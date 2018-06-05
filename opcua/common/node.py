@@ -159,6 +159,8 @@ class Node:
         """
         Get value of a node as a python type. Only variables ( and properties) have values.
         An exception will be generated for other node types.
+        WARNING: on server side, this function returns a ref to object in ua database. Do not modify it if it is a mutable
+        object unless you know what you are doing
         """
         result = await self.get_data_value()
         return result.Value.Value
@@ -209,6 +211,9 @@ class Node:
         optionnaly using the variantype argument.
         * a ua.Variant, varianttype is then ignored
         * a ua.DataValue, you then have full control over data send to server
+        WARNING: On server side, ref to object is directly saved in our UA db, if this is a mutable object
+        and you modfy it afterward, then the object in db will be modified without any
+        data change event generated
         """
         datavalue = None
         if isinstance(value, ua.DataValue):

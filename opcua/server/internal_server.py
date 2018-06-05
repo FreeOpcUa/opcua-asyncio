@@ -303,18 +303,12 @@ class InternalSession:
 
     async def read(self, params):
         results = self.iserver.attribute_service.read(params)
-        if self.external:
-            return results
-        return [deepcopy(dv) for dv in results]
+        return results
 
     def history_read(self, params) -> Coroutine:
         return self.iserver.history_manager.read_history(params)
 
     async def write(self, params):
-        if not self.external:
-            # If session is internal we need to store a copy og object, not a reference,
-            # otherwise users may change it and we will not generate expected events
-            params.NodesToWrite = [deepcopy(ntw) for ntw in params.NodesToWrite]
         return self.iserver.attribute_service.write(params, self.user)
 
     async def browse(self, params):
