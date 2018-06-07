@@ -201,6 +201,8 @@ def create_standard_address_space_{self.part!s}(server):
             elif obj.valuetype == "ListOfLocalizedText":
                 value = ['LocalizedText({0})'.format(repr(text)) for text in obj.value]
                 self.writecode(indent, 'attrs.Value = [{}]'.format(','.join(value)))
+            elif obj.valuetype == "LocalizedText":
+                self.writecode(indent, 'attrs.Value = ua.Variant(LocalizedText("{0}"), ua.VariantType.LocalizedText)'.format(obj.value[1][1]))
             else:
                 if obj.valuetype.startswith("ListOf"):
                     obj.valuetype = obj.valuetype[6:]
