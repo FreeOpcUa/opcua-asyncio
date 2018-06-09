@@ -49,8 +49,6 @@ class EnumType(object):
     def get_code(self):
         code = """
 
-
-
 class {0}(IntEnum):
 
     '''
@@ -69,9 +67,10 @@ class {0}(IntEnum):
 
 class EnumeratedValue(object):
     def __init__(self, name, value):
+        if name == "None":
+            name = "None_"
         self.Name = name
         self.Value = value
-
 
 class Struct(object):
     def __init__(self, name):
@@ -178,28 +177,7 @@ class StructGenerator(object):
         return code
 
     def get_python_classes(self, env=None):
-        """
-        generate Python code and execute in a new environment
-        return a dict of structures {name: class}
-        Rmw: Since the code is generated on the fly, in case of error the stack trace is 
-        not available and debugging is very hard...
-        """
-        if env is None:
-            env = {}
-        #  Add the required libraries to dict
-        if "ua" not in env:
-            env['ua'] = ua
-        if "datetime" not in env:
-            env['datetime'] = datetime
-        if "uuid" not in env:
-            env['uuid'] = uuid
-        if "enum" not in env:
-            env['IntEnum'] = IntEnum
-        # generate classes one by one and add them to dict
-        for element in self.model:
-            code = element.get_code()
-            exec(code, env)
-        return env
+        return _generate_python_class(self.model, env=env)
 
     def _make_header(self, _file):
         _file.write("""
@@ -286,3 +264,53 @@ def _clean_name(name):
     name = re.sub(r'^[0-9]+', r'_\g<0>', name)
 
     return name
+
+
+def _generate_python_class(model, env=None):
+    """
+    generate Python code and execute in a new environment
+    return a dict of structures {name: class}
+    Rmw: Since the code is generated on the fly, in case of error the stack trace is
+    not available and debugging is very hard...
+    """
+    if env is None:
+        env = {}
+    #  Add the required libraries to dict
+    if "ua" not in env:
+        env['ua'] = ua
+    if "datetime" not in env:
+        env['datetime'] = datetime
+    if "uuid" not in env:
+        env['uuid'] = uuid
+    if "enum" not in env:
+        env['IntEnum'] = IntEnum
+    # generate classes one by one and add them to dict
+    for element in model:
+        code = element.get_code()
+        print("Generating", code)
+        exec(code, env)
+    return env
+
+
+def load_enums(server, env=None):
+    """
+    read enumeration data types and generate python enums for them
+    Not sure this methods is necessary, alternatives are welcome
+    """
+    model = []
+    nodes = server.nodes.enum_data_type.get_children()
+    if env is None:
+        env = ua.__dict__
+    for node in nodes:
+        name = node.get_browse_name().Name
+        try:
+            def_node = node.get_child("0:EnumStrings")
+        except ua.UaError as ex:
+            print(node, ex)
+            continue
+        val = def_node.get_value()
+        c = EnumType(name)
+        c.fields = [EnumeratedValue(st.Text, idx) for idx, st in enumerate(val)]
+        if not hasattr(ua, c.name):
+            model.append(c)
+    return _generate_python_class(model, env=env)
