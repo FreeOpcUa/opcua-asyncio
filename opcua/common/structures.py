@@ -288,7 +288,6 @@ def _generate_python_class(model, env=None):
     # generate classes one by one and add them to dict
     for element in model:
         code = element.get_code()
-        print("Generating", code)
         exec(code, env)
     return env
 
@@ -307,7 +306,7 @@ def load_enums(server, env=None):
         try:
             def_node = node.get_child("0:EnumStrings")
         except ua.UaError as ex:
-            print(node, ex)
+            #logger.exception("Error getting child node EnumStrings of node %s", node)
             continue
         val = def_node.get_value()
         c = EnumType(name)

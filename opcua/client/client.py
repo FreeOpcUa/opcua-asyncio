@@ -550,4 +550,16 @@ class Client(object):
         return len(uries) - 1
 
     def load_type_definitions(self, nodes=None) -> Coroutine:
+        """
+        Load custom types (custom structures/extension objects) definition from server
+        Generate Python classes for custom structures/extension objects defined in server
+        These classes will available in ua module
+        """
         return load_type_definitions(self, nodes)
+
+    def load_enums(self):
+        """
+        generate Python enums for custom enums on server.
+        This enums will be available in ua module
+        """
+        return load_enums(self)

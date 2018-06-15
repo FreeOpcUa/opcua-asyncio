@@ -587,4 +587,15 @@ class Server:
         self.iserver.isession.add_method_callback(node.nodeid, callback)
 
     def load_type_definitions(self, nodes=None) -> Coroutine:
+        """
+        load custom structures from our server.
+        Server side this can be used to create python objects from custom structures
+        imported through xml into server
+        """
         return load_type_definitions(self, nodes)
+
+    def load_enums(self):
+        """
+        load UA structures and generate python Enums in ua module for custom enums in server
+        """
+        return load_enums(self)
