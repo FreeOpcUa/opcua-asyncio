@@ -18,12 +18,13 @@ __all__ = [
 ]
 
 
-def val_to_string(val):
+def val_to_string(val, truncate=True):
     """
     convert a python object or python-opcua object to a string
     which should be easy to understand for human
     easy to modify, and not too hard to parse back ....not easy
     meant for UI or command lines
+    if truncate is true then huge strings or bytes are tuncated
 
     """
     if isinstance(val, (list, tuple)):
@@ -43,9 +44,13 @@ def val_to_string(val):
     elif isinstance(val, ua.XmlElement):
         val = val.Value
     elif isinstance(val, str):
-        pass
+        if truncate and len(val) > 100:
+            val = val[:10] + "...." + val[-10:]
     elif isinstance(val, bytes):
-        val = val.decode("utf-8", errors="replace")
+        if truncate and len(val) > 100:
+            val = val[:10].decode("utf-8", errors="replace") + "...." + val[-10:].decode("utf-8", errors="replace")
+        else:
+            val = val.decode("utf-8", errors="replace")
     elif isinstance(val, datetime):
         val = val.isoformat()
     elif isinstance(val, (int, float)):
