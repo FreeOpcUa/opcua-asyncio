@@ -442,7 +442,7 @@ class Client(object):
             data, uri = self._encrypt_password(password, policy_uri)
             params.UserIdentityToken.Password = data
             params.UserIdentityToken.EncryptionAlgorithm = uri
-        params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.UserName, b"username_basic256")
+        params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.UserName, "username_basic256")
 
     def _encrypt_password(self, password: str, policy_uri):
         pubkey = uacrypto.x509_from_der(self.security_policy.server_certificate).public_key()
