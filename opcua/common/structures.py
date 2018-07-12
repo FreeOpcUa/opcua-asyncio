@@ -69,6 +69,7 @@ class EnumeratedValue(object):
     def __init__(self, name, value):
         if name == "None":
             name = "None_"
+        name = name.replace(" ", "")
         self.Name = name
         self.Value = value
 
@@ -294,8 +295,7 @@ def _generate_python_class(model, env=None):
 
 async def load_enums(server, env=None):
     """
-    read enumeration data types and generate python enums for them
-    Not sure this methods is necessary, alternatives are welcome
+    Read enumeration data types on server and generate python Enums in ua scope for them
     """
     model = []
     nodes = await server.nodes.enum_data_type.get_children()
@@ -304,13 +304,29 @@ async def load_enums(server, env=None):
     for node in nodes:
         name = (await node.get_browse_name()).Name
         try:
-            def_node = await node.get_child("0:EnumStrings")
+            c = _get_enum_strings(name, node)
         except ua.UaError as ex:
-            #logger.exception("Error getting child node EnumStrings of node %s", node)
-            continue
-        val = await def_node.get_value()
-        c = EnumType(name)
-        c.fields = [EnumeratedValue(st.Text, idx) for idx, st in enumerate(val)]
+            try:
+                c = _get_enum_values(name, node)
+            except ua.UaError as ex:
+                logger.warning("Node %s, %s under DataTypes/Enumeration, does not seem to have a child called EnumString or EumValue: %s", name, node, ex)
+                continue
         if not hasattr(ua, c.name):
             model.append(c)
     return _generate_python_class(model, env=env)
+
+
+def _get_enum_values(name, node):
+    def_node = node.get_child("0:EnumValues")
+    val = def_node.get_value()
+    c = EnumType(name)
+    c.fields = [EnumeratedValue(enumval.DisplayName.Text, enumval.Value) for enumval in val]
+    return c
+
+
+def _get_enum_strings(name, node):
+    def_node = node.get_child("0:EnumStrings")
+    val = def_node.get_value()
+    c = EnumType(name)
+    c.fields = [EnumeratedValue(st.Text, idx) for idx, st in enumerate(val)]
+    return c
