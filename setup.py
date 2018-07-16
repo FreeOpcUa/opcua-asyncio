@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name="opcua",
-      version="0.98.2",
+      version="0.98.3",
       description="Pure Python OPC-UA client and server library",
       author="Olivier Roulet-Dubonnet",
       author_email="olivier.roulet@gmail.com",
