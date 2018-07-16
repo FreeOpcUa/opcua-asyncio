@@ -99,6 +99,10 @@ class Subscription:
         self.loop.create_task(self.server.publish())
         self.loop.create_task(self.server.publish())
 
+        #Send a publish request so the server has one in its queue
+        # Servers should alsways be able to handle at least on extra publish request per subscriptions
+        self.server.publish()
+
     async def delete(self):
         """
         Delete subscription on server. This is automatically done by Client and Server classes on exit
