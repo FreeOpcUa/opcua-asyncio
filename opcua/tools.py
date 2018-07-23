@@ -18,6 +18,7 @@ from opcua import Client
 from opcua import Server
 from opcua import Node
 from opcua import uamethod
+from opcua.ua.uaerrors import UaStatusCodeError
 
 
 def add_minimum_args(parser):
@@ -324,7 +325,10 @@ async def _lsprint_1(node, depth, indent=""):
 
     for desc in await node.get_children_descriptions():
         if desc.NodeClass == ua.NodeClass.Variable:
-            val = await Node(node.server, desc.NodeId).get_value()
+            try:
+                val = await Node(node.server, desc.NodeId).get_value()
+            except UaStatusCodeError as err:
+                val = "Bad (0x{0:x})".format(err.code)
             print("{0}{1:30} {2!s:25} {3!s:25}, {4!s:3}".format(indent, desc.DisplayName.to_string(), desc.NodeId.to_string(), desc.BrowseName.to_string(), val))
         else:
             print("{0}{1:30} {2!s:25} {3!s:25}".format(indent, desc.DisplayName.to_string(), desc.NodeId.to_string(), desc.BrowseName.to_string()))
