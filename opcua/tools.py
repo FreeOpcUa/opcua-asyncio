@@ -61,6 +61,10 @@ def add_common_args(parser, default_node='i=84', require_node=False):
     parser.add_argument("--security",
                         help="Security settings, for example: Basic256,SignAndEncrypt,cert.der,pk.pem[,server_cert.der]. Default: None",
                         default='')
+    parser.add_argument("--user",
+                        help="User name for authentication. Overrides the user name given in the URL.")
+    parser.add_argument("--password",
+                        help="Password name for authentication. Overrides the password given in the URL.")
 
 
 def _require_nodeid(parser, args):
@@ -114,6 +118,7 @@ def uaread():
     client = Client(args.url, timeout=args.timeout)
     client.set_security_string(args.security)
     client.connect()
+
     try:
         node = get_node(client, args)
         attr = node.get_attribute(args.attribute)
@@ -217,6 +222,14 @@ def _val_to_variant(val, args):
         return _arg_to_variant(val, array, ua.LocalizedText, ua.VariantType.LocalizedText)
 
 
+def _configure_client_with_args(client, args):
+    if args.user:
+        client.set_user(args.user)
+    if args.password:
+        client.set_password(args.password)
+    client.set_security_string(args.security)
+
+
 def uawrite():
     parser = argparse.ArgumentParser(description="Write attribute of a node, per default write value of node")
     add_common_args(parser)
@@ -245,7 +258,7 @@ def uawrite():
     args = parse_args(parser, requirenodeid=True)
 
     client = Client(args.url, timeout=args.timeout)
-    client.set_security_string(args.security)
+    _configure_client_with_args(client, args)
     client.connect()
     try:
         node = get_node(client, args)
@@ -277,8 +290,8 @@ async def uals():
         args.long_format = 1
 
     client = Client(args.url, timeout=args.timeout)
-    await client.set_security_string(args.security)
-    await client.connect()
+    _configure_client_with_args(client, args)
+    client.connect()
     try:
         node = get_node(client, args)
         print("Browsing node {0} at {1}\n".format(node, args.url))
@@ -369,7 +382,7 @@ def uasubscribe():
             args.nodeid = "i=2253"
 
     client = Client(args.url, timeout=args.timeout)
-    client.set_security_string(args.security)
+    _configure_client_with_args(client, args)
     client.connect()
     try:
         node = get_node(client, args)
@@ -452,7 +465,7 @@ def uaclient():
     args = parse_args(parser)
 
     client = Client(args.url, timeout=args.timeout)
-    client.set_security_string(args.security)
+    _configure_client_with_args(client, args)
     if args.certificate:
         client.load_client_certificate(args.certificate)
     if args.private_key:
@@ -636,7 +649,7 @@ def uahistoryread():
     args = parse_args(parser, requirenodeid=True)
 
     client = Client(args.url, timeout=args.timeout)
-    client.set_security_string(args.security)
+    _configure_client_with_args(client, args)
     client.connect()
     try:
         node = get_node(client, args)
@@ -684,7 +697,7 @@ def uacall():
     args = parse_args(parser, requirenodeid=True)
 
     client = Client(args.url, timeout=args.timeout)
-    client.set_security_string(args.security)
+    _configure_client_with_args(client, args)
     client.connect()
     try:
         node = get_node(client, args)
@@ -740,7 +753,7 @@ def uageneratestructs():
     args = parse_args(parser, requirenodeid=True)
 
     client = Client(args.url, timeout=args.timeout)
-    client.set_security_string(args.security)
+    _configure_client_with_args(client, args)
     client.connect()
     try:
         node = get_node(client, args)
