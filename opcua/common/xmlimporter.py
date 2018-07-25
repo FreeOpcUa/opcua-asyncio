@@ -396,7 +396,6 @@ class XmlImporter:
             ref.IsForward = data.forward
             ref.ReferenceTypeId = self.to_nodeid(data.reftype)
             ref.SourceNodeId = self._migrate_ns(obj.nodeid)
-            ref.TargetNodeClass = ua.NodeClass.DataType
             ref.TargetNodeId = self.to_nodeid(data.target)
             refs.append(ref)
         await self._add_references(refs)

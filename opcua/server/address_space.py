@@ -369,7 +369,10 @@ class NodeManagementService(object):
         rdesc.ReferenceTypeId = addref.ReferenceTypeId
         rdesc.IsForward = addref.IsForward
         rdesc.NodeId = addref.TargetNodeId
-        rdesc.NodeClass = addref.TargetNodeClass
+        if addref.TargetNodeClass == ua.NodeClass.Unspecified:
+            rdesc.NodeClass = self._aspace.get_attribute_value(addref.TargetNodeId, ua.AttributeIds.NodeClass).Value.Value
+        else:
+            rdesc.NodeClass = addref.TargetNodeClass
         bname = self._aspace.get_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value
         if bname:
             rdesc.BrowseName = bname
