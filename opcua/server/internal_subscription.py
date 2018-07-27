@@ -353,14 +353,14 @@ class InternalSubscription:
 
         self._publish_cycles_count = 0
         for nb in acks:
-            if nb in self._not_acknowledged_results:
-                self._not_acknowledged_results.pop(nb)
+                self._not_acknowledged_results.pop(nb, None)
 
     def republish(self, nb):
         self.logger.info("re-publish request for ack %s in subscription %s", nb, self)
-        if nb in self._not_acknowledged_results:
+        notificationMessage = self._not_acknowledged_results.pop(nb, None)
+        if notificationMessage:
             self.logger.info("re-publishing ack %s in subscription %s", nb, self)
-            return self._not_acknowledged_results[nb].NotificationMessage
+            return notificationMessage
         else:
             self.logger.info("Error request to re-published non existing ack %s in subscription %s", nb, self)
             return ua.NotificationMessage()
@@ -375,13 +375,14 @@ class InternalSubscription:
         self._triggered_statuschanges.append(code)
 
     def _enqueue_event(self, mid, eventdata, size, queue):
-        if mid not in queue:
-            queue[mid] = [eventdata]
-            return
-        if size != 0:
-            if len(queue[mid]) >= size:
-                queue[mid].pop(0)
-        queue[mid].append(eventdata)
+        with self._lock:
+            if mid not in queue:
+                queue[mid] = [eventdata]
+                return
+            if size != 0:
+                if len(queue[mid]) >= size:
+                    queue[mid].pop(0)
+            queue[mid].append(eventdata)
 
 
 class WhereClauseEvaluator:

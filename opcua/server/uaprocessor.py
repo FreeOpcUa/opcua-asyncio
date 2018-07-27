@@ -113,7 +113,7 @@ class UaProcessor:
 
     async def process_message(self, algohdr, seqhdr, body):
         """
-        Process incoming messages. 
+        Process incoming messages.
         """
         typeid = nodeid_from_binary(body)
         requesthdr = struct_from_binary(ua.RequestHeader, body)
@@ -150,9 +150,14 @@ class UaProcessor:
             self.send_response(requesthdr.RequestHandle, algohdr, seqhdr, response)
 
         elif typeid == ua.NodeId(ua.ObjectIds.CloseSessionRequest_Encoding_DefaultBinary):
-            _logger.info("Close session request")
-            deletesubs = ua.ua_binary.Primitives.Boolean.unpack(body)
-            await self.session.close_session(deletesubs)
+            self.logger.info("Close session request")
+
+            if self.session:
+                deletesubs = ua.ua_binary.Primitives.Boolean.unpack(body)
+                self.session.close_session(deletesubs)
+            else:
+                self.logger.info("Request to close non-existing session")
+
             response = ua.CloseSessionResponse()
             _logger.info("sending close session response")
             self.send_response(requesthdr.RequestHandle, algohdr, seqhdr, response)
