@@ -1,4 +1,4 @@
-Pure Python OPC UA / IEC 62541 Client and Server Python 2, 3 and pypy .
+OPC UA / IEC 62541 Client and Server for Python > 3.6 and pypy .
 http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
 [![Build Status](https://travis-ci.org/FreeOpcUa/opcua-asyncio.svg?branch=master)](https://travis-ci.org/FreeOpcUa/opcua-asyncio)
@@ -8,6 +8,8 @@ http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 [![Code Climate](https://codeclimate.com/github/FreeOpcUa/opcua-asyncio/badges/gpa.svg)](https://codeclimate.com/github/FreeOpcUa/opcua-asyncio)
 
 [![PyPI Oackage](https://badge.fury.io/py/freeopcua.svg)](https://badge.fury.io/py/freeopcua)
+
+This repository is a fork of python-opcua to rebase it completely on asyncio and drop support of Python < 3.6. This will hill hopefully allow us to have a simpler code and improve performance. This is currently ALPHA quality.
 
 OPC UA binary protocol implementation is quasi complete and has been tested against many different OPC UA stacks. API offers both a low level interface to send and receive all UA defined structures and high level classes allowing to write a server or a client in a few lines. It is easy to mix high level objects and low level UA calls in one application.
 
