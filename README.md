@@ -1,11 +1,11 @@
 Pure Python OPC UA / IEC 62541 Client and Server Python 2, 3 and pypy .
-http://freeopcua.github.io/, https://github.com/FreeOpcUa/python-opcua
+http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
-[![Build Status](https://travis-ci.org/FreeOpcUa/python-opcua.svg?branch=master)](https://travis-ci.org/FreeOpcUa/python-opcua)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/FreeOpcUa/python-opcua/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/FreeOpcUa/python-opcua/?branch=master)
-[![Code Coverage](https://scrutinizer-ci.com/g/FreeOpcUa/python-opcua/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/FreeOpcUa/python-opcua/?branch=master)
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/f7f9a138ee7c4541b3b794b86e61e929)](https://www.codacy.com/app/olivier-roulet/python-opcua)
-[![Code Climate](https://codeclimate.com/github/FreeOpcUa/python-opcua/badges/gpa.svg)](https://codeclimate.com/github/FreeOpcUa/python-opcua)
+[![Build Status](https://travis-ci.org/FreeOpcUa/opcua-asyncio.svg?branch=master)](https://travis-ci.org/FreeOpcUa/opcua-asyncio)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/?branch=master)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/f7f9a138ee7c4541b3b794b86e61e929)](https://www.codacy.com/app/olivier-roulet/opcua-asyncio)
+[![Code Climate](https://codeclimate.com/github/FreeOpcUa/opcua-asyncio/badges/gpa.svg)](https://codeclimate.com/github/FreeOpcUa/opcua-asyncio)
 
 [![PyPI Oackage](https://badge.fury.io/py/freeopcua.svg)](https://badge.fury.io/py/freeopcua)
 
@@ -19,16 +19,16 @@ coverage.py reports a test coverage of over 95% of code, most of non-tested code
 
 =======
 
-Some documentation is available at http://python-opcua.readthedocs.org/en/latest/
+Some documentation is available at http://opcua-asyncio.readthedocs.org/en/latest/
 
 A simple GUI client is available: https://github.com/FreeOpcUa/opcua-client-gui
 
-Examples: https://github.com/FreeOpcUa/python-opcua/tree/master/examples
+Examples: https://github.com/FreeOpcUa/opcua-asyncio/tree/master/examples
 
-Minimal client example: https://github.com/FreeOpcUa/python-opcua/blob/master/examples/client-minimal.py
-Minimal server example: https://github.com/FreeOpcUa/python-opcua/blob/master/examples/server-minimal.py
+Minimal client example: https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples/client-minimal.py
+Minimal server example: https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples/server-minimal.py
 
-A set of command line tools also available: https://github.com/FreeOpcUa/python-opcua/tree/master/tools
+A set of command line tools also available: https://github.com/FreeOpcUa/opcua-asyncio/tree/master/tools
 * uadiscover (find_servers, get_endpoints and find_servers_on_network calls)
 * uals (list children of a node)
 * uahistoryread
@@ -41,7 +41,7 @@ A set of command line tools also available: https://github.com/FreeOpcUa/python-
 
     tools/uaserver --populate --certificate cert.pem --private_key pk.pem
 
-How to generate certificate: https://github.com/FreeOpcUa/python-opcua/tree/master/examples/generate_certificate.sh
+How to generate certificate: https://github.com/FreeOpcUa/opcua-asyncio/tree/master/examples/generate_certificate.sh
 
 Client: what works:
 * connection to server, opening channel, session
