@@ -642,10 +642,7 @@ class AddressSpace(object):
         node = self._nodes[nodeid]
         if attr not in node.attributes:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
-        if not value.SourceTimestamp:
-            value.SourceTimestamp = datetime.utcnow()
-        if not value.ServerTimestamp:
-            value.ServerTimestamp = datetime.utcnow()
+
 
         attval = node.attributes[attr]
         old = attval.value

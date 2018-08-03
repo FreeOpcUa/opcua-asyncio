@@ -2,6 +2,7 @@
 High level node object, to access node attribute
 and browse address space
 """
+from datetime import datetime
 
 import logging
 from typing import Coroutine
@@ -220,9 +221,12 @@ class Node:
             datavalue = value
         elif isinstance(value, ua.Variant):
             datavalue = ua.DataValue(value)
+            datavalue.SourceTimestamp = datetime.utcnow()
         else:
             datavalue = ua.DataValue(ua.Variant(value, varianttype))
         await self.set_attribute(ua.AttributeIds.Value, datavalue)
+            datavalue.SourceTimestamp = datetime.utcnow()
+        self.set_attribute(ua.AttributeIds.Value, datavalue)
 
     set_data_value = set_value
 
