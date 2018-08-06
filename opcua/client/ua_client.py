@@ -17,6 +17,9 @@ class UASocketProtocol(asyncio.Protocol):
     Handle socket connection and send ua messages.
     Timeout is the timeout used while waiting for an ua answer from server.
     """
+    INITIALIZED = 'initialized'
+    OPEN = 'open'
+    CLOSED = 'closed'
 
     def __init__(self, timeout=1, security_policy=ua.SecurityPolicy()):
         self.logger = logging.getLogger(__name__ + ".UASocketProtocol")
@@ -30,12 +33,15 @@ class UASocketProtocol(asyncio.Protocol):
         self._request_handle = 0
         self._callbackmap = {}
         self._connection = SecureConnection(security_policy)
+        self.state = self.INITIALIZED
 
     def connection_made(self, transport: asyncio.Transport):
+        self.state = self.OPEN
         self.transport = transport
 
     def connection_lost(self, exc):
         self.logger.info("Socket has closed connection")
+        self.state = self.CLOSED
         self.transport = None
 
     def data_received(self, data: bytes):
@@ -226,6 +232,9 @@ class UaClient:
         await self.loop.create_connection(self._make_protocol, host, port)
 
     def disconnect_socket(self):
+        if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
+            self.logger.warning("disconnect_socket was called but connection is closed")
+            return
         return self.protocol.disconnect_socket()
 
     async def send_hello(self, url, max_messagesize=0, max_chunkcount=0):
@@ -239,6 +248,9 @@ class UaClient:
         close secure channel. It seems to trigger a shutdown of socket
         in most servers, so be prepare to reconnect
         """
+        if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
+            self.logger.warning("close_secure_channel was called but connection is closed")
+            return
         return await self.protocol.close_secure_channel()
 
     async def create_session(self, parameters):
@@ -264,6 +276,9 @@ class UaClient:
 
     async def close_session(self, delete_subscriptions):
         self.logger.info("close_session")
+        if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
+            self.logger.warning("close_session was called but connection is closed")
+            return
         request = ua.CloseSessionRequest()
         request.DeleteSubscriptions = delete_subscriptions
         data = await self.protocol.send_request(request)
