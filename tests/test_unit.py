@@ -26,7 +26,6 @@ from opcua.common.structures import StructGenerator
 from opcua.common.connection import MessageChunk
 
 EXAMPLE_BSD_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "example.bsd"))
-STRUCTURES_OUTPUT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "structures.py"))
 
 
 def test_variant_array_none():
@@ -51,28 +50,21 @@ def test_variant_empty_list():
     assert v2.is_array
 
 
-def test_structs_save_and_import():
+def test_custom_structs(tmpdir):
     c = StructGenerator()
     c.make_model_from_file(EXAMPLE_BSD_PATH)
-    struct_dict = c.save_and_import(STRUCTURES_OUTPUT_PATH)
-    for k, v in struct_dict.items():
-        a = v()
-        assert k == a.__class__.__name__
-
-
-def test_custom_structs():
-    c = StructGenerator()
-    c.make_model_from_file(EXAMPLE_BSD_PATH)
-    c.save_to_file(STRUCTURES_OUTPUT_PATH)
-    import structures as s
-
+    output_path = tmpdir.join("test_custom_structs.py").strpath
+    c.save_to_file(output_path)
+    ns = {}
+    with open(output_path) as s:
+        exec(s.read(), ns)
     # test with default values
-    v = s.ScalarValueDataType()
+    v = ns["ScalarValueDataType"]()
     data = struct_to_binary(v)
-    v2 = struct_from_binary(s.ScalarValueDataType, ua.utils.Buffer(data))
+    v2 = struct_from_binary(ns["ScalarValueDataType"], ua.utils.Buffer(data))
 
     # set some values
-    v = s.ScalarValueDataType()
+    v = ns["ScalarValueDataType"]()
     v.SbyteValue = 1
     v.ByteValue = 2
     v.Int16Value = 3
@@ -101,23 +93,26 @@ def test_custom_structs():
     # self.UInteger =
 
     data = struct_to_binary(v)
-    v2 = struct_from_binary(s.ScalarValueDataType, ua.utils.Buffer(data))
+    v2 = struct_from_binary(ns["ScalarValueDataType"], ua.utils.Buffer(data))
     assert v.NodeIdValue == v2.NodeIdValue
 
 
-def test_custom_structs_array():
+def test_custom_structs_array(tmpdir):
     c = StructGenerator()
     c.make_model_from_file(EXAMPLE_BSD_PATH)
-    c.save_to_file(STRUCTURES_OUTPUT_PATH)
-    import structures as s
+    ns = {}
+    output_path = tmpdir.join("test_custom_structs_array.py").strpath
+    c.save_to_file(output_path)
+    with open(output_path) as s:
+        exec(s.read(), ns)
 
     # test with default values
-    v = s.ArrayValueDataType()
+    v = ns["ArrayValueDataType"]()
     data = struct_to_binary(v)
-    v2 = struct_from_binary(s.ArrayValueDataType, ua.utils.Buffer(data))
+    v2 = struct_from_binary(ns["ArrayValueDataType"], ua.utils.Buffer(data))
 
     # set some values
-    v = s.ArrayValueDataType()
+    v = ns["ArrayValueDataType"]()
     v.SbyteValue = [1]
     v.ByteValue = [2]
     v.Int16Value = [3]
@@ -135,7 +130,7 @@ def test_custom_structs_array():
     v.XmlElementValue = [ua.XmlElement("<toto>titi</toto>")]
     v.NodeIdValue = [ua.NodeId.from_string("ns=4;i=9999"), ua.NodeId.from_string("i=6")]
     data = struct_to_binary(v)
-    v2 = struct_from_binary(s.ArrayValueDataType, ua.utils.Buffer(data))
+    v2 = struct_from_binary(ns["ArrayValueDataType"], ua.utils.Buffer(data))
     assert v.NodeIdValue == v2.NodeIdValue
     # print(v2.NodeIdValue)
 

@@ -4,21 +4,19 @@ We only support a subset of features but should be enough
 for custom structures
 """
 
-import os
-import importlib
 import re
+import uuid
 import logging
 # The next two imports are for generated code
 from datetime import datetime
-import uuid
-
 from lxml import objectify
+from enum import IntEnum, EnumMeta
 
 from opcua import ua
 
-from enum import IntEnum, EnumMeta
 
 __all__ = ["load_type_definitions"]
+_logger = logging.getLogger(__name__)
 
 
 def get_default_value(uatype, enums):
@@ -203,24 +201,6 @@ class StructGenerator(object):
             exec(code, env)
         return env
 
-    def save_and_import(self, path, append_to=None):
-        """
-        save the new structures to a python file which be used later
-        import the result and return resulting classes in a dict
-        if append_to is a dict, the classes are added to the dict
-        """
-        self.save_to_file(path)
-        name = os.path.basename(path)
-        name = os.path.splitext(name)[0]
-        mymodule = importlib.import_module(name)
-        if append_to is None:
-            result = {}
-        else:
-            result = append_to
-        for struct in self.model:
-            result[struct.name] = getattr(mymodule, struct.name)
-        return result
-
     def _make_header(self, _file):
         _file.write("""
 '''
@@ -281,8 +261,8 @@ async def load_type_definitions(server, nodes=None):
             if ref_desc_list:  # some server put extra things here
                 name = _clean_name(ndesc.BrowseName.Name)
                 if not name in structs_dict:
-                    logging.getLogger(__name__).warning(
-                        "Error {} is found as child of binary definition node but is not found in xml".format(name))
+                    _logger.warning(
+                        "Error %s is found as child of binary definition node but is not found in xml", name)
                     continue
                 nodeid = ref_desc_list[0].NodeId
                 ua.register_extension_object(name, nodeid, structs_dict[name])

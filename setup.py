@@ -9,7 +9,7 @@ setup(name="opcua",
       packages=find_packages(),
       provides=["opcua"],
       license="GNU Lesser General Public License v3 or later",
-      install_requires=["python-dateutil", "pytz", "lxml"],
+      install_requires=["aiofiles", "python-dateutil", "pytz", "lxml"],
       extras_require={
           'encryption': ['cryptography']
       },
