@@ -1,11 +1,5 @@
 from setuptools import setup, find_packages
 
-import sys
-
-install_requires = ["python-dateutil", "pytz", "lxml"]
-if sys.version_info[0] < 3:
-    install_requires.extend(["enum34", "trollius", "futures"])
-
 setup(name="opcua",
       version="0.95.3",
       description="Pure Python OPC-UA client and server library",
@@ -15,13 +9,12 @@ setup(name="opcua",
       packages=find_packages(),
       provides=["opcua"],
       license="GNU Lesser General Public License v3 or later",
-      install_requires=install_requires,
+      install_requires=["python-dateutil", "pytz", "lxml"],
       extras_require={
           'encryption': ['cryptography']
       },
-      classifiers=["Programming Language :: Python",
-                   "Programming Language :: Python :: 3",
-                   "Programming Language :: Python :: 2",
+      classifiers=["Programming Language :: Python :: 3.6",
+                   "Programming Language :: Python :: 3.7"
                    "Development Status :: 4 - Beta",
                    "Intended Audience :: Developers",
                    "Operating System :: OS Independent",
