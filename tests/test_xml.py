@@ -45,14 +45,16 @@ async def test_xml_import(opc):
 
 
 async def test_xml_import_additional_ns(opc):
-    await opc.server.register_namespace("http://placeholder.toincrease.nsindex")  # if not already shift the new namespaces
+    # if not already shift the new namespaces
+    await opc.server.register_namespace("http://placeholder.toincrease.nsindex")
     # "tests/custom_nodes.xml" isn't created with namespaces in mind, provide new test file
-    await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)  # the ns=1 in to file now should be mapped to ns=2
+    # the ns=1 in to file now should be mapped to ns=2
+    await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)
     ns = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/")
     o = opc.opc.get_objects_node()
-    o2 = await o.get_child(["{0:d}:MyBaseObject".format(ns)])
+    o2 = await o.get_child([f"{ns}:MyBaseObject"])
     assert o2 is None
-    v1 = await o.get_child(["{0:d}:MyBaseObject".format(ns), "{0:d}:MyVar".format(ns)])
+    v1 = await o.get_child([f"{ns}:MyBaseObject", f"{ns}:MyVar"])
     assert v1 is None
     r1 = await o2.get_references(refs=ua.ObjectIds.HasComponent)[0]
     assert ns == r1.NodeId.NamespaceIndex

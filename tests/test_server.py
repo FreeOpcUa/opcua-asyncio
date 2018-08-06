@@ -350,7 +350,7 @@ async def test_create_custom_event_type_node_id(server):
     etype = await server.create_custom_event_type(2, 'MyEvent', ua.NodeId(ua.ObjectIds.BaseEventType),
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
-    await check_custom_type(etype, ua.ObjectIds.BaseVariableType, server)
+    await check_custom_type(etype, ua.ObjectIds.BaseEventType, server)
 
 
 async def test_create_custom_event_type_node(server):
@@ -358,7 +358,7 @@ async def test_create_custom_event_type_node(server):
                                                                            ua.NodeId(ua.ObjectIds.BaseEventType)),
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
-    await check_custom_type(etype, ua.ObjectIds.BaseVariableType, server)
+    await check_custom_type(etype, ua.ObjectIds.BaseEventType, server)
 
 
 async def test_get_event_from_type_node_custom_event(server):
