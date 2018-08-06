@@ -1,6 +1,6 @@
 import time
 import pytest
-from asyncio import Future, sleep, wait_for
+from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
 
 import opcua
@@ -135,8 +135,8 @@ async def test_subscription_count_list(opc):
 
 async def test_subscription_count_no_change(opc):
     myhandler = MySubHandlerCounter()
-    sub = await opc.create_subscription(1, myhandler)
-    o = opc.get_objects_node()
+    sub = await opc.opc.create_subscription(1, myhandler)
+    o = opc.opc.get_objects_node()
     var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2])
     await sub.subscribe_data_change(var)
     nb = 12
@@ -401,10 +401,10 @@ async def test_events_CustomEvent(opc):
     etype = await opc.server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
                                               [('PropertyNum', ua.VariantType.Float),
                                                ('PropertyString', ua.VariantType.String)])
-    evgen = opc.server.get_event_generator(etype)
+    evgen = await opc.server.get_event_generator(etype)
     myhandler = MySubHandler()
-    sub = opc.opc.create_subscription(100, myhandler)
-    handle = sub.subscribe_events(evtypes=etype)
+    sub = await opc.opc.create_subscription(100, myhandler)
+    handle = await sub.subscribe_events(evtypes=etype)
     propertynum = 2
     propertystring = "This is my test"
     evgen.event.PropertyNum = propertynum
@@ -418,26 +418,26 @@ async def test_events_CustomEvent(opc):
     assert ev is not None  # we did not receive event
     assert etype.nodeid == ev.EventType
     assert serverity == ev.Severity
-    assert opc.opc.get_server_node().get_browse_name().Name == ev.SourceName
+    assert (await opc.opc.get_server_node().get_browse_name()).Name == ev.SourceName
     assert opc.opc.get_server_node().nodeid == ev.SourceNode
     assert msg == ev.Message.Text
     assert tid == ev.Time
     assert propertynum == ev.PropertyNum
     assert propertystring == ev.PropertyString
-    sub.unsubscribe(handle)
+    await sub.unsubscribe(handle)
     await sub.delete()
 
 
 async def test_events_CustomEvent_MyObject(opc):
     objects = opc.server.get_objects_node()
-    o = objects.add_object(3, 'MyObject')
+    o = await objects.add_object(3, 'MyObject')
     etype = await opc.server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
                                               [('PropertyNum', ua.VariantType.Float),
                                                ('PropertyString', ua.VariantType.String)])
-    evgen = opc.server.get_event_generator(etype, o)
+    evgen = await opc.server.get_event_generator(etype, o)
     myhandler = MySubHandler()
-    sub = opc.opc.create_subscription(100, myhandler)
-    handle = sub.subscribe_events(o, etype)
+    sub = await opc.opc.create_subscription(100, myhandler)
+    handle = await sub.subscribe_events(o, etype)
     propertynum = 2
     propertystring = "This is my test"
     evgen.event.PropertyNum = propertynum
@@ -455,13 +455,13 @@ async def test_events_CustomEvent_MyObject(opc):
     assert tid == ev.Time
     assert propertynum == ev.PropertyNum
     assert propertystring == ev.PropertyString
-    sub.unsubscribe(handle)
+    await sub.unsubscribe(handle)
     await sub.delete()
 
 
 async def test_several_different_events(opc):
     objects = opc.server.get_objects_node()
-    o = objects.add_object(3, 'MyObject')
+    o = await objects.add_object(3, 'MyObject')
     etype1 = await opc.server.create_custom_event_type(2, 'MyEvent1', ua.ObjectIds.BaseEventType,
                                                [('PropertyNum', ua.VariantType.Float),
                                                 ('PropertyString', ua.VariantType.String)])
@@ -472,7 +472,7 @@ async def test_several_different_events(opc):
     evgen2 = await opc.server.get_event_generator(etype2, o)
     myhandler = MySubHandler2()
     sub = await opc.opc.create_subscription(100, myhandler)
-    handle = sub.subscribe_events(o, etype1)
+    handle = await sub.subscribe_events(o, etype1)
     propertynum1 = 1
     propertystring1 = "This is my test 1"
     evgen1.event.PropertyNum = propertynum1
@@ -488,7 +488,7 @@ async def test_several_different_events(opc):
     assert 3 == len(myhandler.results)
     ev = myhandler.results[-1]
     assert etype1.nodeid == ev.EventType
-    handle = sub.subscribe_events(o, etype2)
+    handle = await sub.subscribe_events(o, etype2)
     for i in range(4):
         evgen1.trigger()
         evgen2.trigger()
@@ -498,7 +498,7 @@ async def test_several_different_events(opc):
     assert 11 == len(myhandler.results)
     assert 4 == len(ev2s)
     assert 7 == len(ev1s)
-    sub.unsubscribe(handle)
+    await sub.unsubscribe(handle)
     await sub.delete()
 
 
@@ -521,8 +521,8 @@ async def test_several_different_events_2(opc):
     )
     evgen3 = await opc.server.get_event_generator(etype3, o)
     myhandler = MySubHandler2()
-    sub = await opc.create_subscription(100, myhandler)
-    handle = sub.subscribe_events(o, [etype1, etype3])
+    sub = await opc.opc.create_subscription(100, myhandler)
+    handle = await sub.subscribe_events(o, [etype1, etype3])
     propertynum1 = 1
     propertystring1 = "This is my test 1"
     evgen1.event.PropertyNum = propertynum1

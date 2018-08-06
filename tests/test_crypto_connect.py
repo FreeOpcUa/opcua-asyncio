@@ -22,6 +22,7 @@ uri_no_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num2)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 EXAMPLE_PATH = os.path.join(BASE_DIR, "examples") + os.sep
 
+
 @pytest.fixture()
 async def srv_crypto():
     # start our own server

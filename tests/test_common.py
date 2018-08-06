@@ -735,7 +735,7 @@ async def test_references_for_added_nodes(opc):
         refs=ua.ObjectIds.HasProperty, direction=ua.BrowseDirection.Inverse, includesubtypes=False
     )
     assert o in nodes
-    assert 0 == await p.get_parent()
+    assert o == await p.get_parent()
     assert ua.ObjectIds.PropertyType == (await p.get_type_definition()).Identifier
     assert [] == await p.get_references(ua.ObjectIds.HasModellingRule)
 
@@ -769,7 +769,7 @@ async def test_path(opc):
 async def test_get_endpoints(opc):
     endpoints = await opc.opc.get_endpoints()
     assert len(endpoints) > 0
-    assert endpoints[0].EndpointUrl.startswith("opc.opc.tcp://")
+    assert endpoints[0].EndpointUrl.startswith("opc.tcp://")
 
 
 async def test_copy_node(opc):

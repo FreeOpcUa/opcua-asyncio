@@ -10,7 +10,6 @@ _logger = logging.getLogger('opcua')
 
 
 class SubHandler(object):
-
     """
     Subscription Handler. To receive events from server for a subscription
     data_change and event methods are called directly from receiving thread.

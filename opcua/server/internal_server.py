@@ -364,7 +364,7 @@ class InternalSession:
                 self.subscriptions.remove(i)
         return self.subscription_service.delete_subscriptions(ids)
 
-    def delete_monitored_items(self, params):
+    async def delete_monitored_items(self, params):
         subscription_result = self.subscription_service.delete_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(
             CallbackType.ItemSubscriptionDeleted, ServerItemCallback(params, subscription_result))

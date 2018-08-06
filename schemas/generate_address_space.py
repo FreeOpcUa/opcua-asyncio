@@ -79,7 +79,7 @@ def nodeid_code(string):
     return f"{ntype}({identifier}, {namespace})"
 
 
-class CodeGenerator(object):
+class CodeGenerator:
 
     def __init__(self, input_path, output_path):
         self.input_path = input_path
@@ -88,11 +88,12 @@ class CodeGenerator(object):
         self.part = self.input_path.split(".")[-2]
         self.parser = None
 
-    def run(self):
+    async def run(self):
         sys.stderr.write(f"Generating Python code {self.output_path} for XML file {self.input_path}\n")
         self.output_file = open(self.output_path, 'w', encoding='utf-8')
         self.make_header()
-        self.parser = xmlparser.XMLParser(self.input_path)
+        self.parser = xmlparser.XMLParser()
+        self.parser.parse_sync(self.input_path)
         for node in self.parser.get_node_datas():
             if node.nodetype == 'UAObject':
                 self.make_object_code(node)
@@ -222,7 +223,7 @@ def create_standard_address_space_{self.part!s}(server):
             for k, v in val:
                 if type(v) is str:
                     val = _to_val([extobj.objname], k, v)
-                    self.writecode(indent, f'extobj.{k} = {v}')
+                    self.writecode(indent, f'extobj.{k} = {val}')
                 else:
                     if k == "DataType":  #hack for strange nodeid xml format
                         self.writecode(indent, 'extobj.{0} = {1}'.format(k, nodeid_code(v[0][1])))
@@ -320,7 +321,7 @@ def create_standard_address_space_{self.part!s}(server):
 def save_aspace_to_disk():
     import os.path
     path = os.path.join('..', 'opcua', 'binary_address_space.pickle')
-    print('Savind standard address space to:', path)
+    print('Saving standard address space to:', path)
     sys.path.append('..')
     from opcua.server.standard_address_space import standard_address_space
     from opcua.server.address_space import NodeManagementService, AddressSpace

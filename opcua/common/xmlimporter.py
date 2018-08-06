@@ -49,8 +49,8 @@ class XmlImporter:
         import xml and return added nodes
         """
         self.logger.info("Importing XML file %s", xmlpath)
-        self.parser = XMLParser(xmlpath, xmlstring)
-
+        self.parser = XMLParser()
+        await self.parser.parse(xmlpath, xmlstring)
         self.namespaces = await self._map_namespaces(self.parser.get_used_namespaces())
         self.aliases = self._map_aliases(self.parser.get_aliases())
         self.refs = []

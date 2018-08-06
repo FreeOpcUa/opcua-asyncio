@@ -7,7 +7,7 @@ if __name__ == "__main__":
     outputfile.write("\n")
     # Making ObjectIds inherit IntEnum has a huge performance impact!!!!!
     # so we use a normal class and a reverse one for the few places we need it
-    outputfile.write("class ObjectIds(object):\n")
+    outputfile.write("class ObjectIds:\n")
     outputfile.write("    Null = 0\n")
     for line in inputfile:
         name, nb, datatype = line.split(",")

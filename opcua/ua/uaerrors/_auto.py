@@ -72,6 +72,9 @@ class BadCertificateInvalid(UaStatusCodeError):
 class BadSecurityChecksFailed(UaStatusCodeError):
     code = 0x80130000
 
+class BadCertificatePolicyCheckFailed(UaStatusCodeError):
+    code = 0x81140000
+
 class BadCertificateTimeInvalid(UaStatusCodeError):
     code = 0x80140000
 
@@ -149,6 +152,15 @@ class BadRequestCancelledByClient(UaStatusCodeError):
 
 class BadTooManyArguments(UaStatusCodeError):
     code = 0x80E50000
+
+class BadLicenseExpired(UaStatusCodeError):
+    code = 0x810E0000
+
+class BadLicenseLimitsExceeded(UaStatusCodeError):
+    code = 0x810F0000
+
+class BadLicenseNotAvailable(UaStatusCodeError):
+    code = 0x81100000
 
 class BadNoCommunication(UaStatusCodeError):
     code = 0x80310000
@@ -254,6 +266,9 @@ class BadBrowseDirectionInvalid(UaStatusCodeError):
 
 class BadNodeNotInView(UaStatusCodeError):
     code = 0x804E0000
+
+class BadNumericOverflow(UaStatusCodeError):
+    code = 0x81120000
 
 class BadServerUriInvalid(UaStatusCodeError):
     code = 0x804F0000
@@ -393,6 +408,9 @@ class BadMethodInvalid(UaStatusCodeError):
 class BadArgumentsMissing(UaStatusCodeError):
     code = 0x80760000
 
+class BadNotExecutable(UaStatusCodeError):
+    code = 0x81110000
+
 class BadTooManySubscriptions(UaStatusCodeError):
     code = 0x80770000
 
@@ -413,6 +431,9 @@ class BadInsufficientClientProfile(UaStatusCodeError):
 
 class BadStateNotActive(UaStatusCodeError):
     code = 0x80BF0000
+
+class BadAlreadyExists(UaStatusCodeError):
+    code = 0x81150000
 
 class BadTcpServerTooBusy(UaStatusCodeError):
     code = 0x807D0000
@@ -548,6 +569,9 @@ class BadAggregateConfigurationRejected(UaStatusCodeError):
 
 class BadRequestNotAllowed(UaStatusCodeError):
     code = 0x80E40000
+
+class BadRequestNotComplete(UaStatusCodeError):
+    code = 0x81130000
 
 class BadDominantValueChanged(UaStatusCodeError):
     code = 0x80E10000

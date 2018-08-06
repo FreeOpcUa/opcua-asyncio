@@ -28,8 +28,8 @@ class MessageChunk(ua.FrozenClass):
         self.security_policy = security_policy
 
     @staticmethod
-    async def from_binary(security_policy, data):
-        h = await header_from_binary(data)
+    def from_binary(security_policy, data):
+        h = header_from_binary(data)
         return MessageChunk.from_header_and_body(security_policy, h, data)
 
     @staticmethod

@@ -1091,6 +1091,90 @@ def create_standard_address_space_Part3(server):
     server.add_references(refs)
    
     node = ua.AddNodesItem()
+    node.RequestedNewNodeId = NumericNodeId(129, 0)
+    node.BrowseName = QualifiedName('DescribesArgument', 0)
+    node.NodeClass = NodeClass.ReferenceType
+    node.ParentNodeId = NumericNodeId(47, 0)
+    node.ReferenceTypeId = NumericNodeId(45, 0)
+    attrs = ua.ReferenceTypeAttributes()
+    attrs.DisplayName = LocalizedText("DescribesArgument")
+    attrs.InverseName = LocalizedText("ArgumentDescriptionFor")
+    node.NodeAttributes = attrs
+    server.add_nodes([node])
+    refs = []
+    ref = ua.AddReferencesItem()
+    ref.IsForward = False
+    ref.ReferenceTypeId = NumericNodeId(45, 0)
+    ref.SourceNodeId = NumericNodeId(129, 0)
+    ref.TargetNodeClass = NodeClass.DataType
+    ref.TargetNodeId = NumericNodeId(47, 0)
+    refs.append(ref)
+    server.add_references(refs)
+   
+    node = ua.AddNodesItem()
+    node.RequestedNewNodeId = NumericNodeId(130, 0)
+    node.BrowseName = QualifiedName('DescribesInputArgument', 0)
+    node.NodeClass = NodeClass.ReferenceType
+    node.ParentNodeId = NumericNodeId(129, 0)
+    node.ReferenceTypeId = NumericNodeId(45, 0)
+    attrs = ua.ReferenceTypeAttributes()
+    attrs.DisplayName = LocalizedText("DescribesInputArgument")
+    attrs.InverseName = LocalizedText("InputArgumentDescriptionFor")
+    node.NodeAttributes = attrs
+    server.add_nodes([node])
+    refs = []
+    ref = ua.AddReferencesItem()
+    ref.IsForward = False
+    ref.ReferenceTypeId = NumericNodeId(45, 0)
+    ref.SourceNodeId = NumericNodeId(130, 0)
+    ref.TargetNodeClass = NodeClass.DataType
+    ref.TargetNodeId = NumericNodeId(129, 0)
+    refs.append(ref)
+    server.add_references(refs)
+   
+    node = ua.AddNodesItem()
+    node.RequestedNewNodeId = NumericNodeId(131, 0)
+    node.BrowseName = QualifiedName('DescribesOptionalInputArgument', 0)
+    node.NodeClass = NodeClass.ReferenceType
+    node.ParentNodeId = NumericNodeId(130, 0)
+    node.ReferenceTypeId = NumericNodeId(45, 0)
+    attrs = ua.ReferenceTypeAttributes()
+    attrs.DisplayName = LocalizedText("DescribesOptionalInputArgument")
+    attrs.InverseName = LocalizedText("OptionalInputArgumentDescriptionFor")
+    node.NodeAttributes = attrs
+    server.add_nodes([node])
+    refs = []
+    ref = ua.AddReferencesItem()
+    ref.IsForward = False
+    ref.ReferenceTypeId = NumericNodeId(45, 0)
+    ref.SourceNodeId = NumericNodeId(131, 0)
+    ref.TargetNodeClass = NodeClass.DataType
+    ref.TargetNodeId = NumericNodeId(130, 0)
+    refs.append(ref)
+    server.add_references(refs)
+   
+    node = ua.AddNodesItem()
+    node.RequestedNewNodeId = NumericNodeId(132, 0)
+    node.BrowseName = QualifiedName('DescribesOutputArgument', 0)
+    node.NodeClass = NodeClass.ReferenceType
+    node.ParentNodeId = NumericNodeId(129, 0)
+    node.ReferenceTypeId = NumericNodeId(45, 0)
+    attrs = ua.ReferenceTypeAttributes()
+    attrs.DisplayName = LocalizedText("DescribesOutputArgument")
+    attrs.InverseName = LocalizedText("OutputArgumentDescriptionFor")
+    node.NodeAttributes = attrs
+    server.add_nodes([node])
+    refs = []
+    ref = ua.AddReferencesItem()
+    ref.IsForward = False
+    ref.ReferenceTypeId = NumericNodeId(45, 0)
+    ref.SourceNodeId = NumericNodeId(132, 0)
+    ref.TargetNodeClass = NodeClass.DataType
+    ref.TargetNodeId = NumericNodeId(129, 0)
+    refs.append(ref)
+    server.add_references(refs)
+   
+    node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(3068, 0)
     node.BrowseName = QualifiedName('NodeVersion', 0)
     node.NodeClass = NodeClass.Variable
@@ -1751,7 +1835,7 @@ def create_standard_address_space_Part3(server):
     node.RequestedNewNodeId = NumericNodeId(94, 0)
     node.BrowseName = QualifiedName('PermissionType', 0)
     node.NodeClass = NodeClass.DataType
-    node.ParentNodeId = NumericNodeId(5, 0)
+    node.ParentNodeId = NumericNodeId(7, 0)
     node.ReferenceTypeId = NumericNodeId(45, 0)
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("PermissionType")
@@ -1770,7 +1854,7 @@ def create_standard_address_space_Part3(server):
     ref.ReferenceTypeId = NumericNodeId(45, 0)
     ref.SourceNodeId = NumericNodeId(94, 0)
     ref.TargetNodeClass = NodeClass.DataType
-    ref.TargetNodeId = NumericNodeId(5, 0)
+    ref.TargetNodeId = NumericNodeId(7, 0)
     refs.append(ref)
     server.add_references(refs)
    
@@ -1914,7 +1998,7 @@ def create_standard_address_space_Part3(server):
     attrs = ua.VariableAttributes()
     attrs.DisplayName = LocalizedText("OptionSetValues")
     attrs.DataType = ua.NodeId(ua.ObjectIds.LocalizedText)
-    attrs.Value = [LocalizedText('CurrentRead'),LocalizedText('CurrentWrite'),LocalizedText('HistoryRead'),LocalizedText('Reserved'),LocalizedText('HistoryWrite'),LocalizedText('StatusWrite'),LocalizedText('TimestampWrite'),LocalizedText('Reserved'),LocalizedText('Reserved'),LocalizedText('Reserved'),LocalizedText('Reserved'),LocalizedText('Reserved'),LocalizedText('Reserved'),LocalizedText('Reserved'),LocalizedText('Reserved'),LocalizedText('Reserved'),LocalizedText('NonatomicRead'),LocalizedText('NonatomicWrite'),LocalizedText('WriteFullArrayOnly')]
+    attrs.Value = [LocalizedText('CurrentRead'),LocalizedText('CurrentWrite'),LocalizedText('HistoryRead'),LocalizedText('Reserved'),LocalizedText('HistoryWrite'),LocalizedText('StatusWrite'),LocalizedText('TimestampWrite'),LocalizedText('Reserved'),LocalizedText('NonatomicRead'),LocalizedText('NonatomicWrite'),LocalizedText('WriteFullArrayOnly')]
     attrs.ValueRank = 1
     node.NodeAttributes = attrs
     server.add_nodes([node])
@@ -1946,7 +2030,7 @@ def create_standard_address_space_Part3(server):
     node.RequestedNewNodeId = NumericNodeId(15033, 0)
     node.BrowseName = QualifiedName('EventNotifierType', 0)
     node.NodeClass = NodeClass.DataType
-    node.ParentNodeId = NumericNodeId(7, 0)
+    node.ParentNodeId = NumericNodeId(3, 0)
     node.ReferenceTypeId = NumericNodeId(45, 0)
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("EventNotifierType")
@@ -1965,7 +2049,7 @@ def create_standard_address_space_Part3(server):
     ref.ReferenceTypeId = NumericNodeId(45, 0)
     ref.SourceNodeId = NumericNodeId(15033, 0)
     ref.TargetNodeClass = NodeClass.DataType
-    ref.TargetNodeId = NumericNodeId(7, 0)
+    ref.TargetNodeId = NumericNodeId(3, 0)
     refs.append(ref)
     server.add_references(refs)
    

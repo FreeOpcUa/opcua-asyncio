@@ -12,7 +12,7 @@ class UaNodeAlreadyHistorizedError(ua.UaError):
     pass
 
 
-class HistoryStorageInterface(object):
+class HistoryStorageInterface:
 
     """
     Interface of a history backend.
@@ -173,7 +173,7 @@ class HistoryDict(HistoryStorageInterface):
         pass
 
 
-class SubHandler(object):
+class SubHandler:
     def __init__(self, storage):
         self.storage = storage
 
@@ -184,7 +184,7 @@ class SubHandler(object):
         self.storage.save_event(event)
 
 
-class HistoryManager(object):
+class HistoryManager:
     def __init__(self, iserver):
         self.logger = logging.getLogger(__name__)
         self.iserver = iserver
@@ -241,11 +241,11 @@ class HistoryManager(object):
             raise ua.UaError("Events from {0} are already historized".format(source))
 
         # get list of all event types that the source node generates; change this to only historize specific events
-        event_types = source.get_referenced_nodes(ua.ObjectIds.GeneratesEvent)
+        event_types = await source.get_referenced_nodes(ua.ObjectIds.GeneratesEvent)
 
         self.storage.new_historized_event(source.nodeid, event_types, period, count)
 
-        handler = self._sub.subscribe_events(source, event_types)
+        handler = await self._sub.subscribe_events(source, event_types)
         self._handlers[source] = handler
 
     async def dehistorize(self, node):

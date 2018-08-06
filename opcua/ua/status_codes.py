@@ -2,7 +2,7 @@
 
 from opcua.ua.uaerrors import UaStatusCodeError
 
-class StatusCodes(object):
+class StatusCodes:
     Good = 0
     Uncertain = 0x40000000
     Bad = 0x80000000
@@ -327,7 +327,7 @@ code_to_name_doc = {
     0x80460000: ('BadStructureMissing', 'A mandatory structured parameter was missing or null.'),
     0x80470000: ('BadEventFilterInvalid', 'The event filter is not valid.'),
     0x80480000: ('BadContentFilterInvalid', 'The content filter is not valid.'),
-    0x80C10000: ('BadFilterOperatorInvalid', 'An unregognized operator was provided in a filter.'),
+    0x80C10000: ('BadFilterOperatorInvalid', 'An unrecognized operator was provided in a filter.'),
     0x80C20000: ('BadFilterOperatorUnsupported', 'A valid operator was provided, but the server does not provide support for this filter operator.'),
     0x80C30000: ('BadFilterOperandCountMismatch', 'The number of operands provided for the filter operator was less then expected for the operand provided.'),
     0x80490000: ('BadFilterOperandInvalid', 'The operand used in a content filter is not valid.'),
@@ -335,7 +335,7 @@ code_to_name_doc = {
     0x80C50000: ('BadFilterLiteralInvalid', 'The referenced literal is not a valid value.'),
     0x804A0000: ('BadContinuationPointInvalid', 'The continuation point provide is longer valid.'),
     0x804B0000: ('BadNoContinuationPoints', 'The operation could not be processed because all continuation points have been allocated.'),
-    0x804C0000: ('BadReferenceTypeIdInvalid', 'The operation could not be processed because all continuation points have been allocated.'),
+    0x804C0000: ('BadReferenceTypeIdInvalid', 'The reference type id does not refer to a valid reference type node.'),
     0x804D0000: ('BadBrowseDirectionInvalid', 'The browse direction is not valid.'),
     0x804E0000: ('BadNodeNotInView', 'The node is not part of the view.'),
     0x81120000: ('BadNumericOverflow', 'The number was not accepted because of a numeric overflow.'),
@@ -390,7 +390,7 @@ code_to_name_doc = {
     0x80750000: ('BadMethodInvalid', 'The method id does not refer to a method for the specified object.'),
     0x80760000: ('BadArgumentsMissing', 'The client did not specify all of the input arguments for the method.'),
     0x81110000: ('BadNotExecutable', 'The executable attribute does not allow the execution of the method.'),
-    0x80770000: ('BadTooManySubscriptions', 'The server has reached its  maximum number of subscriptions.'),
+    0x80770000: ('BadTooManySubscriptions', 'The server has reached its maximum number of subscriptions.'),
     0x80780000: ('BadTooManyPublishRequests', 'The server has reached the maximum number of queued publish requests.'),
     0x80790000: ('BadNoSubscription', 'There is no subscription available for this session.'),
     0x807A0000: ('BadSequenceNumberUnknown', 'The sequence number is unknown to the server.'),
@@ -455,7 +455,7 @@ code_to_name_doc = {
     0x80D50000: ('BadAggregateNotSupported', 'The requested Aggregate is not support by the server.'),
     0x80D60000: ('BadAggregateInvalidInputs', 'The aggregate value could not be derived due to invalid data inputs.'),
     0x80DA0000: ('BadAggregateConfigurationRejected', 'The aggregate configuration is not valid for specified node.'),
-    0x00D90000: ('GoodDataIgnored', 'The request pecifies fields which are not valid for the EventType or cannot be saved by the historian.'),
+    0x00D90000: ('GoodDataIgnored', 'The request specifies fields which are not valid for the EventType or cannot be saved by the historian.'),
     0x80E40000: ('BadRequestNotAllowed', 'The request was rejected by the server because it did not meet the criteria set by the server.'),
     0x81130000: ('BadRequestNotComplete', 'The request has not been processed by the server yet.'),
     0x00DC0000: ('GoodEdited', 'The value does not come from the real source and has been edited by the server.'),
@@ -486,12 +486,13 @@ code_to_name_doc = {
 
 
 def get_name_and_doc(val):
-    if val in code_to_name_doc:
-        return code_to_name_doc[val]
-    else:
-        if val & 1 << 31:
-            return 'Bad', 'Unknown StatusCode value: {}'.format(val)
-        elif val & 1 << 30:
-            return 'UncertainIn', 'Unknown StatusCode value: {}'.format(val)
+        if val in code_to_name_doc:
+            return code_to_name_doc[val]
         else:
-            return 'Good', 'Unknown StatusCode value: {}'.format(val)
+            if val & 1 << 31:
+                return 'Bad', 'Unknown StatusCode value: {}'.format(val)
+            elif val & 1 << 30:
+                return 'UncertainIn', 'Unknown StatusCode value: {}'.format(val)
+            else:
+                return 'Good', 'Unknown StatusCode value: {}'.format(val)
+    

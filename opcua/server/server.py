@@ -508,13 +508,13 @@ class Server:
         importer = XmlImporter(self)
         return await importer.import_xml(path, xmlstring)
 
-    def export_xml(self, nodes, path):
+    async def export_xml(self, nodes, path):
         """
         Export defined nodes to xml
         """
         exp = XmlExporter(self)
-        exp.build_etree(nodes)
-        return exp.write_xml(path)
+        await exp.build_etree(nodes)
+        await exp.write_xml(path)
 
     async def export_xml_by_ns(self, path, namespaces=None):
         """
@@ -530,7 +530,7 @@ class Server:
         if namespaces is None:
             namespaces = []
         nodes = await get_nodes_of_namespace(self, namespaces)
-        self.export_xml(nodes, path)
+        await self.export_xml(nodes, path)
 
     async def delete_nodes(self, nodes, recursive=False):
         return await delete_nodes(self.iserver.isession, nodes, recursive)

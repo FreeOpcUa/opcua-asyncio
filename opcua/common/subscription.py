@@ -76,6 +76,7 @@ class Subscription:
     This is a high level class, especially subscribe_data_change
     and subscribe_events methods. If more control is necessary look at
     code and/or use create_monitored_items method.
+    :param server: `InternalSession` or `UAClient`
     """
 
     def __init__(self, server, params, handler):

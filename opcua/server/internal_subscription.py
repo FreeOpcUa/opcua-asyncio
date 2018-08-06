@@ -41,7 +41,7 @@ class MonitoredItemValues:
 
 class MonitoredItemService:
     """
-    implement monitoreditem service for 1 subscription
+    implement monitored item service for one subscription
     """
 
     def __init__(self, isub, aspace):
@@ -419,7 +419,7 @@ class WhereClauseEvaluator:
         elif el.FilterOperator == ua.FilterOperator.LessThanOrEqual:
             return self._eval_op(ops[0], event) <= self._eval_el(ops[1], event)
         elif el.FilterOperator == ua.FilterOperator.Like:
-            return self._likeoperator(self._eval_op(ops[0], event), self._eval_el(ops[1], event))
+            return self._like_operator(self._eval_op(ops[0], event), self._eval_el(ops[1], event))
         elif el.FilterOperator == ua.FilterOperator.Not:
             return not self._eval_op(ops[0], event)
         elif el.FilterOperator == ua.FilterOperator.Between:

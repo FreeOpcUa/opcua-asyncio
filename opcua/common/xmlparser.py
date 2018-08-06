@@ -1,10 +1,12 @@
 """
 parse xml file from opcua-spec
 """
+import re
+import asyncio
+import base64
 import logging
 from pytz import utc
-import re
-import base64
+
 
 import xml.etree.ElementTree as ET
 
@@ -28,7 +30,7 @@ def _to_bool(val):
     return ua_type_to_python(val, "Boolean")
 
 
-class NodeData(object):
+class NodeData:
 
     def __init__(self):
         self.nodetype = None
@@ -68,7 +70,7 @@ class NodeData(object):
     __repr__ = __str__
 
 
-class RefStruct(object):
+class RefStruct:
 
     def __init__(self):
         self.reftype = None
@@ -76,7 +78,7 @@ class RefStruct(object):
         self.target = None
 
 
-class ExtObj(object):
+class ExtObj:
 
     def __init__(self):
         self.typeid = None
@@ -90,18 +92,12 @@ class ExtObj(object):
     __repr__ = __str__
 
 
-class XMLParser(object):
+class XMLParser:
 
-    def __init__(self, xmlpath=None, xmlstring=None):
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
         self._retag = re.compile(r"(\{.*\})(.*)")
-        self.path = xmlpath
-
-        if xmlstring:
-            self.root = ET.fromstring(xmlstring)
-        else:
-            self.root = ET.parse(xmlpath).getroot()
-
+        self.root = None
         # FIXME: hard to get these xml namespaces with ElementTree, we may have to shift to lxml
         self.ns = {
             'base': "http://opcfoundation.org/UA/2011/03/UANodeSet.xsd",
@@ -109,6 +105,20 @@ class XMLParser(object):
             'xsd': "http://www.w3.org/2001/XMLSchema",
             'xsi': "http://www.w3.org/2001/XMLSchema-instance"
         }
+        
+    async def parse(self, xmlpath=None, xmlstring=None):
+        if xmlstring:
+            self.root = ET.fromstring(xmlstring)
+        else:
+            tree = await asyncio.get_event_loop().run_in_executor(None, ET.parse, xmlpath)
+            self.root = tree.getroot()
+
+    def parse_sync(self, xmlpath=None, xmlstring=None):
+        if xmlstring:
+            self.root = ET.fromstring(xmlstring)
+        else:
+            tree = ET.parse(xmlpath)
+            self.root = tree.getroot()
 
     def get_used_namespaces(self):
         """

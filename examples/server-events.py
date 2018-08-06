@@ -49,8 +49,11 @@ def main():
     loop = asyncio.get_event_loop()
     loop.set_debug(True)
     loop.create_task(start_server(loop))
-    loop.run_forever()
-    loop.close()
+    try:
+        loop.run_forever()
+    finally:
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
 
 
 if __name__ == "__main__":

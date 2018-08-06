@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 from collections import namedtuple
 from opcua import Client
@@ -17,7 +18,15 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('opc', ['client', 'server'], indirect=True)
 
 
-@pytest.fixture()
+@pytest.yield_fixture(scope='module')
+def event_loop(request):
+    """Create an instance of the default event loop for each test case."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope='module')
 async def server():
     # start our own server
     srv = Server()
@@ -31,7 +40,7 @@ async def server():
     await srv.stop()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 async def discovery_server():
     # start our own server
     srv = Server()
@@ -44,7 +53,7 @@ async def discovery_server():
     await srv.stop()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 async def admin_client():
     # start admin client
     # long timeout since travis (automated testing) can be really slow
@@ -54,7 +63,7 @@ async def admin_client():
     await clt.disconnect()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 async def client():
     # start anonymous client
     ro_clt = Client(f'opc.tcp://127.0.0.1:{port_num}')
@@ -63,7 +72,7 @@ async def client():
     await ro_clt.disconnect()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 async def opc(request):
     """
     Fixture for tests that should run for both `Server` and `Client`

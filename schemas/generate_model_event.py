@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import collections
 
+
 class Node_struct:
 
     def __init__(self):
@@ -14,14 +15,17 @@ class Node_struct:
         self.references = []
 
     def __hash__(self):
-        return hash(self.nodeId, self.browseName, self.isAbstract, self.parentNodeId, self.dataType, self.displayName, self.description, self.references)
+        return hash(self.nodeId, self.browseName, self.isAbstract, self.parentNodeId, self.dataType, self.displayName,
+                    self.description, self.references)
 
     def __eq__(self, other):
-        return (self.nodeId, self.browseName, self.isAbstract, self.parentNodeId, self.dataType, self.displayName, self.description, self.references) == (other.nodeId, other.browseName, other.isAbstract, other.parentNodeId, other.dataType, other.displayName, other.description, other.references)
+        return (self.nodeId, self.browseName, self.isAbstract, self.parentNodeId, self.dataType, self.displayName,
+                self.description, self.references) == (
+               other.nodeId, other.browseName, other.isAbstract, other.parentNodeId, other.dataType, other.displayName,
+               other.description, other.references)
 
     def __ne__(self, other):
-        return not(self == other)
-
+        return not (self == other)
 
 
 class Reference:
@@ -36,7 +40,7 @@ class Reference:
         return (self.referenceType, self.refId) == (other.referenceType, other.refValue)
 
     def __ne__(self, other):
-        return not(self == other)
+        return not (self == other)
 
 
 class Model_Event:
@@ -52,11 +56,12 @@ class Model_Event:
 
 class Parser(object):
     nameSpace = "{http://opcfoundation.org/UA/2011/03/UANodeSet.xsd}"
+
     def __init__(self, path):
         self.path = path
         self.model = None
 
-    def findNodeWithNodeId(self,root, nodeId):
+    def findNodeWithNodeId(self, root, nodeId):
         node = Node_struct()
         for child in root:
             if nodeId == child.attrib.get('NodeId'):
@@ -64,23 +69,27 @@ class Parser(object):
                 node.nodeId = child.attrib.get('NodeId')
                 node.isAbstract = child.attrib.get('IsAbstract')
                 node.dataType = child.attrib.get('DataType')
-                if (node.dataType == None):
+                if node.dataType is None:
                     node.dataType = 'Variant'
                 node.displayName = child.find(self.nameSpace + 'DisplayName').text
-                if (child.find(self.nameSpace + 'Description') != None):
+                if child.find(self.nameSpace + 'Description') is not None:
                     node.description = child.find(self.nameSpace + 'Description').text
                 for ref in child.find(self.nameSpace + 'References').findall(self.nameSpace + 'Reference'):
                     reference = Reference()
                     reference.referenceType = ref.attrib.get('ReferenceType')
                     reference.refId = ref.text
-                    if ref.attrib.get('IsForward')!=None:
+                    if ref.attrib.get('IsForward') != None:
                         node.parentNodeId = reference.refId
                     node.references.append(reference)
         return node
 
     def checkNodeType(self, node):
-        if (node.tag == self.nameSpace + "UAObjectType") or (node.tag == self.nameSpace + "UAVariable") or (
-            node.tag == self.nameSpace + "UAObject") or (node.tag == self.nameSpace + "UAMethod") or (node.tag == self.nameSpace + "UAVariableType"):
+        if (
+                (node.tag == self.nameSpace + "UAObjectType") or
+                (node.tag == self.nameSpace + "UAVariable") or
+                (node.tag == self.nameSpace + "UAObject") or
+                (node.tag == self.nameSpace + "UAMethod") or
+                (node.tag == self.nameSpace + "UAVariableType")):
             return True
 
     def parse(self):
@@ -98,7 +107,7 @@ class Parser(object):
                 node.nodeId = child.attrib.get('NodeId')
                 node.isAbstract = child.attrib.get('IsAbstract')
                 node.displayName = child.find(self.nameSpace + 'DisplayName').text
-                if (child.find(self.nameSpace + 'Description') != None):
+                if child.find(self.nameSpace + 'Description') is not None:
                     node.description = child.find(self.nameSpace + 'Description').text
                 for ref in child.find(self.nameSpace + 'References').findall(self.nameSpace + 'Reference'):
                     reference = Reference()
@@ -107,11 +116,10 @@ class Parser(object):
                     self.refNode = self.findNodeWithNodeId(root, reference.refId).browseName
                     reference.refBrowseName = self.findNodeWithNodeId(root, reference.refId).browseName
                     reference.refDataType = self.findNodeWithNodeId(root, reference.refId).dataType
-                    if ref.attrib.get('IsForward')!=None:
+                    if ref.attrib.get('IsForward') is not None:
                         node.parentNodeId = reference.refId
                     node.references.append(reference)
-                listEventType.update({node.nodeId:node})
+                listEventType.update({node.nodeId: node})
 
-        return collections.OrderedDict(sorted(sorted(listEventType.items(), key=lambda t: t[0]), key=lambda u: len(u[0])))
-
-
+        return collections.OrderedDict(
+            sorted(sorted(listEventType.items(), key=lambda t: t[0]), key=lambda u: len(u[0])))

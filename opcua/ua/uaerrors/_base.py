@@ -2,8 +2,6 @@
 Define exceptions to be raised at various places in the stack
 """
 
-from opcua.compat import with_metaclass
-
 
 class _AutoRegister(type):
     def __new__(mcs, name, bases, dict):
@@ -26,7 +24,7 @@ class UaError(RuntimeError):
     pass
 
 
-class UaStatusCodeError(with_metaclass(_AutoRegister, UaError)):
+class UaStatusCodeError(_AutoRegister("Meta", (UaError,), {})):
     """
     This exception is raised when a bad status code is encountered.
 
@@ -37,7 +35,7 @@ class UaStatusCodeError(with_metaclass(_AutoRegister, UaError)):
     The list of status error codes can be found in opcua.ua.status_codes.
     """
 
-    """ Dict containing all subclasses keyed to their status code. """
+    # Dict containing all subclasses keyed to their status code.
     _subclasses = {}
 
     def __new__(cls, *args):
