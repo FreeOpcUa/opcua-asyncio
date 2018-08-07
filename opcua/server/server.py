@@ -6,6 +6,7 @@ import asyncio
 import logging
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
+from typing import Coroutine
 
 from opcua import ua
 # from opcua.binary_server import BinaryServer
@@ -113,23 +114,23 @@ class Server:
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.stop()
 
-    async def load_certificate(self, path):
+    async def load_certificate(self, path: str):
         """
         load server certificate from file, either pem or der
         """
         self.certificate = await uacrypto.load_certificate(path)
 
-    async def load_private_key(self, path):
+    async def load_private_key(self, path: str):
         self.private_key = await uacrypto.load_private_key(path)
 
-    def disable_clock(self, val=True):
+    def disable_clock(self, val: bool=True):
         """
         for debugging you may want to disable clock that write every second
         to address space
         """
         self.iserver.disabled_clock = val
 
-    async def set_application_uri(self, uri):
+    async def set_application_uri(self, uri: str):
         """
         Set application/server URI.
         This uri is supposed to be unique. If you intent to register
@@ -157,7 +158,7 @@ class Server:
         params.ServerUris = uris
         return self.iserver.find_servers(params)
 
-    async def register_to_discovery(self, url="opc.tcp://localhost:4840", period=60):
+    async def register_to_discovery(self, url: str="opc.tcp://localhost:4840", period: int=60):
         """
         Register to an OPC-UA Discovery server. Registering must be renewed at
         least every 10 minutes, so this method will use our asyncio thread to
@@ -174,7 +175,7 @@ class Server:
         if period:
             self.loop.call_soon(self._schedule_renew_registration)
 
-    def unregister_to_discovery(self, url="opc.tcp://localhost:4840"):
+    def unregister_to_discovery(self, url: str="opc.tcp://localhost:4840"):
         """
         stop registration thread
         """
@@ -198,46 +199,45 @@ class Server:
     def set_endpoint(self, url):
         self.endpoint = urlparse(url)
 
-    async def get_endpoints(self):
-        return await self.iserver.get_endpoints()
+    def get_endpoints(self) -> Coroutine:
+        return self.iserver.get_endpoints()
 
     def set_security_policy(self, security_policy):
         """
-            Method setting up the security policies for connections
-            to the server, where security_policy is a list of integers.
-            During server initialization, all endpoints are enabled:
+        Method setting up the security policies for connections
+        to the server, where security_policy is a list of integers.
+        During server initialization, all endpoints are enabled:
 
-                security_policy = [
-                            ua.SecurityPolicyType.NoSecurity,
-                            ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt,
-                            ua.SecurityPolicyType.Basic128Rsa15_Sign,
-                            ua.SecurityPolicyType.Basic256_SignAndEncrypt,
-                            ua.SecurityPolicyType.Basic256_Sign
-                                ]
+            security_policy = [
+                        ua.SecurityPolicyType.NoSecurity,
+                        ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt,
+                        ua.SecurityPolicyType.Basic128Rsa15_Sign,
+                        ua.SecurityPolicyType.Basic256_SignAndEncrypt,
+                        ua.SecurityPolicyType.Basic256_Sign
+                            ]
 
-            E.g. to limit the number of endpoints and disable no encryption:
+        E.g. to limit the number of endpoints and disable no encryption:
 
-                set_security_policy([
-                            ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt
-                            ua.SecurityPolicyType.Basic256_SignAndEncrypt])
+            set_security_policy([
+                        ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt
+                        ua.SecurityPolicyType.Basic256_SignAndEncrypt])
 
         """
         self._security_policy = security_policy
 
     def set_security_IDs(self, policyIDs):
         """
-            Method setting up the security endpoints for identification
-            of clients. During server object initialization, all possible
-            endpoints are enabled:
+        Method setting up the security endpoints for identification
+        of clients. During server object initialization, all possible
+        endpoints are enabled:
 
-            self._policyIDs = ["Anonymous", "Basic256", "Basic128", "Username"]
+        self._policyIDs = ["Anonymous", "Basic256", "Basic128", "Username"]
 
-            E.g. to limit the number of IDs and disable anonymous clients:
+        E.g. to limit the number of IDs and disable anonymous clients:
 
-                set_security_policy(["Basic256"])
+            set_security_policy(["Basic256"])
 
-            (Implementation for ID check is currently not finalized...)
-
+        (Implementation for ID check is currently not finalized...)
         """
         self._policyIDs = policyIDs
 
@@ -292,25 +292,25 @@ class Server:
         idtokens = []
         if "Anonymous" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
-            idtoken.PolicyId = 'anonymous'
+            idtoken.PolicyId = "anonymous"
             idtoken.TokenType = ua.UserTokenType.Anonymous
             idtokens.append(idtoken)
 
         if "Basic256" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
-            idtoken.PolicyId = 'certificate_basic256'
+            idtoken.PolicyId = "certificate_basic256"
             idtoken.TokenType = ua.UserTokenType.Certificate
             idtokens.append(idtoken)
 
         if "Basic128" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
-            idtoken.PolicyId = 'certificate_basic128'
+            idtoken.PolicyId = "certificate_basic128"
             idtoken.TokenType = ua.UserTokenType.Certificate
             idtokens.append(idtoken)
 
         if "Username" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
-            idtoken.PolicyId = 'username'
+            idtoken.PolicyId = "username"
             idtoken.TokenType = ua.UserTokenType.UserName
             idtokens.append(idtoken)
 
@@ -329,7 +329,7 @@ class Server:
         edp.SecurityMode = mode
         edp.SecurityPolicyUri = policy.URI
         edp.UserIdentityTokens = idtokens
-        edp.TransportProfileUri = 'http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary'
+        edp.TransportProfileUri = "http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary"
         edp.SecurityLevel = 0
         self.iserver.add_endpoint(edp)
 
@@ -405,14 +405,14 @@ class Server:
         await subscription.init()
         return subscription
 
-    async def get_namespace_array(self):
+    def get_namespace_array(self) -> Coroutine:
         """
         get all namespace defined in server
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        return await ns_node.get_value()
+        return ns_node.get_value()
 
-    async def register_namespace(self, uri):
+    async def register_namespace(self, uri) -> int:
         """
         Register a new namespace. Nodes should in custom namespace, not 0.
         """
@@ -443,38 +443,38 @@ class Server:
         await ev_gen.set_source(source)
         return ev_gen
 
-    async def create_custom_data_type(self, idx, name, basetype=ua.ObjectIds.BaseDataType, properties=None):
+    def create_custom_data_type(self, idx, name, basetype=ua.ObjectIds.BaseDataType, properties=None) -> Coroutine:
         if properties is None:
             properties = []
-        return await self._create_custom_type(idx, name, basetype, properties, [], [])
+        return self._create_custom_type(idx, name, basetype, properties, [], [])
 
-    async def create_custom_event_type(self, idx, name, basetype=ua.ObjectIds.BaseEventType, properties=None):
+    def create_custom_event_type(self, idx, name, basetype=ua.ObjectIds.BaseEventType, properties=None) -> Coroutine:
         if properties is None:
             properties = []
-        return await self._create_custom_type(idx, name, basetype, properties, [], [])
+        return self._create_custom_type(idx, name, basetype, properties, [], [])
 
-    async def create_custom_object_type(self, idx, name, basetype=ua.ObjectIds.BaseObjectType, properties=None,
-                                  variables=None, methods=None):
+    def create_custom_object_type(self, idx, name, basetype=ua.ObjectIds.BaseObjectType, properties=None,
+                                  variables=None, methods=None) -> Coroutine:
         if properties is None:
             properties = []
         if variables is None:
             variables = []
         if methods is None:
             methods = []
-        return await self._create_custom_type(idx, name, basetype, properties, variables, methods)
+        return self._create_custom_type(idx, name, basetype, properties, variables, methods)
 
     # def create_custom_reference_type(self, idx, name, basetype=ua.ObjectIds.BaseReferenceType, properties=[]):
     # return self._create_custom_type(idx, name, basetype, properties)
 
-    async def create_custom_variable_type(self, idx, name, basetype=ua.ObjectIds.BaseVariableType, properties=None,
-                                    variables=None, methods=None):
+    def create_custom_variable_type(self, idx, name, basetype=ua.ObjectIds.BaseVariableType, properties=None,
+                                    variables=None, methods=None) -> Coroutine:
         if properties is None:
             properties = []
         if variables is None:
             variables = []
         if methods is None:
             methods = []
-        return await self._create_custom_type(idx, name, basetype, properties, variables, methods)
+        return self._create_custom_type(idx, name, basetype, properties, variables, methods)
 
     async def _create_custom_type(self, idx, name, basetype, properties, variables, methods):
         if isinstance(basetype, Node):
@@ -501,12 +501,12 @@ class Server:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
 
-    async def import_xml(self, path=None, xmlstring=None):
+    def import_xml(self, path=None, xmlstring=None) -> Coroutine:
         """
         Import nodes defined in xml
         """
         importer = XmlImporter(self)
-        return await importer.import_xml(path, xmlstring)
+        return importer.import_xml(path, xmlstring)
 
     async def export_xml(self, nodes, path):
         """
@@ -516,34 +516,27 @@ class Server:
         await exp.build_etree(nodes)
         await exp.write_xml(path)
 
-    async def export_xml_by_ns(self, path, namespaces=None):
+    async def export_xml_by_ns(self, path: str, namespaces: list=None):
         """
         Export nodes of one or more namespaces to an XML file.
         Namespaces used by nodes are always exported for consistency.
-        Args:
-            server: opc ua server to use
-            path: name of the xml file to write
-            namespaces: list of string uris or int indexes of the namespace to export, if not provide all ns are used except 0
-
-        Returns:
+        :param path: name of the xml file to write
+        :param namespaces: list of string uris or int indexes of the namespace to export, if not provide all ns are used except 0
         """
         if namespaces is None:
             namespaces = []
         nodes = await get_nodes_of_namespace(self, namespaces)
         await self.export_xml(nodes, path)
 
-    async def delete_nodes(self, nodes, recursive=False):
-        return await delete_nodes(self.iserver.isession, nodes, recursive)
+    def delete_nodes(self, nodes, recursive=False) -> Coroutine:
+        return delete_nodes(self.iserver.isession, nodes, recursive)
 
     async def historize_node_data_change(self, node, period=timedelta(days=7), count=0):
         """
         Start historizing supplied nodes; see history module
-        Args:
-            node: node or list of nodes that can be historized (variables/properties)
-            period: time delta to store the history; older data will be deleted from the storage
-            count: number of changes to store in the history
-
-        Returns:
+        :param node: node or list of nodes that can be historized (variables/properties)
+        :param period: time delta to store the history; older data will be deleted from the storage
+        :param count: number of changes to store in the history
         """
         nodes = node if isinstance(node, (list, tuple)) else [node]
         for node in nodes:
@@ -552,24 +545,18 @@ class Server:
     def dehistorize_node_data_change(self, node):
         """
         Stop historizing supplied nodes; see history module
-        Args:
-            node: node or list of nodes that can be historized (UA variables/properties)
-
-        Returns:
+        :param node: node or list of nodes that can be historized (UA variables/properties)
         """
         nodes = node if isinstance(node, (list, tuple)) else [node]
         for node in nodes:
             self.iserver.disable_history_data_change(node)
 
-    def historize_node_event(self, node, period=timedelta(days=7), count=0):
+    def historize_node_event(self, node, period=timedelta(days=7), count: int=0):
         """
         Start historizing events from node (typically a UA object); see history module
-        Args:
-            node: node or list of nodes that can be historized (UA objects)
-            period: time delta to store the history; older data will be deleted from the storage
-            count: number of events to store in the history
-
-        Returns:
+        :param node: node or list of nodes that can be historized (UA objects)
+        :param period: time delta to store the history; older data will be deleted from the storage
+        :param count: number of events to store in the history
         """
         nodes = node if isinstance(node, (list, tuple)) else [node]
         for node in nodes:
@@ -578,10 +565,7 @@ class Server:
     async def dehistorize_node_event(self, node):
         """
         Stop historizing events from node (typically a UA object); see history module
-        Args:
-           node: node or list of nodes that can be historized (UA objects)
-
-        Returns:
+        :param node: node or list of nodes that can be historized (UA objects)
         """
         nodes = node if isinstance(node, (list, tuple)) else [node]
         for node in nodes:
@@ -597,14 +581,10 @@ class Server:
         """
         Link a python function to a UA method in the address space; required when a UA method has been imported
         to the address space via XML; the python executable must be linked manually
-        Args:
-            node: UA method node
-            callback: python function that the UA method will call
-
-        Returns:
+        :param node: UA method node
+        :param callback: python function that the UA method will call
         """
         self.iserver.isession.add_method_callback(node.nodeid, callback)
 
-    def load_type_definitions(self, nodes=None):
-        """COROUTINE"""
+    def load_type_definitions(self, nodes=None) -> Coroutine:
         return load_type_definitions(self, nodes)

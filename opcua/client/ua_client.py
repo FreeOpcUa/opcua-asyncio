@@ -217,14 +217,14 @@ class UaClient:
         self.security_policy = ua.SecurityPolicy()
         self.protocol: UASocketProtocol = None
 
-    def set_security(self, policy):
+    def set_security(self, policy: ua.SecurityPolicy):
         self.security_policy = policy
 
     def _make_protocol(self):
         self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
         return self.protocol
 
-    async def connect_socket(self, host, port):
+    async def connect_socket(self, host: str, port: int):
         """Connect to server socket."""
         self.logger.info("opening connection")
         # nodelay ncessary to avoid packing in one frame, some servers do not like it

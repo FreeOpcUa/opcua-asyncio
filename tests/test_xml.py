@@ -53,9 +53,9 @@ async def test_xml_import_additional_ns(opc):
     ns = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/")
     o = opc.opc.get_objects_node()
     o2 = await o.get_child([f"{ns}:MyBaseObject"])
-    assert o2 is None
+    assert o2 is not None
     v1 = await o.get_child([f"{ns}:MyBaseObject", f"{ns}:MyVar"])
-    assert v1 is None
+    assert v1 is not None
     r1 = await o2.get_references(refs=ua.ObjectIds.HasComponent)[0]
     assert ns == r1.NodeId.NamespaceIndex
     r3 = await v1.get_references(refs=ua.ObjectIds.HasComponent)[0]
@@ -63,8 +63,8 @@ async def test_xml_import_additional_ns(opc):
 
 
 async def test_xml_method(opc, tmpdir):
-    await opc.opc.register_namespace("tititi")
-    await opc.opc.register_namespace("whatthefuck")
+    await opc.opc.register_namespace("foo")
+    await opc.opc.register_namespace("bar")
     o = await opc.opc.nodes.objects.add_object(2, "xmlexportmethod")
     m = await o.add_method(2, "callme", func, [ua.VariantType.Double, ua.VariantType.String], [ua.VariantType.Float])
     # set an arg dimension to a list to test list export
@@ -90,8 +90,8 @@ async def test_xml_method(opc, tmpdir):
 
 async def test_xml_vars(opc, tmpdir):
     tmp_path = tmpdir.join("tmp_test_export-vars.xml").strpath
-    await opc.opc.register_namespace("tititi")
-    await opc.opc.register_namespace("whatthexxx")
+    await opc.opc.register_namespace("foo")
+    await opc.opc.register_namespace("bar")
     o = await opc.opc.nodes.objects.add_object(2, "xmlexportobj")
     v = await o.add_variable(3, "myxmlvar", 6.78, ua.VariantType.Double)
     a = await o.add_variable(3, "myxmlvar-array", [6, 1], ua.VariantType.UInt16)

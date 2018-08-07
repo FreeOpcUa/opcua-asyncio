@@ -1,10 +1,12 @@
 import asyncio
 import logging
+from typing import Union, Coroutine
 from urllib.parse import urlparse
 
 from opcua import ua
 from .ua_client import UaClient
-from ..common import XmlImporter, XmlExporter, Node, delete_nodes, Subscription, Shortcuts, load_type_definitions, create_nonce
+from ..common import XmlImporter, XmlExporter, Node, delete_nodes, Subscription, Shortcuts, load_type_definitions, \
+    create_nonce
 from ..crypto import uacrypto, security_policies
 
 __all__ = ["Client"]
@@ -23,7 +25,7 @@ class Client(object):
     which offers the raw OPC-UA services interface.
     """
 
-    def __init__(self, url, timeout=4):
+    def __init__(self, url: str, timeout: int = 4):
         """
 
         :param url: url of the server.
@@ -78,14 +80,14 @@ class Client(object):
                 return ep
         raise ua.UaError("No matching endpoints: {0}, {1}".format(security_mode, policy_uri))
 
-    def set_user(self, username):
+    def set_user(self, username: str):
         """
         Set user name for the connection.
         initial user from the URL will be overwritten
         """
         self._username = username
 
-    def set_password(self, pwd):
+    def set_password(self, pwd: str):
         """
         Set user password for the connection.
         initial password from the URL will be overwritten
@@ -94,14 +96,13 @@ class Client(object):
             raise TypeError("Password must be a string, got %s", type(pwd))
         self._password = pwd
 
-    async def set_security_string(self, string):
+    async def set_security_string(self, string: str):
         """
         Set SecureConnection mode. String format:
-        Policy,Mode,certificate,private_key[,server_private_key]
-        where Policy is Basic128Rsa15 or Basic256,
-            Mode is Sign or SignAndEncrypt
-            certificate, private_key and server_private_key are
-                paths to .pem or .der files
+        "<Policy>,<Mode>,<certificate>,<private_key>[,<server_private_key>]"
+        where <Policy> is Basic128Rsa15 or Basic256,
+        <Mode> is Sign or SignAndEncrypt
+        <certificate>, <private_key> and <server_private_key> are paths to .pem or .der files
         Call this before connect()
         """
         if not string:
@@ -115,8 +116,9 @@ class Client(object):
             policy_class, parts[2], parts[3], parts[4] if len(parts) >= 5 else None, mode
         )
 
-    async def set_security(self, policy, certificate_path, private_key_path,
-            server_certificate_path=None, mode=ua.MessageSecurityMode.SignAndEncrypt):
+    async def set_security(self, policy, certificate_path: str, private_key_path: str,
+                           server_certificate_path: str = None,
+                           mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
         """
         Set SecureConnection mode.
         Call this before connect()
@@ -133,13 +135,13 @@ class Client(object):
         self.security_policy = policy(server_cert, cert, pk, mode)
         self.uaclient.set_security(self.security_policy)
 
-    async def load_client_certificate(self, path):
+    async def load_client_certificate(self, path: str):
         """
         load our certificate from file, either pem or der
         """
         self.user_certificate = await uacrypto.load_certificate(path)
 
-    async def load_private_key(self, path):
+    async def load_private_key(self, path: str):
         """
         Load user private key. This is used for authenticating using certificate
         """
@@ -253,7 +255,7 @@ class Client(object):
     async def close_secure_channel(self):
         return await self.uaclient.close_secure_channel()
 
-    async def get_endpoints(self):
+    async def get_endpoints(self) -> list:
         params = ua.GetEndpointsParameters()
         params.EndpointUrl = self.server_url.geturl()
         return await self.uaclient.get_endpoints(params)
@@ -313,7 +315,7 @@ class Client(object):
         params.ClientCertificate = self.security_policy.client_certificate
         params.ClientDescription = desc
         params.EndpointUrl = self.server_url.geturl()
-        params.SessionName = "{} Session{}".format(self.description, self._session_counter)
+        params.SessionName = f"{self.description} Session{self._session_counter}"
         # Requested maximum number of milliseconds that a Session should remain open without activity
         params.RequestedSessionTimeout = 60 * 60 * 1000
         params.MaxResponseMessageSize = 0  # means no max size
@@ -343,7 +345,7 @@ class Client(object):
         """
         return response
 
-    def _schedule_renew_session(self, renew_session=False):
+    def _schedule_renew_session(self, renew_session: bool=False):
         # if the session was intentionally closed `session_timeout` will be None
         if renew_session and self.session_timeout:
             self.loop.create_task(self._renew_session())
@@ -388,7 +390,7 @@ class Client(object):
                     return self.security_policy.URI
         return self.security_policy.URI
 
-    async def activate_session(self, username=None, password=None, certificate=None):
+    async def activate_session(self, username: str=None, password: str=None, certificate=None):
         """
         Activate session using either username and password or private_key
         """
@@ -424,7 +426,7 @@ class Client(object):
         params.UserTokenSignature.Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
         params.UserTokenSignature.Signature = sig
 
-    def _add_user_auth(self, params, username, password):
+    def _add_user_auth(self, params, username: str, password: str):
         params.UserIdentityToken = ua.UserNameIdentityToken()
         params.UserIdentityToken.UserName = username
         policy_uri = self.server_policy_uri(ua.UserTokenType.UserName)
@@ -442,7 +444,7 @@ class Client(object):
             params.UserIdentityToken.EncryptionAlgorithm = uri
         params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.UserName, b"username_basic256")
 
-    def _encrypt_password(self, password, policy_uri):
+    def _encrypt_password(self, password: str, policy_uri):
         pubkey = uacrypto.x509_from_der(self.security_policy.server_certificate).public_key()
         # see specs part 4, 7.36.3: if the token is encrypted, password
         # shall be converted to UTF-8 and serialized with server nonce
@@ -453,12 +455,12 @@ class Client(object):
         data, uri = security_policies.encrypt_asymmetric(pubkey, etoken, policy_uri)
         return data, uri
 
-    async def close_session(self):
+    def close_session(self) -> Coroutine:
         """
         Close session
         """
         self.session_timeout = None
-        return await self.uaclient.close_session(True)
+        return self.uaclient.close_session(True)
 
     def get_root_node(self):
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.RootFolder))
@@ -470,7 +472,7 @@ class Client(object):
     def get_server_node(self):
         return self.get_node(ua.FourByteNodeId(ua.ObjectIds.Server))
 
-    def get_node(self, nodeid):
+    def get_node(self, nodeid: Union[ua.NodeId, str]) -> Node:
         """
         Get node using NodeId object or a string representing a NodeId
         """
@@ -507,8 +509,7 @@ class Client(object):
         await subscription.init()
         return subscription
 
-    def get_namespace_array(self):
-        """COROUTINE"""
+    def get_namespace_array(self) -> Coroutine:
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
         return ns_node.get_value()
 
@@ -517,13 +518,12 @@ class Client(object):
         _logger.info("get_namespace_index %s %r", type(uries), uries)
         return uries.index(uri)
 
-    async def delete_nodes(self, nodes, recursive=False):
-        return await delete_nodes(self.uaclient, nodes, recursive)
+    def delete_nodes(self, nodes, recursive=False) -> Coroutine:
+        return delete_nodes(self.uaclient, nodes, recursive)
 
-    def import_xml(self, path=None, xmlstring=None):
+    def import_xml(self, path=None, xmlstring=None) -> Coroutine:
         """
         Import nodes defined in xml
-        COROUTINE
         """
         importer = XmlImporter(self)
         return importer.import_xml(path, xmlstring)
@@ -549,6 +549,5 @@ class Client(object):
         await ns_node.set_value(uries)
         return len(uries) - 1
 
-    def load_type_definitions(self, nodes=None):
-        """COROUTINE"""
+    def load_type_definitions(self, nodes=None) -> Coroutine:
         return load_type_definitions(self, nodes)

@@ -132,7 +132,7 @@ class XMLParser:
                 break
         return namespaces_uris
 
-    def get_aliases(self):
+    def get_aliases(self) -> dict:
         """
         Return the used node aliases in this import file
         """

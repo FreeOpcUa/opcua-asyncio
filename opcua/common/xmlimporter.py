@@ -4,6 +4,7 @@ format is the one from opc-ua specification
 """
 import logging
 import uuid
+from typing import Coroutine, Union, Dict
 from copy import copy
 
 from opcua import ua
@@ -20,8 +21,8 @@ class XmlImporter:
         self.logger = logging.getLogger(__name__)
         self.parser = None
         self.server = server
-        self.namespaces = {}
-        self.aliases = {}
+        self.namespaces: Dict[int, int] = {}
+        self.aliases: Dict[str, ua.NodeId] = {}
         self.refs = None
 
     async def _map_namespaces(self, namespaces_uris):
@@ -35,7 +36,7 @@ class XmlImporter:
             namespaces[ns_index + 1] = ns_server_index
         return namespaces
 
-    def _map_aliases(self, aliases):
+    def _map_aliases(self, aliases: dict):
         """
         maps the import aliases to the correct namespaces
         """
@@ -54,11 +55,9 @@ class XmlImporter:
         self.namespaces = await self._map_namespaces(self.parser.get_used_namespaces())
         self.aliases = self._map_aliases(self.parser.get_aliases())
         self.refs = []
-
         dnodes = self.parser.get_node_datas()
         dnodes = self.make_objects(dnodes)
         nodes_parsed = self._sort_nodes_by_parentid(dnodes)
-
         nodes = []
         for nodedata in nodes_parsed:  # self.parser:
             try:
@@ -67,35 +66,32 @@ class XmlImporter:
                 self.logger.warning("failure adding node %s", nodedata)
                 raise
             nodes.append(node)
-
         self.refs, remaining_refs = [], self.refs
         await self._add_references(remaining_refs)
-        if len(self.refs) != 0:
-            self.logger.warning("The following references could not be imported and are probaly broken: %s", self.refs) 
-
+        if len(self.refs):
+            self.logger.warning("The following references could not be imported and are probably broken: %s", self.refs)
         return nodes
 
-    async def _add_node_data(self, nodedata):
-        if nodedata.nodetype == 'UAObject':
+    async def _add_node_data(self, nodedata) -> "Node":
+        if nodedata.nodetype == "UAObject":
             node = await self.add_object(nodedata)
-        elif nodedata.nodetype == 'UAObjectType':
+        elif nodedata.nodetype == "UAObjectType":
             node = await self.add_object_type(nodedata)
-        elif nodedata.nodetype == 'UAVariable':
+        elif nodedata.nodetype == "UAVariable":
             node = await self.add_variable(nodedata)
-        elif nodedata.nodetype == 'UAVariableType':
+        elif nodedata.nodetype == "UAVariableType":
             node = await self.add_variable_type(nodedata)
-        elif nodedata.nodetype == 'UAReferenceType':
+        elif nodedata.nodetype == "UAReferenceType":
             node = await self.add_reference_type(nodedata)
-        elif nodedata.nodetype == 'UADataType':
+        elif nodedata.nodetype == "UADataType":
             node = await self.add_datatype(nodedata)
-        elif nodedata.nodetype == 'UAMethod':
+        elif nodedata.nodetype == "UAMethod":
             node = await self.add_method(nodedata)
         else:
             raise ValueError(f"Not implemented node type: {nodedata.nodetype} ")
         return node
 
-    def _add_node(self, node):
-        """COROUTINE"""
+    def _add_node(self, node: "Node") -> Coroutine:
         if hasattr(self.server, "iserver"):
             return self.server.iserver.isession.add_nodes([node])
         else:
@@ -111,21 +107,21 @@ class XmlImporter:
             if not sc.is_good():
                 self.refs.append(ref)
 
-    def make_objects(self, node_datas):
+    def make_objects(self, node_data):
         new_nodes = []
-        for ndata in node_datas:
-            ndata.nodeid = ua.NodeId.from_string(ndata.nodeid)
-            ndata.browsename = ua.QualifiedName.from_string(ndata.browsename)
-            if ndata.parent:
-                ndata.parent = ua.NodeId.from_string(ndata.parent)
-            if ndata.parentlink:
-                ndata.parentlink = self.to_nodeid(ndata.parentlink)
-            if ndata.typedef:
-                ndata.typedef = self.to_nodeid(ndata.typedef)
-            new_nodes.append(ndata)
+        for node_datum in node_data:
+            node_datum.nodeid = ua.NodeId.from_string(node_datum.nodeid)
+            node_datum.browsename = ua.QualifiedName.from_string(node_datum.browsename)
+            if node_datum.parent:
+                node_datum.parent = ua.NodeId.from_string(node_datum.parent)
+            if node_datum.parentlink:
+                node_datum.parentlink = self.to_nodeid(node_datum.parentlink)
+            if node_datum.typedef:
+                node_datum.typedef = self.to_nodeid(node_datum.typedef)
+            new_nodes.append(node_datum)
         return new_nodes
 
-    def _migrate_ns(self, nodeid):
+    def _migrate_ns(self, nodeid: ua.NodeId) -> ua.NodeId:
         """
         Check if the index of nodeid or browsename  given in the xml model file
         must be converted to a already existing namespace id based on the files
@@ -151,7 +147,7 @@ class XmlImporter:
             node.TypeDefinition = self._migrate_ns(obj.typedef)
         return node
 
-    def _to_nodeid(self, nodeid):
+    def _to_nodeid(self, nodeid: Union[ua.NodeId, None, str]) -> ua.NodeId:
         if isinstance(nodeid, ua.NodeId):
             return nodeid
         elif not nodeid:
@@ -166,7 +162,7 @@ class XmlImporter:
             else:
                 return ua.NodeId(getattr(ua.ObjectIds, nodeid))
 
-    def to_nodeid(self, nodeid):
+    def to_nodeid(self, nodeid: Union[ua.NodeId, None, str]) -> ua.NodeId:
         return self._migrate_ns(self._to_nodeid(nodeid))
 
     async def add_object(self, obj):
@@ -220,7 +216,7 @@ class XmlImporter:
         res[0].StatusCode.check()
         return res[0].AddedNodeId
 
-    def _get_ext_class(self, name):
+    def _get_ext_class(self, name: str):
         if hasattr(ua, name):
             return getattr(ua, name)
         elif name in self.aliases.keys():
@@ -243,13 +239,13 @@ class XmlImporter:
                     self._set_attr(ext, attname, v)
         return ext
 
-    def _get_val_type(self, obj, attname):
+    def _get_val_type(self, obj, attname: str):
         for name, uatype in obj.ua_types:
             if name == attname:
                 return uatype
         raise UaError("Attribute '{}' defined in xml is not found in object '{}'".format(attname, obj))
 
-    def _set_attr(self, obj, attname, val):
+    def _set_attr(self, obj, attname: str, val):
         # tow possible values:
         # either we get value directly
         # or a dict if it s an object or a list
@@ -334,7 +330,7 @@ class XmlImporter:
         if obj.dimensions:
             attrs.ArrayDimensions = obj.dimensions
         node.NodeAttributes = attrs
-        res = self._add_node(node)
+        res = await self._add_node(node)
         await self._add_refs(obj)
         res[0].StatusCode.check()
         return res[0].AddedNodeId
