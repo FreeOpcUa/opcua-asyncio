@@ -267,12 +267,17 @@ class InternalSubscription:
 
     def start(self):
         self.logger.debug("starting subscription %s", self.data.SubscriptionId)
-        self._subscription_loop()
+        if self.data.RevisedPublishingInterval > 0.0:
+            self._subscription_loop()
 
     def stop(self):
         self.logger.debug("stopping subscription %s", self.data.SubscriptionId)
         self._stopev = True
         self.monitored_item_srv.delete_all_monitored_items()
+
+    def _trigger_publish(self):
+        if not self._stopev and self.data.RevisedPublishingInterval <= 0.0:
+            self.subservice.loop.call_soon(self.publish_results)
 
     def _subscription_loop(self):
         if not self._stopev:
@@ -373,10 +378,12 @@ class InternalSubscription:
 
     def enqueue_statuschange(self, code):
         self._triggered_statuschanges.append(code)
+        self._trigger_publish()
 
     def _enqueue_event(self, mid, eventdata, size, queue):
         if mid not in queue:
             queue[mid] = [eventdata]
+            self._trigger_publish()
             return
         if size != 0:
             if len(queue[mid]) >= size:
