@@ -16,14 +16,14 @@ Please note that opcua-asyncio is still in development and should be treated as 
 
 ## Motivation
 
-The primary goal of this version of [python-opcua](https://github.com/FreeOpcUa/python-opcua) was to create an asynchronous OPC UA client based on asyncio.
+The primary goal of this version of [python-opcua](https://github.com/FreeOpcUa/python-opcua) is to create an asynchronous OPC UA client based on asyncio.
 Asynchronous programming will allow for simpler code (e.g. less need for locks) and potentially performance gains.
 
 ## Caveats
 
 Since `Client` and `Server` share common resources (e.g. `Node`), the `Server` has to also use asynchronous methods
 to access nodes in it's address space although the operation are non-blocking in most cases. This comes with a cost
-in performance since calling a coroutine is more expensive than a function. If your primary need is a OPC UA server implementation with high performance
+in performance since calling a coroutine is more expensive than a function. If your primary need is an OPC UA server implementation with high performance
 than you should also consider to use [python-opcua](https://github.com/FreeOpcUa/python-opcua) instead.
 This problem could be addressed by a future change in architecture. One possibility would be [sans I/O](https://sans-io.readthedocs.io/).
 

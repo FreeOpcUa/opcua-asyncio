@@ -1,2 +1,2 @@
 #!/bin/sh
-python tests/tests.py
+pytest
