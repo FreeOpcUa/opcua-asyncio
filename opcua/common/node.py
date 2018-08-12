@@ -517,7 +517,7 @@ class Node:
         result = await self.history_read(details)
         return result.HistoryData.DataValues
 
-    def history_read(self, details):
+    async def history_read(self, details):
         """
         Read raw history of a node, low-level function
         result code from server is checked and an exception is raised in case of error
@@ -530,7 +530,7 @@ class Node:
         params.TimestampsToReturn = ua.TimestampsToReturn.Both
         params.ReleaseContinuationPoints = False
         params.NodesToRead.append(valueid)
-        return self.server.history_read(params)[0]
+        return (await self.server.history_read(params))[0]
 
     async def read_event_history(self, starttime=None, endtime=None, numvalues=0, evtypes=ua.ObjectIds.BaseEventType):
         """
@@ -558,11 +558,11 @@ class Node:
         event_res = []
         for res in result.HistoryData.Events:
             event_res.append(
-                await Event.from_event_fields(evfilter.SelectClauses, res.EventFields)
+                Event.from_event_fields(evfilter.SelectClauses, res.EventFields)
             )
         return event_res
 
-    def history_read_events(self, details):
+    async def history_read_events(self, details):
         """
         Read event history of a node, low-level function
         result code from server is checked and an exception is raised in case of error
@@ -575,7 +575,7 @@ class Node:
         params.TimestampsToReturn = ua.TimestampsToReturn.Both
         params.ReleaseContinuationPoints = False
         params.NodesToRead.append(valueid)
-        return self.server.history_read(params)[0]
+        return (await self.server.history_read(params))[0]
 
     async def delete(self, delete_references=True, recursive=False):
         """

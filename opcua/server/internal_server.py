@@ -10,6 +10,7 @@ from enum import Enum
 from copy import copy, deepcopy
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
+from typing import Coroutine
 
 from opcua import ua
 from ..common import CallbackType, ServerItemCallback, CallbackDispatcher, Node, create_nonce, ServiceError
@@ -61,6 +62,7 @@ class InternalServer:
         await self.load_standard_address_space(shelffile)
         await self._address_space_fixes()
         await self.setup_nodes()
+        await self.history_manager.init()
 
     async def setup_nodes(self):
         """
@@ -122,7 +124,7 @@ class InternalServer:
     async def stop(self):
         self.logger.info('stopping internal server')
         await self.isession.close_session()
-        self.history_manager.stop()
+        await self.history_manager.stop()
 
     def _set_current_time(self):
         self.loop.create_task(
@@ -302,7 +304,7 @@ class InternalSession:
             return results
         return [deepcopy(dv) for dv in results]
 
-    async def history_read(self, params):
+    def history_read(self, params) -> Coroutine:
         return self.iserver.history_manager.read_history(params)
 
     async def write(self, params):

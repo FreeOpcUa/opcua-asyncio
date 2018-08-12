@@ -1,8 +1,8 @@
 import asyncio
 import pytest
 from collections import namedtuple
-from opcua import Client
-from opcua import Server
+from opcua import ua, Client, Server, HistoryDict, HistorySQLite
+
 from .test_common import add_server_methods
 from .util_enum_struct import add_server_custom_enum_struct
 
@@ -16,6 +16,10 @@ Opc = namedtuple('opc', ['opc', 'server'])
 def pytest_generate_tests(metafunc):
     if 'opc' in metafunc.fixturenames:
         metafunc.parametrize('opc', ['client', 'server'], indirect=True)
+    elif 'history' in metafunc.fixturenames:
+        metafunc.parametrize('history', ['dict', 'sqlite'], indirect=True)
+    elif 'history_server' in metafunc.fixturenames:
+        metafunc.parametrize('history_server', ['dict', 'sqlite'], indirect=True)
 
 
 @pytest.yield_fixture(scope='module')
@@ -105,3 +109,74 @@ async def opc(request):
         await srv.stop()
     else:
         raise ValueError("invalid internal test config")
+
+
+@pytest.fixture()
+async def history(request):
+    if request.param == 'dict':
+        h = HistoryDict()
+        await h.init()
+        yield h
+        await h.stop()
+    elif request.param == 'sqlite':
+        h = HistorySQLite(':memory:')
+        await h.init()
+        yield h
+        await h.stop()
+
+
+class HistoryServer:
+    def __init__(self):
+        self.srv = Server()
+        self.srv_node = None
+        self.ev_values = None
+        self.var = None
+        self.values = None
+
+
+async def create_srv_events(history_server: HistoryServer):
+    history_server.ev_values = [i for i in range(20)]
+    srv_evgen = await history_server.srv.get_event_generator()
+    history_server.srv_node = history_server.srv.get_node(ua.ObjectIds.Server)
+    await history_server.srv.historize_node_event(history_server.srv_node, period=None)
+    for i in history_server.ev_values:
+        srv_evgen.event.Severity = history_server.ev_values[i]
+        srv_evgen.trigger(message="test message")
+        await asyncio.sleep(.1)
+    await asyncio.sleep(2)
+
+
+async def create_var(history_server: HistoryServer):
+    o = history_server.srv.get_objects_node()
+    history_server.values = [i for i in range(20)]
+    history_server.var = await o.add_variable(3, "history_var", 0)
+    await history_server.srv.historize_node_data_change(history_server.var, period=None, count=0)
+    for i in history_server.values:
+        await history_server.var.set_value(i)
+    await asyncio.sleep(1)
+
+
+async def create_history_server(sqlite=False) -> HistoryServer:
+    history_server = HistoryServer()
+    await history_server.srv.init()
+    history_server.srv.set_endpoint(f'opc.tcp://127.0.0.1:{port_num if not sqlite else port_num1}')
+    await history_server.srv.start()
+    if sqlite:
+        history = HistorySQLite(":memory:")
+        await history.init()
+        history_server.srv.iserver.history_manager.set_storage(history)
+    await create_var(history_server)
+    await create_srv_events(history_server)
+    return history_server
+
+
+@pytest.fixture(scope='module')
+async def history_server(request):
+    if request.param == 'dict':
+        srv = await create_history_server()
+        yield srv
+        await srv.srv.stop()
+    elif request.param == 'sqlite':
+        srv = await create_history_server(sqlite=True)
+        yield srv
+        await srv.srv.stop()

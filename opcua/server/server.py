@@ -542,16 +542,16 @@ class Server:
         for node in nodes:
             await self.iserver.enable_history_data_change(node, period, count)
 
-    def dehistorize_node_data_change(self, node):
+    async def dehistorize_node_data_change(self, node):
         """
         Stop historizing supplied nodes; see history module
         :param node: node or list of nodes that can be historized (UA variables/properties)
         """
         nodes = node if isinstance(node, (list, tuple)) else [node]
         for node in nodes:
-            self.iserver.disable_history_data_change(node)
+            await self.iserver.disable_history_data_change(node)
 
-    def historize_node_event(self, node, period=timedelta(days=7), count: int=0):
+    async def historize_node_event(self, node, period=timedelta(days=7), count: int=0):
         """
         Start historizing events from node (typically a UA object); see history module
         :param node: node or list of nodes that can be historized (UA objects)
@@ -560,7 +560,7 @@ class Server:
         """
         nodes = node if isinstance(node, (list, tuple)) else [node]
         for node in nodes:
-            self.iserver.enable_history_event(node, period, count)
+            await self.iserver.enable_history_event(node, period, count)
 
     async def dehistorize_node_event(self, node):
         """
