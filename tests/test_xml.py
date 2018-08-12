@@ -56,9 +56,9 @@ async def test_xml_import_additional_ns(opc):
     assert o2 is not None
     v1 = await o.get_child([f"{ns}:MyBaseObject", f"{ns}:MyVar"])
     assert v1 is not None
-    r1 = await o2.get_references(refs=ua.ObjectIds.HasComponent)[0]
+    r1 = (await o2.get_references(refs=ua.ObjectIds.HasComponent))[0]
     assert ns == r1.NodeId.NamespaceIndex
-    r3 = await v1.get_references(refs=ua.ObjectIds.HasComponent)[0]
+    r3 = (await v1.get_references(refs=ua.ObjectIds.HasComponent))[0]
     assert ns == r3.NodeId.NamespaceIndex
 
 
