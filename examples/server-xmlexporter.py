@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     # setup our server
     server = Server()
-    server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
+    server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
 
     # setup our own namespace, not really necessary but should as spec
     uri = "http://examples.freeopcua.github.io"
