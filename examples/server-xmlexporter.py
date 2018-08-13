@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     # setup our server
     server = Server()
-    server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
+    server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
 
     # setup our own namespace, not really necessary but should as spec
     uri = "http://examples.freeopcua.github.io"
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     mydevice = instantiate(server.nodes.objects, dev, bname="2:Device0001")
 
-    node_list = [dev, mydevice, myobj, myvar]
+    node_list = [dev, mydevice[0], myobj, myvar]
 
     # starting!
     server.start()
