@@ -136,6 +136,7 @@ if __name__ == "__main__":
         myarrayvar.set_value(var)
         mydevice_var.set_value("Running")
         myevgen.trigger(message="This is BaseEvent")
+        server.set_attribute_value(myvar.nodeid, ua.DataValue(9.9))  # Server side write method which is a but faster than using set_value
 
         embed()
     finally:

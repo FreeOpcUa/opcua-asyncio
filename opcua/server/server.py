@@ -599,3 +599,10 @@ class Server:
         load UA structures and generate python Enums in ua module for custom enums in server
         """
         return load_enums(self)
+
+    def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+        """
+        directly write datavalue to the Attribute, bypasing some checks and structure creation
+        so it is a little faster
+        """
+        return self.iserver.set_attribute_value(nodeid, datavalue, attr)

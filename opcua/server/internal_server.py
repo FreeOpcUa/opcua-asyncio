@@ -242,6 +242,15 @@ class InternalServer:
         """
         self.server_callback_dispatcher.removeListener(event, handle)
 
+    def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+        """
+        directly write datavalue to the Attribute, bypasing some checks and structure creation
+        so it is a little faster
+        """
+        self.aspace.set_attribute_value(nodeid, ua.AttributeIds.Value, datavalue)
+
+
+
 
 class InternalSession:
     _counter = 10
