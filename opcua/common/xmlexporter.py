@@ -118,7 +118,7 @@ class XmlExporter:
         # try to write the XML etree to a file
         self.logger.info('Exporting XML file to %s', xmlpath)
         if pretty:
-            self.indent(self.etree.getroot())
+            indent(self.etree.getroot())
         func = functools.partial(self.etree.write, xmlpath, encoding='utf-8', xml_declaration=True)
         await asyncio.get_event_loop().run_in_executor(None, func)
 
@@ -421,22 +421,22 @@ class XmlExporter:
 
         return member_keys
 
-    def indent(self, elem, level=0):
-        """
-        copy and paste from http://effbot.org/zone/element-lib.htm#prettyprint
-        it basically walks your tree and adds spaces and newlines so the tree is
-        printed in a nice way
-        """
-        i = "\n" + level * "  "
-        if len(elem):
-            if not elem.text or not elem.text.strip():
-                elem.text = i + "  "
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-            for elem in elem:
-                self.indent(elem, level + 1)
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
+def indent(elem, level=0):
+    """
+    copy and paste from http://effbot.org/zone/element-lib.htm#prettyprint
+    it basically walks your tree and adds spaces and newlines so the tree is
+    printed in a nice way
+    """
+    i = "\n" + level * "  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level + 1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
