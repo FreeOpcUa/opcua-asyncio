@@ -362,4 +362,4 @@ class XMLParser:
 
         if not obj.parent or not obj.parentlink:
             obj.parent, obj.parentlink = parent, parentlink
-            self.logger.warning("Could not detect backward reference to parent for node '%s'", obj.nodeid)
+            self.logger.info("Could not detect backward reference to parent for node '%s'", obj.nodeid)

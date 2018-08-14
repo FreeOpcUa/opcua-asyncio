@@ -926,7 +926,7 @@ def register_extension_object(name, nodeid, class_type):
     """
     Register a new extension object for automatic decoding and make them available in ua module
     """
-    logger.warning("registring new extension object: %s %s %s", name, nodeid, class_type)
+    logger.info("registring new extension object: %s %s %s", name, nodeid, class_type)
     extension_object_classes[nodeid] = class_type
     extension_object_ids[name] = nodeid
     # FIXME: Next line is not exactly a Python best practices, so feel free to propose something else
