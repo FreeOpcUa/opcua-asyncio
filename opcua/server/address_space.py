@@ -644,14 +644,13 @@ class AddressSpace(object):
 
     def set_attribute_value(self, nodeid, attr, value):
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
-        if nodeid not in self._nodes:
+        node = self._nodes.get(nodeid, None)
+        if node is None:
             return ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown)
-        node = self._nodes[nodeid]
-        if attr not in node.attributes:
+        attval = node.attributes.get(attr, None)
+        if attval is None:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
 
-
-        attval = node.attributes[attr]
         old = attval.value
         attval.value = value
         cbs = []
