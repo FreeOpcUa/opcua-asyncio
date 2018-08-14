@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 
-def val_to_string(val, truncate=True):
+def val_to_string(val, truncate=False):
     """
     convert a python object or python-opcua object to a string
     which should be easy to understand for human
