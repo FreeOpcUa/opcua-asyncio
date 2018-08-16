@@ -34,7 +34,7 @@ def get_default_value(uatype, enums):
         return 0
     elif uatype in enums:
         return f"ua.{uatype}({enums[uatype]})"
-    elif issubclass(eval(f"ua.{uatype}"), IntEnum):
+    elif hasattr(ua, uatype) and issubclass(getattr(ua, uatype), IntEnum):
         return f"ua.{uatype}({list(eval('ua.' + uatype))[0]})"
     else:
         return f"ua.{uatype}()"
