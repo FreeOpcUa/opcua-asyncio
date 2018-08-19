@@ -95,7 +95,7 @@ class Subscription:
         self.logger.info('Subscription created %s', self.subscription_id)
         # Send a publish request so the server has one in its queue
         # Servers should always be able to handle at least on extra publish request per subscriptions
-        await self.server.publish()
+        self.loop.create_task(self.server.publish())
 
     async def delete(self):
         """
