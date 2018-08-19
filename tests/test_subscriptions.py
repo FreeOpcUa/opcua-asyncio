@@ -1,5 +1,6 @@
 import time
 import pytest
+from copy import copy
 from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
 
@@ -126,8 +127,10 @@ async def test_subscription_count_list(opc):
     nb = 12
     for i in range(nb):
         val = await var.get_value()
+        #  we do not want to modify object in our db, we need a copy in order to generate event
+        val = copy(val)
         val.append(i)
-        await var.set_value(val)
+        await var.set_value(copy(val))
     await sleep(0.2)  # let last event arrive
     assert nb + 1 == myhandler.datachange_count
     await sub.delete()
@@ -156,6 +159,8 @@ async def test_subscription_count_empty(opc):
     await sub.subscribe_data_change(var)
     while True:
         val = await var.get_value()
+        # we do not want to modify object in our db, we need a copy in order to generate event
+        val = copy(val)
         val.pop()
         await var.set_value(val, ua.VariantType.Double)
         if not val:
