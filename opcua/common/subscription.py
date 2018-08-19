@@ -167,7 +167,7 @@ class Subscription:
         except Exception:
             self.logger.exception("Exception calling status change handler")
 
-    def subscribe_data_change(self, nodes, attr=ua.AttributeIds.Value):
+    def subscribe_data_change(self, nodes, attr=ua.AttributeIds.Value, queuesize=0):
         """
         COROUTINE
         Subscribe for data change events for a node or list of nodes.
@@ -175,7 +175,7 @@ class Subscription:
         Return a handle which can be used to unsubscribe
         If more control is necessary use create_monitored_items method
         """
-        return self._subscribe(nodes, attr, queuesize=0)
+        return self._subscribe(nodes, attr, queuesize=queuesize)
 
     async def subscribe_events(self, sourcenode=ua.ObjectIds.Server, evtypes=ua.ObjectIds.BaseEventType, evfilter=None,
             queuesize=0):
