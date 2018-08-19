@@ -375,14 +375,13 @@ class InternalSubscription:
         self._triggered_statuschanges.append(code)
 
     def _enqueue_event(self, mid, eventdata, size, queue):
-        with self._lock:
-            if mid not in queue:
-                queue[mid] = [eventdata]
-                return
-            if size != 0:
-                if len(queue[mid]) >= size:
-                    queue[mid].pop(0)
-            queue[mid].append(eventdata)
+        if mid not in queue:
+            queue[mid] = [eventdata]
+            return
+        if size != 0:
+            if len(queue[mid]) >= size:
+                queue[mid].pop(0)
+        queue[mid].append(eventdata)
 
 
 class WhereClauseEvaluator:

@@ -150,13 +150,12 @@ class UaProcessor:
             self.send_response(requesthdr.RequestHandle, algohdr, seqhdr, response)
 
         elif typeid == ua.NodeId(ua.ObjectIds.CloseSessionRequest_Encoding_DefaultBinary):
-            self.logger.info("Close session request")
-
+            _logger.info("Close session request")
             if self.session:
                 deletesubs = ua.ua_binary.Primitives.Boolean.unpack(body)
-                self.session.close_session(deletesubs)
+                await self.session.close_session(deletesubs)
             else:
-                self.logger.info("Request to close non-existing session")
+                _logger.info("Request to close non-existing session")
 
             response = ua.CloseSessionResponse()
             _logger.info("sending close session response")
