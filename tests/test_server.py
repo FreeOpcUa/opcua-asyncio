@@ -8,6 +8,7 @@ import logging
 import os
 import shelve
 from datetime import timedelta
+from enum import Enum, EnumMeta
 
 import opcua
 from opcua import Server, Client, ua, uamethod, BaseEvent, AuditEvent, AuditChannelEvent, AuditSecurityEvent, AuditOpenSecureChannelEvent
@@ -481,6 +482,38 @@ async def test_get_node_by_ns(server):
     assert set([idx_b]) == get_ns_of_nodes(nodes)
     with pytest.raises(ValueError):
         await ua_utils.get_nodes_of_namespace(server, namespaces='non_existing_ns')
+
+
+async def test_load_enum_strings(server):
+    dt = await server.nodes.enum_data_type.add_data_type(0, "MyStringEnum")
+    await dt.add_variable(0, "EnumStrings", [ua.LocalizedText("e1"), ua.LocalizedText("e2"), ua.LocalizedText("e3"),
+                                       ua.LocalizedText("e 4")])
+    await server.load_enums()
+    e = getattr(ua, "MyStringEnum")
+    assert isinstance(e, EnumMeta)
+    assert hasattr(e, "e1")
+    assert hasattr(e, "e4")
+    assert 3 == getattr(e, "e4")
+
+
+async def test_load_enum_values(server):
+    dt = await server.nodes.enum_data_type.add_data_type(0, "MyValuesEnum")
+    v1 = ua.EnumValueType()
+    v1.DisplayName.Text = "v1"
+    v1.Value = 2
+    v2 = ua.EnumValueType()
+    v2.DisplayName.Text = "v2"
+    v2.Value = 3
+    v3 = ua.EnumValueType()
+    v3.DisplayName.Text = "v 3 "
+    v3.Value = 4
+    await dt.add_variable(0, "EnumValues", [v1, v2, v3])
+    await server.load_enums()
+    e = getattr(ua, "MyValuesEnum")
+    assert isinstance(e, EnumMeta)
+    assert hasattr(e, "v1")
+    assert hasattr(e, "v3")
+    assert 4 == getattr(e, "v3")
 
 
 async def check_eventgenerator_source_server(evgen, server: Server):

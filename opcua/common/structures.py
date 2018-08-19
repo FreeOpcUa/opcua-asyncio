@@ -304,29 +304,29 @@ async def load_enums(server, env=None):
     for node in nodes:
         name = (await node.get_browse_name()).Name
         try:
-            c = _get_enum_strings(name, node)
+            c = await _get_enum_strings(name, node)
         except ua.UaError as ex:
             try:
-                c = _get_enum_values(name, node)
+                c = await _get_enum_values(name, node)
             except ua.UaError as ex:
-                logger.warning("Node %s, %s under DataTypes/Enumeration, does not seem to have a child called EnumString or EumValue: %s", name, node, ex)
+                _logger.warning("Node %s, %s under DataTypes/Enumeration, does not seem to have a child called EnumString or EumValue: %s", name, node, ex)
                 continue
         if not hasattr(ua, c.name):
             model.append(c)
     return _generate_python_class(model, env=env)
 
 
-def _get_enum_values(name, node):
-    def_node = node.get_child("0:EnumValues")
-    val = def_node.get_value()
+async def _get_enum_values(name, node):
+    def_node = await node.get_child("0:EnumValues")
+    val = await def_node.get_value()
     c = EnumType(name)
     c.fields = [EnumeratedValue(enumval.DisplayName.Text, enumval.Value) for enumval in val]
     return c
 
 
-def _get_enum_strings(name, node):
-    def_node = node.get_child("0:EnumStrings")
-    val = def_node.get_value()
+async def _get_enum_strings(name, node):
+    def_node = await node.get_child("0:EnumStrings")
+    val = await def_node.get_value()
     c = EnumType(name)
     c.fields = [EnumeratedValue(st.Text, idx) for idx, st in enumerate(val)]
     return c
