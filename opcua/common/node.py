@@ -224,9 +224,8 @@ class Node:
             datavalue.SourceTimestamp = datetime.utcnow()
         else:
             datavalue = ua.DataValue(ua.Variant(value, varianttype))
-        await self.set_attribute(ua.AttributeIds.Value, datavalue)
             datavalue.SourceTimestamp = datetime.utcnow()
-        self.set_attribute(ua.AttributeIds.Value, datavalue)
+        await self.set_attribute(ua.AttributeIds.Value, datavalue)
 
     set_data_value = set_value
 
