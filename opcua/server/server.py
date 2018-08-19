@@ -15,7 +15,7 @@ from .internal_server import InternalServer
 from .event_generator import EventGenerator
 from ..client import Client
 from ..common import Node, Subscription, delete_nodes, BaseEvent, Shortcuts, load_type_definitions, XmlExporter,\
-    XmlImporter, get_nodes_of_namespace
+    XmlImporter, get_nodes_of_namespace, load_enums
 
 from ..crypto import security_policies, uacrypto
 
@@ -594,7 +594,7 @@ class Server:
         """
         return load_type_definitions(self, nodes)
 
-    def load_enums(self):
+    def load_enums(self) -> Coroutine:
         """
         load UA structures and generate python Enums in ua module for custom enums in server
         """

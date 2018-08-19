@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 from opcua import ua
 from .ua_client import UaClient
 from ..common import XmlImporter, XmlExporter, Node, delete_nodes, Subscription, Shortcuts, load_type_definitions, \
-    create_nonce
+    create_nonce, load_enums
 from ..crypto import uacrypto, security_policies
 
 __all__ = ["Client"]
@@ -557,7 +557,7 @@ class Client(object):
         """
         return load_type_definitions(self, nodes)
 
-    def load_enums(self):
+    def load_enums(self) -> Coroutine:
         """
         generate Python enums for custom enums on server.
         This enums will be available in ua module

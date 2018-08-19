@@ -4,6 +4,7 @@ and browse address space
 """
 
 import logging
+from typing import Coroutine
 from opcua import ua
 from .events import Event, get_filter_from_event_type
 from .ua_utils import data_type_to_variant_type
@@ -293,7 +294,7 @@ class Node:
         results = await self.server.read(params)
         return results
 
-    def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
+    def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified) -> Coroutine:
         """
         Get all children of a node. By default hierarchical references and all node classes are returned.
         Other reference types may be given:

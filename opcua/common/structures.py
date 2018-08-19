@@ -15,7 +15,7 @@ from enum import IntEnum, EnumMeta
 from opcua import ua
 
 
-__all__ = ["load_type_definitions"]
+__all__ = ["load_type_definitions", "load_enums"]
 _logger = logging.getLogger(__name__)
 
 
@@ -292,23 +292,23 @@ def _generate_python_class(model, env=None):
     return env
 
 
-def load_enums(server, env=None):
+async def load_enums(server, env=None):
     """
     read enumeration data types and generate python enums for them
     Not sure this methods is necessary, alternatives are welcome
     """
     model = []
-    nodes = server.nodes.enum_data_type.get_children()
+    nodes = await server.nodes.enum_data_type.get_children()
     if env is None:
         env = ua.__dict__
     for node in nodes:
-        name = node.get_browse_name().Name
+        name = (await node.get_browse_name()).Name
         try:
-            def_node = node.get_child("0:EnumStrings")
+            def_node = await node.get_child("0:EnumStrings")
         except ua.UaError as ex:
             #logger.exception("Error getting child node EnumStrings of node %s", node)
             continue
-        val = def_node.get_value()
+        val = await def_node.get_value()
         c = EnumType(name)
         c.fields = [EnumeratedValue(st.Text, idx) for idx, st in enumerate(val)]
         if not hasattr(ua, c.name):
