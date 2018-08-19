@@ -91,7 +91,7 @@ class InternalServer:
             # path was supplied, but file doesn't exist - create one for next start up
             await self.loop.run_in_executor(None, self.aspace.make_aspace_shelf, shelf_file)
 
-    def _address_space_fixes(self):
+    def _address_space_fixes(self) -> Coroutine:
         """
         Looks like the xml definition of address space has some error. This is a good place to fix them
         """
@@ -101,16 +101,13 @@ class InternalServer:
         it.IsForward = False
         it.TargetNodeId = ua.NodeId(ua.ObjectIds.ObjectTypesFolder)
         it.TargetNodeClass = ua.NodeClass.Object
-        return self.isession.add_references([it])
-
         it2 = ua.AddReferencesItem()
         it2.SourceNodeId = ua.NodeId(ua.ObjectIds.BaseDataType)
         it2.ReferenceTypeId = ua.NodeId(ua.ObjectIds.Organizes)
         it2.IsForward = False
         it2.TargetNodeId = ua.NodeId(ua.ObjectIds.DataTypesFolder)
         it2.TargetNodeClass = ua.NodeClass.Object
-
-        results = self.isession.add_references([it, it2])
+        return self.isession.add_references([it, it2])
  
     def load_address_space(self, path):
         """
