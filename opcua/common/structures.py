@@ -33,11 +33,11 @@ def get_default_value(uatype, enums):
     elif uatype in ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte", "SByte"):
         return 0
     elif uatype in enums:
-        return "ua." + uatype + "(" + enums[uatype] + ")"
-    elif issubclass(eval("ua." + uatype), IntEnum):
-        return "ua." + uatype + "(" + list(eval("ua." + uatype))[0] + ")"
+        return f"ua.{uatype}({enums[uatype]})"
+    elif issubclass(eval(f"ua.{uatype}"), IntEnum):
+        return f"ua.{uatype}({list(eval('ua.' + uatype))[0]})"
     else:
-        return "ua." + uatype + "()"
+        return f"ua.{uatype}()"
 
 
 class EnumType(object):
@@ -71,6 +71,7 @@ class EnumeratedValue(object):
             name = "None_"
         self.Name = name
         self.Value = value
+
 
 class Struct(object):
     def __init__(self, name):
