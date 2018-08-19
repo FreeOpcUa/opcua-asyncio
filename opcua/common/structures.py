@@ -9,18 +9,10 @@ import uuid
 import logging
 # The next two imports are for generated code
 from datetime import datetime
-import uuid
-from enum import IntEnum, EnumMeta
-
 from lxml import objectify
 from enum import IntEnum, EnumMeta
 
 from opcua import ua
-
-from opcua.ua.ua_binary import Primitives
-from opcua import ua
-
-
 
 __all__ = ["load_type_definitions", "load_enums"]
 _logger = logging.getLogger(__name__)
