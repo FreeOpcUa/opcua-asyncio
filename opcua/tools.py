@@ -291,7 +291,7 @@ async def uals():
 
     client = Client(args.url, timeout=args.timeout)
     _configure_client_with_args(client, args)
-    client.connect()
+    await client.connect()
     try:
         node = get_node(client, args)
         print("Browsing node {0} at {1}\n".format(node, args.url))
