@@ -20,7 +20,7 @@ def _to_camel_case(name):
     """
     name = re.sub(r'[^a-zA-Z0-9]+', ' ', name)
     name = re.sub('(^|\s)(\S)', _repl_func, name)
-    name = re.sub(r'[^a-zA-Z0-9]+', '', name)
+    name = name.replace(' ', '')
     return name
 
 
