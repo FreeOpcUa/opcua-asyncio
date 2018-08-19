@@ -73,8 +73,11 @@ class InternalServer:
         await ns_node.set_value(uries)
 
     async def load_standard_address_space(self, shelf_file=None):
-        if shelf_file is not None:
-            is_file = await self.loop.run_in_executor(None, os.path.isfile, shelf_file)
+        if shelf_file:
+            is_file = (
+                    await self.loop.run_in_executor(None, os.path.isfile, shelf_file) or
+                    await self.loop.run_in_executor(None, os.path.isfile, f'{shelf_file}.db')
+            )
             if is_file:
                 # import address space from shelf
                 await self.loop.run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
