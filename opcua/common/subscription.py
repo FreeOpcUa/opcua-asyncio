@@ -93,15 +93,9 @@ class Subscription:
         response = await self.server.create_subscription(self.parameters, self.publish_callback)
         self.subscription_id = response.SubscriptionId  # move to data class
         self.logger.info('Subscription created %s', self.subscription_id)
-        # Launching two publish requests is a heuristic. We try to ensure
-        # that the server always has at least one publish request in the queue,
-        # even after it just replied to a publish request.
-        self.loop.create_task(self.server.publish())
-        self.loop.create_task(self.server.publish())
-
-        #Send a publish request so the server has one in its queue
-        # Servers should alsways be able to handle at least on extra publish request per subscriptions
-        self.server.publish()
+        # Send a publish request so the server has one in its queue
+        # Servers should always be able to handle at least on extra publish request per subscriptions
+        await self.server.publish()
 
     async def delete(self):
         """
