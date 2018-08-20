@@ -179,7 +179,7 @@ class DataTypeDictionaryBuilder:
                                      ua.NodeId(ua.ObjectIds.HasComponent, 0), False)]
         self._session_server.add_references(refs)
 
-    def _create_data_type(self, type_name):
+    def create_data_type(self, type_name):
         name = _to_camel_case(type_name)
         # apply for new node id
         data_type_node_id = self._nodeid_generator()
@@ -230,9 +230,6 @@ class DataTypeDictionaryBuilder:
 
         self._type_dictionary.append_struct(type_name)
         return data_type_node_id
-
-    def create_data_type(self, type_name):
-        self._create_data_type(type_name)
 
     def add_field(self, type_name, variable_name, struct_name, is_array=False):
         self._type_dictionary.add_field(type_name, variable_name, struct_name, is_array)
