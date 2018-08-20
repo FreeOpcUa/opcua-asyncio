@@ -126,12 +126,8 @@ class DataTypeDictionaryBuilder:
         self.dict_id = self._add_dictionary(dict_name)
         self._type_dictionary = OPCTypeDictionaryBuilder(idx_name)
 
-    def nodeid_generator(self):
-        self._id_counter += 1
-        return ua.NodeId(self._id_counter, namespaceidx=self._idx, nodeidtype=ua.NodeIdType.Numeric)
-
     def _add_dictionary(self, name):
-        dictionary_node_id = self.nodeid_generator()
+        dictionary_node_id = self._nodeid_generator()
         node = ua.AddNodesItem()
         node.RequestedNewNodeId = dictionary_node_id
         node.BrowseName = ua.QualifiedName(name, self._idx)
@@ -149,6 +145,10 @@ class DataTypeDictionaryBuilder:
         self._session_server.add_nodes([node])
 
         return dictionary_node_id
+
+    def _nodeid_generator(self):
+        self._id_counter += 1
+        return ua.NodeId(self._id_counter, namespaceidx=self._idx, nodeidtype=ua.NodeIdType.Numeric)
 
     def _link_nodes(self, linked_obj_node_id, data_type_node_id, description_node_id):
         """link the three node by their node ids according to UA standard"""
@@ -179,12 +179,12 @@ class DataTypeDictionaryBuilder:
                                      ua.NodeId(ua.ObjectIds.HasComponent, 0), False)]
         self._session_server.add_references(refs)
 
-    def create_data_type(self, type_name):
+    def _create_data_type(self, type_name):
         name = _to_camel_case(type_name)
         # apply for new node id
-        data_type_node_id = self.nodeid_generator()
-        description_node_id = self.nodeid_generator()
-        bind_obj_node_id = self.nodeid_generator()
+        data_type_node_id = self._nodeid_generator()
+        description_node_id = self._nodeid_generator()
+        bind_obj_node_id = self._nodeid_generator()
 
         # create data type node
         dt_node = ua.AddNodesItem()
@@ -229,8 +229,10 @@ class DataTypeDictionaryBuilder:
         self._link_nodes(bind_obj_node_id, data_type_node_id, description_node_id)
 
         self._type_dictionary.append_struct(type_name)
-
         return data_type_node_id
+
+    def create_data_type(self, type_name):
+        self._create_data_type(type_name)
 
     def add_field(self, type_name, variable_name, struct_name, is_array=False):
         self._type_dictionary.add_field(type_name, variable_name, struct_name, is_array)
