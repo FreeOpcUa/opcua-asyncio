@@ -27,8 +27,7 @@ class DemoServer:
 
     def create_structure(self, name):
         # save the created data type
-        data_type_id = self.dict_builder.create_data_type(name)
-        return data_type_id
+        return self.dict_builder.create_data_type(name)
 
     def add_field(self, type_name, field_name, struct_name, is_array=False):
         self.dict_builder.add_field(type_name, field_name, struct_name, is_array)
@@ -38,20 +37,22 @@ class DemoServer:
 
 
 if __name__ == '__main__':
+
     with DemoServer() as ua_server:
         # add one basic structure
         basic_struct_name = 'basic_structure'
-        basic_data_type = ua_server.create_structure(basic_struct_name)
-        ua_server.add_field('Int32', 'ID', basic_struct_name)
-        ua_server.add_field('Boolean', 'Gender', basic_struct_name)
-        ua_server.add_field('String', 'Comments', basic_struct_name)
+        basic_struct = ua_server.create_structure(basic_struct_name)
+        basic_struct.add_field('ID', ua.VariantType.Int32)
+        basic_struct.add_field('Gender', ua.VariantType.Boolean)
+        basic_struct.add_field('Comments', ua.VariantType.String)
 
         # add an advance structure which uses our basic structure
         nested_struct_name = 'nested_structure'
-        nested_data_type = ua_server.create_structure(nested_struct_name)
-        ua_server.add_field('String', 'Name', nested_struct_name)
-        ua_server.add_field('String', 'Surname', nested_struct_name)
-        ua_server.add_field(basic_struct_name, 'Stuff', nested_struct_name)
+        nested_struct = ua_server.create_structure(nested_struct_name)
+        nested_struct.add_field('Name', ua.VariantType.String)
+        nested_struct.add_field('Surname', ua.VariantType.String)
+        # add simple structure as field
+        nested_struct.add_field('Stuff', basic_struct)
 
         # this operation will write the OPC dict string to our new data type dictionary
         # namely the 'MyDictionary'
@@ -63,7 +64,7 @@ if __name__ == '__main__':
         # Create one test structure
         basic_var = ua_server.server.nodes.objects.add_variable(ua.NodeId(namespaceidx=ua_server.idx), 'BasicStruct',
                                                                 ua.Variant(None, ua.VariantType.Null),
-                                                                datatype=basic_data_type)
+                                                                datatype=basic_struct.data_type)
 
         basic_var.set_writable()
         basic_msg = get_ua_class(basic_struct_name)()
@@ -75,7 +76,7 @@ if __name__ == '__main__':
         # Create one advance test structure
         nested_var = ua_server.server.nodes.objects.add_variable(ua.NodeId(namespaceidx=ua_server.idx), 'NestedStruct',
                                                                  ua.Variant(None, ua.VariantType.Null),
-                                                                 datatype=nested_data_type)
+                                                                 datatype=nested_struct.data_type)
 
         nested_var.set_writable()
         nested_msg = get_ua_class(nested_struct_name)()

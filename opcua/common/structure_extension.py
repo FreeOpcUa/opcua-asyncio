@@ -1,4 +1,5 @@
 from opcua import ua
+from enum import Enum
 
 import xml.etree.ElementTree as Et
 import re
@@ -71,6 +72,8 @@ class OPCTypeDictionaryBuilder:
         field.attrib['LengthField'] = array_len
 
     def add_field(self, type_name, variable_name, struct_name, is_array=False):
+        if isinstance(type_name, Enum):
+            type_name = type_name.name
         if is_array:
             self._add_array_field(type_name, variable_name, struct_name)
         else:
@@ -229,7 +232,7 @@ class DataTypeDictionaryBuilder:
         self._link_nodes(bind_obj_node_id, data_type_node_id, description_node_id)
 
         self._type_dictionary.append_struct(type_name)
-        return data_type_node_id
+        return StructNode(self, data_type_node_id, type_name)
 
     def add_field(self, type_name, variable_name, struct_name, is_array=False):
         self._type_dictionary.add_field(type_name, variable_name, struct_name, is_array)
@@ -238,6 +241,21 @@ class DataTypeDictionaryBuilder:
         dict_node = self._server.get_node(self.dict_id)
         value = self._type_dictionary.get_dict_value()
         dict_node.set_value(value, ua.VariantType.ByteString)
+
+
+class StructNode:
+
+    def __init__(self, type_dict, data_type, name):
+        self._type_dict = type_dict
+        self.data_type = data_type
+        self.name = name
+        pass
+
+    def add_field(self, type_name, field_name, is_array=False):
+        # nested structure could directly use simple structure as field
+        if isinstance(field_name, StructNode):
+            field_name = field_name.name
+        self._type_dict.add_field(field_name, type_name, self.name, is_array)
 
 
 def get_ua_class(ua_class_name):
