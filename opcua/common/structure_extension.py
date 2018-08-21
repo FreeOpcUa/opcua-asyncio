@@ -47,28 +47,28 @@ class OPCTypeDictionaryBuilder:
         self._structs_dict = {}
         self._build_in_list = _ua_build_in_types
     
-    def _process_type(self, type_name):
-        if type_name in self._build_in_list:
-            type_name = 'opc:' + type_name
+    def _process_type(self, data_type):
+        if data_type in self._build_in_list:
+            data_type = 'opc:' + data_type
         else:
-            type_name = 'tns:' + _to_camel_case(type_name)
-        return type_name
+            data_type = 'tns:' + _to_camel_case(data_type)
+        return data_type
 
-    def _add_field(self, type_name, variable_name, struct_name):
-        type_name = self._process_type(type_name)
+    def _add_field(self, variable_name, data_type, struct_name):
+        data_type = self._process_type(data_type)
         field = Et.SubElement(self._structs_dict[struct_name], 'opc:Field')
         field.attrib['Name'] = variable_name
-        field.attrib['TypeName'] = type_name
+        field.attrib['TypeName'] = data_type
 
-    def _add_array_field(self, type_name, variable_name, struct_name):
-        type_name = self._process_type(type_name)
+    def _add_array_field(self, variable_name, data_type, struct_name):
+        data_type = self._process_type(data_type)
         array_len = 'NoOf' + variable_name
         field = Et.SubElement(self._structs_dict[struct_name], 'opc:Field')
         field.attrib['Name'] = array_len
         field.attrib['TypeName'] = 'opc:Int32'
         field = Et.SubElement(self._structs_dict[struct_name], 'opc:Field')
         field.attrib['Name'] = variable_name
-        field.attrib['TypeName'] = type_name
+        field.attrib['TypeName'] = data_type
         field.attrib['LengthField'] = array_len
 
     def add_field(self, type_name, variable_name, struct_name, is_array=False):
