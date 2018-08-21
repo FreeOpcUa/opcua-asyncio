@@ -29,9 +29,6 @@ class DemoServer:
         # save the created data type
         return self.dict_builder.create_data_type(name)
 
-    def add_field(self, type_name, field_name, struct_name, is_array=False):
-        self.dict_builder.add_field(type_name, field_name, struct_name, is_array)
-
     def complete_creation(self):
         self.dict_builder.set_dict_byte_string()
 
@@ -92,6 +89,6 @@ if __name__ == '__main__':
 
         # values can be write back and retrieved with the codes below.
         basic_result = basic_var.get_value()
-        advance_result = nested_var.get_value()
+        nested_result = nested_var.get_value()
 
         embed()
