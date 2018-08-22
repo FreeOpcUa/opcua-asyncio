@@ -2,21 +2,21 @@ import unittest
 import logging
 import xml.etree.ElementTree as Et
 from opcua import ua, Server
-import opcua.common.structure_extension
-from opcua.common.structure_extension import OPCTypeDictionaryBuilder, DataTypeDictionaryBuilder
-from opcua.common.structure_extension import get_ua_class, StructNode
+import opcua.common.type_dictionary_buider
+from opcua.common.type_dictionary_buider import OPCTypeDictionaryBuilder, DataTypeDictionaryBuilder
+from opcua.common.type_dictionary_buider import get_ua_class, StructNode
 
 port_num = 48540
 idx_name = 'http://test.freeopcua.github.io'
 
 
 def to_camel_case(name):
-    func = getattr(opcua.common.structure_extension, '_to_camel_case')
+    func = getattr(opcua.common.type_dictionary_buider, '_to_camel_case')
     return func(name)
 
 
 def reference_generator(source_id, target_id, reference_type, is_forward=True):
-    func = getattr(opcua.common.structure_extension, '_reference_generator')
+    func = getattr(opcua.common.type_dictionary_buider, '_reference_generator')
     return func(source_id, target_id, reference_type, is_forward)
 
 
@@ -31,7 +31,7 @@ def set_up_test_tree():
     return test_etree
 
 
-class OPCTypeDictionaryBuilderTest(unittest.TestCase):
+class TypeDictionaryBuilderTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
