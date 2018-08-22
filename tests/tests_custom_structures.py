@@ -138,7 +138,7 @@ class TypeDictionaryBuilderTest(unittest.TestCase):
         field.attrib['Name'] = 'id'
         field.attrib['TypeName'] = 'opc:Boolean'
         case = Et.tostring(self.test_etree.getroot(), encoding='utf-8').decode("utf-8").replace(' ', '')
-        result = self.opc_type_builder.get_dict_value().replace(' ', '').replace('\n', '')
+        result = self.opc_type_builder.get_dict_value().decode("utf-8").replace(' ', '').replace('\n', '')
         self.assertEqual(result, case)
 
     def test_reference_generator_1(self):
@@ -254,7 +254,8 @@ class TypeDictionaryBuilderTest(unittest.TestCase):
         field.attrib['Name'] = 'id'
         field.attrib['TypeName'] = 'opc:Int32'
         case = Et.tostring(self.test_etree.getroot(), encoding='utf-8').decode("utf-8").replace(' ', '')
-        result = self.srv.get_node(self.dict_builder.dict_id).get_value().replace(' ', '').replace('\n', '')
+        result_string = self.srv.get_node(self.dict_builder.dict_id).get_value().decode("utf-8")
+        result = result_string.replace(' ', '').replace('\n', '')
         self.assertEqual(result, case)
 
     def test_data_type_dict_add_field_1(self):
