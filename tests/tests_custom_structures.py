@@ -120,7 +120,9 @@ class TypeDictionaryBuilderTest(unittest.TestCase):
                  'Name': 'id'}]
         struct_dict = getattr(self.opc_type_builder, '_structs_dict')
         result = [item.attrib for item in list(struct_dict[structure_name])]
-        self.assertItemsEqual(result, case)
+        self.assertTrue(len(case), len(result))
+        for item in case:
+            self.assertTrue(item in result)
 
     def test_opc_type_dict_get_dict_value(self):
         structure_name = 'CustomizedStruct'
@@ -135,7 +137,7 @@ class TypeDictionaryBuilderTest(unittest.TestCase):
         field = Et.SubElement(appended_struct, 'opc:Field')
         field.attrib['Name'] = 'id'
         field.attrib['TypeName'] = 'opc:Boolean'
-        case = Et.tostring(self.test_etree.getroot(), encoding='utf-8').replace(' ', '')
+        case = Et.tostring(self.test_etree.getroot(), encoding='utf-8').decode("utf-8").replace(' ', '')
         result = self.opc_type_builder.get_dict_value().replace(' ', '').replace('\n', '')
         self.assertEqual(result, case)
 
@@ -251,7 +253,7 @@ class TypeDictionaryBuilderTest(unittest.TestCase):
         field = Et.SubElement(appended_struct, 'opc:Field')
         field.attrib['Name'] = 'id'
         field.attrib['TypeName'] = 'opc:Int32'
-        case = Et.tostring(self.test_etree.getroot(), encoding='utf-8').replace(' ', '')
+        case = Et.tostring(self.test_etree.getroot(), encoding='utf-8').decode("utf-8").replace(' ', '')
         result = self.srv.get_node(self.dict_builder.dict_id).get_value().replace(' ', '').replace('\n', '')
         self.assertEqual(result, case)
 
