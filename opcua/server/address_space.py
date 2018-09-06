@@ -262,7 +262,7 @@ class NodeManagementService(object):
             ua.DataValue(ua.Variant(item.BrowseName, ua.VariantType.QualifiedName))
         )
         nodedata.attributes[ua.AttributeIds.NodeClass] = AttributeValue(
-            ua.DataValue(ua.Variant(item.NodeClass, ua.VariantType.Int32))
+            ua.DataValue(ua.Variant(item.NodeClass, ua.VariantType.UInt32))
         )
         # add requested attrs
         self._add_nodeattributes(item.NodeAttributes, nodedata, add_timestamps)
