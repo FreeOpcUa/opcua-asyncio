@@ -426,6 +426,7 @@ async def delete_nodes(server, nodes, recursive=False, delete_target_references=
 
 async def _add_childs(nodes):
     results = []
-    for mynode in nodes[:]:
-        results += await mynode.get_children()
+    for mynode in nodes:
+        results += await _add_childs(mynode.get_children())
+        results += [mynode]
     return results
