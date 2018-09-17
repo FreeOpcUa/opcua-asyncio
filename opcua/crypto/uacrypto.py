@@ -50,6 +50,12 @@ def sign_sha1(private_key, data):
         hashes.SHA1()
     )
 
+def sign_sha256(private_key, data):
+    return private_key.sign(
+        data,
+        padding.PKCS1v15(),
+        hashes.SHA256()
+    )
 
 def verify_sha1(certificate, data, signature):
     certificate.public_key().verify(
@@ -59,6 +65,13 @@ def verify_sha1(certificate, data, signature):
         hashes.SHA1()
     )
 
+
+def verify_sha256(certificate, data, signature):
+    certificate.public_key().verify(
+        signature,
+        data,
+        padding.PKCS1v15(),
+        hashes.SHA256())
 
 def encrypt_basic256(public_key, data):
     ciphertext = public_key.encrypt(
@@ -128,10 +141,16 @@ def hmac_sha1(key, message):
     hasher.update(message)
     return hasher.finalize()
 
+def hmac_sha256(key, message):
+    hasher = hmac.HMAC(key, hashes.SHA256(), backend=default_backend())
+    hasher.update(message)
+    return hasher.finalize()
 
 def sha1_size():
     return hashes.SHA1.digest_size
 
+def sha256_size():
+    return hashes.SHA256.digest_size
 
 def p_sha1(secret, seed, sizes=()):
     """
@@ -155,6 +174,27 @@ def p_sha1(secret, seed, sizes=()):
         result = result[size:]
     return tuple(parts)
 
+def p_sha256(secret, seed, sizes=()):
+    """
+    Derive one or more keys from secret and seed.
+    (See specs part 6, 6.7.5 and RFC 2246 - TLS v1.0)
+    Lengths of keys will match sizes argument
+    """
+    full_size = 0
+    for size in sizes:
+        full_size += size
+
+    result = b''
+    accum = seed
+    while len(result) < full_size:
+        accum = hmac_sha256(secret, accum)
+        result += hmac_sha256(secret, accum + seed)
+
+    parts = []
+    for size in sizes:
+        parts.append(result[:size])
+        result = result[size:]
+    return tuple(parts)
 
 def x509_name_to_string(name):
     parts = ["{0}={1}".format(attr.oid._name, attr.value) for attr in name]

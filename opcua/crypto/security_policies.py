@@ -1,3 +1,5 @@
+import logging
+
 from abc import ABCMeta, abstractmethod
 from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError
 try:
@@ -307,9 +309,63 @@ class DecryptorAesCbc(Decryptor):
     def decrypt(self, data):
         return uacrypto.cipher_decrypt(self.cipher, data)
 
+class SignerSha256(Signer):
+
+    def __init__(self, client_pk):
+        require_cryptography(self)
+        self.client_pk = client_pk
+        self.key_size = self.client_pk.key_size // 8
+
+    def signature_size(self):
+        return self.key_size
+
+    def signature(self, data):
+        return uacrypto.sign_sha256(self.client_pk, data)
+
+class VerifierSha256(Verifier):
+
+    def __init__(self, server_cert):
+        require_cryptography(self)
+        self.server_cert = server_cert
+        self.key_size = self.server_cert.public_key().key_size // 8
+
+    def signature_size(self):
+        return self.key_size
+
+    def verify(self, data, signature):
+        uacrypto.verify_sha256(self.server_cert, data, signature)
+
+class SignerHMac256(Signer):
+
+    def __init__(self, key):
+        require_cryptography(self)
+        self.key = key
+
+    def signature_size(self):
+        return uacrypto.sha256_size()
+
+    def signature(self, data):
+        return uacrypto.hmac_sha256(self.key, data)
+
+
+class VerifierHMac256(Verifier):
+
+    def __init__(self, key):
+        require_cryptography(self)
+        self.key = key
+
+    def signature_size(self):
+        return uacrypto.sha256_size()
+
+    def verify(self, data, signature):
+        expected = uacrypto.hmac_sha256(self.key, data)
+        if signature != expected:
+            raise uacrypto.InvalidSignature
 
 class SecurityPolicyBasic128Rsa15(SecurityPolicy):
     """
+    DEPRECATED, do not use anymore!
+
     Security Basic 128Rsa15
     A suite of algorithms that uses RSA15 as Key-Wrap-algorithm
     and 128-Bit (16 bytes) for encryption algorithms.
@@ -344,6 +400,9 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
         return uacrypto.encrypt_rsa15(pubkey, data)
 
     def __init__(self, server_cert, client_cert, client_pk, mode):
+        logger = logging.getLogger(__name__)
+        logger.warning("DEPRECATED! Do not use SecurityPolicyBasic128Rsa15 anymore!")
+
         require_cryptography(self)
         if isinstance(server_cert, bytes):
             server_cert = uacrypto.x509_from_der(server_cert)
@@ -376,6 +435,8 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
 
 class SecurityPolicyBasic256(SecurityPolicy):
     """
+    DEPRECATED, do not use anymore!
+
     Security Basic 256
     A suite of algorithms that are for 256-Bit (32 bytes) encryption,
     algorithms include:
@@ -410,6 +471,9 @@ class SecurityPolicyBasic256(SecurityPolicy):
         return uacrypto.encrypt_rsa_oaep(pubkey, data)
 
     def __init__(self, server_cert, client_cert, client_pk, mode):
+        logger = logging.getLogger(__name__)
+        logger.warning("DEPRECATED! Do not use SecurityPolicyBasic256 anymore!")
+
         require_cryptography(self)
         if isinstance(server_cert, bytes):
             server_cert = uacrypto.x509_from_der(server_cert)
@@ -440,6 +504,70 @@ class SecurityPolicyBasic256(SecurityPolicy):
         self.symmetric_cryptography.Verifier = VerifierAesCbc(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
+class SecurityPolicyBasic256Sha256(SecurityPolicy):
+    """
+    Security Basic 256Sha256
+    A suite of algorithms that uses Sha256 as Key-Wrap-algorithm
+    and 256-Bit (32 bytes) for encryption algorithms.
+
+    - SymmetricSignatureAlgorithm_HMAC-SHA2-256
+      https://tools.ietf.org/html/rfc4634
+    - SymmetricEncryptionAlgorithm_AES256-CBC
+      http://www.w3.org/2001/04/xmlenc#aes256-cbc
+    - AsymmetricSignatureAlgorithm_RSA-PKCS15-SHA2-256
+      http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
+    - AsymmetricEncryptionAlgorithm_RSA-OAEP-SHA1
+      http://www.w3.org/2001/04/xmlenc#rsa-oaep
+    - KeyDerivationAlgorithm_P-SHA2-256
+      http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512/dk/p_sha256
+    - CertificateSignatureAlgorithm_RSA-PKCS15-SHA2-256
+      http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
+    - Basic256Sha256_Limits
+        -> DerivedSignatureKeyLength: 256 bits
+        -> MinAsymmetricKeyLength: 2048 bits
+        -> MaxAsymmetricKeyLength: 4096 bits
+        -> SecureChannelNonceLength: 32 bytes
+    """
+
+    URI = "http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256"
+    signature_key_size = 32
+    symmetric_key_size = 32
+    AsymmetricEncryptionURI = "http://www.w3.org/2001/04/xmlenc#rsa-oaep"
+
+    @staticmethod
+    def encrypt_asymmetric(pubkey, data):
+        return uacrypto.encrypt_rsa_oaep(pubkey, data)
+
+    def __init__(self, server_cert, client_cert, client_pk, mode):
+        require_cryptography(self)
+        if isinstance(server_cert, bytes):
+            server_cert = uacrypto.x509_from_der(server_cert)
+        # even in Sign mode we need to asymmetrically encrypt secrets
+        # transmitted in OpenSecureChannel. So SignAndEncrypt here
+        self.asymmetric_cryptography = Cryptography(
+            MessageSecurityMode.SignAndEncrypt)
+        self.asymmetric_cryptography.Signer = SignerSha256(client_pk)
+        self.asymmetric_cryptography.Verifier = VerifierSha256(server_cert)
+        self.asymmetric_cryptography.Encryptor = EncryptorRsa(
+            server_cert, uacrypto.encrypt_rsa_oaep, 42)
+        self.asymmetric_cryptography.Decryptor = DecryptorRsa(
+            client_pk, uacrypto.decrypt_rsa_oaep, 42)
+        self.symmetric_cryptography = Cryptography(mode)
+        self.Mode = mode
+        self.server_certificate = uacrypto.der_from_x509(server_cert)
+        self.client_certificate = uacrypto.der_from_x509(client_cert)
+
+    def make_symmetric_key(self, nonce1, nonce2):
+        # specs part 6, 6.7.5
+        key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
+
+        (sigkey, key, init_vec) = uacrypto.p_sha256(nonce2, nonce1, key_sizes)
+        self.symmetric_cryptography.Signer = SignerHMac256(sigkey)
+        self.symmetric_cryptography.Encryptor = EncryptorAesCbc(key, init_vec)
+
+        (sigkey, key, init_vec) = uacrypto.p_sha256(nonce1, nonce2, key_sizes)
+        self.symmetric_cryptography.Verifier = VerifierHMac256(sigkey)
+        self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
 def encrypt_asymmetric(pubkey, data, policy_uri):
     """
@@ -447,7 +575,7 @@ def encrypt_asymmetric(pubkey, data, policy_uri):
     The algorithm is selected by policy_uri.
     Returns a tuple (encrypted_data, algorithm_uri)
     """
-    for cls in [SecurityPolicyBasic256, SecurityPolicyBasic128Rsa15]:
+    for cls in [SecurityPolicyBasic256Sha256, SecurityPolicyBasic256, SecurityPolicyBasic128Rsa15]:
         if policy_uri == cls.URI:
             return (cls.encrypt_asymmetric(pubkey, data),
                     cls.AsymmetricEncryptionURI)

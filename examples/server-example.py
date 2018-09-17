@@ -74,10 +74,8 @@ if __name__ == "__main__":
     # set all possible endpoint policies for clients to connect through
     server.set_security_policy([
                 ua.SecurityPolicyType.NoSecurity,
-                ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt,
-                ua.SecurityPolicyType.Basic128Rsa15_Sign,
-                ua.SecurityPolicyType.Basic256_SignAndEncrypt,
-                ua.SecurityPolicyType.Basic256_Sign])
+                ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
+                ua.SecurityPolicyType.Basic256Sha256_Sign])
 
     # setup our own namespace
     uri = "http://examples.freeopcua.github.io"

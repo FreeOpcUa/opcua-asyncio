@@ -60,7 +60,7 @@ def add_common_args(parser, default_node='i=84', require_node=False):
                         default=0,
                         metavar="NAMESPACE")
     parser.add_argument("--security",
-                        help="Security settings, for example: Basic256,SignAndEncrypt,cert.der,pk.pem[,server_cert.der]. Default: None",
+                        help="Security settings, for example: Basic256Sha256,SignAndEncrypt,cert.der,pk.pem[,server_cert.der]. Default: None",
                         default='')
     parser.add_argument("--user",
                         help="User name for authentication. Overrides the user name given in the URL.")

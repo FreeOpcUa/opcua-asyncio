@@ -954,6 +954,8 @@ class SecurityPolicyType(Enum):
     "Basic128Rsa15_SignAndEncrypt"
     "Basic256_Sign"
     "Basic256_SignAndEncrypt"
+    "Basic256Sha256_Sign"
+    "Basic256Sha256_SignAndEncrypt"
 
     """
 
@@ -962,3 +964,5 @@ class SecurityPolicyType(Enum):
     Basic128Rsa15_SignAndEncrypt = 2
     Basic256_Sign = 3
     Basic256_SignAndEncrypt = 4
+    Basic256Sha256_Sign = 5
+    Basic256Sha256_SignAndEncrypt = 6
