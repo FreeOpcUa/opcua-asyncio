@@ -25,28 +25,28 @@ class TestCryptoConnect(unittest.TestCase):
 
     '''
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         # start our own server
-        self.srv_crypto = Server()
-        self.uri_crypto = 'opc.tcp://127.0.0.1:{0:d}'.format(port_num1)
-        self.srv_crypto.set_endpoint(self.uri_crypto)
+        cls.srv_crypto = Server()
+        cls.uri_crypto = 'opc.tcp://127.0.0.1:{0:d}'.format(port_num1)
+        cls.srv_crypto.set_endpoint(cls.uri_crypto)
         # load server certificate and private key. This enables endpoints
         # with signing and encryption.
-        self.srv_crypto.load_certificate("examples/certificate-example.der")
-        self.srv_crypto.load_private_key("examples/private-key-example.pem")
-        self.srv_crypto.start()
+        cls.srv_crypto.load_certificate("examples/certificate-example.der")
+        cls.srv_crypto.load_private_key("examples/private-key-example.pem")
+        cls.srv_crypto.start()
 
         # start a server without crypto
-        self.srv_no_crypto = Server()
-        self.uri_no_crypto = 'opc.tcp://127.0.0.1:{0:d}'.format(port_num2)
-        self.srv_no_crypto.set_endpoint(self.uri_no_crypto)
-        self.srv_no_crypto.start()
+        cls.srv_no_crypto = Server()
+        cls.uri_no_crypto = 'opc.tcp://127.0.0.1:{0:d}'.format(port_num2)
+        cls.srv_no_crypto.set_endpoint(cls.uri_no_crypto)
+        cls.srv_no_crypto.start()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(cls):
         # stop the server 
-        self.srv_no_crypto.stop()
-        self.srv_crypto.stop()
+        cls.srv_no_crypto.stop()
+        cls.srv_crypto.stop()
 
     def test_nocrypto(self):
         clt = Client(self.uri_no_crypto)
