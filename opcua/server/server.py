@@ -75,8 +75,6 @@ class Server:
         self.bserver: BinaryServer = None
         self._discovery_clients = {}
         self._discovery_period = 60
-        self.certificate = None
-        self.private_key = None
         self._policies = []
         self.nodes = Shortcuts(self.iserver.isession)
         # enable all endpoints by default
@@ -117,10 +115,10 @@ class Server:
         """
         load server certificate from file, either pem or der
         """
-        self.certificate = await uacrypto.load_certificate(path)
+        self.iserver.certificate = await uacrypto.load_certificate(path)
 
-    async def load_private_key(self, path: str):
-        self.private_key = await uacrypto.load_private_key(path)
+    async def load_private_key(self, path):
+        self.iserver.private_key = await uacrypto.load_private_key(path)
 
     def disable_clock(self, val: bool=True):
         """
@@ -244,7 +242,7 @@ class Server:
             self._policies = [ua.SecurityPolicyFactory()]
 
         if self._security_policy != [ua.SecurityPolicyType.NoSecurity]:
-            if not (self.certificate and self.private_key):
+            if not (self.iserver.certificate and self.iserver.private_key):
                 self.logger.warning("Endpoints other than open requested but private key and certificate are not set.")
                 return
 
@@ -256,16 +254,16 @@ class Server:
                                     ua.MessageSecurityMode.SignAndEncrypt)
                 self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
                                                                ua.MessageSecurityMode.SignAndEncrypt,
-                                                               self.certificate,
-                                                               self.private_key)
+                                                               self.iserver.certificate,
+                                                               self.iserver.private_key)
                                      )
             if ua.SecurityPolicyType.Basic256Sha256_Sign in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256,
                                     ua.MessageSecurityMode.Sign)
                 self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
                                                                ua.MessageSecurityMode.Sign,
-                                                               self.certificate,
-                                                               self.private_key)
+                                                               self.iserver.certificate,
+                                                               self.iserver.private_key)
                                      )
 
     def _set_endpoints(self, policy=ua.SecurityPolicy, mode=ua.MessageSecurityMode.None_):
@@ -298,8 +296,8 @@ class Server:
         edp = ua.EndpointDescription()
         edp.EndpointUrl = self.endpoint.geturl()
         edp.Server = appdesc
-        if self.certificate:
-            edp.ServerCertificate = uacrypto.der_from_x509(self.certificate)
+        if self.iserver.certificate:
+            edp.ServerCertificate = uacrypto.der_from_x509(self.iserver.certificate)
         edp.SecurityMode = mode
         edp.SecurityPolicyUri = policy.URI
         edp.UserIdentityTokens = idtokens
