@@ -106,17 +106,22 @@ class Subscription:
 
     def publish_callback(self, publishresult):
         self.logger.info("Publish callback called with result: %s", publishresult)
-        if self.subscription_id is None:
-            raise RuntimeError('publish_callback was called before subscription_id was set')
-        for notif in publishresult.NotificationMessage.NotificationData:
-            if isinstance(notif, ua.DataChangeNotification):
-                self._call_datachange(notif)
-            elif isinstance(notif, ua.EventNotificationList):
-                self._call_event(notif)
-            elif isinstance(notif, ua.StatusChangeNotification):
-                self._call_status(notif)
-            else:
-                self.logger.warning("Notification type not supported yet for notification %s", notif)
+        while self.subscription_id is None:
+            time.sleep(0.01)
+
+        if publishresult.NotificationMessage.NotificationData is not None:
+            for notif in publishresult.NotificationMessage.NotificationData:
+                if isinstance(notif, ua.DataChangeNotification):
+                    self._call_datachange(notif)
+                elif isinstance(notif, ua.EventNotificationList):
+                    self._call_event(notif)
+                elif isinstance(notif, ua.StatusChangeNotification):
+                    self._call_status(notif)
+                else:
+                    self.logger.warning("Notification type not supported yet for notification %s", notif)
+        else:
+            self.logger.warning("NotificationMessage is None.")
+
         ack = ua.SubscriptionAcknowledgement()
         ack.SubscriptionId = self.subscription_id
         ack.SequenceNumber = publishresult.NotificationMessage.SequenceNumber
