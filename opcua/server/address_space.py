@@ -435,7 +435,7 @@ class NodeManagementService(object):
         self._add_node_attr(item, nodedata, "InverseName", ua.VariantType.LocalizedText)
         self._add_node_attr(item, nodedata, "IsAbstract", ua.VariantType.Boolean)
         self._add_node_attr(item, nodedata, "MinimumSamplingInterval", ua.VariantType.Double)
-        self._add_node_attr(item, nodedata, "NodeClass", ua.VariantType.UInt32)
+        self._add_node_attr(item, nodedata, "NodeClass", ua.VariantType.Int32)
         self._add_node_attr(item, nodedata, "NodeId", ua.VariantType.NodeId)
         self._add_node_attr(item, nodedata, "Symmetric", ua.VariantType.Boolean)
         self._add_node_attr(item, nodedata, "UserAccessLevel", ua.VariantType.Byte)
