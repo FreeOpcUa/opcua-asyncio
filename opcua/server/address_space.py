@@ -335,7 +335,7 @@ class NodeManagementService(object):
 
     def _delete_node_callbacks(self, nodedata):
         if ua.AttributeIds.Value in nodedata.attributes:
-            for handle, callback in nodedata.attributes[ua.AttributeIds.Value].datachange_callbacks.items():
+            for handle, callback in list(nodedata.attributes[ua.AttributeIds.Value].datachange_callbacks.items()):
                 try:
                     callback(handle, None, ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
                     self._aspace.delete_datachange_callback(handle)
