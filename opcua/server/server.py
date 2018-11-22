@@ -115,7 +115,7 @@ class Server:
         """
         load server certificate from file, either pem or der
         """
-        self.iserver.certificate = await uacrypto.load_certificate(path)
+        self.certificate = await uacrypto.load_certificate(path)
 
     async def load_private_key(self, path):
         self.iserver.private_key = await uacrypto.load_private_key(path)
@@ -242,7 +242,7 @@ class Server:
             self._policies = [ua.SecurityPolicyFactory()]
 
         if self._security_policy != [ua.SecurityPolicyType.NoSecurity]:
-            if not (self.iserver.certificate and self.iserver.private_key):
+            if not (self.certificate and self.iserver.private_key):
                 self.logger.warning("Endpoints other than open requested but private key and certificate are not set.")
                 return
 
@@ -254,7 +254,7 @@ class Server:
                                     ua.MessageSecurityMode.SignAndEncrypt)
                 self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
                                                                ua.MessageSecurityMode.SignAndEncrypt,
-                                                               self.iserver.certificate,
+                                                               self.certificate,
                                                                self.iserver.private_key)
                                      )
             if ua.SecurityPolicyType.Basic256Sha256_Sign in self._security_policy:
@@ -262,7 +262,7 @@ class Server:
                                     ua.MessageSecurityMode.Sign)
                 self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
                                                                ua.MessageSecurityMode.Sign,
-                                                               self.iserver.certificate,
+                                                               self.certificate,
                                                                self.iserver.private_key)
                                      )
 
@@ -296,8 +296,8 @@ class Server:
         edp = ua.EndpointDescription()
         edp.EndpointUrl = self.endpoint.geturl()
         edp.Server = appdesc
-        if self.iserver.certificate:
-            edp.ServerCertificate = uacrypto.der_from_x509(self.iserver.certificate)
+        if self.certificate:
+            edp.ServerCertificate = uacrypto.der_from_x509(self.certificate)
         edp.SecurityMode = mode
         edp.SecurityPolicyUri = policy.URI
         edp.UserIdentityTokens = idtokens
