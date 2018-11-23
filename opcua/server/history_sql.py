@@ -119,7 +119,7 @@ class HistorySQLite(HistoryStorageInterface):
                 for row in rows:
                     # rebuild the data value object
                     dv = ua.DataValue(variant_from_binary(Buffer(row[6])))
-                    dv.SourceTimestamp = row[1]
+                    dv.ServerTimestamp = row[1]
                     dv.SourceTimestamp = row[2]
                     dv.StatusCode = ua.StatusCode(row[3])
                     results.append(dv)
