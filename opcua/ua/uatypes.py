@@ -508,13 +508,23 @@ class LocalizedText(FrozenClass):
 
     def __init__(self, text=None):
         self.Encoding = 0
-        if text is not None and not isinstance(text, str):
-            raise ValueError(f"A LocalizedText object takes a string as argument, not a {text}, {type(text)}")
-        self.Text = text
-        if self.Text:
-            self.Encoding |= (1 << 1)
+        self._text = None
+        if text:
+            self.Text = text
         self.Locale = None
         self._freeze = True
+
+    @property
+    def Text(self):
+        return self._text
+
+    @Text.setter
+    def Text(self, text):
+        if not isinstance(text, str):
+            raise ValueError("A LocalizedText object takes a string as argument, not a {}, {}".format(type(text), text))
+        self._text = text
+        if self._text:
+            self.Encoding |= (1 << 1)
 
     def to_string(self):
         # FIXME: use local
