@@ -213,14 +213,13 @@ class MonitoredItemService:
             return False
 
     def trigger_event(self, event):
-        # with self._lock:
-        if event.SourceNode not in self._monitored_events:
+        if event.emitting_node not in self._monitored_events:
             self.logger.debug("%s has no subscription for events %s from node: %s",
-                self, event, event.SourceNode)
+                self, event, event.emitting_node)
             return False
         self.logger.debug("%s has subscription for events %s from node: %s",
-            self, event, event.SourceNode)
-        mids = self._monitored_events[event.SourceNode]
+            self, event, event.emitting_node)
+        mids = self._monitored_events[event.emitting_node]
         for mid in mids:
             self._trigger_event(event, mid)
 

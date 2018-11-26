@@ -4,7 +4,7 @@ import uuid
 
 from opcua import ua
 from opcua import Node
-from ..common import get_event_obj_from_type_node, BaseEvent
+from opcua.common import events, event_object
 
 __all__ = ["EventGenerator"]
 
@@ -27,11 +27,9 @@ class EventGenerator:
         self.isession = isession
         self.event = None
 
-    async def init(self, etype=None):
-        if not etype:
-            etype = BaseEvent()
-        node = None
-        if isinstance(etype, BaseEvent):
+    async def init(self, etype=None, emitting_node=ua.ObjectIds.Server):
+
+        if isinstance(etype, event_objects.BaseEvent):
             self.event = etype
         elif isinstance(etype, Node):
             node = etype
@@ -40,41 +38,36 @@ class EventGenerator:
         else:
             node = Node(self.isession, ua.NodeId(etype))
         if node:
-            self.event = await get_event_obj_from_type_node(node)
+            self.event = await events.get_event_obj_from_type_node(node)
 
-    async def set_source(self, source=ua.ObjectIds.Server):
-        if isinstance(source, Node):
+        if isinstance(emitting_node, Node):
             pass
-        elif isinstance(source, ua.NodeId):
-            source = Node(self.isession, source)
+        elif isinstance(emitting_node, ua.NodeId):
+            emitting_node = Node(isession, emitting_node)
         else:
-            source = Node(self.isession, ua.NodeId(source))
+            emitting_node = Node(isession, ua.NodeId(emitting_node))
 
-        if self.event.SourceNode:
-            if source.nodeid != self.event.SourceNode:
-                self.logger.warning(
-                    "Source NodeId: '%s' and event SourceNode: '%s' are not the same. Using '%s' as SourceNode",
-                    str(source.nodeid), str(self.event.SourceNode), str(self.event.SourceNode))
-                source = Node(self.isession, self.event.SourceNode)
+        if not self.event.SourceNode:
+            self.event.SourceNode = emitting_node.nodeid
+            self.event.SourceName = (await emitting_node.get_browse_name()).Name
 
-        self.event.SourceNode = source.nodeid
-        self.event.SourceName = (await source.get_browse_name()).Name
-
-        await source.set_event_notifier([ua.EventNotifier.SubscribeToEvents])
+        await emitting_node.set_event_notifier([ua.EventNotifier.SubscribeToEvents])
         refs = []
         ref = ua.AddReferencesItem()
         ref.IsForward = True
         ref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.GeneratesEvent)
-        ref.SourceNodeId = source.nodeid
+        ref.SourceNodeId = emitting_node.nodeid
         ref.TargetNodeClass = ua.NodeClass.ObjectType
         ref.TargetNodeId = self.event.EventType
         refs.append(ref)
         results = await self.isession.add_references(refs)
         # result.StatusCode.check()
 
+        self.emitting_node = emitting_node
+
     def __str__(self):
-        return "EventGenerator(Type:{0}, Source:{1}, Time:{2}, Message: {3})".format(self.event.EventType,
-                                                                                 self.event.SourceNode,
+        return "EventGenerator(Type:{0}, Emitting Node:{1}, Time:{2}, Message: {3})".format(self.event.EventType,
+                                                                                 self.emitting_node,
                                                                                  self.event.Time,
                                                                                  self.event.Message)
     __repr__ = __str__

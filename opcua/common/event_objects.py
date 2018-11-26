@@ -12,8 +12,8 @@ class BaseEvent(Event):
     """
     BaseEvent: The base type for all events.
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        Event.__init__(self)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.NodeId(ua.ObjectIds.Server)):
+        super(BaseEvent, self).__init__(emitting_node=emitting_node)
         self.add_property('EventId', None, ua.VariantType.ByteString)
         self.add_property('EventType', ua.NodeId(ua.ObjectIds.BaseEventType), ua.VariantType.NodeId)
         self.add_property('SourceNode', sourcenode, ua.VariantType.NodeId)
@@ -28,8 +28,8 @@ class AuditEvent(BaseEvent):
     """
     AuditEvent: A base type for events used to track client initiated changes to the server state.
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditEventType)
         self.add_property('ActionTimeStamp', None, ua.NodeId(ua.ObjectIds.UtcTime))
         self.add_property('Status', False, ua.VariantType.Boolean)
@@ -41,8 +41,8 @@ class AuditSecurityEvent(AuditEvent):
     """
     AuditSecurityEvent: A base type for events used to track security related changes.
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditSecurityEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditSecurityEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditSecurityEventType)
         self.add_property('StatusCodeId', None, ua.VariantType.StatusCode)
 
@@ -50,8 +50,8 @@ class AuditChannelEvent(AuditSecurityEvent):
     """
     AuditChannelEvent: A base type for events used to track related changes to a secure channel.
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditChannelEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditChannelEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditChannelEventType)
         self.add_property('SecureChannelId', None, ua.VariantType.String)
 
@@ -59,8 +59,8 @@ class AuditOpenSecureChannelEvent(AuditChannelEvent):
     """
     AuditOpenSecureChannelEvent: An event that is raised when a secure channel is opened.
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditOpenSecureChannelEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditOpenSecureChannelEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditOpenSecureChannelEventType)
         self.add_property('ClientCertificate', None, ua.VariantType.ByteString)
         self.add_property('ClientCertificateThumbprint', None, ua.VariantType.String)
@@ -73,8 +73,8 @@ class AuditSessionEvent(AuditSecurityEvent):
     """
     AuditSessionEvent: A base type for events used to track related changes to a session.
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditSessionEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditSessionEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditSessionEventType)
         self.add_property('SessionId', ua.NodeId(ua.ObjectIds.AuditSessionEventType), ua.VariantType.NodeId)
 
@@ -82,8 +82,8 @@ class AuditCreateSessionEvent(AuditSessionEvent):
     """
     AuditCreateSessionEvent: An event that is raised when a session is created.
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditCreateSessionEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditCreateSessionEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditCreateSessionEventType)
         self.add_property('SecureChannelId', None, ua.VariantType.String)
         self.add_property('ClientCertificate', None, ua.VariantType.ByteString)
@@ -94,8 +94,8 @@ class AuditActivateSessionEvent(AuditSessionEvent):
     """
     AuditActivateSessionEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditActivateSessionEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditActivateSessionEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditActivateSessionEventType)
         self.add_property('ClientSoftwareCertificates', None, ua.NodeId(ua.ObjectIds.SignedSoftwareCertificate))
         self.add_property('UserIdentityToken', None, ua.NodeId(ua.ObjectIds.UserIdentityToken))
@@ -105,8 +105,8 @@ class AuditCancelEvent(AuditSessionEvent):
     """
     AuditCancelEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditCancelEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditCancelEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditCancelEventType)
         self.add_property('RequestHandle', None, ua.VariantType.UInt32)
 
@@ -114,8 +114,8 @@ class AuditCertificateEvent(AuditSecurityEvent):
     """
     AuditCertificateEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditCertificateEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditCertificateEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditCertificateEventType)
         self.add_property('Certificate', None, ua.VariantType.ByteString)
 
@@ -123,8 +123,8 @@ class AuditCertificateDataMismatchEvent(AuditCertificateEvent):
     """
     AuditCertificateDataMismatchEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditCertificateDataMismatchEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditCertificateDataMismatchEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditCertificateDataMismatchEventType)
         self.add_property('InvalidHostname', None, ua.VariantType.String)
         self.add_property('InvalidUri', None, ua.VariantType.String)
@@ -133,56 +133,56 @@ class AuditCertificateExpiredEvent(AuditCertificateEvent):
     """
     AuditCertificateExpiredEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditCertificateExpiredEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditCertificateExpiredEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditCertificateExpiredEventType)
 
 class AuditCertificateInvalidEvent(AuditCertificateEvent):
     """
     AuditCertificateInvalidEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditCertificateInvalidEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditCertificateInvalidEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditCertificateInvalidEventType)
 
 class AuditCertificateUntrustedEvent(AuditCertificateEvent):
     """
     AuditCertificateUntrustedEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditCertificateUntrustedEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditCertificateUntrustedEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditCertificateUntrustedEventType)
 
 class AuditCertificateRevokedEvent(AuditCertificateEvent):
     """
     AuditCertificateRevokedEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditCertificateRevokedEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditCertificateRevokedEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditCertificateRevokedEventType)
 
 class AuditCertificateMismatchEvent(AuditCertificateEvent):
     """
     AuditCertificateMismatchEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditCertificateMismatchEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditCertificateMismatchEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditCertificateMismatchEventType)
 
 class AuditNodeManagementEvent(AuditEvent):
     """
     AuditNodeManagementEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditNodeManagementEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditNodeManagementEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditNodeManagementEventType)
 
 class AuditAddNodesEvent(AuditNodeManagementEvent):
     """
     AuditAddNodesEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditAddNodesEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditAddNodesEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditAddNodesEventType)
         self.add_property('NodesToAdd', None, ua.NodeId(ua.ObjectIds.AddNodesItem))
 
@@ -190,8 +190,8 @@ class AuditDeleteNodesEvent(AuditNodeManagementEvent):
     """
     AuditDeleteNodesEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditDeleteNodesEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditDeleteNodesEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditDeleteNodesEventType)
         self.add_property('NodesToDelete', None, ua.NodeId(ua.ObjectIds.DeleteNodesItem))
 
@@ -199,8 +199,8 @@ class AuditAddReferencesEvent(AuditNodeManagementEvent):
     """
     AuditAddReferencesEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditAddReferencesEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditAddReferencesEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditAddReferencesEventType)
         self.add_property('ReferencesToAdd', None, ua.NodeId(ua.ObjectIds.AddReferencesItem))
 
@@ -208,8 +208,8 @@ class AuditDeleteReferencesEvent(AuditNodeManagementEvent):
     """
     AuditDeleteReferencesEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditDeleteReferencesEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditDeleteReferencesEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditDeleteReferencesEventType)
         self.add_property('ReferencesToDelete', None, ua.NodeId(ua.ObjectIds.DeleteReferencesItem))
 
@@ -217,16 +217,16 @@ class AuditUpdateEvent(AuditEvent):
     """
     AuditUpdateEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditUpdateEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditUpdateEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditUpdateEventType)
 
 class AuditWriteUpdateEvent(AuditUpdateEvent):
     """
     AuditWriteUpdateEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditWriteUpdateEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditWriteUpdateEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditWriteUpdateEventType)
         self.add_property('AttributeId', None, ua.VariantType.UInt32)
         self.add_property('IndexRange', None, ua.NodeId(ua.ObjectIds.NumericRange))
@@ -237,8 +237,8 @@ class AuditHistoryUpdateEvent(AuditUpdateEvent):
     """
     AuditHistoryUpdateEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditHistoryUpdateEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditHistoryUpdateEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryUpdateEventType)
         self.add_property('ParameterDataTypeId', ua.NodeId(ua.ObjectIds.AuditHistoryUpdateEventType), ua.VariantType.NodeId)
 
@@ -246,8 +246,8 @@ class AuditUpdateMethodEvent(AuditEvent):
     """
     AuditUpdateMethodEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditUpdateMethodEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditUpdateMethodEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditUpdateMethodEventType)
         self.add_property('MethodId', ua.NodeId(ua.ObjectIds.AuditUpdateMethodEventType), ua.VariantType.NodeId)
         self.add_property('InputArguments', None, ua.VariantType.Variant)
@@ -256,32 +256,32 @@ class SystemEvent(BaseEvent):
     """
     SystemEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(SystemEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(SystemEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.SystemEventType)
 
 class DeviceFailureEvent(SystemEvent):
     """
     DeviceFailureEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(DeviceFailureEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(DeviceFailureEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.DeviceFailureEventType)
 
 class BaseModelChangeEvent(BaseEvent):
     """
     BaseModelChangeEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(BaseModelChangeEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(BaseModelChangeEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.BaseModelChangeEventType)
 
 class GeneralModelChangeEvent(BaseModelChangeEvent):
     """
     GeneralModelChangeEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(GeneralModelChangeEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(GeneralModelChangeEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.GeneralModelChangeEventType)
         self.add_property('Changes', None, ua.NodeId(ua.ObjectIds.ModelChangeStructureDataType))
 
@@ -289,16 +289,16 @@ class TransitionEvent(BaseEvent):
     """
     TransitionEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(TransitionEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(TransitionEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.TransitionEventType)
 
 class AuditUpdateStateEvent(AuditUpdateMethodEvent):
     """
     AuditUpdateStateEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditUpdateStateEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditUpdateStateEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditUpdateStateEventType)
         self.add_property('OldStateId', None, ua.VariantType.Variant)
         self.add_property('NewStateId', None, ua.VariantType.Variant)
@@ -307,8 +307,8 @@ class ProgramTransitionEvent(TransitionEvent):
     """
     ProgramTransitionEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(ProgramTransitionEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(ProgramTransitionEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.ProgramTransitionEventType)
         self.add_property('IntermediateResult', None, ua.VariantType.Variant)
 
@@ -316,8 +316,8 @@ class SemanticChangeEvent(BaseModelChangeEvent):
     """
     SemanticChangeEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(SemanticChangeEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(SemanticChangeEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.SemanticChangeEventType)
         self.add_property('Changes', None, ua.NodeId(ua.ObjectIds.SemanticChangeStructureDataType))
 
@@ -325,8 +325,8 @@ class AuditUrlMismatchEvent(AuditCreateSessionEvent):
     """
     AuditUrlMismatchEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditUrlMismatchEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditUrlMismatchEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditUrlMismatchEventType)
         self.add_property('EndpointUrl', None, ua.VariantType.String)
 
@@ -334,48 +334,48 @@ class RefreshStartEvent(SystemEvent):
     """
     RefreshStartEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(RefreshStartEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(RefreshStartEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.RefreshStartEventType)
 
 class RefreshEndEvent(SystemEvent):
     """
     RefreshEndEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(RefreshEndEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(RefreshEndEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.RefreshEndEventType)
 
 class RefreshRequiredEvent(SystemEvent):
     """
     RefreshRequiredEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(RefreshRequiredEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(RefreshRequiredEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.RefreshRequiredEventType)
 
 class AuditConditionEvent(AuditUpdateMethodEvent):
     """
     AuditConditionEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionEventType)
 
 class AuditConditionEnableEvent(AuditConditionEvent):
     """
     AuditConditionEnableEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionEnableEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionEnableEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionEnableEventType)
 
 class AuditConditionCommentEvent(AuditConditionEvent):
     """
     AuditConditionCommentEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionCommentEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionCommentEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionCommentEventType)
         self.add_property('ConditionEventId', None, ua.VariantType.ByteString)
         self.add_property('Comment', None, ua.VariantType.LocalizedText)
@@ -384,8 +384,8 @@ class AuditHistoryEventUpdateEvent(AuditHistoryUpdateEvent):
     """
     AuditHistoryEventUpdateEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditHistoryEventUpdateEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditHistoryEventUpdateEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryEventUpdateEventType)
         self.add_property('UpdatedNode', ua.NodeId(ua.ObjectIds.AuditHistoryEventUpdateEventType), ua.VariantType.NodeId)
         self.add_property('PerformInsertReplace', None, ua.NodeId(ua.ObjectIds.PerformUpdateType))
@@ -397,8 +397,8 @@ class AuditHistoryValueUpdateEvent(AuditHistoryUpdateEvent):
     """
     AuditHistoryValueUpdateEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditHistoryValueUpdateEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditHistoryValueUpdateEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryValueUpdateEventType)
         self.add_property('UpdatedNode', ua.NodeId(ua.ObjectIds.AuditHistoryValueUpdateEventType), ua.VariantType.NodeId)
         self.add_property('PerformInsertReplace', None, ua.NodeId(ua.ObjectIds.PerformUpdateType))
@@ -409,8 +409,8 @@ class AuditHistoryDeleteEvent(AuditHistoryUpdateEvent):
     """
     AuditHistoryDeleteEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditHistoryDeleteEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditHistoryDeleteEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryDeleteEventType)
         self.add_property('UpdatedNode', ua.NodeId(ua.ObjectIds.AuditHistoryDeleteEventType), ua.VariantType.NodeId)
 
@@ -418,8 +418,8 @@ class AuditHistoryRawModifyDeleteEvent(AuditHistoryDeleteEvent):
     """
     AuditHistoryRawModifyDeleteEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditHistoryRawModifyDeleteEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditHistoryRawModifyDeleteEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryRawModifyDeleteEventType)
         self.add_property('IsDeleteModified', None, ua.VariantType.Boolean)
         self.add_property('StartTime', None, ua.VariantType.DateTime)
@@ -430,8 +430,8 @@ class AuditHistoryAtTimeDeleteEvent(AuditHistoryDeleteEvent):
     """
     AuditHistoryAtTimeDeleteEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditHistoryAtTimeDeleteEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditHistoryAtTimeDeleteEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryAtTimeDeleteEventType)
         self.add_property('ReqTimes', None, ua.NodeId(ua.ObjectIds.UtcTime))
         self.add_property('OldValues', None, ua.NodeId(ua.ObjectIds.DataValue))
@@ -440,8 +440,8 @@ class AuditHistoryEventDeleteEvent(AuditHistoryDeleteEvent):
     """
     AuditHistoryEventDeleteEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditHistoryEventDeleteEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditHistoryEventDeleteEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryEventDeleteEventType)
         self.add_property('EventIds', None, ua.VariantType.ByteString)
         self.add_property('OldValues', None, ua.NodeId(ua.ObjectIds.HistoryEventFieldList))
@@ -450,24 +450,24 @@ class EventQueueOverflowEvent(BaseEvent):
     """
     EventQueueOverflowEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(EventQueueOverflowEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(EventQueueOverflowEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.EventQueueOverflowEventType)
 
 class ProgramTransitionAuditEvent(AuditUpdateStateEvent):
     """
     ProgramTransitionAuditEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(ProgramTransitionAuditEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(ProgramTransitionAuditEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.ProgramTransitionAuditEventType)
 
 class AuditConditionRespondEvent(AuditConditionEvent):
     """
     AuditConditionRespondEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionRespondEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionRespondEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionRespondEventType)
         self.add_property('SelectedResponse', None, ua.VariantType.Int32)
 
@@ -475,8 +475,8 @@ class AuditConditionAcknowledgeEvent(AuditConditionEvent):
     """
     AuditConditionAcknowledgeEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionAcknowledgeEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionAcknowledgeEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionAcknowledgeEventType)
         self.add_property('ConditionEventId', None, ua.VariantType.ByteString)
         self.add_property('Comment', None, ua.VariantType.LocalizedText)
@@ -485,8 +485,8 @@ class AuditConditionConfirmEvent(AuditConditionEvent):
     """
     AuditConditionConfirmEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionConfirmEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionConfirmEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionConfirmEventType)
         self.add_property('ConditionEventId', None, ua.VariantType.ByteString)
         self.add_property('Comment', None, ua.VariantType.LocalizedText)
@@ -495,8 +495,8 @@ class AuditConditionShelvingEvent(AuditConditionEvent):
     """
     AuditConditionShelvingEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionShelvingEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionShelvingEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionShelvingEventType)
         self.add_property('ShelvingTime', None, ua.VariantType.DateTime)
 
@@ -504,8 +504,8 @@ class ProgressEvent(BaseEvent):
     """
     ProgressEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(ProgressEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(ProgressEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.ProgressEventType)
         self.add_property('Context', None, ua.VariantType.Variant)
         self.add_property('Progress', None, ua.VariantType.UInt16)
@@ -514,8 +514,8 @@ class SystemStatusChangeEvent(SystemEvent):
     """
     SystemStatusChangeEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(SystemStatusChangeEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(SystemStatusChangeEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.SystemStatusChangeEventType)
         self.add_property('SystemState', None, ua.NodeId(ua.ObjectIds.ServerState))
 
@@ -523,8 +523,8 @@ class AuditProgramTransitionEvent(AuditUpdateStateEvent):
     """
     AuditProgramTransitionEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditProgramTransitionEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditProgramTransitionEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditProgramTransitionEventType)
         self.add_property('TransitionNumber', None, ua.VariantType.UInt32)
 
@@ -532,16 +532,16 @@ class TrustListUpdatedAuditEvent(AuditUpdateMethodEvent):
     """
     TrustListUpdatedAuditEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(TrustListUpdatedAuditEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(TrustListUpdatedAuditEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.TrustListUpdatedAuditEventType)
 
 class CertificateUpdatedAuditEvent(AuditUpdateMethodEvent):
     """
     CertificateUpdatedAuditEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(CertificateUpdatedAuditEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(CertificateUpdatedAuditEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.CertificateUpdatedAuditEventType)
         self.add_property('CertificateGroup', ua.NodeId(ua.ObjectIds.CertificateUpdatedAuditEventType), ua.VariantType.NodeId)
         self.add_property('CertificateType', ua.NodeId(ua.ObjectIds.CertificateUpdatedAuditEventType), ua.VariantType.NodeId)
@@ -550,16 +550,16 @@ class AuditConditionResetEvent(AuditConditionEvent):
     """
     AuditConditionResetEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionResetEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionResetEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionResetEventType)
 
 class PubSubStatusEvent(SystemEvent):
     """
     PubSubStatusEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(PubSubStatusEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(PubSubStatusEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.PubSubStatusEventType)
         self.add_property('ConnectionId', ua.NodeId(ua.ObjectIds.PubSubStatusEventType), ua.VariantType.NodeId)
         self.add_property('GroupId', ua.NodeId(ua.ObjectIds.PubSubStatusEventType), ua.VariantType.NodeId)
@@ -569,8 +569,8 @@ class PubSubTransportLimitsExceedEvent(PubSubStatusEvent):
     """
     PubSubTransportLimitsExceedEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(PubSubTransportLimitsExceedEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(PubSubTransportLimitsExceedEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.PubSubTransportLimitsExceedEventType)
         self.add_property('Actual', None, ua.VariantType.UInt32)
         self.add_property('Maximum', None, ua.VariantType.UInt32)
@@ -579,8 +579,8 @@ class PubSubCommunicationFailureEvent(PubSubStatusEvent):
     """
     PubSubCommunicationFailureEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(PubSubCommunicationFailureEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(PubSubCommunicationFailureEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.PubSubCommunicationFailureEventType)
         self.add_property('Error', None, ua.VariantType.StatusCode)
 
@@ -588,40 +588,40 @@ class AuditConditionSuppressEvent(AuditConditionEvent):
     """
     AuditConditionSuppressEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionSuppressEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionSuppressEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionSuppressEventType)
 
 class AuditConditionSilenceEvent(AuditConditionEvent):
     """
     AuditConditionSilenceEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionSilenceEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionSilenceEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionSilenceEventType)
 
 class AuditConditionOutOfServiceEvent(AuditConditionEvent):
     """
     AuditConditionOutOfServiceEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(AuditConditionOutOfServiceEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(AuditConditionOutOfServiceEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditConditionOutOfServiceEventType)
 
 class RoleMappingRuleChangedAuditEvent(AuditUpdateMethodEvent):
     """
     RoleMappingRuleChangedAuditEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(RoleMappingRuleChangedAuditEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(RoleMappingRuleChangedAuditEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.RoleMappingRuleChangedAuditEventType)
 
 class KeyCredentialAuditEvent(AuditUpdateMethodEvent):
     """
     KeyCredentialAuditEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(KeyCredentialAuditEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(KeyCredentialAuditEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.KeyCredentialAuditEventType)
         self.add_property('ResourceUri', None, ua.VariantType.String)
 
@@ -629,16 +629,16 @@ class KeyCredentialUpdatedAuditEvent(KeyCredentialAuditEvent):
     """
     KeyCredentialUpdatedAuditEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(KeyCredentialUpdatedAuditEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(KeyCredentialUpdatedAuditEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.KeyCredentialUpdatedAuditEventType)
 
 class KeyCredentialDeletedAuditEvent(KeyCredentialAuditEvent):
     """
     KeyCredentialDeletedAuditEvent:
     """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(KeyCredentialDeletedAuditEvent, self).__init__(sourcenode, message, severity)
+    def __init__(self, sourcenode=None, message=None, severity=1, emitting_node=ua.ObjectIds.Server):
+        super(KeyCredentialDeletedAuditEvent, self).__init__(sourcenode, message, severity, emitting_node=emitting_node)
         self.EventType = ua.NodeId(ua.ObjectIds.KeyCredentialDeletedAuditEventType)
 
 
