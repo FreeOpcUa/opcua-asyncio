@@ -373,11 +373,13 @@ class SubscriptionTests(object):
     def test_events_MyObject(self):
         objects = self.srv.get_objects_node()
         o = objects.add_object(3, 'MyObject')
-        evgen = self.srv.get_event_generator(source=o)
+        evgen = self.srv.get_event_generator()
+        evgen.event.SourceNode=o.nodeid
+        evgen.event.SourceName=o.get_browse_name().Name
 
         myhandler = MySubHandler()
         sub = self.opc.create_subscription(100, myhandler)
-        handle = sub.subscribe_events(o)
+        handle = sub.subscribe_events()
 
         tid = datetime.utcnow()
         msg = "this is my msg "
@@ -399,7 +401,7 @@ class SubscriptionTests(object):
     def test_events_wrong_source(self):
         objects = self.srv.get_objects_node()
         o = objects.add_object(3, 'MyObject')
-        evgen = self.srv.get_event_generator(source=o)
+        evgen = self.srv.get_event_generator(emitting_node=o)
 
         myhandler = MySubHandler()
         sub = self.opc.create_subscription(100, myhandler)
@@ -422,7 +424,7 @@ class SubscriptionTests(object):
 
         myhandler = MySubHandler()
         sub = self.opc.create_subscription(100, myhandler)
-        handle = sub.subscribe_events(evtypes=etype)
+        handle = sub.subscribe_events(sourcenode=ua.ObjectIds.Server, evtypes=etype)
 
         propertynum = 2
         propertystring = "This is my test"
@@ -453,16 +455,18 @@ class SubscriptionTests(object):
         objects = self.srv.get_objects_node()
         o = objects.add_object(3, 'MyObject')
         etype = self.srv.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType, [('PropertyNum', ua.VariantType.Float), ('PropertyString', ua.VariantType.String)])
-        evgen = self.srv.get_event_generator(etype, o)
+        evgen = self.srv.get_event_generator(etype, emitting_node=o)
+        evgen.event.SourceNode = o.nodeid
 
         myhandler = MySubHandler()
         sub = self.opc.create_subscription(100, myhandler)
-        handle = sub.subscribe_events(o, etype)
+        handle = sub.subscribe_events(sourcenode=o, evtypes=etype)
 
         propertynum = 2
         propertystring = "This is my test"
         evgen.event.PropertyNum = propertynum
         evgen.event.PropertyString = propertystring
+        evgen.event.SourceNode = o.nodeid
         tid = datetime.utcnow()
         msg = "this is my msg "
         evgen.trigger(tid, msg)
