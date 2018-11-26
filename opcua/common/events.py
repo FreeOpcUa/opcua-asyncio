@@ -65,7 +65,7 @@ class Event:
     def to_event_fields_using_subscription_fields(self, select_clauses):
         """
         Using a new select_clauses and the original select_clauses
-        used during subscription, return a field list 
+        used during subscription, return a field list
         """
         fields = []
         for sattr in select_clauses:
