@@ -590,9 +590,10 @@ class Node:
         """
         Delete node from address space
         """
-        results = await delete_nodes(self.server, [self], recursive, delete_references)
+        nodes, results = await delete_nodes(self.server, [self], recursive, delete_references)
         for r in results:
             r.check()
+        return nodes
 
     def _fill_delete_reference_item(self, rdesc, bidirectional=False):
         ditem = ua.DeleteReferencesItem()

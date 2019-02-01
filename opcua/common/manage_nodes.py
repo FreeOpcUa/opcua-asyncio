@@ -410,6 +410,7 @@ async def delete_nodes(server, nodes, recursive=False, delete_target_references=
     """
     Delete specified nodes. Optionally delete recursively all nodes with a
     downward hierachic references to the node
+    return the list of deleted node and the result
     """
     nodestodelete = []
     if recursive:
@@ -421,7 +422,7 @@ async def delete_nodes(server, nodes, recursive=False, delete_target_references=
         nodestodelete.append(it)
     params = ua.DeleteNodesParameters()
     params.NodesToDelete = nodestodelete
-    return await server.delete_nodes(params)
+    return nodes, await server.delete_nodes(params)
 
 
 async def _add_childs(nodes):
