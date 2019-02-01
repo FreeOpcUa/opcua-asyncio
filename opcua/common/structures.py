@@ -81,6 +81,10 @@ class Struct(object):
         self.fields = []
         self.typeid = None
 
+    def __str__(self):
+        return "Struct(name={}, fields={}".format(self.name, self.fields)
+    __repr__ = __str__
+
     def get_code(self):
         code = f"""
 
@@ -116,6 +120,10 @@ class Field(object):
         self.uatype = None
         self.value = None
         self.array = False
+
+    def __str__(self):
+        return "Field(name={}, uatype={}".format(self.name, self.uatype)
+    __repr__ = __str__
 
 
 class StructGenerator(object):
