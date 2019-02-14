@@ -79,14 +79,14 @@ class Server:
         self.private_key = None
         self._policies = []
         self.nodes = Shortcuts(self.iserver.isession)
+        # enable all endpoints by default
         self._security_policy = [
-            ua.SecurityPolicyType.NoSecurity,
-            ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt,
-            ua.SecurityPolicyType.Basic128Rsa15_Sign,
-            ua.SecurityPolicyType.Basic256_SignAndEncrypt,
-            ua.SecurityPolicyType.Basic256_Sign
-        ]
-        self._policyIDs = ["Anonymous", "Basic256", "Basic128", "Username"]
+                        ua.SecurityPolicyType.NoSecurity,
+                        ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
+                        ua.SecurityPolicyType.Basic256Sha256_Sign
+                                ]
+        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
+
 
     async def init(self, shelf_file=None):
         await self.iserver.init(shelf_file)
@@ -106,13 +106,6 @@ class Server:
         status.SecondsTillShutdown = 0
         await status_node.set_value(status)
         await build_node.set_value(status.BuildInfo)
-        # enable all endpoints by default
-        self._security_policy = [
-                        ua.SecurityPolicyType.NoSecurity,
-                        ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
-                        ua.SecurityPolicyType.Basic256Sha256_Sign
-                                ]
-        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
 
     async def __aenter__(self):
         await self.start()
@@ -214,47 +207,22 @@ class Server:
         to the server, where security_policy is a list of integers.
         During server initialization, all endpoints are enabled:
 
-<<<<<<< HEAD
-            security_policy = [
-                        ua.SecurityPolicyType.NoSecurity,
-                        ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt,
-                        ua.SecurityPolicyType.Basic128Rsa15_Sign,
-                        ua.SecurityPolicyType.Basic256_SignAndEncrypt,
-                        ua.SecurityPolicyType.Basic256_Sign
-                            ]
-=======
                 security_policy = [
                             ua.SecurityPolicyType.NoSecurity,
                             ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
                             ua.SecurityPolicyType.Basic256Sha256_Sign
                                 ]
->>>>>>> 10131b7... Added security policy Basic256Sha256
 
         E.g. to limit the number of endpoints and disable no encryption:
 
-<<<<<<< HEAD
-            set_security_policy([
-                        ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt
-                        ua.SecurityPolicyType.Basic256_SignAndEncrypt])
-=======
                 set_security_policy([
                             ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt])
->>>>>>> 10131b7... Added security policy Basic256Sha256
 
         """
         self._security_policy = security_policy
 
     def set_security_IDs(self, policyIDs):
         """
-<<<<<<< HEAD
-        Method setting up the security endpoints for identification
-        of clients. During server object initialization, all possible
-        endpoints are enabled:
-
-        self._policyIDs = ["Anonymous", "Basic256", "Basic128", "Username"]
-
-        E.g. to limit the number of IDs and disable anonymous clients:
-=======
             Method setting up the security endpoints for identification
             of clients. During server object initialization, all possible
             endpoints are enabled:
@@ -264,9 +232,6 @@ class Server:
             E.g. to limit the number of IDs and disable anonymous clients:
 
                 set_security_policy(["Basic256Sha256"])
->>>>>>> 10131b7... Added security policy Basic256Sha256
-
-            set_security_policy(["Basic256"])
 
         (Implementation for ID check is currently not finalized...)
         """
@@ -286,55 +251,22 @@ class Server:
             if ua.SecurityPolicyType.NoSecurity in self._security_policy:
                 self.logger.warning("Creating an open endpoint to the server, although encrypted endpoints are enabled.")
 
-<<<<<<< HEAD
-            if ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyBasic128Rsa15,
-                    ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15,
-=======
             if ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256,
                                     ua.MessageSecurityMode.SignAndEncrypt)
                 self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
->>>>>>> 10131b7... Added security policy Basic256Sha256
                                                                ua.MessageSecurityMode.SignAndEncrypt,
                                                                self.certificate,
                                                                self.private_key)
                                      )
-<<<<<<< HEAD
-            if ua.SecurityPolicyType.Basic128Rsa15_Sign in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyBasic128Rsa15,
-                    ua.MessageSecurityMode.Sign)
-                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15,
-=======
             if ua.SecurityPolicyType.Basic256Sha256_Sign in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256,
                                     ua.MessageSecurityMode.Sign)
                 self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
->>>>>>> 10131b7... Added security policy Basic256Sha256
                                                                ua.MessageSecurityMode.Sign,
                                                                self.certificate,
                                                                self.private_key)
                                      )
-<<<<<<< HEAD
-            if ua.SecurityPolicyType.Basic256_SignAndEncrypt in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyBasic256,
-                    ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256,
-                                                               ua.MessageSecurityMode.SignAndEncrypt,
-                                                               self.certificate,
-                                                               self.private_key)
-                                     )
-            if ua.SecurityPolicyType.Basic256_Sign in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyBasic256,
-                    ua.MessageSecurityMode.Sign)
-                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256,
-                    ua.MessageSecurityMode.Sign,
-                    self.certificate,
-                    self.private_key)
-                )
-=======
->>>>>>> 10131b7... Added security policy Basic256Sha256
 
     def _set_endpoints(self, policy=ua.SecurityPolicy, mode=ua.MessageSecurityMode.None_):
         idtokens = []
@@ -344,21 +276,9 @@ class Server:
             idtoken.TokenType = ua.UserTokenType.Anonymous
             idtokens.append(idtoken)
 
-<<<<<<< HEAD
-        if "Basic256" in self._policyIDs:
-            idtoken = ua.UserTokenPolicy()
-            idtoken.PolicyId = "certificate_basic256"
-            idtoken.TokenType = ua.UserTokenType.Certificate
-            idtokens.append(idtoken)
-
-        if "Basic128" in self._policyIDs:
-            idtoken = ua.UserTokenPolicy()
-            idtoken.PolicyId = "certificate_basic128"
-=======
         if "Basic256Sha256" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = 'certificate_basic256sha256'
->>>>>>> 10131b7... Added security policy Basic256Sha256
             idtoken.TokenType = ua.UserTokenType.Certificate
             idtokens.append(idtoken)
 
