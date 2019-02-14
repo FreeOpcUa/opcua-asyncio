@@ -449,7 +449,7 @@ class QualifiedName(FrozenClass):
 
     def __init__(self, name=None, namespaceidx=0):
         if not isinstance(namespaceidx, int):
-            raise UaError("namespaceidx must be an int")
+            raise UaError(f"namespaceidx must be an int not {namespaceidx} of type {type(namespaceidx)}")
         self.NamespaceIndex = namespaceidx
         self.Name = name
         self._freeze = True

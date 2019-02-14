@@ -30,14 +30,14 @@ def _to_camel_case(name):
 
 class OPCTypeDictionaryBuilder:
 
-    def __init__(self, idx_name):
+    def __init__(self, ns_urn):
         """
-        :param idx_name: name of the name space
+        :param ns_urn: name of the name space
         types in dict is created as opc:xxx, otherwise as tns:xxx
         """
-        head_attributes = {'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance', 'xmlns:tns': idx_name,
+        head_attributes = {'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance', 'xmlns:tns': ns_urn,
                            'DefaultByteOrder': 'LittleEndian', 'xmlns:opc': 'http://opcfoundation.org/BinarySchema/',
-                           'xmlns:ua': 'http://opcfoundation.org/UA/', 'TargetNamespace': idx_name}
+                           'xmlns:ua': 'http://opcfoundation.org/UA/', 'TargetNamespace': ns_urn}
 
         self.etree = Et.ElementTree(Et.Element('opc:TypeDictionary', head_attributes))
 
@@ -75,9 +75,9 @@ class OPCTypeDictionaryBuilder:
         if isinstance(type_name, Enum):
             type_name = type_name.name
         if is_array:
-            self._add_array_field(type_name, variable_name, struct_name)
+            self._add_array_field(variable_name, type_name, struct_name)
         else:
-            self._add_field(type_name, variable_name, struct_name)
+            self._add_field(variable_name, type_name, struct_name)
 
     def append_struct(self, name):
         appended_struct = Et.SubElement(self.etree.getroot(), 'opc:StructuredType')
@@ -120,16 +120,22 @@ def _reference_generator(source_id, target_id, reference_type, is_forward=True):
 
 class DataTypeDictionaryBuilder:
 
-    def __init__(self, server, idx, idx_name, dict_name):
+    def __init__(self, server, idx, ns_urn, dict_name):
         self._server = server
         self._session_server = server.get_root_node().server
         self._idx = idx
+        self.ns_urn = ns_urn
+        self.dict_name = dict_name
         # Risk of bugs using a fixed number without checking
         self._id_counter = 8000
-        self.dict_id = self._add_dictionary(dict_name)
-        self._type_dictionary = OPCTypeDictionaryBuilder(idx_name)
+        self.dict_id = None
+        self._type_dictionary = None
 
-    def _add_dictionary(self, name):
+    async def init(self):
+        self.dict_id = await self._add_dictionary(self.dict_name)
+        self._type_dictionary = OPCTypeDictionaryBuilder(self.ns_urn)
+
+    async def _add_dictionary(self, name):
         dictionary_node_id = self._nodeid_generator()
         node = ua.AddNodesItem()
         node.RequestedNewNodeId = dictionary_node_id
@@ -145,7 +151,7 @@ class DataTypeDictionaryBuilder:
         attrs.Value = ua.Variant(None, ua.VariantType.Null)
         attrs.ValueRank = -1
         node.NodeAttributes = attrs
-        self._session_server.add_nodes([node])
+        await self._session_server.add_nodes([node])
 
         return dictionary_node_id
 
@@ -153,7 +159,7 @@ class DataTypeDictionaryBuilder:
         self._id_counter += 1
         return ua.NodeId(self._id_counter, namespaceidx=self._idx, nodeidtype=ua.NodeIdType.Numeric)
 
-    def _link_nodes(self, linked_obj_node_id, data_type_node_id, description_node_id):
+    async def _link_nodes(self, linked_obj_node_id, data_type_node_id, description_node_id):
         """link the three node by their node ids according to UA standard"""
         refs = [
                 # add reverse reference to BaseDataType -> Structure
@@ -180,9 +186,9 @@ class DataTypeDictionaryBuilder:
                 # add reverse link to dictionary
                 _reference_generator(description_node_id, self.dict_id,
                                      ua.NodeId(ua.ObjectIds.HasComponent, 0), False)]
-        self._session_server.add_references(refs)
+        await self._session_server.add_references(refs)
 
-    def _create_data_type(self, type_name):
+    async def _create_data_type(self, type_name):
         name = _to_camel_case(type_name)
         # apply for new node id
         data_type_node_id = self._nodeid_generator()
@@ -228,22 +234,22 @@ class DataTypeDictionaryBuilder:
         obj_attributes.EventNotifier = 0
         obj_node.NodeAttributes = obj_attributes
 
-        self._session_server.add_nodes([dt_node, desc_node, obj_node])
-        self._link_nodes(bind_obj_node_id, data_type_node_id, description_node_id)
+        await self._session_server.add_nodes([dt_node, desc_node, obj_node])
+        await self._link_nodes(bind_obj_node_id, data_type_node_id, description_node_id)
 
         self._type_dictionary.append_struct(type_name)
         return StructNode(self, data_type_node_id, type_name)
 
-    def create_data_type(self, type_name):
-        return self._create_data_type(type_name)
+    async def create_data_type(self, type_name):
+        return await self._create_data_type(type_name)
 
     def add_field(self, type_name, variable_name, struct_name, is_array=False):
         self._type_dictionary.add_field(type_name, variable_name, struct_name, is_array)
 
-    def set_dict_byte_string(self):
+    async def set_dict_byte_string(self):
         dict_node = self._server.get_node(self.dict_id)
         value = self._type_dictionary.get_dict_value()
-        dict_node.set_value(value, ua.VariantType.ByteString)
+        await dict_node.set_value(value, ua.VariantType.ByteString)
 
 
 class StructNode:
