@@ -84,7 +84,7 @@ class Server:
                         ua.SecurityPolicyType.Basic256Sha256_Sign
                                 ]
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
-
+        self.certificate = None
 
     async def init(self, shelf_file=None):
         await self.iserver.init(shelf_file)
