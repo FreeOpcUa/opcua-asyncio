@@ -410,6 +410,7 @@ class Server:
         """
         if not etype:
             etype = BaseEvent()
+        ev_gen = EventGenerator(self.iserver.isession)
         await ev_gen.init(etype, emitting_node=emitting_node)
         return ev_gen
 

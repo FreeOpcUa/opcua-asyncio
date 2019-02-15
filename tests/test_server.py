@@ -229,19 +229,19 @@ async def test_eventgenerator_BaseEvent_Identifier(server):
 
 
 async def test_eventgenerator_sourceServer_Node(server):
-    evgen = await server.get_event_generator(source=opcua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.Server)))
+    evgen = await server.get_event_generator(emitting_node=opcua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.Server)))
     await check_eventgenerator_base_event(evgen, server)
     await check_eventgenerator_source_server(evgen, server)
 
 
 async def test_eventgenerator_sourceServer_NodeId(server):
-    evgen = await server.get_event_generator(source=ua.NodeId(ua.ObjectIds.Server))
+    evgen = await server.get_event_generator(emitting_node=ua.NodeId(ua.ObjectIds.Server))
     await check_eventgenerator_base_event(evgen, server)
     await check_eventgenerator_source_server(evgen, server)
 
 
 async def test_eventgenerator_sourceServer_ObjectIds(server):
-    evgen = await server.get_event_generator(source=ua.ObjectIds.Server)
+    evgen = await server.get_event_generator(emitting_node=ua.ObjectIds.Server)
     await check_eventgenerator_base_event(evgen, server)
     await check_eventgenerator_source_server(evgen, server)
 
@@ -249,7 +249,7 @@ async def test_eventgenerator_sourceServer_ObjectIds(server):
 async def test_eventgenerator_sourceMyObject(server):
     objects = server.get_objects_node()
     o = await objects.add_object(3, 'MyObject')
-    evgen = await server.get_event_generator(source=o)
+    evgen = await server.get_event_generator(emitting_node=o)
     await check_eventgenerator_base_event(evgen, server)
     await check_event_generator_object(evgen, o)
 
@@ -260,7 +260,7 @@ async def test_eventgenerator_source_collision(server):
     event = BaseEvent(sourcenode=o.nodeid)
     evgen = await server.get_event_generator(event, ua.ObjectIds.Server)
     await check_eventgenerator_base_event(evgen, server)
-    await check_event_generator_object(evgen, o)
+    await check_event_generator_object(evgen, o, emitting_node=opcua.Node(server.iserver.isession, ua.ObjectIds.Server))
 
 
 async def test_eventgenerator_inherited_event(server):
@@ -526,14 +526,18 @@ async def check_eventgenerator_source_server(evgen, server: Server):
     assert len(refs) >= 1
 
 
-async def check_event_generator_object(evgen, obj):
+async def check_event_generator_object(evgen, obj, emitting_node=None):
     assert evgen.event.SourceName == (await obj.get_browse_name()).Name
     assert evgen.event.SourceNode == obj.nodeid
-    assert await obj.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
-    refs = await obj.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward,
-                                          ua.NodeClass.ObjectType, False)
-    assert len(refs) == 1
-    assert refs[0].nodeid == evgen.event.EventType
+
+    if not emitting_node:
+        assert await obj.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+        refs = await obj.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
+    else:
+        assert await emitting_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+        refs = await emitting_node.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
+
+    assert evgen.event.EventType in [x.nodeid for x in refs]
 
 
 async def check_eventgenerator_base_event(evgen, server: Server):

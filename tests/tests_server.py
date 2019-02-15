@@ -526,47 +526,47 @@ def check_eventgenerator_SourceServer(test, evgen):
 
 
 def check_event_generator_object(test, evgen, obj, emitting_node=None):
-    test.assertEqual(evgen.event.SourceName, obj.get_browse_name().Name)
-    test.assertEqual(evgen.event.SourceNode, obj.nodeid)
+    assert evgen.event.SourceName == (await obj.get_browse_name()).Name
+    assert evgen.event.SourceNode == obj.nodeid)
     if not emitting_node:
-        test.assertEqual(obj.get_event_notifier(), {ua.EventNotifier.SubscribeToEvents})
-        refs = obj.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
+        assert await obj.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+        refs = await obj.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
     else:
-        test.assertEqual(emitting_node.get_event_notifier(), {ua.EventNotifier.SubscribeToEvents})
-        refs = emitting_node.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
+        assert await emitting_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+        refs = await emitting_node.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
 
-    test.assertIn(evgen.event.EventType, [x.nodeid for x in refs])
+    assert evgen.event.EventType in [x.nodeid for x in refs]
 
 
 def check_eventgenerator_BaseEvent(test, evgen):
-    test.assertIsNot(evgen, None)  # we did not receive event generator
-    test.assertIs(evgen.isession, test.opc.iserver.isession)
+    assert evgen is not None)  # we did not receive event generator
+    assert evgen.isession is test.opc.iserver.isession
     check_base_event(test, evgen.event)
 
 
 def check_base_event(test, ev):
-    test.assertIsNot(ev, None)  # we did not receive event
-    test.assertIsInstance(ev, BaseEvent)
-    test.assertEqual(ev.EventType, ua.NodeId(ua.ObjectIds.BaseEventType))
-    test.assertEqual(ev.Severity, 1)
+    assert ev is not None
+    assert isinstance(ev, BaseEvent)
+    assert ev.EventType == ua.NodeId(ua.ObjectIds.BaseEventType)
+    assert ev.Severity == 1
 
 
 def check_eventgenerator_CustomEvent(test, evgen, etype):
-    test.assertIsNot(evgen, None)  # we did not receive event generator
-    test.assertIs(evgen.isession, test.opc.iserver.isession)
+    assert evgen is not None  # we did not receive event generator
+    assert evgen.isession is test.opc.iserver.isession
     check_custom_event(test, evgen.event, etype)
 
 
 def check_custom_event(test, ev, etype):
-    test.assertIsNot(ev, None)  # we did not receive event
-    test.assertIsInstance(ev, BaseEvent)
-    test.assertEqual(ev.EventType, etype.nodeid)
-    test.assertEqual(ev.Severity, 1)
+    assert ev is not None
+    assert isinstance(ev, BaseEvent)
+    assert ev.EventType == etype.nodeid
+    assert ev.Severity == 1
 
 
 def check_custom_type(test, type, base_type):
     base = opcua.Node(test.opc.iserver.isession, ua.NodeId(base_type))
-    test.assertTrue(type in base.get_children())
+    test.assertTrue(type in await base.get_children())
     nodes = type.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True)
     test.assertEqual(base, nodes[0])
     properties = type.get_properties()

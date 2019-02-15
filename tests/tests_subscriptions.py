@@ -374,12 +374,12 @@ class SubscriptionTests(object):
         objects = self.srv.get_objects_node()
         o = objects.add_object(3, 'MyObject')
         evgen = self.srv.get_event_generator()
-        evgen.event.SourceNode=o.nodeid
-        evgen.event.SourceName=o.get_browse_name().Name
+        evgen.event.SourceNode = o.nodeid
+        evgen.event.SourceName = (await o.get_browse_name()).Name
 
         myhandler = MySubHandler()
         sub = self.opc.create_subscription(100, myhandler)
-        handle = sub.subscribe_events()
+        handle = await sub.subscribe_events()
 
         tid = datetime.utcnow()
         msg = "this is my msg "

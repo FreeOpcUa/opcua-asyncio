@@ -367,7 +367,7 @@ async def test_events_default(opc):
 async def test_events_MyObject(opc):
     objects = opc.server.get_objects_node()
     o = await objects.add_object(3, 'MyObject')
-    evgen = await opc.server.get_event_generator(source=o)
+    evgen = await opc.server.get_event_generator(emitting_node=o)
     myhandler = MySubHandler()
     sub = await opc.opc.create_subscription(100, myhandler)
     handle = await sub.subscribe_events(o)
@@ -389,7 +389,7 @@ async def test_events_MyObject(opc):
 async def test_events_wrong_source(opc):
     objects = opc.server.get_objects_node()
     o = await objects.add_object(3, 'MyObject')
-    evgen = await opc.server.get_event_generator(source=o)
+    evgen = await opc.server.get_event_generator(emitting_node=o)
     myhandler = MySubHandler()
     sub = await opc.opc.create_subscription(100, myhandler)
     handle = await sub.subscribe_events()
@@ -439,7 +439,7 @@ async def test_events_CustomEvent_MyObject(opc):
     etype = await opc.server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
                                               [('PropertyNum', ua.VariantType.Float),
                                                ('PropertyString', ua.VariantType.String)])
-    evgen = await opc.server.get_event_generator(etype, o)
+    evgen = await opc.server.get_event_generator(etype, emitting_node=o)
     myhandler = MySubHandler()
     sub = await opc.opc.create_subscription(100, myhandler)
     handle = await sub.subscribe_events(o, etype)

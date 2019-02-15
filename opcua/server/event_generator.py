@@ -4,7 +4,7 @@ import uuid
 
 from opcua import ua
 from opcua import Node
-from opcua.common import events, event_object
+from opcua.common import events, event_objects
 
 __all__ = ["EventGenerator"]
 
@@ -26,8 +26,10 @@ class EventGenerator:
         self.logger = logging.getLogger(__name__)
         self.isession = isession
         self.event = None
+        self.emitting_node = None
 
     async def init(self, etype=None, emitting_node=ua.ObjectIds.Server):
+        node = None
 
         if isinstance(etype, event_objects.BaseEvent):
             self.event = etype
@@ -37,19 +39,22 @@ class EventGenerator:
             node = Node(self.isession, etype)
         else:
             node = Node(self.isession, ua.NodeId(etype))
+
         if node:
             self.event = await events.get_event_obj_from_type_node(node)
 
         if isinstance(emitting_node, Node):
             pass
         elif isinstance(emitting_node, ua.NodeId):
-            emitting_node = Node(isession, emitting_node)
+            emitting_node = Node(self.isession, emitting_node)
         else:
-            emitting_node = Node(isession, ua.NodeId(emitting_node))
+            emitting_node = Node(self.isession, ua.NodeId(emitting_node))
 
+        self.event.emitting_node = emitting_node.nodeid
         if not self.event.SourceNode:
             self.event.SourceNode = emitting_node.nodeid
-            self.event.SourceName = (await emitting_node.get_browse_name()).Name
+        if not self.event.SourceName:
+            self.event.SourceName = (await Node(self.isession, self.event.SourceNode).get_browse_name()).Name
 
         await emitting_node.set_event_notifier([ua.EventNotifier.SubscribeToEvents])
         refs = []
