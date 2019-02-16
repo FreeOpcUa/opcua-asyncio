@@ -233,7 +233,9 @@ class Client(object):
         Send OPC-UA hello to server
         """
         ack = await self.uaclient.send_hello(self.server_url.geturl(), self.max_messagesize, self.max_chunkcount)
-        # FIXME check ack
+        # TODO: Handle ua.UaError
+        if isinstance(ack, ua.UaStatusCodeError):
+            raise ack
 
     async def open_secure_channel(self, renew=False):
         """
