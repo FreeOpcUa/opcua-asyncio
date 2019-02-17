@@ -104,7 +104,7 @@ class Subscription:
         results = await self.server.delete_subscriptions([self.subscription_id])
         results[0].check()
 
-    def publish_callback(self, publishresult):
+    def publish_callback(self, publishresult: ua.PublishResult):
         self.logger.info("Publish callback called with result: %s", publishresult)
         if self.subscription_id is None:
             self.subscription_id = publishresult.SubscriptionId
@@ -127,7 +127,7 @@ class Subscription:
         ack.SequenceNumber = publishresult.NotificationMessage.SequenceNumber
         self.loop.create_task(self.server.publish([ack]))
 
-    def _call_datachange(self, datachange):
+    def _call_datachange(self, datachange: ua.DataChangeNotification):
         for item in datachange.MonitoredItems:
             if item.ClientHandle not in self._monitored_items:
                 self.logger.warning("Received a notification for unknown handle: %s", item.ClientHandle)
@@ -148,7 +148,7 @@ class Subscription:
             else:
                 self.logger.error("DataChange subscription created but handler has no datachange_notification method")
 
-    def _call_event(self, eventlist):
+    def _call_event(self, eventlist: ua.EventNotificationList):
         for event in eventlist.Events:
             data = self._monitored_items[event.ClientHandle]
             result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)
@@ -166,7 +166,7 @@ class Subscription:
             else:
                 self.logger.error("Event subscription created but handler has no event_notification method")
 
-    def _call_status(self, status):
+    def _call_status(self, status: ua.StatusChangeNotification):
         try:
             self._handler.status_change_notification(status.Status)
         except Exception:
