@@ -22,7 +22,7 @@ class SubscriptionService:
         self.subscriptions = {}
         self._sub_id_counter = 77
 
-    def create_subscription(self, params, callback):
+    def create_subscription(self, params, callback) -> ua.CreateSubscriptionResult:
         self.logger.info("create subscription with callback: %s", callback)
         result = ua.CreateSubscriptionResult()
         result.RevisedPublishingInterval = params.RequestedPublishingInterval

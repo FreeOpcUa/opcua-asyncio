@@ -399,7 +399,7 @@ class InternalSession:
         """COROUTINE"""
         return self.iserver.method_service.call(params)
 
-    async def create_subscription(self, params, callback):
+    async def create_subscription(self, params, callback) -> ua.CreateSubscriptionResult:
         result = self.subscription_service.create_subscription(params, callback)
         self.subscriptions.append(result.SubscriptionId)
         return result

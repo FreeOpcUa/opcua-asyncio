@@ -3,6 +3,7 @@ Low level binary client
 """
 import asyncio
 import logging
+from typing import List
 
 from opcua import ua
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
@@ -403,7 +404,7 @@ class UaClient:
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def create_subscription(self, params, callback):
+    async def create_subscription(self, params, callback) -> ua.CreateSubscriptionResult:
         self.logger.info("create_subscription")
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
@@ -417,7 +418,7 @@ class UaClient:
         self._publish_callbacks[response.Parameters.SubscriptionId] = callback
         return response.Parameters
 
-    async def delete_subscriptions(self, subscription_ids):
+    async def delete_subscriptions(self, subscription_ids) -> List[ua.StatusCode]:
         self.logger.info("delete_subscription")
         request = ua.DeleteSubscriptionsRequest()
         request.Parameters.SubscriptionIds = subscription_ids
