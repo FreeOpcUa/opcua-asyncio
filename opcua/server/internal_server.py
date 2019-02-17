@@ -359,8 +359,8 @@ class InternalSession:
         self.state = SessionState.Activated
         id_token = params.UserIdentityToken
         if isinstance(id_token, ua.UserNameIdentityToken):
-            if self.iserver.check_user_token(self, id_token) == False:
-                raise utils.ServiceError(ua.StatusCodes.BadUserAccessDenied)
+            if self.iserver.check_user_token(self, id_token) is False:
+                raise ServiceError(ua.StatusCodes.BadUserAccessDenied)
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)
         return result
 
