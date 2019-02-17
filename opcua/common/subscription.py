@@ -106,8 +106,8 @@ class Subscription:
 
     def publish_callback(self, publishresult):
         self.logger.info("Publish callback called with result: %s", publishresult)
-        while self.subscription_id is None:
-            time.sleep(0.01)
+        if self.subscription_id is None:
+            self.subscription_id = publishresult.SubscriptionId
 
         if publishresult.NotificationMessage.NotificationData is not None:
             for notif in publishresult.NotificationMessage.NotificationData:
