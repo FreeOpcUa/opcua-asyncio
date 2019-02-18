@@ -220,8 +220,8 @@ class NodeManagementService(object):
                 return result
 
         if item.ParentNodeId.is_null():
-            self.logger.info("add_node: while adding node %s, requested parent node is null %s %s",
-                item.RequestedNewNodeId, item.ParentNodeId, item.ParentNodeId.is_null())
+            #self.logger.info("add_node: while adding node %s, requested parent node is null %s %s",
+                #item.RequestedNewNodeId, item.ParentNodeId, item.ParentNodeId.is_null())
             if check:
                 result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
                 return result

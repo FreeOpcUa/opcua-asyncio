@@ -22,7 +22,7 @@ class SubscriptionService:
         self.subscriptions = {}
         self._sub_id_counter = 77
 
-    def create_subscription(self, params, callback):
+    async def create_subscription(self, params, callback):
         self.logger.info("create subscription with callback: %s", callback)
         result = ua.CreateSubscriptionResult()
         result.RevisedPublishingInterval = params.RequestedPublishingInterval
@@ -32,21 +32,20 @@ class SubscriptionService:
         result.SubscriptionId = self._sub_id_counter
 
         sub = InternalSubscription(self, result, self.aspace, callback)
-        sub.start()
+        await sub.start()
         self.subscriptions[result.SubscriptionId] = sub
 
         return result
 
-    def delete_subscriptions(self, ids):
+    async def delete_subscriptions(self, ids):
         self.logger.info("delete subscriptions: %s", ids)
         res = []
         for i in ids:
-            #with self._lock:
             if i not in self.subscriptions:
                 res.append(ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid))
             else:
                 sub = self.subscriptions.pop(i)
-                sub.stop()
+                await sub.stop()
                 res.append(ua.StatusCode())
         return res
 
@@ -56,7 +55,7 @@ class SubscriptionService:
         for subid, sub in self.subscriptions.items():
             sub.publish([ack.SequenceNumber for ack in acks if ack.SubscriptionId == subid])
 
-    def create_monitored_items(self, params):
+    async def create_monitored_items(self, params):
         self.logger.info("create monitored items")
         #with self._lock:
         if params.SubscriptionId not in self.subscriptions:
@@ -66,7 +65,7 @@ class SubscriptionService:
                 response.StatusCode = ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
                 res.append(response)
             return res
-        return self.subscriptions[params.SubscriptionId].monitored_item_srv.create_monitored_items(params)
+        return await self.subscriptions[params.SubscriptionId].monitored_item_srv.create_monitored_items(params)
 
     def modify_monitored_items(self, params):
         self.logger.info("modify monitored items")

@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, "..")
 
 import asyncio
 from opcua import ua, Server
@@ -13,7 +15,7 @@ async def task(loop):
     # setup our server
     server = Server()
     await server.init()
-    server.set_endpoint('opc.tcp://127.0.0.1:8080/freeopcua/server/') #4840
+    server.set_endpoint('opc.tcp://localhost:4840/freeopcua/server/') #4840
     # setup our own namespace, not really necessary but should as spec
     uri = 'http://examples.freeopcua.github.io'
     idx = await server.register_namespace(uri)
@@ -34,6 +36,7 @@ async def task(loop):
     async with server:
         count = 0
         while True:
+            print("UPDATE")
             await asyncio.sleep(1)
             count += 0.1
             await myvar.set_value(count)

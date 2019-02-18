@@ -339,13 +339,6 @@ class Client(object):
         #  Actual maximum number of milliseconds that a Session shall remain open without activity
         self.session_timeout = response.RevisedSessionTimeout
         self._schedule_renew_session()
-        # ToDo: subscribe to ServerStatus
-        """
-        The preferred mechanism for a Client to monitor the connection status is through the keep-alive of the
-        Subscription. A Client should subscribe for the State Variable in the ServerStatus to detect shutdown or other
-        failure states. If no Subscription is created or the Server does not support Subscriptions,
-        the connection can be monitored by periodically reading the State Variable
-        """
         return response
 
     def _schedule_renew_session(self, renew_session: bool=False):
@@ -361,12 +354,13 @@ class Client(object):
     async def _renew_session(self):
         """
         Renew the SecureChannel before the SessionTimeout will happen.
-        ToDo: shouldn't this only be done if there was no session activity?
+        In theory we could do that only if no session activity
+        but it does not cost much..
         """
-        server_state = self.get_node(ua.FourByteNodeId(ua.ObjectIds.Server_ServerStatus_State))
+        state_node = await self.nodes.server_state
         self.logger.debug("renewing channel")
         await self.open_secure_channel(renew=True)
-        val = await server_state.get_value()
+        val = await state_node.get_value()
         self.logger.debug("server state is: %s ", val)
 
     def server_policy_id(self, token_type, default):

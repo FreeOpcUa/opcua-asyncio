@@ -137,7 +137,7 @@ class UASocketProtocol(asyncio.Protocol):
     def _call_callback(self, request_id, body):
         future = self._callbackmap.pop(request_id, None)
         if future is None:
-            raise ua.UaError("No future object found for request: {0}, callbacks in list are {1}".format(
+            raise ua.UaError("No request found for requestid: {0}, callbacks in list are {1}".format(
                 request_id, self._callbackmap.keys()))
         future.set_result(body)
 
@@ -183,6 +183,7 @@ class UASocketProtocol(asyncio.Protocol):
         self._connection.set_channel(response.Parameters)
         return response.Parameters
 
+
     async def close_secure_channel(self):
         """
         Close secure channel.
@@ -217,6 +218,8 @@ class UaClient:
         self._timeout = timeout
         self.security_policy = ua.SecurityPolicy()
         self.protocol: UASocketProtocol = None
+        self._sub_cond = asyncio.Condition()
+        self._sub_data_queue = []
 
     def set_security(self, policy: ua.SecurityPolicy):
         self.security_policy = policy
@@ -407,9 +410,10 @@ class UaClient:
         self.logger.info("create_subscription")
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
+        data = await self.protocol.send_request(request)
         response = struct_from_binary(
             ua.CreateSubscriptionResponse,
-            await self.protocol.send_request(request)
+            data
         )
         self.logger.info("create subscription callback")
         self.logger.debug(response)
@@ -421,9 +425,10 @@ class UaClient:
         self.logger.info("delete_subscription")
         request = ua.DeleteSubscriptionsRequest()
         request.Parameters.SubscriptionIds = subscription_ids
+        data = await self.protocol.send_request(request)
         response = struct_from_binary(
             ua.DeleteSubscriptionsResponse,
-            await self.protocol.send_request(request)
+            data
         )
         self.logger.info("delete subscriptions callback")
         self.logger.debug(response)
@@ -438,13 +443,36 @@ class UaClient:
             acks = []
         request = ua.PublishRequest()
         request.Parameters.SubscriptionAcknowledgements = acks
-        data = await self.protocol.send_request(request, timeout=0)
-        # check if answer looks ok
+        await self.protocol.send_request(request, self._sub_data_received, timeout=0)
+
+    def _sub_data_received(self, future):
+        data = future.result()
+        self.loop.create_task(self._call_publish_callback(data))
+    """
+    def _sub_data_received(self, future):
+        data = future.result()
+        self.loop.create_task(self._enqueue_sub_data(data))
+
+    async def _enqueue_sub_data(self, data):
+        self._sub_data_queue.append(data)
+        with self._sub_cond:
+            self._sub_cond.notify()
+
+    async def _subscribtion_loop(self):
+        while True:
+            async with self._sub_cond:
+                await self._sub_cond.wait()
+                data = self._sub_data_queue.pop(0)
+                await self._call_publish_callback(data)
+    """
+
+    async def _call_publish_callback(self, data):
+        self.logger.info("call_publish_callback")
         try:
             self.protocol.check_answer(data, "while waiting for publish response")
         except BadTimeout:
             # Spec Part 4, 7.28
-            self.loop.create_task(self.publish())
+            await self.publish()
             return
         except BadNoSubscription:  # Spec Part 5, 13.8.1
             # BadNoSubscription is expected after deleting the last subscription.
@@ -472,7 +500,7 @@ class UaClient:
             #       does so it stays in, doesn't seem to hurt.
             self.logger.exception("Error parsing notification from server")
             # send publish request ot server so he does stop sending notifications
-            self.loop.create_task(self.publish([]))
+            await self.publish([])
             return
         # look for callback
         try:
@@ -482,7 +510,7 @@ class UaClient:
             return
         # do callback
         try:
-            callback(response.Parameters)
+            await callback(response.Parameters)
         except Exception:
             # we call client code, catch everything!
             self.logger.exception("Exception while calling user callback: %s")

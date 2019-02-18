@@ -400,13 +400,13 @@ class InternalSession:
         return self.iserver.method_service.call(params)
 
     async def create_subscription(self, params, callback):
-        result = self.subscription_service.create_subscription(params, callback)
+        result = await self.subscription_service.create_subscription(params, callback)
         self.subscriptions.append(result.SubscriptionId)
         return result
 
     async def create_monitored_items(self, params):
         """Returns Future"""
-        subscription_result = self.subscription_service.create_monitored_items(params)
+        subscription_result = await self.subscription_service.create_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(
             CallbackType.ItemSubscriptionCreated, ServerItemCallback(params, subscription_result))
         return subscription_result
@@ -424,15 +424,16 @@ class InternalSession:
         for i in ids:
             if i in self.subscriptions:
                 self.subscriptions.remove(i)
-        return self.subscription_service.delete_subscriptions(ids)
+        return await self.subscription_service.delete_subscriptions(ids)
 
     async def delete_monitored_items(self, params):
-        subscription_result = self.subscription_service.delete_monitored_items(params)
+        subscription_result = await self.subscription_service.delete_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(
             CallbackType.ItemSubscriptionDeleted, ServerItemCallback(params, subscription_result))
         return subscription_result
 
     async def publish(self, acks=None):
+        # This is an async method, dues to symetry with client code
         if acks is None:
             acks = []
         return self.subscription_service.publish(acks)

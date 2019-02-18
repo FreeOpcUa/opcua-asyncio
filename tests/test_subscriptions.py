@@ -98,9 +98,9 @@ async def test_subscription_overload(opc):
     for i in range(nb):
         for j in range(nb):
             await variables[i].set_value(j)
-    await sub.delete()
-    for s in subs:
-        await s.delete()
+    #await sub.delete()
+    #for s in subs:
+        #await s.delete()
 
 
 async def test_subscription_count(opc):
