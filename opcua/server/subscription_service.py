@@ -34,7 +34,6 @@ class SubscriptionService:
         sub = InternalSubscription(self, result, self.aspace, callback)
         await sub.start()
         self.subscriptions[result.SubscriptionId] = sub
-
         return result
 
     async def delete_subscriptions(self, ids):
@@ -51,13 +50,11 @@ class SubscriptionService:
 
     def publish(self, acks):
         self.logger.info("publish request with acks %s", acks)
-        #with self._lock:
         for subid, sub in self.subscriptions.items():
             sub.publish([ack.SequenceNumber for ack in acks if ack.SubscriptionId == subid])
 
     async def create_monitored_items(self, params):
         self.logger.info("create monitored items")
-        #with self._lock:
         if params.SubscriptionId not in self.subscriptions:
             res = []
             for _ in params.ItemsToCreate:
@@ -69,7 +66,6 @@ class SubscriptionService:
 
     def modify_monitored_items(self, params):
         self.logger.info("modify monitored items")
-        #with self._lock:
         if params.SubscriptionId not in self.subscriptions:
             res = []
             for _ in params.ItemsToModify:
@@ -81,7 +77,6 @@ class SubscriptionService:
 
     def delete_monitored_items(self, params):
         self.logger.info("delete monitored items")
-        #with self._lock:
         if params.SubscriptionId not in self.subscriptions:
             res = []
             for _ in params.MonitoredItemIds:
@@ -98,6 +93,5 @@ class SubscriptionService:
         return self.subscriptions[params.SubscriptionId].republish(params.RetransmitSequenceNumber)
 
     def trigger_event(self, event):
-        #with self._lock:
         for sub in self.subscriptions.values():
             sub.monitored_item_srv.trigger_event(event)
