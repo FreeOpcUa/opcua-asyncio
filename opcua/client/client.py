@@ -357,7 +357,7 @@ class Client(object):
         In theory we could do that only if no session activity
         but it does not cost much..
         """
-        state_node = await self.nodes.server_state
+        state_node = self.nodes.server_state
         self.logger.debug("renewing channel")
         await self.open_secure_channel(renew=True)
         val = await state_node.get_value()
