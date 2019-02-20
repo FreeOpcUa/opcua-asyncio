@@ -9,6 +9,7 @@ install:
   - pip install aiofiles
   - pip install asyncio-contextmanager
   - pip install pytest
+  - pip install pytest-asyncio
   - pip install cryptography
 # command to run tests
 script: pytest -v
