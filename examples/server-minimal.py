@@ -1,7 +1,8 @@
 import sys
 sys.path.insert(0, "..")
-
+import logging
 import asyncio
+
 from opcua import ua, Server
 from opcua.common.methods import uamethod
 
@@ -11,7 +12,7 @@ def func(parent, value):
     return value * 2
 
 
-async def task(loop):
+async def main():
     # setup our server
     server = Server()
     await server.init()
@@ -36,18 +37,18 @@ async def task(loop):
     async with server:
         count = 0
         while True:
+            await asyncio.sleep(1000)
             print("UPDATE")
             await asyncio.sleep(1)
             count += 0.1
             await myvar.set_value(count)
 
 
-def main():
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     loop = asyncio.get_event_loop()
     loop.set_debug(True)
-    loop.run_until_complete(task(loop))
+    loop.run_until_complete(main())
     loop.close()
 
 
-if __name__ == '__main__':
-    main()

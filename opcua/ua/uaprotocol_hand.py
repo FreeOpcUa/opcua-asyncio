@@ -48,6 +48,7 @@ class Header(uatypes.FrozenClass):
         self.ChannelId = channelid
         self.body_size = 0
         self.packet_size = 0
+        self.header_size = 8
         self._freeze = True
 
     def add_size(self, size):

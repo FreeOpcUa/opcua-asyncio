@@ -419,10 +419,12 @@ class InternalSession:
         return self.subscription_service.republish(params)
 
     async def delete_subscriptions(self, ids):
+        # This is an async method, dues to symetry with client code
         return await self.subscription_service.delete_subscriptions(ids)
 
     async def delete_monitored_items(self, params):
-        subscription_result = await self.subscription_service.delete_monitored_items(params)
+        # This is an async method, dues to symetry with client code
+        subscription_result = self.subscription_service.delete_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(
             CallbackType.ItemSubscriptionDeleted, ServerItemCallback(params, subscription_result))
         return subscription_result

@@ -2,6 +2,7 @@
 server side implementation of subscription service
 """
 
+import asyncio
 import logging
 
 from opcua import ua
@@ -39,13 +40,16 @@ class SubscriptionService:
     async def delete_subscriptions(self, ids):
         self.logger.info("delete subscriptions: %s", ids)
         res = []
+        existing_subs = []
         for i in ids:
-            if i not in self.subscriptions:
+            sub = self.subscriptions.pop(i, None)
+            if sub is None:
                 res.append(ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid))
             else:
-                sub = self.subscriptions.pop(i)
-                await sub.stop()
+                #await sub.stop()
+                existing_subs.append(sub)
                 res.append(ua.StatusCode())
+        await asyncio.gather(*[sub.stop() for sub in existing_subs])
         return res
 
     def publish(self, acks):

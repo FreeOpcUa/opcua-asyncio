@@ -510,6 +510,7 @@ def header_from_binary(data):
     if hdr.MessageType in (ua.MessageType.SecureOpen, ua.MessageType.SecureClose, ua.MessageType.SecureMessage):
         hdr.body_size -= 4
         hdr.ChannelId = Primitives.UInt32.unpack(data)
+        hdr.header_size = 12
     return hdr
 
 
