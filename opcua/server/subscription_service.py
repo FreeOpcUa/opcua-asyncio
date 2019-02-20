@@ -41,7 +41,7 @@ class SubscriptionService:
         self.logger.info("delete subscriptions: %s", ids)
         res = []
         existing_subs = []
-        for i in ids:
+        for i in list(ids):
             sub = self.subscriptions.pop(i, None)
             if sub is None:
                 res.append(ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid))
