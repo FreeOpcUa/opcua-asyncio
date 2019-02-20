@@ -5,12 +5,11 @@ Can be used on server side or to implement binary/https opc-ua servers
 
 from datetime import datetime, timedelta
 from copy import copy
-from struct import unpack_from, unpack
+from struct import unpack_from
 import os
 import asyncio
 import logging
 from enum import Enum
-from copy import copy, deepcopy
 from urllib.parse import urlparse
 from typing import Coroutine
 
@@ -344,7 +343,7 @@ class InternalSession:
     async def close_session(self, delete_subs=True):
         self.logger.info('close session %s')
         self.state = SessionState.Closed
-        await self.delete_subscriptions(self.subscription_service.subscriptions.keys())
+        await self.delete_subscriptions(list(self.subscription_service.subscriptions.keys()))
 
     def activate_session(self, params):
         self.logger.info('activate session')
