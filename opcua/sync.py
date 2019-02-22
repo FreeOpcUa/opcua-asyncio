@@ -48,14 +48,28 @@ _ref_count = 0
 _tloop = None
 
 
+
+def start_thread_loop():
+    print("START")
+    global _tloop
+    _tloop = ThreadLoop()
+    _tloop.start()
+    return _tloop
+
+
+def stop_thread_loop():
+    print("STOP")
+    global _tloop
+    _tloop.stop()
+    _tloop.join()
+
+
 def get_thread_loop():
     global _tloop
     if _tloop is None:
-        _tloop = ThreadLoop()
-        _tloop.start()
+        start_thread_loop()
     global _ref_count
     _ref_count += 1
-    print("RETURNING", _tloop, _ref_count)
     return _tloop
 
 
@@ -66,9 +80,7 @@ def release_thread_loop():
     global _ref_count
     if _ref_count == 0:
         _ref_count -= 1
-    print("STOPPING", _tloop, _ref_count)
-    _tloop.stop()
-    _tloop.join()
+    stop_thread_loop()
 
 
 def _get_super(func):
@@ -90,7 +102,8 @@ def syncmethod(func):
         sup = _get_super(func)
         super_func = getattr(sup, name)
         global _tloop
-        return _tloop.post(super_func(self, *args, **kwargs))
+        result = _tloop.post(super_func(self, *args, **kwargs))
+        return result
     return wrapper
 
 
@@ -101,7 +114,6 @@ class Client(client.Client):
     
     @syncmethod
     def connect(self):
-        print("NOT HEERE")
         pass
 
     @syncmethod
