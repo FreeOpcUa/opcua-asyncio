@@ -2,7 +2,6 @@
 sync API of asyncua
 """
 import asyncio
-import inspect
 from threading import Thread, Condition
 import logging
 
@@ -109,8 +108,8 @@ def syncmethod(func):
 
 class Client(client.Client):
     def __init__(self, url: str, timeout: int = 4):
-        self._tloop = get_thread_loop()
-        client.Client.__init__(self, url, timeout, loop=self._tloop.loop)
+        global _tloop
+        client.Client.__init__(self, url, timeout, loop=_tloop.loop)
     
     @syncmethod
     def connect(self):
@@ -120,5 +119,19 @@ class Client(client.Client):
     def disconnect(self):
         pass
 
+
+class Server(server.Server):
+    def __init__(self, shelf_file=None):
+        global _tloop
+        server.Server.__init__(self)
+        _tloop.post(self.init(shelf_file))
+    
+    @syncmethod
+    def start(self):
+        pass
+
+    @syncmethod
+    def stop(self):
+        pass
 
 
