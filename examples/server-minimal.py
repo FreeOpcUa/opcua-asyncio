@@ -16,7 +16,7 @@ async def main():
     # setup our server
     server = Server()
     await server.init()
-    server.set_endpoint('opc.tcp://localhost:4840/freeopcua/server/') #4840
+    server.set_endpoint('opc.tcp://*:4840/freeopcua/server/') #4840
     # setup our own namespace, not really necessary but should as spec
     uri = 'http://examples.freeopcua.github.io'
     idx = await server.register_namespace(uri)
@@ -45,9 +45,9 @@ async def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
     loop = asyncio.get_event_loop()
-    loop.set_debug(True)
+    #loop.set_debug(True)
     loop.run_until_complete(main())
     loop.close()
 

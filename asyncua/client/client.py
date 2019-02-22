@@ -25,7 +25,7 @@ class Client:
     which offers the raw OPC-UA services interface.
     """
 
-    def __init__(self, url: str, timeout: int = 4):
+    def __init__(self, url: str, timeout: int = 4, loop=None):
         """
 
         :param url: url of the server.
@@ -37,7 +37,7 @@ class Client:
             time. The timeout is specified in seconds.
         """
         self.logger = logging.getLogger(__name__)
-        self.loop = asyncio.get_event_loop()
+        self.loop = loop or asyncio.get_event_loop()
         self.server_url = urlparse(url)
         # take initial username and password from the url
         self._username = self.server_url.username
@@ -51,7 +51,7 @@ class Client:
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
         self._policy_ids = []
-        self.uaclient: UaClient = UaClient(timeout)
+        self.uaclient: UaClient = UaClient(timeout, loop=self.loop)
         self.user_certificate = None
         self.user_private_key = None
         self._server_nonce = None

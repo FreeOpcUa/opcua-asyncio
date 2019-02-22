@@ -21,9 +21,9 @@ class UASocketProtocol(asyncio.Protocol):
     OPEN = 'open'
     CLOSED = 'closed'
 
-    def __init__(self, timeout=1, security_policy=ua.SecurityPolicy()):
+    def __init__(self, timeout=1, security_policy=ua.SecurityPolicy(), loop=None):
         self.logger = logging.getLogger(__name__ + ".UASocketProtocol")
-        self.loop = asyncio.get_event_loop()
+        self.loop = loop or asyncio.get_event_loop()
         self.transport = None
         self.receive_buffer: bytes = None
         self.is_receiving = False
@@ -210,9 +210,9 @@ class UaClient:
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
 
-    def __init__(self, timeout=1):
+    def __init__(self, timeout=1, loop=None):
         self.logger = logging.getLogger(__name__ + '.UaClient')
-        self.loop = asyncio.get_event_loop()
+        self.loop = loop or asyncio.get_event_loop()
         self._publish_callbacks = {}
         self._timeout = timeout
         self.security_policy = ua.SecurityPolicy()
@@ -224,7 +224,7 @@ class UaClient:
         self.security_policy = policy
 
     def _make_protocol(self):
-        self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
+        self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy, loop=self.loop)
         return self.protocol
 
     async def connect_socket(self, host: str, port: int):
