@@ -2,12 +2,16 @@ import time
 
 import pytest
 
-from opcua.sync import Client, start_thread_loop, stop_thread_loop
+from opcua.sync import Client, start_thread_loop, stop_thread_loop, Server
 
 
 @pytest.fixture
 def server():
-    pass
+    s = Server()
+    s.set_endpoint('opc.tcp://*:8840/freeopcua/server/')
+    s.start()
+    yield s
+    s.stop()
 
 
 @pytest.fixture
@@ -18,8 +22,8 @@ def tloop():
 
 
 @pytest.fixture
-def client(tloop):
-    c = Client("opc.tcp://localhost:4840/freeopcua/server")
+def client(tloop, server):
+    c = Client("opc.tcp://localhost:8840/freeopcua/server")
     c.connect()
     yield c
     c.disconnect()
