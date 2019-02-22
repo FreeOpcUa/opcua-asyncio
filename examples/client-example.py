@@ -24,9 +24,8 @@ class SubHandler(object):
         print("New event", event)
 
 
-async def task(loop):
-    url = "opc.tcp://commsvr.com:51234/UA/CAS_UA_Server"
-    # url = "opc.tcp://localhost:4840/freeopcua/server/"
+async def run():
+    url = "opc.tcp://localhost:4840/freeopcua/server/"
     try:
         async with Client(url=url) as client:
             root = client.get_root_node()
@@ -37,6 +36,9 @@ async def task(loop):
             # Node objects have methods to read and write node attributes as well as browse or populate address space
             _logger.info("Children of root are: %r", await root.get_children())
 
+            uri = "http://examples.freeopcua.github.io"
+            idx = await client.get_namespace_index(uri)
+            _logger.info("index of our namespace is %s", idx)
             # get a specific node knowing its node id
             #var = client.get_node(ua.NodeId(1002, 2))
             #var = client.get_node("ns=3;i=2002")
@@ -63,18 +65,14 @@ async def task(loop):
             # await sub.delete()
 
             # calling a method on server
-            res = obj.call_method("2:multiply", 3, "klk")
+            res = await obj.call_method("2:multiply", 3, "klk")
             _logger.info("method result is: %r", res)
     except Exception:
         _logger.exception('error')
 
 
-def main():
+if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.set_debug(True)
-    loop.run_until_complete(task(loop))
-    loop.close()
+    loop.run_until_complete(run())
 
-
-if __name__ == "__main__":
-    main()

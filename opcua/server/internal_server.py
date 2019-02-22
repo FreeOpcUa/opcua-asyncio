@@ -5,12 +5,11 @@ Can be used on server side or to implement binary/https opc-ua servers
 
 from datetime import datetime, timedelta
 from copy import copy
-from struct import unpack_from, unpack
+from struct import unpack_from
 import os
 import asyncio
 import logging
 from enum import Enum
-from copy import copy, deepcopy
 from urllib.parse import urlparse
 from typing import Coroutine
 
@@ -318,7 +317,6 @@ class InternalSession:
         InternalSession._counter += 1
         self.authentication_token = ua.NodeId(self._auth_counter)
         InternalSession._auth_counter += 1
-        self.subscriptions = []
         self.logger.info('Created internal session %s', self.name)
 
     def __str__(self):
@@ -343,9 +341,9 @@ class InternalSession:
         return result
 
     async def close_session(self, delete_subs=True):
-        self.logger.info('close session %s with subscriptions %s', self, self.subscriptions)
+        self.logger.info('close session %s')
         self.state = SessionState.Closed
-        await self.delete_subscriptions(self.subscriptions[:])
+        await self.delete_subscriptions(list(self.subscription_service.subscriptions.keys()))
 
     def activate_session(self, params):
         self.logger.info('activate session')
@@ -400,13 +398,12 @@ class InternalSession:
         return self.iserver.method_service.call(params)
 
     async def create_subscription(self, params, callback):
-        result = self.subscription_service.create_subscription(params, callback)
-        self.subscriptions.append(result.SubscriptionId)
+        result = await self.subscription_service.create_subscription(params, callback)
         return result
 
     async def create_monitored_items(self, params):
         """Returns Future"""
-        subscription_result = self.subscription_service.create_monitored_items(params)
+        subscription_result = await self.subscription_service.create_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(
             CallbackType.ItemSubscriptionCreated, ServerItemCallback(params, subscription_result))
         return subscription_result
@@ -421,18 +418,18 @@ class InternalSession:
         return self.subscription_service.republish(params)
 
     async def delete_subscriptions(self, ids):
-        for i in ids:
-            if i in self.subscriptions:
-                self.subscriptions.remove(i)
-        return self.subscription_service.delete_subscriptions(ids)
+        # This is an async method, dues to symetry with client code
+        return await self.subscription_service.delete_subscriptions(ids)
 
     async def delete_monitored_items(self, params):
+        # This is an async method, dues to symetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(
             CallbackType.ItemSubscriptionDeleted, ServerItemCallback(params, subscription_result))
         return subscription_result
 
     async def publish(self, acks=None):
+        # This is an async method, dues to symetry with client code
         if acks is None:
             acks = []
         return self.subscription_service.publish(acks)

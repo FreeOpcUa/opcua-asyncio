@@ -23,11 +23,12 @@ class OPCUAProtocol(asyncio.Protocol):
         self.peer_name = None
         self.transport = None
         self.processor = None
-        self.receive_buffer = b''
+        self._buffer = b''
         self.iserver = iserver
         self.policies = policies
         self.clients = clients
         self.messages = asyncio.Queue()
+        self._task = None
 
     def __str__(self):
         return 'OPCUAProtocol({}, {})'.format(self.peer_name, self.processor.session)
@@ -42,7 +43,7 @@ class OPCUAProtocol(asyncio.Protocol):
         self.processor.set_policies(self.policies)
         self.iserver.asyncio_transports.append(transport)
         self.clients.append(self)
-        self.loop.create_task(self._process_received_message())
+        self._task = self.loop.create_task(self._process_received_message_loop())
 
     def connection_lost(self, ex):
         logger.info('Lost connection from %s, %s', self.peer_name, ex)
@@ -52,34 +53,30 @@ class OPCUAProtocol(asyncio.Protocol):
         if self in self.clients:
             self.clients.remove(self)
         self.messages.put_nowait((None, None))
+        self._task.cancel()
 
     def data_received(self, data):
-        if self.receive_buffer:
-            data = self.receive_buffer + data
-            self.receive_buffer = b''
-        self._process_received_data(data)
-
-    def _process_received_data(self, data: Union[bytes, Buffer]):
-        buf = Buffer(data) if type(data) is bytes else data
-        try:
-            # try to parse the incoming data
+        self._buffer += data
+        # try to parse the incoming data
+        while len(self._buffer) > 0:
             try:
-                header = header_from_binary(buf)
-            except NotEnoughData:
-                logger.debug('Not enough data while parsing header from client, waiting for more')
-                self.receive_buffer = data + self.receive_buffer
+                buf = Buffer(self._buffer)
+                try:
+                    header = header_from_binary(buf)
+                except NotEnoughData:
+                    logger.debug('Not enough data while parsing header from client, waiting for more')
+                    return
+                if len(buf) < header.body_size:
+                    logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size, len(buf))
+                    return
+                # we have a complete message
+                self.messages.put_nowait((header, buf))
+                self._buffer = self._buffer[(header.header_size + header.body_size):]
+            except Exception:
+                logger.exception('Exception raised while parsing message from client')
                 return
-            if len(buf) < header.body_size:
-                logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size, len(buf))
-                self.receive_buffer = data + self.receive_buffer
-                return
-            # a message has been received
-            self.messages.put_nowait((header, buf))
-        except Exception:
-            logger.exception('Exception raised while parsing message from client')
-            return
 
-    async def _process_received_message(self):
+    async def _process_received_message_loop(self):
         """
         Take message from the queue and try to process it.
         """
@@ -88,15 +85,18 @@ class OPCUAProtocol(asyncio.Protocol):
             if header is None and buf is None:
                 # Connection was closed, end task
                 break
-            logger.debug('_process_received_message %s %s', header.body_size, len(buf))
-            ret = await self.processor.process(header, buf)
-            if not ret:
-                logger.info('processor returned False, we close connection from %s', self.peer_name)
-                self.transport.close()
-                return
-            if len(buf) != 0:
-                # There is data left in the buffer - process it
-                self._process_received_data(buf)
+            try:
+                await self._process_one_msg(header, buf)
+            except:
+                logger.exception()
+
+    async def _process_one_msg(self, header, buf):
+        logger.debug('_process_received_message %s %s', header.body_size, len(buf))
+        ret = await self.processor.process(header, buf)
+        if not ret:
+            logger.info('processor returned False, we close connection from %s', self.peer_name)
+            self.transport.close()
+            return
 
 
 class BinaryServer:

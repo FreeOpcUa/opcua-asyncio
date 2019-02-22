@@ -28,3 +28,4 @@ class Shortcuts(object):
         self.namespace_array = Node(server, ObjectIds.Server_NamespaceArray)
         self.opc_binary = Node(server, ObjectIds.OPCBinarySchema_TypeSystem)
         self.base_structure_type = Node(server, ObjectIds.Structure)
+        self.server_state = Node(server, ObjectIds.Server_ServerStatus_State)

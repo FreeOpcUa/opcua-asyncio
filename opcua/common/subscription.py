@@ -4,7 +4,7 @@ high level interface to subscriptions
 import asyncio
 import logging
 import collections
-from typing import Union
+import time
 
 from opcua import ua
 from .events import Event, get_filter_from_event_type
@@ -95,7 +95,7 @@ class Subscription:
         self.logger.info('Subscription created %s', self.subscription_id)
         # Send a publish request so the server has one in its queue
         # Servers should always be able to handle at least on extra publish request per subscriptions
-        self.loop.create_task(self.server.publish())
+        await self.server.publish()
 
     async def delete(self):
         """
@@ -104,10 +104,10 @@ class Subscription:
         results = await self.server.delete_subscriptions([self.subscription_id])
         results[0].check()
 
-    def publish_callback(self, publishresult: ua.PublishResult):
+    async def publish_callback(self, publishresult: ua.PublishResult):
         self.logger.info("Publish callback called with result: %s", publishresult)
         while self.subscription_id is None:
-            time.sleep(0.01)
+            await asyncio.sleep(0.01)
 
         if publishresult.NotificationMessage.NotificationData is not None:
             for notif in publishresult.NotificationMessage.NotificationData:
@@ -125,7 +125,7 @@ class Subscription:
         ack = ua.SubscriptionAcknowledgement()
         ack.SubscriptionId = self.subscription_id
         ack.SequenceNumber = publishresult.NotificationMessage.SequenceNumber
-        self.loop.create_task(self.server.publish([ack]))
+        await self.server.publish([ack])
 
     def _call_datachange(self, datachange: ua.DataChangeNotification):
         for item in datachange.MonitoredItems:

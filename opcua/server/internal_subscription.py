@@ -3,6 +3,7 @@ server side implementation of a subscription object
 """
 
 import logging
+import asyncio
 
 from opcua import ua
 
@@ -56,7 +57,7 @@ class MonitoredItemService:
     def delete_all_monitored_items(self):
         self.delete_monitored_items([mdata.monitored_item_id for mdata in self._monitored_items.values()])
 
-    def create_monitored_items(self, params):
+    async def create_monitored_items(self, params):
         results = []
         for item in params.ItemsToCreate:
             # with self._lock:
@@ -259,34 +260,33 @@ class InternalSubscription:
         self._startup = True
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
-        self._stopev = False
+        self._task = None
 
     def __str__(self):
         return "Subscription(id:{0})".format(self.data.SubscriptionId)
 
-    def start(self):
+    async def start(self):
         self.logger.debug("starting subscription %s", self.data.SubscriptionId)
         if self.data.RevisedPublishingInterval > 0.0:
-            self._subscription_loop()
+            self._task = self.subservice.loop.create_task(self._subscription_loop())
 
-    def stop(self):
+    async def stop(self):
         self.logger.debug("stopping subscription %s", self.data.SubscriptionId)
-        self._stopev = True
+        self._task.cancel()
+        await self._task
         self.monitored_item_srv.delete_all_monitored_items()
 
     def _trigger_publish(self):
-        if not self._stopev and self.data.RevisedPublishingInterval <= 0.0:
-            self.subservice.loop.call_soon(self.publish_results)
+        if self._task and self.data.RevisedPublishingInterval <= 0.0:
+            self.publish_results()
 
-    def _subscription_loop(self):
-        if not self._stopev:
-            self.subservice.loop.call_later(self.data.RevisedPublishingInterval / 1000.0, self._sub_loop)
-
-    def _sub_loop(self):
-        if self._stopev:
-            return
-        self.publish_results()
-        self._subscription_loop()
+    async def _subscription_loop(self):
+        try:
+            while True:
+                await asyncio.sleep(self.data.RevisedPublishingInterval / 1000.0)
+                self.publish_results()
+        except asyncio.CancelledError:
+            pass
 
     def has_published_results(self):
         if self._startup or self._triggered_datachanges or self._triggered_events:
@@ -304,14 +304,14 @@ class InternalSubscription:
                 self, self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
             self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
-            self._stopev = True
         result = None
         if self.has_published_results():
             # FIXME: should we pop a publish request here? or we do not care?
             self._publish_cycles_count += 1
             result = self._pop_publish_result()
         if result is not None:
-            self.callback(result)
+            self.subservice.loop.create_task(self.callback(result))
+            #await self.callback(result)
 
     def _pop_publish_result(self):
         result = ua.PublishResult()
@@ -354,7 +354,6 @@ class InternalSubscription:
 
     def publish(self, acks):
         self.logger.info("publish request with acks %s", acks)
-
         self._publish_cycles_count = 0
         for nb in acks:
                 self._not_acknowledged_results.pop(nb, None)

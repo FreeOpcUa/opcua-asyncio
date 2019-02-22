@@ -1,5 +1,8 @@
-
+import sys
+sys.path.insert(0, "..")
+import logging
 import asyncio
+
 from opcua import ua, Server
 from opcua.common.methods import uamethod
 
@@ -9,11 +12,11 @@ def func(parent, value):
     return value * 2
 
 
-async def task(loop):
+async def main():
     # setup our server
     server = Server()
     await server.init()
-    server.set_endpoint('opc.tcp://127.0.0.1:8080/freeopcua/server/') #4840
+    server.set_endpoint('opc.tcp://localhost:4840/freeopcua/server/') #4840
     # setup our own namespace, not really necessary but should as spec
     uri = 'http://examples.freeopcua.github.io'
     idx = await server.register_namespace(uri)
@@ -34,17 +37,18 @@ async def task(loop):
     async with server:
         count = 0
         while True:
+            await asyncio.sleep(1000)
+            print("UPDATE")
             await asyncio.sleep(1)
             count += 0.1
             await myvar.set_value(count)
 
 
-def main():
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     loop = asyncio.get_event_loop()
     loop.set_debug(True)
-    loop.run_until_complete(task(loop))
+    loop.run_until_complete(main())
     loop.close()
 
 
-if __name__ == '__main__':
-    main()

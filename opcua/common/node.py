@@ -654,33 +654,32 @@ class Node:
             rule = ua.ObjectIds.ModellingRule_Mandatory if mandatory else ua.ObjectIds.ModellingRule_Optional
             await self.add_reference(rule, ua.ObjectIds.HasModellingRule, True, False)
 
-    def add_folder(self, nodeid, bname):
-        return create_folder(self, nodeid, bname)
+    async def add_folder(self, nodeid, bname):
+        return await create_folder(self, nodeid, bname)
 
-    def add_object(self, nodeid, bname, objecttype=None):
-        return create_object(self, nodeid, bname, objecttype)
+    async def add_object(self, nodeid, bname, objecttype=None):
+        return await create_object(self, nodeid, bname, objecttype)
 
-    def add_variable(self, nodeid, bname, val, varianttype=None, datatype=None):
-        return create_variable(self, nodeid, bname, val, varianttype, datatype)
+    async def add_variable(self, nodeid, bname, val, varianttype=None, datatype=None):
+        return await create_variable(self, nodeid, bname, val, varianttype, datatype)
 
-    def add_object_type(self, nodeid, bname):
-        return create_object_type(self, nodeid, bname)
+    async def add_object_type(self, nodeid, bname):
+        return await create_object_type(self, nodeid, bname)
 
-    def add_variable_type(self, nodeid, bname, datatype):
-        return create_variable_type(self, nodeid, bname, datatype)
+    async def add_variable_type(self, nodeid, bname, datatype):
+        return await create_variable_type(self, nodeid, bname, datatype)
 
-    def add_data_type(self, nodeid, bname, description=None):
-        return create_data_type(self, nodeid, bname, description=None)
+    async def add_data_type(self, nodeid, bname, description=None):
+        return await create_data_type(self, nodeid, bname, description=None)
 
-    def add_property(self, nodeid, bname, val, varianttype=None, datatype=None):
-        return create_property(self, nodeid, bname, val, varianttype, datatype)
+    async def add_property(self, nodeid, bname, val, varianttype=None, datatype=None):
+        return await create_property(self, nodeid, bname, val, varianttype, datatype)
 
-    def add_method(self, *args):
-        return create_method(self, *args)
+    async def add_method(self, *args):
+        return await create_method(self, *args)
 
-    def add_reference_type(self, nodeid, bname, symmetric=True, inversename=None):
-        """COROUTINE"""
-        return create_reference_type(self, nodeid, bname, symmetric, inversename)
+    async def add_reference_type(self, nodeid, bname, symmetric=True, inversename=None):
+        return await create_reference_type(self, nodeid, bname, symmetric, inversename)
 
-    def call_method(self, methodid, *args):
-        return call_method(self, methodid, *args)
+    async def call_method(self, methodid, *args):
+        return await call_method(self, methodid, *args)

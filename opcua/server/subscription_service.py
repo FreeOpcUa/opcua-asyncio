@@ -2,6 +2,7 @@
 server side implementation of subscription service
 """
 
+import asyncio
 import logging
 
 from opcua import ua
@@ -22,7 +23,7 @@ class SubscriptionService:
         self.subscriptions = {}
         self._sub_id_counter = 77
 
-    def create_subscription(self, params, callback):
+    async def create_subscription(self, params, callback):
         self.logger.info("create subscription with callback: %s", callback)
         result = ua.CreateSubscriptionResult()
         result.RevisedPublishingInterval = params.RequestedPublishingInterval
@@ -32,33 +33,32 @@ class SubscriptionService:
         result.SubscriptionId = self._sub_id_counter
 
         sub = InternalSubscription(self, result, self.aspace, callback)
-        sub.start()
+        await sub.start()
         self.subscriptions[result.SubscriptionId] = sub
-
         return result
 
-    def delete_subscriptions(self, ids):
+    async def delete_subscriptions(self, ids):
         self.logger.info("delete subscriptions: %s", ids)
         res = []
+        existing_subs = []
         for i in ids:
-            #with self._lock:
-            if i not in self.subscriptions:
+            sub = self.subscriptions.pop(i, None)
+            if sub is None:
                 res.append(ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid))
             else:
-                sub = self.subscriptions.pop(i)
-                sub.stop()
+                #await sub.stop()
+                existing_subs.append(sub)
                 res.append(ua.StatusCode())
+        await asyncio.gather(*[sub.stop() for sub in existing_subs])
         return res
 
     def publish(self, acks):
         self.logger.info("publish request with acks %s", acks)
-        #with self._lock:
         for subid, sub in self.subscriptions.items():
             sub.publish([ack.SequenceNumber for ack in acks if ack.SubscriptionId == subid])
 
-    def create_monitored_items(self, params):
+    async def create_monitored_items(self, params):
         self.logger.info("create monitored items")
-        #with self._lock:
         if params.SubscriptionId not in self.subscriptions:
             res = []
             for _ in params.ItemsToCreate:
@@ -66,11 +66,10 @@ class SubscriptionService:
                 response.StatusCode = ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
                 res.append(response)
             return res
-        return self.subscriptions[params.SubscriptionId].monitored_item_srv.create_monitored_items(params)
+        return await self.subscriptions[params.SubscriptionId].monitored_item_srv.create_monitored_items(params)
 
     def modify_monitored_items(self, params):
         self.logger.info("modify monitored items")
-        #with self._lock:
         if params.SubscriptionId not in self.subscriptions:
             res = []
             for _ in params.ItemsToModify:
@@ -82,7 +81,6 @@ class SubscriptionService:
 
     def delete_monitored_items(self, params):
         self.logger.info("delete monitored items")
-        #with self._lock:
         if params.SubscriptionId not in self.subscriptions:
             res = []
             for _ in params.MonitoredItemIds:
@@ -99,6 +97,5 @@ class SubscriptionService:
         return self.subscriptions[params.SubscriptionId].republish(params.RetransmitSequenceNumber)
 
     def trigger_event(self, event):
-        #with self._lock:
         for sub in self.subscriptions.values():
             sub.monitored_item_srv.trigger_event(event)
