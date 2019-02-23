@@ -3,7 +3,6 @@ Socket server forwarding request to internal server
 """
 import logging
 import asyncio
-from typing import Union
 
 from ..ua.ua_binary import header_from_binary
 from ..common import Buffer, NotEnoughData
@@ -67,7 +66,8 @@ class OPCUAProtocol(asyncio.Protocol):
                     logger.debug('Not enough data while parsing header from client, waiting for more')
                     return
                 if len(buf) < header.body_size:
-                    logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size, len(buf))
+                    logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size,
+                                 len(buf))
                     return
                 # we have a complete message
                 self.messages.put_nowait((header, buf))
@@ -87,7 +87,7 @@ class OPCUAProtocol(asyncio.Protocol):
                 break
             try:
                 await self._process_one_msg(header, buf)
-            except:
+            except Exception:
                 logger.exception()
 
     async def _process_one_msg(self, header, buf):
@@ -100,7 +100,6 @@ class OPCUAProtocol(asyncio.Protocol):
 
 
 class BinaryServer:
-
     def __init__(self, internal_server, hostname, port):
         self.logger = logging.getLogger(__name__)
         self.hostname = hostname
@@ -128,7 +127,7 @@ class BinaryServer:
             sockname = self._server.sockets[0].getsockname()
             self.hostname = sockname[0]
             self.port = sockname[1]
-        self.logger.info('Listening on {0}:{1}'.format(self.hostname, self.port))
+        self.logger.info('Listening on %s:%s', self.hostname, self.port)
 
     async def stop(self):
         self.logger.info('Closing asyncio socket server')

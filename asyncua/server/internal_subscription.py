@@ -11,7 +11,6 @@ __all__ = ["InternalSubscription", "WhereClauseEvaluator"]
 
 
 class MonitoredItemData:
-
     def __init__(self):
         self.client_handle = None
         self.callback_handle = None
@@ -24,7 +23,6 @@ class MonitoredItemData:
 
 
 class MonitoredItemValues:
-
     def __init__(self):
         self.current_value = None
         self.old_value = None
@@ -116,13 +114,12 @@ class MonitoredItemService:
         return result, mdata
 
     def _create_events_monitored_item(self, params):
-        self.logger.info("request to subscribe to events for node %s and attribute %s",
-            params.ItemToMonitor.NodeId,
-            params.ItemToMonitor.AttributeId)
+        self.logger.info("request to subscribe to events for node %s and attribute %s", params.ItemToMonitor.NodeId,
+                         params.ItemToMonitor.AttributeId)
 
         result, mdata = self._make_monitored_item_common(params)
-        ev_notify_byte = self.aspace.get_attribute_value(
-            params.ItemToMonitor.NodeId, ua.AttributeIds.EventNotifier).Value.Value
+        ev_notify_byte = self.aspace.get_attribute_value(params.ItemToMonitor.NodeId,
+                                                         ua.AttributeIds.EventNotifier).Value.Value
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadServiceUnsupported)
@@ -136,9 +133,8 @@ class MonitoredItemService:
         return result
 
     def _create_data_change_monitored_item(self, params):
-        self.logger.info("request to subscribe to datachange for node %s and attribute %s",
-            params.ItemToMonitor.NodeId,
-            params.ItemToMonitor.AttributeId)
+        self.logger.info("request to subscribe to datachange for node %s and attribute %s", params.ItemToMonitor.NodeId,
+                         params.ItemToMonitor.AttributeId)
 
         result, mdata = self._make_monitored_item_common(params)
         result.FilterResult = params.RequestedParameters.Filter
@@ -182,11 +178,11 @@ class MonitoredItemService:
     def datachange_callback(self, handle, value, error=None):
         if error:
             self.logger.info("subscription %s: datachange callback called with handle '%s' and erorr '%s'", self,
-                handle, error)
+                             handle, error)
             self.trigger_statuschange(error)
         else:
             self.logger.info("subscription %s: datachange callback called with handle '%s' and value '%s'", self,
-                handle, value.Value)
+                             handle, value.Value)
             event = ua.MonitoredItemNotification()
             # with self._lock:
             mid = self._monitored_datachange[handle]
@@ -204,30 +200,28 @@ class MonitoredItemService:
     def deadband_callback(self, values, flt):
         if flt.DeadbandType == ua.DeadbandType.None_ or values.get_old_value() is None:
             return True
-        elif flt.DeadbandType == ua.DeadbandType.Absolute and \
+        if flt.DeadbandType == ua.DeadbandType.Absolute and \
                 ((abs(values.get_current_value() - values.get_old_value())) > flt.DeadbandValue):
             return True
-        elif flt.DeadbandType == ua.DeadbandType.Percent:
-            self.logger.warn("DeadbandType Percent is not implemented !")
+        if flt.DeadbandType == ua.DeadbandType.Percent:
+            self.logger.warning("DeadbandType Percent is not implemented !")
             return True
-        else:
-            return False
+        return False
 
     def trigger_event(self, event):
         if event.emitting_node not in self._monitored_events:
-            self.logger.debug("%s has no subscription for events %s from node: %s",
-                self, event, event.emitting_node)
+            self.logger.debug("%s has no subscription for events %s from node: %s", self, event, event.emitting_node)
             return False
-        self.logger.debug("%s has subscription for events %s from node: %s",
-            self, event, event.emitting_node)
+        self.logger.debug("%s has subscription for events %s from node: %s", self, event, event.emitting_node)
         mids = self._monitored_events[event.emitting_node]
         for mid in mids:
             self._trigger_event(event, mid)
+        return True
 
     def _trigger_event(self, event, mid):
         if mid not in self._monitored_items:
-            self.logger.debug("Could not find monitored items for id %s for event %s in subscription %s",
-                mid, event, self)
+            self.logger.debug("Could not find monitored items for id %s for event %s in subscription %s", mid, event,
+                              self)
             return
         mdata = self._monitored_items[mid]
         if not mdata.where_clause_evaluator.eval(event):
@@ -243,7 +237,6 @@ class MonitoredItemService:
 
 
 class InternalSubscription:
-
     def __init__(self, subservice, data, addressspace, callback):
         self.logger = logging.getLogger(__name__)
         self.aspace = addressspace
@@ -293,15 +286,15 @@ class InternalSubscription:
             return True
         if self._keep_alive_count > self.data.RevisedMaxKeepAliveCount:
             self.logger.debug("keep alive count %s is > than max keep alive count %s, sending publish event",
-                self._keep_alive_count, self.data.RevisedMaxKeepAliveCount)
+                              self._keep_alive_count, self.data.RevisedMaxKeepAliveCount)
             return True
         self._keep_alive_count += 1
         return False
 
     def publish_results(self):
         if self._publish_cycles_count > self.data.RevisedLifetimeCount:
-            self.logger.warning("Subscription %s has expired, publish cycle count(%s) > lifetime count (%s)",
-                self, self._publish_cycles_count, self.data.RevisedLifetimeCount)
+            self.logger.warning("Subscription %s has expired, publish cycle count(%s) > lifetime count (%s)", self,
+                                self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
             self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
         result = None
@@ -322,7 +315,7 @@ class InternalSubscription:
         self._keep_alive_count = 0
         self._startup = False
         result.NotificationMessage.SequenceNumber = self._notification_seq
-        if len(result.NotificationMessage.NotificationData) != 0:
+        if result.NotificationMessage.NotificationData:
             self._notification_seq += 1
             self._not_acknowledged_results[result.NotificationMessage.SequenceNumber] = result
         result.MoreNotifications = False
@@ -356,7 +349,7 @@ class InternalSubscription:
         self.logger.info("publish request with acks %s", acks)
         self._publish_cycles_count = 0
         for nb in acks:
-                self._not_acknowledged_results.pop(nb, None)
+            self._not_acknowledged_results.pop(nb, None)
 
     def republish(self, nb):
         self.logger.info("re-publish request for ack %s in subscription %s", nb, self)
@@ -364,9 +357,8 @@ class InternalSubscription:
         if notificationMessage:
             self.logger.info("re-publishing ack %s in subscription %s", nb, self)
             return notificationMessage
-        else:
-            self.logger.info("Error request to re-published non existing ack %s in subscription %s", nb, self)
-            return ua.NotificationMessage()
+        self.logger.info("Error request to re-published non existing ack %s in subscription %s", nb, self)
+        return ua.NotificationMessage()
 
     def enqueue_datachange_event(self, mid, eventdata, maxsize):
         self._enqueue_event(mid, eventdata, maxsize, self._triggered_datachanges)
@@ -402,8 +394,8 @@ class WhereClauseEvaluator:
         try:
             res = self._eval_el(0, event)
         except Exception as ex:
-            self.logger.exception("Exception while evaluating WhereClause %s for event %s: %s",
-                self.elements, event, ex)
+            self.logger.exception("Exception while evaluating WhereClause %s for event %s: %s", self.elements, event,
+                                  ex)
             return False
         return res
 
@@ -413,61 +405,57 @@ class WhereClauseEvaluator:
         ops = el.FilterOperands  # just to make code more readable
         if el.FilterOperator == ua.FilterOperator.Equals:
             return self._eval_op(ops[0], event) == self._eval_el(ops[1], event)
-        elif el.FilterOperator == ua.FilterOperator.IsNull:
+        if el.FilterOperator == ua.FilterOperator.IsNull:
             return self._eval_op(ops[0], event) is None  # FIXME: might be too strict
-        elif el.FilterOperator == ua.FilterOperator.GreaterThan:
+        if el.FilterOperator == ua.FilterOperator.GreaterThan:
             return self._eval_op(ops[0], event) > self._eval_el(ops[1], event)
-        elif el.FilterOperator == ua.FilterOperator.LessThan:
+        if el.FilterOperator == ua.FilterOperator.LessThan:
             return self._eval_op(ops[0], event) < self._eval_el(ops[1], event)
-        elif el.FilterOperator == ua.FilterOperator.GreaterThanOrEqual:
+        if el.FilterOperator == ua.FilterOperator.GreaterThanOrEqual:
             return self._eval_op(ops[0], event) >= self._eval_el(ops[1], event)
-        elif el.FilterOperator == ua.FilterOperator.LessThanOrEqual:
+        if el.FilterOperator == ua.FilterOperator.LessThanOrEqual:
             return self._eval_op(ops[0], event) <= self._eval_el(ops[1], event)
-        elif el.FilterOperator == ua.FilterOperator.Like:
+        if el.FilterOperator == ua.FilterOperator.Like:
             return self._like_operator(self._eval_op(ops[0], event), self._eval_el(ops[1], event))
-        elif el.FilterOperator == ua.FilterOperator.Not:
+        if el.FilterOperator == ua.FilterOperator.Not:
             return not self._eval_op(ops[0], event)
-        elif el.FilterOperator == ua.FilterOperator.Between:
+        if el.FilterOperator == ua.FilterOperator.Between:
             return self._eval_el(ops[2], event) >= self._eval_op(ops[0], event) >= self._eval_el(ops[1], event)
-        elif el.FilterOperator == ua.FilterOperator.InList:
+        if el.FilterOperator == ua.FilterOperator.InList:
             return self._eval_op(ops[0], event) in [self._eval_op(op, event) for op in ops[1:]]
-        elif el.FilterOperator == ua.FilterOperator.And:
+        if el.FilterOperator == ua.FilterOperator.And:
             self.elements(ops[0].Index)
             return self._eval_op(ops[0], event) and self._eval_op(ops[1], event)
-        elif el.FilterOperator == ua.FilterOperator.Or:
+        if el.FilterOperator == ua.FilterOperator.Or:
             return self._eval_op(ops[0], event) or self._eval_el(ops[1], event)
-        elif el.FilterOperator == ua.FilterOperator.Cast:
+        if el.FilterOperator == ua.FilterOperator.Cast:
             self.logger.warn("Cast operand not implemented, assuming True")
             return True
-        elif el.FilterOperator == ua.FilterOperator.OfType:
+        if el.FilterOperator == ua.FilterOperator.OfType:
             return event.EventType == self._eval_op(ops[0], event)
-        else:
-            # TODO: implement missing operators
-            self.logger.warning("WhereClause not implemented for element: %s", el)
-            raise NotImplementedError
+        # TODO: implement missing operators
+        self.logger.warning("WhereClause not implemented for element: %s", el)
+        raise NotImplementedError
 
     def _like_operator(self, string, pattern):
         raise NotImplementedError
 
     def _eval_op(self, op, event):
         # seems spec says we should return Null if issues
-        if type(op) is ua.ElementOperand:
+        if isinstance(op, ua.ElementOperand):
             return self._eval_el(op.Index, event)
-        elif type(op) is ua.AttributeOperand:
+        if isinstance(op, ua.AttributeOperand):
             if op.BrowsePath:
                 return getattr(event, op.BrowsePath.Elements[0].TargetName.Name)
-            else:
-                return self._aspace.get_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return self._aspace.get_attribute_value(event.EventType, op.AttributeId).Value.Value
             # FIXME: check, this is probably broken
-        elif type(op) is ua.SimpleAttributeOperand:
+        if isinstance(op, ua.SimpleAttributeOperand):
             if op.BrowsePath:
                 # we only support depth of 1
                 return getattr(event, op.BrowsePath[0].Name)
-            else:
-                # TODO: write code for index range.... but doe it make any sense
-                return self._aspace.get_attribute_value(event.EventType, op.AttributeId).Value.Value
-        elif type(op) is ua.LiteralOperand:
+            # TODO: write code for index range.... but doe it make any sense
+            return self._aspace.get_attribute_value(event.EventType, op.AttributeId).Value.Value
+        if isinstance(op, ua.LiteralOperand):
             return op.Value.Value
-        else:
-            self.logger.warning("Where clause element % is not of a known type", op)
-            raise NotImplementedError
+        self.logger.warning("Where clause element % is not of a known type", op)
+        raise NotImplementedError

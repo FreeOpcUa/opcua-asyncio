@@ -44,7 +44,6 @@ class ServerDesc:
 
 
 class InternalServer:
-
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.server_callback_dispatcher = CallbackDispatcher()
@@ -65,7 +64,7 @@ class InternalServer:
         self.subscription_service: SubscriptionService = SubscriptionService(self.loop, self.aspace)
         self.history_manager = HistoryManager(self)
 
-        self.user_manager = default_user_manager # defined at the end of this file
+        self.user_manager = default_user_manager  # defined at the end of this file
 
         # create a session to use on server side
         self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal", user=User.Admin)
@@ -87,10 +86,8 @@ class InternalServer:
 
     async def load_standard_address_space(self, shelf_file=None):
         if shelf_file:
-            is_file = (
-                    await self.loop.run_in_executor(None, os.path.isfile, shelf_file) or
-                    await self.loop.run_in_executor(None, os.path.isfile, f'{shelf_file}.db')
-            )
+            is_file = (await self.loop.run_in_executor(None, os.path.isfile, shelf_file)
+                       or await self.loop.run_in_executor(None, os.path.isfile, f'{shelf_file}.db'))
             if is_file:
                 # import address space from shelf
                 await self.loop.run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
@@ -121,7 +118,7 @@ class InternalServer:
         it2.TargetNodeId = ua.NodeId(ua.ObjectIds.DataTypesFolder)
         it2.TargetNodeClass = ua.NodeClass.Object
         return self.isession.add_references([it, it2])
- 
+
     def load_address_space(self, path):
         """
         Load address space from path
@@ -149,9 +146,7 @@ class InternalServer:
         await self.history_manager.stop()
 
     def _set_current_time(self):
-        self.loop.create_task(
-            self.current_time_node.set_value(datetime.utcnow())
-        )
+        self.loop.create_task(self.current_time_node.set_value(datetime.utcnow()))
         self.loop.call_later(1, self._set_current_time)
 
     def get_new_channel_id(self):
@@ -260,7 +255,7 @@ class InternalServer:
         directly write datavalue to the Attribute, bypasing some checks and structure creation
         so it is a little faster
         """
-        self.aspace.set_attribute_value(nodeid, ua.AttributeIds.Value, datavalue)
+        self.aspace.set_attribute_value(nodeid, attr, datavalue)
 
     def set_user_manager(self, user_manager):
         """
@@ -278,21 +273,21 @@ class InternalServer:
 
         # decrypt password is we can
         if str(token.EncryptionAlgorithm) != "None":
-            if use_crypto == False:
-                return False;
+            if use_crypto is False:
+                return False
             try:
                 if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
                     raw_pw = uacrypto.decrypt_rsa15(self.private_key, passwd)
                 elif token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-oaep":
                     raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, passwd)
                 else:
-                    self.logger.warning("Unknown password encoding '{0}'".format(token.EncryptionAlgorithm))
+                    self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
                     return False
                 length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
                 passwd = raw_pw[4:4 + length]
                 passwd = passwd.decode('utf-8')
-            except Exception as exp:
-                self.logger.warning("Unable to decrypt password")
+            except Exception:
+                self.logger.exception("Unable to decrypt password")
                 return False
 
         # call user_manager
@@ -404,14 +399,14 @@ class InternalSession:
     async def create_monitored_items(self, params):
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(
-            CallbackType.ItemSubscriptionCreated, ServerItemCallback(params, subscription_result))
+        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionCreated,
+                                                         ServerItemCallback(params, subscription_result))
         return subscription_result
 
     def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(
-            CallbackType.ItemSubscriptionModified, ServerItemCallback(params, subscription_result))
+        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionModified,
+                                                         ServerItemCallback(params, subscription_result))
         return subscription_result
 
     def republish(self, params):
@@ -424,8 +419,8 @@ class InternalSession:
     async def delete_monitored_items(self, params):
         # This is an async method, dues to symetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(
-            CallbackType.ItemSubscriptionDeleted, ServerItemCallback(params, subscription_result))
+        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionDeleted,
+                                                         ServerItemCallback(params, subscription_result))
         return subscription_result
 
     async def publish(self, acks=None):
@@ -435,10 +430,10 @@ class InternalSession:
         return self.subscription_service.publish(acks)
 
 
-def default_user_manager(iserver, isession, userName, password):
+def default_user_manager(iserver, isession, username, password):
     """
     Default user_manager, does nothing much but check for admin
     """
-    if iserver.allow_remote_admin and userName in ("admin", "Admin"):
+    if iserver.allow_remote_admin and username in ("admin", "Admin"):
         isession.user = User.Admin
     return True

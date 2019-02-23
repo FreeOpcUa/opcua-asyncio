@@ -61,7 +61,7 @@ class Server:
     :vartype nodes: Shortcuts
     """
 
-    def __init__(self, iserver: InternalServer=None):
+    def __init__(self, iserver: InternalServer = None):
         self.loop = asyncio.get_event_loop()
         self.logger = logging.getLogger(__name__)
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
@@ -79,10 +79,9 @@ class Server:
         self.nodes = Shortcuts(self.iserver.isession)
         # enable all endpoints by default
         self._security_policy = [
-                        ua.SecurityPolicyType.NoSecurity,
-                        ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
-                        ua.SecurityPolicyType.Basic256Sha256_Sign
-                                ]
+            ua.SecurityPolicyType.NoSecurity, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
+            ua.SecurityPolicyType.Basic256Sha256_Sign
+        ]
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
         self.certificate = None
 
@@ -120,7 +119,7 @@ class Server:
     async def load_private_key(self, path):
         self.iserver.private_key = await uacrypto.load_private_key(path)
 
-    def disable_clock(self, val: bool=True):
+    def disable_clock(self, val: bool = True):
         """
         for debugging you may want to disable clock that write every second
         to address space
@@ -155,7 +154,7 @@ class Server:
         params.ServerUris = uris
         return self.iserver.find_servers(params)
 
-    async def register_to_discovery(self, url: str="opc.tcp://localhost:4840", period: int=60):
+    async def register_to_discovery(self, url: str = "opc.tcp://localhost:4840", period: int = 60):
         """
         Register to an OPC-UA Discovery server. Registering must be renewed at
         least every 10 minutes, so this method will use our asyncio thread to
@@ -172,7 +171,7 @@ class Server:
         if period:
             self.loop.call_soon(self._schedule_renew_registration)
 
-    def unregister_to_discovery(self, url: str="opc.tcp://localhost:4840"):
+    def unregister_to_discovery(self, url: str = "opc.tcp://localhost:4840"):
         """
         stop registration thread
         """
@@ -219,7 +218,7 @@ class Server:
         """
         self._security_policy = security_policy
 
-    def set_security_IDs(self, policyIDs):
+    def set_security_IDs(self, policy_ids):
         """
             Method setting up the security endpoints for identification
             of clients. During server object initialization, all possible
@@ -233,7 +232,7 @@ class Server:
 
         (Implementation for ID check is currently not finalized...)
         """
-        self._policyIDs = policyIDs
+        self._policyIDs = policy_ids
 
     async def _setup_server_nodes(self):
         # to be called just before starting server since it needs all parameters to be setup
@@ -247,24 +246,21 @@ class Server:
                 return
 
             if ua.SecurityPolicyType.NoSecurity in self._security_policy:
-                self.logger.warning("Creating an open endpoint to the server, although encrypted endpoints are enabled.")
+                self.logger.warning(
+                    "Creating an open endpoint to the server, although encrypted endpoints are enabled.")
 
             if ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256,
                                     ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
-                                                               ua.MessageSecurityMode.SignAndEncrypt,
-                                                               self.certificate,
-                                                               self.iserver.private_key)
-                                     )
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
+                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
+                                             self.iserver.private_key))
             if ua.SecurityPolicyType.Basic256Sha256_Sign in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256,
-                                    ua.MessageSecurityMode.Sign)
-                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
-                                                               ua.MessageSecurityMode.Sign,
-                                                               self.certificate,
-                                                               self.iserver.private_key)
-                                     )
+                self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256, ua.MessageSecurityMode.Sign)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
+                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key))
 
     def _set_endpoints(self, policy=ua.SecurityPolicy, mode=ua.MessageSecurityMode.None_):
         idtokens = []
@@ -424,8 +420,13 @@ class Server:
             properties = []
         return self._create_custom_type(idx, name, basetype, properties, [], [])
 
-    def create_custom_object_type(self, idx, name, basetype=ua.ObjectIds.BaseObjectType, properties=None,
-                                  variables=None, methods=None) -> Coroutine:
+    def create_custom_object_type(self,
+                                  idx,
+                                  name,
+                                  basetype=ua.ObjectIds.BaseObjectType,
+                                  properties=None,
+                                  variables=None,
+                                  methods=None) -> Coroutine:
         if properties is None:
             properties = []
         if variables is None:
@@ -437,8 +438,13 @@ class Server:
     # def create_custom_reference_type(self, idx, name, basetype=ua.ObjectIds.BaseReferenceType, properties=[]):
     # return self._create_custom_type(idx, name, basetype, properties)
 
-    def create_custom_variable_type(self, idx, name, basetype=ua.ObjectIds.BaseVariableType, properties=None,
-                                    variables=None, methods=None) -> Coroutine:
+    def create_custom_variable_type(self,
+                                    idx,
+                                    name,
+                                    basetype=ua.ObjectIds.BaseVariableType,
+                                    properties=None,
+                                    variables=None,
+                                    methods=None) -> Coroutine:
         if properties is None:
             properties = []
         if variables is None:
@@ -459,15 +465,14 @@ class Server:
             datatype = None
             if len(prop) > 2:
                 datatype = prop[2]
-            await custom_t.add_property(idx, prop[0], ua.get_default_value(prop[1]), varianttype=prop[1],
-                datatype=datatype)
+            await custom_t.add_property(
+                idx, prop[0], ua.get_default_value(prop[1]), varianttype=prop[1], datatype=datatype)
         for variable in variables:
             datatype = None
             if len(variable) > 2:
                 datatype = variable[2]
             await custom_t.add_variable(
-                idx, variable[0], ua.get_default_value(variable[1]), varianttype=variable[1], datatype=datatype
-            )
+                idx, variable[0], ua.get_default_value(variable[1]), varianttype=variable[1], datatype=datatype)
         for method in methods:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
@@ -487,7 +492,7 @@ class Server:
         await exp.build_etree(nodes)
         await exp.write_xml(path)
 
-    async def export_xml_by_ns(self, path: str, namespaces: list=None):
+    async def export_xml_by_ns(self, path: str, namespaces: list = None):
         """
         Export nodes of one or more namespaces to an XML file.
         Namespaces used by nodes are always exported for consistency.
@@ -510,8 +515,8 @@ class Server:
         :param count: number of changes to store in the history
         """
         nodes = node if isinstance(node, (list, tuple)) else [node]
-        for node in nodes:
-            await self.iserver.enable_history_data_change(node, period, count)
+        for n in nodes:
+            await self.iserver.enable_history_data_change(n, period, count)
 
     async def dehistorize_node_data_change(self, node):
         """
@@ -519,10 +524,10 @@ class Server:
         :param node: node or list of nodes that can be historized (UA variables/properties)
         """
         nodes = node if isinstance(node, (list, tuple)) else [node]
-        for node in nodes:
-            await self.iserver.disable_history_data_change(node)
+        for n in nodes:
+            await self.iserver.disable_history_data_change(n)
 
-    async def historize_node_event(self, node, period=timedelta(days=7), count: int=0):
+    async def historize_node_event(self, node, period=timedelta(days=7), count: int = 0):
         """
         Start historizing events from node (typically a UA object); see history module
         :param node: node or list of nodes that can be historized (UA objects)
@@ -530,8 +535,8 @@ class Server:
         :param count: number of events to store in the history
         """
         nodes = node if isinstance(node, (list, tuple)) else [node]
-        for node in nodes:
-            await self.iserver.enable_history_event(node, period, count)
+        for n in nodes:
+            await self.iserver.enable_history_event(n, period, count)
 
     async def dehistorize_node_event(self, node):
         """
@@ -539,8 +544,8 @@ class Server:
         :param node: node or list of nodes that can be historized (UA objects)
         """
         nodes = node if isinstance(node, (list, tuple)) else [node]
-        for node in nodes:
-            await self.iserver.disable_history_event(node)
+        for n in nodes:
+            await self.iserver.disable_history_event(n)
 
     def subscribe_server_callback(self, event, handle):
         self.iserver.subscribe_server_callback(event, handle)

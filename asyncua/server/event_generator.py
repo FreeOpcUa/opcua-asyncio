@@ -10,7 +10,6 @@ __all__ = ["EventGenerator"]
 
 
 class EventGenerator:
-
     """
     Create an event based on an event type. Per default is BaseEventType used.
     Object members are dynamically created from the base event type and send to
@@ -71,10 +70,9 @@ class EventGenerator:
         self.emitting_node = emitting_node
 
     def __str__(self):
-        return "EventGenerator(Type:{0}, Emitting Node:{1}, Time:{2}, Message: {3})".format(self.event.EventType,
-                                                                                 self.emitting_node,
-                                                                                 self.event.Time,
-                                                                                 self.event.Message)
+        return "EventGenerator(Type:{0}, Emitting Node:{1}, Time:{2}, Message: {3})".format(
+            self.event.EventType, self.emitting_node, self.event.Time, self.event.Message)
+
     __repr__ = __str__
 
     def trigger(self, time=None, message=None):
