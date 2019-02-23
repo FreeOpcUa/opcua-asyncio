@@ -29,6 +29,15 @@ def client(tloop, server):
     c.disconnect()
 
 
-def test_sync1(client):
+def test_sync_client(client):
     print(client.nodes.root)
     time.sleep(2)
+
+
+def test_sync_get_node(client):
+    node  = client.get_node(85)
+    assert node == client.nodes.objects
+    nodes = node.get_children()
+    assert len(nodes) == 1
+    assert nodes[0] == client.nodes.server
+

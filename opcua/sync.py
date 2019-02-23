@@ -8,7 +8,7 @@ import logging
 from opcua import client
 from opcua import server
 from opcua.common import node
-from opcua.common import subscription
+from opcua.common import subscription, shortcuts
 
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,6 @@ class ThreadLoop(Thread):
         with self._cond:
             self._cond.notify_all()
         self.loop.run_forever()
-        print("Thread ended")
 
     def stop(self):
         self.loop.call_soon_threadsafe(self.loop.stop)
@@ -49,7 +48,6 @@ _tloop = None
 
 
 def start_thread_loop():
-    print("START")
     global _tloop
     _tloop = ThreadLoop()
     _tloop.start()
@@ -57,7 +55,6 @@ def start_thread_loop():
 
 
 def stop_thread_loop():
-    print("STOP")
     global _tloop
     _tloop.stop()
     _tloop.join()
@@ -97,20 +94,26 @@ def _get_super(func):
 
 def syncmethod(func):
     def wrapper(self, *args, **kwargs):
-        name = func.__name__
-        sup = _get_super(func)
-        super_func = getattr(sup, name)
+        #name = func.__name__
+        aio_func = getattr(self.aio_obj, func.__name__)
+        #sup = _get_super(func)
+        #super_func = getattr(sup, name)
         global _tloop
-        result = _tloop.post(super_func(self, *args, **kwargs))
+        result = _tloop.post(aio_func(*args, **kwargs))
+        if isinstance(result, node.Node):
+            return Node(result)
+        if isinstance(result, list) and len(result) > 0 and isinstance(result[0], node.Node):
+            return [Node(i) for i in result]
         return result
     return wrapper
 
 
-class Client(client.Client):
+class Client:
     def __init__(self, url: str, timeout: int = 4):
         global _tloop
-        client.Client.__init__(self, url, timeout, loop=_tloop.loop)
-    
+        self.aio_obj = client.Client(url, timeout, loop=_tloop.loop)
+        self.nodes = Shortcuts(self.aio_obj.uaclient)
+
     @syncmethod
     def connect(self):
         pass
@@ -119,12 +122,26 @@ class Client(client.Client):
     def disconnect(self):
         pass
 
+    def get_node(self, nodeid):
+        return Node(self.aio_obj.get_node(nodeid))
 
-class Server(server.Server):
+
+class Shortcuts:
+    def __init__(self, aio_server):
+        self.aio_obj = shortcuts.Shortcuts(aio_server)
+        for k, v in self.aio_obj.__dict__.items():
+            setattr(self, k, Node(v))
+
+
+class Server:
     def __init__(self, shelf_file=None):
         global _tloop
-        server.Server.__init__(self)
-        _tloop.post(self.init(shelf_file))
+        self.aio_obj = server.Server(loop=_tloop.loop)
+        _tloop.post(self.aio_obj.init(shelf_file))
+        self.nodes = Shortcuts(self.aio_obj.iserver.isession)
+    
+    def set_endpoint(self, url):
+        return self.aio_obj.set_endpoint(url)
     
     @syncmethod
     def start(self):
@@ -133,5 +150,25 @@ class Server(server.Server):
     @syncmethod
     def stop(self):
         pass
+
+    def get_node(self, nodeid):
+        return Node(server.Server.get_node(self, nodeid))
+
+
+class Node:
+    def __init__(self, aio_node):
+        self.aio_obj = aio_node
+        global _tloop
+    
+    @syncmethod
+    def get_browse_name(self):
+        pass
+
+    @syncmethod
+    def get_children(self):
+        pass
+
+    def __eq__(self, other):
+        return self.aio_obj == other.aio_obj
 
 
