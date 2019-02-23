@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timedelta
-from opcua import ua
+from asyncua import ua
 
 pytestmark = pytest.mark.asyncio
 NODE_ID = ua.NodeId(123)

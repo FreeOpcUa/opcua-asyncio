@@ -1,5 +1,5 @@
-from opcua import ua, Server
-from opcua.common.type_dictionary_buider import DataTypeDictionaryBuilder, get_ua_class
+from asyncua import ua, Server
+from asyncua.common.type_dictionary_buider import DataTypeDictionaryBuilder, get_ua_class
 from IPython import embed
 
 

@@ -11,19 +11,19 @@ import pytest
 import logging
 from datetime import datetime
 
-from opcua import ua
-from opcua.ua.ua_binary import extensionobject_from_binary
-from opcua.ua.ua_binary import extensionobject_to_binary
-from opcua.ua.ua_binary import nodeid_to_binary, variant_to_binary, _reshape, variant_from_binary, nodeid_from_binary
-from opcua.ua.ua_binary import struct_to_binary, struct_from_binary
-from opcua.ua import flatten, get_shape
-from opcua.server.internal_subscription import WhereClauseEvaluator
-from opcua.common.event_objects import BaseEvent
-from opcua.common.ua_utils import string_to_variant, variant_to_string, string_to_val, val_to_string
-from opcua.common.xmlimporter import XmlImporter
-from opcua.ua.uatypes import _MaskEnum
-from opcua.common.structures import StructGenerator
-from opcua.common.connection import MessageChunk
+from asyncua import ua
+from asyncua.ua.ua_binary import extensionobject_from_binary
+from asyncua.ua.ua_binary import extensionobject_to_binary
+from asyncua.ua.ua_binary import nodeid_to_binary, variant_to_binary, _reshape, variant_from_binary, nodeid_from_binary
+from asyncua.ua.ua_binary import struct_to_binary, struct_from_binary
+from asyncua.ua import flatten, get_shape
+from asyncua.server.internal_subscription import WhereClauseEvaluator
+from asyncua.common.event_objects import BaseEvent
+from asyncua.common.ua_utils import string_to_variant, variant_to_string, string_to_val, val_to_string
+from asyncua.common.xmlimporter import XmlImporter
+from asyncua.ua.uatypes import _MaskEnum
+from asyncua.common.structures import StructGenerator
+from asyncua.common.connection import MessageChunk
 
 EXAMPLE_BSD_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "example.bsd"))
 

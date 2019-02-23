@@ -2,10 +2,10 @@ import asyncio
 import sys
 sys.path.insert(0, "..")
 import logging
-from opcua import Client, Node, ua
+from asyncua import Client, Node, ua
 
 logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger('opcua')
+_logger = logging.getLogger('asyncua')
 
 
 async def main():

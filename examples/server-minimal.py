@@ -3,8 +3,8 @@ sys.path.insert(0, "..")
 import logging
 import asyncio
 
-from opcua import ua, Server
-from opcua.common.methods import uamethod
+from asyncua import ua, Server
+from asyncua.common.methods import uamethod
 
 
 @uamethod

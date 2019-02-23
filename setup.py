@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
 
-setup(name="opcua",
+setup(name="asyncua",
       version="0.98.5",
       description="Pure Python OPC-UA client and server library",
       author="Olivier Roulet-Dubonnet",
       author_email="olivier.roulet@gmail.com",
       url='http://freeopcua.github.io/',
       packages=find_packages(),
-      provides=["opcua"],
+      provides=["asyncua"],
       license="GNU Lesser General Public License v3 or later",
       install_requires=["aiofiles", "asyncio-contextmanager", "python-dateutil", "pytz", "lxml"],
       extras_require={
@@ -23,16 +23,16 @@ setup(name="opcua",
                    ],
       entry_points={'console_scripts':
                     [
-                        'uaread = opcua.tools:uaread',
-                        'uals = opcua.tools:uals',
-                        'uabrowse = opcua.tools:uals',
-                        'uawrite = opcua.tools:uawrite',
-                        'uasubscribe = opcua.tools:uasubscribe',
-                        'uahistoryread = opcua.tools:uahistoryread',
-                        'uaclient = opcua.tools:uaclient',
-                        'uaserver = opcua.tools:uaserver',
-                        'uadiscover = opcua.tools:uadiscover',
-                        'uacall = opcua.tools:uacall',
+                        'uaread = asyncua.tools:uaread',
+                        'uals = asyncua.tools:uals',
+                        'uabrowse = asyncua.tools:uals',
+                        'uawrite = asyncua.tools:uawrite',
+                        'uasubscribe = asyncua.tools:uasubscribe',
+                        'uahistoryread = asyncua.tools:uahistoryread',
+                        'uaclient = asyncua.tools:uaclient',
+                        'uaserver = asyncua.tools:uaserver',
+                        'uadiscover = asyncua.tools:uadiscover',
+                        'uacall = asyncua.tools:uacall',
                     ]
                     }
       )

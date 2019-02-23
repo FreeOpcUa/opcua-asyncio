@@ -1,8 +1,8 @@
 import os
-from opcua import ua
-from opcua.ua import uatypes
+from asyncua import ua
+from asyncua.ua import uatypes
 from enum import IntEnum
-from opcua import Server
+from asyncua import Server
 
 TEST_DIR = os.path.dirname(__file__) + os.sep
 
@@ -13,9 +13,9 @@ class ExampleEnum(IntEnum):
     EnumVal3 = 2
 
 
-import opcua.ua
+import asyncua.ua
 
-setattr(opcua.ua, 'ExampleEnum', ExampleEnum)
+setattr(asyncua.ua, 'ExampleEnum', ExampleEnum)
 
 
 class ExampleStruct(uatypes.FrozenClass):

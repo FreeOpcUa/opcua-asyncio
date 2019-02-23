@@ -4,7 +4,7 @@ import logging
 
 from IPython import embed
 
-from opcua import Client
+from asyncua import Client
 
 
 if __name__ == "__main__":

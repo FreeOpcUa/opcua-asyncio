@@ -15,8 +15,8 @@ except ImportError:
         shell.interact()
 
 
-from opcua import ua, uamethod, Server
-from opcua.common.callback import CallbackType
+from asyncua import ua, uamethod, Server
+from asyncua.common.callback import CallbackType
 
 
 
@@ -40,15 +40,15 @@ def delete_monitored_items(event, dispatcher):
 if __name__ == "__main__":
     # optional: setup logging
     logging.basicConfig(level=logging.WARN)
-    #logger = logging.getLogger("opcua.address_space")
+    #logger = logging.getLogger("asyncua.address_space")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("opcua.internal_server")
+    #logger = logging.getLogger("asyncua.internal_server")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("opcua.binary_server_asyncio")
+    #logger = logging.getLogger("asyncua.binary_server_asyncio")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("opcua.uaprocessor")
+    #logger = logging.getLogger("asyncua.uaprocessor")
     # logger.setLevel(logging.DEBUG)
-    logger = logging.getLogger("opcua.subscription_service")
+    logger = logging.getLogger("asyncua.subscription_service")
     logger.setLevel(logging.DEBUG)
 
     # now setup our server

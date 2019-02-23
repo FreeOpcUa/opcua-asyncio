@@ -3,8 +3,8 @@ sys.path.insert(0, "..")
 import time
 from collections import OrderedDict
 
-from opcua import ua, Server, instantiate
-from opcua.common.xmlexporter import XmlExporter
+from asyncua import ua, Server, instantiate
+from asyncua.common.xmlexporter import XmlExporter
 
 
 if __name__ == "__main__":

@@ -4,8 +4,8 @@ import time
 from datetime import datetime, timedelta
 from copy import copy
 
-import opcua
-from opcua import ua
+import asyncua
+from asyncua import ua
 
 
 class SubHandler():
@@ -327,14 +327,14 @@ class SubscriptionTests(object):
 
     def test_get_event_from_type_node_BaseEvent(self):
         etype = self.opc.get_node(ua.ObjectIds.BaseEventType)
-        properties = opcua.common.events.get_event_properties_from_type_node(etype)
+        properties = asyncua.common.events.get_event_properties_from_type_node(etype)
         for child in etype.get_properties():
             self.assertTrue(child in properties)
 
     def test_get_event_from_type_node_CustomEvent(self):
         etype = self.srv.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.AuditEventType, [('PropertyNum', ua.VariantType.Float), ('PropertyString', ua.VariantType.String)])
 
-        properties = opcua.common.events.get_event_properties_from_type_node(etype)
+        properties = asyncua.common.events.get_event_properties_from_type_node(etype)
 
         for child in self.opc.get_node(ua.ObjectIds.BaseEventType).get_properties():
             self.assertTrue(child in properties)

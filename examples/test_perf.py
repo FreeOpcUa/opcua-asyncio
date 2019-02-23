@@ -1,7 +1,7 @@
 import sys
 sys.path.insert(0, "..")
 
-from opcua import Server
+from asyncua import Server
 
 import cProfile
 

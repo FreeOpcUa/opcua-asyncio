@@ -6,13 +6,13 @@ from datetime import timedelta
 import math
 from contextlib import contextmanager
 
-from opcua import ua
-from opcua import Node
-from opcua import uamethod
-from opcua import instantiate
-from opcua import copy_node
-from opcua.common import ua_utils
-from opcua.common.methods import call_method_full
+from asyncua import ua
+from asyncua import Node
+from asyncua import uamethod
+from asyncua import instantiate
+from asyncua import copy_node
+from asyncua.common import ua_utils
+from asyncua.common.methods import call_method_full
 
 def add_server_methods(srv):
     @uamethod

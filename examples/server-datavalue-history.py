@@ -4,8 +4,8 @@ import time
 import math
 
 
-from opcua import ua, Server
-from opcua.server.history_sql import HistorySQLite
+from asyncua import ua, Server
+from asyncua.server.history_sql import HistorySQLite
 
 
 if __name__ == "__main__":

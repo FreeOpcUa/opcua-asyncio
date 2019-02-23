@@ -1,10 +1,10 @@
 
 import asyncio
 import logging
-from opcua import Client
+from asyncua import Client
 
 logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger('opcua')
+_logger = logging.getLogger('asyncua')
 
 
 class SubHandler:

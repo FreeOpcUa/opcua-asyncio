@@ -18,9 +18,9 @@ from tests_custom_structures import TypeDictionaryBuilderTest
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.WARNING)
-    #l = logging.getLogger("opcua.server.internal_subscription")
+    #l = logging.getLogger("asyncua.server.internal_subscription")
     #l.setLevel(logging.DEBUG)
-    #l = logging.getLogger("opcua.server.internal_server")
+    #l = logging.getLogger("asyncua.server.internal_server")
     #l.setLevel(logging.DEBUG)
 
     unittest.main(verbosity=3)

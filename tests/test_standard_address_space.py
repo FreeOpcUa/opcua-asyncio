@@ -2,9 +2,9 @@ import pytest
 import os.path
 import xml.etree.ElementTree as ET
 
-from opcua.server.address_space import AddressSpace
-from opcua.server.address_space import NodeManagementService
-from opcua.server.standard_address_space import standard_address_space
+from asyncua.server.address_space import AddressSpace
+from asyncua.server.address_space import NodeManagementService
+from asyncua.server.standard_address_space import standard_address_space
 
 
 def find_elem(parent, name, ns=None):

@@ -2,8 +2,8 @@
 import logging
 import pytest
 
-from opcua import Client
-from opcua import ua
+from asyncua import Client
+from asyncua import ua
 
 _logger = logging.getLogger(__name__)
 pytestmark = pytest.mark.asyncio

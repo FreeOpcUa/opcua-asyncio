@@ -4,10 +4,10 @@ import xml.etree.ElementTree as Et
 
 import pytest
 
-from opcua import ua, Server
-import opcua.common.type_dictionary_buider
-from opcua.common.type_dictionary_buider import OPCTypeDictionaryBuilder, DataTypeDictionaryBuilder
-from opcua.common.type_dictionary_buider import get_ua_class, StructNode
+from asyncua import ua, Server
+import asyncua.common.type_dictionary_buider
+from asyncua.common.type_dictionary_buider import OPCTypeDictionaryBuilder, DataTypeDictionaryBuilder
+from asyncua.common.type_dictionary_buider import get_ua_class, StructNode
 
 port_num = 48540
 ns_urn = 'http://test.freeopcua.github.io'
@@ -17,12 +17,12 @@ pytestmark = pytest.mark.asyncio
 
 
 def to_camel_case(name):
-    func = getattr(opcua.common.type_dictionary_buider, '_to_camel_case')
+    func = getattr(asyncua.common.type_dictionary_buider, '_to_camel_case')
     return func(name)
 
 
 def reference_generator(source_id, target_id, reference_type, is_forward=True):
-    func = getattr(opcua.common.type_dictionary_buider, '_reference_generator')
+    func = getattr(asyncua.common.type_dictionary_buider, '_reference_generator')
     return func(source_id, target_id, reference_type, is_forward)
 
 

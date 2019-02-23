@@ -1,6 +1,6 @@
-from opcua import Client, ua
-from opcua.ua import ua_binary as uabin
-from opcua.common.methods import call_method
+from asyncua import Client, ua
+from asyncua.ua import ua_binary as uabin
+from asyncua.common.methods import call_method
 
 
 class HelloClient:

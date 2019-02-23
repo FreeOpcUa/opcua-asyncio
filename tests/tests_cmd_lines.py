@@ -1,7 +1,7 @@
 import unittest
 import subprocess
 
-from opcua import Server
+from asyncua import Server
 
 
 port_num = 48530

@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0, "..")
 import logging
 
-from opcua import Client
+from asyncua import Client
 
 
 class SubHandler(object):

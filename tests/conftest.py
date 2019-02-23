@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 from collections import namedtuple
-from opcua import ua, Client, Server, HistoryDict, HistorySQLite
+from asyncua import ua, Client, Server, HistoryDict, HistorySQLite
 
 from .test_common import add_server_methods
 from .util_enum_struct import add_server_custom_enum_struct

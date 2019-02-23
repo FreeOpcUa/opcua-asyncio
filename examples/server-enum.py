@@ -20,8 +20,8 @@ except ImportError:
 interactive = True
 
 
-from opcua import ua, Server
-from opcua.common import node
+from asyncua import ua, Server
+from asyncua.common import node
 from enum import IntEnum
 
 # Not required just for convenience

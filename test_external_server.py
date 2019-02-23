@@ -7,8 +7,8 @@ import asyncio
 import logging
 from datetime import datetime
 
-from opcua import ua
-from opcua import Client
+from asyncua import ua
+from asyncua import Client
 
 
 class MySubHandler:

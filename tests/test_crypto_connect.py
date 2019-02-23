@@ -1,12 +1,12 @@
 import os
 import pytest
-from opcua import Client
-from opcua import Server
-from opcua import ua
+from asyncua import Client
+from asyncua import Server
+from asyncua import ua
 
 try:
-    from opcua.crypto import uacrypto
-    from opcua.crypto import security_policies
+    from asyncua.crypto import uacrypto
+    from asyncua.crypto import security_policies
 except ImportError:
     print("WARNING: CRYPTO NOT AVAILABLE, CRYPTO TESTS DISABLED!!")
     disable_crypto_tests = True

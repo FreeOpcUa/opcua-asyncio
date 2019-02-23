@@ -3,7 +3,7 @@ import time
 
 sys.path.insert(0, "..")
 
-from opcua import ua, Server
+from asyncua import ua, Server
 
 
 if __name__ == "__main__":

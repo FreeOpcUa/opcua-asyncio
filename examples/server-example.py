@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, "..")
 
 
-from opcua import ua, uamethod, Server
+from asyncua import ua, uamethod, Server
 
 
 class SubHandler(object):
@@ -45,13 +45,13 @@ def multiply(parent, x, y):
 async def main():
     # optional: setup logging
     logging.basicConfig(level=logging.INFO)
-    #logger = logging.getLogger("opcua.address_space")
+    #logger = logging.getLogger("asyncua.address_space")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("opcua.internal_server")
+    #logger = logging.getLogger("asyncua.internal_server")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("opcua.binary_server_asyncio")
+    #logger = logging.getLogger("asyncua.binary_server_asyncio")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("opcua.uaprocessor")
+    #logger = logging.getLogger("asyncua.uaprocessor")
     # logger.setLevel(logging.DEBUG)
 
     # now setup our server

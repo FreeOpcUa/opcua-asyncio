@@ -10,13 +10,13 @@ from tests_subscriptions import SubscriptionTests
 from datetime import timedelta, datetime
 from tempfile import NamedTemporaryFile
 
-import opcua
-from opcua import Server
-from opcua import Client
-from opcua import ua
-from opcua import uamethod
-from opcua.common.event_objects import BaseEvent, AuditEvent, AuditChannelEvent, AuditSecurityEvent, AuditOpenSecureChannelEvent
-from opcua.common import ua_utils
+import asyncua
+from asyncua import Server
+from asyncua import Client
+from asyncua import ua
+from asyncua import uamethod
+from asyncua.common.event_objects import BaseEvent, AuditEvent, AuditChannelEvent, AuditSecurityEvent, AuditOpenSecureChannelEvent
+from asyncua.common import ua_utils
 
 
 port_num = 48540
@@ -186,11 +186,11 @@ class TestServer(unittest.TestCase, CommonTests, SubscriptionTests, XmlTests):
 
     # This should work for following BaseEvent tests to work (maybe to write it a bit differentlly since they are not independent)
     def test_get_event_from_type_node_BaseEvent(self):
-        ev = opcua.common.events.get_event_obj_from_type_node(opcua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)))
+        ev = asyncua.common.events.get_event_obj_from_type_node(asyncua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)))
         check_base_event(self, ev)
 
     def test_get_event_from_type_node_Inhereted_AuditEvent(self):
-        ev = opcua.common.events.get_event_obj_from_type_node(opcua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.AuditEventType)))
+        ev = asyncua.common.events.get_event_obj_from_type_node(asyncua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.AuditEventType)))
         self.assertIsNot(ev, None)  # we did not receive event
         self.assertIsInstance(ev, BaseEvent)
         self.assertIsInstance(ev, AuditEvent)
@@ -203,7 +203,7 @@ class TestServer(unittest.TestCase, CommonTests, SubscriptionTests, XmlTests):
         self.assertEqual(ev.ClientUserId, None)
 
     def test_get_event_from_type_node_MultiInhereted_AuditOpenSecureChannelEvent(self):
-        ev = opcua.common.events.get_event_obj_from_type_node(opcua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.AuditOpenSecureChannelEventType)))
+        ev = asyncua.common.events.get_event_obj_from_type_node(asyncua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.AuditOpenSecureChannelEventType)))
         self.assertIsNot(ev, None)
         self.assertIsInstance(ev, BaseEvent)
         self.assertIsInstance(ev, AuditEvent)
@@ -230,7 +230,7 @@ class TestServer(unittest.TestCase, CommonTests, SubscriptionTests, XmlTests):
         check_eventgenerator_SourceServer(self, evgen)
 
     def test_eventgenerator_BaseEvent_Node(self):
-        evgen = self.opc.get_event_generator(opcua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)))
+        evgen = self.opc.get_event_generator(asyncua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)))
         check_eventgenerator_BaseEvent(self, evgen)
         check_eventgenerator_SourceServer(self, evgen)
 
@@ -250,7 +250,7 @@ class TestServer(unittest.TestCase, CommonTests, SubscriptionTests, XmlTests):
         check_eventgenerator_SourceServer(self, evgen)
 
     def test_eventgenerator_sourceServer_Node(self):
-        evgen = self.opc.get_event_generator(emitting_node=opcua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.Server)))
+        evgen = self.opc.get_event_generator(emitting_node=asyncua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.Server)))
         check_eventgenerator_BaseEvent(self, evgen)
         check_eventgenerator_SourceServer(self, evgen)
 
@@ -279,7 +279,7 @@ class TestServer(unittest.TestCase, CommonTests, SubscriptionTests, XmlTests):
         evgen.event.SourceNode = o.nodeid
         evgen.event.SourceName = o.get_browse_name().Name
         check_eventgenerator_BaseEvent(self, evgen)
-        check_event_generator_object(self, evgen, o, emitting_node=opcua.Node(self.opc.iserver.isession, ua.ObjectIds.Server))
+        check_event_generator_object(self, evgen, o, emitting_node=asyncua.Node(self.opc.iserver.isession, ua.ObjectIds.Server))
 
     def test_eventgenerator_InheritedEvent(self):
         evgen = self.opc.get_event_generator(ua.ObjectIds.AuditEventType)
@@ -361,13 +361,13 @@ class TestServer(unittest.TestCase, CommonTests, SubscriptionTests, XmlTests):
         check_custom_type(self, etype, ua.ObjectIds.BaseEventType)
 
     def test_create_custom_event_type_Node(self):
-        etype = self.opc.create_custom_event_type(2, 'MyEvent', opcua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)), [('PropertyNum', ua.VariantType.Int32), ('PropertyString', ua.VariantType.String)])
+        etype = self.opc.create_custom_event_type(2, 'MyEvent', asyncua.Node(self.opc.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)), [('PropertyNum', ua.VariantType.Int32), ('PropertyString', ua.VariantType.String)])
         check_custom_type(self, etype, ua.ObjectIds.BaseEventType)
 
     def test_get_event_from_type_node_CustomEvent(self):
         etype = self.opc.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType, [('PropertyNum', ua.VariantType.Int32), ('PropertyString', ua.VariantType.String)])
 
-        ev = opcua.common.events.get_event_obj_from_type_node(etype)
+        ev = asyncua.common.events.get_event_obj_from_type_node(etype)
         check_custom_event(self, ev, etype)
         self.assertEqual(ev.PropertyNum, 0)
         self.assertEqual(ev.PropertyString, None)
@@ -565,7 +565,7 @@ def check_custom_event(test, ev, etype):
 
 
 def check_custom_type(test, type, base_type):
-    base = opcua.Node(test.opc.iserver.isession, ua.NodeId(base_type))
+    base = asyncua.Node(test.opc.iserver.isession, ua.NodeId(base_type))
     test.assertTrue(type in await base.get_children())
     nodes = type.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True)
     test.assertEqual(base, nodes[0])

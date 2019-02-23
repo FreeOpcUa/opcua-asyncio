@@ -7,12 +7,12 @@ import datetime
 
 import pytest
 
-from opcua import ua, Node, uamethod
-from opcua.ua import uaerrors
+from asyncua import ua, Node, uamethod
+from asyncua.ua import uaerrors
 
-logger = logging.getLogger("opcua.common.xmlimporter")
+logger = logging.getLogger("asyncua.common.xmlimporter")
 logger.setLevel(logging.DEBUG)
-logger = logging.getLogger("opcua.common.xmlparser")
+logger = logging.getLogger("asyncua.common.xmlparser")
 logger.setLevel(logging.DEBUG)
 
 pytestmark = pytest.mark.asyncio

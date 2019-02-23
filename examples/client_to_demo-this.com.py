@@ -4,14 +4,14 @@ import time
 import logging
 from IPython import embed
 
-from opcua import Client
-from opcua import ua
+from asyncua import Client
+from asyncua import ua
 
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.WARN)
-    client = Client("opc.tcp://opcua.demo-this.com:51210/UA/SampleServer")
+    client = Client("opc.tcp://asyncua.demo-this.com:51210/UA/SampleServer")
     try:
         client.connect()
         root = client.get_root_node()

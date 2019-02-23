@@ -4,8 +4,8 @@ from copy import copy
 from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
 
-import opcua
-from opcua import ua
+import asyncua
+from asyncua import ua
 
 pytestmark = pytest.mark.asyncio
 
@@ -323,7 +323,7 @@ async def test_subscribe_events_to_wrong_node(opc):
 
 async def test_get_event_from_type_node_BaseEvent(opc):
     etype = opc.opc.get_node(ua.ObjectIds.BaseEventType)
-    properties = await opcua.common.events.get_event_properties_from_type_node(etype)
+    properties = await asyncua.common.events.get_event_properties_from_type_node(etype)
     for child in await etype.get_properties():
         assert child in properties
 
@@ -333,7 +333,7 @@ async def test_get_event_from_type_node_CustomEvent(opc):
         2, 'MyEvent', ua.ObjectIds.AuditEventType,
         [('PropertyNum', ua.VariantType.Float), ('PropertyString', ua.VariantType.String)]
     )
-    properties = await opcua.common.events.get_event_properties_from_type_node(etype)
+    properties = await asyncua.common.events.get_event_properties_from_type_node(etype)
     for child in await opc.opc.get_node(ua.ObjectIds.BaseEventType).get_properties():
         assert child in properties
     for child in await opc.opc.get_node(ua.ObjectIds.AuditEventType).get_properties():

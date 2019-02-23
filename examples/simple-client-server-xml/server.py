@@ -10,7 +10,7 @@ except ImportError:
         shell = code.InteractiveConsole(vars)
         shell.interact()
 
-from opcua import ua, uamethod, Server
+from asyncua import ua, uamethod, Server
 
 
 @uamethod

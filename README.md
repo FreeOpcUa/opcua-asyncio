@@ -11,21 +11,20 @@ http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
 # opcua-asyncio
 
-This repository is a fork of [python-opcua](https://github.com/FreeOpcUa/python-opcua) to rebase it completely on asyncio and drop support of Python < 3.6.
+This repository is a fork of [python-opcua](https://github.com/FreeOpcUa/python-opcua) to rebase it completely on asyncio and drop support for Python < 3.6.
 Please note that opcua-asyncio is still in development and should be treated as an alpha release. 
 
 ## Motivation
 
 The primary goal of this version of [python-opcua](https://github.com/FreeOpcUa/python-opcua) is to create an asynchronous OPC UA client based on asyncio.
-Asynchronous programming will allow for simpler code (e.g. less need for locks) and potentially performance gains.
+Asynchronous programming allows for simpler code (e.g. less need for locks) and potentially performance gains.
 
 ## Caveats
 
 Since `Client` and `Server` share common resources (e.g. `Node`), the `Server` has to also use asynchronous methods
 to access nodes in it's address space although the operation are non-blocking in most cases. This comes with a cost
-in performance since calling a coroutine is more expensive than a function. If your primary need is an OPC UA server implementation with high performance
-than you should also consider to use [python-opcua](https://github.com/FreeOpcUa/python-opcua) instead.
-This problem could be addressed by a future change in architecture. One possibility would be [sans I/O](https://sans-io.readthedocs.io/).
+in performance since calling a coroutine is more expensive than a function.
+This problem should be addressed by a future change in architecture. One possibility would be [sans I/O](https://sans-io.readthedocs.io/).
 
 ## Documentation
 
@@ -46,17 +45,7 @@ coverage.py reports a test coverage of over 95 % of code, most of non-tested c
 
 With pip (note: the package was ealier called freeopcua)
 
-    pip install opcua
-
-Ubuntu:
-
-    apt install python-opcua        # Library
-    apt install python-opcua-tools  # Command-line tools
-
-Dependencies:
-* Python > 3.4: `cryptography`, `dateutil`, `lxml` and `pytz`. 
-* Python 2.7 or pypy < 3: you also need to install `enum34`, `trollius` (`asyncio`), and `futures` (`concurrent.futures`),
-  with pip for example.
+    pip install asyncua
 
 
 # Documentation
@@ -129,12 +118,12 @@ What works:
 * certificate handling
 * removing nodes
 * history support for data change and events
+* more high level solution to create custom structures
 
 Tested clients: freeopcua C++, freeopcua Python, uaexpert, prosys, quickopc
 
 Not yet implemented:
 
-* more high level solution to create custom structures
 * UDP
 * session restore
 * alarms

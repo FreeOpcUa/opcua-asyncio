@@ -2,8 +2,8 @@ import sys
 sys.path.insert(0, "..")
 import logging
 
-from opcua import Client
-from opcua import ua
+from asyncua import Client
+from asyncua import ua
 
 
 if __name__ == "__main__":

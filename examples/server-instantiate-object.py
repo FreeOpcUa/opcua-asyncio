@@ -4,7 +4,7 @@ import time
 from IPython import embed
 
 
-from opcua import ua, Server, instantiate
+from asyncua import ua, Server, instantiate
 
 
 if __name__ == "__main__":

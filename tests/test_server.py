@@ -10,9 +10,9 @@ import shelve
 from datetime import timedelta
 from enum import Enum, EnumMeta
 
-import opcua
-from opcua import Server, Client, ua, uamethod, BaseEvent, AuditEvent, AuditChannelEvent, AuditSecurityEvent, AuditOpenSecureChannelEvent
-from opcua.common import ua_utils
+import asyncua
+from asyncua import Server, Client, ua, uamethod, BaseEvent, AuditEvent, AuditChannelEvent, AuditSecurityEvent, AuditOpenSecureChannelEvent
+from asyncua.common import ua_utils
 
 pytestmark = pytest.mark.asyncio
 _logger = logging.getLogger(__name__)
@@ -149,15 +149,15 @@ async def test_get_event_from_type_node_BaseEvent(server):
     This should work for following BaseEvent tests to work
     (maybe to write it a bit differentlly since they are not independent) 
     """
-    ev = await opcua.common.events.get_event_obj_from_type_node(
-        opcua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType))
+    ev = await asyncua.common.events.get_event_obj_from_type_node(
+        asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType))
     )
     check_base_event(ev)
 
 
 async def test_get_event_from_type_node_Inhereted_AuditEvent(server):
-    ev = await opcua.common.events.get_event_obj_from_type_node(
-        opcua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.AuditEventType))
+    ev = await asyncua.common.events.get_event_obj_from_type_node(
+        asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.AuditEventType))
     )
     # we did not receive event
     assert ev is not None
@@ -173,8 +173,8 @@ async def test_get_event_from_type_node_Inhereted_AuditEvent(server):
 
 
 async def test_get_event_from_type_node_MultiInhereted_AuditOpenSecureChannelEvent(server):
-    ev = await opcua.common.events.get_event_obj_from_type_node(
-        opcua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.AuditOpenSecureChannelEventType))
+    ev = await asyncua.common.events.get_event_obj_from_type_node(
+        asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.AuditOpenSecureChannelEventType))
     )
     assert ev is not None
     assert isinstance(ev, BaseEvent)
@@ -205,7 +205,7 @@ async def test_eventgenerator_BaseEvent_object(server):
 
 
 async def test_eventgenerator_BaseEvent_Node(server):
-    evgen = await server.get_event_generator(opcua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)))
+    evgen = await server.get_event_generator(asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)))
     await check_eventgenerator_base_event(evgen, server)
     await check_eventgenerator_source_server(evgen, server)
 
@@ -229,7 +229,7 @@ async def test_eventgenerator_BaseEvent_Identifier(server):
 
 
 async def test_eventgenerator_sourceServer_Node(server):
-    evgen = await server.get_event_generator(emitting_node=opcua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.Server)))
+    evgen = await server.get_event_generator(emitting_node=asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.Server)))
     await check_eventgenerator_base_event(evgen, server)
     await check_eventgenerator_source_server(evgen, server)
 
@@ -260,7 +260,7 @@ async def test_eventgenerator_source_collision(server):
     event = BaseEvent(sourcenode=o.nodeid)
     evgen = await server.get_event_generator(event, ua.ObjectIds.Server)
     await check_eventgenerator_base_event(evgen, server)
-    await check_event_generator_object(evgen, o, emitting_node=opcua.Node(server.iserver.isession, ua.ObjectIds.Server))
+    await check_event_generator_object(evgen, o, emitting_node=asyncua.Node(server.iserver.isession, ua.ObjectIds.Server))
 
 
 async def test_eventgenerator_inherited_event(server):
@@ -355,7 +355,7 @@ async def test_create_custom_event_type_node_id(server):
 
 
 async def test_create_custom_event_type_node(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent', opcua.Node(server.iserver.isession,
+    etype = await server.create_custom_event_type(2, 'MyEvent', asyncua.Node(server.iserver.isession,
                                                                            ua.NodeId(ua.ObjectIds.BaseEventType)),
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
@@ -366,7 +366,7 @@ async def test_get_event_from_type_node_custom_event(server):
     etype = await server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
-    ev = await opcua.common.events.get_event_obj_from_type_node(etype)
+    ev = await asyncua.common.events.get_event_obj_from_type_node(etype)
     check_custom_event(ev, etype)
     assert 0 == ev.PropertyNum
     assert ev.PropertyString is None
@@ -571,7 +571,7 @@ def check_custom_event(ev, etype):
 
 
 async def check_custom_type(type, base_type, server: Server):
-    base = opcua.Node(server.iserver.isession, ua.NodeId(base_type))
+    base = asyncua.Node(server.iserver.isession, ua.NodeId(base_type))
     assert type in await base.get_children()
     nodes = await type.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse,
                                             includesubtypes=True)
