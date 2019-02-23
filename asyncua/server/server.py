@@ -61,8 +61,8 @@ class Server:
     :vartype nodes: Shortcuts
     """
 
-    def __init__(self, iserver: InternalServer = None):
-        self.loop = asyncio.get_event_loop()
+    def __init__(self, iserver: InternalServer = None, loop=None):
+        self.loop = loop or asyncio.get_event_loop()
         self.logger = logging.getLogger(__name__)
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
