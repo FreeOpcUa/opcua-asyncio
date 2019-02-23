@@ -85,7 +85,7 @@ class UASocketProtocol(asyncio.Protocol):
             self.logger.fatal("Received an error: %r", msg)
             self._call_callback(0, ua.UaStatusCodeError(msg.Error.value))
         else:
-            raise ua.UaError("Unsupported message type: %s", msg)
+            raise ua.UaError(f"Unsupported message type: {msg}")
 
     def _send_request(self, request, callback=None, timeout=1000, message_type=ua.MessageType.SecureMessage):
         """
@@ -183,7 +183,6 @@ class UASocketProtocol(asyncio.Protocol):
         self._connection.set_channel(response.Parameters)
         return response.Parameters
 
-
     async def close_secure_channel(self):
         """
         Close secure channel.
@@ -231,14 +230,12 @@ class UaClient:
     async def connect_socket(self, host: str, port: int):
         """Connect to server socket."""
         self.logger.info("opening connection")
-        # nodelay ncessary to avoid packing in one frame, some servers do not like it
-        # ToDo: TCP_NODELAY is set by default, but only since 3.6
         await self.loop.create_connection(self._make_protocol, host, port)
 
     def disconnect_socket(self):
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("disconnect_socket was called but connection is closed")
-            return
+            return None
         return self.protocol.disconnect_socket()
 
     async def send_hello(self, url, max_messagesize=0, max_chunkcount=0):
@@ -448,7 +445,9 @@ class UaClient:
     def _sub_data_received(self, future):
         data = future.result()
         self.loop.create_task(self._call_publish_callback(data))
+
     """
+    # to avoid fire and forget of task we could use a loop:
     def _sub_data_received(self, future):
         data = future.result()
         self.loop.create_task(self._enqueue_sub_data(data))

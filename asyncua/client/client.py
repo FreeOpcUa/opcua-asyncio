@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 asyncio.get_event_loop().set_debug(True)
 
 
-class Client(object):
+class Client:
     """
     High level client to connect to an OPC-UA server.
 
@@ -93,8 +93,8 @@ class Client(object):
         Set user password for the connection.
         initial password from the URL will be overwritten
         """
-        if type(pwd) is not str:
-            raise TypeError("Password must be a string, got %s", type(pwd))
+        if not isinstance(pwd, str):
+            raise TypeError(f"Password must be a string, got {pwd} of type {type(pwd)}")
         self._password = pwd
 
     async def set_security_string(self, string: str):
@@ -280,8 +280,7 @@ class Client(object):
             params.Server = serv
             params.DiscoveryConfiguration = discovery_configuration
             return await self.uaclient.register_server2(params)
-        else:
-            return await self.uaclient.register_server(serv)
+        return await self.uaclient.register_server(serv)
 
     async def find_servers(self, uris=None):
         """
@@ -379,11 +378,11 @@ class Client(object):
             if policy.TokenType == token_type:
                 if policy.SecurityPolicyUri:
                     return policy.SecurityPolicyUri
-                else:  # empty URI means "use this endpoint's policy URI"
-                    return self.security_policy.URI
+                # empty URI means "use this endpoint's policy URI"
+                return self.security_policy.URI
         return self.security_policy.URI
 
-    async def activate_session(self, username: str=None, password: str=None, certificate=None):
+    async def activate_session(self, username: str = None, password: str = None, certificate=None):
         """
         Activate session using either username and password or private_key
         """

@@ -3,16 +3,14 @@ http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
 [![Build Status](https://travis-ci.org/FreeOpcUa/opcua-asyncio.svg?branch=master)](https://travis-ci.org/FreeOpcUa/opcua-asyncio)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/?branch=master)
-[![Code Coverage](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/?branch=master)
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/f7f9a138ee7c4541b3b794b86e61e929)](https://www.codacy.com/app/olivier-roulet/opcua-asyncio)
-[![Code Climate](https://codeclimate.com/github/FreeOpcUa/opcua-asyncio/badges/gpa.svg)](https://codeclimate.com/github/FreeOpcUa/opcua-asyncio)
 
-[![PyPI Oackage](https://badge.fury.io/py/freeopcua.svg)](https://badge.fury.io/py/freeopcua)
+[![PyPI Package](https://badge.fury.io/py/freeopcua.svg)](https://badge.fury.io/py/freeopcua)
 
 # opcua-asyncio
 
 This repository is a fork of [python-opcua](https://github.com/FreeOpcUa/python-opcua) to rebase it completely on asyncio and drop support for Python < 3.6.
 Please note that opcua-asyncio is still in development and should be treated as an alpha release. 
+There is also a draft of sync wrapper over async API which may replace python-opcua in the future in asyncua/sync.py
 
 ## Motivation
 
