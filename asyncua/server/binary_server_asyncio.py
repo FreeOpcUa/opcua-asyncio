@@ -57,7 +57,7 @@ class OPCUAProtocol(asyncio.Protocol):
     def data_received(self, data):
         self._buffer += data
         # try to parse the incoming data
-        while len(self._buffer) > 0:
+        while self._buffer:
             try:
                 buf = Buffer(self._buffer)
                 try:

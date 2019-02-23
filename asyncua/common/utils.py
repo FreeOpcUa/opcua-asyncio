@@ -47,6 +47,9 @@ class Buffer:
     def __len__(self):
         return self._size
 
+    def __bool__(self):
+        return self._size > 0
+
     def read(self, size):
         """
         read and pop number of bytes for buffer
