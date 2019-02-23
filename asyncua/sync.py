@@ -5,10 +5,10 @@ import asyncio
 from threading import Thread, Condition
 import logging
 
-from opcua import client
-from opcua import server
-from opcua.common import node
-from opcua.common import subscription, shortcuts
+from asyncua import client
+from asyncua import server
+from asyncua.common import node
+from asyncua.common import subscription, shortcuts
 
 
 logger = logging.getLogger(__name__)
@@ -99,6 +99,7 @@ def syncmethod(func):
         #sup = _get_super(func)
         #super_func = getattr(sup, name)
         global _tloop
+        print("CALLING", func, func.__name__, args)
         result = _tloop.post(aio_func(*args, **kwargs))
         if isinstance(result, node.Node):
             return Node(result)
@@ -144,6 +145,10 @@ class Server:
         return self.aio_obj.set_endpoint(url)
     
     @syncmethod
+    def register_namespace(self, url):
+        return self.aio_obj.register_namespace(url)
+    
+    @syncmethod
     def start(self):
         pass
 
@@ -166,6 +171,26 @@ class Node:
 
     @syncmethod
     def get_children(self):
+        pass
+
+    @syncmethod
+    def get_child(self, path):
+        pass
+
+    @syncmethod
+    def add_variable(self, ns, name, val):
+        pass
+
+    @syncmethod
+    def add_object(self, ns, name):
+        pass
+
+    @syncmethod
+    def set_writable(self, writable=True):
+        pass
+
+    @syncmethod
+    def set_value(self, val):
         pass
 
     def __eq__(self, other):

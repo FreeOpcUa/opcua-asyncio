@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from opcua.sync import Client, start_thread_loop, stop_thread_loop, Server
+from asyncua.sync import Client, start_thread_loop, stop_thread_loop, Server
 
 
 @pytest.fixture
