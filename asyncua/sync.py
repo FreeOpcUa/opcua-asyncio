@@ -5,6 +5,7 @@ import asyncio
 from threading import Thread, Condition
 import logging
 
+from asyncua import ua
 from asyncua import client
 from asyncua import server
 from asyncua.common import node
@@ -79,32 +80,21 @@ def release_thread_loop():
     stop_thread_loop()
 
 
-def _get_super(func):
-    classname = func.__qualname__.split('.', 1)[0]
-    if hasattr(node, classname):
-        return getattr(node, classname)
-    if hasattr(client, classname):
-        return getattr(client, classname)
-    if hasattr(server, classname):
-        return getattr(server, classname)
-    if hasattr(subscription, classname):
-        return getattr(subscription, classname)
-    return AttributeError(f"Could not find super of parent class for method {func}")
-
-
 def syncmethod(func):
     def wrapper(self, *args, **kwargs):
-        #name = func.__name__
+        args = list(args)  #FIXME: might be very inefficient...
+        for idx, arg in enumerate(args):
+            if isinstance(arg, Node):
+                args[idx] = arg.aio_obj
         aio_func = getattr(self.aio_obj, func.__name__)
-        #sup = _get_super(func)
-        #super_func = getattr(sup, name)
         global _tloop
-        print("CALLING", func, func.__name__, args)
         result = _tloop.post(aio_func(*args, **kwargs))
         if isinstance(result, node.Node):
             return Node(result)
         if isinstance(result, list) and len(result) > 0 and isinstance(result[0], node.Node):
             return [Node(i) for i in result]
+        if isinstance(result, server.event_generator.EventGenerator):
+            return EventGenerator(result)
         return result
     return wrapper
 
@@ -144,6 +134,12 @@ class Server:
     def set_endpoint(self, url):
         return self.aio_obj.set_endpoint(url)
     
+    def set_server_name(self, name):
+        return self.aio_obj.set_server_name(name)
+    
+    def set_security_policy(self, security_policy):
+        return self.aio_obj.set_security_policy(security_policy)
+
     @syncmethod
     def register_namespace(self, url):
         return self.aio_obj.register_namespace(url)
@@ -156,14 +152,40 @@ class Server:
     def stop(self):
         pass
 
+    @syncmethod
+    async def get_event_generator(self, etype=None, emitting_node=ua.ObjectIds.Server):
+        pass
+
     def get_node(self, nodeid):
         return Node(server.Server.get_node(self, nodeid))
+
+    def import_xml(self, path=None, xmlstring=None):
+        return self.aio_obj.import_xml(path=None, xmlstring=None)
+
+    def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+        return self.aio_obj.set_attribute_value(nodeid, datavalue, attr)
+
+
+class EventGenerator:
+    def __init__(self, aio_evgen):
+        self.aio_obj = aio_evgen
+
+    @property
+    def event(self):
+        return self.aio_obj.event
+
+    def trigger(self, time=None, message=None):
+        return self.aio_obj.trigger(time, message)
 
 
 class Node:
     def __init__(self, aio_node):
         self.aio_obj = aio_node
         global _tloop
+
+    @property
+    def nodeid(self):
+        return self.aio_obj.nodeid
     
     @syncmethod
     def get_browse_name(self):
@@ -178,11 +200,31 @@ class Node:
         pass
 
     @syncmethod
+    def set_modelling_rule(self, mandatory: bool):
+        pass
+
+    @syncmethod
     def add_variable(self, ns, name, val):
         pass
 
     @syncmethod
+    def add_property(self, ns, name, val):
+        pass
+
+    @syncmethod
     def add_object(self, ns, name):
+        pass
+
+    @syncmethod
+    def add_object_type(self, ns, name):
+        pass
+
+    @syncmethod
+    def add_folder(self, ns, name):
+        pass
+
+    @syncmethod
+    def add_method(self, *args):
         pass
 
     @syncmethod
@@ -191,6 +233,10 @@ class Node:
 
     @syncmethod
     def set_value(self, val):
+        pass
+
+    @syncmethod
+    def get_value(self, val):
         pass
 
     def __eq__(self, other):
