@@ -37,10 +37,9 @@ async def main():
     async with server:
         count = 0
         while True:
-            await asyncio.sleep(1000)
-            print("UPDATE")
             await asyncio.sleep(1)
             count += 0.1
+            print("SET VALUE", myvar, count)
             await myvar.set_value(count)
 
 

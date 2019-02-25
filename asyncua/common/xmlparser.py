@@ -94,7 +94,8 @@ class ExtObj:
 
 class XMLParser:
 
-    def __init__(self):
+    def __init__(self, loop=None):
+        self.loop = None or asyncio.get_event_loop()
         self.logger = logging.getLogger(__name__)
         self._retag = re.compile(r"(\{.*\})(.*)")
         self.root = None

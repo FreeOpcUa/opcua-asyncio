@@ -126,7 +126,7 @@ class XmlExporter:
         if pretty:
             indent(self.etree.getroot())
         func = functools.partial(self.etree.write, xmlpath, encoding='utf-8', xml_declaration=True)
-        await asyncio.get_event_loop().run_in_executor(None, func)
+        await self.server.loop.run_in_executor(None, func)
 
     def dump_etree(self):
         """

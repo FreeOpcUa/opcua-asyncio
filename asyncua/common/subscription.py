@@ -80,7 +80,6 @@ class Subscription:
     """
 
     def __init__(self, server, params, handler):
-        self.loop = asyncio.get_event_loop()
         self.logger = logging.getLogger(__name__)
         self.server = server
         self._client_handle = 200

@@ -71,7 +71,7 @@ class Server:
         self.manufacturer_name = "FreeOpcUa"
         self.application_type = ua.ApplicationType.ClientAndServer
         self.default_timeout = 60 * 60 * 1000
-        self.iserver = iserver if iserver else InternalServer()
+        self.iserver = iserver if iserver else InternalServer(self.loop)
         self.bserver: BinaryServer = None
         self._discovery_clients = {}
         self._discovery_period = 60

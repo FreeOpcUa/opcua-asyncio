@@ -159,8 +159,9 @@ class Server:
     def get_node(self, nodeid):
         return Node(server.Server.get_node(self, nodeid))
 
+    @syncmethod
     def import_xml(self, path=None, xmlstring=None):
-        return self.aio_obj.import_xml(path=None, xmlstring=None)
+        pass
 
     def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         return self.aio_obj.set_attribute_value(nodeid, datavalue, attr)
