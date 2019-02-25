@@ -4,6 +4,7 @@ server side implementation of a subscription object
 
 import logging
 import asyncio
+import inspect
 
 from asyncua import ua
 
@@ -280,6 +281,9 @@ class InternalSubscription:
                 self.publish_results()
         except asyncio.CancelledError:
             pass
+        except Exception:
+            # seems this except is necessary to print errors
+            self.logger.exception("Exception in subscription loop")
 
     def has_published_results(self):
         if self._startup or self._triggered_datachanges or self._triggered_events:
@@ -303,8 +307,10 @@ class InternalSubscription:
             self._publish_cycles_count += 1
             result = self._pop_publish_result()
         if result is not None:
-            self.subservice.loop.create_task(self.callback(result))
-            #await self.callback(result)
+            if inspect.iscoroutinefunction(self.callback):
+                self.subservice.loop.create_task(self.callback(result))
+            else:
+                self.callback(result)
 
     def _pop_publish_result(self):
         result = ua.PublishResult()

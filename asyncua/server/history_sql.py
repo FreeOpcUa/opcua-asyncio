@@ -22,7 +22,7 @@ class HistorySQLite(HistoryStorageInterface):
     note that PARSE_DECLTYPES is active so certain data types (such as datetime) will not be BLOBs
     """
 
-    def __init__(self, path="history.db"):
+    def __init__(self, path="history.db", loop=None):
         self.logger = logging.getLogger(__name__)
         self._datachanges_period = {}
         self._db_file = path
@@ -30,7 +30,7 @@ class HistorySQLite(HistoryStorageInterface):
         self._event_fields = {}
         self._conn: sqlite3.Connection = None
         self._cur: sqlite3.Cursor = None
-        self._loop = get_event_loop()
+        self._loop = loop or get_event_loop()
 
     async def init(self):
         self._conn = sqlite3.connect(self._db_file, detect_types=sqlite3.PARSE_DECLTYPES, check_same_thread=False)

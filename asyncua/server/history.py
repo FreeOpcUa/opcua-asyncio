@@ -185,9 +185,9 @@ class HistoryDict(HistoryStorageInterface):
 
 
 class SubHandler:
-    def __init__(self, storage):
+    def __init__(self, storage, loop):
         self.storage = storage
-        self.loop = asyncio.get_event_loop()
+        self.loop = loop 
 
     def datachange_notification(self, node, val, data):
         self.loop.create_task(
@@ -234,7 +234,7 @@ class HistoryManager:
         Subscribe to the nodes' data changes and store the data in the active storage.
         """
         if not self._sub:
-            self._sub = await self._create_subscription(SubHandler(self.storage))
+            self._sub = await self._create_subscription(SubHandler(self.storage, self.iserver.loop))
         if node in self._handlers:
             raise ua.UaError("Node {0} is already historized".format(node))
         await self.storage.new_historized_node(node.nodeid, period, count)
@@ -255,7 +255,7 @@ class HistoryManager:
         must be deleted manually so that a new table with the custom event fields can be created.
         """
         if not self._sub:
-            self._sub = await self._create_subscription(SubHandler(self.storage))
+            self._sub = await self._create_subscription(SubHandler(self.storage, self.iserver.loop))
         if source in self._handlers:
             raise ua.UaError("Events from {0} are already historized".format(source))
 

@@ -44,7 +44,8 @@ class ServerDesc:
 
 
 class InternalServer:
-    def __init__(self):
+    def __init__(self, loop):
+        self.loop = loop
         self.logger = logging.getLogger(__name__)
         self.server_callback_dispatcher = CallbackDispatcher()
         self.endpoints = []
@@ -59,7 +60,6 @@ class InternalServer:
         self.view_service = ViewService(self.aspace)
         self.method_service = MethodService(self.aspace)
         self.node_mgt_service = NodeManagementService(self.aspace)
-        self.loop = asyncio.get_event_loop()
         self.asyncio_transports = []
         self.subscription_service: SubscriptionService = SubscriptionService(self.loop, self.aspace)
         self.history_manager = HistoryManager(self)

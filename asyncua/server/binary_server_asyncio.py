@@ -17,8 +17,7 @@ class OPCUAProtocol(asyncio.Protocol):
     Instantiated for every connection.
     """
 
-    def __init__(self, iserver=None, policies=None, clients=None):
-        self.loop = asyncio.get_event_loop()
+    def __init__(self, iserver, policies, clients):
         self.peer_name = None
         self.transport = None
         self.processor = None
@@ -42,13 +41,13 @@ class OPCUAProtocol(asyncio.Protocol):
         self.processor.set_policies(self.policies)
         self.iserver.asyncio_transports.append(transport)
         self.clients.append(self)
-        self._task = self.loop.create_task(self._process_received_message_loop())
+        self._task = self.iserver.loop.create_task(self._process_received_message_loop())
 
     def connection_lost(self, ex):
         logger.info('Lost connection from %s, %s', self.peer_name, ex)
         self.transport.close()
         self.iserver.asyncio_transports.remove(self.transport)
-        self.loop.create_task(self.processor.close())
+        self.iserver.loop.create_task(self.processor.close())
         if self in self.clients:
             self.clients.remove(self)
         self.messages.put_nowait((None, None))
@@ -105,7 +104,6 @@ class BinaryServer:
         self.hostname = hostname
         self.port = port
         self.iserver = internal_server
-        self.loop = asyncio.get_event_loop()
         self._server = None
         self._policies = []
         self.clients = []
@@ -118,7 +116,7 @@ class BinaryServer:
         return OPCUAProtocol(iserver=self.iserver, policies=self._policies, clients=self.clients)
 
     async def start(self):
-        self._server = await self.loop.create_server(self._make_protocol, self.hostname, self.port)
+        self._server = await self.iserver.loop.create_server(self._make_protocol, self.hostname, self.port)
         # get the port and the hostname from the created server socket
         # only relevant for dynamic port asignment (when self.port == 0)
         if self.port == 0 and len(self._server.sockets) == 1:
@@ -134,5 +132,5 @@ class BinaryServer:
         for transport in self.iserver.asyncio_transports:
             transport.close()
         if self._server:
-            self.loop.call_soon(self._server.close)
+            self.iserver.loop.call_soon(self._server.close)
             await self._server.wait_closed()

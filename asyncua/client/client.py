@@ -11,7 +11,6 @@ from ..crypto import uacrypto, security_policies
 
 __all__ = ["Client"]
 _logger = logging.getLogger(__name__)
-asyncio.get_event_loop().set_debug(True)
 
 
 class Client:
