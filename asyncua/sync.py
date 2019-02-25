@@ -95,6 +95,8 @@ def syncmethod(func):
             return [Node(i) for i in result]
         if isinstance(result, server.event_generator.EventGenerator):
             return EventGenerator(result)
+        if isinstance(result, subscription.Subscription):
+            return Subscription(result)
         return result
     return wrapper
 
@@ -111,6 +113,18 @@ class Client:
 
     @syncmethod
     def disconnect(self):
+        pass
+
+    @syncmethod
+    def load_type_definitions(self, nodes=None):
+        pass
+
+    @syncmethod
+    async def create_subscription(self, period, handler):
+        pass
+
+    @syncmethod
+    def get_namespace_index(self, url):
         pass
 
     def get_node(self, nodeid):
@@ -240,7 +254,27 @@ class Node:
     def get_value(self, val):
         pass
 
+    @syncmethod
+    def call_method(self, methodid, *args):
+        pass
+
     def __eq__(self, other):
         return self.aio_obj == other.aio_obj
 
+
+class Subscription:
+    def __init__(self, sub):
+        self.aio_obj = sub
+
+    @syncmethod
+    def subscribe_data_change(self, nodes, attr=ua.AttributeIds.Value, queuesize=0):
+        pass
+
+    @syncmethod
+    def subscribe_events(self, sourcenode=ua.ObjectIds.Server, evtypes=ua.ObjectIds.BaseEventType, evfilter=None, queuesize=0):
+        pass
+
+    @syncmethod
+    async def create_monitored_items(self, monitored_items):
+        pass
 
