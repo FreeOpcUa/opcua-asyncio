@@ -408,37 +408,23 @@ class XmlImporter:
         :param nodes: list of NodeDataObjects
         :returns: list of sorted nodes
         """
-        _ndatas = list(ndatas)
-        # list of node ids that are already sorted / inserted
-        sorted_nodes_ids = []
-        # list of sorted nodes (i.e. XML Elements)
+
         sorted_ndatas = []
+        sorted_nodes_ids = []
         all_node_ids = [data.nodeid for data in ndatas]
-        # list of namespace indexes that are relevant for this import
-        # we can only respect ordering nodes for namespaces indexes that
-        # are defined in the xml file itself. Thus we assume that all other
-        # references namespaces are already known to the server and should
-        # not create any dependency problems (like "NodeNotFound")
-        while len(_ndatas) > 0:
-            pop_nodes = []
-            for ndata in _ndatas:
-                # Insert nodes that
-                #   (1) have no parent / parent_ns is None (e.g. namespace 0)
-                #   (2) ns is not in list of relevant namespaces
+        while ndatas:
+            for ndata in ndatas[:]:
                 if ndata.nodeid.NamespaceIndex not in self.namespaces or \
                         ndata.parent is None or \
                         ndata.parent not in all_node_ids:
                     sorted_ndatas.append(ndata)
                     sorted_nodes_ids.append(ndata.nodeid)
-                    pop_nodes.append(ndata)
+                    ndatas.remove(ndata)
                 else:
                     # Check if the nodes parent is already in the list of
                     # inserted nodes
                     if ndata.parent in sorted_nodes_ids:
                         sorted_ndatas.append(ndata)
                         sorted_nodes_ids.append(ndata.nodeid)
-                        pop_nodes.append(ndata)
-            # Remove inserted nodes from the list
-            for ndata in pop_nodes:
-                _ndatas.pop(_ndatas.index(ndata))
+                        ndatas.remove(ndata)
         return sorted_ndatas

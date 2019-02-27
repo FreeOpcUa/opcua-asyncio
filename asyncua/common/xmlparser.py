@@ -358,9 +358,12 @@ class XMLParser:
                 obj.typedef = ref.text
             elif not struct.forward:
                 parent, parentlink = struct.target, struct.reftype
-                if obj.parent == parent:
+                if obj.parent == parent or obj.parent != parent and not obj.parentlink:
                     obj.parentlink = parentlink
 
-        if not obj.parent or not obj.parentlink:
+        if obj.parent and not obj.parentlink:
+            # the case of asimple parent attribute without any reverse link
+            obj.parentlink = "HasComponent"
+        if not obj.parent:
             obj.parent, obj.parentlink = parent, parentlink
-            self.logger.info("Could not detect backward reference to parent for node '%s'", obj.nodeid)
+            self.logger.info("Could not find parent for node '%s'", obj.nodeid)
