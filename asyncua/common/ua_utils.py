@@ -93,11 +93,20 @@ def string_to_val(string, vtype):
         else:
             val = False
     elif vtype in (ua.VariantType.SByte, ua.VariantType.Int16, ua.VariantType.Int32, ua.VariantType.Int64):
-        val = int(string)
+        if not string:
+            val = 0
+        else:
+            val = int(string)
     elif vtype in (ua.VariantType.Byte, ua.VariantType.UInt16, ua.VariantType.UInt32, ua.VariantType.UInt64):
-        val = int(string)
+        if not string:
+            val = 0
+        else:
+            val = int(string)
     elif vtype in (ua.VariantType.Float, ua.VariantType.Double):
-        val = float(string)
+        if not string:
+            val = 0.0
+        else:
+            val = float(string)
     elif vtype == ua.VariantType.XmlElement:
         val = ua.XmlElement(string)
     elif vtype == ua.VariantType.String:
