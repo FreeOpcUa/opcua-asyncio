@@ -154,6 +154,9 @@ class Server:
     def set_security_policy(self, security_policy):
         return self.aio_obj.set_security_policy(security_policy)
 
+    def disable_clock(self, boolean):
+        return self.aio_obj.disable_clock(boolean)
+
     @syncmethod
     def register_namespace(self, url):
         return self.aio_obj.register_namespace(url)
@@ -208,6 +211,10 @@ class Node:
 
     @syncmethod
     def get_children(self):
+        pass
+
+    @syncmethod
+    def get_child(self, path):
         pass
 
     @syncmethod

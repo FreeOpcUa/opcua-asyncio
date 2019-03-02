@@ -33,6 +33,7 @@ setup(name="asyncua",
                         'uaserver = asyncua.tools:uaserver',
                         'uadiscover = asyncua.tools:uadiscover',
                         'uacall = asyncua.tools:uacall',
+                        'uageneratestructs = asyncua.tools:uageneratestructs',
                     ]
                     }
       )

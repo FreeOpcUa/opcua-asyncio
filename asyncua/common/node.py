@@ -302,7 +302,7 @@ class Node:
         results = await self.server.read(params)
         return results
 
-    def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified) -> Coroutine:
+    async def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
         """
         Get all children of a node. By default hierarchical references and all node classes are returned.
         Other reference types may be given:
@@ -324,7 +324,7 @@ class Node:
         HasNotifier = 48
         HasOrderedComponent = 49
         """
-        return self.get_referenced_nodes(refs, ua.BrowseDirection.Forward, nodeclassmask)
+        return await self.get_referenced_nodes(refs, ua.BrowseDirection.Forward, nodeclassmask)
 
     def get_properties(self):
         """
