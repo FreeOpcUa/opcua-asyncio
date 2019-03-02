@@ -275,6 +275,13 @@ class Subscription:
         pass
 
     @syncmethod
+    def unsubscribe(self, handle):
+        pass
+
+    @syncmethod
     async def create_monitored_items(self, monitored_items):
         pass
 
+    @syncmethod
+    def delete(self):
+        pass
