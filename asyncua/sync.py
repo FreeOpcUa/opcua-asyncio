@@ -210,12 +210,13 @@ class Node:
         pass
 
     @syncmethod
-    def get_children(self):
+    def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
         pass
 
     @syncmethod
-    def get_child(self, path):
-        pass
+    def get_children_descriptions(self, refs=ua.ObjectIds.HierarchicalReferences,
+                                        nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
+            pass
 
     @syncmethod
     def get_child(self, path):
