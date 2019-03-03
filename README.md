@@ -9,12 +9,11 @@ http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 # opcua-asyncio
 
 This repository is a fork of [python-opcua](https://github.com/FreeOpcUa/python-opcua) to rebase it completely on asyncio and drop support for Python < 3.6.
-Please note that opcua-asyncio is still in development and should be treated as an alpha release. 
-There is also a draft of sync wrapper over async API which may replace python-opcua in the future in asyncua/sync.py
+This library has also [sync wrapper](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/asyncua/sync.py) over async API which may completely replace python-opcua in the future.
 
 ## Motivation
 
-The primary goal of this version of [python-opcua](https://github.com/FreeOpcUa/python-opcua) is to create an asynchronous OPC UA client based on asyncio.
+The primary goal of this version of [python-opcua](https://github.com/FreeOpcUa/python-opcua) is to create an asynchronous OPC UA client based on asyncio and remove hacks for support of python 2 and older python 3 versions.
 Asynchronous programming allows for simpler code (e.g. less need for locks) and potentially performance gains.
 
 ## Caveats
@@ -22,13 +21,13 @@ Asynchronous programming allows for simpler code (e.g. less need for locks) and 
 Since `Client` and `Server` share common resources (e.g. `Node`), the `Server` has to also use asynchronous methods
 to access nodes in it's address space although the operation are non-blocking in most cases. This comes with a cost
 in performance since calling a coroutine is more expensive than a function.
-This problem should be addressed by a future change in architecture. One possibility would be [sans I/O](https://sans-io.readthedocs.io/).
+This problem should be addressed by a future change in architecture. One possibility would be [sans I/O](https://sans-io.readthedocs.io/), or simply make a server API
 
 ## Documentation
 
 The API remains mostly unchanged in regards to [python-opcua](https://github.com/FreeOpcUa/python-opcua). Main difference is that many methods have been refactored to return coroutines.
-Please have a look at the examples and/or the code.
-Below you will find a copy of the documentation from the [python-opcua](https://github.com/FreeOpcUa/python-opcua) package.
+Please have a look at [the examples](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples) and/or the code.
+
 
 ---
 
@@ -41,7 +40,7 @@ coverage.py reports a test coverage of over 95 % of code, most of non-tested c
 
 # Installation
 
-With pip (note: the package was ealier called freeopcua)
+With pip
 
     pip install asyncua
 
@@ -57,7 +56,7 @@ Examples: https://github.com/FreeOpcUa/opcua-asyncio/tree/master/examples
 Minimal client example: https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples/client-minimal.py
 Minimal server example: https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples/server-minimal.py
 
-A set of command line tools also available: https://github.com/FreeOpcUa/python-opcua/tree/master/tools
+A set of command line tools also available: https://github.com/FreeOpcUa/opcua-asyncio/tree/master/tools
 * `uadiscover `(find_servers, get_endpoints and find_servers_on_network calls)
 * `uals `(list children of a node)
 * `uahistoryread`
