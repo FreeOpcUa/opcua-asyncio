@@ -4,7 +4,7 @@ http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 [![Build Status](https://travis-ci.org/FreeOpcUa/opcua-asyncio.svg?branch=master)](https://travis-ci.org/FreeOpcUa/opcua-asyncio)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/?branch=master)
 
-[![PyPI Package](https://badge.fury.io/py/freeopcua.svg)](https://badge.fury.io/py/freeopcua)
+[![PyPI Package](https://badge.fury.io/py/asyncua.svg)](https://badge.fury.io/py/asyncua)
 
 # opcua-asyncio
 
