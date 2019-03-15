@@ -10,8 +10,7 @@ setup(
     packages=find_packages(),
     provides=["asyncua"],
     license="GNU Lesser General Public License v3 or later",
-    install_requires=["aiofiles", "asyncio-contextmanager", "python-dateutil", "pytz", "lxml"],
-    extras_require={'encryption': ['cryptography']},
+    install_requires=["aiofiles", "asyncio-contextmanager", "python-dateutil", "pytz", "lxml", 'cryptography'],
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
