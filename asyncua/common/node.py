@@ -58,9 +58,8 @@ class Node:
         elif isinstance(nodeid, int):
             self.nodeid = ua.NodeId(nodeid, 0)
         else:
-            raise ua.UaError(
-                "argument to node must be a NodeId object or a string defining a nodeid found {0} of type {1}".format(
-                    nodeid, type(nodeid)))
+            raise ua.UaError("argument to node must be a NodeId object or a string defining a nodeid found {0} of type {1}".format(nodeid, type(nodeid)))
+        self.oldnodeid = None
 
     def __eq__(self, other):
         if isinstance(other, Node) and self.nodeid == other.nodeid:
@@ -683,3 +682,13 @@ class Node:
 
     async def call_method(self, methodid, *args):
         return await call_method(self, methodid, *args)
+
+    async def register(self):
+        self.oldnodeid = self.nodeid
+        self.nodeid = await self.server.register_nodes([self.nodeid])[0]
+
+    async def unregister(self):
+        await self.server.unregister_nodes([self.nodeid])
+        if self.oldnodeid:
+            self.nodeid = self.oldnodeid
+            self.oldnodeid = None
