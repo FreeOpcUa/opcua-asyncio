@@ -577,3 +577,11 @@ class Client:
                 continue
             node.nodeid = node.oldnodeid
             node.oldnodeid = None
+
+    def get_values(self, nodes):
+        """
+        Read the value of multiple nodes in one roundtrip.
+        """
+        nodes = [node.nodeid for node in nodes]
+        results = self.uaclient.get_attribute(nodes, ua.AttributeIds.Value)
+        return [result.Value.Value for result in results]
