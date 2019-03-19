@@ -51,7 +51,8 @@ class OPCTypeDictionaryBuilder:
         if data_type in self._build_in_list:
             data_type = 'opc:' + data_type
         else:
-            data_type = 'tns:' + _to_camel_case(data_type)
+            #data_type = 'tns:' + _to_camel_case(data_type)
+            data_type = 'tns:' + data_type
         return data_type
 
     def _add_field(self, variable_name, data_type, struct_name):
@@ -82,7 +83,8 @@ class OPCTypeDictionaryBuilder:
     def append_struct(self, name):
         appended_struct = Et.SubElement(self.etree.getroot(), 'opc:StructuredType')
         appended_struct.attrib['BaseType'] = 'ua:ExtensionObject'
-        appended_struct.attrib['Name'] = _to_camel_case(name)
+        #appended_struct.attrib['Name'] = _to_camel_case(name)
+        appended_struct.attrib['Name'] = name
         self._structs_dict[name] = appended_struct
         return appended_struct
 
@@ -120,25 +122,23 @@ def _reference_generator(source_id, target_id, reference_type, is_forward=True):
 
 class DataTypeDictionaryBuilder:
 
-    def __init__(self, server, idx, ns_urn, dict_name):
+    def __init__(self, server, idx, ns_urn, dict_name, dict_node_id=None):
         self._server = server
-        self._session_server = server.get_root_node().server
+        self._session_server = server.get_node(ua.ObjectIds.RootFolder).server
         self._idx = idx
         self.ns_urn = ns_urn
         self.dict_name = dict_name
-        # Risk of bugs using a fixed number without checking
-        self._id_counter = 8000
-        self.dict_id = None
         self._type_dictionary = None
+        self.dict_id = dict_node_id
 
     async def init(self):
-        self.dict_id = await self._add_dictionary(self.dict_name)
+        if self.dict_id is None:
+            self.dict_id = await self._add_dictionary(self.dict_name)
         self._type_dictionary = OPCTypeDictionaryBuilder(self.ns_urn)
 
     async def _add_dictionary(self, name):
-        dictionary_node_id = self._nodeid_generator()
         node = ua.AddNodesItem()
-        node.RequestedNewNodeId = dictionary_node_id
+        node.RequestedNewNodeId = ua.NodeId(0, self._idx)
         node.BrowseName = ua.QualifiedName(name, self._idx)
         node.NodeClass = ua.NodeClass.Variable
         node.ParentNodeId = ua.NodeId(ua.ObjectIds.OPCBinarySchema_TypeSystem, 0)
@@ -151,13 +151,9 @@ class DataTypeDictionaryBuilder:
         attrs.Value = ua.Variant(None, ua.VariantType.Null)
         attrs.ValueRank = -1
         node.NodeAttributes = attrs
-        await self._session_server.add_nodes([node])
+        res = await self._session_server.add_nodes([node])
 
-        return dictionary_node_id
-
-    def _nodeid_generator(self):
-        self._id_counter += 1
-        return ua.NodeId(self._id_counter, namespaceidx=self._idx, nodeidtype=ua.NodeIdType.Numeric)
+        return res[0].AddedNodeId
 
     async def _link_nodes(self, linked_obj_node_id, data_type_node_id, description_node_id):
         """link the three node by their node ids according to UA standard"""
@@ -188,60 +184,75 @@ class DataTypeDictionaryBuilder:
                                      ua.NodeId(ua.ObjectIds.HasComponent, 0), False)]
         await self._session_server.add_references(refs)
 
-    async def _create_data_type(self, type_name):
-        name = _to_camel_case(type_name)
-        # apply for new node id
-        data_type_node_id = self._nodeid_generator()
-        description_node_id = self._nodeid_generator()
-        bind_obj_node_id = self._nodeid_generator()
+    async def _create_data_type(self, type_name, nodeid=None, init=True):
+        #name = _to_camel_case(type_name)
+        name = type_name
 
-        # create data type node
-        dt_node = ua.AddNodesItem()
-        dt_node.RequestedNewNodeId = data_type_node_id
-        dt_node.BrowseName = ua.QualifiedName(name, self._idx)
-        dt_node.NodeClass = ua.NodeClass.DataType
-        dt_node.ParentNodeId = ua.NodeId(ua.ObjectIds.Structure, 0)
-        dt_node.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasSubtype, 0)
-        dt_attributes = ua.DataTypeAttributes()
-        dt_attributes.DisplayName = ua.LocalizedText(type_name)
-        dt_node.NodeAttributes = dt_attributes
+        if nodeid is None:
+            data_type_node_id = ua.NodeId(0, self._idx)
+            # create data type node
+            dt_node = ua.AddNodisItem()
+            dt_node.RequestedNewNodeId = data_type_node_id
+            dt_node.BrowseName = ua.QualifiedName(name, self._idx)
+            dt_node.NodeClass = ua.NodeClass.DataType
+            dt_node.ParentNodeId = ua.NodeId(ua.ObjectIds.Structure, 0)
+            dt_node.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasSubtype, 0)
+            dt_attributes = ua.DataTypeAttributes()
+            dt_attributes.DisplayName = ua.LocalizedText(type_name)
+            dt_node.NodeAttributes = dt_attributes
 
-        # create description node
-        desc_node = ua.AddNodesItem()
-        desc_node.RequestedNewNodeId = description_node_id
-        desc_node.BrowseName = ua.QualifiedName(name, self._idx)
-        desc_node.NodeClass = ua.NodeClass.Variable
-        desc_node.ParentNodeId = self.dict_id
-        desc_node.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasComponent, 0)
-        desc_node.TypeDefinition = ua.NodeId(ua.ObjectIds.DataTypeDescriptionType, 0)
-        desc_attributes = ua.VariableAttributes()
-        desc_attributes.DisplayName = ua.LocalizedText(type_name)
-        desc_attributes.DataType = ua.NodeId(ua.ObjectIds.String)
-        desc_attributes.Value = ua.Variant(name, ua.VariantType.String)
-        desc_attributes.ValueRank = -1
-        desc_node.NodeAttributes = desc_attributes
+            res = await self._session_server.add_nodes([dt_node])
+        else:
+            data_type_node_id = nodeid
 
-        # create object node which the loaded python class should link to
-        obj_node = ua.AddNodesItem()
-        obj_node.RequestedNewNodeId = bind_obj_node_id
-        obj_node.BrowseName = ua.QualifiedName('Default Binary', 0)
-        obj_node.NodeClass = ua.NodeClass.Object
-        obj_node.ParentNodeId = data_type_node_id
-        obj_node.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasEncoding, 0)
-        obj_node.TypeDefinition = ua.NodeId(ua.ObjectIds.DataTypeEncodingType, 0)
-        obj_attributes = ua.ObjectAttributes()
-        obj_attributes.DisplayName = ua.LocalizedText('Default Binary')
-        obj_attributes.EventNotifier = 0
-        obj_node.NodeAttributes = obj_attributes
+        added = [data_type_node_id]
 
-        await self._session_server.add_nodes([dt_node, desc_node, obj_node])
-        await self._link_nodes(bind_obj_node_id, data_type_node_id, description_node_id)
+        if init:
+            # create description node
+            description_node_id = ua.NodeId(0, self._idx)
+            desc_node = ua.AddNodesItem()
+            desc_node.RequestedNewNodeId = description_node_id
+            desc_node.BrowseName = ua.QualifiedName(name, self._idx)
+            desc_node.NodeClass = ua.NodeClass.Variable
+            desc_node.ParentNodeId = self.dict_id
+            desc_node.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasComponent, 0)
+            desc_node.TypeDefinition = ua.NodeId(ua.ObjectIds.DataTypeDescriptionType, 0)
+            desc_attributes = ua.VariableAttributes()
+            desc_attributes.DisplayName = ua.LocalizedText(type_name)
+            desc_attributes.DataType = ua.NodeId(ua.ObjectIds.String)
+            desc_attributes.Value = ua.Variant(name, ua.VariantType.String)
+            desc_attributes.ValueRank = -1
+            desc_node.NodeAttributes = desc_attributes
+
+            res = await self._session_server.add_nodes([desc_node])
+            description_node_id = res[0].AddedNodeId
+            added.append(description_node_id)
+
+            # create object node which the loaded python class should link to
+            bind_obj_node_id = ua.NodeId(0, self._idx)
+            obj_node = ua.AddNodesItem()
+            obj_node.RequestedNewNodeId = bind_obj_node_id
+            obj_node.BrowseName = ua.QualifiedName('Default Binary', 0)
+            obj_node.NodeClass = ua.NodeClass.Object
+            obj_node.ParentNodeId = data_type_node_id
+            obj_node.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasEncoding, 0)
+            obj_node.TypeDefinition = ua.NodeId(ua.ObjectIds.DataTypeEncodingType, 0)
+            obj_attributes = ua.ObjectAttributes()
+            obj_attributes.DisplayName = ua.LocalizedText('Default Binary')
+            obj_attributes.EventNotifier = 0
+            obj_node.NodeAttributes = obj_attributes
+
+            res = await self._session_server.add_nodes([obj_node])
+            bind_obj_node_id = res[0].AddedNodeId
+            added.append(bind_obj_node_id)
+
+            await self._link_nodes(bind_obj_node_id, data_type_node_id, description_node_id)
 
         self._type_dictionary.append_struct(type_name)
-        return StructNode(self, data_type_node_id, type_name)
+        return StructNode(self, data_type_node_id, type_name, added)
 
-    async def create_data_type(self, type_name):
-        return await self._create_data_type(type_name)
+    async def create_data_type(self, type_name, nodeid=None, init=True):
+        return await self._create_data_type(type_name, nodeid, init)
 
     def add_field(self, type_name, variable_name, struct_name, is_array=False):
         self._type_dictionary.add_field(type_name, variable_name, struct_name, is_array)
@@ -254,11 +265,11 @@ class DataTypeDictionaryBuilder:
 
 class StructNode:
 
-    def __init__(self, type_dict, data_type, name):
+    def __init__(self, type_dict, data_type, name, node_ids):
         self._type_dict = type_dict
         self.data_type = data_type
         self.name = name
-        pass
+        self.node_ids = node_ids 
 
     def add_field(self, type_name, field_name, is_array=False):
         # nested structure could directly use simple structure as field
@@ -268,4 +279,5 @@ class StructNode:
 
 
 def get_ua_class(ua_class_name):
-    return getattr(ua, _to_camel_case(ua_class_name))
+    #return getattr(ua, _to_camel_case(ua_class_name))
+    return getattr(ua, ua_class_name)
