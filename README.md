@@ -10,6 +10,7 @@ http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
 This repository is a fork of [python-opcua](https://github.com/FreeOpcUa/python-opcua) to rebase it completely on asyncio and drop support for Python < 3.6.
 This library has also [sync wrapper](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/asyncua/sync.py) over async API which may completely replace python-opcua in the future.
+**PR to fix bugs to python-opcua are welcome, but if you want to write new fancy features or architectural changes, please look at opcua-asyncio**
 
 ## Motivation
 
