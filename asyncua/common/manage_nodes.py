@@ -64,7 +64,7 @@ async def create_object(parent, nodeid, bname, objecttype=None):
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
     if objecttype is not None:
         objecttype = make_node(parent.server, objecttype)
-        dname = ua.LocalizedText(bname)
+        dname = ua.LocalizedText(qname.Name)
         nodes = await instantiate(parent, objecttype, nodeid, bname=qname, dname=dname)
         return nodes[0]
     else:
