@@ -115,9 +115,9 @@ class XmlImporter:
             if node_datum.parent:
                 node_datum.parent = ua.NodeId.from_string(node_datum.parent)
             if node_datum.parentlink:
-                node_datum.parentlink = self.to_nodeid(node_datum.parentlink)
+                node_datum.parentlink = self._to_nodeid(node_datum.parentlink)
             if node_datum.typedef:
-                node_datum.typedef = self.to_nodeid(node_datum.typedef)
+                node_datum.typedef = self._to_nodeid(node_datum.typedef)
             new_nodes.append(node_datum)
         return new_nodes
 
