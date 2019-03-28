@@ -346,9 +346,9 @@ class Client:
         but it does not cost much..
         """
         try:
-            duration = min(self.session_timeout, self.secure_channel_timeout) * 0.7
+            duration = min(self.session_timeout, self.secure_channel_timeout) * 0.7 * 0.001
             while True:
-                # 0.7 is from spec
+                # 0.7 is from spec. 0.001 is because asyncio.sleep expects time in seconds
                 await asyncio.sleep(duration)
                 self.logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
