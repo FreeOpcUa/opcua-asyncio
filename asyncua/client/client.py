@@ -560,23 +560,22 @@ class Client:
         """
         Register nodes for faster read and write access
         """
-        nodes = [node.nodeid for node in nodes]
-        nodeids = self.uaclient.register_nodes(nodes)
+        nodeids = [node.nodeid for node in nodes]
+        nodeids = self.uaclient.register_nodes(nodeids)
+        ret = []
         for node, nodeid in zip(nodes, nodeids):
-            node.oldnodeid = node.nodeid
-            node.nodeid = nodeid
+            ret.append(Node(node.server, nodeid, node.nodeid))
+        return ret
 
     def unregister_nodes(self, nodes):
         """
         Unregister nodes
         """
-        nodes = [node.nodeid for node in nodes]
-        self.uaclient.unregister_nodes(nodes)
+        nodeids = [node.nodeid for node in nodes]
+        self.uaclient.unregister_nodes(nodeids)
+        ret = []
         for node in nodes:
-            if not node.oldnodeid:
-                continue
-            node.nodeid = node.oldnodeid
-            node.oldnodeid = None
+            ret.append(Node(node.server, node.basenodeid))
 
     def get_values(self, nodes):
         """
