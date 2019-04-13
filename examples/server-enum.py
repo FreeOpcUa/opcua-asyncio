@@ -64,7 +64,7 @@ if __name__ == "__main__":
     #                                                       ua.LocalizedText("idle")])
 
     # Or convert the existing IntEnum MyEnum
-    es = myenum_type.add_variable(0, "EnumStrings" , enum_to_stringlist(MyEnum))
+    es = myenum_type.add_property(0, "EnumStrings" , enum_to_stringlist(MyEnum))
 
     es.set_value_rank(1)
     es.set_array_dimensions([0])
