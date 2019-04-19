@@ -1,9 +1,12 @@
 from asyncua import ua
 from enum import Enum
+import logging
 
 import xml.etree.ElementTree as Et
 import re
 
+
+logger = logging.getLogger(__name__)
 # Indicates which type should be OPC build in types
 _ua_build_in_types = [ua_type for ua_type in ua.VariantType.__members__ if ua_type != 'ExtensionObject']
 
@@ -137,23 +140,28 @@ class DataTypeDictionaryBuilder:
         self._type_dictionary = OPCTypeDictionaryBuilder(self.ns_urn)
 
     async def _add_dictionary(self, name):
-        node = ua.AddNodesItem()
-        node.RequestedNewNodeId = ua.NodeId(0, self._idx)
-        node.BrowseName = ua.QualifiedName(name, self._idx)
-        node.NodeClass = ua.NodeClass.Variable
-        node.ParentNodeId = ua.NodeId(ua.ObjectIds.OPCBinarySchema_TypeSystem, 0)
-        node.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasComponent, 0)
-        node.TypeDefinition = ua.NodeId(ua.ObjectIds.DataTypeDictionaryType, 0)
-        attrs = ua.VariableAttributes()
-        attrs.DisplayName = ua.LocalizedText(name)
-        attrs.DataType = ua.NodeId(ua.ObjectIds.ByteString)
-        # Value should be set after all data types created by calling set_dict_byte_string
-        attrs.Value = ua.Variant(None, ua.VariantType.Null)
-        attrs.ValueRank = -1
-        node.NodeAttributes = attrs
-        res = await self._session_server.add_nodes([node])
-
-        return res[0].AddedNodeId
+        try:
+            node = await self._server.nodes.opc_binary.get_child(f"{self._idx}:{name}")
+        except ua.uaerrors.BadNoMatch:
+            node = ua.AddNodesItem()
+            node.RequestedNewNodeId = ua.NodeId(0, self._idx)
+            node.BrowseName = ua.QualifiedName(name, self._idx)
+            node.NodeClass = ua.NodeClass.Variable
+            node.ParentNodeId = ua.NodeId(ua.ObjectIds.OPCBinarySchema_TypeSystem, 0)
+            node.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasComponent, 0)
+            node.TypeDefinition = ua.NodeId(ua.ObjectIds.DataTypeDictionaryType, 0)
+            attrs = ua.VariableAttributes()
+            attrs.DisplayName = ua.LocalizedText(name)
+            attrs.DataType = ua.NodeId(ua.ObjectIds.ByteString)
+            # Value should be set after all data types created by calling set_dict_byte_string
+            attrs.Value = ua.Variant(None, ua.VariantType.Null)
+            attrs.ValueRank = -1
+            node.NodeAttributes = attrs
+            res = await self._session_server.add_nodes([node])
+            return res[0].AddedNodeId
+        logger.warning("Making %s object for node %s which already exist, its data will be overriden", self, node)
+        #FIXME: we have an issue 
+        return node.nodeid
 
     async def _link_nodes(self, linked_obj_node_id, data_type_node_id, description_node_id):
         """link the three node by their node ids according to UA standard"""
@@ -189,10 +197,9 @@ class DataTypeDictionaryBuilder:
         name = type_name
 
         if nodeid is None:
-            data_type_node_id = ua.NodeId(0, self._idx)
             # create data type node
-            dt_node = ua.AddNodisItem()
-            dt_node.RequestedNewNodeId = data_type_node_id
+            dt_node = ua.AddNodesItem()
+            dt_node.RequestedNewNodeId = ua.NodeId(0, self._idx)
             dt_node.BrowseName = ua.QualifiedName(name, self._idx)
             dt_node.NodeClass = ua.NodeClass.DataType
             dt_node.ParentNodeId = ua.NodeId(ua.ObjectIds.Structure, 0)
@@ -202,6 +209,7 @@ class DataTypeDictionaryBuilder:
             dt_node.NodeAttributes = dt_attributes
 
             res = await self._session_server.add_nodes([dt_node])
+            data_type_node_id = res[0].AddedNodeId
         else:
             data_type_node_id = nodeid
 
@@ -209,9 +217,8 @@ class DataTypeDictionaryBuilder:
 
         if init:
             # create description node
-            description_node_id = ua.NodeId(0, self._idx)
             desc_node = ua.AddNodesItem()
-            desc_node.RequestedNewNodeId = description_node_id
+            desc_node.RequestedNewNodeId = ua.NodeId(0, self._idx)
             desc_node.BrowseName = ua.QualifiedName(name, self._idx)
             desc_node.NodeClass = ua.NodeClass.Variable
             desc_node.ParentNodeId = self.dict_id
@@ -229,9 +236,8 @@ class DataTypeDictionaryBuilder:
             added.append(description_node_id)
 
             # create object node which the loaded python class should link to
-            bind_obj_node_id = ua.NodeId(0, self._idx)
             obj_node = ua.AddNodesItem()
-            obj_node.RequestedNewNodeId = bind_obj_node_id
+            obj_node.RequestedNewNodeId = ua.NodeId(0, self._idx)
             obj_node.BrowseName = ua.QualifiedName('Default Binary', 0)
             obj_node.NodeClass = ua.NodeClass.Object
             obj_node.ParentNodeId = data_type_node_id
