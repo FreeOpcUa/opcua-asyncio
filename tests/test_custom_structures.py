@@ -53,13 +53,7 @@ async def srv(_srv):
     _srv.opc_type_builder = OPCTypeDictionaryBuilder(ns_urn)
     _srv.dict_builder = DataTypeDictionaryBuilder(_srv.srv, _srv.idx, ns_urn, 'TestDict')
     await _srv.dict_builder.init()
-    _srv.init_counter = getattr(_srv.dict_builder, '_id_counter')
     yield _srv
-    curr_counter = getattr(_srv.dict_builder, '_id_counter')
-    trash_nodes = []
-    for counter in range(_srv.init_counter, curr_counter + 1):
-        trash_nodes.append(_srv.srv.get_node('ns={0};i={1}'.format(_srv.idx, str(counter))))
-    await _srv.srv.delete_nodes(trash_nodes)
 
 
 async def test_camel_case_1():
@@ -93,6 +87,7 @@ async def test_opc_type_dict_append_struct_1(srv):
     assert result.attrib == case
 
 
+@pytest.mark.skip("support for theat currently removed")
 async def test_opc_type_dict_append_struct_2(srv):
     case = {'BaseType': 'ua:ExtensionObject',
             'Name': 'CustomizedStruct'}
@@ -183,15 +178,6 @@ async def test_data_type_dict_general(srv):
     assert getattr(srv.dict_builder, '_type_dictionary') is not None
 
 
-async def test_data_type_dict_nodeid_generator(srv):
-    nodeid_generator = getattr(srv.dict_builder, '_nodeid_generator')
-    result = nodeid_generator()
-    assert isinstance(result, ua.NodeId)
-    assert str(result.Identifier).isdigit()
-    assert result.NamespaceIndex == srv.idx
-    setattr(srv.dict_builder, '_id_counter', srv.init_counter)
-
-
 async def test_data_type_dict_add_dictionary(srv):
     add_dictionary = getattr(srv.dict_builder, '_add_dictionary')
     dict_name = 'TestDict'
@@ -207,7 +193,7 @@ async def test_data_type_dict_add_dictionary(srv):
 
 
 async def test_data_type_dict_create_data_type(srv):
-    type_name = 'CustomizedStruct'
+    type_name = 'CustomizedStruct2'
     created_type = await srv.dict_builder.create_data_type(type_name)
     assert isinstance(created_type, StructNode)
     # Test data type node
@@ -219,7 +205,8 @@ async def test_data_type_dict_create_data_type(srv):
     assert await type_node.get_display_name() == ua.LocalizedText(type_name)
 
     # Test description node
-    desc_node = (await srv.srv.get_node(srv.dict_builder.dict_id).get_children())[0]
+    n = srv.srv.get_node(srv.dict_builder.dict_id)
+    desc_node = await n.get_child(f"{srv.dict_builder._idx}:{type_name}")
     assert await desc_node.get_browse_name() == ua.QualifiedName(type_name, srv.idx)
     assert await desc_node.get_node_class() == ua.NodeClass.Variable
     assert (await desc_node.get_parent()).nodeid == srv.dict_builder.dict_id
@@ -331,6 +318,7 @@ async def test_get_ua_class_1(srv):
         pass
 
 
+@pytest.mark.skip("support for theat currently removed")
 async def test_get_ua_class_2(srv):
     struct_name = '*c*u_stom-ized&Stru#ct'
     struct_node = await srv.dict_builder.create_data_type(struct_name)
