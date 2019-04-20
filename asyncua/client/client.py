@@ -268,7 +268,7 @@ class Client:
         if discovery_configuration is provided, the newer register_server2 service call is used
         """
         serv = ua.RegisteredServer()
-        serv.ServerUri = server.application_uri
+        serv.ServerUri = server.get_application_uri()
         serv.ProductUri = server.product_uri
         serv.DiscoveryUrls = [server.endpoint.geturl()]
         serv.ServerType = server.application_type

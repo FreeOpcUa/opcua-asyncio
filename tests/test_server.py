@@ -23,7 +23,7 @@ async def test_discovery(server, discovery_server):
     async with client:
         servers = await client.find_servers()
         new_app_uri = 'urn:freeopcua:python:server:test_discovery'
-        server.application_uri = new_app_uri
+        await server.set_application_uri(new_app_uri)
         await server.register_to_discovery(discovery_server.endpoint.geturl(), 0)
         # let server register registration
         await asyncio.sleep(0.1)
@@ -38,10 +38,10 @@ async def test_find_servers2(server, discovery_server):
     async with client:
         servers = await client.find_servers()
         new_app_uri1 = 'urn:freeopcua:python:server:test_discovery1'
-        server.application_uri = new_app_uri1
+        await server.set_application_uri(new_app_uri1)
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=0)
         new_app_uri2 = 'urn:freeopcua:python:test_discovery2'
-        server.application_uri = new_app_uri2
+        await server.set_application_uri(new_app_uri2)
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=0)
         await asyncio.sleep(0.1)  # let server register registration
         new_servers = await client.find_servers()

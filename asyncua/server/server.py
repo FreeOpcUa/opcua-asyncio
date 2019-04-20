@@ -126,6 +126,9 @@ class Server:
         """
         self.iserver.disabled_clock = val
 
+    def get_application_uri(self):
+        return self._application_uri
+
     async def set_application_uri(self, uri: str):
         """
         Set application/server URI.
