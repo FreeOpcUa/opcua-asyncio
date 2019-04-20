@@ -2,8 +2,7 @@ import logging
 from typing import Iterable, Coroutine, Optional
 from datetime import timedelta
 from datetime import datetime
-from asyncio import Lock, get_event_loop
-from aiocontext import async_contextmanager
+from asyncio import get_event_loop
 import sqlite3
 
 from asyncua import ua
@@ -26,185 +25,169 @@ class HistorySQLite(HistoryStorageInterface):
         self.logger = logging.getLogger(__name__)
         self._datachanges_period = {}
         self._db_file = path
-        self._lock = Lock()
         self._event_fields = {}
-        self._conn: sqlite3.Connection = None
-        self._cur: sqlite3.Cursor = None
+        self._conn: Optional[sqlite3.Connection] = None
         self._loop = loop or get_event_loop()
 
     async def init(self):
         self._conn = sqlite3.connect(self._db_file, detect_types=sqlite3.PARSE_DECLTYPES, check_same_thread=False)
 
-    @async_contextmanager
-    async def _cursor(self):
-        async with self._lock:
-            self._cur = await self._loop.run_in_executor(None, self._conn.cursor)
-            yield None
-            await self._loop.run_in_executor(None, self._cur.close)
-            self._cur = None
+    async def stop(self):
+        await self._loop.run_in_executor(None, self._conn.close)
+        self._conn = None
+        self.logger.info('Historizing SQL connection closed')
 
-    def _excute_sql_task(self, sql, params, commit):
-        result = self._cur.execute(sql, params)
-        if commit:
-            self._conn.commit()
-        return result
-
-    def _execute_sql(self, sql: str, params: Iterable = None, commit: bool = False) -> Coroutine:
-        return self._loop.run_in_executor(None, self._excute_sql_task, sql, params or (), commit)
+    async def _execute_sql(self, sql: str, params: Iterable = None):
+        return await self._loop.run_in_executor(None, self._conn.execute, sql, params or ())
 
     async def new_historized_node(self, node_id, period, count=0):
-        async with self._cursor():
-            table = self._get_table_name(node_id)
-            self._datachanges_period[node_id] = period, count
-            # create a table for the node which will store attributes of the DataValue object
-            # note: Value/VariantType TEXT is only for human reading, the actual data is stored in VariantBinary column
-            try:
-                await self._execute_sql(f'CREATE TABLE "{table}" (_Id INTEGER PRIMARY KEY NOT NULL,'
-                                        ' ServerTimestamp TIMESTAMP,'
-                                        ' SourceTimestamp TIMESTAMP,'
-                                        ' StatusCode INTEGER,'
-                                        ' Value TEXT,'
-                                        ' VariantType TEXT,'
-                                        ' VariantBinary BLOB)', None, commit=True)
+        table = self._get_table_name(node_id)
+        self._datachanges_period[node_id] = period, count
+        # create a table for the node which will store attributes of the DataValue object
+        # note: Value/VariantType TEXT is only for human reading, the actual data is stored in VariantBinary column
+        try:
+            await self._execute_sql(f'CREATE TABLE "{table}" (_Id INTEGER PRIMARY KEY NOT NULL,'
+                                    ' ServerTimestamp TIMESTAMP,'
+                                    ' SourceTimestamp TIMESTAMP,'
+                                    ' StatusCode INTEGER,'
+                                    ' Value TEXT,'
+                                    ' VariantType TEXT,'
+                                    ' VariantBinary BLOB)', None)
 
-            except sqlite3.Error as e:
-                self.logger.info("Historizing SQL Table Creation Error for %s: %s", node_id, e)
+        except sqlite3.Error as e:
+            self.logger.info("Historizing SQL Table Creation Error for %s: %s", node_id, e)
 
     async def execute_sql_delete(self, condition: str, args: Iterable, table: str, node_id):
         try:
-            await self._execute_sql(f'DELETE FROM "{table}" WHERE {condition}', args, commit=True)
+            await self._execute_sql(f'DELETE FROM "{table}" WHERE {condition}', args)
         except sqlite3.Error as e:
             self.logger.error("Historizing SQL Delete Old Data Error for %s: %s", node_id, e)
 
     async def save_node_value(self, node_id, datavalue):
-        async with self._cursor():
-
-            table = self._get_table_name(node_id)
-            # insert the data change into the database
-            try:
-                await self._execute_sql(f'INSERT INTO "{table}" VALUES (NULL, ?, ?, ?, ?, ?, ?)', (
-                    datavalue.ServerTimestamp,
-                    datavalue.SourceTimestamp,
-                    datavalue.StatusCode.value,
-                    str(datavalue.Value.Value),
-                    datavalue.Value.VariantType.name,
-                    sqlite3.Binary(variant_to_binary(datavalue.Value))
-                ), commit=True)
-            except sqlite3.Error as e:
-                self.logger.error("Historizing SQL Insert Error for %s: %s", node_id, e)
-            # get this node's period from the period dict and calculate the limit
-            period, count = self._datachanges_period[node_id]
-            if period:
-                # after the insert, if a period was specified delete all records older than period
-                date_limit = datetime.utcnow() - period
-                await self.execute_sql_delete("SourceTimestamp < ?", (date_limit,), table, node_id)
-            if count:
-                # ensure that no more than count records are stored for the specified node
-                await self.execute_sql_delete(
-                    'SourceTimestamp = (SELECT CASE WHEN COUNT(*) > ? '
-                    f'THEN MIN(SourceTimestamp) ELSE NULL END FROM "{table}")', (count,), table, node_id)
+        table = self._get_table_name(node_id)
+        # insert the data change into the database
+        try:
+            await self._execute_sql(f'INSERT INTO "{table}" VALUES (NULL, ?, ?, ?, ?, ?, ?)', (
+                datavalue.ServerTimestamp,
+                datavalue.SourceTimestamp,
+                datavalue.StatusCode.value,
+                str(datavalue.Value.Value),
+                datavalue.Value.VariantType.name,
+                sqlite3.Binary(variant_to_binary(datavalue.Value))
+            ))
+        except sqlite3.Error as e:
+            self.logger.error("Historizing SQL Insert Error for %s: %s", node_id, e)
+        # get this node's period from the period dict and calculate the limit
+        period, count = self._datachanges_period[node_id]
+        if period:
+            # after the insert, if a period was specified delete all records older than period
+            date_limit = datetime.utcnow() - period
+            await self.execute_sql_delete("SourceTimestamp < ?", (date_limit,), table, node_id)
+        if count:
+            # ensure that no more than count records are stored for the specified node
+            await self.execute_sql_delete(
+                'SourceTimestamp = (SELECT CASE WHEN COUNT(*) > ? '
+                f'THEN MIN(SourceTimestamp) ELSE NULL END FROM "{table}")', (count,), table, node_id)
 
     async def read_node_history(self, node_id, start, end, nb_values):
-        async with self._cursor():
-            table = self._get_table_name(node_id)
-            start_time, end_time, order, limit = self._get_bounds(start, end, nb_values)
-            cont = None
-            results = []
-            # select values from the database; recreate UA Variant from binary
-            try:
-                rows = await self._execute_sql(
-                        f'SELECT * FROM "{table}" WHERE "SourceTimestamp" BETWEEN ? AND ? '
-                        f'ORDER BY "_Id" {order} LIMIT ?', (start_time, end_time, limit,)
-                )
-                for row in rows:
-                    # rebuild the data value object
-                    dv = ua.DataValue(variant_from_binary(Buffer(row[6])))
-                    dv.ServerTimestamp = row[1]
-                    dv.SourceTimestamp = row[2]
-                    dv.StatusCode = ua.StatusCode(row[3])
-                    results.append(dv)
+        
+        table = self._get_table_name(node_id)
+        start_time, end_time, order, limit = self._get_bounds(start, end, nb_values)
+        cont = None
+        results = []
+        # select values from the database; recreate UA Variant from binary
+        try:
+            rows = await self._execute_sql(
+                    f'SELECT * FROM "{table}" WHERE "SourceTimestamp" BETWEEN ? AND ? '
+                    f'ORDER BY "_Id" {order} LIMIT ?', (start_time, end_time, limit,)
+            )
+            for row in rows:
+                # rebuild the data value object
+                dv = ua.DataValue(variant_from_binary(Buffer(row[6])))
+                dv.ServerTimestamp = row[1]
+                dv.SourceTimestamp = row[2]
+                dv.StatusCode = ua.StatusCode(row[3])
+                results.append(dv)
 
-            except sqlite3.Error as e:
-                self.logger.error("Historizing SQL Read Error for %s: %s", node_id, e)
+        except sqlite3.Error as e:
+            self.logger.error("Historizing SQL Read Error for %s: %s", node_id, e)
 
-            if nb_values:
-                if len(results) > nb_values:
-                    cont = results[nb_values].SourceTimestamp
-                results = results[:nb_values]
-            return results, cont
+        if nb_values:
+            if len(results) > nb_values:
+                cont = results[nb_values].SourceTimestamp
+            results = results[:nb_values]
+        return results, cont
 
     async def new_historized_event(self, source_id, evtypes, period, count=0):
-        async with self._cursor():
-            # get all fields for the event type nodes
-            ev_fields = await self._get_event_fields(evtypes)
-            self._datachanges_period[source_id] = period
-            self._event_fields[source_id] = ev_fields
-            table = self._get_table_name(source_id)
-            columns = self._get_event_columns(ev_fields)
-            # create a table for the event which will store fields generated by the source object's events
-            # note that _Timestamp is for SQL query, _EventTypeName is for debugging, be careful not to create event
-            # properties with these names
-            try:
-                self._execute_sql(
-                    f'CREATE TABLE "{table}" (_Id INTEGER PRIMARY KEY NOT NULL, _Timestamp TIMESTAMP, _EventTypeName TEXT, {columns})',
-                    None, commit=True
-                )
-            except sqlite3.Error as e:
-                self.logger.info("Historizing SQL Table Creation Error for events from %s: %s", source_id, e)
+        # get all fields for the event type nodes
+        ev_fields = await self._get_event_fields(evtypes)
+        self._datachanges_period[source_id] = period
+        self._event_fields[source_id] = ev_fields
+        table = self._get_table_name(source_id)
+        columns = self._get_event_columns(ev_fields)
+        # create a table for the event which will store fields generated by the source object's events
+        # note that _Timestamp is for SQL query, _EventTypeName is for debugging, be careful not to create event
+        # properties with these names
+        try:
+            self._execute_sql(
+                f'CREATE TABLE "{table}" '
+                f'(_Id INTEGER PRIMARY KEY NOT NULL, _Timestamp TIMESTAMP, _EventTypeName TEXT, {columns})',
+                None
+            )
+        except sqlite3.Error as e:
+            self.logger.info("Historizing SQL Table Creation Error for events from %s: %s", source_id, e)
 
     async def save_event(self, event):
-        async with self._cursor():
-            table = self._get_table_name(event.SourceNode)
-            columns, placeholders, evtup = self._format_event(event)
-            event_type = event.EventType  # useful for troubleshooting database
-            # insert the event into the database
+        table = self._get_table_name(event.SourceNode)
+        columns, placeholders, evtup = self._format_event(event)
+        event_type = event.EventType  # useful for troubleshooting database
+        # insert the event into the database
+        try:
+            await self._execute_sql(
+                f'INSERT INTO "{table}" ("_Id", "_Timestamp", "_EventTypeName", {columns}) '
+                f'VALUES (NULL, "{event.Time}", "{event_type}", {placeholders})',
+                evtup
+            )
+        except sqlite3.Error as e:
+            self.logger.error("Historizing SQL Insert Error for events from %s: %s", event.SourceNode, e)
+        # get this node's period from the period dict and calculate the limit
+        period = self._datachanges_period[event.SourceNode]
+        if period:
+            # after the insert, if a period was specified delete all records older than period
+            date_limit = datetime.utcnow() - period
             try:
-                await self._execute_sql(
-                    f'INSERT INTO "{table}" ("_Id", "_Timestamp", "_EventTypeName", {columns}) VALUES (NULL, "{event.Time}", "{event_type}", {placeholders})',
-                    evtup
-                )
+                await self._execute_sql(f'DELETE FROM "{table}" WHERE Time < ?', (date_limit.isoformat(' '),))
             except sqlite3.Error as e:
-                self.logger.error("Historizing SQL Insert Error for events from %s: %s", event.SourceNode, e)
-            # get this node's period from the period dict and calculate the limit
-            period = self._datachanges_period[event.SourceNode]
-            if period:
-                # after the insert, if a period was specified delete all records older than period
-                date_limit = datetime.utcnow() - period
-                try:
-                    await self._execute_sql(f'DELETE FROM "{table}" WHERE Time < ?', (date_limit.isoformat(' '),),
-                                            commit=True)
-                except sqlite3.Error as e:
-                    self.logger.error("Historizing SQL Delete Old Data Error for events from %s: %s",
-                                      event.SourceNode, e)
+                self.logger.error("Historizing SQL Delete Old Data Error for events from %s: %s", event.SourceNode, e)
 
     async def read_event_history(self, source_id, start, end, nb_values, evfilter):
-        async with self._cursor():
-            table = self._get_table_name(source_id)
-            start_time, end_time, order, limit = self._get_bounds(start, end, nb_values)
-            clauses, clauses_str = self._get_select_clauses(source_id, evfilter)
-            cont = None
-            cont_timestamps = []
-            results = []
-            # select events from the database; SQL select clause is built from EventFilter and available fields
-            try:
-                for row in await self._execute_sql(
-                        f'SELECT "_Timestamp", {clauses_str} FROM "{table}" WHERE "_Timestamp" BETWEEN ? AND ? ORDER BY "_Id" {order} LIMIT ?',
-                        (start_time, end_time, limit)):
-                    fdict = {}
-                    cont_timestamps.append(row[0])
-                    for i, field in enumerate(row[1:]):
-                        if field is not None:
-                            fdict[clauses[i]] = variant_from_binary(Buffer(field))
-                        else:
-                            fdict[clauses[i]] = ua.Variant(None)
-                    results.append(Event.from_field_dict(fdict))
-            except sqlite3.Error as e:
-                self.logger.error("Historizing SQL Read Error events for node %s: %s", source_id, e)
-            if nb_values:
-                if len(results) > nb_values:  # start > ua.get_win_epoch() and
-                    cont = cont_timestamps[nb_values]
-                results = results[:nb_values]
-            return results, cont
+        table = self._get_table_name(source_id)
+        start_time, end_time, order, limit = self._get_bounds(start, end, nb_values)
+        clauses, clauses_str = self._get_select_clauses(source_id, evfilter)
+        cont = None
+        cont_timestamps = []
+        results = []
+        # select events from the database; SQL select clause is built from EventFilter and available fields
+        try:
+            for row in await self._execute_sql(
+                    f'SELECT "_Timestamp", {clauses_str} FROM "{table}" '
+                    f'WHERE "_Timestamp" BETWEEN ? AND ? ORDER BY "_Id" {order} LIMIT ?',
+                    (start_time, end_time, limit)):
+                fdict = {}
+                cont_timestamps.append(row[0])
+                for i, field in enumerate(row[1:]):
+                    if field is not None:
+                        fdict[clauses[i]] = variant_from_binary(Buffer(field))
+                    else:
+                        fdict[clauses[i]] = ua.Variant(None)
+                results.append(Event.from_field_dict(fdict))
+        except sqlite3.Error as e:
+            self.logger.error("Historizing SQL Read Error events for node %s: %s", source_id, e)
+        if nb_values:
+            if len(results) > nb_values:  # start > ua.get_win_epoch() and
+                cont = cont_timestamps[nb_values]
+            results = results[:nb_values]
+        return results, cont
 
     def _get_table_name(self, node_id):
         return f"{node_id.NamespaceIndex}_{node_id.Identifier}"
@@ -296,7 +279,3 @@ class HistorySQLite(HistoryStorageInterface):
         items = [f'"{item}"' if quotes else str(item) for item in ls]
         return ", ".join(items)
 
-    async def stop(self):
-        async with self._lock:
-            await self._loop.run_in_executor(None, self._conn.close)
-            self.logger.info('Historizing SQL connection closed')
