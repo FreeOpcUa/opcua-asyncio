@@ -17,13 +17,6 @@ This library has also [sync wrapper](https://github.com/FreeOpcUa/opcua-asyncio/
 The primary goal of this version of [python-opcua](https://github.com/FreeOpcUa/python-opcua) is to create an asynchronous OPC UA client based on asyncio and remove hacks for support of python 2 and older python 3 versions.
 Asynchronous programming allows for simpler code (e.g. less need for locks) and potentially performance gains.
 
-## Caveats
-
-Since `Client` and `Server` share common resources (e.g. `Node`), the `Server` has to also use asynchronous methods
-to access nodes in it's address space although the operation are non-blocking in most cases. This comes with a cost
-in performance since calling a coroutine is more expensive than a function.
-This problem should be addressed by a future change in architecture. One possibility would be [sans I/O](https://sans-io.readthedocs.io/), or simply make a server API
-
 ## Documentation
 
 The API remains mostly unchanged in regards to [python-opcua](https://github.com/FreeOpcUa/python-opcua). Main difference is that many methods have been refactored to return coroutines.
@@ -156,18 +149,17 @@ All protocol code is under opcua directory
 - `tests` contains tests
 - `docs` contains files to auto generate documentation from doc strings
 - `examples` contains many example files
+- `examples/sync` contains many example files using sync API
 - `tools` contains python scripts that can be used to run command line tools from repository without installing
 
 ## Running tests:
 
 ```
-./run-tests.sh
+pytest -v -s
 ```
 
 ## Coverage
 
 ```
-coverage run tests.py
-coverage html
-firefox htmlcov/index.html
+pytest -v -s --cov asyncua --cov-report=html
 ```
