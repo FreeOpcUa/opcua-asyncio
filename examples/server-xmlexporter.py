@@ -1,9 +1,8 @@
 import sys
 sys.path.insert(0, "..")
-import time
-from collections import OrderedDict
 
-from asyncua import ua, Server, instantiate
+from asyncua import ua, Server
+from asyncua.common.instantiate_util import instantiate
 from asyncua.common.xmlexporter import XmlExporter
 
 

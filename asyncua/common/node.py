@@ -5,7 +5,7 @@ and browse address space
 from datetime import datetime
 
 import logging
-from typing import Coroutine
+
 from asyncua import ua
 from .events import Event, get_filter_from_event_type
 from .ua_utils import data_type_to_variant_type
@@ -14,7 +14,6 @@ from .manage_nodes import create_folder, create_object, create_object_type, crea
 from .methods import call_method
 
 _logger = logging.getLogger(__name__)
-__all__ = ["Node"]
 
 
 def _check_results(results, reqlen=1):

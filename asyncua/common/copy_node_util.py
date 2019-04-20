@@ -5,7 +5,6 @@ from .node_factory import make_node
 
 
 logger = logging.getLogger(__name__)
-__all__ = ["copy_node"]
 
 
 async def copy_node(parent, node, nodeid=None, recursive=True):

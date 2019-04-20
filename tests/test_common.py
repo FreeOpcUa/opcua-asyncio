@@ -11,8 +11,11 @@ from datetime import datetime
 from datetime import timedelta
 import math
 
-from asyncua import ua, call_method_full, copy_node, uamethod, instantiate
+from asyncua import ua, uamethod
 from asyncua.common import ua_utils
+from asyncua.common.methods import call_method_full
+from asyncua.common.copy_node_util import copy_node
+from asyncua.common.instantiate_util import instantiate
 
 pytestmark = pytest.mark.asyncio
 

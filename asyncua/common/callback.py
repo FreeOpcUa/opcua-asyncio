@@ -5,17 +5,15 @@ server side implementation of callback event
 from collections import OrderedDict
 from enum import Enum
 
-__all__ = ["CallbackType", "ServerItemCallback", "CallbackDispatcher"]
-
 
 class CallbackType(Enum):
-    '''
+    """
     The possible types of a Callback type.
 
     :ivar Null:
     :ivar MonitoredItem:
 
-    '''
+    """
     Null = 0
     ItemSubscriptionCreated = 1
     ItemSubscriptionModified = 2

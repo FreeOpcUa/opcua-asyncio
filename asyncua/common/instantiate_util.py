@@ -10,7 +10,6 @@ from .copy_node_util import _rdesc_from_node, _read_and_copy_attrs
 from .node_factory import make_node
 
 logger = logging.getLogger(__name__)
-__all__ = ["instantiate"]
 
 
 async def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, idx=0, instantiate_optional=True):

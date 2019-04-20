@@ -4,13 +4,10 @@ high level interface to subscriptions
 import asyncio
 import logging
 import collections
-import time
 
 from asyncua import ua
 from .events import Event, get_filter_from_event_type
 from .node import Node
-
-__all__ = ["Subscription"]
 
 
 class SubHandler:

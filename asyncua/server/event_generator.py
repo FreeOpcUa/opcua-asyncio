@@ -4,9 +4,7 @@ import uuid
 
 from asyncua import ua
 from asyncua import Node
-from asyncua.common import events, event_objects
-
-__all__ = ["EventGenerator"]
+from ..common import events, event_objects
 
 
 class EventGenerator:

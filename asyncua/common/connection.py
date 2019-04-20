@@ -7,7 +7,6 @@ from asyncua import ua
 
 
 logger = logging.getLogger('asyncua.uaprotocol')
-__all__ = ["MessageChunk", "SecureConnection"]
 
 
 class MessageChunk(ua.FrozenClass):

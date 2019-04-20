@@ -6,10 +6,8 @@ import logging
 
 from asyncua import ua
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
-from ..ua.uaerrors import UaError, BadTimeout, BadNoSubscription, BadSessionClosed
-from ..common import SecureConnection
-
-__all__ = ["UaClient"]
+from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed
+from ..common.connection import SecureConnection
 
 
 class UASocketProtocol(asyncio.Protocol):

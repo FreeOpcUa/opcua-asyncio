@@ -2,8 +2,6 @@
 Pure Python OPC-UA library
 """
 
-from .common import *
-from .client import *
-from .server import *
-
-__all__ = (client.__all__ + server.__all__)
+from .common import Node, uamethod
+from .client import Client
+from .server import Server

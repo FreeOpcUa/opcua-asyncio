@@ -15,7 +15,6 @@ except ImportError:
         shell.interact()
 
 
-from asyncua import ua
 from asyncua.sync import Client, start_thread_loop, stop_thread_loop
 
 

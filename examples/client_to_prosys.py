@@ -3,8 +3,7 @@ import asyncio
 sys.path.insert(0, "..")
 import logging
 
-from asyncua import Client
-from asyncua import ua
+from asyncua import Client, ua
 
 
 class SubHandler(object):

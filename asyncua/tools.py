@@ -16,9 +16,7 @@ except ImportError:
 
 from asyncua import ua
 from asyncua import Client
-from asyncua import Server
-from asyncua import Node
-from asyncua import uamethod
+from asyncua import Node, uamethod
 from asyncua import sync
 from asyncua.ua.uaerrors import UaStatusCodeError
 
