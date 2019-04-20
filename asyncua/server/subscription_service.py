@@ -8,8 +8,6 @@ import logging
 from asyncua import ua
 from .internal_subscription import InternalSubscription
 
-__all__ = ["SubscriptionService"]
-
 
 class SubscriptionService:
     """

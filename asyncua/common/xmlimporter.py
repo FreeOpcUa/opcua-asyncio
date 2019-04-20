@@ -12,9 +12,6 @@ from .xmlparser import XMLParser, ua_type_to_python
 from ..ua.uaerrors import UaError
 
 
-__all__ = ["XmlImporter"]
-
-
 class XmlImporter:
 
     def __init__(self, server):

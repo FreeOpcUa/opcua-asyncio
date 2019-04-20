@@ -2,7 +2,6 @@
 from a list of nodes in the address space, build an XML file
 format is the one from opc-ua specification
 """
-import asyncio
 import logging
 import functools
 from collections import OrderedDict
@@ -14,8 +13,6 @@ from asyncua import ua
 from ..ua import object_ids as o_ids
 from .ua_utils import get_base_data_type
 from asyncua.ua.uaerrors import UaError
-
-__all__ = ["XmlExporter"]
 
 
 class XmlExporter:

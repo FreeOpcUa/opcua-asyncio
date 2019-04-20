@@ -4,8 +4,6 @@ High level method related functions
 
 from asyncua import ua
 
-__all__ = ["call_method", "call_method_full", "uamethod"]
-
 
 async def call_method(parent, methodid, *args):
     """

@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from asyncua import ua, Server, EventGenerator
+from asyncua import ua
+from asyncua.server import Server, EventGenerator
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger('asyncua')

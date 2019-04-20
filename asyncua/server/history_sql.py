@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable, Coroutine, Optional
+from typing import Iterable, Optional
 from datetime import timedelta
 from datetime import datetime
 from asyncio import get_event_loop
@@ -7,10 +7,9 @@ import sqlite3
 
 from asyncua import ua
 from ..ua.ua_binary import variant_from_binary, variant_to_binary
-from ..common import Buffer, Event, get_event_properties_from_type_node
+from ..common.utils import Buffer
+from ..common.events import Event, get_event_properties_from_type_node
 from .history import HistoryStorageInterface
-
-__all__ = ["HistorySQLite"]
 
 
 class HistorySQLite(HistoryStorageInterface):

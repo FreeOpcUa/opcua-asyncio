@@ -13,8 +13,6 @@ import xml.etree.ElementTree as ET
 from .ua_utils import string_to_val
 from asyncua import ua
 
-__all__ = ["XMLParser"]
-
 
 def ua_type_to_python(val, uatype_as_str):
     """

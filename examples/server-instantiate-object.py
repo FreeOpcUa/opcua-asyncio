@@ -4,7 +4,8 @@ import time
 from IPython import embed
 
 
-from asyncua import ua, Server, instantiate
+from asyncua import ua, Server
+from asyncua.common.instantiate_util import instantiate
 
 
 if __name__ == "__main__":

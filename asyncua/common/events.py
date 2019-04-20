@@ -5,8 +5,6 @@ import asyncua
 from ..ua.uaerrors import UaError
 from .ua_utils import get_node_subtypes
 
-__all__ = ["Event", "get_event_obj_from_type_node", "get_event_properties_from_type_node"]
-
 
 class Event:
     """

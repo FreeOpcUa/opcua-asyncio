@@ -3,7 +3,6 @@ Implement user managent here
 """
 
 from enum import Enum
-__all__ = ["User"]
 
 
 class User(Enum):
