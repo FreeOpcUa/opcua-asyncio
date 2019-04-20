@@ -11,7 +11,6 @@ from asyncua import server
 from asyncua.common import node
 from asyncua.common import subscription, shortcuts
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -42,10 +41,8 @@ class ThreadLoop(Thread):
 
 #@ipcmethod
 
-
 _ref_count = 0
 _tloop = None
-
 
 
 def start_thread_loop():
@@ -98,6 +95,7 @@ def syncmethod(func):
         if isinstance(result, subscription.Subscription):
             return Subscription(result)
         return result
+
     return wrapper
 
 
@@ -144,13 +142,13 @@ class Server:
         self.aio_obj = server.Server(loop=_tloop.loop)
         _tloop.post(self.aio_obj.init(shelf_file))
         self.nodes = Shortcuts(self.aio_obj.iserver.isession)
-    
+
     def set_endpoint(self, url):
         return self.aio_obj.set_endpoint(url)
-    
+
     def set_server_name(self, name):
         return self.aio_obj.set_server_name(name)
-    
+
     def set_security_policy(self, security_policy):
         return self.aio_obj.set_security_policy(security_policy)
 
@@ -160,7 +158,7 @@ class Server:
     @syncmethod
     def register_namespace(self, url):
         return self.aio_obj.register_namespace(url)
-    
+
     @syncmethod
     def start(self):
         pass
@@ -204,7 +202,7 @@ class Node:
     @property
     def nodeid(self):
         return self.aio_obj.nodeid
-    
+
     @syncmethod
     def get_browse_name(self):
         pass
@@ -214,9 +212,11 @@ class Node:
         pass
 
     @syncmethod
-    def get_children_descriptions(self, refs=ua.ObjectIds.HierarchicalReferences,
-                                        nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
-            pass
+    def get_children_descriptions(self,
+                                  refs=ua.ObjectIds.HierarchicalReferences,
+                                  nodeclassmask=ua.NodeClass.Unspecified,
+                                  includesubtypes=True):
+        pass
 
     @syncmethod
     def get_child(self, path):
@@ -279,7 +279,11 @@ class Subscription:
         pass
 
     @syncmethod
-    def subscribe_events(self, sourcenode=ua.ObjectIds.Server, evtypes=ua.ObjectIds.BaseEventType, evfilter=None, queuesize=0):
+    def subscribe_events(self,
+                         sourcenode=ua.ObjectIds.Server,
+                         evtypes=ua.ObjectIds.BaseEventType,
+                         evfilter=None,
+                         queuesize=0):
         pass
 
     @syncmethod
