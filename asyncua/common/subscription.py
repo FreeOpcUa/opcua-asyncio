@@ -289,10 +289,10 @@ class Subscription:
         :param mod_filter_val: New deadband filter value
         :return: Return a Modify Monitored Item Result
         """
-        for monitored_item_index in self._monitored_items:
-            if self._monitored_items[monitored_item_index].server_handle == handle:
-                item_to_change = self._monitored_items[monitored_item_index]
-                break
+        # Find the monitored item in the monitored item registry.
+        item_to_change = next(item for item in self._monitored_items.values() if item.server_handle == handle)
+        if not item_to_change:
+            raise ValueError('The monitored item was not found.')
         if mod_filter_val is None:
             mod_filter = None
         elif mod_filter_val < 0:
@@ -304,8 +304,9 @@ class Subscription:
             mod_filter.DeadbandValue = mod_filter_val  # absolute float value or from 0 to 100 for percentage deadband
         modif_item = ua.MonitoredItemModifyRequest()
         modif_item.MonitoredItemId = handle
-        modif_item.RequestedParameters = self._modify_monitored_item_request(new_queuesize, new_samp_time,
-                                                                             mod_filter, item_to_change.client_handle)
+        modif_item.RequestedParameters = self._modify_monitored_item_request(
+            new_queuesize, new_samp_time, mod_filter, item_to_change.client_handle
+        )
         params = ua.ModifyMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
         params.ItemsToModify.append(modif_item)
@@ -330,6 +331,7 @@ class Subscription:
         :param deadband_val: Absolute float value
         :param deadbandtype: Default value is 1 (absolute), change to 2 for percentage deadband
         :param queuesize: Wanted queue size, default is 1
+        :param attr: Attribute ID
         """
         deadband_filter = ua.DataChangeFilter()
         deadband_filter.Trigger = ua.DataChangeTrigger(1)  # send notification when status or value change

@@ -403,7 +403,7 @@ class InternalSession:
                                                          ServerItemCallback(params, subscription_result))
         return subscription_result
 
-    def modify_monitored_items(self, params):
+    async def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionModified,
                                                          ServerItemCallback(params, subscription_result))
