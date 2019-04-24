@@ -1,4 +1,4 @@
-import time
+import asyncio
 import pytest
 from copy import copy
 from asyncio import Future, sleep, wait_for, TimeoutError
@@ -37,10 +37,12 @@ class MySubHandler:
         return await wait_for(self.future, 2)
 
     def datachange_notification(self, node, val, data):
-        self.future.set_result((node, val, data))
+        if not self.future.done():
+            self.future.set_result((node, val, data))
 
     def event_notification(self, event):
-        self.future.set_result(event)
+        if not self.future.done():
+            self.future.set_result(event)
 
 
 class MySubHandler2:
@@ -288,6 +290,22 @@ async def test_subscribe_server_time(opc):
     assert server_time_node == node
     delta = datetime.utcnow() - val
     assert delta < timedelta(seconds=2)
+    await sub.unsubscribe(handle)
+    await sub.delete()
+
+
+async def test_modify_monitored_item(opc):
+    myhandler = MySubHandler()
+    server_time_node = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
+    sub = await opc.opc.create_subscription(1000, myhandler)
+    handle = await sub.subscribe_data_change(server_time_node)
+    await myhandler.result()
+    myhandler.reset()
+    results = await sub.modify_monitored_item(handle, 2000)
+    assert results
+    assert len(results) == 1
+    assert type(results[0]) == ua.MonitoredItemModifyResult
+    assert results[0].RevisedSamplingInterval == 2000
     await sub.unsubscribe(handle)
     await sub.delete()
 
