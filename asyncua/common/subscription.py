@@ -4,6 +4,7 @@ high level interface to subscriptions
 import asyncio
 import logging
 import collections
+from typing import Union, List, Iterable
 
 from asyncua import ua
 from .events import Event, get_filter_from_event_type
@@ -45,6 +46,7 @@ class SubscriptionItemData:
     """
     To store useful data from a monitored item
     """
+
     def __init__(self):
         self.node = None
         self.client_handle = None
@@ -57,12 +59,14 @@ class DataChangeNotif:
     """
     To be send to clients for every datachange notification from server
     """
+
     def __init__(self, subscription_data, monitored_item):
         self.monitored_item = monitored_item
         self.subscription_data = subscription_data
 
     def __str__(self):
         return "DataChangeNotification({0}, {1})".format(self.subscription_data, self.monitored_item)
+
     __repr__ = __str__
 
 
@@ -168,24 +172,29 @@ class Subscription:
         except Exception:
             self.logger.exception("Exception calling status change handler")
 
-    def subscribe_data_change(self, nodes, attr=ua.AttributeIds.Value, queuesize=0):
+    async def subscribe_data_change(self,
+                                    nodes: Union[Node, Iterable[Node]],
+                                    attr=ua.AttributeIds.Value,
+                                    queuesize=0) -> List[int]:
         """
-        COROUTINE
         Subscribe for data change events for a node or list of nodes.
         default attribute is Value.
         Return a handle which can be used to unsubscribe
         If more control is necessary use create_monitored_items method
         """
-        return self._subscribe(nodes, attr, queuesize=queuesize)
+        return await self._subscribe(nodes, attr, queuesize=queuesize)
 
-    async def subscribe_events(self, sourcenode=ua.ObjectIds.Server, evtypes=ua.ObjectIds.BaseEventType, evfilter=None,
-            queuesize=0):
+    async def subscribe_events(self,
+                               sourcenode: Node = ua.ObjectIds.Server,
+                               evtypes=ua.ObjectIds.BaseEventType,
+                               evfilter=None,
+                               queuesize=0):
         """
         Subscribe to events from a node. Default node is Server node.
         In most servers the server node is the only one you can subscribe to.
-        if evtypes is not provided, evtype defaults to BaseEventType
-        if evtypes is a list or tuple of custom event types, the events will be filtered to the supplied types
-        Return a handle which can be used to unsubscribe
+        If evtypes is not provided, evtype defaults to BaseEventType.
+        If evtypes is a list or tuple of custom event types, the events will be filtered to the supplied types.
+        Return a handle which can be used to unsubscribe.
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
@@ -195,7 +204,7 @@ class Subscription:
             evfilter = await get_filter_from_event_type(evtypes)
         return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 
-    async def _subscribe(self, nodes, attr, mfilter=None, queuesize=0):
+    async def _subscribe(self, nodes: Union[Node, Iterable[Node]], attr, mfilter=None, queuesize=0):
         is_list = True
         if isinstance(nodes, collections.Iterable):
             nodes = list(nodes)
@@ -213,7 +222,7 @@ class Subscription:
             mids[0].check()
         return mids[0]
 
-    def _make_monitored_item_request(self, node, attr, mfilter, queuesize):
+    def _make_monitored_item_request(self, node: Node, attr, mfilter, queuesize):
         rv = ua.ReadValueId()
         rv.NodeId = node.nodeid
         rv.AttributeId = attr
@@ -248,7 +257,7 @@ class Subscription:
             data.client_handle = mi.RequestedParameters.ClientHandle
             data.node = Node(self.server, mi.ItemToMonitor.NodeId)
             data.attribute = mi.ItemToMonitor.AttributeId
-            #TODO: Either use the filter from request or from response. Here it uses from request, in modify it uses from response
+            # TODO: Either use the filter from request or from response. Here it uses from request, in modify it uses from response
             data.mfilter = mi.RequestedParameters.Filter
             self._monitored_items[mi.RequestedParameters.ClientHandle] = data
         results = await self.server.create_monitored_items(params)
@@ -265,22 +274,23 @@ class Subscription:
             mids.append(result.MonitoredItemId)
         return mids
 
-    async def unsubscribe(self, handle):
+    async def unsubscribe(self, handle: Union[int, List[int]]):
         """
-        unsubscribe to datachange or events using the handle returned while subscribing
-        if you delete subscription, you do not need to unsubscribe
+        Unsubscribe from datachange or events using the handle returned while subscribing.
+        If you delete the subscription, you do not need to unsubscribe.
         """
+        handles = [handle] if type(handle) is int else handle
         params = ua.DeleteMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
-        params.MonitoredItemIds = [handle]
+        params.MonitoredItemIds = handles
         results = await self.server.delete_monitored_items(params)
         results[0].check()
         for k, v in self._monitored_items.items():
-            if v.server_handle == handle:
-                del(self._monitored_items[k])
+            if v.server_handle in handles:
+                del (self._monitored_items[k])
                 return
 
-    async def modify_monitored_item(self, handle, new_samp_time, new_queuesize=0, mod_filter_val=-1):
+    async def modify_monitored_item(self, handle: int, new_samp_time, new_queuesize=0, mod_filter_val=-1):
         """
         Modify a monitored item.
         :param handle: Handle returned when originally subscribing
