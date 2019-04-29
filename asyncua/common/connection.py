@@ -146,13 +146,13 @@ class SecureConnection:
 
     def set_channel(self, channel):
         """
-        Called on client side when getting secure channel data from server
+        Called on client side when getting secure channel data from server.
         """
         self.channel = channel
 
     def open(self, params, server):
         """
-        called on server side to open secure channel
+        Called on server side to open secure channel.
         """
         if not self._open or params.RequestType == ua.SecurityTokenRequestType.Issue:
             self._open = True
@@ -178,7 +178,7 @@ class SecureConnection:
     def set_policy_factories(self, policies):
         """
         Set a list of available security policies.
-        Use this in servers with multiple endpoints with different security
+        Use this in servers with multiple endpoints with different security.
         """
         self._policies = policies
 
@@ -197,8 +197,8 @@ class SecureConnection:
     def message_to_binary(self, message, message_type=ua.MessageType.SecureMessage, request_id=0, algohdr=None):
         """
         Convert OPC UA secure message to binary.
-        The only supported types are SecureOpen, SecureMessage, SecureClose
-        if message_type is SecureMessage, the AlgoritmHeader should be passed as arg
+        The only supported types are SecureOpen, SecureMessage, SecureClose.
+        If message_type is SecureMessage, the AlgorithmHeader should be passed as arg.
         """
         if algohdr is None:
             token_id = self.channel.SecurityToken.TokenId
@@ -247,20 +247,21 @@ class SecureConnection:
                     chunk.SequenceHeader.RequestId,
                     self._incoming_parts[0].SequenceHeader.RequestId)
                 )
-        # sequence number must be incremented or wrapped
-        num = chunk.SequenceHeader.SequenceNumber
+        # The sequence number must monotonically increase (but it can wrap around)
+        seq_num = chunk.SequenceHeader.SequenceNumber
         if self._peer_sequence_number is not None:
-            if num != self._peer_sequence_number + 1:
-                wrap = (1 << 32) - 1024
-                if num < 1024 and self._peer_sequence_number >= wrap:
-                    # specs Part 6, 6.7.2
-                    logger.debug('Sequence number wrapped: %d -> %d', self._peer_sequence_number, num)
+            if seq_num != self._peer_sequence_number + 1:
+                wrap_limit = (1 << 32) - 1024
+                if seq_num < 1024 and self._peer_sequence_number >= wrap_limit:
+                    # The sequence number has wrapped around. See spec. part 6, 6.7.2
+                    logger.debug('Sequence number wrapped: %d -> %d', self._peer_sequence_number, seq_num)
                 else:
+                    # Condition for monotonically increase is not met
                     raise ua.UaError(
                         'Wrong sequence {0} -> {1} (server bug or replay attack)'
-                        .format(self._peer_sequence_number, num)
+                        .format(self._peer_sequence_number, seq_num)
                     )
-        self._peer_sequence_number = num
+        self._peer_sequence_number = seq_num
 
     def receive_from_header_and_body(self, header, body):
         """

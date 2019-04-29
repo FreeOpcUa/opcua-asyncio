@@ -49,7 +49,11 @@ class UASocketProtocol(asyncio.Protocol):
         self._process_received_data(data)
 
     def _process_received_data(self, data: bytes):
-        """Try to parse a asyncua message"""
+        """
+        Try to parse received data as asyncua message. Data may be chunked but will be in correct order.
+        See: https://docs.python.org/3/library/asyncio-protocol.html#asyncio.Protocol.data_received
+        Reassembly is done by filling up a buffer until it verifies as a valid message (or a MessageChunk).
+        """
         buf = ua.utils.Buffer(data)
         while True:
             try:
