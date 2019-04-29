@@ -57,7 +57,7 @@ async def main():
     # now setup our server
     server = Server()
     await server.init()
-    #server.disable_clock()
+    server.disable_clock()  #for debuging
     #server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
     server.set_server_name("FreeOpcUa Example Server")
