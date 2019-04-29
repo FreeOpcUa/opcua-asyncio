@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -7,9 +7,8 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-from opcua.tools import uaserver
+from asyncua.tools import uaserver
 
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(uaserver())
+    uaserver()
