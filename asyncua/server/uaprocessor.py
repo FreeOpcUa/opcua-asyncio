@@ -124,7 +124,13 @@ class UaProcessor:
             status = ua.StatusCode(e.code)
             response = ua.ServiceFault()
             response.ResponseHeader.ServiceResult = status
-            _logger.info("sending service fault response: %s (%s)", status.doc, status.name)
+            _logger.error("sending service fault response: %s (%s)", status.doc, status.name)
+            self.send_response(requesthdr.RequestHandle, algohdr, seqhdr, response)
+            return True
+        except Exception:
+            _logger.exception('Error while processing message')
+            response = ua.ServiceFault()
+            response.ResponseHeader.ServiceResult = ua.StatusCode(ua.StatusCodes.BadInternalError)
             self.send_response(requesthdr.RequestHandle, algohdr, seqhdr, response)
             return True
 
