@@ -74,9 +74,8 @@ class Subscription:
     """
     Subscription object returned by Server or Client objects.
     The object represent a subscription to an opc-ua server.
-    This is a high level class, especially subscribe_data_change
-    and subscribe_events methods. If more control is necessary look at
-    code and/or use create_monitored_items method.
+    This is a high level class, especially `subscribe_data_change` and `subscribe_events methods`.
+    If more control is necessary look at code and/or use `create_monitored_items method`.
     :param server: `InternalSession` or `UAClient`
     """
 
@@ -99,7 +98,7 @@ class Subscription:
 
     async def delete(self):
         """
-        Delete subscription on server. This is automatically done by Client and Server classes on exit
+        Delete subscription on server. This is automatically done by Client and Server classes on exit.
         """
         results = await self.server.delete_subscriptions([self.subscription_id])
         results[0].check()
@@ -139,7 +138,8 @@ class Subscription:
                     self._handler.datachange_notification(data.node, item.Value.Value.Value, event_data)
                 except Exception:
                     self.logger.exception("Exception calling data change handler")
-            elif hasattr(self._handler, "data_change"):  # deprecated API
+            elif hasattr(self._handler, "data_change"):
+                # deprecated API
                 self.logger.warning("data_change method is deprecated, use datachange_notification")
                 try:
                     self._handler.data_change(data.server_handle, data.node, item.Value.Value.Value, data.attribute)
@@ -158,7 +158,8 @@ class Subscription:
                     self._handler.event_notification(result)
                 except Exception:
                     self.logger.exception("Exception calling event handler")
-            elif hasattr(self._handler, "event"):  # depcrecated API
+            elif hasattr(self._handler, "event"):
+                # depcrecated API
                 try:
                     self._handler.event(data.server_handle, result)
                 except Exception:
@@ -175,12 +176,21 @@ class Subscription:
     async def subscribe_data_change(self,
                                     nodes: Union[Node, Iterable[Node]],
                                     attr=ua.AttributeIds.Value,
-                                    queuesize=0) -> List[int]:
+                                    queuesize=0) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
-        Subscribe for data change events for a node or list of nodes.
-        default attribute is Value.
-        Return a handle which can be used to unsubscribe
-        If more control is necessary use create_monitored_items method
+        Subscribe for data change events for one ore multiple nodes.
+        The default attribute used for the subscription is `Value`.
+        Return value is a handle which can be used to modify/cancel the subscription.
+        The handle is either an integer value for single Nodes. If the subscription failes an `UaStatusCodeError`
+        will be raises.
+        If multiple Nodes were supplied a List of integers or ua.StatusCode objects is returned. StatusCode objects
+        are returned to indicate that the subscription has failed (no exception will be raises in this case).
+        If more control is necessary the `create_monitored_items` method can be used directly.
+
+        :param nodes: One Node or an Iterable of Nodes
+        :param attr: The Node attribute you want to subscribe to
+        :param queuesize: 0 or 1 for default queue size (shall be 1 - noe queuing), n for FIFO queue
+        :return: Handle for changing/cancelling of the subscription
         """
         return await self._subscribe(nodes, attr, queuesize=queuesize)
 
@@ -188,13 +198,20 @@ class Subscription:
                                sourcenode: Node = ua.ObjectIds.Server,
                                evtypes=ua.ObjectIds.BaseEventType,
                                evfilter=None,
-                               queuesize=0):
+                               queuesize=0) -> int:
         """
         Subscribe to events from a node. Default node is Server node.
         In most servers the server node is the only one you can subscribe to.
         If evtypes is not provided, evtype defaults to BaseEventType.
         If evtypes is a list or tuple of custom event types, the events will be filtered to the supplied types.
-        Return a handle which can be used to unsubscribe.
+        A handle (integer value) is returned which can be used to modify/cancel the subscription.
+
+        :param sourcenode:
+        :param evtypes:
+        :param evfilter:
+        :param queuesize: 0 for default queue size, 1 for minimum queue size, n for FIFO queue,
+        MaxUInt32 for max queue size
+        :return: Handle for changing/cancelling of the subscription
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
@@ -204,25 +221,38 @@ class Subscription:
             evfilter = await get_filter_from_event_type(evtypes)
         return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 
-    async def _subscribe(self, nodes: Union[Node, Iterable[Node]], attr, mfilter=None, queuesize=0):
+    async def _subscribe(self, nodes: Union[Node, Iterable[Node]],
+                         attr, mfilter=None, queuesize=0) -> Union[int, List[Union[int, ua.StatusCode]]]:
+        """
+        Private low level method for subscribing.
+        :param nodes: One Node or an Iterable og Nodes.
+        :param attr: ua.AttributeId
+        :param mfilter: MonitoringFilter
+        :param queuesize: queue size
+        :return: Integer handle or if multiple Nodes were given a List of Integer handles/ua.StatusCode
+        """
         is_list = True
         if isinstance(nodes, collections.Iterable):
             nodes = list(nodes)
         else:
             nodes = [nodes]
             is_list = False
+        # Create List of MonitoredItemCreateRequest
         mirs = []
         for node in nodes:
             mir = self._make_monitored_item_request(node, attr, mfilter, queuesize)
             mirs.append(mir)
+        # Await MonitoredItemCreateResult
         mids = await self.create_monitored_items(mirs)
         if is_list:
+            # Return results for multiple nodes
             return mids
+        # Check and return result for single node (raise `UaStatusCodeError` if subscription failed)
         if type(mids[0]) == ua.StatusCode:
             mids[0].check()
         return mids[0]
 
-    def _make_monitored_item_request(self, node: Node, attr, mfilter, queuesize):
+    def _make_monitored_item_request(self, node: Node, attr, mfilter, queuesize) -> ua.MonitoredItemCreateRequest:
         rv = ua.ReadValueId()
         rv.NodeId = node.nodeid
         rv.AttributeId = attr
@@ -241,10 +271,10 @@ class Subscription:
         mir.RequestedParameters = mparams
         return mir
 
-    async def create_monitored_items(self, monitored_items):
+    async def create_monitored_items(self, monitored_items) -> List[Union[int, ua.StatusCode]]:
         """
-        low level method to have full control over subscription parameters
-        Client handle must be unique since it will be used as key for internal registration of data
+        low level method to have full control over subscription parameters.
+        Client handle must be unique since it will be used as key for internal registration of data.
         """
         params = ua.CreateMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
@@ -257,7 +287,8 @@ class Subscription:
             data.client_handle = mi.RequestedParameters.ClientHandle
             data.node = Node(self.server, mi.ItemToMonitor.NodeId)
             data.attribute = mi.ItemToMonitor.AttributeId
-            # TODO: Either use the filter from request or from response. Here it uses from request, in modify it uses from response
+            # TODO: Either use the filter from request or from response.
+            #  Here it uses from request, in modify it uses from response
             data.mfilter = mi.RequestedParameters.Filter
             self._monitored_items[mi.RequestedParameters.ClientHandle] = data
         results = await self.server.create_monitored_items(params)
@@ -278,6 +309,7 @@ class Subscription:
         """
         Unsubscribe from datachange or events using the handle returned while subscribing.
         If you delete the subscription, you do not need to unsubscribe.
+        :param handle: The handle that was returned when subscribing to the node/nodes
         """
         handles = [handle] if type(handle) is int else handle
         params = ua.DeleteMonitoredItemsParameters()
@@ -309,9 +341,11 @@ class Subscription:
             mod_filter = item_to_change.mfilter
         else:
             mod_filter = ua.DataChangeFilter()
-            mod_filter.Trigger = ua.DataChangeTrigger(1)  # send notification when status or value change
+            # send notification when status or value change
+            mod_filter.Trigger = ua.DataChangeTrigger(1)
             mod_filter.DeadbandType = 1
-            mod_filter.DeadbandValue = mod_filter_val  # absolute float value or from 0 to 100 for percentage deadband
+            # absolute float value or from 0 to 100 for percentage deadband
+            mod_filter.DeadbandValue = mod_filter_val
         modif_item = ua.MonitoredItemModifyRequest()
         modif_item.MonitoredItemId = handle
         modif_item.RequestedParameters = self._modify_monitored_item_request(
@@ -344,7 +378,9 @@ class Subscription:
         :param attr: Attribute ID
         """
         deadband_filter = ua.DataChangeFilter()
-        deadband_filter.Trigger = ua.DataChangeTrigger(1)  # send notification when status or value change
+        # send notification when status or value change
+        deadband_filter.Trigger = ua.DataChangeTrigger(1)
         deadband_filter.DeadbandType = deadbandtype
-        deadband_filter.DeadbandValue = deadband_val  # absolute float value or from 0 to 100 for percentage deadband
+        # absolute float value or from 0 to 100 for percentage deadband
+        deadband_filter.DeadbandValue = deadband_val
         return self._subscribe(var, attr, deadband_filter, queuesize)
