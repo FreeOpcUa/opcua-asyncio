@@ -86,7 +86,7 @@ class OPCUAProtocol(asyncio.Protocol):
             try:
                 await self._process_one_msg(header, buf)
             except Exception:
-                logger.exception()
+                logger.exception('Exception raised while processing message from client')
 
     async def _process_one_msg(self, header, buf):
         logger.debug('_process_received_message %s %s', header.body_size, len(buf))
