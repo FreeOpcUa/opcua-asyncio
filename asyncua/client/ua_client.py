@@ -3,8 +3,9 @@ Low level binary client
 """
 import asyncio
 import logging
-
+from typing import Dict
 from asyncua import ua
+from typing import Optional
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed
 from ..common.connection import SecureConnection
@@ -23,13 +24,13 @@ class UASocketProtocol(asyncio.Protocol):
         self.logger = logging.getLogger(f"{__name__}.UASocketProtocol")
         self.loop = loop or asyncio.get_event_loop()
         self.transport = None
-        self.receive_buffer: bytes = None
+        self.receive_buffer: Optional[bytes] = None
         self.is_receiving = False
         self.timeout = timeout
         self.authentication_token = ua.NodeId()
         self._request_id = 0
         self._request_handle = 0
-        self._callbackmap = {}
+        self._callbackmap: Dict[int, asyncio.Future] = {}
         self._connection = SecureConnection(security_policy)
         self.state = self.INITIALIZED
 
@@ -64,7 +65,9 @@ class UASocketProtocol(asyncio.Protocol):
                     self.receive_buffer = data
                     return
                 if len(buf) < header.body_size:
-                    self.logger.debug('We did not receive enough data from server. Need %s got %s', header.body_size, len(buf))
+                    self.logger.debug(
+                        'We did not receive enough data from server. Need %s got %s', header.body_size, len(buf)
+                    )
                     self.receive_buffer = data
                     return
                 msg = self._connection.receive_from_header_and_body(header, buf)
@@ -89,7 +92,7 @@ class UASocketProtocol(asyncio.Protocol):
         else:
             raise ua.UaError(f"Unsupported message type: {msg}")
 
-    def _send_request(self, request, timeout=1000, message_type=ua.MessageType.SecureMessage):
+    def _send_request(self, request, timeout=1000, message_type=ua.MessageType.SecureMessage) -> asyncio.Future:
         """
         Send request to server, lower-level method.
         Timeout is the timeout written in ua header.
@@ -137,8 +140,9 @@ class UASocketProtocol(asyncio.Protocol):
     def _call_callback(self, request_id, body):
         future = self._callbackmap.pop(request_id, None)
         if future is None:
-            raise ua.UaError("No request found for requestid: {0}, callbacks in list are {1}".format(
-                request_id, self._callbackmap.keys()))
+            raise ua.UaError(
+                f"No request found for requestid: {request_id}, callbacks in list are {self._callbackmap.keys()}"
+            )
         future.set_result(body)
 
     def _create_request_header(self, timeout=1000):
@@ -161,21 +165,19 @@ class UASocketProtocol(asyncio.Protocol):
         hello.EndpointUrl = url
         hello.MaxMessageSize = max_messagesize
         hello.MaxChunkCount = max_chunkcount
-        future = asyncio.Future()
-        self._callbackmap[0] = future
-        binmsg = uatcp_to_binary(ua.MessageType.Hello, hello)
-        self.transport.write(binmsg)
-        await asyncio.wait_for(future, self.timeout)
-        ack = future.result()
-        return ack
+        ack = asyncio.Future()
+        self._callbackmap[0] = ack
+        self.transport.write(uatcp_to_binary(ua.MessageType.Hello, hello))
+        return await asyncio.wait_for(ack, self.timeout)
 
     async def open_secure_channel(self, params):
         self.logger.info("open_secure_channel")
         request = ua.OpenSecureChannelRequest()
         request.Parameters = params
-        future = self._send_request(request, message_type=ua.MessageType.SecureOpen)
-        await asyncio.wait_for(future, self.timeout)
-        result = future.result()
+        result = await asyncio.wait_for(
+            self._send_request(request, message_type=ua.MessageType.SecureOpen),
+            self.timeout
+        )
         # FIXME: we have a race condition here
         # we can get a packet with the new token id before we reach to store it..
         response = struct_from_binary(ua.OpenSecureChannelResponse, result)
@@ -216,7 +218,7 @@ class UaClient:
         self._publish_callbacks = {}
         self._timeout = timeout
         self.security_policy = ua.SecurityPolicy()
-        self.protocol: UASocketProtocol = None
+        self.protocol: Optional[UASocketProtocol] = None
         self._sub_cond = asyncio.Condition()
         self._sub_data_queue = []
 
@@ -609,7 +611,7 @@ class UaClient:
         self.logger.info("register_nodes")
         request = ua.RegisterNodesRequest()
         request.Parameters.NodesToRegister = nodes
-        data = await self._uasocket.send_request(request)
+        data = await self.protocol.send_request(request)
         response = struct_from_binary(ua.RegisterNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -619,13 +621,13 @@ class UaClient:
         self.logger.info("unregister_nodes")
         request = ua.UnregisterNodesRequest()
         request.Parameters.NodesToUnregister = nodes
-        data = await self._uasocket.send_request(request)
+        data = await self.protocol.send_request(request)
         response = struct_from_binary(ua.UnregisterNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         # nothing to return for this service
 
-    def get_attribute(self, nodes, attr):
+    async def get_attribute(self, nodes, attr):
         self.logger.info("get_attribute")
         request = ua.ReadRequest()
         for node in nodes:
@@ -633,7 +635,7 @@ class UaClient:
             rv.NodeId = node
             rv.AttributeId = attr
             request.Parameters.NodesToRead.append(rv)
-        data = self._uasocket.send_request(request)
+        data = await self.protocol.send_request(request)
         response = struct_from_binary(ua.ReadResponse, data)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
