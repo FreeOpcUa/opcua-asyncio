@@ -337,36 +337,34 @@ async def test_create_delete_subscription(opc):
 
 async def test_unsubscribe_two_objects_simultaneously(opc):
     """
-    Test the subscription/unsub. of the `CurrentTime` and `Server_ServerStatus_State` objects.
+    Test the subscription/unsub. of the `ServerStatus_StartTime` and `ServerStatus_State` objects.
     Unsubscribe from both Nodes simultaneously.
     """
     handler = MySubHandler2(limit=1)
     nodes = [
-        opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime)),
+        opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)),
         opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)),
     ]
-    sub = await opc.opc.create_subscription(200, handler)
+    sub = await opc.opc.create_subscription(100, handler)
     handles = await sub.subscribe_data_change(nodes)
     await handler.done.wait()
     assert handler.results[0][0] == nodes[0]
-    assert (datetime.utcnow() - handler.results[0][1]) < timedelta(seconds=2)
     assert handler.results[1][0] == nodes[1]
-    assert handler.results[1][1] == 0
     await sub.unsubscribe(handles)
     await sub.delete()
 
 
 async def test_unsubscribe_two_objects_consecutively(opc):
     """
-    Test the subscription/unsub. of the `CurrentTime` and `Server_ServerStatus_State` objects.
+    Test the subscription/unsub. of the `ServerStatus_StartTime` and `ServerStatus_State` objects.
     Unsubscribe from both Nodes consecutively.
     """
-    handler = MySubHandler2(limit=2)
+    handler = MySubHandler2(limit=1)
     nodes = [
-        opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime)),
+        opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)),
         opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)),
     ]
-    sub = await opc.opc.create_subscription(200, handler)
+    sub = await opc.opc.create_subscription(100, handler)
     handles = await sub.subscribe_data_change(nodes)
     assert type(handles) is list
     await handler.done.wait()
