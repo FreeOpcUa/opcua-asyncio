@@ -17,12 +17,6 @@ class SubHandler:
     This class is just a sample class. Whatever class having these methods can be used
     """
 
-    def data_change(self, handle, node, val, attr):
-        """
-        Deprecated, use datachange_notification
-        """
-        pass
-
     def datachange_notification(self, node, val, data):
         """
         called for every datachange notification from server
@@ -138,13 +132,6 @@ class Subscription:
                     self._handler.datachange_notification(data.node, item.Value.Value.Value, event_data)
                 except Exception:
                     self.logger.exception("Exception calling data change handler")
-            elif hasattr(self._handler, "data_change"):
-                # deprecated API
-                self.logger.warning("data_change method is deprecated, use datachange_notification")
-                try:
-                    self._handler.data_change(data.server_handle, data.node, item.Value.Value.Value, data.attribute)
-                except Exception:
-                    self.logger.exception("Exception calling deprecated data change handler")
             else:
                 self.logger.error("DataChange subscription created but handler has no datachange_notification method")
 
@@ -158,12 +145,6 @@ class Subscription:
                     self._handler.event_notification(result)
                 except Exception:
                     self.logger.exception("Exception calling event handler")
-            elif hasattr(self._handler, "event"):
-                # depcrecated API
-                try:
-                    self._handler.event(data.server_handle, result)
-                except Exception:
-                    self.logger.exception("Exception calling deprecated event handler")
             else:
                 self.logger.error("Event subscription created but handler has no event_notification method")
 
