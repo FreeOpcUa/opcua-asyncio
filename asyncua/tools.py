@@ -711,15 +711,15 @@ async def _uacall():
     parser.add_argument("-m",
                         "--method",
                         dest="method",
-                        type=int,
-                        default=None,
-                        help="Set method to call. If not given then (single) method of the selected node is used.")
-    parser.add_argument("-M",
-                        "--method-name",
-                        dest="method_name",
                         type=str,
                         default=None,
-                        help="Set name of method to call. Overrides --method")
+                        help="browse name of method to call")
+    parser.add_argument("-t",
+                        "--datatype",
+                        dest="datatype",
+                        default="guess",
+                        choices=["guess", 'byte', 'sbyte', 'nodeid', 'expandednodeid', 'qualifiedname', 'browsename', 'string', 'float', 'double', 'int16', 'int32', "int64", 'uint16', 'uint32', 'uint64', "bool", "string", 'datetime', 'bytestring', 'xmlelement', 'statuscode', 'localizedtext'],
+                        help="Data type to return")
     parser.add_argument("-l",
                         "--list",
                         "--array",
@@ -727,14 +727,8 @@ async def _uacall():
                         default="guess",
                         choices=["guess", "true", "false"],
                         help="Value is an array")
-    parser.add_argument("-t",
-                        "--datatype",
-                        dest="datatype",
-                        default="guess",
-                        choices=["guess", 'byte', 'sbyte', 'nodeid', 'expandednodeid', 'qualifiedname', 'browsename', 'string', 'float', 'double', 'int16', 'int32', "int64", 'uint16', 'uint32', 'uint64', "bool", "string", 'datetime', 'bytestring', 'xmlelement', 'statuscode', 'localizedtext'],
-                        help="Data type to return")
     parser.add_argument("value",
-                        help="Value to use for call to method, if any",
+                        help="Comma separated value(s) to use for call to method, if any",
                         nargs="?",
                         metavar="VALUE")
 
@@ -745,40 +739,24 @@ async def _uacall():
     await client.connect()
     try:
         node = await get_node(client, args)
-        # val must be a tuple in order to enable method calls without arguments
-        if ( args.value is None ):
-            val = () #empty tuple
+        if args.value is None:
+            val = ()  # empty tuple
         else:
-            val = (_val_to_variant(args.value, args),) # tuple with one element
+            val = args.value.split(",")
+            val = [_val_to_variant(v, args) for v in val]
 
-        # determine method to call: Either explicitly given or automatically select the method of the selected node.
-        methods = await node.get_methods()
         method_id = None
-        #print( "methods=%s" % (methods) )
 
-        if ( args.method_name is not None ):
-            method_id = args.method_name
-        elif ( args.method is None ):
-            if ( len( methods ) == 0 ):
-                raise ValueError( "No methods in selected node and no method given" )
-            elif ( len( methods ) == 1 ):
-                method_id = methods[0]
-            else:
-                raise ValueError( "Selected node has {0:d} methods but no method given. Provide one of {1!s}".format(*(methods)) )
+        if args.method is not None:
+            method_id = args.method
         else:
-            for m in methods:
-                if ( m.nodeid.Identifier == args.method ):
-                    method_id = m.nodeid
-                    break
-
-        if ( method_id is None):
-            # last resort:
-            method_id = ua.NodeId( identifier=args.method )#, namespaceidx=? )#, nodeidtype=?): )
-
-        #print( "method_id=%s\nval=%s" % (method_id,val) )
-
-        result_variants = await node.call_method( method_id, *val )
-        print( "resulting result_variants={0!s}".format(result_variants) )
+            methods = await node.get_methods()
+            if len(methods) == 0:
+                raise ValueError("No methods in selected node and no method given")
+            else:
+                method_id = methods[0]
+        result = await node.call_method(method_id, *val)
+        print(f"resulting result_variants={result}")
     finally:
         await client.disconnect()
 
