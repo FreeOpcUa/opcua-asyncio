@@ -470,24 +470,19 @@ class Client:
 
     def get_node(self, nodeid: Union[ua.NodeId, str]) -> Node:
         """
-        Get node using NodeId object or a string representing a NodeId
+        Get node using NodeId object or a string representing a NodeId.
         """
         return Node(self.uaclient, nodeid)
 
     async def create_subscription(self, period, handler):
         """
         Create a subscription.
-        returns a Subscription object which allow
-        to subscribe to events or data on server
-        handler argument is a class with data_change and/or event methods.
-        period argument is either a publishing interval in milliseconds or a
-        CreateSubscriptionParameters instance. The second option should be used,
-        if the asyncua-server has problems with the default options.
-        These methods will be called when notfication from server are received.
-        See example-client.py.
-        Do not do expensive/slow or network operation from these methods
-        since they are called directly from receiving thread. This is a design choice,
-        start another thread if you need to do such a thing.
+        Returns a Subscription object which allows to subscribe to events or data changes on server.
+
+        :param period: Either a publishing interval in milliseconds or a `CreateSubscriptionParameters` instance.
+        The second option should be used, if the asyncua-server has problems with the default options.
+        :param handler: Class instance with data_change and/or event methods (see `SubHandler`
+        base class for details). Remember not to block the main event loop inside the handler methods.
         """
 
         if isinstance(period, ua.CreateSubscriptionParameters):
