@@ -105,7 +105,7 @@ class UASocketProtocol(asyncio.Protocol):
             self._request_handle -= 1
             raise
         self._request_id += 1
-        future = asyncio.Future()
+        future = self.loop.create_future()
         self._callbackmap[self._request_id] = future
         msg = self._connection.message_to_binary(binreq, message_type=message_type, request_id=self._request_id)
         self.transport.write(msg)
@@ -440,7 +440,7 @@ class UaClient:
             acks = []
         request = ua.PublishRequest()
         request.Parameters.SubscriptionAcknowledgements = acks
-        # We do not wait for publish response in this task
+        # We do not want to wait for publish response in this task
         self.loop.create_task(self._send_publish_request(request))
 
     """
