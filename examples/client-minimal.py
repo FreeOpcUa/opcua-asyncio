@@ -9,7 +9,6 @@ _logger = logging.getLogger('asyncua')
 
 
 async def main():
-    # url = 'opc.tcp://192.168.2.64:4840'
     url = 'opc.tcp://localhost:4840/freeopcua/server/'
     # url = 'opc.tcp://commsvr.com:51234/UA/CAS_UA_Server'
     try:

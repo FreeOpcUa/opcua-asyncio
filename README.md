@@ -16,12 +16,6 @@ This library has also [sync wrapper](https://github.com/FreeOpcUa/opcua-asyncio/
 The primary goal of opcua-asyncio is to create an asynchronous OPC UA client based on asyncio and remove hacks for support of python 2 and older python 3 versions.
 Asynchronous programming allows for simpler code (e.g. less need for locks) and potentially performance gains.
 
-## Documentation
-
-The API remains mostly unchanged in regards to [python-opcua](https://github.com/FreeOpcUa/python-opcua). Main difference is that many methods have been refactored to return coroutines.
-Please have a look at [the examples](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples) and/or the code.
-
-
 ---
 
 OPC UA binary protocol implementation is quasi complete and has been tested against many different OPC UA stacks. API offers both a low level interface to send and receive all UA defined structures and high level classes allowing to write a server or a client in a few lines. It is easy to mix high level objects and low level UA calls in one application.
@@ -37,15 +31,69 @@ With pip
 
     pip install asyncua
 
+# Usage
+
+We assume that you already have some experience with the asyncio module, the async / await syntax and the concept of
+asyncio Tasks.
+
+## Client
+
+The `Client` class provides a high level API for connecting to APU UA servers, session management and access to basic
+address space services.
+The client can be used as a context manager. The client will automatically connect before the code inside the `with`
+statement is executed. When your code leaves the `with` statement the client will disconnect. If you want to keep the
+connection open (e.g. for listening to a subscription) you could write something like this:
+
+```python
+from asyncua import Client
+
+async with Client(url='opc.tcp://localhost:4840/freeopcua/server/') as client:
+    while True:
+        # Do something with client
+        node = client.get_node('i=85')
+        value = await node.get_value()
+```
+
+Of course you can also call the `connect`, `disconnect` methods yourself if you do not want to use the context manager.
+
+```python
+from asyncua import Client
+
+client = Client(url='opc.tcp://localhost:4840/freeopcua/server/')
+await client.connect()
+node = client.get_node('i=85')
+value = await node.get_value()
+# close connection before you exit the program
+await client.disconnect()
+```
+
+See the example folder for more information on the client API.
+
+## Node
+
+The `Node` class provides a high level API for management of nodes as well as data access services.
+
+## Subscription
+
+The `Subscription` class provides a high level API for management of monitored items.
+
+## Server
+
+The `Server` class provides a high level API for creation of OPC UA server instances.
 
 # Documentation
 
-Some documentation is available on [ReadTheDocs](http://python-opcua.readthedocs.org/en/latest/).
+The API remains mostly unchanged in regards to [python-opcua](https://github.com/FreeOpcUa/python-opcua).
+Main difference is that many methods have been refactored to return coroutines.
+Please have a look at [the examples](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples) and/or the code.
+
+The original documentation (for python-opcua) is available here [ReadTheDocs](http://python-opcua.readthedocs.org/en/latest/).
 
 A simple GUI client is available: https://github.com/FreeOpcUa/opcua-client-gui
 
-Examples: https://github.com/FreeOpcUa/opcua-asyncio/tree/master/examples
+Browse the examples: https://github.com/FreeOpcUa/opcua-asyncio/tree/master/examples
 
+A good starting point are the minimal examples.
 Minimal client example: https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples/client-minimal.py
 Minimal server example: https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples/server-minimal.py
 
