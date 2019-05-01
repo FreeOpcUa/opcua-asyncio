@@ -52,19 +52,17 @@ class Server:
     cache file or the file will be created if it does not exist yet.
     As a result the first startup will be even slower due to the cache file
     generation but all further start ups will be significantly faster.
+    ┌────────┐
+    │ Server │ ── BinaryServer ── OPCUAProtocol ── UaProcessor
+    │        │ ── InternalServer ── InternalSession
+    └────────┘                   ── SubscriptionService
 
     :ivar product_uri:
-    :vartype product_uri: uri
     :ivar name:
-    :vartype name: string
     :ivar default_timeout: timeout in milliseconds for sessions and secure channel
-    :vartype default_timeout: int
-    :ivar iserver: internal server object
-    :vartype default_timeout: InternalServer
-    :ivar bserver: binary protocol server
-    :vartype bserver: BinaryServer
-    :ivar nodes: shortcuts to common nodes
-    :vartype nodes: Shortcuts
+    :ivar iserver: `InternalServer` instance
+    :ivar bserver: binary protocol server `BinaryServer`
+    :ivar nodes: shortcuts to common nodes - `Shortcuts` instance
     """
 
     def __init__(self, iserver: InternalServer = None, loop=None):
@@ -73,10 +71,10 @@ class Server:
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
         self.product_uri = "urn:freeopcua.github.io:python:server"
-        self.name = "FreeOpcUa Python Server"
+        self.name: str = "FreeOpcUa Python Server"
         self.manufacturer_name = "FreeOpcUa"
         self.application_type = ua.ApplicationType.ClientAndServer
-        self.default_timeout = 60 * 60 * 1000
+        self.default_timeout: int = 60 * 60 * 1000
         self.iserver = iserver if iserver else InternalServer(self.loop)
         self.bserver: BinaryServer = None
         self._discovery_clients = {}
@@ -363,13 +361,9 @@ class Server:
     async def create_subscription(self, period, handler):
         """
         Create a subscription.
-        returns a Subscription object which allow
-        to subscribe to events or data on server
-        period is in milliseconds
-        handler is a python object with following methods:
-            def datachange_notification(self, node, val, data):
-            def event_notification(self, event):
-            def status_change_notification(self, status):
+        Returns a Subscription object which allow to subscribe to events or data changes on server
+        :param period: Period in milliseconds
+        :param handler: A class instance - see `SubHandler` base class for details
         """
         params = ua.CreateSubscriptionParameters()
         params.RequestedPublishingInterval = period

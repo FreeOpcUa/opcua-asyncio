@@ -9,7 +9,7 @@ from asyncua import ua
 @pytest.fixture
 def server():
     s = Server()
-    s.set_endpoint('opc.tcp://*:8840/freeopcua/server/')
+    s.set_endpoint('opc.tcp://0.0.0.0:8840/freeopcua/server/')
     uri = "http://examples.freeopcua.github.io"
     idx = s.register_namespace(uri)
     myobj = s.nodes.objects.add_object(idx, "MyObject")

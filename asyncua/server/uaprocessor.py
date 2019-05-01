@@ -71,11 +71,11 @@ class UaProcessor:
                 self._publish_results.append(result)
                 _logger.info(
                     "Server wants to send publish answer but no publish request is available,"
-                    "enqueing notification, length of result queue is %s",
+                    "enqueuing notification, length of result queue is %s",
                     len(self._publish_results)
                 )
                 return
-            # We pop left from the Publieh Request deque (FIFO)
+            # We pop left from the Publish Request deque (FIFO)
             requestdata = self._publish_requests.popleft()
             if (requestdata.requesthdr.TimeoutHint == 0 or
                     requestdata.requesthdr.TimeoutHint != 0 and
@@ -294,7 +294,7 @@ class UaProcessor:
         elif typeid == ua.NodeId(ua.ObjectIds.CreateSubscriptionRequest_Encoding_DefaultBinary):
             _logger.info("create subscription request")
             params = struct_from_binary(ua.CreateSubscriptionParameters, body)
-            result = await self.session.create_subscription(params, self.forward_publish_response)
+            result = await self.session.create_subscription(params, callback=self.forward_publish_response)
             response = ua.CreateSubscriptionResponse()
             response.Parameters = result
             _logger.info("sending create subscription response")
@@ -306,7 +306,7 @@ class UaProcessor:
             results = await self.session.delete_subscriptions(params.SubscriptionIds)
             response = ua.DeleteSubscriptionsResponse()
             response.Results = results
-            _logger.info("sending delte subscription response")
+            _logger.info("sending delete subscription response")
             self.send_response(requesthdr.RequestHandle, algohdr, seqhdr, response)
 
         elif typeid == ua.NodeId(ua.ObjectIds.CreateMonitoredItemsRequest_Encoding_DefaultBinary):
@@ -362,7 +362,7 @@ class UaProcessor:
             self.send_response(requesthdr.RequestHandle, algohdr, seqhdr, response)
 
         elif typeid == ua.NodeId(ua.ObjectIds.PublishRequest_Encoding_DefaultBinary):
-            _logger.info("publish request")
+            _logger.debug("publish request")
             if not self.session:
                 return False
             params = struct_from_binary(ua.PublishParameters, body)
@@ -370,11 +370,15 @@ class UaProcessor:
             # Store the Publish Request (will be used to send publish answers from server)
             self._publish_requests.append(data)
             # If there is an enqueued result forward it immediately
-            if len(self._publish_results):
+            while len(self._publish_results):
                 result = self._publish_results.popleft()
+                if result.SubscriptionId not in self.session.subscription_service.active_subscription_ids:
+                    # Discard the result if the subscription is no longer active
+                    continue
                 self.forward_publish_response(result)
-            await self.session.publish(params.SubscriptionAcknowledgements)
-            _logger.info("publish forward to server")
+                break
+            self.session.publish(params.SubscriptionAcknowledgements)
+            _logger.debug("publish forward to server")
 
         elif typeid == ua.NodeId(ua.ObjectIds.RepublishRequest_Encoding_DefaultBinary):
             _logger.info("re-publish request")

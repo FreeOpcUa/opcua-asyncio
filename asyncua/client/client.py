@@ -484,18 +484,16 @@ class Client:
         :param handler: Class instance with data_change and/or event methods (see `SubHandler`
         base class for details). Remember not to block the main event loop inside the handler methods.
         """
-
         if isinstance(period, ua.CreateSubscriptionParameters):
-            subscription = Subscription(self.uaclient, period, handler)
-            await subscription.init()
-            return subscription
-        params = ua.CreateSubscriptionParameters()
-        params.RequestedPublishingInterval = period
-        params.RequestedLifetimeCount = 10000
-        params.RequestedMaxKeepAliveCount = 3000
-        params.MaxNotificationsPerPublish = 10000
-        params.PublishingEnabled = True
-        params.Priority = 0
+            params = period
+        else:
+            params = ua.CreateSubscriptionParameters()
+            params.RequestedPublishingInterval = period
+            params.RequestedLifetimeCount = 10000
+            params.RequestedMaxKeepAliveCount = 3000
+            params.MaxNotificationsPerPublish = 10000
+            params.PublishingEnabled = True
+            params.Priority = 0
         subscription = Subscription(self.uaclient, params, handler)
         await subscription.init()
         return subscription

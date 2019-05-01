@@ -17,10 +17,9 @@ from asyncua.ua.ua_binary import extensionobject_to_binary
 from asyncua.ua.ua_binary import nodeid_to_binary, variant_to_binary, _reshape, variant_from_binary, nodeid_from_binary
 from asyncua.ua.ua_binary import struct_to_binary, struct_from_binary
 from asyncua.ua import flatten, get_shape
-from asyncua.server.internal_subscription import WhereClauseEvaluator
+from asyncua.server.monitored_item_service import WhereClauseEvaluator
 from asyncua.common.event_objects import BaseEvent
-from asyncua.common.ua_utils import string_to_variant, variant_to_string, string_to_val, val_to_string
-from asyncua.common.xmlimporter import XmlImporter
+from asyncua.common.ua_utils import string_to_val, val_to_string
 from asyncua.ua.uatypes import _MaskEnum
 from asyncua.common.structures import StructGenerator
 from asyncua.common.connection import MessageChunk
