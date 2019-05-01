@@ -146,12 +146,14 @@ class UASocketProtocol(asyncio.Protocol):
         return True
 
     def _call_callback(self, request_id, body):
-        future = self._callbackmap.pop(request_id, None)
-        if future is None:
+        try:
+            self._callbackmap[request_id].set_result(body)
+        except KeyError:
             raise ua.UaError(
-                f"No request found for requestid: {request_id}, callbacks in list are {self._callbackmap.keys()}"
+                f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}"
             )
-        future.set_result(body)
+        except asyncio.InvalidStateError:
+            raise ua.UaError(f"Future for request id {request_id} is already done")
 
     def _create_request_header(self, timeout=1) -> ua.RequestHeader:
         """
@@ -231,12 +233,11 @@ class UaClient:
         """
         self.logger = logging.getLogger(f'{__name__}.UaClient')
         self.loop = loop or asyncio.get_event_loop()
-        self._publish_callbacks = {}
+        self._subscription_callbacks = {}
         self._timeout = timeout
         self.security_policy = ua.SecurityPolicy()
         self.protocol: Optional[UASocketProtocol] = None
-        self._sub_cond = asyncio.Condition()
-        self._sub_data_queue = []
+        self._publish_task = None
 
     def set_security(self, policy: ua.SecurityPolicy):
         self.security_policy = policy
@@ -295,6 +296,8 @@ class UaClient:
 
     async def close_session(self, delete_subscriptions):
         self.logger.info("close_session")
+        if self._publish_task and not self._publish_task.done():
+            self._publish_task.cancel()
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("close_session was called but connection is closed")
             return
@@ -322,7 +325,7 @@ class UaClient:
         return response.Results
 
     async def browse_next(self, parameters):
-        self.logger.info("browse next")
+        self.logger.debug("browse next")
         request = ua.BrowseNextRequest()
         request.Parameters = parameters
         data = await self.protocol.send_request(request)
@@ -332,7 +335,7 @@ class UaClient:
         return response.Parameters.Results
 
     async def read(self, parameters):
-        self.logger.info("read")
+        self.logger.debug("read")
         request = ua.ReadRequest()
         request.Parameters = parameters
         data = await self.protocol.send_request(request)
@@ -352,7 +355,7 @@ class UaClient:
         return response.Results
 
     async def write(self, params):
-        self.logger.info("read")
+        self.logger.debug("write")
         request = ua.WriteRequest()
         request.Parameters = params
         data = await self.protocol.send_request(request)
@@ -362,7 +365,7 @@ class UaClient:
         return response.Results
 
     async def get_endpoints(self, params):
-        self.logger.info("get_endpoint")
+        self.logger.debug("get_endpoint")
         request = ua.GetEndpointsRequest()
         request.Parameters = params
         data = await self.protocol.send_request(request)
@@ -372,7 +375,7 @@ class UaClient:
         return response.Endpoints
 
     async def find_servers(self, params):
-        self.logger.info("find_servers")
+        self.logger.debug("find_servers")
         request = ua.FindServersRequest()
         request.Parameters = params
         data = await self.protocol.send_request(request)
@@ -382,7 +385,7 @@ class UaClient:
         return response.Servers
 
     async def find_servers_on_network(self, params):
-        self.logger.info("find_servers_on_network")
+        self.logger.debug("find_servers_on_network")
         request = ua.FindServersOnNetworkRequest()
         request.Parameters = params
         data = await self.protocol.send_request(request)
@@ -392,7 +395,7 @@ class UaClient:
         return response.Parameters
 
     async def register_server(self, registered_server):
-        self.logger.info("register_server")
+        self.logger.debug("register_server")
         request = ua.RegisterServerRequest()
         request.Server = registered_server
         data = await self.protocol.send_request(request)
@@ -402,7 +405,7 @@ class UaClient:
         # nothing to return for this service
 
     async def register_server2(self, params):
-        self.logger.info("register_server2")
+        self.logger.debug("register_server2")
         request = ua.RegisterServer2Request()
         request.Parameters = params
         data = await self.protocol.send_request(request)
@@ -412,7 +415,7 @@ class UaClient:
         return response.ConfigurationResults
 
     async def translate_browsepaths_to_nodeids(self, browse_paths):
-        self.logger.info("translate_browsepath_to_nodeid")
+        self.logger.debug("translate_browsepath_to_nodeid")
         request = ua.TranslateBrowsePathsToNodeIdsRequest()
         request.Parameters.BrowsePaths = browse_paths
         data = await self.protocol.send_request(request)
@@ -422,7 +425,7 @@ class UaClient:
         return response.Results
 
     async def create_subscription(self, params, callback):
-        self.logger.info("create_subscription")
+        self.logger.debug("create_subscription")
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
         data = await self.protocol.send_request(request)
@@ -430,14 +433,16 @@ class UaClient:
             ua.CreateSubscriptionResponse,
             data
         )
-        self.logger.info("create subscription callback")
-        self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
-        self._publish_callbacks[response.Parameters.SubscriptionId] = callback
+        self._subscription_callbacks[response.Parameters.SubscriptionId] = callback
+        self.logger.info("create_subscription success SubscriptionId %s", response.Parameters.SubscriptionId)
+        if not self._publish_task or self._publish_task.done():
+            # Start the publish cycle on the first subscription
+            self._publish_task = self.loop.create_task(self._publish())
         return response.Parameters
 
     async def delete_subscriptions(self, subscription_ids):
-        self.logger.info("delete_subscription")
+        self.logger.debug("delete_subscriptions %r", subscription_ids)
         request = ua.DeleteSubscriptionsRequest()
         request.Parameters.SubscriptionIds = subscription_ids
         data = await self.protocol.send_request(request)
@@ -445,94 +450,87 @@ class UaClient:
             ua.DeleteSubscriptionsResponse,
             data
         )
-        self.logger.info("delete subscriptions callback")
-        self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
+        self.logger.info("remove subscription callbacks")
         for sid in subscription_ids:
-            self._publish_callbacks.pop(sid)
+            self._subscription_callbacks.pop(sid)
         return response.Results
 
-    async def publish(self, acks=None):
-        self.logger.info("publish")
-        if acks is None:
-            acks = []
-        request = ua.PublishRequest()
-        request.Parameters.SubscriptionAcknowledgements = acks
-        # We do not want to wait for publish response in this task
-        self.loop.create_task(self._send_publish_request(request))
+    def publish(self):
+        """
+        This is just for maintaining symmetry.
+        This client takes care of sending PublishRequest internally.
+        """
+        pass
 
-    """
-    # to avoid fire and forget of task we could use a loop:
-    def _sub_data_received(self, future):
-        data = future.result()
-        self.loop.create_task(self._enqueue_sub_data(data))
-
-    async def _enqueue_sub_data(self, data):
-        self._sub_data_queue.append(data)
-        with self._sub_cond:
-            self._sub_cond.notify()
-
-    async def _subscribtion_loop(self):
+    async def _publish(self):
+        """
+        Cyclically send publish request and wait for the publish response.
+        Send the `PublishResult` to the matching `Subscription`.
+        """
+        ack = None
         while True:
-            async with self._sub_cond:
-                await self._sub_cond.wait()
-                data = self._sub_data_queue.pop(0)
-                await self._call_publish_callback(data)
-    """
-
-    async def _send_publish_request(self, request):
-        """
-        Send publish request and wait for publish response.
-        :param request:
-        :return:
-        """
-        data = await self.protocol.send_request(request, timeout=0)
-        try:
-            self.protocol.check_answer(data, "while waiting for publish response")
-        except BadTimeout:
-            # Spec Part 4, 7.28
-            await self.publish()
-            return
-        except BadNoSubscription:  # Spec Part 5, 13.8.1
-            # BadNoSubscription is expected after deleting the last subscription.
-            #
-            # We should therefore also check for len(self._publishcallbacks) == 0, but
-            # this gets us into trouble if a Publish response arrives before the
-            # DeleteSubscription response.
-            #
-            # We could remove the callback already when sending the DeleteSubscription request,
-            # but there are some legitimate reasons to keep them around, such as when the server
-            # responds with "BadTimeout" and we should try again later instead of just removing
-            # the subscription client-side.
-            #
-            # There are a variety of ways to act correctly, but the most practical solution seems
-            # to be to just ignore any BadNoSubscription responses.
-            self.logger.info("BadNoSubscription received, ignoring because it's probably valid.")
-            return
-        # parse publish response
-        try:
-            response = struct_from_binary(ua.PublishResponse, data)
-            self.logger.debug(response)
-        except Exception:
-            # INFO: catching the exception here might be obsolete because we already
-            #       catch BadTimeout above. However, it's not really clear what this code
-            #       does so it stays in, doesn't seem to hurt.
-            self.logger.exception("Error parsing notification from server")
-            # send publish request ot server so he does stop sending notifications
-            await self.publish([])
-            return
-        # look for callback
-        try:
-            callback = self._publish_callbacks[response.Parameters.SubscriptionId]
-        except KeyError:
-            self.logger.warning("Received data for unknown subscription: %s ", response.Parameters.SubscriptionId)
-            return
-        # do callback
-        try:
-            await callback(response.Parameters)
-        except Exception:
-            # we call client code, catch everything!
-            self.logger.exception("Exception while calling user callback: %s")
+            if not self._subscription_callbacks:
+                # End Task if there are no more subscriptions
+                break
+            self.logger.debug("publish")
+            request = ua.PublishRequest()
+            request.Parameters.SubscriptionAcknowledgements = [ack] if ack else []
+            data = await self.protocol.send_request(request, timeout=0)
+            try:
+                self.protocol.check_answer(data, "while waiting for publish response")
+            except BadTimeout:
+                # Spec Part 4, 7.28
+                # Repeat without Acknowledgement
+                ack = None
+                continue
+            except BadNoSubscription:  # Spec Part 5, 13.8.1
+                # BadNoSubscription is expected after deleting the last subscription.
+                #
+                # We should therefore also check for len(self._publishcallbacks) == 0, but
+                # this gets us into trouble if a Publish response arrives before the
+                # DeleteSubscription response.
+                #
+                # We could remove the callback already when sending the DeleteSubscription request,
+                # but there are some legitimate reasons to keep them around, such as when the server
+                # responds with "BadTimeout" and we should try again later instead of just removing
+                # the subscription client-side.
+                #
+                # There are a variety of ways to act correctly, but the most practical solution seems
+                # to be to just ignore any BadNoSubscription responses.
+                self.logger.info("BadNoSubscription received, ignoring because it's probably valid.")
+                ack = None
+                continue
+            # parse publish response
+            try:
+                response = struct_from_binary(ua.PublishResponse, data)
+                self.logger.debug(response)
+            except Exception:
+                # INFO: catching the exception here might be obsolete because we already
+                #       catch BadTimeout above. However, it's not really clear what this code
+                #       does so it stays in, doesn't seem to hurt.
+                self.logger.exception("Error parsing notification from server")
+                # send publish request to server so he does stop sending notifications
+                ack = None
+                continue
+            # look for matching subscription callback
+            subscription_id = response.Parameters.SubscriptionId
+            try:
+                callback = self._subscription_callbacks[subscription_id]
+            except KeyError:
+                self.logger.warning("Received data for unknown subscription %s active are %s", subscription_id,
+                                    self._subscription_callbacks.keys())
+            else:
+                # do callback
+                try:
+                    callback(response.Parameters)
+                except Exception:
+                    # we call client code, catch everything!
+                    self.logger.exception("Exception while calling user callback: %s")
+            # Repeat with acknowledgement
+            ack = ua.SubscriptionAcknowledgement()
+            ack.SubscriptionId = subscription_id
+            ack.SequenceNumber = response.Parameters.NotificationMessage.SequenceNumber
 
     async def create_monitored_items(self, params):
         self.logger.info("create_monitored_items")

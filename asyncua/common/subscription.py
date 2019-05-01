@@ -73,7 +73,8 @@ class Subscription:
     :param server: `InternalSession` or `UAClient`
     """
 
-    def __init__(self, server, params, handler):
+    def __init__(self, server, params, handler, loop=None):
+        self.loop = loop or asyncio.get_event_loop()
         self.logger = logging.getLogger(__name__)
         self.server = server
         self._client_handle = 200
@@ -83,27 +84,18 @@ class Subscription:
         self.subscription_id = None
 
     async def init(self):
-        response = await self.server.create_subscription(self.parameters, self.publish_callback)
+        response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
         self.subscription_id = response.SubscriptionId  # move to data class
         self.logger.info('Subscription created %s', self.subscription_id)
-        # Send a publish request so the server has one in its queue
-        # Servers should always be able to handle at least on extra publish request per subscriptions
-        await self.server.publish()
+        #self.server.publish()
 
-    async def delete(self):
+    def publish_callback(self, publish_result: ua.PublishResult):
         """
-        Delete subscription on server. This is automatically done by Client and Server classes on exit.
+        Handle `PublishResult` callback.
         """
-        results = await self.server.delete_subscriptions([self.subscription_id])
-        results[0].check()
-
-    async def publish_callback(self, publishresult: ua.PublishResult):
-        self.logger.info("Publish callback called with result: %s", publishresult)
-        while self.subscription_id is None:
-            await asyncio.sleep(0.01)
-
-        if publishresult.NotificationMessage.NotificationData is not None:
-            for notif in publishresult.NotificationMessage.NotificationData:
+        self.logger.info("Publish callback called with result: %s", publish_result)
+        if publish_result.NotificationMessage.NotificationData is not None:
+            for notif in publish_result.NotificationMessage.NotificationData:
                 if isinstance(notif, ua.DataChangeNotification):
                     self._call_datachange(notif)
                 elif isinstance(notif, ua.EventNotificationList):
@@ -115,10 +107,12 @@ class Subscription:
         else:
             self.logger.warning("NotificationMessage is None.")
 
-        ack = ua.SubscriptionAcknowledgement()
-        ack.SubscriptionId = self.subscription_id
-        ack.SequenceNumber = publishresult.NotificationMessage.SequenceNumber
-        await self.server.publish([ack])
+    async def delete(self):
+        """
+        Delete subscription on server. This is automatically done by Client and Server classes on exit.
+        """
+        results = await self.server.delete_subscriptions([self.subscription_id])
+        results[0].check()
 
     def _call_datachange(self, datachange: ua.DataChangeNotification):
         for item in datachange.MonitoredItems:

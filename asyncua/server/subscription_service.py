@@ -4,6 +4,7 @@ server side implementation of subscription service
 
 import asyncio
 import logging
+from typing import Dict
 
 from asyncua import ua
 from .internal_subscription import InternalSubscription
@@ -11,28 +12,32 @@ from .internal_subscription import InternalSubscription
 
 class SubscriptionService:
     """
-    ToDo: check if locks need to be replaced by asyncio.Lock
+    Manages subscriptions on the server side.
+    There is one `SubscriptionService` instance for every `Server`/`InternalServer`.
     """
 
     def __init__(self, loop, aspace):
         self.logger = logging.getLogger(__name__)
         self.loop = loop
         self.aspace = aspace
-        self.subscriptions = {}
+        self.subscriptions: Dict[int, InternalSubscription] = {}
         self._sub_id_counter = 77
 
-    async def create_subscription(self, params, callback):
-        self.logger.info("create subscription with callback: %s", callback)
+    @property
+    def active_subscription_ids(self):
+        return self.subscriptions.keys()
+
+    async def create_subscription(self, params, callback=None):
+        self.logger.info("create subscription")
         result = ua.CreateSubscriptionResult()
         result.RevisedPublishingInterval = params.RequestedPublishingInterval
         result.RevisedLifetimeCount = params.RequestedLifetimeCount
         result.RevisedMaxKeepAliveCount = params.RequestedMaxKeepAliveCount
         self._sub_id_counter += 1
         result.SubscriptionId = self._sub_id_counter
-
-        sub = InternalSubscription(self, result, self.aspace, callback)
-        await sub.start()
-        self.subscriptions[result.SubscriptionId] = sub
+        internal_sub = InternalSubscription(self, result, self.aspace, callback)
+        await internal_sub.start()
+        self.subscriptions[result.SubscriptionId] = internal_sub
         return result
 
     async def delete_subscriptions(self, ids):
@@ -44,7 +49,6 @@ class SubscriptionService:
             if sub is None:
                 res.append(ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid))
             else:
-                #await sub.stop()
                 existing_subs.append(sub)
                 res.append(ua.StatusCode())
         await asyncio.gather(*[sub.stop() for sub in existing_subs])
@@ -88,7 +92,6 @@ class SubscriptionService:
             params.MonitoredItemIds)
 
     def republish(self, params):
-        #with self._lock:
         if params.SubscriptionId not in self.subscriptions:
             # TODO: what should I do?
             return ua.NotificationMessage()

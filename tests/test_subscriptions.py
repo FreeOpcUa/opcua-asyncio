@@ -49,11 +49,14 @@ class MySubHandler2:
     def __init__(self, limit=None):
         self.results = []
         self.limit = limit
-        self.done = asyncio.Event()
+        self._done = asyncio.Event()
+
+    def done(self):
+        return wait_for(self._done.wait(), 2)
 
     def check_done(self):
-        if self.limit and len(self.results) == self.limit and not self.done.is_set():
-            self.done.set()
+        if self.limit and len(self.results) == self.limit and not self._done.is_set():
+            self._done.set()
 
     def datachange_notification(self, node, val, data):
         self.results.append((node, val))
@@ -82,13 +85,13 @@ async def test_subscription_failure(opc):
     sub = await opc.opc.create_subscription(100, myhandler)
     with pytest.raises(ua.UaStatusCodeError):
         # we can only subscribe to variables so this should fail
-        handle1 = await sub.subscribe_data_change(o)
+        await sub.subscribe_data_change(o)
     await sub.delete()
 
 
 async def test_subscription_overload(opc):
     nb = 10
-    myhandler = SubHandler()
+    myhandler = MySubHandlerCounter()
     o = opc.opc.get_objects_node()
     sub = await opc.opc.create_subscription(1, myhandler)
     variables = []
@@ -108,9 +111,12 @@ async def test_subscription_overload(opc):
     for i in range(nb):
         for j in range(nb):
             await variables[i].set_value(j)
+    # await asyncio.sleep(4)
     await sub.delete()
     for s in subs:
         await s.delete()
+    # assert myhandler.datachange_count == 1000
+    # assert myhandler.event_count == 0
 
 
 async def test_subscription_count(opc):
@@ -119,7 +125,7 @@ async def test_subscription_count(opc):
     o = opc.opc.get_objects_node()
     var = await o.add_variable(3, 'SubVarCounter', 0.1)
     await sub.subscribe_data_change(var)
-    nb = 12
+    nb = 100
     for i in range(nb):
         val = await var.get_value()
         await var.set_value(val + 1)
@@ -347,7 +353,7 @@ async def test_unsubscribe_two_objects_simultaneously(opc):
     ]
     sub = await opc.opc.create_subscription(100, handler)
     handles = await sub.subscribe_data_change(nodes)
-    await handler.done.wait()
+    await handler.done()
     assert handler.results[0][0] == nodes[0]
     assert handler.results[1][0] == nodes[1]
     await sub.unsubscribe(handles)
@@ -367,7 +373,7 @@ async def test_unsubscribe_two_objects_consecutively(opc):
     sub = await opc.opc.create_subscription(100, handler)
     handles = await sub.subscribe_data_change(nodes)
     assert type(handles) is list
-    await handler.done.wait()
+    await handler.done()
     for handle in handles:
         await sub.unsubscribe(handle)
     await sub.delete()
