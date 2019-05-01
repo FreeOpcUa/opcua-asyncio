@@ -8,33 +8,24 @@ from copy import copy
 from struct import unpack_from
 import os
 import logging
-from enum import Enum
 from urllib.parse import urlparse
 from typing import Coroutine
 
 from asyncua import ua
-from ..common.callback import CallbackType, ServerItemCallback, CallbackDispatcher
+from ..common.callback import CallbackDispatcher
 from ..common.node import Node
-from ..common.utils import create_nonce, ServiceError
 from .history import HistoryManager
 from .address_space import AddressSpace, AttributeService, ViewService, NodeManagementService, MethodService
 from .subscription_service import SubscriptionService
 from .standard_address_space import standard_address_space
 from .users import User
+from .internal_session import InternalSession
 
-
-use_crypto = True
 try:
     from asyncua.crypto import uacrypto
 except ImportError:
     logging.getLogger(__name__).warning("cryptography is not installed, use of crypto disabled")
-    use_crypto = False
-
-
-class SessionState(Enum):
-    Created = 0
-    Activated = 1
-    Closed = 2
+    uacrypto = False
 
 
 class ServerDesc:
@@ -43,7 +34,19 @@ class ServerDesc:
         self.Capabilities = cap
 
 
+def default_user_manager(iserver, isession, username, password):
+    """
+    Default user_manager, does nothing much but check for admin
+    """
+    if iserver.allow_remote_admin and username in ("admin", "Admin"):
+        isession.user = User.Admin
+    return True
+
+
 class InternalServer:
+    """
+    There is one `InternalServer` for every `Server`.
+    """
     def __init__(self, loop):
         self.loop = loop
         self.logger = logging.getLogger(__name__)
@@ -271,9 +274,9 @@ class InternalServer:
         userName = token.UserName
         passwd = token.Password
 
-        # decrypt password is we can
+        # decrypt password if we can
         if str(token.EncryptionAlgorithm) != "None":
-            if use_crypto is False:
+            if not uacrypto:
                 return False
             try:
                 if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
@@ -292,148 +295,3 @@ class InternalServer:
 
         # call user_manager
         return self.user_manager(self, isession, userName, passwd)
-
-
-class InternalSession:
-    _counter = 10
-    _auth_counter = 1000
-
-    def __init__(self, internal_server, aspace, submgr, name, user=User.Anonymous, external=False):
-        self.logger = logging.getLogger(__name__)
-        self.iserver = internal_server
-        self.external = external  # define if session is external, we need to copy some objects if it is internal
-        self.aspace = aspace
-        self.subscription_service = submgr
-        self.name = name
-        self.user = user
-        self.nonce = None
-        self.state = SessionState.Created
-        self.session_id = ua.NodeId(self._counter)
-        InternalSession._counter += 1
-        self.authentication_token = ua.NodeId(self._auth_counter)
-        InternalSession._auth_counter += 1
-        self.logger.info('Created internal session %s', self.name)
-
-    def __str__(self):
-        return 'InternalSession(name:{0}, user:{1}, id:{2}, auth_token:{3})'.format(
-            self.name, self.user, self.session_id, self.authentication_token)
-
-    async def get_endpoints(self, params=None, sockname=None):
-        return await self.iserver.get_endpoints(params, sockname)
-
-    async def create_session(self, params, sockname=None):
-        self.logger.info('Create session request')
-
-        result = ua.CreateSessionResult()
-        result.SessionId = self.session_id
-        result.AuthenticationToken = self.authentication_token
-        result.RevisedSessionTimeout = params.RequestedSessionTimeout
-        result.MaxRequestMessageSize = 65536
-        self.nonce = create_nonce(32)
-        result.ServerNonce = self.nonce
-        result.ServerEndpoints = await self.get_endpoints(sockname=sockname)
-
-        return result
-
-    async def close_session(self, delete_subs=True):
-        self.logger.info('close session %s')
-        self.state = SessionState.Closed
-        await self.delete_subscriptions(list(self.subscription_service.subscriptions.keys()))
-
-    def activate_session(self, params):
-        self.logger.info('activate session')
-        result = ua.ActivateSessionResult()
-        if self.state != SessionState.Created:
-            raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
-        self.nonce = create_nonce(32)
-        result.ServerNonce = self.nonce
-        for _ in params.ClientSoftwareCertificates:
-            result.Results.append(ua.StatusCode())
-        self.state = SessionState.Activated
-        id_token = params.UserIdentityToken
-        if isinstance(id_token, ua.UserNameIdentityToken):
-            if self.iserver.check_user_token(self, id_token) is False:
-                raise ServiceError(ua.StatusCodes.BadUserAccessDenied)
-        self.logger.info("Activated internal session %s for user %s", self.name, self.user)
-        return result
-
-    async def read(self, params):
-        results = self.iserver.attribute_service.read(params)
-        return results
-
-    def history_read(self, params) -> Coroutine:
-        return self.iserver.history_manager.read_history(params)
-
-    async def write(self, params):
-        return self.iserver.attribute_service.write(params, self.user)
-
-    async def browse(self, params):
-        return self.iserver.view_service.browse(params)
-
-    async def translate_browsepaths_to_nodeids(self, params):
-        return self.iserver.view_service.translate_browsepaths_to_nodeids(params)
-
-    async def add_nodes(self, params):
-        return self.iserver.node_mgt_service.add_nodes(params, self.user)
-
-    async def delete_nodes(self, params):
-        return self.iserver.node_mgt_service.delete_nodes(params, self.user)
-
-    async def add_references(self, params):
-        return self.iserver.node_mgt_service.add_references(params, self.user)
-
-    async def delete_references(self, params):
-        return self.iserver.node_mgt_service.delete_references(params, self.user)
-
-    async def add_method_callback(self, methodid, callback):
-        return self.aspace.add_method_callback(methodid, callback)
-
-    def call(self, params):
-        """COROUTINE"""
-        return self.iserver.method_service.call(params)
-
-    async def create_subscription(self, params, callback):
-        result = await self.subscription_service.create_subscription(params, callback)
-        return result
-
-    async def create_monitored_items(self, params):
-        """Returns Future"""
-        subscription_result = await self.subscription_service.create_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionCreated,
-                                                         ServerItemCallback(params, subscription_result))
-        return subscription_result
-
-    async def modify_monitored_items(self, params):
-        subscription_result = self.subscription_service.modify_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionModified,
-                                                         ServerItemCallback(params, subscription_result))
-        return subscription_result
-
-    def republish(self, params):
-        return self.subscription_service.republish(params)
-
-    async def delete_subscriptions(self, ids):
-        # This is an async method, dues to symetry with client code
-        return await self.subscription_service.delete_subscriptions(ids)
-
-    async def delete_monitored_items(self, params):
-        # This is an async method, dues to symetry with client code
-        subscription_result = self.subscription_service.delete_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionDeleted,
-                                                         ServerItemCallback(params, subscription_result))
-        return subscription_result
-
-    async def publish(self, acks=None):
-        # This is an async method, dues to symetry with client code
-        if acks is None:
-            acks = []
-        return self.subscription_service.publish(acks)
-
-
-def default_user_manager(iserver, isession, username, password):
-    """
-    Default user_manager, does nothing much but check for admin
-    """
-    if iserver.allow_remote_admin and username in ("admin", "Admin"):
-        isession.user = User.Admin
-    return True
