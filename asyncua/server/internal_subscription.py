@@ -8,6 +8,7 @@ import asyncio
 from typing import Union, Iterable, Dict, List
 from asyncua import ua
 from .monitored_item_service import MonitoredItemService
+from .address_space import AddressSpace
 
 
 class InternalSubscription:
@@ -15,13 +16,13 @@ class InternalSubscription:
 
     """
 
-    def __init__(self, subservice, data: ua.CreateSubscriptionResult, addressspace, callback=None):
+    def __init__(self, loop: asyncio.AbstractEventLoop, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
+                 callback=None):
         self.logger = logging.getLogger(__name__)
-        self.aspace = addressspace
-        self.subservice = subservice
+        self.loop: asyncio.AbstractEventLoop = loop
         self.data: ua.CreateSubscriptionResult = data
         self.pub_result_callback = callback
-        self.monitored_item_srv = MonitoredItemService(self, addressspace)
+        self.monitored_item_srv = MonitoredItemService(self, aspace)
         self._triggered_datachanges: Dict[int, List[ua.MonitoredItemNotification]] = {}
         self._triggered_events: Dict[int, List[ua.EventFieldList]] = {}
         self._triggered_statuschanges: list = []
@@ -38,7 +39,7 @@ class InternalSubscription:
     async def start(self):
         self.logger.debug("starting subscription %s", self.data.SubscriptionId)
         if self.data.RevisedPublishingInterval > 0.0:
-            self._task = self.subservice.loop.create_task(self._subscription_loop())
+            self._task = self.loop.create_task(self._subscription_loop())
 
     async def stop(self):
         self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
@@ -162,21 +163,21 @@ class InternalSubscription:
         self.logger.info("Error request to re-published non existing ack %s in subscription %s", nb, self)
         return ua.NotificationMessage()
 
-    def enqueue_datachange_event(self, mid: int, eventdata: ua.MonitoredItemNotification, maxsize):
+    def enqueue_datachange_event(self, mid: int, eventdata: ua.MonitoredItemNotification, maxsize: int):
         """
         Enqueue a monitored item data change.
         :param mid: Monitored Item Id
         :param eventdata: Monitored Item Notification
-        :param maxsize:
+        :param maxsize: Max queue size (0: No limit)
         """
         self._enqueue_event(mid, eventdata, maxsize, self._triggered_datachanges)
 
-    def enqueue_event(self, mid: int, eventdata: ua.EventFieldList, maxsize):
+    def enqueue_event(self, mid: int, eventdata: ua.EventFieldList, maxsize: int):
         """
         Enqueue a event.
         :param mid: Monitored Item Id
         :param eventdata: Event Field List
-        :param maxsize:
+        :param maxsize: Max queue size (0: No limit)
         """
         self._enqueue_event(mid, eventdata, maxsize, self._triggered_events)
 
@@ -188,7 +189,7 @@ class InternalSubscription:
         self._triggered_statuschanges.append(code)
         self._trigger_publish()
 
-    def _enqueue_event(self, mid: int, eventdata: Union[ua.MonitoredItemNotification, ua.EventFieldList], size,
+    def _enqueue_event(self, mid: int, eventdata: Union[ua.MonitoredItemNotification, ua.EventFieldList], size: int,
                        queue: dict):
         if mid not in queue:
             # New Monitored Item Id
@@ -196,6 +197,7 @@ class InternalSubscription:
             self._trigger_publish()
             return
         if size != 0:
+            # Limit queue size
             if len(queue[mid]) >= size:
                 queue[mid].pop(0)
         queue[mid].append(eventdata)

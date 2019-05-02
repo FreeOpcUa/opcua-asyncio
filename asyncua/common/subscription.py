@@ -163,7 +163,7 @@ class Subscription:
 
         :param nodes: One Node or an Iterable of Nodes
         :param attr: The Node attribute you want to subscribe to
-        :param queuesize: 0 or 1 for default queue size (shall be 1 - noe queuing), n for FIFO queue
+        :param queuesize: 0 or 1 for default queue size (shall be 1 - no queuing), n for FIFO queue
         :return: Handle for changing/cancelling of the subscription
         """
         return await self._subscribe(nodes, attr, queuesize=queuesize)

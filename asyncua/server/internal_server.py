@@ -3,6 +3,7 @@ Internal server implementing opcu-ua interface.
 Can be used on server side or to implement binary/https opc-ua servers
 """
 
+import asyncio
 from datetime import datetime, timedelta
 from copy import copy
 from struct import unpack_from
@@ -47,8 +48,8 @@ class InternalServer:
     """
     There is one `InternalServer` for every `Server`.
     """
-    def __init__(self, loop):
-        self.loop = loop
+    def __init__(self, loop: asyncio.AbstractEventLoop):
+        self.loop: asyncio.AbstractEventLoop = loop
         self.logger = logging.getLogger(__name__)
         self.server_callback_dispatcher = CallbackDispatcher()
         self.endpoints = []
@@ -66,9 +67,7 @@ class InternalServer:
         self.asyncio_transports = []
         self.subscription_service: SubscriptionService = SubscriptionService(self.loop, self.aspace)
         self.history_manager = HistoryManager(self)
-
         self.user_manager = default_user_manager  # defined at the end of this file
-
         # create a session to use on server side
         self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal", user=User.Admin)
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
@@ -255,7 +254,7 @@ class InternalServer:
 
     def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
-        directly write datavalue to the Attribute, bypasing some checks and structure creation
+        directly write datavalue to the Attribute, bypassing some checks and structure creation
         so it is a little faster
         """
         self.aspace.set_attribute_value(nodeid, attr, datavalue)
@@ -263,7 +262,7 @@ class InternalServer:
     def set_user_manager(self, user_manager):
         """
         set up a function which that will check for authorize users. Input function takes username
-        and password as paramters and returns True of user is allowed access, False otherwise.
+        and password as parameters and returns True of user is allowed access, False otherwise.
         """
         self.user_manager = user_manager
 
@@ -271,27 +270,25 @@ class InternalServer:
         """
         unpack the username and password for the benefit of the user defined user manager
         """
-        userName = token.UserName
-        passwd = token.Password
-
+        user_name = token.UserName
+        password = token.Password
         # decrypt password if we can
         if str(token.EncryptionAlgorithm) != "None":
             if not uacrypto:
                 return False
             try:
                 if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
-                    raw_pw = uacrypto.decrypt_rsa15(self.private_key, passwd)
+                    raw_pw = uacrypto.decrypt_rsa15(self.private_key, password)
                 elif token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-oaep":
-                    raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, passwd)
+                    raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, password)
                 else:
                     self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
                     return False
                 length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
-                passwd = raw_pw[4:4 + length]
-                passwd = passwd.decode('utf-8')
+                password = raw_pw[4:4 + length]
+                password = password.decode('utf-8')
             except Exception:
                 self.logger.exception("Unable to decrypt password")
                 return False
-
         # call user_manager
-        return self.user_manager(self, isession, userName, passwd)
+        return self.user_manager(self, isession, user_name, password)
