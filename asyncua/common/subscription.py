@@ -38,7 +38,7 @@ class SubHandler:
 
 class SubscriptionItemData:
     """
-    To store useful data from a monitored item
+    To store useful data from a monitored item.
     """
 
     def __init__(self):
@@ -51,7 +51,7 @@ class SubscriptionItemData:
 
 class DataChangeNotif:
     """
-    To be send to clients for every datachange notification from server
+    To be send to clients for every datachange notification from server.
     """
 
     def __init__(self, subscription_data, monitored_item):
@@ -59,7 +59,7 @@ class DataChangeNotif:
         self.subscription_data = subscription_data
 
     def __str__(self):
-        return "DataChangeNotification({0}, {1})".format(self.subscription_data, self.monitored_item)
+        return f"DataChangeNotification({self.subscription_data}, {self.monitored_item})"
 
     __repr__ = __str__
 
@@ -73,13 +73,13 @@ class Subscription:
     :param server: `InternalSession` or `UAClient`
     """
 
-    def __init__(self, server, params, handler, loop=None):
+    def __init__(self, server, params: ua.CreateSubscriptionParameters, handler: SubHandler, loop=None):
         self.loop = loop or asyncio.get_event_loop()
         self.logger = logging.getLogger(__name__)
         self.server = server
         self._client_handle = 200
-        self._handler = handler
-        self.parameters = params  # move to data class
+        self._handler: SubHandler = handler
+        self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items = {}
         self.subscription_id = None
 
