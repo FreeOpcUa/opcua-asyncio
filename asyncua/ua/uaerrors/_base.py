@@ -84,3 +84,7 @@ class UaStatusCodeError(_AutoRegister("Meta", (UaError,), {})):
 
 class UaStringParsingError(UaError):
     pass
+
+
+class UaStructParsingError(UaError):
+    pass
