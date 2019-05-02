@@ -3,12 +3,16 @@ Low level binary client
 """
 import asyncio
 import logging
-from typing import Dict
+from typing import Dict, List
 from asyncua import ua
 from typing import Optional
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed
 from ..common.connection import SecureConnection
+
+
+class ResponseParseError(ValueError):
+    """Error while parsing responses."""
 
 
 class UASocketProtocol(asyncio.Protocol):
@@ -441,7 +445,7 @@ class UaClient:
         self.logger.info("create_subscription success SubscriptionId %s", response.Parameters.SubscriptionId)
         if not self._publish_task or self._publish_task.done():
             # Start the publish cycle if it is not yet running
-            self._publish_task = self.loop.create_task(self._publish())
+            self._publish_task = self.loop.create_task(self._publish_cycle())
         return response.Parameters
 
     async def delete_subscriptions(self, subscription_ids):
@@ -459,25 +463,30 @@ class UaClient:
             self._subscription_callbacks.pop(sid)
         return response.Results
 
-    def publish(self):
+    async def publish(self, acks: List[ua.SubscriptionAcknowledgement]) -> ua.PublishResponse:
         """
-        This is just for maintaining symmetry.
-        This client takes care of sending PublishRequest internally.
+        Send a PublishRequest to the server.
         """
-        pass
+        request = ua.PublishRequest()
+        request.Parameters.SubscriptionAcknowledgements = acks if acks else []
+        data = await self.protocol.send_request(request, timeout=0)
+        self.protocol.check_answer(data, "while waiting for publish response")
+        try:
+            response = struct_from_binary(ua.PublishResponse, data)
+        except Exception:
+            self.logger.exception("Error parsing notification from server")
+            raise ResponseParseError
+        return response
 
-    async def _publish(self):
+    async def _publish_cycle(self):
         """
-        Send publish request and wait for the publish response in an endless loop.
+        Start publish cycle that sends a publish request and waits for the publish response in an endless loop.
         Forward the `PublishResult` to the matching `Subscription` by callback.
         """
         ack = None
         while True:
-            request = ua.PublishRequest()
-            request.Parameters.SubscriptionAcknowledgements = [ack] if ack else []
-            data = await self.protocol.send_request(request, timeout=0)
             try:
-                self.protocol.check_answer(data, "while waiting for publish response")
+                response = await self.publish([ack] if ack else [])
             except BadTimeout:  # See Spec. Part 4, 7.28
                 # Repeat without acknowledgement
                 ack = None
@@ -498,14 +507,7 @@ class UaClient:
                 self.logger.info("BadNoSubscription received, ignoring because it's probably valid.")
                 # End task
                 return
-            # parse publish response
-            try:
-                response = struct_from_binary(ua.PublishResponse, data)
-            except Exception:
-                # INFO: catching the exception here might be obsolete because we already
-                #       catch BadTimeout above. However, it's not really clear what this code
-                #       does so it stays in, doesn't seem to hurt.
-                self.logger.exception("Error parsing notification from server")
+            except ResponseParseError:
                 # send publish request to server so he does stop sending notifications
                 ack = None
                 continue

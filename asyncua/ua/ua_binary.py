@@ -453,7 +453,7 @@ def extensionobject_to_binary(obj):
 
 def from_binary(uatype, data):
     """
-    unpack data given an uatype as a string or a python class having a ua_types memeber
+    unpack data given an uatype as a string or a python class having a ua_types member
     """
     if isinstance(uatype, str) and uatype.startswith("ListOf"):
         utype = uatype[6:]
@@ -481,7 +481,7 @@ def struct_from_binary(objtype, data):
         return objtype(Primitives.UInt32.unpack(data))
     obj = objtype()
     for name, uatype in obj.ua_types:
-        # if our member has a swtich and it is not set we skip it
+        # if our member has a switch and it is not set we skip it
         if hasattr(obj, "ua_switches") and name in obj.ua_switches:
             container_name, idx = obj.ua_switches[name]
             val = getattr(obj, container_name)
