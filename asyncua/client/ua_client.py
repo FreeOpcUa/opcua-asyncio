@@ -467,6 +467,7 @@ class UaClient:
         """
         Send a PublishRequest to the server.
         """
+        self.logger.debug('publish %r', acks)
         request = ua.PublishRequest()
         request.Parameters.SubscriptionAcknowledgements = acks if acks else []
         data = await self.protocol.send_request(request, timeout=0)
@@ -508,16 +509,21 @@ class UaClient:
                 # End task
                 return
             except ResponseParseError:
-                # send publish request to server so he does stop sending notifications
                 ack = None
                 continue
-            # look for matching subscription callback
             subscription_id = response.Parameters.SubscriptionId
+            if not subscription_id:
+                # The value 0 is used to indicate that there were no Subscriptions defined for which a
+                # response could be sent. See Spec. Part 4 - Section 5.13.5 "Publish"
+                # End task
+                return
             try:
                 callback = self._subscription_callbacks[subscription_id]
             except KeyError:
-                self.logger.warning("Received data for unknown subscription %s active are %s", subscription_id,
-                                    self._subscription_callbacks.keys())
+                self.logger.warning(
+                    "Received data for unknown subscription %s active are %s", subscription_id,
+                    self._subscription_callbacks.keys()
+                )
             else:
                 try:
                     callback(response.Parameters)
