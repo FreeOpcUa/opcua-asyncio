@@ -52,6 +52,7 @@ class InternalSubscription:
             self.publish_results()
 
     async def _subscription_loop(self):
+        """Publication cycle."""
         try:
             while True:
                 await asyncio.sleep(self.data.RevisedPublishingInterval / 1000.0)
@@ -60,7 +61,7 @@ class InternalSubscription:
             self.logger.info('exiting _subscription_loop for %s', self.data.SubscriptionId)
             pass
         except Exception:
-            # seems this except is necessary to print errors
+            # seems this except is necessary to log errors
             self.logger.exception("Exception in subscription loop")
 
     def has_published_results(self):
