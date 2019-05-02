@@ -4,6 +4,7 @@ server side implementation of a subscription object
 
 import logging
 from asyncua import ua
+from .address_space import AddressSpace
 
 
 class MonitoredItemData:
@@ -39,10 +40,10 @@ class MonitoredItemService:
     Implements monitored item service for one subscription
     """
 
-    def __init__(self, isub, aspace):
+    def __init__(self, isub, aspace: AddressSpace):
         self.logger = logging.getLogger(f"{__name__}.{isub.data.SubscriptionId}")
         self.isub = isub
-        self.aspace = aspace
+        self.aspace: AddressSpace = aspace
         self._monitored_items = {}
         self._monitored_events = {}
         self._monitored_datachange = {}
@@ -57,7 +58,6 @@ class MonitoredItemService:
     async def create_monitored_items(self, params):
         results = []
         for item in params.ItemsToCreate:
-            # with self._lock:
             if item.ItemToMonitor.AttributeId == ua.AttributeIds.EventNotifier:
                 result = self._create_events_monitored_item(item)
             else:
@@ -102,14 +102,12 @@ class MonitoredItemService:
         self._monitored_item_counter += 1
         result.MonitoredItemId = self._monitored_item_counter
         self.logger.debug("Creating MonitoredItem with id %s", result.MonitoredItemId)
-
         mdata = MonitoredItemData()
         mdata.mode = params.MonitoringMode
         mdata.client_handle = params.RequestedParameters.ClientHandle
         mdata.monitored_item_id = result.MonitoredItemId
         mdata.queue_size = params.RequestedParameters.QueueSize
         mdata.filter = params.RequestedParameters.Filter
-
         return result, mdata
 
     def _create_events_monitored_item(self, params):

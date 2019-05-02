@@ -18,12 +18,12 @@ class AttributeValue(object):
         self.datachange_callbacks = {}
 
     def __str__(self):
-        return "AttributeValue({0})".format(self.value)
+        return f"AttributeValue({self.value})"
 
     __repr__ = __str__
 
 
-class NodeData(object):
+class NodeData:
 
     def __init__(self, nodeid):
         self.nodeid = nodeid
@@ -32,16 +32,16 @@ class NodeData(object):
         self.call = None
 
     def __str__(self):
-        return "NodeData(id:{0}, attrs:{1}, refs:{2})".format(self.nodeid, self.attributes, self.references)
+        return f"NodeData(id:{self.nodeid}, attrs:{self.attributes}, refs:{self.references})"
 
     __repr__ = __str__
 
 
-class AttributeService(object):
+class AttributeService:
 
-    def __init__(self, aspace):
+    def __init__(self, aspace: "AddressSpace"):
         self.logger = logging.getLogger(__name__)
-        self._aspace = aspace
+        self._aspace: "AddressSpace" = aspace
 
     def read(self, params):
         self.logger.debug("read %s", params)
@@ -60,8 +60,9 @@ class AttributeService(object):
                     continue
                 al = self._aspace.get_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
                 ual = self._aspace.get_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
-                if not al.StatusCode.is_good() or not ua.ua_binary.test_bit(al.Value.Value, ua.AccessLevel.CurrentWrite) or not ua.ua_binary.test_bit(
-                        ual.Value.Value, ua.AccessLevel.CurrentWrite):
+                if not al.StatusCode.is_good() or not ua.ua_binary.test_bit(
+                        al.Value.Value, ua.AccessLevel.CurrentWrite) or not ua.ua_binary.test_bit(
+                    ual.Value.Value, ua.AccessLevel.CurrentWrite):
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
             res.append(self._aspace.set_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
@@ -70,9 +71,9 @@ class AttributeService(object):
 
 class ViewService(object):
 
-    def __init__(self, aspace):
+    def __init__(self, aspace: "AddressSpace"):
         self.logger = logging.getLogger(__name__)
-        self._aspace = aspace
+        self._aspace: "AddressSpace" = aspace
 
     def browse(self, params):
         self.logger.debug("browse %s", params)
@@ -177,11 +178,11 @@ class ViewService(object):
         return None
 
 
-class NodeManagementService(object):
+class NodeManagementService:
 
-    def __init__(self, aspace):
+    def __init__(self, aspace: "AddressSpace"):
         self.logger = logging.getLogger(__name__)
-        self._aspace = aspace
+        self._aspace: "AddressSpace" = aspace
 
     def add_nodes(self, addnodeitems, user=User.Admin):
         results = []
@@ -216,8 +217,8 @@ class NodeManagementService(object):
                 return result
 
         if item.ParentNodeId.is_null():
-            #self.logger.info("add_node: while adding node %s, requested parent node is null %s %s",
-                #item.RequestedNewNodeId, item.ParentNodeId, item.ParentNodeId.is_null())
+            # self.logger.info("add_node: while adding node %s, requested parent node is null %s %s",
+            # item.RequestedNewNodeId, item.ParentNodeId, item.ParentNodeId.is_null())
             if check:
                 result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
                 return result
@@ -366,7 +367,8 @@ class NodeManagementService(object):
         rdesc.IsForward = addref.IsForward
         rdesc.NodeId = addref.TargetNodeId
         if addref.TargetNodeClass == ua.NodeClass.Unspecified:
-            rdesc.NodeClass = self._aspace.get_attribute_value(addref.TargetNodeId, ua.AttributeIds.NodeClass).Value.Value
+            rdesc.NodeClass = self._aspace.get_attribute_value(
+                addref.TargetNodeId, ua.AttributeIds.NodeClass).Value.Value
         else:
             rdesc.NodeClass = addref.TargetNodeClass
         bname = self._aspace.get_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value
@@ -443,11 +445,11 @@ class NodeManagementService(object):
         self._add_node_attr(item, nodedata, "Value", add_timestamps=add_timestamps)
 
 
-class MethodService(object):
+class MethodService:
 
-    def __init__(self, aspace):
+    def __init__(self, aspace: "AddressSpace"):
         self.logger = logging.getLogger(__name__)
-        self._aspace = aspace
+        self._aspace: "AddressSpace" = aspace
 
     async def call(self, methods):
         results = []
@@ -480,10 +482,9 @@ class MethodService(object):
         return res
 
 
-class AddressSpace(object):
+class AddressSpace:
     """
-    The address space object stores all the nodes of the OPC-UA server
-    and helper methods.
+    The address space object stores all the nodes of the OPC-UA server and helper methods.
     The methods are thread safe
     """
 
@@ -517,9 +518,12 @@ class AddressSpace(object):
             self._nodeid_counter[idx] += 1
         else:
             # get the biggest identifier number from the existed nodes in address space
-            identifier_list = sorted([nodeid.Identifier for nodeid in self._nodes.keys()
-                                      if nodeid.NamespaceIndex == idx and nodeid.NodeIdType
-                                      in (ua.NodeIdType.Numeric, ua.NodeIdType.TwoByte, ua.NodeIdType.FourByte)])
+            identifier_list = sorted([
+                nodeid.Identifier for nodeid in self._nodes.keys()
+                if nodeid.NamespaceIndex == idx and nodeid.NodeIdType in (
+                    ua.NodeIdType.Numeric, ua.NodeIdType.TwoByte, ua.NodeIdType.FourByte
+                )
+            ])
             if identifier_list:
                 self._nodeid_counter[idx] = identifier_list[-1]
             else:
