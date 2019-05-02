@@ -48,11 +48,17 @@ class InternalSubscription:
         self.monitored_item_srv.delete_all_monitored_items()
 
     def _trigger_publish(self):
-        if self._task and self.data.RevisedPublishingInterval <= 0.0:  # ToDo: check against Spec.
+        """
+        Trigger immediate publication (if requested by the PublishingInterval).
+        """
+        if self._task and self.data.RevisedPublishingInterval <= 0.0:
+            # Publish immediately (as fast as possible)
             self.publish_results()
 
     async def _subscription_loop(self):
-        """Publication cycle."""
+        """
+        Start the publication loop running at the RevisedPublishingInterval.
+        """
         try:
             while True:
                 await asyncio.sleep(self.data.RevisedPublishingInterval / 1000.0)
