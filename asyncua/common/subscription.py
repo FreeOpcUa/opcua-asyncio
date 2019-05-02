@@ -87,7 +87,6 @@ class Subscription:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
         self.subscription_id = response.SubscriptionId  # move to data class
         self.logger.info('Subscription created %s', self.subscription_id)
-        #self.server.publish()
 
     def publish_callback(self, publish_result: ua.PublishResult):
         """
