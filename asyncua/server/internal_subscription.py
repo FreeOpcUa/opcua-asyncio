@@ -5,7 +5,7 @@ server side implementation of a subscription object
 import logging
 import asyncio
 
-from typing import Union
+from typing import Union, Iterable, Dict, List
 from asyncua import ua
 from .monitored_item_service import MonitoredItemService
 
@@ -23,11 +23,11 @@ class InternalSubscription:
         self.pub_result_callback = callback
         self.monitored_item_srv = MonitoredItemService(self, addressspace)
         self.task = None
-        self._triggered_datachanges = {}
-        self._triggered_events = {}
-        self._triggered_statuschanges = []
+        self._triggered_datachanges: Dict[int, List[ua.MonitoredItemNotification]] = {}
+        self._triggered_events: Dict[int, List[ua.EventFieldList]] = {}
+        self._triggered_statuschanges: list = []
         self._notification_seq = 1
-        self._not_acknowledged_results = {}
+        self._not_acknowledged_results: Dict[int, ua.PublishResult] = {}
         self._startup = True
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
@@ -137,10 +137,10 @@ class InternalSubscription:
             result.NotificationMessage.NotificationData.append(notif)
             self.logger.debug("sending event notification %s", notif.Status)
 
-    def publish(self, acks):
+    def publish(self, acks: Iterable[int]):
         """
-        :param acks:
-        :return:
+        Reset publish cycle count, acknowledge PublishResults.
+        :param acks: Sequence number of the PublishResults to acknowledge
         """
         self.logger.info("publish request with acks %s", acks)
         self._publish_cycles_count = 0

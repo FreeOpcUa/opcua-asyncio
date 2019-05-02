@@ -1,7 +1,6 @@
-import asyncio
 import logging
 from enum import Enum
-from typing import Coroutine
+from typing import Coroutine, Iterable, Optional
 
 from asyncua import ua
 from ..common.callback import CallbackType, ServerItemCallback
@@ -36,23 +35,21 @@ class InternalSession:
         self.state = SessionState.Created
         self.session_id = ua.NodeId(self._counter)
         InternalSession._counter += 1
-        self.authentication_token = ua.NodeId(self._auth_counter)
+        self.auth_token = ua.NodeId(self._auth_counter)
         InternalSession._auth_counter += 1
         self.logger.info('Created internal session %s', self.name)
 
     def __str__(self):
-        return 'InternalSession(name:{0}, user:{1}, id:{2}, auth_token:{3})'.format(
-            self.name, self.user, self.session_id, self.authentication_token)
+        return f'InternalSession(name:{self.name}, user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})'
 
     async def get_endpoints(self, params=None, sockname=None):
         return await self.iserver.get_endpoints(params, sockname)
 
     async def create_session(self, params, sockname=None):
         self.logger.info('Create session request')
-
         result = ua.CreateSessionResult()
         result.SessionId = self.session_id
-        result.AuthenticationToken = self.authentication_token
+        result.AuthenticationToken = self.auth_token
         result.RevisedSessionTimeout = params.RequestedSessionTimeout
         result.MaxRequestMessageSize = 65536
         self.nonce = create_nonce(32)
@@ -126,13 +123,13 @@ class InternalSession:
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionCreated,
-                                                         ServerItemCallback(params, subscription_result))
+            ServerItemCallback(params, subscription_result))
         return subscription_result
 
     async def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionModified,
-                                                         ServerItemCallback(params, subscription_result))
+            ServerItemCallback(params, subscription_result))
         return subscription_result
 
     def republish(self, params):
@@ -146,16 +143,8 @@ class InternalSession:
         # This is an async method, dues to symmetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionDeleted,
-                                                         ServerItemCallback(params, subscription_result))
+            ServerItemCallback(params, subscription_result))
         return subscription_result
 
-    def publish(self, acks=None):
-        """
-        ???
-        """
-        #
-        if acks is None:
-            acks = []
-        return self.subscription_service.publish(acks)
-
-
+    def publish(self, acks: Optional[Iterable[ua.SubscriptionAcknowledgement]] = None):
+        return self.subscription_service.publish(acks or [])

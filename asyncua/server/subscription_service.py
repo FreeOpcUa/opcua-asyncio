@@ -4,7 +4,7 @@ server side implementation of subscription service
 
 import asyncio
 import logging
-from typing import Dict
+from typing import Dict, Iterable
 
 from asyncua import ua
 from .internal_subscription import InternalSubscription
@@ -54,7 +54,7 @@ class SubscriptionService:
         await asyncio.gather(*[sub.stop() for sub in existing_subs])
         return res
 
-    def publish(self, acks):
+    def publish(self, acks: Iterable[ua.SubscriptionAcknowledgement]):
         self.logger.info("publish request with acks %s", acks)
         for subid, sub in self.subscriptions.items():
             sub.publish([ack.SequenceNumber for ack in acks if ack.SubscriptionId == subid])
