@@ -4,6 +4,7 @@ server side implementation of a subscription object
 
 import logging
 from asyncua import ua
+from typing import Dict
 from .address_space import AddressSpace
 
 
@@ -44,9 +45,9 @@ class MonitoredItemService:
         self.logger = logging.getLogger(f"{__name__}.{isub.data.SubscriptionId}")
         self.isub = isub
         self.aspace: AddressSpace = aspace
-        self._monitored_items = {}
+        self._monitored_items: Dict[int, MonitoredItemData] = {}
         self._monitored_events = {}
-        self._monitored_datachange = {}
+        self._monitored_datachange: Dict[int, int] = {}
         self._monitored_item_counter = 111
 
     def __str__(self):
@@ -55,7 +56,7 @@ class MonitoredItemService:
     def delete_all_monitored_items(self):
         self.delete_monitored_items([mdata.monitored_item_id for mdata in self._monitored_items.values()])
 
-    async def create_monitored_items(self, params):
+    async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
         results = []
         for item in params.ItemsToCreate:
             if item.ItemToMonitor.AttributeId == ua.AttributeIds.EventNotifier:
@@ -65,7 +66,7 @@ class MonitoredItemService:
             results.append(result)
         return results
 
-    def modify_monitored_items(self, params):
+    def modify_monitored_items(self, params: ua.ModifyMonitoredItemsParameters):
         results = []
         for item in params.ItemsToModify:
             results.append(self._modify_monitored_item(item))
@@ -76,7 +77,7 @@ class MonitoredItemService:
         variant = self.aspace.get_attribute_value(nodeid, attr)
         self.datachange_callback(handle, variant)
 
-    def _modify_monitored_item(self, params):
+    def _modify_monitored_item(self, params: ua.MonitoredItemModifyRequest):
         for mdata in self._monitored_items.values():
             result = ua.MonitoredItemModifyResult()
             if mdata.monitored_item_id == params.MonitoredItemId:
@@ -90,7 +91,7 @@ class MonitoredItemService:
         result.StatusCode(ua.StatusCodes.BadMonitoredItemIdInvalid)
         return result
 
-    def _commit_monitored_item(self, result, mdata):
+    def _commit_monitored_item(self, result, mdata: MonitoredItemData):
         if result.StatusCode.is_good():
             self._monitored_items[result.MonitoredItemId] = mdata
             self._monitored_item_counter += 1
@@ -110,7 +111,7 @@ class MonitoredItemService:
         mdata.filter = params.RequestedParameters.Filter
         return result, mdata
 
-    def _create_events_monitored_item(self, params):
+    def _create_events_monitored_item(self, params: ua.MonitoredItemCreateRequest):
         self.logger.info("request to subscribe to events for node %s and attribute %s", params.ItemToMonitor.NodeId,
                          params.ItemToMonitor.AttributeId)
 
@@ -129,7 +130,7 @@ class MonitoredItemService:
         self._monitored_events[params.ItemToMonitor.NodeId].append(result.MonitoredItemId)
         return result
 
-    def _create_data_change_monitored_item(self, params):
+    def _create_data_change_monitored_item(self, params: ua.MonitoredItemCreateRequest):
         self.logger.info("request to subscribe to datachange for node %s and attribute %s", params.ItemToMonitor.NodeId,
                          params.ItemToMonitor.AttributeId)
 
@@ -155,7 +156,7 @@ class MonitoredItemService:
             results.append(self._delete_monitored_items(mid))
         return results
 
-    def _delete_monitored_items(self, mid):
+    def _delete_monitored_items(self, mid: int):
         if mid not in self._monitored_items:
             return ua.StatusCode(ua.StatusCodes.BadMonitoredItemIdInvalid)
         for k, v in self._monitored_events.items():
@@ -172,7 +173,7 @@ class MonitoredItemService:
         self._monitored_items.pop(mid)
         return ua.StatusCode()
 
-    def datachange_callback(self, handle, value, error=None):
+    def datachange_callback(self, handle: int, value, error=None):
         if error:
             self.logger.info("subscription %s: datachange callback called with handle '%s' and error '%s'", self,
                              handle, error)
@@ -214,7 +215,7 @@ class MonitoredItemService:
             self._trigger_event(event, mid)
         return True
 
-    def _trigger_event(self, event, mid):
+    def _trigger_event(self, event, mid: int):
         if mid not in self._monitored_items:
             self.logger.debug("Could not find monitored items for id %s for event %s in subscription %s", mid, event,
                               self)
@@ -233,7 +234,7 @@ class MonitoredItemService:
 
 
 class WhereClauseEvaluator:
-    def __init__(self, logger, aspace, whereclause):
+    def __init__(self, logger, aspace: AddressSpace, whereclause):
         self.logger = logger
         self.elements = whereclause.Elements
         self._aspace = aspace

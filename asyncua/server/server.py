@@ -6,10 +6,9 @@ import asyncio
 import logging
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
-from typing import Coroutine
+from typing import Coroutine, Optional
 
 from asyncua import ua
-# from asyncua.binary_server import BinaryServer
 from .binary_server_asyncio import BinaryServer
 from .internal_server import InternalServer
 from .event_generator import EventGenerator
@@ -65,8 +64,8 @@ class Server:
     :ivar nodes: shortcuts to common nodes - `Shortcuts` instance
     """
 
-    def __init__(self, iserver: InternalServer = None, loop=None):
-        self.loop = loop or asyncio.get_event_loop()
+    def __init__(self, iserver: InternalServer = None, loop: asyncio.AbstractEventLoop = None):
+        self.loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
         self.logger = logging.getLogger(__name__)
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
@@ -76,7 +75,7 @@ class Server:
         self.application_type = ua.ApplicationType.ClientAndServer
         self.default_timeout: int = 60 * 60 * 1000
         self.iserver = iserver if iserver else InternalServer(self.loop)
-        self.bserver: BinaryServer = None
+        self.bserver: Optional[BinaryServer] = None
         self._discovery_clients = {}
         self._discovery_period = 60
         self._policies = []

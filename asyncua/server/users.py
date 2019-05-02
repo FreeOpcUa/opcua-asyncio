@@ -1,5 +1,5 @@
 """
-Implement user managent here
+Implement user management here.
 """
 
 from enum import Enum
