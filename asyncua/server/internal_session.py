@@ -59,7 +59,7 @@ class InternalSession:
         return result
 
     async def close_session(self, delete_subs=True):
-        self.logger.info('close session %s')
+        self.logger.info('close session %s', self.name)
         self.state = SessionState.Closed
         await self.delete_subscriptions(list(self.subscription_service.subscriptions.keys()))
 

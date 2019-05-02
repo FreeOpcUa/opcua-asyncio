@@ -22,7 +22,6 @@ class InternalSubscription:
         self.data: ua.CreateSubscriptionResult = data
         self.pub_result_callback = callback
         self.monitored_item_srv = MonitoredItemService(self, addressspace)
-        self.task = None
         self._triggered_datachanges: Dict[int, List[ua.MonitoredItemNotification]] = {}
         self._triggered_events: Dict[int, List[ua.EventFieldList]] = {}
         self._triggered_statuschanges: list = []
@@ -45,10 +44,11 @@ class InternalSubscription:
         self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
         self._task.cancel()
         await self._task
+        self._task = None
         self.monitored_item_srv.delete_all_monitored_items()
 
     def _trigger_publish(self):
-        if self._task and self.data.RevisedPublishingInterval <= 0.0:
+        if self._task and self.data.RevisedPublishingInterval <= 0.0:  # ToDo: check against Spec.
             self.publish_results()
 
     async def _subscription_loop(self):
