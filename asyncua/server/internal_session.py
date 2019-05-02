@@ -5,6 +5,7 @@ from typing import Coroutine, Iterable, Optional
 from asyncua import ua
 from ..common.callback import CallbackType, ServerItemCallback
 from ..common.utils import create_nonce, ServiceError
+from .address_space import AddressSpace
 from .users import User
 from .subscription_service import SubscriptionService
 
@@ -22,12 +23,13 @@ class InternalSession:
     _counter = 10
     _auth_counter = 1000
 
-    def __init__(self, internal_server, aspace, submgr: SubscriptionService, name, user=User.Anonymous, external=False):
+    def __init__(self, internal_server, aspace: AddressSpace, submgr: SubscriptionService, name, user=User.Anonymous,
+                 external=False):
         self.logger = logging.getLogger(__name__)
         self.iserver = internal_server
         # define if session is external, we need to copy some objects if it is internal
         self.external = external
-        self.aspace = aspace
+        self.aspace: AddressSpace = aspace
         self.subscription_service: SubscriptionService = submgr
         self.name = name
         self.user = user
@@ -119,7 +121,7 @@ class InternalSession:
         result = await self.subscription_service.create_subscription(params, callback)
         return result
 
-    async def create_monitored_items(self, params):
+    async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionCreated,

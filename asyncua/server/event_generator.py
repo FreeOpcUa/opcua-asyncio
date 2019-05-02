@@ -1,10 +1,10 @@
 import logging
 from datetime import datetime
 import uuid
+from typing import Optional
 
 from asyncua import ua
-from asyncua import Node
-from ..common import events, event_objects
+from ..common import events, event_objects, Node
 
 
 class EventGenerator:
@@ -22,8 +22,8 @@ class EventGenerator:
     def __init__(self, isession):
         self.logger = logging.getLogger(__name__)
         self.isession = isession
-        self.event = None
-        self.emitting_node = None
+        self.event: Optional[event_objects.BaseEvent] = None
+        self.emitting_node: Optional[Node] = None
 
     async def init(self, etype=None, emitting_node=ua.ObjectIds.Server):
         node = None

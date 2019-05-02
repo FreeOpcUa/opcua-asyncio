@@ -7,6 +7,7 @@ import logging
 from typing import Dict, Iterable
 
 from asyncua import ua
+from .address_space import AddressSpace
 from .internal_subscription import InternalSubscription
 
 
@@ -16,10 +17,10 @@ class SubscriptionService:
     There is one `SubscriptionService` instance for every `Server`/`InternalServer`.
     """
 
-    def __init__(self, loop, aspace):
+    def __init__(self, loop: asyncio.AbstractEventLoop, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
-        self.loop = loop
-        self.aspace = aspace
+        self.loop: asyncio.AbstractEventLoop = loop
+        self.aspace: AddressSpace = aspace
         self.subscriptions: Dict[int, InternalSubscription] = {}
         self._sub_id_counter = 77
 
@@ -35,7 +36,7 @@ class SubscriptionService:
         result.RevisedMaxKeepAliveCount = params.RequestedMaxKeepAliveCount
         self._sub_id_counter += 1
         result.SubscriptionId = self._sub_id_counter
-        internal_sub = InternalSubscription(self, result, self.aspace, callback)
+        internal_sub = InternalSubscription(self.loop, result, self.aspace, callback)
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub
         return result
@@ -59,7 +60,7 @@ class SubscriptionService:
         for subid, sub in self.subscriptions.items():
             sub.publish([ack.SequenceNumber for ack in acks if ack.SubscriptionId == subid])
 
-    async def create_monitored_items(self, params):
+    async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
         self.logger.info("create monitored items")
         if params.SubscriptionId not in self.subscriptions:
             res = []
