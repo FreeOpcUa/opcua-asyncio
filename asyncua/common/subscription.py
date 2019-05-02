@@ -152,13 +152,14 @@ class Subscription:
                                     attr=ua.AttributeIds.Value,
                                     queuesize=0) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
-        Subscribe for data change events for one ore multiple nodes.
+        Subscribe to data change events of one or multiple nodes.
         The default attribute used for the subscription is `Value`.
         Return value is a handle which can be used to modify/cancel the subscription.
-        The handle is either an integer value for single Nodes. If the subscription failes an `UaStatusCodeError`
-        will be raises.
-        If multiple Nodes were supplied a List of integers or ua.StatusCode objects is returned. StatusCode objects
-        are returned to indicate that the subscription has failed (no exception will be raises in this case).
+        The handle is an integer value for single Nodes. If the creation of the subscription fails an
+        `UaStatusCodeError` is raised.
+        If multiple Nodes are supplied, a List of integers or ua.StatusCode objects is returned. A list of
+        StatusCode objects are returned to indicate that the subscription has failed (no exception will be
+        raised in this case).
         If more control is necessary the `create_monitored_items` method can be used directly.
 
         :param nodes: One Node or an Iterable of Nodes
