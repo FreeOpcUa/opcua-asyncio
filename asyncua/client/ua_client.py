@@ -7,12 +7,8 @@ from typing import Dict, List
 from asyncua import ua
 from typing import Optional
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
-from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed
+from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, UaStructParsingError
 from ..common.connection import SecureConnection
-
-
-class ResponseParseError(ValueError):
-    """Error while parsing responses."""
 
 
 class UASocketProtocol(asyncio.Protocol):
@@ -442,7 +438,7 @@ class UaClient:
         self.logger.info("create_subscription success SubscriptionId %s", response.Parameters.SubscriptionId)
         if not self._publish_task or self._publish_task.done():
             # Start the publish cycle if it is not yet running
-            self._publish_task = self.loop.create_task(self._publish_cycle())
+            self._publish_task = self.loop.create_task(self._publish_loop())
         return response.Parameters
 
     async def delete_subscriptions(self, subscription_ids):
@@ -473,10 +469,10 @@ class UaClient:
             response = struct_from_binary(ua.PublishResponse, data)
         except Exception:
             self.logger.exception("Error parsing notification from server")
-            raise ResponseParseError
+            raise UaStructParsingError
         return response
 
-    async def _publish_cycle(self):
+    async def _publish_loop(self):
         """
         Start publish cycle that sends a publish request and waits for the publish response in an endless loop.
         Forward the `PublishResult` to the matching `Subscription` by callback.
@@ -505,7 +501,7 @@ class UaClient:
                 self.logger.info("BadNoSubscription received, ignoring because it's probably valid.")
                 # End task
                 return
-            except ResponseParseError:
+            except UaStructParsingError:
                 ack = None
                 continue
             subscription_id = response.Parameters.SubscriptionId
