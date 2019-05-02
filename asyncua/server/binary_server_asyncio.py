@@ -3,10 +3,12 @@ Socket server forwarding request to internal server
 """
 import logging
 import asyncio
+from typing import Optional
 
 from ..ua.ua_binary import header_from_binary
 from ..common.utils import Buffer, NotEnoughData
 from .uaprocessor import UaProcessor
+from .internal_server import InternalServer
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +18,12 @@ class OPCUAProtocol(asyncio.Protocol):
     Instantiated for every connection.
     """
 
-    def __init__(self, iserver, policies, clients):
+    def __init__(self, iserver: InternalServer, policies, clients):
         self.peer_name = None
         self.transport = None
         self.processor = None
         self._buffer = b''
-        self.iserver = iserver
+        self.iserver: InternalServer = iserver
         self.policies = policies
         self.clients = clients
         self.messages = asyncio.Queue()
@@ -98,12 +100,12 @@ class OPCUAProtocol(asyncio.Protocol):
 
 
 class BinaryServer:
-    def __init__(self, internal_server, hostname, port):
+    def __init__(self, internal_server: InternalServer, hostname, port):
         self.logger = logging.getLogger(__name__)
         self.hostname = hostname
         self.port = port
-        self.iserver = internal_server
-        self._server = None
+        self.iserver: InternalServer = internal_server
+        self._server: Optional[asyncio.AbstractServer] = None
         self._policies = []
         self.clients = []
 

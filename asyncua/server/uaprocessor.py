@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import Deque
+from typing import Deque, Optional
 from collections import deque
 
 from asyncua import ua
@@ -23,20 +23,19 @@ class PublishRequestData:
 
 class UaProcessor:
     """
-    ToDo: remove/replace Lock
-    ToDo: Refactor queues with asyncio.Queue
+    Processor for OPC UA messages. Implements the OPC UA protocol for the server side.
     """
 
     def __init__(self, internal_server: InternalServer, transport):
         self.iserver: InternalServer = internal_server
         self.name = transport.get_extra_info('peername')
         self.sockname = transport.get_extra_info('sockname')
-        self.session: InternalSession = None
+        self.session: Optional[InternalSession] = None
         self._transport = transport
         # deque for Publish Requests
         self._publish_requests: Deque[PublishRequestData] = deque()
         # used when we need to wait for PublishRequest
-        self._publish_results = deque()
+        self._publish_results: Deque[ua.PublishResult] = deque()
         self._connection = SecureConnection(ua.SecurityPolicy())
 
     def set_policies(self, policies):
@@ -61,9 +60,9 @@ class UaProcessor:
         response.Parameters = channel
         self.send_response(request.RequestHeader.RequestHandle, None, seqhdr, response, ua.MessageType.SecureOpen)
 
-    def forward_publish_response(self, result):
+    def forward_publish_response(self, result: ua.PublishResult):
         """
-        Try to send a `PublishResponse` for the given result.
+        Try to send a `PublishResponse` with the given `PublishResult`.
         """
         _logger.info("forward publish response %s", result)
         while True:
