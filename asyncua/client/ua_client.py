@@ -437,7 +437,10 @@ class UaClient:
         self._subscription_callbacks[response.Parameters.SubscriptionId] = callback
         self.logger.info("create_subscription success SubscriptionId %s", response.Parameters.SubscriptionId)
         if not self._publish_task or self._publish_task.done():
-            # Start the publish cycle if it is not yet running
+            # Start the publish loop if it is not yet running
+            # The current strategy is to have only one open publish request per UaClient. This might not be enough
+            # in high latency networks or in case many subscriptions are created. A Set of Tasks of `_publish_loop`
+            # could be used if necessary.
             self._publish_task = self.loop.create_task(self._publish_loop())
         return response.Parameters
 
@@ -474,7 +477,7 @@ class UaClient:
 
     async def _publish_loop(self):
         """
-        Start publish cycle that sends a publish request and waits for the publish response in an endless loop.
+        Start a loop that sends a publish requests and waits for the publish responses.
         Forward the `PublishResult` to the matching `Subscription` by callback.
         """
         ack = None
