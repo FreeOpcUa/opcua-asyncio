@@ -21,6 +21,11 @@ class UASocketProtocol(asyncio.Protocol):
     CLOSED = 'closed'
 
     def __init__(self, timeout=1, security_policy=ua.SecurityPolicy(), loop=None):
+        """
+        :param timeout: Timeout in seconds
+        :param security_policy: Security policy (optional)
+        :param loop: Event loop (optional)
+        """
         self.logger = logging.getLogger(f"{__name__}.UASocketProtocol")
         self.loop = loop or asyncio.get_event_loop()
         self.transport = None
@@ -92,11 +97,14 @@ class UASocketProtocol(asyncio.Protocol):
         else:
             raise ua.UaError(f"Unsupported message type: {msg}")
 
-    def _send_request(self, request, timeout=1000, message_type=ua.MessageType.SecureMessage) -> asyncio.Future:
+    def _send_request(self, request, timeout=1, message_type=ua.MessageType.SecureMessage) -> asyncio.Future:
         """
         Send request to server, lower-level method.
         Timeout is the timeout written in ua header.
-        Returns future
+        :param request: Request
+        :param timeout: Timeout in seconds
+        :param message_type: UA Message Type (optional)
+        :return: Future that resolves with the Response
         """
         request.RequestHeader = self._create_request_header(timeout)
         self.logger.debug('Sending: %s', request)
@@ -145,12 +153,16 @@ class UASocketProtocol(asyncio.Protocol):
             )
         future.set_result(body)
 
-    def _create_request_header(self, timeout=1000):
+    def _create_request_header(self, timeout=1) -> ua.RequestHeader:
+        """
+        :param timeout: Timeout in seconds
+        :return: Request header
+        """
         hdr = ua.RequestHeader()
         hdr.AuthenticationToken = self.authentication_token
         self._request_handle += 1
         hdr.RequestHandle = self._request_handle
-        hdr.TimeoutHint = timeout
+        hdr.TimeoutHint = timeout * 1000
         return hdr
 
     def disconnect_socket(self):
@@ -213,6 +225,10 @@ class UaClient:
     """
 
     def __init__(self, timeout=1, loop=None):
+        """
+        :param timeout: Timout in seconds
+        :param loop: Event loop (optional)
+        """
         self.logger = logging.getLogger(f'{__name__}.UaClient')
         self.loop = loop or asyncio.get_event_loop()
         self._publish_callbacks = {}

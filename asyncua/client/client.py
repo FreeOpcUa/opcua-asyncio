@@ -31,7 +31,6 @@ class Client:
 
     def __init__(self, url: str, timeout: int = 4, loop=None):
         """
-
         :param url: url of the server.
             if you are unsure of url, write at least hostname
             and port and call get_endpoints
