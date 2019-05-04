@@ -44,6 +44,9 @@ class Buffer:
     def __len__(self):
         return self._size
 
+    def __bool__(self):
+        return self._size > 0
+
     def __bytes__(self):
         """Return remains of buffer as bytes."""
         return self._data[self._cur_pos:]
