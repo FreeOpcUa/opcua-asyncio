@@ -503,7 +503,7 @@ def header_to_binary(hdr):
     return b"".join(b)
 
 
-def header_from_binary(data):
+def header_from_binary(data: ua.utils.Buffer):
     hdr = ua.Header()
     hdr.MessageType, hdr.ChunkType, hdr.packet_size = struct.unpack("<3scI", data.read(8))
     hdr.body_size = hdr.packet_size - 8

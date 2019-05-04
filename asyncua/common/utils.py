@@ -26,8 +26,8 @@ class SocketClosedException(UaError):
 
 class Buffer:
     """
-    alternative to io.BytesIO making debug easier
-    and added a few convenience methods
+    Alternative to io.BytesIO making debug easier
+    and added a few convenience methods.
     """
 
     def __init__(self, data, start_pos=0, size=-1):
@@ -38,34 +38,30 @@ class Buffer:
         self._size = size
 
     def __str__(self):
-        return "Buffer(size:{0}, data:{1})".format(
-            self._size,
-            self._data[self._cur_pos:self._cur_pos + self._size])
+        return f"Buffer(size:{self._size}, data:{self._data[self._cur_pos:self._cur_pos + self._size]})"
     __repr__ = __str__
 
     def __len__(self):
         return self._size
 
-    def __bool__(self):
-        return self._size > 0
+    def __bytes__(self):
+        """Return remains of buffer as bytes."""
+        return self._data[self._cur_pos:]
 
     def read(self, size):
         """
         read and pop number of bytes for buffer
         """
         if size > self._size:
-            raise NotEnoughData("Not enough data left in buffer, request for {0}, we have {1}".format(size, self))
-        # self.logger.debug("Request for %s bytes, from %s", size, self)
+            raise NotEnoughData(f"Not enough data left in buffer, request for {size}, we have {self._size}")
         self._size -= size
         pos = self._cur_pos
         self._cur_pos += size
-        data = self._data[pos:self._cur_pos]
-        # self.logger.debug("Returning: %s ", data)
-        return data
+        return self._data[pos:self._cur_pos]
 
     def copy(self, size=-1):
         """
-        return a shadow copy, optionnaly only copy 'size' bytes
+        return a shadow copy, optionally only copy 'size' bytes
         """
         if size == -1 or size > self._size:
             size = self._size
@@ -76,7 +72,7 @@ class Buffer:
         skip size bytes in buffer
         """
         if size > self._size:
-            raise NotEnoughData("Not enough data left in buffer, request for {0}, we have {1}".format(size, self))
+            raise NotEnoughData(f"Not enough data left in buffer, request for {size}, we have {self._size}")
         self._size -= size
         self._cur_pos += size
 

@@ -4,12 +4,12 @@ sys.path.insert(0, "..")
 import logging
 from asyncua import Client, Node, ua
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 _logger = logging.getLogger('asyncua')
 
 
 async def main():
-    url = 'opc.tcp://localhost:4840/freeopcua/server/'
+    url = 'opc.tcp://192.168.2.64:4840'
     # url = 'opc.tcp://commsvr.com:51234/UA/CAS_UA_Server'
     try:
         async with Client(url=url) as client:
@@ -19,7 +19,7 @@ async def main():
 
             # Node objects have methods to read and write node attributes as well as browse or populate address space
             _logger.info('Children of root are: %r', await root.get_children())
-
+            """
             uri = 'http://examples.freeopcua.github.io'
             idx = await client.get_namespace_index(uri)
             # get a specific node knowing its node id
@@ -34,6 +34,7 @@ async def main():
             # var.set_value(3.9) # set node value using implicit data type
 
             # Now getting a variable node using its browse path
+            """
     except Exception:
         _logger.exception('error')
 

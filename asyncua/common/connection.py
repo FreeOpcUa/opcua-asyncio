@@ -32,7 +32,7 @@ class MessageChunk(ua.FrozenClass):
         return MessageChunk.from_header_and_body(security_policy, h, data)
 
     @staticmethod
-    def from_header_and_body(security_policy, header, buf):
+    def from_header_and_body(security_policy, header, buf: ua.utils.Buffer):
         if not len(buf) >= header.body_size:
             raise ValueError('Full body expected here')
         data = buf.copy(header.body_size)
@@ -263,7 +263,7 @@ class SecureConnection:
                     )
         self._peer_sequence_number = seq_num
 
-    def receive_from_header_and_body(self, header, body):
+    def receive_from_header_and_body(self, header, body: ua.utils.Buffer):
         """
         Convert MessageHeader and binary body to OPC UA TCP message (see OPC UA
         specs Part 6, 7.1: Hello, Acknowledge or ErrorMessage), or a Message
