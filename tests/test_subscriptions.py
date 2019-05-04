@@ -352,7 +352,7 @@ async def test_unsubscribe_two_objects_simultaneously(opc):
         opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)),
     ]
     sub = await opc.opc.create_subscription(100, handler)
-    handles = await sub.subscribe_data_change(nodes)
+    handles = await sub.subscribe_data_change(nodes, queuesize=1)
     await handler.done()
     assert handler.results[0][0] == nodes[0]
     assert handler.results[1][0] == nodes[1]
@@ -371,7 +371,7 @@ async def test_unsubscribe_two_objects_consecutively(opc):
         opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)),
     ]
     sub = await opc.opc.create_subscription(100, handler)
-    handles = await sub.subscribe_data_change(nodes)
+    handles = await sub.subscribe_data_change(nodes, queuesize=1)
     assert type(handles) is list
     await handler.done()
     for handle in handles:
