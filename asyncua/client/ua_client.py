@@ -79,6 +79,8 @@ class UASocketProtocol(asyncio.Protocol):
                 self._process_received_message(msg)
                 if not buf:
                     return
+                # Buffer still has bytes left, try to process again
+                data = bytes(buf)
             except Exception:
                 self.logger.exception('Exception raised while parsing message from server')
                 self.disconnect_socket()
