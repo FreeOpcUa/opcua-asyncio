@@ -11,7 +11,7 @@ from datetime import datetime
 from datetime import timedelta
 import math
 
-from asyncua import ua, uamethod
+from asyncua import ua, uamethod, Node
 from asyncua.common import ua_utils
 from asyncua.common.methods import call_method_full
 from asyncua.common.copy_node_util import copy_node
@@ -955,3 +955,12 @@ async def test_data_type_to_variant_type(opc):
     }
     for dt, vdt in test_data.items():
         assert vdt == await ua_utils.data_type_to_variant_type(opc.opc.get_node(ua.NodeId(dt)))
+
+
+async def test_guid_node_id():
+    """
+    Test that a Node can be instantiated with a GUID string and that the NodeId ca be converted to binary.
+    """
+    node = Node(None, "ns=4;g=35d5f86f-2777-4550-9d48-b098f5ee285c")
+    binary_node_id = ua.ua_binary.nodeid_to_binary(node.nodeid)
+    assert type(binary_node_id) is bytes
