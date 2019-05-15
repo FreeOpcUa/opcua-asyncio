@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from asyncua.sync import Client, start_thread_loop, stop_thread_loop, Server
+from asyncua.sync import Client, start_thread_loop, stop_thread_loop, Server, ThreadLoop
 from asyncua import ua
 
 
@@ -15,24 +15,21 @@ def server():
     myobj = s.nodes.objects.add_object(idx, "MyObject")
     myvar = myobj.add_variable(idx, "MyVariable", 6.7)
     mysin = myobj.add_variable(idx, "MySin", 0, ua.VariantType.Float)
-    s.start()
-    yield s
-    s.stop()
+    with s:
+        yield s
 
 
 @pytest.fixture
 def tloop():
-    t_loop = start_thread_loop()
-    yield t_loop
-    stop_thread_loop()
+    with ThreadLoop() as t_loop:
+        yield t_loop
 
 
 @pytest.fixture
 def client(tloop, server):
     c = Client("opc.tcp://localhost:8840/freeopcua/server")
-    c.connect()
-    yield c
-    c.disconnect()
+    with c:
+        yield c
 
 
 def test_sync_client(client):

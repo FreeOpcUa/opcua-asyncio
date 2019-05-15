@@ -38,6 +38,15 @@ class ThreadLoop(Thread):
         futur = asyncio.run_coroutine_threadsafe(coro, loop=self.loop)
         return futur.result()
 
+    def __enter__(self):
+        self.start()
+        global _tloop
+        _tloop = self
+        return self
+
+    def __exit__(self, exc_t, exc_v, trace):
+        self.stop()
+        self.join()
 
 #@ipcmethod
 
@@ -128,6 +137,13 @@ class Client:
     def get_node(self, nodeid):
         return Node(self.aio_obj.get_node(nodeid))
 
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.disconnect()
+
 
 class Shortcuts:
     def __init__(self, aio_server):
@@ -142,6 +158,13 @@ class Server:
         self.aio_obj = server.Server(loop=_tloop.loop)
         _tloop.post(self.aio_obj.init(shelf_file))
         self.nodes = Shortcuts(self.aio_obj.iserver.isession)
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.stop()
 
     def set_endpoint(self, url):
         return self.aio_obj.set_endpoint(url)
