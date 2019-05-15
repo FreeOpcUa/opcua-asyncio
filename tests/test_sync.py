@@ -1,8 +1,9 @@
 import time
+from concurrent.futures import Future
 
 import pytest
 
-from asyncua.sync import Client, start_thread_loop, stop_thread_loop, Server, ThreadLoop
+from asyncua.sync import Client, Server, ThreadLoop, Node
 from asyncua import ua
 
 
@@ -27,7 +28,7 @@ def tloop():
 
 @pytest.fixture
 def client(tloop, server):
-    c = Client("opc.tcp://localhost:8840/freeopcua/server")
+    c = Client("opc.tcp://admin@localhost:8840/freeopcua/server")
     with c:
         yield c
 
@@ -46,4 +47,35 @@ def test_sync_get_node(client):
     nodes = node.get_children()
     assert len(nodes) == 2
     assert nodes[0] == client.nodes.server
+    assert isinstance(nodes[0], Node)
+
+
+class MySubHandler():
+
+    def __init__(self):
+        self.future = Future()
+
+    def reset(self):
+        self.future = Future()
+
+    def datachange_notification(self, node, val, data):
+        self.future.set_result((node, val))
+
+    def event_notification(self, event):
+        self.future.set_result(event)
+
+
+def test_sync_sub(client):
+    myhandler = MySubHandler()
+    sub = client.create_subscription(1, myhandler)
+    var = client.nodes.objects.add_variable(3, 'SubVar', 0.1)
+    sub.subscribe_data_change(var)
+    n, v = myhandler.future.result()
+    assert v == 0.1
+    assert n == var
+    myhandler.reset()
+    var.set_value(0.123)
+    n, v = myhandler.future.result()
+    assert v == 0.123
+    sub.delete()
 

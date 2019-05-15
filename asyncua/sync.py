@@ -92,6 +92,9 @@ def syncmethod(func):
         for idx, arg in enumerate(args):
             if isinstance(arg, Node):
                 args[idx] = arg.aio_obj
+        for k, v in kwargs.items():
+            if isinstance(v, Node):
+                kwargs[k] = v.aio_obj
         aio_func = getattr(self.aio_obj, func.__name__)
         global _tloop
         result = _tloop.post(aio_func(*args, **kwargs))
@@ -108,11 +111,26 @@ def syncmethod(func):
     return wrapper
 
 
+class _SubHandler:
+    def __init__(self, sync_handler):
+        self.sync_handler = sync_handler
+
+    def datachange_notification(self, node, val, data):
+        self.sync_handler.datachange_notification(Node(node), val, data)
+
+    def event_notification(self, event):
+        self.sync_handler.event_notification(event)
+
+
 class Client:
     def __init__(self, url: str, timeout: int = 4):
         global _tloop
         self.aio_obj = client.Client(url, timeout, loop=_tloop.loop)
         self.nodes = Shortcuts(self.aio_obj.uaclient)
+
+    def __str__(self):
+        return "Sync" + self.aio_obj.__str__()
+    __repr__ = __str__
 
     @syncmethod
     def connect(self):
@@ -126,9 +144,10 @@ class Client:
     def load_type_definitions(self, nodes=None):
         pass
 
-    @syncmethod
-    async def create_subscription(self, period, handler):
-        pass
+    def create_subscription(self, period, handler):
+        coro = self.aio_obj.create_subscription(period, _SubHandler(handler))
+        aio_sub = _tloop.post(coro)
+        return Subscription(aio_sub)
 
     @syncmethod
     def get_namespace_index(self, url):
@@ -158,6 +177,10 @@ class Server:
         self.aio_obj = server.Server(loop=_tloop.loop)
         _tloop.post(self.aio_obj.init(shelf_file))
         self.nodes = Shortcuts(self.aio_obj.iserver.isession)
+
+    def __str__(self):
+        return "Sync" + self.aio_obj.__str__()
+    __repr__ = __str__
 
     def __enter__(self):
         self.start()
@@ -190,8 +213,11 @@ class Server:
     def stop(self):
         pass
 
+    def link_method(self, node, callback):
+        return self.aio_obj.link_method(node, callback)
+
     @syncmethod
-    async def get_event_generator(self, etype=None, emitting_node=ua.ObjectIds.Server):
+    def get_event_generator(self, etype=None, emitting_node=ua.ObjectIds.Server):
         pass
 
     def get_node(self, nodeid):
@@ -199,6 +225,18 @@ class Server:
 
     @syncmethod
     def import_xml(self, path=None, xmlstring=None):
+        pass
+
+    @syncmethod
+    def get_namespace_index(self, url):
+        pass
+
+    @syncmethod
+    def load_enums(self):
+        pass
+
+    @syncmethod
+    def load_type_definitions(self):
         pass
 
     def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
@@ -221,6 +259,13 @@ class Node:
     def __init__(self, aio_node):
         self.aio_obj = aio_node
         global _tloop
+
+    def __hash__(self):
+        return self.aio_obj.__hash__()
+
+    def __str__(self):
+        return "Sync" + self.aio_obj.__str__()
+    __repr__ = __str__
 
     @property
     def nodeid(self):

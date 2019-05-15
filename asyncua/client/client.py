@@ -71,6 +71,10 @@ class Client:
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.disconnect()
 
+    def __str__(self):
+        return f"Client({self.server_url.geturl()})"
+    __repr__ = __str__
+
     @staticmethod
     def find_endpoint(endpoints, security_mode, policy_uri):
         """
