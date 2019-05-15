@@ -16,7 +16,6 @@ from .uaerrors import UaError, UaStatusCodeError, UaStringParsingError
 
 logger = logging.getLogger(__name__)
 
-
 EPOCH_AS_FILETIME = 116444736000000000  # January 1, 1970 as MS file time
 HUNDREDS_OF_NANOSECONDS = 10000000
 FILETIME_EPOCH_AS_DATETIME = datetime(1601, 1, 1)
@@ -68,7 +67,9 @@ class _FrozenClass(object):
 
     def __setattr__(self, key, value):
         if self._freeze and not hasattr(self, key):
-            raise TypeError(f"Error adding member '{key}' to class '{self.__class__.__name__}', class is frozen, members are {self.__dict__.keys()}")
+            raise TypeError(
+                f"Error adding member '{key}' to class '{self.__class__.__name__}', class is frozen, members are {self.__dict__.keys()}"
+            )
         object.__setattr__(self, key, value)
 
 
@@ -207,11 +208,9 @@ class StatusCode(FrozenClass):
 
     def __init__(self, value=0):
         if isinstance(value, str):
-            self.name = value
             self.value = getattr(status_codes.StatusCodes, value)
         else:
             self.value = value
-            self.name, self.doc = status_codes.get_name_and_doc(value)
         self._freeze = True
 
     def check(self):
@@ -232,6 +231,16 @@ class StatusCode(FrozenClass):
             return False
         else:
             return True
+
+    @property
+    def name(self):
+        name, _ = status_codes.get_name_and_doc(self.value)
+        return name
+
+    @property
+    def doc(self):
+        _, doc = status_codes.get_name_and_doc(self.value)
+        return doc
 
     def __str__(self):
         return f'StatusCode({self.name})'
@@ -299,7 +308,8 @@ class NodeId(object):
                 raise UaError("NodeId: Could not guess type of NodeId, set NodeIdType")
 
     def __eq__(self, node):
-        return isinstance(node, NodeId) and self.NamespaceIndex == node.NamespaceIndex and self.Identifier == node.Identifier
+        return isinstance(node,
+                          NodeId) and self.NamespaceIndex == node.NamespaceIndex and self.Identifier == node.Identifier
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -310,7 +320,8 @@ class NodeId(object):
     def __lt__(self, other):
         if not isinstance(other, NodeId):
             raise AttributeError("Can only compare to NodeId")
-        return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (other.NodeIdType, other.NamespaceIndex, other.Identifier)
+        return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (other.NodeIdType, other.NamespaceIndex,
+                                                                          other.Identifier)
 
     def is_null(self):
         if self.NamespaceIndex != 0:
@@ -502,9 +513,10 @@ class LocalizedText(FrozenClass):
     }
 
     ua_types = (
-            ('Encoding', 'Byte'), 
-            ('Locale', 'String'), 
-            ('Text', 'String'), )
+        ('Encoding', 'Byte'),
+        ('Locale', 'String'),
+        ('Text', 'String'),
+    )
 
     def __init__(self, text=None):
         self.Encoding = 0
@@ -560,10 +572,10 @@ class ExtensionObject(FrozenClass):
     }
 
     ua_types = (
-            ("TypeId", "NodeId"), 
-            ("Encoding", "Byte"), 
-            ("Body", "ByteString"), 
-            )
+        ("TypeId", "NodeId"),
+        ("Encoding", "Byte"),
+        ("Body", "ByteString"),
+    )
 
     def __init__(self):
         self.TypeId = NodeId()
@@ -573,6 +585,7 @@ class ExtensionObject(FrozenClass):
 
     def __bool__(self):
         return self.Body is not None
+
     __nonzero__ = __bool__  # Python2 compatibilty
 
     def __str__(self):
@@ -821,14 +834,14 @@ class DataValue(FrozenClass):
     }
 
     ua_types = (
-            ('Encoding', 'Byte'), 
-            ('Value', 'Variant'), 
-            ('StatusCode', 'StatusCode'), 
-            ('SourceTimestamp', 'DateTime'),
-            ('SourcePicoseconds', 'UInt16'), 
-            ('ServerTimestamp', 'DateTime'), 
-            ('ServerPicoseconds', 'UInt16'), 
-            )
+        ('Encoding', 'Byte'),
+        ('Value', 'Variant'),
+        ('StatusCode', 'StatusCode'),
+        ('SourceTimestamp', 'DateTime'),
+        ('SourcePicoseconds', 'UInt16'),
+        ('ServerTimestamp', 'DateTime'),
+        ('ServerPicoseconds', 'UInt16'),
+    )
 
     def __init__(self, variant=None, status=None):
         self.Encoding = 0
@@ -954,7 +967,7 @@ def get_extensionobject_class_type(typeid):
 class SecurityPolicyType(Enum):
     """
     The supported types of SecurityPolicy.
-    
+
     "None"
     "Basic128Rsa15_Sign"
     "Basic128Rsa15_SignAndEncrypt"

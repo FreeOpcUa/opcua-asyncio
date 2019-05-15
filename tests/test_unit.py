@@ -203,6 +203,19 @@ def test_string_to_variant_status_code():
     assert statuscode2 == string_to_val(s_statuscode2, ua.VariantType.StatusCode)
 
 
+def test_status_code_to_string():
+    # serialize a status code and deserialize it, name and doc resolution should work just fine
+    statuscode = ua.StatusCode(ua.StatusCodes.BadNotConnected)
+    statuscode2 = struct_from_binary(ua.StatusCode, io.BytesIO(struct_to_binary(ua.StatusCode(ua.StatusCodes.BadNotConnected))))
+
+    assert statuscode == statuscode2
+    assert statuscode.value == statuscode2.value
+
+    # properties that are not serialized should still translate properly
+    assert statuscode.name == statuscode2.name
+    assert statuscode.doc == statuscode2.doc
+
+
 def test_string_to_variant_qname():
     string = "2:name"
     obj = ua.QualifiedName("name", 2)
