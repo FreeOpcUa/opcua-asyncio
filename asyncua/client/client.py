@@ -39,7 +39,7 @@ class Client:
             Each request sent to the server expects an answer within this
             time. The timeout is specified in seconds.
         """
-        self.logger = logging.getLogger(__name__)
+        _logger = logging.getLogger(__name__)
         self.loop = loop or asyncio.get_event_loop()
         self.server_url = urlparse(url)
         # take initial username and password from the url
@@ -70,6 +70,10 @@ class Client:
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.disconnect()
+
+    def __str__(self):
+        return f"Client({self.server_url.geturl()})"
+    __repr__ = __str__
 
     @staticmethod
     def find_endpoint(endpoints, security_mode, policy_uri):
@@ -353,10 +357,10 @@ class Client:
             while True:
                 # 0.7 is from spec. 0.001 is because asyncio.sleep expects time in seconds
                 await asyncio.sleep(duration)
-                self.logger.debug("renewing channel")
+                _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
                 val = await self.nodes.server_state.get_value()
-                self.logger.debug("server state is: %s ", val)
+                _logger.debug("server state is: %s ", val)
         except asyncio.CancelledError:
             pass
 
@@ -432,7 +436,7 @@ class Client:
             # then the password only contains UTF-8 encoded password
             # and EncryptionAlgorithm is null
             if self._password:
-                self.logger.warning("Sending plain-text password")
+                _logger.warning("Sending plain-text password")
                 params.UserIdentityToken.Password = password.encode("utf8")
             params.UserIdentityToken.EncryptionAlgorithm = None
         elif self._password:
@@ -464,7 +468,7 @@ class Client:
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.RootFolder))
 
     def get_objects_node(self):
-        self.logger.info("get_objects_node")
+        _logger.info("get_objects_node")
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.ObjectsFolder))
 
     def get_server_node(self):
