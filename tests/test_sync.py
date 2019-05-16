@@ -4,7 +4,12 @@ from concurrent.futures import Future
 import pytest
 
 from asyncua.sync import Client, Server, ThreadLoop, Node
-from asyncua import ua
+from asyncua import ua, uamethod
+
+
+@uamethod
+def divide(parent, x, y):
+    return x / y
 
 
 @pytest.fixture
@@ -16,6 +21,7 @@ def server():
     myobj = s.nodes.objects.add_object(idx, "MyObject")
     myvar = myobj.add_variable(idx, "MyVariable", 6.7)
     mysin = myobj.add_variable(idx, "MySin", 0, ua.VariantType.Float)
+    meth = s.nodes.objects.add_method(idx, "Divide", divide, [ua.VariantType.Float, ua.VariantType.Float], [ua.VariantType.Float])
     with s:
         yield s
 
@@ -33,10 +39,15 @@ def client(tloop, server):
         yield c
 
 
-def test_sync_client(client):
-    client.load_type_definitions()
+@pytest.fixture
+def idx(client):
     uri = "http://examples.freeopcua.github.io"
-    idx = client.get_namespace_index(uri)
+    i = client.get_namespace_index(uri)
+    return i
+
+
+def test_sync_client(client, idx):
+    client.load_type_definitions()
     myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
     assert myvar.get_value() == 6.7
 
@@ -45,7 +56,7 @@ def test_sync_get_node(client):
     node  = client.get_node(85)
     assert node == client.nodes.objects
     nodes = node.get_children()
-    assert len(nodes) == 2
+    assert len(nodes) > 2
     assert nodes[0] == client.nodes.server
     assert isinstance(nodes[0], Node)
 
@@ -78,4 +89,12 @@ def test_sync_sub(client):
     n, v = myhandler.future.result()
     assert v == 0.123
     sub.delete()
+
+
+def test_sync_meth(client, idx):
+    res = client.nodes.objects.call_method(f"{idx}:Divide", 4, 2)
+    assert res == 2
+    with pytest.raises(ua.UaError):
+        res = client.nodes.objects.call_method(f"{idx}:Divide", 4, 0)
+
 

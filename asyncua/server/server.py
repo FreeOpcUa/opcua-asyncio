@@ -122,7 +122,7 @@ class Server:
         await self.stop()
 
     def __str__(self):
-        return f"OPC UA Server()"
+        return f"OPC UA Server({self.endpoint.geturl()})"
     __repr__ = __str__
 
     async def load_certificate(self, path: str):
