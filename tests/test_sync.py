@@ -13,8 +13,15 @@ def divide(parent, x, y):
 
 
 @pytest.fixture
-def server():
-    s = Server()
+def tloop():
+    with ThreadLoop() as tl:
+        yield tl
+
+
+@pytest.fixture
+def server(tloop):
+    s = Server(tloop=tloop)
+    s.disable_clock(True)
     s.set_endpoint('opc.tcp://0.0.0.0:8840/freeopcua/server/')
     uri = "http://examples.freeopcua.github.io"
     idx = s.register_namespace(uri)
@@ -27,15 +34,15 @@ def server():
 
 
 @pytest.fixture
-def tloop():
-    with ThreadLoop() as t_loop:
-        yield t_loop
+def client(tloop, server):
+    c = Client("opc.tcp://admin@localhost:8840/freeopcua/server", tloop=tloop)
+    with c:
+        yield c
 
 
 @pytest.fixture
-def client(tloop, server):
-    c = Client("opc.tcp://admin@localhost:8840/freeopcua/server")
-    with c:
+def client_no_tloop(server):
+    with Client("opc.tcp://admin@localhost:8840/freeopcua/server") as c:
         yield c
 
 
@@ -76,6 +83,10 @@ class MySubHandler():
         self.future.set_result(event)
 
 
+def test_sync_tloop_sub(client_no_tloop):
+    test_sync_sub(client_no_tloop)
+
+
 def test_sync_sub(client):
     myhandler = MySubHandler()
     sub = client.create_subscription(1, myhandler)
@@ -96,5 +107,10 @@ def test_sync_meth(client, idx):
     assert res == 2
     with pytest.raises(ua.UaError):
         res = client.nodes.objects.call_method(f"{idx}:Divide", 4, 0)
+
+
+def test_sync_client_no_tl(client_no_tloop, idx):
+    test_sync_meth(client_no_tloop, idx)
+
 
 

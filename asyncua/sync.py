@@ -21,8 +21,8 @@ class ThreadLoop(Thread):
         self._cond = Condition()
 
     def start(self):
+        Thread.start(self)
         with self._cond:
-            Thread.start(self)
             self._cond.wait()
 
     def run(self):
@@ -40,50 +40,11 @@ class ThreadLoop(Thread):
 
     def __enter__(self):
         self.start()
-        global _tloop
-        _tloop = self
         return self
 
     def __exit__(self, exc_t, exc_v, trace):
         self.stop()
         self.join()
-
-#@ipcmethod
-
-_ref_count = 0
-_tloop = None
-
-
-def start_thread_loop():
-    global _tloop
-    _tloop = ThreadLoop()
-    _tloop.start()
-    return _tloop
-
-
-def stop_thread_loop():
-    global _tloop
-    _tloop.stop()
-    _tloop.join()
-
-
-def get_thread_loop():
-    global _tloop
-    if _tloop is None:
-        start_thread_loop()
-    global _ref_count
-    _ref_count += 1
-    return _tloop
-
-
-def release_thread_loop():
-    global _tloop
-    if _tloop is None:
-        return
-    global _ref_count
-    if _ref_count == 0:
-        _ref_count -= 1
-    stop_thread_loop()
 
 
 def syncmethod(func):
@@ -96,37 +57,42 @@ def syncmethod(func):
             if isinstance(v, Node):
                 kwargs[k] = v.aio_obj
         aio_func = getattr(self.aio_obj, func.__name__)
-        global _tloop
-        result = _tloop.post(aio_func(*args, **kwargs))
+        result = self.tloop.post(aio_func(*args, **kwargs))
         if isinstance(result, node.Node):
-            return Node(result)
+            return Node(self.tloop, result)
         if isinstance(result, list) and len(result) > 0 and isinstance(result[0], node.Node):
-            return [Node(i) for i in result]
+            return [Node(self.tloop, i) for i in result]
         if isinstance(result, server.event_generator.EventGenerator):
             return EventGenerator(result)
         if isinstance(result, subscription.Subscription):
-            return Subscription(result)
+            return Subscription(self.tloop, result)
         return result
 
     return wrapper
 
 
 class _SubHandler:
-    def __init__(self, sync_handler):
+    def __init__(self, tloop, sync_handler):
+        self.tloop = tloop
         self.sync_handler = sync_handler
 
     def datachange_notification(self, node, val, data):
-        self.sync_handler.datachange_notification(Node(node), val, data)
+        self.sync_handler.datachange_notification(Node(self.tloop, node), val, data)
 
     def event_notification(self, event):
         self.sync_handler.event_notification(event)
 
 
 class Client:
-    def __init__(self, url: str, timeout: int = 4):
-        global _tloop
-        self.aio_obj = client.Client(url, timeout, loop=_tloop.loop)
-        self.nodes = Shortcuts(self.aio_obj.uaclient)
+    def __init__(self, url: str, timeout: int = 4, tloop=None):
+        self.tloop = tloop
+        self.close_tloop = False
+        if not self.tloop:
+            self.tloop = ThreadLoop()
+            self.tloop.start()
+            self.close_tloop = True
+        self.aio_obj = client.Client(url, timeout, loop=self.tloop.loop)
+        self.nodes = Shortcuts(self.tloop, self.aio_obj.uaclient)
 
     def __str__(self):
         return "Sync" + self.aio_obj.__str__()
@@ -136,25 +102,30 @@ class Client:
     def connect(self):
         pass
 
-    @syncmethod
     def disconnect(self):
-        pass
+        self.tloop.post(self.aio_obj.disconnect())
+        if self.close_tloop:
+            self.tloop.stop()
 
     @syncmethod
     def load_type_definitions(self, nodes=None):
         pass
 
+    @syncmethod
+    def load_enums(self):
+        pass
+
     def create_subscription(self, period, handler):
-        coro = self.aio_obj.create_subscription(period, _SubHandler(handler))
-        aio_sub = _tloop.post(coro)
-        return Subscription(aio_sub)
+        coro = self.aio_obj.create_subscription(period, _SubHandler(self.tloop, handler))
+        aio_sub = self.tloop.post(coro)
+        return Subscription(self.tloop, aio_sub)
 
     @syncmethod
     def get_namespace_index(self, url):
         pass
 
     def get_node(self, nodeid):
-        return Node(self.aio_obj.get_node(nodeid))
+        return Node(self.tloop, self.aio_obj.get_node(nodeid))
 
     def __enter__(self):
         self.connect()
@@ -165,18 +136,24 @@ class Client:
 
 
 class Shortcuts:
-    def __init__(self, aio_server):
+    def __init__(self, tloop, aio_server):
+        self.tloop = tloop
         self.aio_obj = shortcuts.Shortcuts(aio_server)
         for k, v in self.aio_obj.__dict__.items():
-            setattr(self, k, Node(v))
+            setattr(self, k, Node(self.tloop, v))
 
 
 class Server:
-    def __init__(self, shelf_file=None):
-        global _tloop
-        self.aio_obj = server.Server(loop=_tloop.loop)
-        _tloop.post(self.aio_obj.init(shelf_file))
-        self.nodes = Shortcuts(self.aio_obj.iserver.isession)
+    def __init__(self, shelf_file=None, tloop=None):
+        self.tloop = tloop
+        self.close_tloop = False
+        if not self.tloop:
+            self.tloop = ThreadLoop()
+            self.tloop.start()
+            self.close_tloop = True
+        self.aio_obj = server.Server(loop=self.tloop.loop)
+        self.tloop.post(self.aio_obj.init(shelf_file))
+        self.nodes = Shortcuts(self.tloop, self.aio_obj.iserver.isession)
 
     def __str__(self):
         return "Sync" + self.aio_obj.__str__()
@@ -209,9 +186,10 @@ class Server:
     def start(self):
         pass
 
-    @syncmethod
     def stop(self):
-        pass
+        self.tloop.post(self.aio_obj.stop())
+        if self.close_tloop:
+            self.tloop.stop()
 
     def link_method(self, node, callback):
         return self.aio_obj.link_method(node, callback)
@@ -221,7 +199,7 @@ class Server:
         pass
 
     def get_node(self, nodeid):
-        return Node(server.Server.get_node(self, nodeid))
+        return Node(self.tloop, server.Server.get_node(self, nodeid))
 
     @syncmethod
     def import_xml(self, path=None, xmlstring=None):
@@ -256,9 +234,9 @@ class EventGenerator:
 
 
 class Node:
-    def __init__(self, aio_node):
+    def __init__(self, tloop, aio_node):
         self.aio_obj = aio_node
-        global _tloop
+        self.tloop = tloop
 
     def __hash__(self):
         return self.aio_obj.__hash__()
@@ -339,7 +317,8 @@ class Node:
 
 
 class Subscription:
-    def __init__(self, sub):
+    def __init__(self, tloop, sub):
+        self.tloop = tloop
         self.aio_obj = sub
 
     @syncmethod

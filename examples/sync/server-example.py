@@ -82,9 +82,9 @@ if __name__ == "__main__":
     # logger.setLevel(logging.DEBUG)
     #logger = logging.getLogger("opcua.uaprocessor")
     # logger.setLevel(logging.DEBUG)
-    with ThreadLoop():
+    with ThreadLoop() as tloop:
         # now setup our server
-        server = Server()
+        server = Server(tloop=tloop)
         #server.disable_clock()
         #server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
         server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
