@@ -228,7 +228,33 @@ def test_string_to_variant_localized_text():
     obj = ua.LocalizedText(string)
     assert obj == string_to_val(string, ua.VariantType.LocalizedText)
     assert string == val_to_string(obj)
+    
+def test_string_to_variant_localized_text_with_locale():
+    locale = "cs-CZ"
+    string = "Moje jméno"
+    string_repr = "LocalizedText(Encoding:3, Locale:{}, Text:{})".format(locale,string)
+    obj = ua.LocalizedText(string, locale)
+    assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
+    assert string_repr == val_to_string(obj)
 
+def test_string_to_variant_localized_text_with_none1():
+    locale = "en-US"
+    string = ""
+    string_repr = "LocalizedText(Encoding:1, Locale:{}, Text:{})".format(locale,string)
+    obj = ua.LocalizedText(string, locale)
+    obj2 = ua.LocalizedText(string)
+    assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
+    assert obj2 == string_to_val(string, ua.VariantType.LocalizedText)
+    assert "" == val_to_string(obj)
+
+def test_string_to_variant_localized_text_with_none2():
+    locale = None
+    string = "my name is ..."
+    string_repr = "LocalizedText(Encoding:2, Locale:{}, Text:{})".format(locale,string)
+    obj = ua.LocalizedText(string, locale)
+    assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
+    assert obj == string_to_val(string, ua.VariantType.LocalizedText)
+    assert string == val_to_string(obj)
 
 def test_string_to_val_xml_element():
     string = "<p> titi toto </p>"
@@ -550,6 +576,20 @@ def test_text():
     t4 = struct_from_binary(ua.LocalizedText, ua.utils.Buffer(struct_to_binary(t1)))
     assert t1 == t4
 
+def test_text_with_locale():
+    t0 = ua.LocalizedText('Root')
+    t1 = ua.LocalizedText('Root','de-AT')
+    t2 = ua.LocalizedText('Root','de-AT')
+    t3 = ua.LocalizedText('Root','de-DE')
+    t4 = ua.LocalizedText(locale='de-DE')
+    t5 = ua.LocalizedText(locale='de-DE')
+    assert t0 != t1
+    assert t1 == t2
+    assert t1 != t3
+    assert t3 != t4
+    assert t4 == t5
+    t6 = struct_from_binary(ua.LocalizedText, ua.utils.Buffer(struct_to_binary(t1)))
+    assert t1 == t6
 
 def test_message_chunk():
     pol = ua.SecurityPolicy()

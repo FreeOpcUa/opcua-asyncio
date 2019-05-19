@@ -244,10 +244,18 @@ async def test_xml_localizedtext(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlltext", ua.LocalizedText("mytext"))
     await _test_xml_var_type(opc, tmpdir, o, "localized_text")
 
+async def test_xml_localizedtext_with_locale(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext", ua.LocalizedText("mytext","en-US"))
+    await _test_xml_var_type(opc, tmpdir, o, "localized_text")
 
 async def test_xml_localizedtext_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array",
         [ua.LocalizedText("erert"), ua.LocalizedText("erert33")])
+    await _test_xml_var_type(opc, tmpdir, o, "localized_text_array")
+
+async def test_xml_localizedtext_array_with_locale(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array",
+        [ua.LocalizedText(text="erert",locale="en"), ua.LocalizedText(text="erert33",locale="de")])
     await _test_xml_var_type(opc, tmpdir, o, "localized_text_array")
 
 
