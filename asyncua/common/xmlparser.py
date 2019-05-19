@@ -297,10 +297,12 @@ class XMLParser:
         value = []
         for localized_text in el:
             mylist = self._parse_body(localized_text)
-            # small hack since we did not handle LocalizedText as ExtensionObject at begynning
+            # each localized text is in a dictionary with "Locale" and "Text" keys
+            item = {"Text":None,"Locale":None}
             for name, val in mylist:
-                if name == "Text":
-                    value.append(val)
+                item.update({str(name):val})
+            # value is an array of dictionaries with localized texts
+            value.append(item) 
         return value
 
     def _parse_list_of_extension_object(self, el):

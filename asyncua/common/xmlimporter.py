@@ -291,6 +291,8 @@ class XmlImporter:
             vtype = obj.valuetype[6:]
             if hasattr(ua.ua_binary.Primitives, vtype):
                 return ua.Variant(obj.value, getattr(ua.VariantType, vtype))
+            elif vtype == "LocalizedText":
+                return ua.Variant([getattr(ua, vtype)(text=item["Text"],locale=item["Locale"]) for item in obj.value])
             else:
                 return ua.Variant([getattr(ua, vtype)(v) for v in obj.value])
         elif obj.valuetype == 'ExtensionObject':
@@ -303,6 +305,8 @@ class XmlImporter:
             for name, val in obj.value:
                 if name == "Text":
                     ltext.Text = val
+                elif name == "Locale":
+                    ltext.Locale = val
                 else:
                     self.logger.warning("While parsing localizedText value, unkown element: %s with val: %s", name, val)
             return ua.Variant(ltext, ua.VariantType.LocalizedText)
