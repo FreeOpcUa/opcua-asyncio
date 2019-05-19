@@ -553,10 +553,21 @@ class LocalizedText(FrozenClass):
             self.Encoding |= (1)
 
     def to_string(self):
-        # FIXME: use local
         if self.Text is None:
             return ""
-        return self.Text
+        if self.Locale is None:
+            return self.Text
+        return self.__str__()
+
+    @staticmethod
+    def from_string(string):
+        m = re.match("^LocalizedText\(Encoding:(.*), Locale:(.*), Text:(.*)\)$", string)
+        if m:
+            text = m.group(3) if m.group(3)!=str(None) else None
+            locale = m.group(2) if m.group(2)!=str(None) else None
+            return LocalizedText(text=text,locale=locale)            
+        else:
+            return LocalizedText(string)
 
     def __str__(self):
         return f'LocalizedText(Encoding:{self.Encoding}, Locale:{self.Locale}, Text:{self.Text})'

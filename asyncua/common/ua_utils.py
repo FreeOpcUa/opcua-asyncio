@@ -115,7 +115,7 @@ def string_to_val(string, vtype):
     elif vtype == ua.VariantType.DateTime:
         val = parser.parse(string)
     elif vtype == ua.VariantType.LocalizedText:
-        val = ua.LocalizedText(string)
+        val = ua.LocalizedText.from_string(string)
     elif vtype == ua.VariantType.StatusCode:
         val = ua.StatusCode(string)
     elif vtype == ua.VariantType.Guid:
