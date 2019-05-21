@@ -105,7 +105,7 @@ class InternalSubscription:
                 self._publish_cycles_count += 1
             result = self._pop_publish_result()
         if result is not None:
-            self.logger.info('publish_results for %s', self.data.SubscriptionId)
+            #self.logger.info('publish_results for %s', self.data.SubscriptionId)
             # The callback can be:
             #    Subscription.publish_callback -> server internal subscription
             #    UaProcessor.forward_publish_response -> client subscription
@@ -138,7 +138,7 @@ class InternalSubscription:
             notif = ua.DataChangeNotification()
             notif.MonitoredItems = [item for sublist in self._triggered_datachanges.values() for item in sublist]
             self._triggered_datachanges = {}
-            self.logger.debug("sending datachanges notification with %s events", len(notif.MonitoredItems))
+            #self.logger.debug("sending datachanges notification with %s events", len(notif.MonitoredItems))
             result.NotificationMessage.NotificationData.append(notif)
 
     def _pop_triggered_events(self, result: ua.PublishResult):
@@ -148,7 +148,7 @@ class InternalSubscription:
             notif.Events = [item for sublist in self._triggered_events.values() for item in sublist]
             self._triggered_events = {}
             result.NotificationMessage.NotificationData.append(notif)
-            self.logger.debug("sending event notification with %s events", len(notif.Events))
+            #self.logger.debug("sending event notification with %s events", len(notif.Events))
 
     def _pop_triggered_statuschanges(self, result: ua.PublishResult):
         """Append all enqueued status changes to the given `PublishResult` and clear the queue."""
@@ -156,20 +156,20 @@ class InternalSubscription:
             notif = ua.StatusChangeNotification()
             notif.Status = self._triggered_statuschanges.pop(0)
             result.NotificationMessage.NotificationData.append(notif)
-            self.logger.debug("sending event notification %s", notif.Status)
+            #self.logger.debug("sending event notification %s", notif.Status)
 
     def publish(self, acks: Iterable[int]):
         """
         Reset publish cycle count, acknowledge PublishResults.
         :param acks: Sequence number of the PublishResults to acknowledge
         """
-        self.logger.info("publish request with acks %s", acks)
+        #self.logger.info("publish request with acks %s", acks)
         self._publish_cycles_count = 0
         for nb in acks:
             self._not_acknowledged_results.pop(nb, None)
 
     def republish(self, nb):
-        self.logger.info("re-publish request for ack %s in subscription %s", nb, self)
+        #self.logger.info("re-publish request for ack %s in subscription %s", nb, self)
         notification_message = self._not_acknowledged_results.pop(nb, None)
         if notification_message:
             self.logger.info("re-publishing ack %s in subscription %s", nb, self)

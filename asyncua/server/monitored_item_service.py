@@ -179,8 +179,7 @@ class MonitoredItemService:
                              handle, error)
             self.trigger_statuschange(error)
         else:
-            self.logger.info("subscription %s: datachange callback called with handle '%s' and value '%s'", self,
-                             handle, value.Value)
+            #self.logger.info("subscription %s: datachange callback called with handle '%s' and value '%s'", self, handle, value.Value)
             event = ua.MonitoredItemNotification()
             mid = self._monitored_datachange[handle]
             mdata = self._monitored_items[mid]
@@ -207,7 +206,7 @@ class MonitoredItemService:
 
     def trigger_event(self, event):
         if event.emitting_node not in self._monitored_events:
-            self.logger.debug("%s has no subscription for events %s from node: %s", self, event, event.emitting_node)
+            self.logger.debug("%s has NO subscription for events %s from node: %s", self, event, event.emitting_node)
             return False
         self.logger.debug("%s has subscription for events %s from node: %s", self, event, event.emitting_node)
         mids = self._monitored_events[event.emitting_node]
