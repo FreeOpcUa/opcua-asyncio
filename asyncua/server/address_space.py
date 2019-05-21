@@ -493,8 +493,10 @@ class MethodService:
 
     async def _run_method(self, func, parent, *args):
         if asyncio.iscoroutine(func):
+            self.logger.warning("func %s is a coroutine, awaiting with args: %s", func, args)
             return await func(parent, *args)
         p = partial(func, parent, *args)
+        self.logger.warning("func %s is a sync function, awaiting in executor %s with args: %s", func, self._pool, args)
         res = await asyncio.get_event_loop().run_in_executor(self._pool, p)
         return res
 
