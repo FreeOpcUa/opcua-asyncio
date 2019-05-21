@@ -14,6 +14,10 @@ from asyncua.common import subscription, shortcuts
 logger = logging.getLogger(__name__)
 
 
+class ThreadLoopNotRunning(Exception):
+    pass
+
+
 class ThreadLoop(Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -27,14 +31,19 @@ class ThreadLoop(Thread):
 
     def run(self):
         self.loop = asyncio.new_event_loop()
+        self.loop.call_soon_threadsafe(self._notify_start)
+        self.loop.run_forever()
+
+    def _notify_start(self):
         with self._cond:
             self._cond.notify_all()
-        self.loop.run_forever()
 
     def stop(self):
         self.loop.call_soon_threadsafe(self.loop.stop)
 
     def post(self, coro):
+        if not self.loop or not self.loop.is_running():
+            raise ThreadLoopNotRunning(f"could not post {coro}")
         futur = asyncio.run_coroutine_threadsafe(coro, loop=self.loop)
         return futur.result()
 
