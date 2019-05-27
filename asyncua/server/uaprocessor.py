@@ -401,9 +401,10 @@ class UaProcessor:
             response = ua.CallResponse()
             response.Results = results
             self.send_response(requesthdr.RequestHandle, algohdr, seqhdr, response)
+
         else:
             _logger.warning("Unknown message received %s", typeid)
-            raise ServiceError(ua.StatusCodes.BadNotImplemented)
+            raise ServiceError(ua.StatusCodes.BadServiceUnsupported)
 
         return True
 
