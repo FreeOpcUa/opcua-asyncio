@@ -156,6 +156,7 @@ class UASocketProtocol(asyncio.Protocol):
             )
         except asyncio.InvalidStateError:
             raise ua.UaError(f"Future for request id {request_id} is already done")
+        del self._callbackmap[request_id]
 
     def _create_request_header(self, timeout=1) -> ua.RequestHeader:
         """
