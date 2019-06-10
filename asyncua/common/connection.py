@@ -1,10 +1,11 @@
 import hashlib
-from datetime import datetime
 import logging
+from copy import copy
+from typing import List
+from datetime import datetime
 
 from ..ua.ua_binary import struct_from_binary, struct_to_binary, header_from_binary, header_to_binary
 from asyncua import ua
-
 
 logger = logging.getLogger('asyncua.uaprotocol')
 
@@ -14,7 +15,8 @@ class MessageChunk(ua.FrozenClass):
     Message Chunk, as described in OPC UA specs Part 6, 6.7.2.
     """
 
-    def __init__(self, security_policy, body=b'', msg_type=ua.MessageType.SecureMessage, chunk_type=ua.ChunkType.Single):
+    def __init__(self, security_policy, body=b'', msg_type=ua.MessageType.SecureMessage,
+                 chunk_type=ua.ChunkType.Single):
         self.MessageHeader = ua.Header(msg_type, chunk_type)
         if msg_type in (ua.MessageType.SecureMessage, ua.MessageType.SecureClose):
             self.SecurityHeader = ua.SymmetricAlgorithmHeader()
@@ -53,7 +55,8 @@ class MessageChunk(ua.FrozenClass):
         if signature_size > 0:
             signature = decrypted[-signature_size:]
             decrypted = decrypted[:-signature_size]
-            crypto.verify(header_to_binary(obj.MessageHeader) + struct_to_binary(obj.SecurityHeader) + decrypted, signature)
+            crypto.verify(header_to_binary(obj.MessageHeader) + struct_to_binary(obj.SecurityHeader) + decrypted,
+                          signature)
         data = ua.utils.Buffer(crypto.remove_padding(decrypted))
         obj.SequenceHeader = struct_from_binary(ua.SequenceHeader, data)
         obj.Body = data.read(len(data))
@@ -98,7 +101,7 @@ class MessageChunk(ua.FrozenClass):
             if security_policy.client_certificate:
                 chunk.SecurityHeader.SenderCertificate = security_policy.client_certificate
             if security_policy.server_certificate:
-                chunk.SecurityHeader.ReceiverCertificateThumbPrint =\
+                chunk.SecurityHeader.ReceiverCertificateThumbPrint = \
                     hashlib.sha1(security_policy.server_certificate).digest()
             chunk.MessageHeader.ChannelId = channel_id
             chunk.SequenceHeader.RequestId = request_id
@@ -125,6 +128,7 @@ class MessageChunk(ua.FrozenClass):
         return "{0}({1}, {2}, {3}, {4} bytes)".format(self.__class__.__name__,
                                                       self.MessageHeader, self.SequenceHeader,
                                                       self.SecurityHeader, len(self.Body))
+
     __repr__ = __str__
 
 
@@ -140,7 +144,7 @@ class SecureConnection:
         self.security_policy = security_policy
         self._policies = []
         self.channel = ua.OpenSecureChannelResult()
-        self._old_tokens = []
+        self._old_tokens: List[ua.ChannelSecurityToken] = []
         self._open = False
         self._max_chunk_size = 65536
 
@@ -155,13 +159,16 @@ class SecureConnection:
         Called on server side to open secure channel.
         """
         if not self._open or params.RequestType == ua.SecurityTokenRequestType.Issue:
+            # Set the channel to open and issue a `SecurityToken`
             self._open = True
             self.channel = ua.OpenSecureChannelResult()
             self.channel.SecurityToken.TokenId = 13  # random value
             self.channel.SecurityToken.ChannelId = server.get_new_channel_id()
             self.channel.SecurityToken.RevisedLifetime = params.RequestedLifetime
         else:
-            self._old_tokens.append(self.channel.SecurityToken.TokenId)
+            # Renew the channel, store the current `SecurityToken`
+            self._old_tokens.append(copy(self.channel.SecurityToken))
+            self.remove_expired_tokens()
         self.channel.SecurityToken.TokenId += 1
         self.channel.SecurityToken.CreatedAt = datetime.utcnow()
         self.channel.SecurityToken.RevisedLifetime = params.RequestedLifetime
@@ -218,29 +225,39 @@ class SecureConnection:
             chunk.SequenceHeader.SequenceNumber = self._sequence_number
         return b"".join([chunk.to_binary() for chunk in chunks])
 
-    def _check_incoming_chunk(self, chunk):
+    def get_valid_token_ids(self) -> List[int]:
+        """Return the ids of all valid security tokens."""
+        now = datetime.utcnow()
+        # Expire the token if it is 25 % over its lifetime
+        return [
+            token.TokenId for token in self._old_tokens if
+            ((now - token.CreatedAt).total_seconds()) < ((token.RevisedLifetime / 1000) * 1.25)
+        ]
+
+    def remove_expired_tokens(self):
+        """Remove all expired security tokens."""
+        valid_ids = self.get_valid_token_ids()
+        self._old_tokens = [token for token in self._old_tokens if token.TokenId in valid_ids]
+
+    def _check_incoming_chunk(self, chunk: MessageChunk):
         if not isinstance(chunk, MessageChunk):
             raise ValueError('Expected chunk, got: %r', chunk)
         if chunk.MessageHeader.MessageType != ua.MessageType.SecureOpen:
             if chunk.MessageHeader.ChannelId != self.channel.SecurityToken.ChannelId:
                 raise ua.UaError('Wrong channel id {0}, expected {1}'.format(
                     chunk.MessageHeader.ChannelId,
-                    self.channel.SecurityToken.ChannelId))
+                    self.channel.SecurityToken.ChannelId)
+                )
+            # Validate the SecurityToken ID. Since `MessageType` is not `SecureOpen`,
+            # `SecurityHeader` will be of type `SymmetricAlgorithmHeader`
             if chunk.SecurityHeader.TokenId != self.channel.SecurityToken.TokenId:
-                if chunk.SecurityHeader.TokenId not in self._old_tokens:
+                valid_old_token_ids = self.get_valid_token_ids()
+                if chunk.SecurityHeader.TokenId not in valid_old_token_ids:
                     logger.warning(
-                        'Received a chunk with wrong token id %s, expected %s',
-                        chunk.SecurityHeader.TokenId, self.channel.SecurityToken.TokenId
+                        'The token id %s is unknown to the secure channel, expected %s, or %s',
+                        chunk.SecurityHeader.TokenId, self.channel.SecurityToken.TokenId, valid_old_token_ids
                     )
-                    #raise UaError("Wrong token id {}, expected {}, old tokens are {}".format(
-                        #chunk.SecurityHeader.TokenId,
-                        #self.channel.SecurityToken.TokenId,
-                        #self._old_tokens))
-                else:
-                    # Do some cleanup, spec says we can remove old tokens when new one are used
-                    idx = self._old_tokens.index(chunk.SecurityHeader.TokenId)
-                    if idx != 0:
-                        self._old_tokens = self._old_tokens[idx:]
+                    raise ua.UaError(f'Invalid secure chanel token id {chunk.SecurityHeader.TokenId}')
         if self._incoming_parts:
             if self._incoming_parts[0].SequenceHeader.RequestId != chunk.SequenceHeader.RequestId:
                 raise ua.UaError('Wrong request id {0}, expected {1}'.format(
@@ -259,7 +276,7 @@ class SecureConnection:
                     # Condition for monotonically increase is not met
                     raise ua.UaError(
                         'Wrong sequence {0} -> {1} (server bug or replay attack)'
-                        .format(self._peer_sequence_number, seq_num)
+                            .format(self._peer_sequence_number, seq_num)
                     )
         self._peer_sequence_number = seq_num
 
