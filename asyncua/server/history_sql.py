@@ -37,7 +37,8 @@ class HistorySQLite(HistoryStorageInterface):
         self.logger.info('Historizing SQL connection closed')
 
     async def _execute_sql(self, sql: str, params: Iterable = None):
-        return await self._loop.run_in_executor(None, self._conn.execute, sql, params or ())
+        await self._loop.run_in_executor(None, self._conn.execute, sql, params or ())
+        await self._loop.run_in_executor(None, self._conn.commit)
 
     async def new_historized_node(self, node_id, period, count=0):
         table = self._get_table_name(node_id)
