@@ -30,7 +30,7 @@ class HistorySQLite(HistoryStorageInterface):
         self._loop = loop or get_event_loop()
 
     async def init(self):
-        self._db = aiosqlite.connect(self._db_file, loop=self._loop)
+        self._db = await aiosqlite.connect(self._db_file, loop=self._loop)
 
     async def stop(self):
         await self._db.close()
@@ -89,28 +89,24 @@ class HistorySQLite(HistoryStorageInterface):
                 f'THEN MIN(SourceTimestamp) ELSE NULL END FROM "{table}")', (count,), table, node_id)
 
     async def read_node_history(self, node_id, start, end, nb_values):
-
         table = self._get_table_name(node_id)
         start_time, end_time, order, limit = self._get_bounds(start, end, nb_values)
         cont = None
         results = []
         # select values from the database; recreate UA Variant from binary
         try:
-            rows = await self._execute_sql(
-                f'SELECT * FROM "{table}" WHERE "SourceTimestamp" BETWEEN ? AND ? '
-                f'ORDER BY "_Id" {order} LIMIT ?', (start_time, end_time, limit,)
-            )
-            for row in rows:
-                # rebuild the data value object
-                dv = ua.DataValue(variant_from_binary(Buffer(row[6])))
-                dv.ServerTimestamp = row[1]
-                dv.SourceTimestamp = row[2]
-                dv.StatusCode = ua.StatusCode(row[3])
-                results.append(dv)
-
+            async with self._db.execute(
+                    f'SELECT * FROM "{table}" WHERE "SourceTimestamp" BETWEEN ? AND ? '
+                    f'ORDER BY "_Id" {order} LIMIT ?', (start_time, end_time, limit,)) as cursor:
+                async for row in cursor:
+                    # rebuild the data value object
+                    dv = ua.DataValue(variant_from_binary(Buffer(row[6])))
+                    dv.ServerTimestamp = row[1]
+                    dv.SourceTimestamp = row[2]
+                    dv.StatusCode = ua.StatusCode(row[3])
+                    results.append(dv)
         except sqlite3.Error as e:
             self.logger.error("Historizing SQL Read Error for %s: %s", node_id, e)
-
         if nb_values:
             if len(results) > nb_values:
                 cont = results[nb_values].SourceTimestamp
