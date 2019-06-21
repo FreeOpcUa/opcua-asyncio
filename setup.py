@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="asyncua",
-    version="0.5.0",
+    version="0.5.1",
     description="Pure Python OPC-UA client and server library",
     author="Olivier Roulet-Dubonnet",
     author_email="olivier.roulet@gmail.com",
