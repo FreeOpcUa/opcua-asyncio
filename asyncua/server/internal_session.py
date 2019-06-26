@@ -37,6 +37,7 @@ class InternalSession:
         self.state = SessionState.Created
         self.session_id = ua.NodeId(self._counter)
         InternalSession._counter += 1
+        self.subscriptions = []
         self.auth_token = ua.NodeId(self._auth_counter)
         InternalSession._auth_counter += 1
         self.logger.info('Created internal session %s', self.name)
@@ -63,7 +64,7 @@ class InternalSession:
     async def close_session(self, delete_subs=True):
         self.logger.info('close session %s', self.name)
         self.state = SessionState.Closed
-        await self.delete_subscriptions(list(self.subscription_service.subscriptions.keys()))
+        await self.delete_subscriptions(self.subscriptions)
 
     def activate_session(self, params):
         self.logger.info('activate session')
@@ -119,6 +120,7 @@ class InternalSession:
 
     async def create_subscription(self, params, callback=None):
         result = await self.subscription_service.create_subscription(params, callback)
+        self.subscriptions.append(result.SubscriptionId)
         return result
 
     async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
