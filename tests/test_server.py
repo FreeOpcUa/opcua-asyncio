@@ -126,11 +126,13 @@ async def test_multiple_clients_with_subscriptions(server):
             sub2 = await client2.create_subscription(100, sub_handler)
             await sub1.subscribe_data_change(var)
             await sub2.subscribe_data_change(var)
-            assert len(server.iserver.subscription_service.subscriptions) == 2
-        # When client2 disconnects, client1 should still keep it's subscription.
-        assert len(server.iserver.subscription_service.subscriptions) == 1
-    assert len(server.iserver.subscription_service.subscriptions) == 0
-
+            assert sub1.subscription_id in server.iserver.subscription_service.subscriptions
+            assert sub2.subscription_id in server.iserver.subscription_service.subscriptions
+        # When client2 disconnects, client1 should still keep its subscription.
+        assert sub1.subscription_id in server.iserver.subscription_service.subscriptions
+        assert sub2.subscription_id not in server.iserver.subscription_service.subscriptions
+    assert sub1.subscription_id not in server.iserver.subscription_service.subscriptions
+    assert sub2.subscription_id not in server.iserver.subscription_service.subscriptions
 
 async def test_historize_events(server):
     srv_node = server.get_node(ua.ObjectIds.Server)
