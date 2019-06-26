@@ -106,6 +106,31 @@ async def test_historize_variable(server):
     await var.set_value(3.0)
     await server.iserver.disable_history_data_change(var)
 
+async def test_multiple_clients_with_subscriptions(server):
+    """
+    Tests that multiple clients can subscribe, and when one client disconnects, the other
+    still maintains it's subscription
+    """
+    class SubscriptionHandler:
+        def datachange_notification(self, node, val, data):
+            pass
+    sub_handler = SubscriptionHandler()
+    client1 = Client(server.endpoint.geturl())
+    client2 = Client(server.endpoint.geturl())
+
+    o = server.get_objects_node()
+    var = await o.add_variable(3, "some_variable", 1.0)
+    async with client1:
+        async with client2:
+            sub1 = await client1.create_subscription(100, sub_handler)
+            sub2 = await client2.create_subscription(100, sub_handler)
+            await sub1.subscribe_data_change(var)
+            await sub2.subscribe_data_change(var)
+            assert len(server.iserver.subscription_service.subscriptions) == 2
+        # When client2 disconnects, client1 should still keep it's subscription.
+        assert len(server.iserver.subscription_service.subscriptions) == 1
+    assert len(server.iserver.subscription_service.subscriptions) == 0
+
 
 async def test_historize_events(server):
     srv_node = server.get_node(ua.ObjectIds.Server)
