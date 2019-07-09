@@ -218,6 +218,7 @@ class SecurityPolicy:
     Base class for security policy
     """
     URI = 'http://opcfoundation.org/UA/SecurityPolicy#None'
+    AsymmetricSignatureURI = ""
     signature_key_size = 0
     symmetric_key_size = 0
 

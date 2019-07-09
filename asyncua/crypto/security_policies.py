@@ -394,6 +394,7 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
     signature_key_size = 16
     symmetric_key_size = 16
     AsymmetricEncryptionURI = "http://www.w3.org/2001/04/xmlenc#rsa-1_5"
+    AsymmetricSignatureURI = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 
     @staticmethod
     def encrypt_asymmetric(pubkey, data):
@@ -465,6 +466,7 @@ class SecurityPolicyBasic256(SecurityPolicy):
     signature_key_size = 24
     symmetric_key_size = 32
     AsymmetricEncryptionURI = "http://www.w3.org/2001/04/xmlenc#rsa-oaep"
+    AsymmetricSignatureURI = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 
     @staticmethod
     def encrypt_asymmetric(pubkey, data):
@@ -533,6 +535,7 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
     signature_key_size = 32
     symmetric_key_size = 32
     AsymmetricEncryptionURI = "http://www.w3.org/2001/04/xmlenc#rsa-oaep"
+    AsymmetricSignatureURI = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
 
     @staticmethod
     def encrypt_asymmetric(pubkey, data):
