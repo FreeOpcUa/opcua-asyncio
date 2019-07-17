@@ -191,6 +191,13 @@ async def test_xml_string(opc, tmpdir):
     await _test_xml_var_type(opc, tmpdir, o, "string")
 
 
+async def test_xml_string_with_null_description(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlstring", "mystring")
+    await o.set_attribute(ua.AttributeIds.Description, ua.DataValue(None))
+    o2 = await _test_xml_var_type(opc, tmpdir, o, "string")
+    assert await o.get_description() == await o2.get_description()
+
+
 async def test_xml_string_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlstringarray", ["mystring2", "mystring3"])
     node2 = await _test_xml_var_type(opc, tmpdir, o, "stringarray")
@@ -324,7 +331,7 @@ async def test_xml_custom_uint32(opc, tmpdir):
 async def test_xml_var_nillable(opc):
     xml = """
     <UANodeSet xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd" xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-      <NamespaceUris>    
+      <NamespaceUris>
       </NamespaceUris>
       <Aliases>
         <Alias Alias="Boolean">i=1</Alias>
@@ -341,9 +348,9 @@ async def test_xml_var_nillable(opc):
         </References>
         <Value>
             <uax:String></uax:String>
-        </Value>    
+        </Value>
       </UAVariable>
-      
+
      <UAVariable BrowseName="2:xmlbool" DataType="Boolean" NodeId="ns=2;s=test_xml.bool.nillabel" ParentNodeId="i=85">
         <DisplayName>xmlbool</DisplayName>
         <Description>xmlbool</Description>
@@ -354,8 +361,8 @@ async def test_xml_var_nillable(opc):
         <Value>
           <uax:Boolean></uax:Boolean>
         </Value>
-      </UAVariable>  
-      
+      </UAVariable>
+
     </UANodeSet>
     """
     _new_nodes = await opc.opc.import_xml(xmlstring=xml)
