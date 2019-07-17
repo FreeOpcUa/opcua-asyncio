@@ -185,7 +185,9 @@ class XmlExporter:
         nodeid = node.nodeid
         parent = await node.get_parent()
         displayname = (await node.get_display_name()).Text
-        desc = (await node.get_description()).Text
+        desc = await node.get_description()
+        if desc:
+            desc = desc.Text
         node_el = Et.SubElement(self.etree.getroot(), nodetype)
         node_el.attrib["NodeId"] = self._node_to_string(nodeid)
         node_el.attrib["BrowseName"] = self._bname_to_string(browsename)
@@ -413,7 +415,7 @@ class XmlExporter:
 
     def _get_member_order(self, dtype, val):
         """
-        If an dtype has an entry in XmlExporter.extobj_ordered_elements return the export order of the elements 
+        If an dtype has an entry in XmlExporter.extobj_ordered_elements return the export order of the elements
         else return the unordered members.
         """
         if dtype not in XmlExporter.extobj_ordered_elements.keys():
