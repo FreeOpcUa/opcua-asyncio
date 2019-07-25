@@ -555,14 +555,14 @@ class Server:
     def unsubscribe_server_callback(self, event, handle):
         self.iserver.unsubscribe_server_callback(event, handle)
 
-    def link_method(self, node, callback):
+    async def link_method(self, node, callback):
         """
         Link a python function to a UA method in the address space; required when a UA method has been imported
         to the address space via XML; the python executable must be linked manually
         :param node: UA method node
         :param callback: python function that the UA method will call
         """
-        self.iserver.isession.add_method_callback(node.nodeid, callback)
+        await self.iserver.isession.add_method_callback(node.nodeid, callback)
 
     def load_type_definitions(self, nodes=None) -> Coroutine:
         """
