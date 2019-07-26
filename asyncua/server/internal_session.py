@@ -111,7 +111,7 @@ class InternalSession:
     async def delete_references(self, params):
         return self.iserver.node_mgt_service.delete_references(params, self.user)
 
-    async def add_method_callback(self, methodid, callback):
+    def add_method_callback(self, methodid, callback):
         return self.aspace.add_method_callback(methodid, callback)
 
     def call(self, params):
