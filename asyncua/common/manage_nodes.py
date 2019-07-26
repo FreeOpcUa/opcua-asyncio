@@ -371,7 +371,7 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
             datatype=ua.ObjectIds.Argument
         )
     if hasattr(parent.server, "add_method_callback"):
-        await parent.server.add_method_callback(method.nodeid, callback)
+        parent.server.add_method_callback(method.nodeid, callback)
     return results[0].AddedNodeId
 
 
