@@ -2,11 +2,12 @@
 High level node object, to access node attribute
 and browse address space
 """
-from datetime import datetime
 
 import logging
 
 from asyncua import ua
+from .ua_utils import value_to_datavalue
+
 from .events import Event, get_filter_from_event_type
 from .ua_utils import data_type_to_variant_type
 from .manage_nodes import create_folder, create_object, create_object_type, create_variable, create_variable_type, \
@@ -214,16 +215,8 @@ class Node:
         and you modfy it afterward, then the object in db will be modified without any
         data change event generated
         """
-        datavalue = None
-        if isinstance(value, ua.DataValue):
-            datavalue = value
-        elif isinstance(value, ua.Variant):
-            datavalue = ua.DataValue(value)
-            datavalue.SourceTimestamp = datetime.utcnow()
-        else:
-            datavalue = ua.DataValue(ua.Variant(value, varianttype))
-            datavalue.SourceTimestamp = datetime.utcnow()
-        await self.set_attribute(ua.AttributeIds.Value, datavalue)
+        dv = value_to_datavalue(value, varianttype)
+        await self.set_attribute(ua.AttributeIds.Value, dv)
 
     set_data_value = set_value
 
