@@ -13,6 +13,7 @@ from ..common.subscription import Subscription
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
 from ..common.utils import create_nonce
+from ..common.ua_utils import value_to_datavalue
 from ..crypto import uacrypto, security_policies
 
 _logger = logging.getLogger(__name__)
@@ -28,7 +29,6 @@ class Client:
     use UaClient object, available as self.uaclient
     which offers the raw OPC-UA services interface.
     """
-
     def __init__(self, url: str, timeout: int = 4, loop=None):
         """
         :param url: url of the server.
@@ -78,9 +78,7 @@ class Client:
         """
         _logger.info("find_endpoint %r %r %r", endpoints, security_mode, policy_uri)
         for ep in endpoints:
-            if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and
-                    ep.SecurityMode == security_mode and
-                    ep.SecurityPolicyUri == policy_uri):
+            if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and ep.SecurityPolicyUri == policy_uri):
                 return ep
         raise ua.UaError("No matching endpoints: {0}, {1}".format(security_mode, policy_uri))
 
@@ -117,11 +115,12 @@ class Client:
             raise ua.UaError("Wrong format: `{}`, expected at least 4 comma-separated values".format(string))
         policy_class = getattr(security_policies, "SecurityPolicy{}".format(parts[0]))
         mode = getattr(ua.MessageSecurityMode, parts[1])
-        return await self.set_security(
-            policy_class, parts[2], parts[3], parts[4] if len(parts) >= 5 else None, mode
-        )
+        return await self.set_security(policy_class, parts[2], parts[3], parts[4] if len(parts) >= 5 else None, mode)
 
-    async def set_security(self, policy, certificate_path: str, private_key_path: str,
+    async def set_security(self,
+                           policy,
+                           certificate_path: str,
+                           private_key_path: str,
                            server_certificate_path: str = None,
                            mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
         """
@@ -580,8 +579,18 @@ class Client:
 
     async def get_values(self, nodes):
         """
-        Read the value of multiple nodes in one roundtrip.
+        Read the value of multiple nodes in one ua call.
         """
-        nodes = [node.nodeid for node in nodes]
-        results = await self.uaclient.get_attribute(nodes, ua.AttributeIds.Value)
+        nodeids = [node.nodeid for node in nodes]
+        results = await self.uaclient.get_attributes(nodeids, ua.AttributeIds.Value)
         return [result.Value.Value for result in results]
+
+    async def set_values(self, nodes, values):
+        """
+        Write values to multiple nodes in one ua call
+        """
+        nodeids = [node.nodeid for node in nodes]
+        dvs = [value_to_datavalue(val) for val in values]
+        results = await self.uaclient.set_attributes(nodeids, dvs, ua.AttributeIds.Value)
+        for result in results:
+            result.check()
