@@ -87,3 +87,24 @@ async def test_custom_enum_struct(server, client):
     val = await myvar.get_value()
     assert 242 == val.IntVal1
     assert ua.ExampleEnum.EnumVal2 == val.EnumVal
+
+
+async def test_multiple_read_and_write(server, client):
+    f = await server.nodes.objects.add_folder(3, 'Multiple_read_write_test')
+    v1 = await f.add_variable(3, "a", 1)
+    await v1.set_writable()
+    v2 = await f.add_variable(3, "b", 2)
+    await v2.set_writable()
+    v3 = await f.add_variable(3, "c", 3)
+    await v3.set_writable()
+    v_ro = await f.add_variable(3, "ro", 3)
+
+    vals = await client.get_values([v1, v2, v3])
+    assert vals == [1, 2, 3]
+    await client.set_values([v1, v2, v3], [4, 5, 6])
+    vals = await client.get_values([v1, v2, v3])
+    assert vals == [4, 5, 6]
+    with pytest.raises(ua.uaerrors.BadUserAccessDenied):
+        await client.set_values([v1, v2, v_ro], [4, 5, 6])
+
+

@@ -13,6 +13,22 @@ from asyncua import ua
 logger = logging.getLogger('__name__')
 
 
+def value_to_datavalue(val, varianttype=None):
+    """
+    convert anyting to a DataValue using varianttype
+    """
+    datavalue = None
+    if isinstance(val, ua.DataValue):
+        datavalue = val
+    elif isinstance(val, ua.Variant):
+        datavalue = ua.DataValue(val)
+        datavalue.SourceTimestamp = datetime.utcnow()
+    else:
+        datavalue = ua.DataValue(ua.Variant(val, varianttype))
+        datavalue.SourceTimestamp = datetime.utcnow()
+    return datavalue
+
+
 def val_to_string(val, truncate=False):
     """
     convert a python object or python-asyncua object to a string
@@ -160,7 +176,7 @@ async def get_node_supertypes(node, includeitself=False, skipbase=True):
     :param node: can be a ua.Node or ua.NodeId
     :param includeitself: include also node to the list
     :param skipbase don't include the toplevel one
-    :returns list of ua.Node, top parent first 
+    :returns list of ua.Node, top parent first
     """
     parents = []
     if includeitself:
@@ -202,7 +218,7 @@ async def is_child_present(node, browsename):
     return if a browsename is present a child from the provide node
     :param node: node wherein to find the browsename
     :param browsename: browsename to search
-    :returns returne True if the browsename is present else False 
+    :returns returne True if the browsename is present else False
     """
     child_descs = await node.get_children_descriptions()
     for child_desc in child_descs:
@@ -229,7 +245,7 @@ async def get_base_data_type(datatype):
     Looks up the base datatype of the provided datatype Node
     The base datatype is either:
     A primitive type (ns=0, i<=21) or a complex one (ns=0 i>21 and i<=30) like Enum and Struct.
-    
+
     Args:
         datatype: NodeId of a datype of a variable
     Returns:
@@ -245,7 +261,7 @@ async def get_base_data_type(datatype):
 
 async def get_nodes_of_namespace(server, namespaces=None):
     """
-    Get the nodes of one or more namespaces .      
+    Get the nodes of one or more namespaces .
     Args:
         server: opc ua server to use
         namespaces: list of string uri or int indexes of the namespace to export
