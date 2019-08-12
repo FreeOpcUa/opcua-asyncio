@@ -394,7 +394,9 @@ class Client:
             challenge += self.security_policy.server_certificate
         if self._server_nonce is not None:
             challenge += self._server_nonce
-        params.ClientSignature.Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
+        params.ClientSignature.Algorithm = self.security_policy.AsymmetricSignatureURI
+        if not params.ClientSignature.Algorithm:
+            params.ClientSignature.Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
         params.LocaleIds.append("en")
         if not username and not certificate:
