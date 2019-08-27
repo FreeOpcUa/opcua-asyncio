@@ -97,6 +97,7 @@ class InternalSubscription:
         if result is not None:
             self.logger.info('publish_results for %s', self.data.SubscriptionId)
             self.pub_result_callback(result)
+            self.publish([result.NotificationMessage.SequenceNumber])
 
     def _pop_publish_result(self) -> ua.PublishResult:
         """
