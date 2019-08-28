@@ -294,7 +294,8 @@ class UaProcessor:
         elif typeid == ua.NodeId(ua.ObjectIds.CreateSubscriptionRequest_Encoding_DefaultBinary):
             _logger.info("create subscription request")
             params = struct_from_binary(ua.CreateSubscriptionParameters, body)
-            result = await self.session.create_subscription(params, callback=self.forward_publish_response)
+            result = await self.session.create_subscription(params, callback=self.forward_publish_response,
+                                                            is_for_client=True)
             response = ua.CreateSubscriptionResponse()
             response.Parameters = result
             _logger.info("sending create subscription response")

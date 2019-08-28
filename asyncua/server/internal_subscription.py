@@ -17,7 +17,7 @@ class InternalSubscription:
     """
 
     def __init__(self, loop: asyncio.AbstractEventLoop, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
-                 callback=None):
+                 callback=None, is_for_client=False):
         self.logger = logging.getLogger(__name__)
         self.loop: asyncio.AbstractEventLoop = loop
         self.data: ua.CreateSubscriptionResult = data
@@ -32,6 +32,7 @@ class InternalSubscription:
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
         self._task = None
+        self._is_for_client = is_for_client
 
     def __str__(self):
         return f"Subscription(id:{self.data.SubscriptionId})"
@@ -92,12 +93,15 @@ class InternalSubscription:
             self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
         result = None
         if self.has_published_results():
-            self._publish_cycles_count += 1
+            if self._is_for_client:
+                self._publish_cycles_count += 1
             result = self._pop_publish_result()
         if result is not None:
             self.logger.info('publish_results for %s', self.data.SubscriptionId)
+            # The callback can be:
+            #    Subscription.publish_callback -> server internal subscription
+            #    UaProcessor.forward_publish_response -> client subscription
             self.pub_result_callback(result)
-            self.publish([result.NotificationMessage.SequenceNumber])
 
     def _pop_publish_result(self) -> ua.PublishResult:
         """
@@ -112,7 +116,8 @@ class InternalSubscription:
         self._keep_alive_count = 0
         self._startup = False
         result.NotificationMessage.SequenceNumber = self._notification_seq
-        if result.NotificationMessage.NotificationData:
+        if result.NotificationMessage.NotificationData and self._is_for_client:
+            # Acknowledgement is only expected when the Subscription is for a client.
             self._notification_seq += 1
             self._not_acknowledged_results[result.NotificationMessage.SequenceNumber] = result
         result.MoreNotifications = False
