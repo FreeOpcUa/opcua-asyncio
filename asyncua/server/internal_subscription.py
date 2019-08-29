@@ -13,11 +13,19 @@ from .address_space import AddressSpace
 
 class InternalSubscription:
     """
-
+    Server internal subscription.
+    Runs the publication loop and stores the Publication Results until they are acknowledged.
     """
 
     def __init__(self, loop: asyncio.AbstractEventLoop, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
                  callback=None, no_acks=False):
+        """
+        :param loop: Event loop instance
+        :param data: Create Subscription Result
+        :param aspace: Server Address Space
+        :param callback: Callback for publishing
+        :param no_acks: If true no acknowledging will be expected (for server internal subscriptions)
+        """
         self.logger = logging.getLogger(__name__)
         self.loop: asyncio.AbstractEventLoop = loop
         self.data: ua.CreateSubscriptionResult = data
