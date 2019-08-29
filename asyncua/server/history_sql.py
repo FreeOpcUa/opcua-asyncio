@@ -1,7 +1,7 @@
 import logging
 import aiosqlite
 import sqlite3
-from typing import Iterable, Optional
+from typing import Iterable
 from datetime import timedelta
 from datetime import datetime
 from asyncio import get_event_loop
@@ -247,7 +247,7 @@ class HistorySQLite(HistoryStorageInterface):
         for name in names:
             variant = ev_variant_dict[name]
             placeholders.append("?")
-            ev_variant_binaries.append(aiosqlite.Binary(variant_to_binary(variant)))
+            ev_variant_binaries.append(sqlite3.Binary(variant_to_binary(variant)))
         return self._list_to_sql_str(names), self._list_to_sql_str(placeholders, False), tuple(ev_variant_binaries)
 
     def _get_event_columns(self, ev_fields):
