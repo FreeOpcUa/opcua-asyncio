@@ -36,7 +36,7 @@ class UTC(tzinfo):
         return timedelta(0)
 
 
-def datetime_to_win_epoch(dt):
+def datetime_to_win_epoch(dt: datetime):
     """method copied from David Buxton <david@gasmark6.com> sample code"""
     if (dt.tzinfo is None) or (dt.tzinfo.utcoffset(dt) is None):
         dt = dt.replace(tzinfo=UTC())

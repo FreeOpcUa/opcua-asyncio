@@ -19,13 +19,9 @@ def pytest_generate_tests(metafunc):
     if 'opc' in metafunc.fixturenames:
         metafunc.parametrize('opc', ['client', 'server'], indirect=True)
     elif 'history' in metafunc.fixturenames:
-        #metafunc.parametrize('history', ['dict', 'sqlite'], indirect=True)
-        #FIXME: disable sqlite backend, it breaks
-        metafunc.parametrize('history', ['dict'], indirect=True)
+        metafunc.parametrize('history', ['dict', 'sqlite'], indirect=True)
     elif 'history_server' in metafunc.fixturenames:
-        #FIXME: disable sqlite backend, it breaks
-        #metafunc.parametrize('history_server', ['dict', 'sqlite'], indirect=True)
-        metafunc.parametrize('history_server', ['dict'], indirect=True)
+        metafunc.parametrize('history_server', ['dict', 'sqlite'], indirect=True)
 
 
 @pytest.yield_fixture(scope='module')

@@ -7,7 +7,7 @@ install:
   - pip install pytz
   - pip install lxml
   - pip install aiofiles
-  - pip install asyncio-contextmanager
+  - pip install aiosqlite
   - pip install pytest --upgrade
   - pip install pytest-asyncio
   - pip install cryptography

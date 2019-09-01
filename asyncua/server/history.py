@@ -13,11 +13,11 @@ class UaNodeAlreadyHistorizedError(ua.UaError):
 
 
 class HistoryStorageInterface:
-
     """
     Interface of a history backend.
     Must be implemented by backends
     """
+
     async def init(self):
         """
         Async. initialization.
@@ -185,7 +185,7 @@ class HistoryDict(HistoryStorageInterface):
 class SubHandler:
     def __init__(self, storage, loop):
         self.storage = storage
-        self.loop = loop 
+        self.loop = loop
 
     def datachange_notification(self, node, val, data):
         self.loop.create_task(
@@ -274,7 +274,7 @@ class HistoryManager:
         """
         if node in self._handlers:
             await self._sub.unsubscribe(self._handlers[node])
-            del(self._handlers[node])
+            del (self._handlers[node])
         else:
             self.logger.error("History Manager isn't subscribed to %s", node)
 
@@ -329,9 +329,9 @@ class HistoryManager:
             starttime = ua.ua_binary.Primitives.DateTime.unpack(Buffer(rv.ContinuationPoint))
 
         dv, cont = await self.storage.read_node_history(rv.NodeId,
-                                                  starttime,
-                                                  details.EndTime,
-                                                  details.NumValuesPerNode)
+                                                        starttime,
+                                                        details.EndTime,
+                                                        details.NumValuesPerNode)
         if cont:
             cont = ua.ua_binary.Primitives.DateTime.pack(cont)
         # rv.IndexRange
@@ -348,10 +348,10 @@ class HistoryManager:
             starttime = ua.ua_binary.Primitives.DateTime.unpack(Buffer(rv.ContinuationPoint))
 
         evts, cont = await self.storage.read_event_history(rv.NodeId,
-                                                     starttime,
-                                                     details.EndTime,
-                                                     details.NumValuesPerNode,
-                                                     details.Filter)
+                                                           starttime,
+                                                           details.EndTime,
+                                                           details.NumValuesPerNode,
+                                                           details.Filter)
         results = []
         for ev in evts:
             field_list = ua.HistoryEventFieldList()
