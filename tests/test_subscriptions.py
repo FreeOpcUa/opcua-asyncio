@@ -637,3 +637,27 @@ async def test_several_different_events_2(opc):
     assert ev1s[0].PropertyNum3 is None
     await sub.unsubscribe(handle)
     await sub.delete()
+
+
+async def test_internal_server_subscription(opc):
+    """
+    Test that an internal server subscription is handled correctly when
+    data of a node changes (by external client and internally).
+    """
+    sub_handler = MySubHandler2()
+    uri = 'http://examples.freeopcua.github.io'
+    idx = await opc.server.register_namespace(uri)
+    objects = opc.server.get_objects_node()
+    sub_obj = await objects.add_object(idx, 'SubTestObject')
+    sub_var = await sub_obj.add_variable(idx, 'SubTestVariable', 0)
+    sub = await opc.server.create_subscription(1, sub_handler)
+    # Server subscribes to own variable data changes
+    await sub.subscribe_data_change([sub_var])
+    client_var = await opc.opc.nodes.objects.get_child([f"{idx}:SubTestObject", f"{idx}:SubTestVariable"])
+    for i in range(10):
+        await client_var.set_value(i)
+        await asyncio.sleep(0.01)
+    assert [v for n, v in sub_handler.results] == list(range(10))
+    internal_sub = opc.server.iserver.subscription_service.subscriptions[sub.subscription_id]
+    # Check that the results are not left un-acknowledged on internal Server Subscriptions.
+    assert len(internal_sub._not_acknowledged_results) == 0

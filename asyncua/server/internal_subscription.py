@@ -13,11 +13,19 @@ from .address_space import AddressSpace
 
 class InternalSubscription:
     """
-
+    Server internal subscription.
+    Runs the publication loop and stores the Publication Results until they are acknowledged.
     """
 
     def __init__(self, loop: asyncio.AbstractEventLoop, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
-                 callback=None):
+                 callback=None, no_acks=False):
+        """
+        :param loop: Event loop instance
+        :param data: Create Subscription Result
+        :param aspace: Server Address Space
+        :param callback: Callback for publishing
+        :param no_acks: If true no acknowledging will be expected (for server internal subscriptions)
+        """
         self.logger = logging.getLogger(__name__)
         self.loop: asyncio.AbstractEventLoop = loop
         self.data: ua.CreateSubscriptionResult = data
@@ -32,6 +40,7 @@ class InternalSubscription:
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
         self._task = None
+        self.no_acks = no_acks
 
     def __str__(self):
         return f"Subscription(id:{self.data.SubscriptionId})"
@@ -92,10 +101,14 @@ class InternalSubscription:
             self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
         result = None
         if self.has_published_results():
-            self._publish_cycles_count += 1
+            if not self.no_acks:
+                self._publish_cycles_count += 1
             result = self._pop_publish_result()
         if result is not None:
             self.logger.info('publish_results for %s', self.data.SubscriptionId)
+            # The callback can be:
+            #    Subscription.publish_callback -> server internal subscription
+            #    UaProcessor.forward_publish_response -> client subscription
             self.pub_result_callback(result)
 
     def _pop_publish_result(self) -> ua.PublishResult:
@@ -111,7 +124,8 @@ class InternalSubscription:
         self._keep_alive_count = 0
         self._startup = False
         result.NotificationMessage.SequenceNumber = self._notification_seq
-        if result.NotificationMessage.NotificationData:
+        if result.NotificationMessage.NotificationData and not self.no_acks:
+            # Acknowledgement is only expected when the Subscription is for a client.
             self._notification_seq += 1
             self._not_acknowledged_results[result.NotificationMessage.SequenceNumber] = result
         result.MoreNotifications = False

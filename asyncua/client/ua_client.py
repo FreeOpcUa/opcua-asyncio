@@ -526,7 +526,7 @@ class UaClient:
             else:
                 try:
                     callback(response.Parameters)
-                except Exception:  # we call client code, catch everything!
+                except Exception:  # we call user code, catch everything!
                     self.logger.exception("Exception while calling user callback: %s")
             # Repeat with acknowledgement
             ack = ua.SubscriptionAcknowledgement()

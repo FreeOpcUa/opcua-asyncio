@@ -101,7 +101,6 @@ async def opc(request):
         await srv.stop()
     elif request.param == 'server':
         # start our own server
-        # start our own server
         srv = Server()
         await srv.init()
         srv.set_endpoint(f'opc.tcp://127.0.0.1:{port_num1}')

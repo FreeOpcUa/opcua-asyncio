@@ -119,7 +119,7 @@ class InternalSession:
         return self.iserver.method_service.call(params)
 
     async def create_subscription(self, params, callback=None):
-        result = await self.subscription_service.create_subscription(params, callback)
+        result = await self.subscription_service.create_subscription(params, callback, external=self.external)
         self.subscriptions.append(result.SubscriptionId)
         return result
 
