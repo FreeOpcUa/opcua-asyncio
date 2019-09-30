@@ -1,6 +1,7 @@
 language: python
 python:
   - "3.6"
+  - "pypy3"
 # command to install dependencies
 install:
   - pip install python-dateutil
