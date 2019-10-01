@@ -173,7 +173,7 @@ async def test_references_for_added_nodes_method(server):
 async def test_get_event_from_type_node_BaseEvent(server):
     """
     This should work for following BaseEvent tests to work
-    (maybe to write it a bit differentlly since they are not independent) 
+    (maybe to write it a bit differentlly since they are not independent)
     """
     ev = await asyncua.common.events.get_event_obj_from_type_node(
         asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType))
@@ -333,7 +333,7 @@ async def test_create_custom_data_type_object_id(server):
     type = await server.create_custom_data_type(2, 'MyDataType', ua.ObjectIds.BaseDataType,
                                                 [('PropertyNum', ua.VariantType.Int32),
                                                  ('PropertyString', ua.VariantType.String)])
-    await check_custom_type(type, ua.ObjectIds.BaseDataType, server)
+    await check_custom_type(type, ua.ObjectIds.BaseDataType, server, ua.NodeClass.DataType)
 
 
 async def test_create_custom_event_type_object_id(server):
@@ -596,19 +596,21 @@ def check_custom_event(ev, etype):
     assert ev.Severity == 1
 
 
-async def check_custom_type(type, base_type, server: Server):
+async def check_custom_type(ntype, base_type, server: Server, node_class=None):
     base = asyncua.Node(server.iserver.isession, ua.NodeId(base_type))
-    assert type in await base.get_children()
-    nodes = await type.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse,
+    assert ntype in await base.get_children()
+    nodes = await ntype.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse,
                                             includesubtypes=True)
     assert base == nodes[0]
-    properties = await type.get_properties()
+    if node_class:
+        assert node_class == await ntype.get_node_class()
+    properties = await ntype.get_properties()
     assert properties is not None
     assert len(properties) == 2
-    assert await type.get_child("2:PropertyNum") in properties
-    assert (await(await type.get_child("2:PropertyNum")).get_data_value()).Value.VariantType == ua.VariantType.Int32
-    assert await type.get_child("2:PropertyString") in properties
-    assert (await(await type.get_child("2:PropertyString")).get_data_value()).Value.VariantType == ua.VariantType.String
+    assert await ntype.get_child("2:PropertyNum") in properties
+    assert (await(await ntype.get_child("2:PropertyNum")).get_data_value()).Value.VariantType == ua.VariantType.Int32
+    assert await ntype.get_child("2:PropertyString") in properties
+    assert (await(await ntype.get_child("2:PropertyString")).get_data_value()).Value.VariantType == ua.VariantType.String
 
 
 """
