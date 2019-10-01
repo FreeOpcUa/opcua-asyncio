@@ -144,9 +144,9 @@ class HistoryDict(HistoryStorageInterface):
         self._events_periods[source_id] = period, count
 
     async def save_event(self, event):
-        evts = self._events[event.SourceNode]
+        evts = self._events[event.emitting_node]
         evts.append(event)
-        period, count = self._events_periods[event.SourceNode]
+        period, count = self._events_periods[event.emitting_node]
         now = datetime.utcnow()
         if period:
             while len(evts) and now - evts[0].SourceTimestamp > period:

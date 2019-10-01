@@ -25,6 +25,10 @@ class Event:
         self.event_fields = None
         self.data_types = {}
         self.emitting_node = emitting_node
+        if isinstance(emitting_node, ua.NodeId):
+            self.emitting_node = emitting_node
+        else:
+            self.emitting_node = ua.NodeId(emitting_node)
         # save current attributes
         self.internal_properties = list(self.__dict__.keys())[:] + ["internal_properties"]
 
