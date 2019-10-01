@@ -28,6 +28,14 @@ from ..crypto import security_policies, uacrypto
 _logger = logging.getLogger(__name__)
 
 
+def _get_node(isession, whatever):
+    if isinstance(whatever, Node):
+        return whatever
+    if isinstance(whatever, ua.NodeId):
+        return Node(isession, whatever)
+    return Node(isession, ua.NodeId(whatever))
+
+
 class Server:
     """
     High level Server class
@@ -412,17 +420,25 @@ class Server:
         await ev_gen.init(etype, emitting_node=emitting_node)
         return ev_gen
 
-    def create_custom_data_type(self, idx, name, basetype=ua.ObjectIds.BaseDataType, properties=None) -> Coroutine:
+    async def create_custom_data_type(self, idx, name, basetype=ua.ObjectIds.BaseDataType, properties=None, description=None) -> Coroutine:
         if properties is None:
             properties = []
-        return self._create_custom_type(idx, name, basetype, properties, [], [])
+        base_t = _get_node(self.iserver.isession, basetype)
 
-    def create_custom_event_type(self, idx, name, basetype=ua.ObjectIds.BaseEventType, properties=None) -> Coroutine:
+        custom_t = await base_t.add_data_type(idx, name, description)
+        for prop in properties:
+            datatype = None
+            if len(prop) > 2:
+                datatype = prop[2]
+            await custom_t.add_property(idx, prop[0], ua.get_default_value(prop[1]), varianttype=prop[1], datatype=datatype)
+        return custom_t
+
+    async def create_custom_event_type(self, idx, name, basetype=ua.ObjectIds.BaseEventType, properties=None) -> Coroutine:
         if properties is None:
             properties = []
-        return self._create_custom_type(idx, name, basetype, properties, [], [])
+        return await self._create_custom_type(idx, name, basetype, properties, [], [])
 
-    def create_custom_object_type(self,
+    async def create_custom_object_type(self,
                                   idx,
                                   name,
                                   basetype=ua.ObjectIds.BaseObjectType,
@@ -435,12 +451,12 @@ class Server:
             variables = []
         if methods is None:
             methods = []
-        return self._create_custom_type(idx, name, basetype, properties, variables, methods)
+        return await self._create_custom_type(idx, name, basetype, properties, variables, methods)
 
     # def create_custom_reference_type(self, idx, name, basetype=ua.ObjectIds.BaseReferenceType, properties=[]):
     # return self._create_custom_type(idx, name, basetype, properties)
 
-    def create_custom_variable_type(self,
+    async def create_custom_variable_type(self,
                                     idx,
                                     name,
                                     basetype=ua.ObjectIds.BaseVariableType,
@@ -453,15 +469,10 @@ class Server:
             variables = []
         if methods is None:
             methods = []
-        return self._create_custom_type(idx, name, basetype, properties, variables, methods)
+        return await self._create_custom_type(idx, name, basetype, properties, variables, methods)
 
     async def _create_custom_type(self, idx, name, basetype, properties, variables, methods):
-        if isinstance(basetype, Node):
-            base_t = basetype
-        elif isinstance(basetype, ua.NodeId):
-            base_t = Node(self.iserver.isession, basetype)
-        else:
-            base_t = Node(self.iserver.isession, ua.NodeId(basetype))
+        base_t = _get_node(self.iserver.isession, basetype)
         custom_t = await base_t.add_object_type(idx, name)
         for prop in properties:
             datatype = None
