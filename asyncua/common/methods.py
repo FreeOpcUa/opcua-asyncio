@@ -2,6 +2,8 @@
 High level method related functions
 """
 
+from asyncio import iscoroutinefunction
+
 from asyncua import ua
 
 
@@ -67,14 +69,32 @@ def uamethod(func):
     Method decorator to automatically convert
     arguments and output to and from variants
     """
-    def wrapper(parent, *args):
+
+    if iscoroutinefunction(func):
+        async def wrapper(parent, *args):
+            func_args = _format_call_inputs(parent, *args)
+            result = await func(*func_args)
+            return _format_call_outputs(result)
+
+    else:
+        def wrapper(parent, *args):
+            func_args = _format_call_inputs(parent, *args)
+            result = func(*func_args)
+            return _format_call_outputs(result)
+    return wrapper
+
+
+def _format_call_inputs(parent, *args):
         if isinstance(parent, ua.NodeId):
-            result = func(parent, *[arg.Value for arg in args])
+        return (parent, *[arg.Value for arg in args])
         else:
             self = parent
             parent = args[0]
             args = args[1:]
-            result = func(self, parent, *[arg.Value for arg in args])
+        return (self, parent, *[arg.Value for arg in args])
+
+
+def _format_call_outputs(result):
         if result is None:
             return []
         elif isinstance(result, ua.CallMethodResult):
@@ -86,7 +106,6 @@ def uamethod(func):
             return to_variant(*result)
         else:
             return to_variant(result)
-    return wrapper
 
 
 def to_variant(*args):

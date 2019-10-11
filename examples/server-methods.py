@@ -1,24 +1,12 @@
-import sys
-sys.path.insert(0, "..")
+import asyncio
 import logging
-
-try:
-    from IPython import embed
-except ImportError:
-    import code
-
-    def embed():
-        vars = globals()
-        vars.update(locals())
-        shell = code.InteractiveConsole(vars)
-        shell.interact()
-
 
 from asyncua import ua, uamethod, Server
 
 
 # method to be exposed through server
 def func(parent, variant):
+    print("func method call with parameters: ", variant.Value)
     ret = False
     if variant.Value % 2 == 0:
         ret = True
@@ -26,7 +14,17 @@ def func(parent, variant):
 
 
 # method to be exposed through server
+async def func_async(parent, variant):
+    if variant.Value % 2 == 0:
+        print("Sleeping asynchronously for 1 second")
+        await asyncio.sleep(1)
+    else:
+        print("Not sleeping!")
+
+
+# method to be exposed through server
 # uses a decorator to automatically convert to and from variants
+
 
 @uamethod
 def multiply(parent, x, y):
@@ -34,42 +32,52 @@ def multiply(parent, x, y):
     return x * y
 
 
-if __name__ == "__main__":
+@uamethod
+async def multiply_async(parent, x, y):
+    sleep_time = x * y
+    print(f"Sleeping asynchronously for {x * y} seconds")
+    await asyncio.sleep(sleep_time)
+
+
+async def main():
     # optional: setup logging
     logging.basicConfig(level=logging.WARN)
-    #logger = logging.getLogger("asyncua.address_space")
+    # logger = logging.getLogger("asyncua.address_space")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("asyncua.internal_server")
+    # logger = logging.getLogger("asyncua.internal_server")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("asyncua.binary_server_asyncio")
+    # logger = logging.getLogger("asyncua.binary_server_asyncio")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("asyncua.uaprocessor")
+    # logger = logging.getLogger("asyncua.uaprocessor")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("asyncua.subscription_service")
+    # logger = logging.getLogger("asyncua.subscription_service")
     # logger.setLevel(logging.DEBUG)
 
     # now setup our server
     server = Server()
-    #server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
+    await server.init()
+    # server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
     server.set_server_name("FreeOpcUa Example Server")
 
     # setup our own namespace
     uri = "http://examples.freeopcua.github.io"
-    idx = server.register_namespace(uri)
+    idx = await server.register_namespace(uri)
 
     # get Objects node, this is where we should put our custom stuff
     objects = server.get_objects_node()
 
     # populating our address space
-    myfolder = objects.add_folder(idx, "myEmptyFolder")
-    myobj = objects.add_object(idx, "MyObject")
-    myvar = myobj.add_variable(idx, "MyVariable", 6.7)
-    myvar.set_writable()    # Set MyVariable to be writable by clients
-    myarrayvar = myobj.add_variable(idx, "myarrayvar", [6.7, 7.9])
-    myarrayvar = myobj.add_variable(idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32))
-    myprop = myobj.add_property(idx, "myproperty", "I am a property")
-    mymethod = myobj.add_method(idx, "mymethod", func, [ua.VariantType.Int64], [ua.VariantType.Boolean])
+    await objects.add_folder(idx, "myEmptyFolder")
+    myobj = await objects.add_object(idx, "MyObject")
+    myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
+    await myvar.set_writable()  # Set MyVariable to be writable by clients
+    myarrayvar = await myobj.add_variable(idx, "myarrayvar", [6.7, 7.9])
+    await myobj.add_variable(
+        idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32)
+    )
+    await myobj.add_property(idx, "myproperty", "I am a property")
+    await myobj.add_method(idx, "mymethod", func, [ua.VariantType.Int64], [ua.VariantType.Boolean])
 
     inargx = ua.Argument()
     inargx.Name = "x"
@@ -90,13 +98,17 @@ if __name__ == "__main__":
     outarg.ArrayDimensions = []
     outarg.Description = ua.LocalizedText("Multiplication result")
 
-    multiply_node = myobj.add_method(idx, "multiply", multiply, [inargx, inargy], [outarg])
+    await myobj.add_method(idx, "multiply", multiply, [inargx, inargy], [outarg])
+    await myobj.add_method(idx, "multiply_async", multiply_async, [inargx, inargy], [])
+    await myobj.add_method(idx, "func_async", func_async, [ua.VariantType.Int64], [])
 
-    # starting!
-    server.start()
-    print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
-    try:
+    async with server:
+        while True:
+            await asyncio.sleep(1)
 
-        embed()
-    finally:
-        server.stop()
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    # loop.set_debug(True)
+    loop.run_until_complete(main())
+    loop.close()
