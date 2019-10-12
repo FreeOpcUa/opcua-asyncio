@@ -6,10 +6,12 @@ client side since we have been carefull to have the exact
 same api on server and client side
 """
 
-import pytest
+import asyncio
 from datetime import datetime
 from datetime import timedelta
 import math
+
+import pytest
 
 from asyncua import ua, uamethod, Node
 from asyncua.common import ua_utils
@@ -78,6 +80,15 @@ async def add_server_methods(srv):
     await o.add_method(
         ua.NodeId("ServerMethodTuple", 2), ua.QualifiedName('ServerMethodTuple', 2), func5, [],
         [ua.VariantType.Int64, ua.VariantType.Int64, ua.VariantType.Int64]
+    )
+
+    @uamethod
+    async def func6(parent):
+        await asyncio.sleep(0)
+
+    o = srv.get_objects_node()
+    await o.add_method(
+        ua.NodeId("ServerMethodAsync", 2), ua.QualifiedName('ServerMethodAsync', 2), func6, [], []
     )
 
 
@@ -616,6 +627,13 @@ async def test_method_none(opc):
     assert result is None
     result = await call_method_full(o, m)
     assert [] == result.OutputArguments
+
+
+async def test_method_async(opc):
+    o = opc.opc.get_objects_node()
+    m = await o.get_child("2:ServerMethodAsync")
+    await o.call_method(m)
+    await call_method_full(o, m)
 
 
 async def test_add_nodes(opc):

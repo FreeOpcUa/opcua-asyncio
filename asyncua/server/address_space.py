@@ -2,6 +2,7 @@ import pickle
 import shelve
 import logging
 import collections
+from asyncio import iscoroutinefunction
 from datetime import datetime
 
 from asyncua import ua
@@ -454,10 +455,10 @@ class MethodService:
     async def call(self, methods):
         results = []
         for method in methods:
-            results.append(self._call(method))
+            results.append(await self._call(method))
         return results
 
-    def _call(self, method):
+    async def _call(self, method):
         self.logger.info("Calling: %s", method)
         res = ua.CallMethodResult()
         if method.ObjectId not in self._aspace or method.MethodId not in self._aspace:
@@ -468,7 +469,10 @@ class MethodService:
                 res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNothingToDo)
             else:
                 try:
-                    result = node.call(method.ObjectId, *method.InputArguments)
+                    if iscoroutinefunction(node.call):
+                        result = await node.call(method.ObjectId, *method.InputArguments)
+                    else:
+                        result = node.call(method.ObjectId, *method.InputArguments)
                     if isinstance(result, ua.CallMethodResult):
                         res = result
                     elif isinstance(result, ua.StatusCode):
