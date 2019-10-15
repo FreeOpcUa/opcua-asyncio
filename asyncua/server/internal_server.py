@@ -167,6 +167,7 @@ class InternalServer:
 
     async def stop(self):
         self.logger.info('stopping internal server')
+        self.method_service.stop()
         await self.isession.close_session()
         await self.history_manager.stop()
 

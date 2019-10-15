@@ -121,6 +121,10 @@ class Server:
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.stop()
 
+    def __str__(self):
+        return f"OPC UA Server({self.endpoint.geturl()})"
+    __repr__ = __str__
+
     async def load_certificate(self, path: str):
         """
         load server certificate from file, either pem or der
