@@ -61,7 +61,7 @@ class InternalSubscription:
         """
         Trigger immediate publication (if requested by the PublishingInterval).
         """
-        if self._task and self.data.RevisedPublishingInterval <= 0.0:
+        if not self._task and self.data.RevisedPublishingInterval <= 0.0:
             # Publish immediately (as fast as possible)
             self.publish_results()
 
