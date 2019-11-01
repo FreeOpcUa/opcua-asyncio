@@ -48,11 +48,13 @@ class OPCUAProtocol(asyncio.Protocol):
         logger.info('Lost connection from %s, %s', self.peer_name, ex)
         self.transport.close()
         self.iserver.asyncio_transports.remove(self.transport)
-        self.iserver.loop.create_task(self.processor.close())
+        closing_task = self.iserver.loop.create_task(self.processor.close())
+        self.iserver.tasks_to_await.append(closing_task)
         if self in self.clients:
             self.clients.remove(self)
         self.messages.put_nowait((None, None))
         self._task.cancel()
+        self.iserver.tasks_to_await.append(self._task)
 
     def data_received(self, data):
         self._buffer += data
