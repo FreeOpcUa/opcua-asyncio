@@ -3,12 +3,10 @@ sys.path.insert(0, "../..")
 import time
 
 
-from asyncua.sync import Server, start_thread_loop, stop_thread_loop
+from asyncua.sync import Server
 
 
 if __name__ == "__main__":
-    start_thread_loop()
-
     # setup our server
     server = Server()
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
@@ -24,7 +22,7 @@ if __name__ == "__main__":
 
     # starting!
     server.start()
-    
+
     try:
         count = 0
         while True:
@@ -34,4 +32,3 @@ if __name__ == "__main__":
     finally:
         #close connection, remove subcsriptions, etc
         server.stop()
-        stop_thread_loop()

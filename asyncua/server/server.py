@@ -74,7 +74,7 @@ class Server:
 
     def __init__(self, iserver: InternalServer = None, loop: asyncio.AbstractEventLoop = None):
         self.loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
-        self.logger = logging.getLogger(__name__)
+        _logger = logging.getLogger(__name__)
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
         self.product_uri = "urn:freeopcua.github.io:python:server"
@@ -260,11 +260,11 @@ class Server:
 
         if self._security_policy != [ua.SecurityPolicyType.NoSecurity]:
             if not (self.certificate and self.iserver.private_key):
-                self.logger.warning("Endpoints other than open requested but private key and certificate are not set.")
+                _logger.warning("Endpoints other than open requested but private key and certificate are not set.")
                 return
 
             if ua.SecurityPolicyType.NoSecurity in self._security_policy:
-                self.logger.warning(
+                _logger.warning(
                     "Creating an open endpoint to the server, although encrypted endpoints are enabled.")
 
             if ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt in self._security_policy:
@@ -333,8 +333,11 @@ class Server:
             self.bserver.set_policies(self._policies)
             await self.bserver.start()
         except Exception as exp:
+            _logger.exception("%s error starting server", self)
             await self.iserver.stop()
             raise exp
+        else:
+            _logger.debug("%s server started", self)
 
     async def stop(self):
         """
@@ -344,6 +347,7 @@ class Server:
             await asyncio.wait([client.disconnect() for client in self._discovery_clients.values()])
         await self.bserver.stop()
         await self.iserver.stop()
+        _logger.debug("%s Internal server stopped, everything closed", self)
 
     def get_root_node(self):
         """
