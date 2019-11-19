@@ -41,6 +41,15 @@ class EventGenerator:
 
         if node:
             self.event = await events.get_event_obj_from_type_node(node)
+            if isinstance(self.event, event_objects.Condition):
+                # we need this that it works proper for conditions and alarms aka ConditionId
+                if isinstance(emitting_node, Node):
+                    condition_id = ua.NodeId(emitting_node.nodeid.Identifier, emitting_node.nodeid.NamespaceIndex)
+                elif isinstance(emitting_node, ua.NodeId):
+                    condition_id = emitting_node
+                else:
+                    condition_id = ua.NodeId(emitting_node.Identifier, emitting_node.NamespaceIndex)
+                self.event.add_property('NodeId', condition_id, ua.VariantType.NodeId)
 
         if isinstance(emitting_node, Node):
             pass
@@ -75,29 +84,20 @@ class EventGenerator:
 
     __repr__ = __str__
 
-    def trigger(self, time_attr=None, message=None):
+    def trigger(self, time=None, message=None):
         """
         Trigger the event. This will send a notification to all subscribed clients
         """
         self.event.EventId = ua.Variant(uuid.uuid4().hex.encode('utf-8'), ua.VariantType.ByteString)
-        if time_attr:
-            self.event.Time = time_attr
+        if time:
+            self.event.Time = time
         else:
             self.event.Time = datetime.utcnow()
         self.event.ReceiveTime = datetime.utcnow()
-
-        self.event.LocalTime = ua.uaprotocol_auto.TimeZoneDataType()
-        if sys.version_info.major > 2:
-            localtime = time.localtime(self.event.Time.timestamp())
-            self.event.LocalTime.Offset = localtime.tm_gmtoff//60
-        else:
-            localtime = time.localtime(time.mktime(self.event.Time.timetuple()))
-            self.event.LocalTime.Offset = -(time.altzone if localtime.tm_isdst else time.timezone)
-        self.event.LocalTime.DaylightSavingInOffset = bool(localtime.tm_isdst != -1)
-
+        # FIXME: LocalTime is wrong but currently know better. For description s. Part 5 page 18
+        self.event.LocalTime = datetime.utcnow()
         if message:
             self.event.Message = ua.LocalizedText(message)
         elif not self.event.Message:
             self.event.Message = ua.LocalizedText(Node(self.isession, self.event.SourceNode).get_browse_name().Text)
-
         self.isession.subscription_service.trigger_event(self.event)
