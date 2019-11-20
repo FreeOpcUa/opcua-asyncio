@@ -16,7 +16,6 @@ class OpcUaServer(object):
         self.server.application_type = ua.ApplicationType.Server
         self.con_gen = None
         self.alarm_gen = None
-        self.alarm_gen2 = None
 
     async def init(self, shelf_file=None):
         await self.server.iserver.init(shelf_file)
@@ -32,7 +31,6 @@ class OpcUaServer(object):
         alarm_obj = await objects.add_object(idx, "AlarmObject")
         alarm = self.server.get_node(ua.NodeId(10637))
         self.alarm_gen = await self.server.get_event_generator(alarm, alarm_obj)
-        self.alarm_gen2 = await self.server.get_event_generator(alarm, alarm_obj)
 
     def generate_condition(self, retain):
         self.con_gen.event.ConditionName = 'Example Condition'
@@ -61,24 +59,6 @@ class OpcUaServer(object):
             self.alarm_gen.event.ActiveState = ua.LocalizedText('Inactive', 'en')
             setattr(self.alarm_gen.event, 'ActiveState/Id', False)
         self.alarm_gen.trigger()
-
-    def generate_alarm2(self, active):
-        self.alarm_gen2.event.SourceName = 'andere source'
-        self.alarm_gen2.event.ConditionName = 'Example Alarm'
-        self.alarm_gen2.event.Message = ua.LocalizedText("Some Message")
-        self.alarm_gen2.event.Severity = 500
-        self.alarm_gen2.event.BranchId = ua.NodeId(0)
-        self.alarm_gen2.event.AckedState = ua.LocalizedText('Unacknowledged', 'en')
-        setattr(self.alarm_gen2.event, 'AckedState/Id', False)
-        if active == 1:
-            self.alarm_gen2.event.Retain = True
-            self.alarm_gen2.event.ActiveState = ua.LocalizedText('Active', 'en')
-            setattr(self.alarm_gen2.event, 'ActiveState/Id', True)
-        else:
-            self.alarm_gen2.event.Retain = False
-            self.alarm_gen2.event.ActiveState = ua.LocalizedText('Inactive', 'en')
-            setattr(self.alarm_gen2.event, 'ActiveState/Id', False)
-        self.alarm_gen2.trigger()
 
 
 async def interactive(server):
