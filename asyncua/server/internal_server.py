@@ -66,7 +66,6 @@ class InternalServer:
         self.method_service = MethodService(self.aspace)
         self.node_mgt_service = NodeManagementService(self.aspace)
         self.asyncio_transports = []
-        self.tasks_to_await = []
         self.subscription_service: SubscriptionService = SubscriptionService(self.loop, self.aspace)
         self.history_manager = HistoryManager(self)
         self.user_manager = default_user_manager  # defined at the end of this file
@@ -171,10 +170,6 @@ class InternalServer:
         self.method_service.stop()
         await self.isession.close_session()
         await self.history_manager.stop()
-
-        # Wait for _process_received_message_loop on each connection to complete
-        await asyncio.gather(*self.tasks_to_await, return_exceptions=True)
-        self.tasks_to_await = []
 
     def _set_current_time(self):
         self.loop.create_task(self.current_time_node.set_value(datetime.utcnow()))
