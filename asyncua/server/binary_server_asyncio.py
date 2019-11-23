@@ -142,8 +142,11 @@ class BinaryServer:
         for transport in self.iserver.asyncio_transports:
             transport.close()
 
-        # Wait for all protocol closing tasks to complete
-        await asyncio.gather(*self.protocol_tasks, return_exceptions=True)
+        # Wait for all transport closing tasks to complete
+        results = await asyncio.gather(*self.protocol_tasks, return_exceptions=True)
+        for result in results:
+            if isinstance(result, Exception):
+                self.logger.error(f"An error ocurred while closing a transport: {result}")
         self.protocol_tasks = []
 
         if self._server:
