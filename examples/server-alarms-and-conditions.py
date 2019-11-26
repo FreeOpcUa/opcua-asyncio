@@ -17,6 +17,14 @@ class OpcUaServer(object):
         self.con_gen = None
         self.alarm_gen = None
 
+    async def __aenter__(self):
+        await self.init()
+        await self.server.start()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.server.stop()
+
     async def init(self, shelf_file=None):
         await self.server.iserver.init(shelf_file)
         uri = "http://examples.freeopcua.github.io"
@@ -75,10 +83,8 @@ async def interactive(server):
 
 
 async def main():
-    server = OpcUaServer("opc.tcp://0.0.0.0:4840")
-    await server.init()
-    await server.server.start()
-    await interactive(server)
+    async with OpcUaServer("opc.tcp://0.0.0.0:4840") as server:
+        await interactive(server)
 
 
 if __name__ == '__main__':
