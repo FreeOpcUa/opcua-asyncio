@@ -106,7 +106,5 @@ class EventGenerator:
 
         if message:
             self.event.Message = ua.LocalizedText(message)
-        elif not self.event.Message:
-            self.event.Message = ua.LocalizedText(Node(self.isession, self.event.SourceNode).get_browse_name().Text)
 
         self.isession.subscription_service.trigger_event(self.event)
