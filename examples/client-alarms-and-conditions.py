@@ -19,7 +19,7 @@ class OpcUaClient(object):
     def __init__(self, endpoint):
         self.client = Client(endpoint)
 
-    async def init(self, ):
+    async def init(self):
         await self.client.connect()
         objects = self.client.get_objects_node()
         idx = await self.client.get_namespace_index("http://examples.freeopcua.github.io")
@@ -47,4 +47,8 @@ async def start():
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(start())
-    loop.run_forever()
+    try:
+        loop.run_forever()
+    finally:
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
