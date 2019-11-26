@@ -19,12 +19,11 @@ class Event:
     add properties using the add_property method!!!
     """
 
-    def __init__(self, emitting_node=ua.ObjectIds.Server):
+    def __init__(self):
         self.server_handle = None
         self.select_clauses = None
         self.event_fields = None
         self.data_types = {}
-        self.emitting_node = emitting_node
         # save current attributes
         self.internal_properties = list(self.__dict__.keys())[:] + ["internal_properties"]
 
