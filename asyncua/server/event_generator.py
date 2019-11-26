@@ -84,20 +84,29 @@ class EventGenerator:
 
     __repr__ = __str__
 
-    def trigger(self, time=None, message=None):
+    def trigger(self, time_attr=None, message=None):
         """
         Trigger the event. This will send a notification to all subscribed clients
         """
         self.event.EventId = ua.Variant(uuid.uuid4().hex.encode('utf-8'), ua.VariantType.ByteString)
-        if time:
-            self.event.Time = time
+        if time_attr:
+            self.event.Time = time_attr
         else:
             self.event.Time = datetime.utcnow()
         self.event.ReceiveTime = datetime.utcnow()
-        # FIXME: LocalTime is wrong but currently know better. For description s. Part 5 page 18
-        self.event.LocalTime = datetime.utcnow()
+
+        self.event.LocalTime = ua.uaprotocol_auto.TimeZoneDataType()
+        if sys.version_info.major > 2:
+            localtime = time.localtime(self.event.Time.timestamp())
+            self.event.LocalTime.Offset = localtime.tm_gmtoff//60
+        else:
+            localtime = time.localtime(time.mktime(self.event.Time.timetuple()))
+            self.event.LocalTime.Offset = -(time.altzone if localtime.tm_isdst else time.timezone)
+        self.event.LocalTime.DaylightSavingInOffset = bool(localtime.tm_isdst != -1)
+
         if message:
             self.event.Message = ua.LocalizedText(message)
         elif not self.event.Message:
             self.event.Message = ua.LocalizedText(Node(self.isession, self.event.SourceNode).get_browse_name().Text)
+
         self.isession.subscription_service.trigger_event(self.event)

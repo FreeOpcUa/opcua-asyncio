@@ -58,6 +58,8 @@ class EventsCodeGenerator:
             return "False"
         elif reference.refBrowseName == "Message":
             return "ua.LocalizedText(message)"
+        elif reference.refBrowseName == "LocalTime":
+            return "ua.NodeId(ua.ObjectIds.TimeZoneDataType)"
         elif reference.refDataType == "NodeId":
             return "ua.NodeId(ua.ObjectIds.{0})".format(
                 str(obIds.ObjectIdNames[int(str(reference.refId).split("=")[1])]).split("_")[0])
@@ -65,7 +67,9 @@ class EventsCodeGenerator:
             return "None"
 
     def get_data_type(self, reference):
-        if str(reference.refBrowseName).endswith("Time"):
+        if str(reference.refBrowseName) == "LocalTime":
+            return "ua.VariantType.ExtensionObject"
+        elif str(reference.refBrowseName).endswith("Time"):
             return "ua.VariantType.DateTime"
         elif str(reference.refDataType).startswith("i="):
             return "ua.NodeId(ua.ObjectIds.{0})".format(

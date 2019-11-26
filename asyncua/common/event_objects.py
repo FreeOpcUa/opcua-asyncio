@@ -20,7 +20,7 @@ class BaseEvent(Event):
         self.add_property('SourceName', None, ua.VariantType.String)
         self.add_property('Time', None, ua.VariantType.DateTime)
         self.add_property('ReceiveTime', None, ua.VariantType.DateTime)
-        self.add_property('LocalTime', None, ua.VariantType.DateTime)
+        self.add_property('LocalTime', ua.NodeId(ua.ObjectIds.TimeZoneDataType), ua.VariantType.ExtensionObject)
         self.add_property('Message', ua.LocalizedText(message), ua.VariantType.LocalizedText)
         self.add_property('Severity', severity, ua.VariantType.UInt16)
 
