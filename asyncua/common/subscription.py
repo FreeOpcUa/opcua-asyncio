@@ -3,7 +3,7 @@ high level interface to subscriptions
 """
 import asyncio
 import logging
-import collections
+import collections.abc
 from typing import Union, List, Iterable
 
 from asyncua import ua
@@ -207,7 +207,7 @@ class Subscription:
         :return: Integer handle or if multiple Nodes were given a List of Integer handles/ua.StatusCode
         """
         is_list = True
-        if isinstance(nodes, collections.Iterable):
+        if isinstance(nodes, collections.abc.Iterable):
             nodes = list(nodes)
         else:
             nodes = [nodes]
