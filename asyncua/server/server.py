@@ -417,7 +417,7 @@ class Server:
         uries = await self.get_namespace_array()
         return uries.index(uri)
 
-    async def get_event_generator(self, etype=None, emitting_node=ua.ObjectIds.Server):
+    async def get_event_generator(self, etype=None, emitting_node=ua.ObjectIds.Server, notifier_path=None):
         """
         Returns an event object using an event type from address space.
         Use this object to fire events
@@ -425,7 +425,7 @@ class Server:
         if not etype:
             etype = BaseEvent()
         ev_gen = EventGenerator(self.iserver.isession)
-        await ev_gen.init(etype, emitting_node=emitting_node)
+        await ev_gen.init(etype, emitting_node=emitting_node, notifier_path=notifier_path)
         return ev_gen
 
     async def create_custom_data_type(self, idx, name, basetype=ua.ObjectIds.BaseDataType, properties=None, description=None) -> Coroutine:
