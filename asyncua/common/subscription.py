@@ -170,7 +170,7 @@ class Subscription:
         return await self._subscribe(nodes, attr, queuesize=queuesize)
 
     async def subscribe_events(self,
-                               sourcenode: Node = ua.ObjectIds.Server,
+                               sourcenodes: Union[Node, Iterable[Node]],
                                evtypes=ua.ObjectIds.BaseEventType,
                                evfilter=None,
                                queuesize=0) -> int:
@@ -188,13 +188,16 @@ class Subscription:
         MaxUInt32 for max queue size
         :return: Handle for changing/cancelling of the subscription
         """
-        sourcenode = Node(self.server, sourcenode)
+        if isinstance(sourcenodes, collections.abc.Iterable):
+            sourcenodes = [Node(self.server, node) for node in sourcenodes]
+        else:
+            sourcenodes = [Node(self.server, sourcenodes)]
         if evfilter is None:
             if not type(evtypes) in (list, tuple):
                 evtypes = [evtypes]
             evtypes = [Node(self.server, evtype) for evtype in evtypes]
             evfilter = await get_filter_from_event_type(evtypes)
-        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
+        return await self._subscribe(sourcenodes, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 
     async def _subscribe(self, nodes: Union[Node, Iterable[Node]],
                          attr, mfilter=None, queuesize=0) -> Union[int, List[Union[int, ua.StatusCode]]]:
