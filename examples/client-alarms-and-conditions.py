@@ -37,8 +37,11 @@ class OpcUaClient(object):
         objects = self.client.get_objects_node()
         idx = await self.client.get_namespace_index("http://examples.freeopcua.github.io")
 
+        path = ['%s:NotifierObject' % idx]
+        noti_obj = await objects.get_child(path)
+
         path = ['%s:ConditionObject' % idx]
-        con_obj = await objects.get_child(path)
+        con_obj = await noti_obj.get_child(path)
         condition = self.client.get_node(ua.NodeId(2830))
 
         handler = SubHandler()
@@ -48,7 +51,7 @@ class OpcUaClient(object):
         self.subscriptions[sub].append(con_handle)
 
         path = ['%s:AlarmObject' % idx]
-        alarm_obj = await objects.get_child(path)
+        alarm_obj = await noti_obj.get_child(path)
         alarm = self.client.get_node(ua.NodeId(10637))
 
         alarm_handle = await sub.subscribe_events(alarm_obj, alarm)

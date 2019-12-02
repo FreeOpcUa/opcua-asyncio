@@ -25,20 +25,22 @@ class OpcUaServer(object):
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.server.stop()
 
-    async def init(self, shelf_file=None):
-        await self.server.iserver.init(shelf_file)
+    async def init(self):
+        await self.server.init()
         uri = "http://examples.freeopcua.github.io"
         idx = await self.server.register_namespace(uri)
         objects = self.server.get_objects_node()
 
-        con_obj = await objects.add_object(idx, "ConditionObject")
+        noti_node = await objects.add_object(idx, 'NotifierObject')
+
+        con_obj = await noti_node.add_object(idx, "ConditionObject")
         condition = self.server.get_node(ua.NodeId(2830))
-        self.con_gen = await self.server.get_event_generator(condition, con_obj)
+        self.con_gen = await self.server.get_event_generator(condition, con_obj, [ua.NodeId(2253), noti_node, con_obj])
         self.con_gen.event.add_property('NodeId', con_obj.nodeid, ua.VariantType.NodeId)
 
-        alarm_obj = await objects.add_object(idx, "AlarmObject")
+        alarm_obj = await noti_node.add_object(idx, "AlarmObject")
         alarm = self.server.get_node(ua.NodeId(10637))
-        self.alarm_gen = await self.server.get_event_generator(alarm, alarm_obj)
+        self.alarm_gen = await self.server.get_event_generator(alarm, alarm_obj, [ua.NodeId(2253), noti_node, alarm_obj])
 
     def generate_condition(self, retain):
         self.con_gen.event.ConditionName = 'Example Condition'
@@ -52,8 +54,8 @@ class OpcUaServer(object):
         self.con_gen.trigger()
 
     def generate_alarm(self, active):
-        self.alarm_gen.event.ConditionName = 'Example Alarm'
-        self.alarm_gen.event.Message = ua.LocalizedText("Some Message")
+        self.alarm_gen.event.ConditionName = 'Example Alarm1'
+        self.alarm_gen.event.Message = ua.LocalizedText("error in module1")
         self.alarm_gen.event.Severity = 500
         self.alarm_gen.event.BranchId = ua.NodeId(0)
         self.alarm_gen.event.AckedState = ua.LocalizedText('Unacknowledged', 'en')
@@ -75,6 +77,8 @@ async def interactive(server):
         # server.generate_alarm(1)
         line = await ainput(">>> ")
         print('execute:', line)
+        if line == 'exit':
+            break
         try:
             eval(line)
         except Exception as msg:
