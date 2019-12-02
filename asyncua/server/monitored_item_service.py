@@ -125,9 +125,17 @@ class MonitoredItemService:
         # result.FilterResult = ua.EventFilterResult()  # spec says we can ignore if not error
         mdata.where_clause_evaluator = WhereClauseEvaluator(self.logger, self.aspace, mdata.filter.WhereClause)
         self._commit_monitored_item(result, mdata)
-        if params.ItemToMonitor.NodeId not in self._monitored_events:
-            self._monitored_events[params.ItemToMonitor.NodeId] = []
-        self._monitored_events[params.ItemToMonitor.NodeId].append(result.MonitoredItemId)
+
+        def find_events(node_id):
+            for ref in self.aspace.get(node_id).references:
+                if ref.ReferenceTypeId == ua.NumericNodeId(41):
+                    if ref.NodeId not in self._monitored_events:
+                        self._monitored_events[ref.NodeId] = []
+                    self._monitored_events[ref.NodeId].append(result.MonitoredItemId)
+                elif ref.ReferenceTypeId == ua.NumericNodeId(48):
+                    find_events(ref.NodeId)
+
+        find_events(params.ItemToMonitor.NodeId)
         return result
 
     def _create_data_change_monitored_item(self, params: ua.MonitoredItemCreateRequest):
@@ -205,11 +213,11 @@ class MonitoredItemService:
         return False
 
     def trigger_event(self, event):
-        if event.emitting_node not in self._monitored_events:
+        if event.EventType not in self._monitored_events:
             self.logger.debug("%s has NO subscription for events %s from node: %s", self, event, event.emitting_node)
             return False
         self.logger.debug("%s has subscription for events %s from node: %s", self, event, event.emitting_node)
-        mids = self._monitored_events[event.emitting_node]
+        mids = self._monitored_events[event.EventType]
         for mid in mids:
             self._trigger_event(event, mid)
         return True
