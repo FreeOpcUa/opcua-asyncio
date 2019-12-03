@@ -1,4 +1,3 @@
-import time
 from concurrent.futures import Future
 
 import pytest
@@ -25,11 +24,11 @@ def server(tloop):
     s.disable_clock(True)
     s.set_endpoint('opc.tcp://0.0.0.0:8840/freeopcua/server/')
     uri = "http://examples.freeopcua.github.io"
-    idx = s.register_namespace(uri)
-    myobj = s.nodes.objects.add_object(idx, "MyObject")
-    myvar = myobj.add_variable(idx, "MyVariable", 6.7)
-    mysin = myobj.add_variable(idx, "MySin", 0, ua.VariantType.Float)
-    meth = s.nodes.objects.add_method(idx, "Divide", divide, [ua.VariantType.Float, ua.VariantType.Float], [ua.VariantType.Float])
+    ns_idx = s.register_namespace(uri)
+    myobj = s.nodes.objects.add_object(ns_idx, "MyObject")
+    myobj.add_variable(ns_idx, "MyVariable", 6.7)
+    myobj.add_variable(ns_idx, "MySin", 0, ua.VariantType.Float)
+    s.nodes.objects.add_method(ns_idx, "Divide", divide, [ua.VariantType.Float, ua.VariantType.Float], [ua.VariantType.Float])
     with s:
         yield s
 
@@ -60,12 +59,21 @@ def test_sync_client(client, idx):
     assert myvar.get_value() == 6.7
 
 
-def test_sync_get_node(client):
+def test_sync_client_get_node(client):
     node  = client.get_node(85)
     assert node == client.nodes.objects
     nodes = node.get_children()
     assert len(nodes) > 2
     assert nodes[0] == client.nodes.server
+    assert isinstance(nodes[0], Node)
+
+
+def test_sync_server_get_node(server):
+    node  = server.get_node(85)
+    assert node == server.nodes.objects
+    nodes = node.get_children()
+    assert len(nodes) > 2
+    assert nodes[0] == server.nodes.server
     assert isinstance(nodes[0], Node)
 
 
