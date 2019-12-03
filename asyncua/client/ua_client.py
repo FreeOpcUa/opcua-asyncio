@@ -120,6 +120,11 @@ class UASocketProtocol(asyncio.Protocol):
         self._request_id += 1
         future = self.loop.create_future()
         self._callbackmap[self._request_id] = future
+
+        # Change to the new security token if the connection has been renewed.
+        if self._connection.next_security_token.TokenId != 0:
+            self._connection.revolve_tokens()
+
         msg = self._connection.message_to_binary(binreq, message_type=message_type, request_id=self._request_id)
         self.transport.write(msg)
         return future
@@ -195,11 +200,9 @@ class UASocketProtocol(asyncio.Protocol):
             self._send_request(request, message_type=ua.MessageType.SecureOpen),
             self.timeout
         )
-        # FIXME: we have a race condition here
-        # we can get a packet with the new token id before we reach to store it..
         response = struct_from_binary(ua.OpenSecureChannelResponse, result)
         response.ResponseHeader.ServiceResult.check()
-        self._connection.set_channel(response.Parameters)
+        self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
         return response.Parameters
 
     async def close_secure_channel(self):
