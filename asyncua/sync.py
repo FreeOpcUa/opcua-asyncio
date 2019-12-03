@@ -209,7 +209,7 @@ class Server:
         pass
 
     def get_node(self, nodeid):
-        return Node(self.tloop, server.Server.get_node(self, nodeid))
+        return Node(self.tloop, self.aio_obj.get_node(nodeid))
 
     @syncmethod
     def import_xml(self, path=None, xmlstring=None):
