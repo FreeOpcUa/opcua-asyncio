@@ -103,6 +103,11 @@ class {self.name}(object):
             code += f"        ('{field.name}', '{uatype}'),\n"
         code += "    ]"
         code += """
+    def __str__(self):
+        vals = [name + ": " + str(val) for name, val in self.__dict__.items()]
+        return self.__class__.__name__ + "(" + ", ".join(vals) + ")"
+
+    __repr__ = __str__
 
     def __init__(self):
 """
