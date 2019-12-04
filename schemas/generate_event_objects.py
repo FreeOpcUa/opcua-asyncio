@@ -40,15 +40,20 @@ class EventsCodeGenerator:
         self.write(f"__all__ = [{names}]")
         self.write("")
 
-    def add_properties(self, event):
+    def add_properties_and_variables(self, event):
         for ref in event.references:
             if ref.referenceType == "HasProperty":
                 self.write("self.add_property('{0}', {1}, {2})".format(
-                    ref.refBrowseName, self.get_property_value(ref),
-                    self.get_property_data_type(ref)
+                    ref.refBrowseName, self.get_value(ref),
+                    self.get_data_type(ref)
+                ))
+            elif ref.referenceType == "HasComponent":
+                self.write("self.add_variable('{0}', {1}, {2})".format(
+                    ref.refBrowseName, self.get_value(ref),
+                    self.get_data_type(ref)
                 ))
 
-    def get_property_value(self, reference):
+    def get_value(self, reference):
         if reference.refBrowseName == "SourceNode":
             return "sourcenode"
         elif reference.refBrowseName == "Severity":
@@ -90,7 +95,7 @@ class EventsCodeGenerator:
             self.write("def __init__(self, sourcenode=None, message=None, severity=1):")
             self.iidx += 1
             self.write("Event.__init__(self)")
-            self.add_properties(event)
+            self.add_properties_and_variables(event)
         else:
             self.write("class {0}({1}):".format(event.browseName, parent_event_browse_name[0]))
             self.iidx += 1
@@ -104,7 +109,7 @@ class EventsCodeGenerator:
             self.iidx += 1
             self.write("super({0}, self).__init__(sourcenode, message, severity)".format(event.browseName))
             self.write("self.EventType = ua.NodeId(ua.ObjectIds.{0}Type)".format(event.browseName))
-            self.add_properties(event)
+            self.add_properties_and_variables(event)
         self.iidx -= 2
 
     def generate_events_code(self, model):
