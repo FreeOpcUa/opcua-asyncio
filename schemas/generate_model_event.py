@@ -13,16 +13,17 @@ class Node_struct:
         self.displayName = None
         self.description = None
         self.references = []
+        self.tag = None
 
     def __hash__(self):
         return hash(self.nodeId, self.browseName, self.isAbstract, self.parentNodeId, self.dataType, self.displayName,
-                    self.description, self.references)
+                    self.description, self.references, self.tag)
 
     def __eq__(self, other):
         return (self.nodeId, self.browseName, self.isAbstract, self.parentNodeId, self.dataType, self.displayName,
-                self.description, self.references) == (
+                self.description, self.references, self.tag) == (
                other.nodeId, other.browseName, other.isAbstract, other.parentNodeId, other.dataType, other.displayName,
-               other.description, other.references)
+               other.description, other.references, other.tag)
 
     def __ne__(self, other):
         return not (self == other)
@@ -65,6 +66,7 @@ class Parser(object):
         node = Node_struct()
         for child in root:
             if nodeId == child.attrib.get('NodeId'):
+                node.tag = child.tag.split(self.nameSpace)[1]
                 node.browseName = str(child.attrib.get('BrowseName'))
                 node.nodeId = child.attrib.get('NodeId')
                 node.isAbstract = child.attrib.get('IsAbstract')
@@ -99,7 +101,8 @@ class Parser(object):
         listEventType = {}
         for child in root:
             browseName = str(child.attrib.get('BrowseName'))
-            if browseName.endswith("EventType"):
+            if browseName.endswith("EventType") or browseName.endswith("ConditionType") or \
+                    browseName.endswith("AlarmType"):
                 if browseName == "EventType":
                     continue
                 node = Node_struct()
@@ -113,11 +116,23 @@ class Parser(object):
                     reference = Reference()
                     reference.referenceType = ref.attrib.get('ReferenceType')
                     reference.refId = ref.text
-                    self.refNode = self.findNodeWithNodeId(root, reference.refId).browseName
                     reference.refBrowseName = self.findNodeWithNodeId(root, reference.refId).browseName
                     reference.refDataType = self.findNodeWithNodeId(root, reference.refId).dataType
                     if ref.attrib.get('IsForward') is not None:
                         node.parentNodeId = reference.refId
+                    if reference.referenceType == 'HasComponent':
+                        refs_node = self.findNodeWithNodeId(root, reference.refId)
+                        if refs_node.tag != 'UAVariable':
+                            continue
+                        for ref in refs_node.references:
+                            if ref.referenceType == 'HasProperty':
+                                child_ref_node = self.findNodeWithNodeId(root, ref.refId)
+                                reference2 = Reference()
+                                reference2.referenceType = 'HasProperty'
+                                reference2.refId = ref.refId
+                                reference2.refBrowseName = refs_node.browseName + '/' + child_ref_node.browseName
+                                reference2.refDataType = child_ref_node.dataType
+                                node.references.append(reference2)
                     node.references.append(reference)
                 listEventType.update({node.nodeId: node})
 
