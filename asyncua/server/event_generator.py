@@ -17,7 +17,7 @@ class EventGenerator:
 
     Arguments to constructor are:
         server: The InternalSession object to use for query and event triggering
-        source: The emiting source for the node, either an objectId, NodeId or a Node
+        emitting_node: The emiting  node, either an objectId, NodeId or a Node
         etype: The event type, either an objectId, a NodeId or a Node object
     """
 
@@ -41,6 +41,15 @@ class EventGenerator:
 
         if node:
             self.event = await events.get_event_obj_from_type_node(node)
+            if isinstance(self.event, event_objects.Condition):
+                # we need this that it works proper for conditions and alarms aka ConditionId
+                if isinstance(emitting_node, Node):
+                    condition_id = ua.NodeId(emitting_node.nodeid.Identifier, emitting_node.nodeid.NamespaceIndex)
+                elif isinstance(emitting_node, ua.NodeId):
+                    condition_id = emitting_node
+                else:
+                    condition_id = ua.NodeId(emitting_node.Identifier, emitting_node.NamespaceIndex)
+                self.event.add_property('NodeId', condition_id, ua.VariantType.NodeId)
 
         if isinstance(emitting_node, Node):
             pass
