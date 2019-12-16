@@ -49,6 +49,7 @@ class MonitoredItemService:
         self._monitored_events = {}
         self._monitored_datachange: Dict[int, int] = {}
         self._monitored_item_counter = 111
+        self._events_with_retain = {}
 
     def __str__(self):
         return f"MonitoredItemService({self.isub.data.SubscriptionId})"
@@ -238,6 +239,10 @@ class MonitoredItemService:
 
     async def trigger_statuschange(self, code):
         await self.isub.enqueue_statuschange(code)
+
+    def condition_refresh(self):
+        for event in self._events_with_retain.values():
+            self.trigger_event(event)
 
 
 class WhereClauseEvaluator:
