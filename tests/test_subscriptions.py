@@ -464,6 +464,13 @@ async def test_events_MyObject(opc):
 
 
 async def test_events_wrong_source(opc):
+    # clean the previous BaseEvent from the server
+    # it only exists if you run previous tests
+    server_node = opc.server.get_server_node()
+    server_refs = await server_node.get_references(41)
+    for ref in server_refs:
+        if ref.ReferenceTypeId.Identifier == 41 and ref.NodeId.Identifier == 2041:
+            await server_node.delete_reference(2041, 41)
     objects = opc.server.get_objects_node()
     o = await objects.add_object(3, 'MyObject')
     evgen = await opc.server.get_event_generator(emitting_node=o)
