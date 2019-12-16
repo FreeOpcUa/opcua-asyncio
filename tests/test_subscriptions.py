@@ -466,10 +466,12 @@ async def test_events_MyObject(opc):
 async def test_events_wrong_source(opc):
     objects = opc.server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
+    o2 = await objects.add_object(3, 'MyObject2')
     evgen = await opc.server.get_event_generator(emitting_node=o)
+    evgen2 = await opc.server.get_event_generator(2782, emitting_node=o2)
     myhandler = MySubHandler()
     sub = await opc.opc.create_subscription(100, myhandler)
-    handle = await sub.subscribe_events()
+    handle = await sub.subscribe_events(o2)
     tid = datetime.utcnow()
     msg = "this is my msg "
     await evgen.trigger(tid, msg)
