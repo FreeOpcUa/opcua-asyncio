@@ -90,6 +90,9 @@ class InternalServer:
         self.subscription_service.standard_events[ua.ObjectIds.RefreshEndEventType] = refresh_end_event_type
         condition_refresh_method = Node(self.isession, ua.NodeId(ua.ObjectIds.ConditionType_ConditionRefresh))
         self.isession.add_method_callback(condition_refresh_method.nodeid, self.subscription_service.condition_refresh)
+        condition_refresh2_method = Node(self.isession, ua.NodeId(ua.ObjectIds.ConditionType_ConditionRefresh2))
+        self.isession.add_method_callback(condition_refresh2_method.nodeid,
+                                          self.subscription_service.condition_refresh2)
 
     async def setup_nodes(self):
         """
