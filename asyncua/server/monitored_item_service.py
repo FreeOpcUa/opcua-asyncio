@@ -50,6 +50,7 @@ class MonitoredItemService:
         self._monitored_datachange: Dict[int, int] = {}
         self._monitored_item_counter = 111
         self._events_with_retain = {}
+        self._mid_with_retain = {}
 
     def __str__(self):
         return f"MonitoredItemService({self.isub.data.SubscriptionId})"
@@ -233,6 +234,17 @@ class MonitoredItemService:
             self.logger.debug("Could not find monitored items for id %s for event %s in subscription %s", mid, event,
                               self)
             return
+        if hasattr(event, 'Retain'):
+            if event.Retain:
+                if mid in self._mid_with_retain:
+                    if event not in self._mid_with_retain[mid]:
+                        self._mid_with_retain[mid].append(event)
+                else:
+                    self._mid_with_retain[mid] = [event]
+            else:
+                self._mid_with_retain[mid].remove(event)
+                if not self._mid_with_retain[mid]:
+                    del self._mid_with_retain[mid]
         mdata = self._monitored_items[mid]
         if not mdata.where_clause_evaluator.eval(event):
             self.logger.info("%s, %s, Event %s does not fit WhereClause, not generating event", self, mid, event)
@@ -248,6 +260,11 @@ class MonitoredItemService:
     def condition_refresh(self):
         for event in self._events_with_retain.values():
             self.trigger_event(event)
+
+    def condition_refresh2(self, mid):
+        if mid in self._mid_with_retain:
+            for event in self._mid_with_retain[mid]:
+                self._trigger_event(event, mid)
 
 
 class WhereClauseEvaluator:
