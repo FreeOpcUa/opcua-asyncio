@@ -21,6 +21,7 @@ from .subscription_service import SubscriptionService
 from .standard_address_space import standard_address_space
 from .users import User
 from .internal_session import InternalSession
+from .event_generator import EventGenerator
 
 try:
     from asyncua.crypto import uacrypto
@@ -56,6 +57,7 @@ class InternalServer:
         self.endpoints = []
         self._channel_id_counter = 5
         self.allow_remote_admin = True
+        self.bind_condition_methods = False
         self.disabled_clock = False  # for debugging we may want to disable clock that writes too much in log
         self._known_servers = {}  # used if we are a discovery server
         self.certificate = None
@@ -78,6 +80,18 @@ class InternalServer:
         await self._address_space_fixes()
         await self.setup_nodes()
         await self.history_manager.init()
+        if self.bind_condition_methods:
+            await self.bind_standard_methods()
+
+    async def bind_standard_methods(self):
+        refresh_start_event_type = EventGenerator(self.isession)
+        await refresh_start_event_type.init(ua.ObjectIds.RefreshStartEventType)
+        self.subscription_service.standard_events[ua.ObjectIds.RefreshStartEventType] = refresh_start_event_type
+        refresh_end_event_type = EventGenerator(self.isession)
+        await refresh_end_event_type.init(ua.ObjectIds.RefreshEndEventType)
+        self.subscription_service.standard_events[ua.ObjectIds.RefreshEndEventType] = refresh_end_event_type
+        condition_refresh_method = Node(self.isession, ua.NodeId(ua.ObjectIds.ConditionType_ConditionRefresh))
+        self.isession.add_method_callback(condition_refresh_method.nodeid, self.subscription_service.condition_refresh)
 
     async def setup_nodes(self):
         """

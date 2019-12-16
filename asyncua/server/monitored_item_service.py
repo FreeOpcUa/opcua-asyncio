@@ -49,6 +49,7 @@ class MonitoredItemService:
         self._monitored_events = {}
         self._monitored_datachange: Dict[int, int] = {}
         self._monitored_item_counter = 111
+        self._events_with_retain = {}
 
     def __str__(self):
         return f"MonitoredItemService({self.isub.data.SubscriptionId})"
@@ -213,6 +214,11 @@ class MonitoredItemService:
         return False
 
     def trigger_event(self, event):
+        if hasattr(event, 'Retain'):
+            if event.Retain:
+                self._events_with_retain[event.EventType] = event
+            else:
+                del self._events_with_retain[event.EventType]
         if event.EventType not in self._monitored_events:
             self.logger.debug("%s has NO subscription for events %s from node: %s", self, event, event.emitting_node)
             return False
@@ -238,6 +244,10 @@ class MonitoredItemService:
 
     def trigger_statuschange(self, code):
         self.isub.enqueue_statuschange(code)
+
+    def condition_refresh(self):
+        for event in self._events_with_retain.values():
+            self.trigger_event(event)
 
 
 class WhereClauseEvaluator:

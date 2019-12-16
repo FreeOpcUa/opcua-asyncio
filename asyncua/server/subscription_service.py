@@ -6,7 +6,7 @@ import asyncio
 import logging
 from typing import Dict, Iterable
 
-from asyncua import ua
+from asyncua import ua, uamethod
 from .address_space import AddressSpace
 from .internal_subscription import InternalSubscription
 
@@ -23,6 +23,7 @@ class SubscriptionService:
         self.aspace: AddressSpace = aspace
         self.subscriptions: Dict[int, InternalSubscription] = {}
         self._sub_id_counter = 77
+        self.standard_events = {}
 
     @property
     def active_subscription_ids(self):
@@ -101,3 +102,13 @@ class SubscriptionService:
     def trigger_event(self, event):
         for sub in self.subscriptions.values():
             sub.monitored_item_srv.trigger_event(event)
+
+    @uamethod
+    def condition_refresh(self, parent, sub_id):
+        if sub_id not in self.subscriptions:
+            return ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
+        if ua.ObjectIds.RefreshStartEventType in self.standard_events:
+            self.standard_events[ua.ObjectIds.RefreshStartEventType].trigger()
+        self.subscriptions[sub_id].monitored_item_srv.condition_refresh()
+        if ua.ObjectIds.RefreshEndEventType in self.standard_events:
+            self.standard_events[ua.ObjectIds.RefreshEndEventType].trigger()
