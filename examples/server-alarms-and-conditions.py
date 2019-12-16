@@ -35,12 +35,14 @@ class OpcUaServer(object):
 
         con_obj = await noti_node.add_object(idx, "ConditionObject")
         condition = self.server.get_node(ua.NodeId(2830))
-        self.con_gen = await self.server.get_event_generator(condition, con_obj)
+        self.con_gen = await self.server.get_event_generator(condition, con_obj,
+                                                             notifier_path=[ua.ObjectIds.Server, noti_node, con_obj])
         self.con_gen.event.add_property('NodeId', con_obj.nodeid, ua.VariantType.NodeId)
 
         alarm_obj = await noti_node.add_object(idx, "AlarmObject")
         alarm = self.server.get_node(ua.NodeId(10637))
-        self.alarm_gen = await self.server.get_event_generator(alarm, alarm_obj)
+        self.alarm_gen = await self.server.get_event_generator(alarm, alarm_obj,
+                                                               notifier_path=[ua.ObjectIds.Server, noti_node, alarm_obj])
 
     def generate_condition(self, retain):
         self.con_gen.event.ConditionName = 'Example Condition'
