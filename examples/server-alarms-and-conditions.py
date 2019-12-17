@@ -14,7 +14,7 @@ class OpcUaServer(object):
         self.server.set_endpoint(endpoint)
         self.server.set_server_name('Alarms and Conditions Test Server')
         self.server.application_type = ua.ApplicationType.Server
-        self.server.iserver.bind_condition_methods = True
+        self.server.iserver.bind_condition_methods = 500
         self.con_gen = None
         self.alarm_gen = None
 
