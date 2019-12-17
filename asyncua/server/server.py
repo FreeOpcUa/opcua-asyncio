@@ -125,14 +125,14 @@ class Server:
         return f"OPC UA Server({self.endpoint.geturl()})"
     __repr__ = __str__
 
-    async def load_certificate(self, path: str):
+    async def load_certificate(self, path: str, format: str =None):
         """
         load server certificate from file, either pem or der
         """
-        self.certificate = await uacrypto.load_certificate(path)
+        self.certificate = await uacrypto.load_certificate(path, format)
 
-    async def load_private_key(self, path):
-        self.iserver.private_key = await uacrypto.load_private_key(path)
+    async def load_private_key(self, path, format=None):
+        self.iserver.private_key = await uacrypto.load_private_key(path, format)
 
     def disable_clock(self, val: bool = True):
         """

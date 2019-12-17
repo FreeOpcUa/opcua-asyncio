@@ -12,10 +12,10 @@ from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
 
 
-async def load_certificate(path):
+async def load_certificate(path, format=None):
     _, ext = os.path.splitext(path)
     async with aiofiles.open(path, mode='rb') as f:
-        if ext == ".pem":
+        if ext == ".pem" or format == 'pem' or format == 'PEM':
             return x509.load_pem_x509_certificate(await f.read(), default_backend())
         else:
             return x509.load_der_x509_certificate(await f.read(), default_backend())
@@ -27,10 +27,10 @@ def x509_from_der(data):
     return x509.load_der_x509_certificate(data, default_backend())
 
 
-async def load_private_key(path):
+async def load_private_key(path, format=None):
     _, ext = os.path.splitext(path)
     async with aiofiles.open(path, mode='rb') as f:
-        if ext == ".pem":
+        if ext == ".pem" or format == 'pem' or format == 'PEM':
             return serialization.load_pem_private_key(await f.read(), password=None, backend=default_backend())
         else:
             return serialization.load_der_private_key(await f.read(), password=None, backend=default_backend())
