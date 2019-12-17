@@ -23,9 +23,11 @@ def value_to_datavalue(val, varianttype=None):
     elif isinstance(val, ua.Variant):
         datavalue = ua.DataValue(val)
         datavalue.SourceTimestamp = datetime.utcnow()
+        datavalue.ServerTimestamp = datetime.utcnow()
     else:
         datavalue = ua.DataValue(ua.Variant(val, varianttype))
         datavalue.SourceTimestamp = datetime.utcnow()
+        datavalue.ServerTimestamp = datetime.utcnow()
     return datavalue
 
 

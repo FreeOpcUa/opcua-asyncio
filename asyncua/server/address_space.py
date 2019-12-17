@@ -418,7 +418,7 @@ class NodeManagementService:
         if item.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
             dv = ua.DataValue(ua.Variant(getattr(item, name), vtype))
             if add_timestamps:
-                # dv.ServerTimestamp = datetime.utcnow()  # Disabled until someone explains us it should be there
+                dv.ServerTimestamp = datetime.utcnow()
                 dv.SourceTimestamp = datetime.utcnow()
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
 
@@ -655,6 +655,9 @@ class AddressSpace:
             dv.StatusCode = ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
             return dv
         attval = node.attributes[attr]
+        if attr == 13:
+            datavalue = attval.value
+            datavalue.ServerTimestamp = datetime.utcnow()
         if attval.value_callback:
             return attval.value_callback()
         return attval.value

@@ -2,6 +2,7 @@
 High level node object, to access node attribute
 and browse address space
 """
+from datetime import datetime
 
 import logging
 
@@ -171,7 +172,9 @@ class Node:
         An exception will be generated for other node types.
         DataValue contain a variable value as a variant as well as server and source timestamps
         """
-        return await self.get_attribute(ua.AttributeIds.Value)
+        datavalue = await self.get_attribute(ua.AttributeIds.Value)
+        datavalue.ServerTimestamp = datetime.utcnow()
+        return datavalue
 
     async def set_array_dimensions(self, value):
         """
