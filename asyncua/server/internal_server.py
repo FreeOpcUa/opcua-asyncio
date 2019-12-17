@@ -84,9 +84,13 @@ class InternalServer:
     async def bind_standard_methods(self):
         refresh_start_event_type = EventGenerator(self.isession)
         await refresh_start_event_type.init(ua.ObjectIds.RefreshStartEventType)
+        if isinstance(self.bind_condition_methods, int):
+            refresh_start_event_type.event.Severity = self.bind_condition_methods
         self.subscription_service.standard_events[ua.ObjectIds.RefreshStartEventType] = refresh_start_event_type
         refresh_end_event_type = EventGenerator(self.isession)
         await refresh_end_event_type.init(ua.ObjectIds.RefreshEndEventType)
+        if isinstance(self.bind_condition_methods, int):
+            refresh_end_event_type.event.Severity = self.bind_condition_methods
         self.subscription_service.standard_events[ua.ObjectIds.RefreshEndEventType] = refresh_end_event_type
         condition_refresh_method = Node(self.isession, ua.NodeId(ua.ObjectIds.ConditionType_ConditionRefresh))
         self.isession.add_method_callback(condition_refresh_method.nodeid, self.subscription_service.condition_refresh)
