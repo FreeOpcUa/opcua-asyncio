@@ -20,8 +20,8 @@ class InternalSession:
     """
 
     """
-    __max_connections = None
-    __current_connections = 0
+    max_connections = 1000
+    _current_connections = 0
     _counter = 10
     _auth_counter = 1000
 
@@ -47,8 +47,6 @@ class InternalSession:
     def __str__(self):
         return f'InternalSession(name:{self.name}, user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})'
 
-    def set_max_connections(self, quantity):
-        InternalSession.__max_connections = quantity
 
     async def get_endpoints(self, params=None, sockname=None):
         return await self.iserver.get_endpoints(params, sockname)
@@ -68,9 +66,10 @@ class InternalSession:
 
     async def close_session(self, delete_subs=True):
         self.logger.info('close session %s', self.name)
-        if InternalSession.__max_connections is not None:
-            if self.state == SessionState.Activated:
-                InternalSession.__current_connections -= 1
+        if self.state == SessionState.Activated:
+            InternalSession._current_connections -= 1
+        if InternalSession._current_connections < 0:
+            InternalSession._current_connections = 0
         self.state = SessionState.Closed
         await self.delete_subscriptions(self.subscriptions)
 
@@ -79,16 +78,14 @@ class InternalSession:
         result = ua.ActivateSessionResult()
         if self.state != SessionState.Created:
             raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
-        if InternalSession.__max_connections is not None:
-            if InternalSession.__current_connections >= InternalSession.__max_connections:
-                raise ServiceError(ua.StatusCodes.BadMaxConnectionsReached)
+        if InternalSession._current_connections >= InternalSession.max_connections:
+            raise ServiceError(ua.StatusCodes.BadMaxConnectionsReached)
         self.nonce = create_nonce(32)
         result.ServerNonce = self.nonce
         for _ in params.ClientSoftwareCertificates:
             result.Results.append(ua.StatusCode())
         self.state = SessionState.Activated
-        if InternalSession.__max_connections is not None:
-            InternalSession.__current_connections += 1
+        InternalSession._current_connections += 1
         id_token = params.UserIdentityToken
         if isinstance(id_token, ua.UserNameIdentityToken):
             if self.iserver.check_user_token(self, id_token) is False:
