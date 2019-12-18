@@ -102,18 +102,43 @@ class Server:
         await self.set_application_uri(self._application_uri)
         sa_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerArray))
         await sa_node.set_value([self._application_uri])
+
+        await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
+
+    async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version, build_number, build_date):
         status_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus))
         build_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo))
-        status = ua.ServerStatusDataType()
-        status.BuildInfo.ProductUri = self.product_uri
-        status.BuildInfo.ManufacturerName = self.manufacturer_name
-        status.BuildInfo.ProductName = self.name
-        status.BuildInfo.SoftwareVersion = "1.0pre"
-        status.BuildInfo.BuildNumber = "0"
-        status.BuildInfo.BuildDate = datetime.now()
-        status.SecondsTillShutdown = 0
+
+        status = await status_node.get_value()
+        if status is None:
+            # first time
+            status = ua.ServerStatusDataType()
+            status.SecondsTillShutdown = 0
+
+        status.BuildInfo.ProductUri = product_uri
+        status.BuildInfo.ManufacturerName = manufacturer_name
+        status.BuildInfo.ProductName = product_name
+        status.BuildInfo.SoftwareVersion = software_version
+        status.BuildInfo.BuildNumber = build_number
+        status.BuildInfo.BuildDate = build_date
+
         await status_node.set_value(status)
         await build_node.set_value(status.BuildInfo)
+
+        # we also need to update all individual nodes :/
+        product_uri_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ProductUri))
+        product_name_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ProductName))
+        product_manufacturer_name_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ManufacturerName))
+        product_software_version_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_SoftwareVersion))
+        product_build_number_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_BuildNumber))
+        product_build_date_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_BuildDate))
+
+        await product_uri_node.set_value(status.BuildInfo.ProductUri)
+        await product_name_node.set_value(status.BuildInfo.ProductName)
+        await product_manufacturer_name_node.set_value(status.BuildInfo.ManufacturerName)
+        await product_software_version_node.set_value(status.BuildInfo.SoftwareVersion)
+        await product_build_number_node.set_value(status.BuildInfo.BuildNumber)
+        await product_build_date_node.set_value(status.BuildInfo.BuildDate)
 
     async def __aenter__(self):
         await self.start()
