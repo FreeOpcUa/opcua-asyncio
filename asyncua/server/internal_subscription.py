@@ -51,10 +51,13 @@ class InternalSubscription:
             self._task = self.loop.create_task(self._subscription_loop())
 
     async def stop(self):
-        self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
-        self._task.cancel()
-        await self._task
-        self._task = None
+        if self._task:
+            self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
+            self._task.cancel()
+            await self._task
+            self._task = None
+        else:
+            self.logger.debug(f"internal subscription has no task to stop")
         self.monitored_item_srv.delete_all_monitored_items()
 
     def _trigger_publish(self):
