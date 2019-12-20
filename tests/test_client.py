@@ -99,12 +99,12 @@ async def test_multiple_read_and_write(server, client):
     await v3.set_writable()
     v_ro = await f.add_variable(3, "ro", 3)
 
-    vals = await client.reads([v1, v2, v3])
+    vals = await client.read_many([v1, v2, v3])
     assert vals == [1, 2, 3]
-    await client.writes([v1, v2, v3], [4, 5, 6])
-    vals = await client.reads([v1, v2, v3])
+    await client.write_many([v1, v2, v3], [4, 5, 6])
+    vals = await client.read_many([v1, v2, v3])
     assert vals == [4, 5, 6]
     with pytest.raises(ua.uaerrors.BadUserAccessDenied):
-        await client.writes([v1, v2, v_ro], [4, 5, 6])
+        await client.write_many([v1, v2, v_ro], [4, 5, 6])
 
 

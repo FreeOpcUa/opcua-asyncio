@@ -165,7 +165,7 @@ class Node:
         result = await self.get_data_value()
         return result.Value.Value
 
-    get_value = read
+    get_value = read  # legacy compatibility
 
     async def get_data_value(self):
         """
@@ -220,8 +220,8 @@ class Node:
         dv = value_to_datavalue(value, varianttype)
         await self.set_attribute(ua.AttributeIds.Value, dv)
 
-    set_data_value = write
-    set_value = write
+    set_data_value = write  # legacy compatibility
+    set_value = write  # legacy compatibility
 
     async def set_writable(self, writable=True):
         """

@@ -582,7 +582,7 @@ class Client:
             node.nodeid = node.basenodeid
             node.basenodeid = None
 
-    async def reads(self, nodes):
+    async def read_many(self, nodes):
         """
         Read the value of multiple nodes in one ua call.
         """
@@ -590,7 +590,7 @@ class Client:
         results = await self.uaclient.get_attributes(nodeids, ua.AttributeIds.Value)
         return [result.Value.Value for result in results]
 
-    async def writes(self, nodes, values):
+    async def write_many(self, nodes, values):
         """
         Write values to multiple nodes in one ua call
         """
@@ -599,3 +599,6 @@ class Client:
         results = await self.uaclient.set_attributes(nodeids, dvs, ua.AttributeIds.Value)
         for result in results:
             result.check()
+
+    get_values = read_many  # legacy compatibility
+    set_values = write_many  # legacy compatibility
