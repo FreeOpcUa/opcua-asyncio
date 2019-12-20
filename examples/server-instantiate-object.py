@@ -34,7 +34,7 @@ if __name__ == "__main__":
     server.start()
 
     try:
-        mydevice_var.set_value("Running")
+        mydevice_var.write("Running")
         embed()
     finally:
         # close connection, remove subcsriptions, etc

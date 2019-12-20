@@ -103,14 +103,14 @@ async def test_subscription_overload(opc):
         await sub.subscribe_data_change(variables)
     for i in range(nb):
         for j in range(nb):
-            await variables[i].set_value(j)
+            await variables[i].write(j)
         s = await opc.opc.create_subscription(1, myhandler)
         await s.subscribe_data_change(variables)
         subs.append(s)
         await sub.subscribe_data_change(variables[i])
     for i in range(nb):
         for j in range(nb):
-            await variables[i].set_value(j)
+            await variables[i].write(j)
     # await asyncio.sleep(4)
     await sub.delete()
     for s in subs:
@@ -127,8 +127,8 @@ async def test_subscription_count(opc):
     await sub.subscribe_data_change(var)
     nb = 100
     for i in range(nb):
-        val = await var.get_value()
-        await var.set_value(val + 1)
+        val = await var.read()
+        await var.write(val + 1)
     await sleep(0.2)  # let last event arrive
     assert nb + 1 == myhandler.datachange_count
     await sub.delete()
@@ -142,11 +142,11 @@ async def test_subscription_count_list(opc):
     await sub.subscribe_data_change(var)
     nb = 12
     for i in range(nb):
-        val = await var.get_value()
+        val = await var.read()
         #  we do not want to modify object in our db, we need a copy in order to generate event
         val = copy(val)
         val.append(i)
-        await var.set_value(copy(val))
+        await var.write(copy(val))
     await sleep(0.2)  # let last event arrive
     assert nb + 1 == myhandler.datachange_count
     await sub.delete()
@@ -160,8 +160,8 @@ async def test_subscription_count_no_change(opc):
     await sub.subscribe_data_change(var)
     nb = 12
     for i in range(nb):
-        val = await var.get_value()
-        await var.set_value(val)
+        val = await var.read()
+        await var.write(val)
     await sleep(0.2)  # let last event arrive
     assert 1 == myhandler.datachange_count
     await sub.delete()
@@ -174,11 +174,11 @@ async def test_subscription_count_empty(opc):
     var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2, 0.3])
     await sub.subscribe_data_change(var)
     while True:
-        val = await var.get_value()
+        val = await var.read()
         # we do not want to modify object in our db, we need a copy in order to generate event
         val = copy(val)
         val.pop()
-        await var.set_value(val, ua.VariantType.Double)
+        await var.write(val, ua.VariantType.Double)
         if not val:
             break
     await sleep(0.2)  # let last event arrive
@@ -219,7 +219,7 @@ async def test_subscription_data_change(opc):
     assert v1 == node
     myhandler.reset()  # reset future object
     # modify v1 and check we get value
-    await v1.set_value([5])
+    await v1.write([5])
     node, val, data = await myhandler.result()
     assert v1 == node
     assert [5] == val
@@ -253,7 +253,7 @@ async def test_subscription_data_change_bool(opc):
     assert v1 == node
     myhandler.reset()  # reset future object
     # modify v1 and check we get value
-    await v1.set_value(False)
+    await v1.write(False)
     node, val, data = await myhandler.result()
     assert v1 == node
     assert val is False
@@ -655,7 +655,7 @@ async def test_internal_server_subscription(opc):
     await sub.subscribe_data_change([sub_var])
     client_var = await opc.opc.nodes.objects.get_child([f"{idx}:SubTestObject", f"{idx}:SubTestVariable"])
     for i in range(10):
-        await client_var.set_value(i)
+        await client_var.write(i)
         await asyncio.sleep(0.01)
     assert [v for n, v in sub_handler.results] == list(range(10))
     internal_sub = opc.server.iserver.subscription_service.subscriptions[sub.subscription_id]

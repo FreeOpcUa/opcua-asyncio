@@ -34,7 +34,7 @@ async def mymain():
         #start = time.time()
         #for i in range(nb):
             #server.set_attribute_value(myvar.nodeid, ua.DataValue(i))
-            #await myvar.set_value(i)
+            #await myvar.write(i)
     print("\n Write frequency: \n", nb / (time.time() - start))
 
 

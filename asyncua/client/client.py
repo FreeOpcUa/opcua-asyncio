@@ -357,7 +357,7 @@ class Client:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
-                val = await self.nodes.server_state.get_value()
+                val = await self.nodes.server_state.read()
                 _logger.debug("server state is: %s ", val)
         except asyncio.CancelledError:
             pass
@@ -504,7 +504,7 @@ class Client:
 
     def get_namespace_array(self) -> Coroutine:
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        return ns_node.get_value()
+        return ns_node.read()
 
     async def get_namespace_index(self, uri):
         uries = await self.get_namespace_array()
@@ -535,11 +535,11 @@ class Client:
         This method is mainly implemented for symetry with server
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        uries = await ns_node.get_value()
+        uries = await ns_node.read()
         if uri in uries:
             return uries.index(uri)
         uries.append(uri)
-        await ns_node.set_value(uries)
+        await ns_node.write(uries)
         return len(uries) - 1
 
     def load_type_definitions(self, nodes=None) -> Coroutine:
@@ -582,7 +582,7 @@ class Client:
             node.nodeid = node.basenodeid
             node.basenodeid = None
 
-    async def get_values(self, nodes):
+    async def reads(self, nodes):
         """
         Read the value of multiple nodes in one ua call.
         """
@@ -590,7 +590,7 @@ class Client:
         results = await self.uaclient.get_attributes(nodeids, ua.AttributeIds.Value)
         return [result.Value.Value for result in results]
 
-    async def set_values(self, nodes, values):
+    async def writes(self, nodes, values):
         """
         Write values to multiple nodes in one ua call
         """

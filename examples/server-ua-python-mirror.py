@@ -64,10 +64,10 @@ class UaObject(object):
             for k, node in self.nodes.items():
                 node_class = node.get_node_class()
                 if node_class == ua.NodeClass.Variable:
-                    node.set_value(getattr(self, k))
+                    node.write(getattr(self, k))
         # only update a specific attr
         else:
-            self.nodes[attr].set_value(getattr(self, attr))
+            self.nodes[attr].write(getattr(self, attr))
 
 
 class MyObj(UaObject):
@@ -143,9 +143,9 @@ if __name__ == "__main__":
 
             # write directly to the OPC UA node of the object
             dv = ua.DataValue(ua.Variant(5.5, ua.VariantType.Double))
-            my_python_obj.nodes['MyVariable'].set_value(dv)
+            my_python_obj.nodes['MyVariable'].write(dv)
             dv = ua.DataValue(ua.Variant(4, ua.VariantType.UInt64))
-            my_python_obj.nodes['MyVariable'].set_value(dv)
+            my_python_obj.nodes['MyVariable'].write(dv)
 
             time.sleep(3)
 

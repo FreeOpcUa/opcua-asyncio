@@ -31,7 +31,7 @@ async def main():
             params.NodesToWrite[0].Value.Value.Value = i
             result = await client.uaclient.write(params)
             #result[0].check()
-            #await var.set_value(i)
+            #await var.write(i)
     print("\n Write frequency: \n", nb / (time.time() - start))
 
 if __name__ == '__main__':

@@ -56,7 +56,7 @@ def idx(client):
 def test_sync_client(client, idx):
     client.load_type_definitions()
     myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
-    assert myvar.get_value() == 6.7
+    assert myvar.read() == 6.7
 
 
 def test_sync_client_get_node(client):
@@ -105,7 +105,7 @@ def test_sync_sub(client):
     assert v == 0.1
     assert n == var
     myhandler.reset()
-    var.set_value(0.123)
+    var.write(0.123)
     n, v = myhandler.future.result()
     assert v == 0.123
     sub.delete()

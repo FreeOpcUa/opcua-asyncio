@@ -66,7 +66,7 @@ class VarUpdater(Thread):
     def run(self):
         while not self._stopev:
             v = sin(time.time() / 10)
-            self.var.set_value(v)
+            self.var.write(v)
             time.sleep(0.1)
 
 
@@ -150,13 +150,13 @@ if __name__ == "__main__":
             #sub = server.create_subscription(500, handler)
             #handle = sub.subscribe_data_change(myvar)
             # trigger event, all subscribed clients wil receive it
-            var = myarrayvar.get_value()  # return a ref to value in db server side! not a copy!
+            var = myarrayvar.read()  # return a ref to value in db server side! not a copy!
             var = copy.copy(var)  # WARNING: we need to copy before writting again otherwise no data change event will be generated
             var.append(9.3)
-            myarrayvar.set_value(var)
-            mydevice_var.set_value("Running")
+            myarrayvar.write(var)
+            mydevice_var.write("Running")
             myevgen.trigger(message="This is BaseEvent")
-            server.set_attribute_value(myvar.nodeid, ua.DataValue(9.9))  # Server side write method which is a but faster than using set_value
+            server.set_attribute_value(myvar.nodeid, ua.DataValue(9.9))  # Server side write method which is a but faster than using write
 
             embed()
             vup.stop()

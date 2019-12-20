@@ -36,18 +36,18 @@ async def test_folder_anonymous(server, admin_client, client):
 async def test_variable_anonymous(server, admin_client, client):
     objects = admin_client.get_objects_node()
     v = await objects.add_variable(3, 'MyROVariable', 6)
-    await v.set_value(4)  # this should work
+    await v.write(4)  # this should work
     v_ro = client.get_node(v.nodeid)
     with pytest.raises(ua.UaStatusCodeError):
-        await v_ro.set_value(2)
-    assert await v_ro.get_value() == 4
+        await v_ro.write(2)
+    assert await v_ro.read() == 4
     await v.set_writable(True)
-    await v_ro.set_value(2)  # now it should work
-    assert await v_ro.get_value() == 2
+    await v_ro.write(2)  # now it should work
+    assert await v_ro.read() == 2
     await v.set_writable(False)
     with pytest.raises(ua.UaStatusCodeError):
-        await v_ro.set_value(9)
-    assert await v_ro.get_value() == 2
+        await v_ro.write(9)
+    assert await v_ro.read() == 2
 
 
 async def test_context_manager(server):
@@ -77,14 +77,14 @@ async def test_enumstrings_getvalue(server, client):
     The client only 'sees' an TimeoutError
     """
     nenumstrings = client.get_node(ua.ObjectIds.AxisScaleEnumeration_EnumStrings)
-    value = ua.Variant(await nenumstrings.get_value())
+    value = ua.Variant(await nenumstrings.read())
 
 
 async def test_custom_enum_struct(server, client):
     await client.load_type_definitions()
     ns = await client.get_namespace_index('http://yourorganisation.org/struct_enum_example/')
     myvar = client.get_node(ua.NodeId(6009, ns))
-    val = await myvar.get_value()
+    val = await myvar.read()
     assert 242 == val.IntVal1
     assert ua.ExampleEnum.EnumVal2 == val.EnumVal
 
@@ -99,12 +99,12 @@ async def test_multiple_read_and_write(server, client):
     await v3.set_writable()
     v_ro = await f.add_variable(3, "ro", 3)
 
-    vals = await client.get_values([v1, v2, v3])
+    vals = await client.reads([v1, v2, v3])
     assert vals == [1, 2, 3]
-    await client.set_values([v1, v2, v3], [4, 5, 6])
-    vals = await client.get_values([v1, v2, v3])
+    await client.writes([v1, v2, v3], [4, 5, 6])
+    vals = await client.reads([v1, v2, v3])
     assert vals == [4, 5, 6]
     with pytest.raises(ua.uaerrors.BadUserAccessDenied):
-        await client.set_values([v1, v2, v_ro], [4, 5, 6])
+        await client.writes([v1, v2, v_ro], [4, 5, 6])
 
 

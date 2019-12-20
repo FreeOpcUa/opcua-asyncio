@@ -266,7 +266,7 @@ class DataTypeDictionaryBuilder:
     async def set_dict_byte_string(self):
         dict_node = self._server.get_node(self.dict_id)
         value = self._type_dictionary.get_dict_value()
-        await dict_node.set_value(value, ua.VariantType.ByteString)
+        await dict_node.write(value, ua.VariantType.ByteString)
 
 
 class StructNode:

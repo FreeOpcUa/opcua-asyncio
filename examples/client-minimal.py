@@ -25,12 +25,12 @@ async def main():
         # var = client.get_node(ua.NodeId(1002, 2))
         # var = client.get_node("ns=3;i=2002")
         var = await root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
-        print("My variable", var, await var.get_value())
+        print("My variable", var, await var.read())
         # print(var)
         # var.get_data_value() # get value of node as a DataValue object
-        # var.get_value() # get value of node as a python builtin
-        # var.set_value(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
-        # var.set_value(3.9) # set node value using implicit data type
+        # var.read() # get value of node as a python builtin
+        # var.write(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
+        # var.write(3.9) # set node value using implicit data type
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

@@ -101,7 +101,7 @@ class Server:
         # setup some expected values
         await self.set_application_uri(self._application_uri)
         sa_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerArray))
-        await sa_node.set_value([self._application_uri])
+        await sa_node.write([self._application_uri])
 
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
 
@@ -109,7 +109,7 @@ class Server:
         status_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus))
         build_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo))
 
-        status = await status_node.get_value()
+        status = await status_node.read()
         if status is None:
             # first time
             status = ua.ServerStatusDataType()
@@ -122,8 +122,8 @@ class Server:
         status.BuildInfo.BuildNumber = build_number
         status.BuildInfo.BuildDate = build_date
 
-        await status_node.set_value(status)
-        await build_node.set_value(status.BuildInfo)
+        await status_node.write(status)
+        await build_node.write(status.BuildInfo)
 
         # we also need to update all individual nodes :/
         product_uri_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ProductUri))
@@ -133,12 +133,12 @@ class Server:
         product_build_number_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_BuildNumber))
         product_build_date_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_BuildDate))
 
-        await product_uri_node.set_value(status.BuildInfo.ProductUri)
-        await product_name_node.set_value(status.BuildInfo.ProductName)
-        await product_manufacturer_name_node.set_value(status.BuildInfo.ManufacturerName)
-        await product_software_version_node.set_value(status.BuildInfo.SoftwareVersion)
-        await product_build_number_node.set_value(status.BuildInfo.BuildNumber)
-        await product_build_date_node.set_value(status.BuildInfo.BuildDate)
+        await product_uri_node.write(status.BuildInfo.ProductUri)
+        await product_name_node.write(status.BuildInfo.ProductName)
+        await product_manufacturer_name_node.write(status.BuildInfo.ManufacturerName)
+        await product_software_version_node.write(status.BuildInfo.SoftwareVersion)
+        await product_build_number_node.write(status.BuildInfo.BuildNumber)
+        await product_build_date_node.write(status.BuildInfo.BuildDate)
 
     async def __aenter__(self):
         await self.start()
@@ -179,12 +179,12 @@ class Server:
         """
         self._application_uri = uri
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        uries = await ns_node.get_value()
+        uries = await ns_node.read()
         if len(uries) > 1:
             uries[1] = uri  # application uri is always namespace 1
         else:
             uries.append(uri)
-        await ns_node.set_value(uries)
+        await ns_node.write(uries)
 
     async def find_servers(self, uris=None):
         """
@@ -421,18 +421,18 @@ class Server:
         get all namespace defined in server
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        return ns_node.get_value()
+        return ns_node.read()
 
     async def register_namespace(self, uri) -> int:
         """
         Register a new namespace. Nodes should in custom namespace, not 0.
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        uries = await ns_node.get_value()
+        uries = await ns_node.read()
         if uri in uries:
             return uries.index(uri)
         uries.append(uri)
-        await ns_node.set_value(uries)
+        await ns_node.write(uries)
         return len(uries) - 1
 
     async def get_namespace_index(self, uri):
