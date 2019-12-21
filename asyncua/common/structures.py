@@ -232,7 +232,7 @@ async def load_type_definitions(server, nodes=None):
     structs_dict = {}
     generators = []
     for node in nodes:
-        xml = await node.read()
+        xml = await node.read_value()
         xml = xml.decode("utf-8")
         generator = StructGenerator()
         generators.append(generator)
@@ -330,7 +330,7 @@ async def load_enums(server, env=None):
 
 async def _get_enum_values(name, node):
     def_node = await node.get_child("0:EnumValues")
-    val = await def_node.read()
+    val = await def_node.read_value()
     c = EnumType(name)
     c.fields = [EnumeratedValue(enumval.DisplayName.Text, enumval.Value) for enumval in val]
     return c
@@ -338,7 +338,7 @@ async def _get_enum_values(name, node):
 
 async def _get_enum_strings(name, node):
     def_node = await node.get_child("0:EnumStrings")
-    val = await def_node.read()
+    val = await def_node.read_value()
     c = EnumType(name)
     c.fields = [EnumeratedValue(st.Text, idx) for idx, st in enumerate(val)]
     return c

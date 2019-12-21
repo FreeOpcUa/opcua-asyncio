@@ -110,11 +110,11 @@ async def get_node(client, args):
     return node
 
 
-def uaread():
-    run(_uaread())
+def uaread_value():
+    run(_uaread_value())
 
 
-async def _uaread():
+async def _uaread_value():
     parser = argparse.ArgumentParser(description="Read attribute of a node, per default reads value of a node")
     add_common_args(parser)
     parser.add_argument("-a",
@@ -245,11 +245,11 @@ async def _configure_client_with_args(client, args):
     await client.set_security_string(args.security)
 
 
-def uawrite():
-    run(_uawrite())
+def uawrite_value():
+    run(_uawrite_value())
 
 
-async def _uawrite():
+async def _uawrite_value():
     parser = argparse.ArgumentParser(description="Write attribute of a node, per default write value of node")
     add_common_args(parser)
     parser.add_argument("-a",
@@ -344,7 +344,7 @@ async def _lsprint_1(node, depth, indent=""):
     for desc in await node.get_children_descriptions():
         if desc.NodeClass == ua.NodeClass.Variable:
             try:
-                val = await Node(node.server, desc.NodeId).read()
+                val = await Node(node.server, desc.NodeId).read_value()
             except UaStatusCodeError as err:
                 val = "Bad (0x{0:x})".format(err.code)
             print("{0}{1:30} {2!s:25} {3!s:25}, {4!s:3}".format(indent, desc.DisplayName.to_string(), desc.NodeId.to_string(), desc.BrowseName.to_string(), val))
@@ -579,8 +579,8 @@ def uaserver():
             count = 0
             while True:
                 time.sleep(1)
-                myvar.write(math.sin(count / 10))
-                myarrayvar.write([math.sin(count / 10), math.sin(count / 100)])
+                myvar.write_value(math.sin(count / 10))
+                myarrayvar.write_value([math.sin(count / 10), math.sin(count / 100)])
                 count += 1
         else:
             while True:
@@ -657,11 +657,11 @@ def str_to_datetime(s, default=None):
             pass
 
 
-def uahistoryread():
-    run(_uahistoryread())
+def uahistoryread_value():
+    run(_uahistoryread_value())
 
 
-async def _uahistoryread():
+async def _uahistoryread_value():
     parser = argparse.ArgumentParser(description="Read history of a node")
     add_common_args(parser)
     parser.add_argument("--starttime",

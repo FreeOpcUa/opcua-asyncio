@@ -18,9 +18,9 @@ if __name__ == "__main__":
         #var = client.get_node("ns=3;i=2002")
         #print(var)
         #var.get_data_value() # get value of node as a DataValue object
-        #var.read() # get value of node as a python builtin
-        #var.write(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
-        #var.write(3.9) # set node value using implicit data type
+        #var.read_value() # get value of node as a python builtin
+        #var.write_value(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
+        #var.write_value(3.9) # set node value using implicit data type
 
         # Now getting a variable node using its browse path
         myvar = client.nodes.root.get_child(["0:Objects", "2:MyObject", "2:MyVariable"])
@@ -29,4 +29,4 @@ if __name__ == "__main__":
         print("myobj is: ", obj)
 
         # Stacked myvar access
-        # print("myvar is: ", root.get_children()[0].get_children()[1].get_variables()[0].read())
+        # print("myvar is: ", root.get_children()[0].get_children()[1].get_variables()[0].read_value())

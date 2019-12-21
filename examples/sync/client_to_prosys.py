@@ -44,11 +44,11 @@ if __name__ == "__main__":
 
         var = client.get_node(ua.NodeId("Random1", 5))
         print("var is: ", var)
-        print("value of var is: ", var.read())
-        var.write(ua.Variant([23], ua.VariantType.Double))
+        print("value of var is: ", var.read_value())
+        var.write_value(ua.Variant([23], ua.VariantType.Double))
         print("setting float value")
-        myfloat.write(ua.Variant(1.234, ua.VariantType.Float))
-        print("reading float value: ", myfloat.read())
+        myfloat.write_value(ua.Variant(1.234, ua.VariantType.Float))
+        print("reading float value: ", myfloat.read_value())
 
         handler = SubHandler()
         sub = client.create_subscription(500, handler)

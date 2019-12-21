@@ -68,7 +68,7 @@ if __name__ == '__main__':
         basic_msg.ID = 3
         basic_msg.Gender = True
         basic_msg.Comments = 'Test string'
-        basic_var.write(basic_msg)
+        basic_var.write_value(basic_msg)
 
         # Create one advance test structure
         nested_var = ua_server.server.nodes.objects.add_variable(ua.NodeId(namespaceidx=ua_server.idx), 'NestedStruct',
@@ -80,7 +80,7 @@ if __name__ == '__main__':
         nested_msg.Stuff = basic_msg
         nested_msg.Name = 'Max'
         nested_msg.Surname = 'Karl'
-        nested_var.write(nested_msg)
+        nested_var.write_value(nested_msg)
 
         ua_server.start_server()
 
@@ -88,7 +88,7 @@ if __name__ == '__main__':
         print(getattr(ua_server.dict_builder, '_type_dictionary').get_dict_value())
 
         # values can be write back and retrieved with the codes below.
-        basic_result = basic_var.read()
-        nested_result = nested_var.read()
+        basic_result = basic_var.read_value()
+        nested_result = nested_var.read_value()
 
         embed()

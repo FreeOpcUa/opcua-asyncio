@@ -28,7 +28,7 @@ if __name__ == "__main__":
         while True:
             time.sleep(1)
             count += 0.1
-            myvar.write(count)
+            myvar.write_value(count)
     finally:
         #close connection, remove subcsriptions, etc
         server.stop()

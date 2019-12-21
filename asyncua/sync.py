@@ -311,11 +311,11 @@ class Node:
         pass
 
     @syncmethod
-    def write(self, val):
+    def write_value(self, val):
         pass
 
     @syncmethod
-    def read(self, val):
+    def read_value(self, val):
         pass
 
     @syncmethod

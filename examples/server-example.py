@@ -118,11 +118,11 @@ async def main():
         #sub = server.create_subscription(500, handler)
         #handle = sub.subscribe_data_change(myvar)
         # trigger event, all subscribed clients wil receive it
-        var = await myarrayvar.read()  # return a ref to value in db server side! not a copy!
+        var = await myarrayvar.read_value()  # return a ref to value in db server side! not a copy!
         var = copy.copy(var)  # WARNING: we need to copy before writting again otherwise no data change event will be generated
         var.append(9.3)
-        await myarrayvar.write(var)
-        await mydevice_var.write("Running")
+        await myarrayvar.write_value(var)
+        await mydevice_var.write_value("Running")
         myevgen.trigger(message="This is BaseEvent")
         server.set_attribute_value(myvar.nodeid, ua.DataValue(0.9))  # Server side write method which is a but faster than using write
         while True:

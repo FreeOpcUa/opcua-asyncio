@@ -357,7 +357,7 @@ class Client:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
-                val = await self.nodes.server_state.read()
+                val = await self.nodes.server_state.read_value()
                 _logger.debug("server state is: %s ", val)
         except asyncio.CancelledError:
             pass
@@ -504,7 +504,7 @@ class Client:
 
     def get_namespace_array(self) -> Coroutine:
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        return ns_node.read()
+        return ns_node.read_value()
 
     async def get_namespace_index(self, uri):
         uries = await self.get_namespace_array()
@@ -535,11 +535,11 @@ class Client:
         This method is mainly implemented for symetry with server
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        uries = await ns_node.read()
+        uries = await ns_node.read_value()
         if uri in uries:
             return uries.index(uri)
         uries.append(uri)
-        await ns_node.write(uries)
+        await ns_node.write_value(uries)
         return len(uries) - 1
 
     def load_type_definitions(self, nodes=None) -> Coroutine:
@@ -582,7 +582,7 @@ class Client:
             node.nodeid = node.basenodeid
             node.basenodeid = None
 
-    async def read_many(self, nodes):
+    async def read_values(self, nodes):
         """
         Read the value of multiple nodes in one ua call.
         """
@@ -590,7 +590,7 @@ class Client:
         results = await self.uaclient.get_attributes(nodeids, ua.AttributeIds.Value)
         return [result.Value.Value for result in results]
 
-    async def write_many(self, nodes, values):
+    async def write_values(self, nodes, values):
         """
         Write values to multiple nodes in one ua call
         """
@@ -600,5 +600,5 @@ class Client:
         for result in results:
             result.check()
 
-    get_values = read_many  # legacy compatibility
-    set_values = write_many  # legacy compatibility
+    get_values = read_values  # legacy compatibility
+    set_values = write_values  # legacy compatibility

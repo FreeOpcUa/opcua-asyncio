@@ -102,8 +102,8 @@ async def test_historize_variable(server):
     var = await o.add_variable(3, "test_hist", 1.0)
     await server.iserver.enable_history_data_change(var, timedelta(days=1))
     await asyncio.sleep(1)
-    await var.write(2.0)
-    await var.write(3.0)
+    await var.write_value(2.0)
+    await var.write_value(3.0)
     await server.iserver.disable_history_data_change(var)
 
 async def test_multiple_clients_with_subscriptions(server):
@@ -632,7 +632,7 @@ class TestServerCaching(unittest.TestCase):
 
         # ensure that we are actually loading from the cache
         server = Server(shelffile=path)
-        assert server.get_node(id).read(), 123)
+        assert server.get_node(id).read_value(), 123)
 
         os.remove(path)
 

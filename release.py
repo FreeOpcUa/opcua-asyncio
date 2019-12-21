@@ -15,7 +15,7 @@ def bump_version():
         newv = ans
     s = s.replace(oldv, newv)
     with open("setup.py", "w") as f:
-        f.write(s)
+        f.write_value(s)
     return newv
 
 

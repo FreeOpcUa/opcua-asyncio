@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # add var with as type the custom enumeration
     myenum_var = myobj.add_variable(nsidx, 'MyEnum2Var', MyEnum.ok, datatype = myenum_type.nodeid)
     myenum_var.set_writable()
-    myenum_var.write(MyEnum.idle)  # change value of enumeration
+    myenum_var.write_value(MyEnum.idle)  # change value of enumeration
 
     server.start()
     try:

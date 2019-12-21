@@ -37,11 +37,11 @@ async def main():
 
         var = client.get_node(ua.NodeId("Random1", 5))
         print("var is: ", var)
-        print("value of var is: ", await var.read())
-        await var.write(ua.Variant([23], ua.VariantType.Double))
+        print("value of var is: ", await var.read_value())
+        await var.write_value(ua.Variant([23], ua.VariantType.Double))
         print("setting float value")
-        await myfloat.write(ua.Variant(1.234, ua.VariantType.Float))
-        print("reading float value: ", await myfloat.read())
+        await myfloat.write_value(ua.Variant(1.234, ua.VariantType.Float))
+        print("reading float value: ", await myfloat.read_value())
 
 
         device = await client.nodes.objects.get_child(["2:MyObjects", "2:MyDevice"])

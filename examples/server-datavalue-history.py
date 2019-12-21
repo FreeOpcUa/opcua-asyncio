@@ -45,7 +45,7 @@ async def main():
         while True:
             await asyncio.sleep(1)
             count += 0.1
-            await myvar.write(math.sin(count))
+            await myvar.write_value(math.sin(count))
 
     finally:
         # close connection, remove subscriptions, etc
