@@ -351,7 +351,7 @@ async def test_variant_array_dim(opc):
     dim = await v.get_array_dimensions()
     assert [0, 0, 0] == dim
 
-    await v.write_rank(0)
+    await v.write_value_rank(0)
     rank = await v.read_value_rank()
     assert 0 == rank
 
@@ -913,7 +913,7 @@ async def test_enum(opc):
         0, "EnumStrings", [ua.LocalizedText("String0"), ua.LocalizedText("String1"), ua.LocalizedText("String2")],
         ua.VariantType.LocalizedText
     )
-    # es.write_rank(1)
+    # es.write_value_rank(1)
     # instantiate
     o = opc.opc.get_objects_node()
     myvar = await o.add_variable(2, "MyEnumVar", ua.LocalizedText("String1"), datatype=myenum_type.nodeid)

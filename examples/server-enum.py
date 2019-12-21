@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # Or convert the existing IntEnum MyEnum
     es = myenum_type.add_property(0, "EnumStrings" , enum_to_stringlist(MyEnum))
 
-    es.write_rank(1)
+    es.write_value_rank(1)
     es.set_array_dimensions([0])
 
     # --------------------------------------------------------

@@ -190,7 +190,7 @@ class Node:
         res = await self.get_attribute(ua.AttributeIds.ArrayDimensions)
         return res.Value.Value
 
-    async def write_rank(self, value):
+    async def write_value_rank(self, value):
         """
         Set attribute ArrayDimensions of node
         """
