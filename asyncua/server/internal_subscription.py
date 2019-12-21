@@ -56,8 +56,6 @@ class InternalSubscription:
             self._task.cancel()
             await self._task
             self._task = None
-        else:
-            self.logger.debug(f"internal subscription has no task to stop")
         self.monitored_item_srv.delete_all_monitored_items()
 
     def _trigger_publish(self):
