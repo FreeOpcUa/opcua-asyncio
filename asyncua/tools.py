@@ -110,11 +110,11 @@ async def get_node(client, args):
     return node
 
 
-def uaread_value():
-    run(_uaread_value())
+def uaread():
+    run(_uaread())
 
 
-async def _uaread_value():
+async def _uaread():
     parser = argparse.ArgumentParser(description="Read attribute of a node, per default reads value of a node")
     add_common_args(parser)
     parser.add_argument("-a",
@@ -245,11 +245,11 @@ async def _configure_client_with_args(client, args):
     await client.set_security_string(args.security)
 
 
-def uawrite_value():
-    run(_uawrite_value())
+def uawrite():
+    run(_uawrite())
 
 
-async def _uawrite_value():
+async def _uawrite():
     parser = argparse.ArgumentParser(description="Write attribute of a node, per default write value of node")
     add_common_args(parser)
     parser.add_argument("-a",
@@ -494,7 +494,7 @@ def uaclient():
         client.load_client_certificate(args.certificate)
     if args.private_key:
         client.load_private_key(args.private_key)
-    
+
     sync.start_thread_loop()
     client.connect()
     try:
@@ -657,11 +657,11 @@ def str_to_datetime(s, default=None):
             pass
 
 
-def uahistoryread_value():
-    run(_uahistoryread_value())
+def uahistoryread():
+    run(_uahistoryread())
 
 
-async def _uahistoryread_value():
+async def _uahistoryread():
     parser = argparse.ArgumentParser(description="Read history of a node")
     add_common_args(parser)
     parser.add_argument("--starttime",

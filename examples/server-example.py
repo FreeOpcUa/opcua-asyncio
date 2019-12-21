@@ -85,7 +85,7 @@ async def main():
     myfolder = await server.nodes.objects.add_folder(idx, "myEmptyFolder")
     # instanciate one instance of our device
     mydevice = await server.nodes.objects.add_object(idx, "Device0001", dev)
-    mydevice_var = await mydevice.get_child([f"{idx}:controller", f"{idx}:state"])  # get proxy to our device state variable 
+    mydevice_var = await mydevice.get_child([f"{idx}:controller", f"{idx}:state"])  # get proxy to our device state variable
     # create directly some objects and variables
     myobj = await server.nodes.objects.add_object(idx, "MyObject")
     myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
@@ -124,7 +124,7 @@ async def main():
         await myarrayvar.write_value(var)
         await mydevice_var.write_value("Running")
         myevgen.trigger(message="This is BaseEvent")
-        server.set_attribute_value(myvar.nodeid, ua.DataValue(0.9))  # Server side write method which is a but faster than using write
+        server.set_attribute_value(myvar.nodeid, ua.DataValue(0.9))  # Server side write method which is a bit faster than using write_value
         while True:
             await asyncio.sleep(0.1)
             server.set_attribute_value(myvar.nodeid, ua.DataValue(sin(time.time())))
