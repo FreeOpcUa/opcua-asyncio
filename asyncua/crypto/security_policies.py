@@ -422,14 +422,17 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
         self.server_certificate = uacrypto.der_from_x509(server_cert)
         self.client_certificate = uacrypto.der_from_x509(client_cert)
 
-    def make_symmetric_key(self, nonce1, nonce2):
+    def make_local_symmetric_key(self, secret, seed):
         key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
 
-        (sigkey, key, init_vec) = uacrypto.p_sha1(nonce2, nonce1, key_sizes)
+        (sigkey, key, init_vec) = uacrypto.p_sha1(secret, seed, key_sizes)
         self.symmetric_cryptography.Signer = SignerAesCbc(sigkey)
         self.symmetric_cryptography.Encryptor = EncryptorAesCbc(key, init_vec)
 
-        (sigkey, key, init_vec) = uacrypto.p_sha1(nonce1, nonce2, key_sizes)
+    def make_remote_symmetric_key(self, secret, seed):
+        key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
+
+        (sigkey, key, init_vec) = uacrypto.p_sha1(secret, seed, key_sizes)
         self.symmetric_cryptography.Verifier = VerifierAesCbc(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
@@ -494,15 +497,20 @@ class SecurityPolicyBasic256(SecurityPolicy):
         self.server_certificate = uacrypto.der_from_x509(server_cert)
         self.client_certificate = uacrypto.der_from_x509(client_cert)
 
-    def make_symmetric_key(self, nonce1, nonce2):
+    def make_local_symmetric_key(self, secret, seed):
         # specs part 6, 6.7.5
         key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
 
-        (sigkey, key, init_vec) = uacrypto.p_sha1(nonce2, nonce1, key_sizes)
+        (sigkey, key, init_vec) = uacrypto.p_sha1(secret, seed, key_sizes)
         self.symmetric_cryptography.Signer = SignerAesCbc(sigkey)
         self.symmetric_cryptography.Encryptor = EncryptorAesCbc(key, init_vec)
 
-        (sigkey, key, init_vec) = uacrypto.p_sha1(nonce1, nonce2, key_sizes)
+    def make_remote_symmetric_key(self, secret, seed):
+
+        # specs part 6, 6.7.5
+        key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
+
+        (sigkey, key, init_vec) = uacrypto.p_sha1(secret, seed, key_sizes)
         self.symmetric_cryptography.Verifier = VerifierAesCbc(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
@@ -560,15 +568,20 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         self.server_certificate = uacrypto.der_from_x509(server_cert)
         self.client_certificate = uacrypto.der_from_x509(client_cert)
 
-    def make_symmetric_key(self, nonce1, nonce2):
+    def make_local_symmetric_key(self, secret, seed):
         # specs part 6, 6.7.5
         key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
 
-        (sigkey, key, init_vec) = uacrypto.p_sha256(nonce2, nonce1, key_sizes)
+        (sigkey, key, init_vec) = uacrypto.p_sha256(secret, seed, key_sizes)
         self.symmetric_cryptography.Signer = SignerHMac256(sigkey)
         self.symmetric_cryptography.Encryptor = EncryptorAesCbc(key, init_vec)
 
-        (sigkey, key, init_vec) = uacrypto.p_sha256(nonce1, nonce2, key_sizes)
+    def make_remote_symmetric_key(self, secret, seed):
+
+        # specs part 6, 6.7.5
+        key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
+
+        (sigkey, key, init_vec) = uacrypto.p_sha256(secret, seed, key_sizes)
         self.symmetric_cryptography.Verifier = VerifierHMac256(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 

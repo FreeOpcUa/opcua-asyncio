@@ -229,7 +229,10 @@ class SecurityPolicy:
         self.server_certificate = None
         self.client_certificate = None
 
-    def make_symmetric_key(self, a, b):
+    def make_local_symmetric_key(self, secret, seed):
+        pass
+
+    def make_remote_symmetric_key(self, secret, seed):
         pass
 
 
