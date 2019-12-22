@@ -314,9 +314,13 @@ class Node:
     def write_value(self, val):
         pass
 
+    set_value = write_value  # legacy
+
     @syncmethod
     def read_value(self, val):
         pass
+
+    get_value = read_value  # legacy
 
     @syncmethod
     def call_method(self, methodid, *args):
