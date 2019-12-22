@@ -228,7 +228,7 @@ class XmlExporter:
             self.aliases[dtype] = dtype_name
         else:
             dtype_name = dtype.to_string()
-        rank = await node.get_value_rank()
+        rank = await node.read_value_rank()
         if rank != -1:
             el.attrib["ValueRank"] = str(int(rank))
         dim = await node.get_attribute(ua.AttributeIds.ArrayDimensions)

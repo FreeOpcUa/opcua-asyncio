@@ -51,7 +51,7 @@ async with Client(url='opc.tcp://localhost:4840/freeopcua/server/') as client:
     while True:
         # Do something with client
         node = client.get_node('i=85')
-        value = await node.get_value()
+        value = await node.read_value()
 ```
 
 Of course you can also call the `connect`, `disconnect` methods yourself if you do not want to use the context manager.
@@ -62,7 +62,7 @@ from asyncua import Client
 client = Client(url='opc.tcp://localhost:4840/freeopcua/server/')
 await client.connect()
 node = client.get_node('i=85')
-value = await node.get_value()
+value = await node.read()
 # close connection before you exit the program
 await client.disconnect()
 ```

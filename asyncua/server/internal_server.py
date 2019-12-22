@@ -85,7 +85,7 @@ class InternalServer:
         """
         uries = ['http://opcfoundation.org/UA/']
         ns_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        await ns_node.set_value(uries)
+        await ns_node.write_value(uries)
 
         params = ua.WriteParameters()
         for nodeid in (ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
@@ -164,8 +164,8 @@ class InternalServer:
         self.logger.info('starting internal server')
         for edp in self.endpoints:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).set_value(0, ua.VariantType.Int32)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).set_value(datetime.utcnow())
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(0, ua.VariantType.Int32)
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.utcnow())
         if not self.disabled_clock:
             self._set_current_time()
 
@@ -176,7 +176,7 @@ class InternalServer:
         await self.history_manager.stop()
 
     def _set_current_time(self):
-        self.loop.create_task(self.current_time_node.set_value(datetime.utcnow()))
+        self.loop.create_task(self.current_time_node.write_value(datetime.utcnow()))
         self.loop.call_later(1, self._set_current_time)
 
     def get_new_channel_id(self):

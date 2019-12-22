@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # Or convert the existing IntEnum MyEnum
     es = myenum_type.add_property(0, "EnumStrings" , enum_to_stringlist(MyEnum))
 
-    es.set_value_rank(1)
+    es.write_value_rank(1)
     es.set_array_dimensions([0])
 
     # --------------------------------------------------------
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # add var with as type the custom enumeration
     myenum_var = myobj.add_variable(nsidx, 'MyEnum2Var', MyEnum.ok, datatype = myenum_type.nodeid)
     myenum_var.set_writable()
-    myenum_var.set_value(MyEnum.idle)  # change value of enumeration
+    myenum_var.write_value(MyEnum.idle)  # change value of enumeration
 
     server.start()
     try:

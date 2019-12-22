@@ -154,7 +154,7 @@ async def create_var(history_server: HistoryServer):
     history_server.var = await o.add_variable(3, "history_var", 0)
     await history_server.srv.historize_node_data_change(history_server.var, period=None, count=0)
     for i in history_server.values:
-        await history_server.var.set_value(i)
+        await history_server.var.write_value(i)
     await asyncio.sleep(1)
 
 

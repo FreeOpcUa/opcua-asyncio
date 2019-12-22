@@ -2,6 +2,7 @@
 Generate address space code from xml file specification
 xmlparser.py is a requirement. it is in asyncua folder but to avoid importing all code, developer can link xmlparser.py in current directory
 """
+import asyncio
 import sys
 import logging
 # sys.path.insert(0, "..")  # load local freeopcua implementation
@@ -332,10 +333,14 @@ def save_aspace_to_disk():
     a_space.dump(path)
 
 
-if __name__ == '__main__':
+async def main():
     logging.basicConfig(level=logging.WARN)
     for i in (3, 4, 5, 8, 9, 10, 11, 13):
         xml_path = f'Opc.Ua.NodeSet2.Part{i}.xml'
         py_path = f'../asyncua/server/standard_address_space/standard_address_space_part{i}.py'
-        CodeGenerator(xml_path, py_path).run()
+        await CodeGenerator(xml_path, py_path).run()
     save_aspace_to_disk()
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

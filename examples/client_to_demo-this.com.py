@@ -17,9 +17,9 @@ if __name__ == "__main__":
         root = client.get_root_node()
         objects = client.get_objects_node()
         struct = client.get_node("ns=2;i=10239")
-        before = struct.get_value()
+        before = struct.read_value()
         client.load_type_definitions()  # scan server for custom structures and import them
-        after = struct.get_value()
+        after = struct.read_value()
         
 
         embed()
