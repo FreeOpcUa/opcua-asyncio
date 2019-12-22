@@ -64,7 +64,7 @@ class UaProcessor:
         """
         #_logger.info("forward publish response %s", result)
         while True:
-            if not len(self._publish_requests):
+            if not self._publish_requests:
                 self._publish_results.append(result)
                 _logger.info(
                     "Server wants to send publish answer but no publish request is available,"
@@ -367,7 +367,7 @@ class UaProcessor:
             # Store the Publish Request (will be used to send publish answers from server)
             self._publish_requests.append(data)
             # If there is an enqueued result forward it immediately
-            while len(self._publish_results):
+            while self._publish_results:
                 result = self._publish_results.popleft()
                 if result.SubscriptionId not in self.session.subscription_service.active_subscription_ids:
                     # Discard the result if the subscription is no longer active
@@ -398,6 +398,34 @@ class UaProcessor:
             results = await self.session.call(params.MethodsToCall)
             response = ua.CallResponse()
             response.Results = results
+            self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+        elif typeid == ua.NodeId(ua.ObjectIds.SetMonitoringModeRequest_Encoding_DefaultBinary):
+            _logger.info("set monitoring mode request")
+            params = struct_from_binary(ua.SetMonitoringModeParameters, body)
+            # FIXME: Implement SetMonitoringMode
+            # For now send dummy results to keep clients happy
+            response = ua.SetMonitoringModeResponse()
+            results = ua.SetMonitoringModeResult()
+            ids = params.MonitoredItemIds
+            statuses = [ua.StatusCode(ua.StatusCodes.Good) for node_id in ids]
+            results.Results = statuses
+            response.Parameters = results
+            _logger.info("sending set monitoring mode response")
+            self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+        elif typeid == ua.NodeId(ua.ObjectIds.SetPublishingModeRequest_Encoding_DefaultBinary):
+            _logger.info("set publishing mode request")
+            params = struct_from_binary(ua.SetPublishingModeParameters, body)
+            # FIXME: Implement SetPublishingMode
+            # For now send dummy results to keep clients happy
+            response = ua.SetPublishingModeResponse()
+            results = ua.SetPublishingModeResult()
+            ids = params.SubscriptionIds
+            statuses = [ua.StatusCode(ua.StatusCodes.Good) for node_id in ids]
+            results.Results = statuses
+            response.Parameters = results
+            _logger.info("sending set publishing mode response")
             self.send_response(requesthdr.RequestHandle, seqhdr, response)
 
         else:
