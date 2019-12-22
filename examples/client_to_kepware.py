@@ -35,9 +35,9 @@ if __name__ == "__main__":
 
 
         tag1 = client.get_node("ns=2;s=Channel1.Device1.Tag1")
-        print("tag1 is: {0} with value {1} ".format(tag1, tag1.get_value()))
+        print("tag1 is: {0} with value {1} ".format(tag1, tag1.read_value()))
         tag2 = client.get_node("ns=2;s=Channel1.Device1.Tag2")
-        print("tag2 is: {0} with value {1} ".format(tag2, tag2.get_value()))
+        print("tag2 is: {0} with value {1} ".format(tag2, tag2.read_value()))
 
         handler = SubHandler()
         sub = client.create_subscription(500, handler)

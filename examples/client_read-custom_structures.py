@@ -18,11 +18,11 @@ if __name__ == "__main__":
         objects = client.get_objects_node()
         struct = client.get_node("ns=2;i=10239")
         struct_array = client.get_node("ns=2;i=10323")
-        before = struct.get_value()
-        before_array = struct_array.get_value()
+        before = struct.read_value()
+        before_array = struct_array.read_value()
         client.load_type_definitions()  # scan server for custom structures and import them
-        after = struct.get_value()
-        after_array = struct_array.get_value()
+        after = struct.read_value()
+        after_array = struct_array.read_value()
         
 
         embed()

@@ -41,7 +41,7 @@ async def main():
             await asyncio.sleep(1)
             count += 0.1
             _logger.info('Set value of %s to %.1f', myvar, count)
-            await myvar.set_value(count)
+            await myvar.write_value(count)
 
 
 if __name__ == '__main__':

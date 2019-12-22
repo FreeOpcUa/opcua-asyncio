@@ -228,7 +228,7 @@ def test_string_to_variant_localized_text():
     obj = ua.LocalizedText(string)
     assert obj == string_to_val(string, ua.VariantType.LocalizedText)
     assert string == val_to_string(obj)
-    
+
 def test_string_to_variant_localized_text_with_locale():
     locale = "cs-CZ"
     string = "Moje jméno"
