@@ -287,15 +287,17 @@ class Subscription:
         :param handle: The handle that was returned when subscribing to the node/nodes
         """
         handles = [handle] if type(handle) is int else handle
+        if not handles:
+            return
         params = ua.DeleteMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
         params.MonitoredItemIds = handles
         results = await self.server.delete_monitored_items(params)
         results[0].check()
-        for k, v in self._monitored_items.items():
-            if v.server_handle in handles:
-                del (self._monitored_items[k])
-                return
+        handle_map = {v.server_handle: k for k, v in self._monitored_items.items()}
+        for handle in handles:
+            if handle in handle_map:
+                del self._monitored_items[handle_map[handle]]
 
     async def modify_monitored_item(self, handle: int, new_samp_time, new_queuesize=0, mod_filter_val=-1):
         """
