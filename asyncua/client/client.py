@@ -38,8 +38,11 @@ class Client:
         :param timeout:
             Each request sent to the server expects an answer within this
             time. The timeout is specified in seconds.
+
+        Some other client parameters can be changed by setting
+        attributes on the constructed object:
+        See the source code for the exhaustive list.
         """
-        _logger = logging.getLogger(__name__)
         self.loop = loop or asyncio.get_event_loop()
         self.server_url = urlparse(url)
         # take initial username and password from the url
@@ -73,6 +76,7 @@ class Client:
 
     def __str__(self):
         return f"Client({self.server_url.geturl()})"
+
     __repr__ = __str__
 
     @staticmethod
@@ -257,7 +261,9 @@ class Client:
         # length should be equal to the length of key of symmetric encryption
         params.ClientNonce = create_nonce(self.security_policy.symmetric_key_size)
         result = await self.uaclient.open_secure_channel(params)
-        self.secure_channel_timeout = result.SecurityToken.RevisedLifetime
+        if self.secure_channel_timeout != result.SecurityToken.RevisedLifetime:
+            _logger.info("Requested secure channel timeout to be %dms, got %dms instead", self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
+            self.secure_channel_timeout = result.SecurityToken.RevisedLifetime
 
     async def close_secure_channel(self):
         return await self.uaclient.close_secure_channel()
@@ -323,7 +329,7 @@ class Client:
         params.EndpointUrl = self.server_url.geturl()
         params.SessionName = f"{self.description} Session{self._session_counter}"
         # Requested maximum number of milliseconds that a Session should remain open without activity
-        params.RequestedSessionTimeout = 60 * 60 * 1000
+        params.RequestedSessionTimeout = self.session_timeout
         params.MaxResponseMessageSize = 0  # means no max size
         response = await self.uaclient.create_session(params)
         if self.security_policy.client_certificate is None:
@@ -340,7 +346,9 @@ class Client:
         ep = Client.find_endpoint(response.ServerEndpoints, self.security_policy.Mode, self.security_policy.URI)
         self._policy_ids = ep.UserIdentityTokens
         #  Actual maximum number of milliseconds that a Session shall remain open without activity
-        self.session_timeout = response.RevisedSessionTimeout
+        if self.session_timeout != response.RevisedSessionTimeout:
+            _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
+            self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = self.loop.create_task(self._renew_channel_loop())
         return response
 
