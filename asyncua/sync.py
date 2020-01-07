@@ -256,7 +256,7 @@ class Node:
 
     def __str__(self):
         return "Sync" + self.aio_obj.__str__()
-    
+
     __repr__ = __str__
 
     def __hash__(self):
@@ -275,14 +275,18 @@ class Node:
         pass
 
     @syncmethod
-    def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
+    def get_children(
+        self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified
+    ):
         pass
 
     @syncmethod
-    def get_children_descriptions(self,
-                                  refs=ua.ObjectIds.HierarchicalReferences,
-                                  nodeclassmask=ua.NodeClass.Unspecified,
-                                  includesubtypes=True):
+    def get_children_descriptions(
+        self,
+        refs=ua.ObjectIds.HierarchicalReferences,
+        nodeclassmask=ua.NodeClass.Unspecified,
+        includesubtypes=True,
+    ):
         pass
 
     @syncmethod
@@ -338,7 +342,13 @@ class Node:
         pass
 
     @syncmethod
-    def get_references(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
+    def get_references(
+        self,
+        refs=ua.ObjectIds.References,
+        direction=ua.BrowseDirection.Both,
+        nodeclassmask=ua.NodeClass.Unspecified,
+        includesubtypes=True,
+    ):
         pass
 
     @syncmethod
@@ -360,11 +370,13 @@ class Subscription:
         pass
 
     @syncmethod
-    def subscribe_events(self,
-                         sourcenode=ua.ObjectIds.Server,
-                         evtypes=ua.ObjectIds.BaseEventType,
-                         evfilter=None,
-                         queuesize=0):
+    def subscribe_events(
+        self,
+        sourcenode=ua.ObjectIds.Server,
+        evtypes=ua.ObjectIds.BaseEventType,
+        evfilter=None,
+        queuesize=0,
+    ):
         pass
 
     @syncmethod
