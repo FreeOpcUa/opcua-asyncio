@@ -248,12 +248,19 @@ class Node:
         self.aio_obj = aio_node
         self.tloop = tloop
 
-    def __hash__(self):
-        return self.aio_obj.__hash__()
+    def __eq__(self, other):
+        return self.aio_obj == other.aio_obj
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __str__(self):
         return "Sync" + self.aio_obj.__str__()
+    
     __repr__ = __str__
+
+    def __hash__(self):
+        return self.aio_obj.__hash__()
 
     @property
     def nodeid(self):
@@ -261,6 +268,10 @@ class Node:
 
     @syncmethod
     def get_browse_name(self):
+        pass
+
+    @syncmethod
+    def get_display_name(self):
         pass
 
     @syncmethod
@@ -317,7 +328,7 @@ class Node:
     set_value = write_value  # legacy
 
     @syncmethod
-    def read_value(self, val):
+    def read_value(self):
         pass
 
     get_value = read_value  # legacy
@@ -326,8 +337,17 @@ class Node:
     def call_method(self, methodid, *args):
         pass
 
-    def __eq__(self, other):
-        return self.aio_obj == other.aio_obj
+    @syncmethod
+    def get_references(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
+        pass
+
+    @syncmethod
+    def get_description(self):
+        pass
+
+    @syncmethod
+    def get_variables(self):
+        pass
 
 
 class Subscription:
