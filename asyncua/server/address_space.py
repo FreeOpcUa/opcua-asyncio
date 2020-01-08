@@ -136,12 +136,12 @@ class ViewService(object):
                     res += self._get_sub_ref(ref.NodeId)
         return res
 
-    def _suitable_direction(self, desc, isforward):
-        if desc == ua.BrowseDirection.Both:
+    def _suitable_direction(self, direction, isforward):
+        if direction == ua.BrowseDirection.Both:
             return True
-        if desc == ua.BrowseDirection.Forward and isforward:
+        if direction == ua.BrowseDirection.Forward and isforward:
             return True
-        if desc == ua.BrowseDirection.Inverse and not isforward:
+        if direction == ua.BrowseDirection.Inverse and not isforward:
             return True
         return False
 

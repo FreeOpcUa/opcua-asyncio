@@ -25,8 +25,7 @@ class InternalSession:
     _counter = 10
     _auth_counter = 1000
 
-    def __init__(self, internal_server, aspace: AddressSpace, submgr: SubscriptionService, name, user=User.Anonymous,
-                 external=False):
+    def __init__(self, internal_server, aspace: AddressSpace, submgr: SubscriptionService, name, user=User.Anonymous, external=False):
         self.logger = logging.getLogger(__name__)
         self.iserver = internal_server
         # define if session is external, we need to copy some objects if it is internal
