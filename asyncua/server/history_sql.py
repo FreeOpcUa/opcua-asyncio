@@ -87,7 +87,7 @@ class HistorySQLite(HistoryStorageInterface):
                 'SourceTimestamp = (SELECT CASE WHEN COUNT(*) > ? '
                 f'THEN MIN(SourceTimestamp) ELSE NULL END FROM "{table}")', (count,), table, node_id)
 
-    async def read_node_history(self, node_id, start, end, nb_values):
+    async def read_node_history(self, node_id, start, end, nb_values, session):
         table = self._get_table_name(node_id)
         start_time, end_time, order, limit = self._get_bounds(start, end, nb_values)
         cont = None
@@ -157,7 +157,7 @@ class HistorySQLite(HistoryStorageInterface):
             except aiosqlite.Error as e:
                 self.logger.error("Historizing SQL Delete Old Data Error for events from %s: %s", event.emitting_node, e)
 
-    async def read_event_history(self, source_id, start, end, nb_values, evfilter):
+    async def read_event_history(self, source_id, start, end, nb_values, evfilter, session):
         table = self._get_table_name(source_id)
         start_time, end_time, order, limit = self._get_bounds(start, end, nb_values)
         clauses, clauses_str = self._get_select_clauses(source_id, evfilter)
