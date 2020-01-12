@@ -96,8 +96,8 @@ class InternalSession:
         results = self.iserver.attribute_service.read(params)
         return results
 
-    def history_read(self, params) -> Coroutine:
-        return self.iserver.history_manager.read_history(params)
+    def history_read(self, params, session) -> Coroutine:
+        return self.iserver.history_manager.read_history(params, session)
 
     async def write(self, params):
         return self.iserver.attribute_service.write(params, self.user)

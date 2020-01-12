@@ -336,7 +336,7 @@ class UaProcessor:
         elif typeid == ua.NodeId(ua.ObjectIds.HistoryReadRequest_Encoding_DefaultBinary):
             _logger.info("history read request")
             params = struct_from_binary(ua.HistoryReadParameters, body)
-            results = await self.session.history_read(params)
+            results = await self.session.history_read(params, self.session)
             response = ua.HistoryReadResponse()
             response.Results = results
             #_logger.info("sending history read response")

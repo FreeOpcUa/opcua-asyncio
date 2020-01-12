@@ -39,7 +39,7 @@ class HistoryStorageInterface:
         """
         raise NotImplementedError
 
-    async def read_node_history(self, node_id, start, end, nb_values):
+    async def read_node_history(self, node_id, start, end, nb_values, session):
         """
         Called when a client make a history read request for a node
         if start or end is missing then nb_values is used to limit query
@@ -64,7 +64,7 @@ class HistoryStorageInterface:
         """
         raise NotImplementedError
 
-    async def read_event_history(self, source_id, start, end, nb_values, evfilter):
+    async def read_event_history(self, source_id, start, end, nb_values, evfilter, session):
         """
         Called when a client make a history read request for events
         Start time and end time are inclusive
@@ -113,7 +113,7 @@ class HistoryDict(HistoryStorageInterface):
         if count and len(data) > count:
             data.pop(0)
 
-    async def read_node_history(self, node_id, start, end, nb_values):
+    async def read_node_history(self, node_id, start, end, nb_values, session):
         cont = None
         if node_id not in self._datachanges:
             self.logger.warning("Error attempt to read history for a node which is not historized")
@@ -154,7 +154,7 @@ class HistoryDict(HistoryStorageInterface):
         if count and len(evts) > count:
             evts.pop(0)
 
-    async def read_event_history(self, source_id, start, end, nb_values, evfilter):
+    async def read_event_history(self, source_id, start, end, nb_values, evfilter, session):
         cont = None
         if source_id not in self._events:
             print("Error attempt to read event history for a node which does not historize events")
@@ -278,20 +278,19 @@ class HistoryManager:
         else:
             self.logger.error("History Manager isn't subscribed to %s", node)
 
-    async def read_history(self, params):
+    async def read_history(self, params, session):
         """
         Read history for a node
         This is the part AttributeService, but implemented as its own service
         since it requires more logic than other attribute service methods
         """
         results = []
-
         for rv in params.NodesToRead:
-            res = await self._read_history(params.HistoryReadDetails, rv)
+            res = await self._read_history(params.HistoryReadDetails, rv, session)
             results.append(res)
         return results
 
-    async def _read_history(self, details, rv):
+    async def _read_history(self, details, rv, session):
         """
         determine if the history read is for a data changes or events; then read the history for that node
         """
@@ -302,7 +301,7 @@ class HistoryManager:
                 # we do not support modified history by design so we return what we have
             else:
                 result.HistoryData = ua.HistoryData()
-            dv, cont = await self._read_datavalue_history(rv, details)
+            dv, cont = await self._read_datavalue_history(rv, details, session)
             result.HistoryData.DataValues = dv
             result.ContinuationPoint = cont
 
@@ -310,7 +309,7 @@ class HistoryManager:
             result.HistoryData = ua.HistoryEvent()
             # FIXME: filter is a cumbersome type, maybe transform it something easier
             # to handle for storage
-            ev, cont = await self._read_event_history(rv, details)
+            ev, cont = await self._read_event_history(rv, details, session)
             result.HistoryData.Events = ev
             result.ContinuationPoint = cont
 
@@ -319,7 +318,7 @@ class HistoryManager:
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadNotImplemented)
         return result
 
-    async def _read_datavalue_history(self, rv, details):
+    async def _read_datavalue_history(self, rv, details, session):
         starttime = details.StartTime
         if rv.ContinuationPoint:
             # Spec says we should ignore details if cont point is present
@@ -331,14 +330,15 @@ class HistoryManager:
         dv, cont = await self.storage.read_node_history(rv.NodeId,
                                                         starttime,
                                                         details.EndTime,
-                                                        details.NumValuesPerNode)
+                                                        details.NumValuesPerNode,
+                                                        session)
         if cont:
             cont = ua.ua_binary.Primitives.DateTime.pack(cont)
         # rv.IndexRange
         # rv.DataEncoding # xml or binary, seems spec say we can ignore that one
         return dv, cont
 
-    async def _read_event_history(self, rv, details):
+    async def _read_event_history(self, rv, details, session):
         starttime = details.StartTime
         if rv.ContinuationPoint:
             # Spec says we should ignore details if cont point is present
@@ -351,7 +351,8 @@ class HistoryManager:
                                                            starttime,
                                                            details.EndTime,
                                                            details.NumValuesPerNode,
-                                                           details.Filter)
+                                                           details.Filter,
+                                                           session)
         results = []
         for ev in evts:
             field_list = ua.HistoryEventFieldList()
