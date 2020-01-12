@@ -517,10 +517,10 @@ class Node:
             details.EndTime = ua.get_win_epoch()
         details.NumValuesPerNode = numvalues
         details.ReturnBounds = True
-        result = await self.history_read(details)
+        result = await self.history_read(details, None)
         return result.HistoryData.DataValues
 
-    async def history_read(self, details):
+    async def history_read(self, details, session):
         """
         Read raw history of a node, low-level function
         result code from server is checked and an exception is raised in case of error
@@ -533,9 +533,9 @@ class Node:
         params.TimestampsToReturn = ua.TimestampsToReturn.Both
         params.ReleaseContinuationPoints = False
         params.NodesToRead.append(valueid)
-        return (await self.server.history_read(params))[0]
+        return (await self.server.history_read(params, session))[0]
 
-    async def read_event_history(self, starttime=None, endtime=None, numvalues=0, evtypes=ua.ObjectIds.BaseEventType):
+    async def read_event_history(self, starttime=None, endtime=None, numvalues=0, evtypes=ua.ObjectIds.BaseEventType, session=None):
         """
         Read event history of a source node
         result code from server is checked and an exception is raised in case of error
@@ -557,7 +557,7 @@ class Node:
         evtypes = [Node(self.server, evtype) for evtype in evtypes]
         evfilter = await get_filter_from_event_type(evtypes)
         details.Filter = evfilter
-        result = await self.history_read_events(details)
+        result = await self.history_read_events(details, session)
         event_res = []
         for res in result.HistoryData.Events:
             event_res.append(
@@ -565,7 +565,7 @@ class Node:
             )
         return event_res
 
-    async def history_read_events(self, details):
+    async def history_read_events(self, details, session):
         """
         Read event history of a node, low-level function
         result code from server is checked and an exception is raised in case of error
@@ -578,7 +578,7 @@ class Node:
         params.TimestampsToReturn = ua.TimestampsToReturn.Both
         params.ReleaseContinuationPoints = False
         params.NodesToRead.append(valueid)
-        return (await self.server.history_read(params))[0]
+        return (await self.server.history_read(params, session))[0]
 
     async def delete(self, delete_references=True, recursive=False):
         """
