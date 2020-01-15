@@ -281,7 +281,7 @@ class XmlExporter:
         var = await node.get_attribute(ua.AttributeIds.UserExecutable)
         if var.Value.Value is False:
             obj_el.attrib["UserExecutable"] = "false"
-            await self._add_ref_els(obj_el, node)
+        await self._add_ref_els(obj_el, node)
 
     async def add_etree_reference_type(self, obj):
         obj_el = await self._add_node_common("UAReferenceType", obj)
