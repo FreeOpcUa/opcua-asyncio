@@ -156,8 +156,8 @@ class Server:
         """
         self.certificate = await uacrypto.load_certificate(path, format)
 
-    async def load_private_key(self, path, format=None):
-        self.iserver.private_key = await uacrypto.load_private_key(path, format)
+    async def load_private_key(self, path, password=None, format=None):
+        self.iserver.private_key = await uacrypto.load_private_key(path, password, format)
 
     def disable_clock(self, val: bool = True):
         """

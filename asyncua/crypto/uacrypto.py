@@ -27,13 +27,15 @@ def x509_from_der(data):
     return x509.load_der_x509_certificate(data, default_backend())
 
 
-async def load_private_key(path, format=None):
+async def load_private_key(path, password=None, format=None):
     _, ext = os.path.splitext(path)
+    if isinstance(password, str):
+        password.encode('utf-8')
     async with aiofiles.open(path, mode='rb') as f:
         if ext == ".pem" or format == 'pem' or format == 'PEM':
-            return serialization.load_pem_private_key(await f.read(), password=None, backend=default_backend())
+            return serialization.load_pem_private_key(await f.read(), password=password, backend=default_backend())
         else:
-            return serialization.load_der_private_key(await f.read(), password=None, backend=default_backend())
+            return serialization.load_der_private_key(await f.read(), password=password, backend=default_backend())
 
 
 def der_from_x509(certificate):
