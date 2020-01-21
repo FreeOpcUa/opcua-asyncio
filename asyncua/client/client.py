@@ -153,11 +153,11 @@ class Client:
         """
         self.user_certificate = await uacrypto.load_certificate(path)
 
-    async def load_private_key(self, path: str):
+    async def load_private_key(self, path, password=None, format=None):
         """
         Load user private key. This is used for authenticating using certificate
         """
-        self.user_private_key = await uacrypto.load_private_key(path)
+        self.user_private_key = await uacrypto.load_private_key(path, password, format)
 
     async def connect_and_get_server_endpoints(self):
         """
