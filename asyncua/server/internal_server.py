@@ -85,7 +85,7 @@ class InternalServer:
         """
         uries = ['http://opcfoundation.org/UA/']
         ns_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        await ns_node.set_value(uries)
+        await ns_node.write_value(uries)
 
         params = ua.WriteParameters()
         for nodeid in (ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
@@ -103,7 +103,7 @@ class InternalServer:
             attr = ua.WriteValue()
             attr.NodeId = ua.NodeId(nodeid)
             attr.AttributeId = ua.AttributeIds.Value
-            attr.Value = ua.DataValue(ua.Variant(10000), ua.StatusCode(ua.StatusCodes.Good))
+            attr.Value = ua.DataValue(ua.Variant(10000, ua.VariantType.UInt32), ua.StatusCode(ua.StatusCodes.Good))
             attr.Value.ServerTimestamp = datetime.utcnow()
             params.NodesToWrite.append(attr)
         result = await self.isession.write(params)
@@ -126,7 +126,7 @@ class InternalServer:
             # path was supplied, but file doesn't exist - create one for next start up
             await self.loop.run_in_executor(None, self.aspace.make_aspace_shelf, shelf_file)
 
-    def _address_space_fixes(self) -> Coroutine:
+    async def _address_space_fixes(self) -> Coroutine:
         """
         Looks like the xml definition of address space has some error. This is a good place to fix them
         """
@@ -136,13 +136,17 @@ class InternalServer:
         it.IsForward = False
         it.TargetNodeId = ua.NodeId(ua.ObjectIds.ObjectTypesFolder)
         it.TargetNodeClass = ua.NodeClass.Object
+
         it2 = ua.AddReferencesItem()
         it2.SourceNodeId = ua.NodeId(ua.ObjectIds.BaseDataType)
         it2.ReferenceTypeId = ua.NodeId(ua.ObjectIds.Organizes)
         it2.IsForward = False
         it2.TargetNodeId = ua.NodeId(ua.ObjectIds.DataTypesFolder)
         it2.TargetNodeClass = ua.NodeClass.Object
-        return self.isession.add_references([it, it2])
+
+        results = await self.isession.add_references([it, it2])
+        for res in results:
+            res.check()
 
     def load_address_space(self, path):
         """
@@ -160,18 +164,19 @@ class InternalServer:
         self.logger.info('starting internal server')
         for edp in self.endpoints:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).set_value(0, ua.VariantType.Int32)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).set_value(datetime.utcnow())
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(ua.ServerState.Running, ua.VariantType.Int32)
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.utcnow())
         if not self.disabled_clock:
             self._set_current_time()
 
     async def stop(self):
         self.logger.info('stopping internal server')
+        self.method_service.stop()
         await self.isession.close_session()
         await self.history_manager.stop()
 
     def _set_current_time(self):
-        self.loop.create_task(self.current_time_node.set_value(datetime.utcnow()))
+        self.loop.create_task(self.current_time_node.write_value(datetime.utcnow()))
         self.loop.call_later(1, self._set_current_time)
 
     def get_new_channel_id(self):

@@ -155,7 +155,7 @@ class Node:
         result = await self.get_attribute(ua.AttributeIds.Description)
         return result.Value.Value
 
-    async def get_value(self):
+    async def read_value(self):
         """
         Get value of a node as a python type. Only variables ( and properties) have values.
         An exception will be generated for other node types.
@@ -164,6 +164,8 @@ class Node:
         """
         result = await self.get_data_value()
         return result.Value.Value
+
+    get_value = read_value  # legacy compatibility
 
     async def get_data_value(self):
         """
@@ -188,23 +190,23 @@ class Node:
         res = await self.get_attribute(ua.AttributeIds.ArrayDimensions)
         return res.Value.Value
 
-    async def set_value_rank(self, value):
+    async def write_value_rank(self, value):
         """
         Set attribute ArrayDimensions of node
         """
         v = ua.Variant(value, ua.VariantType.Int32)
         await self.set_attribute(ua.AttributeIds.ValueRank, ua.DataValue(v))
 
-    async def get_value_rank(self):
+    async def read_value_rank(self):
         """
         Read and return ArrayDimensions attribute of node
         """
         res = await self.get_attribute(ua.AttributeIds.ValueRank)
         return res.Value.Value
 
-    async def set_value(self, value, varianttype=None):
+    async def write_value(self, value, varianttype=None):
         """
-        Set value of a node. Only variables(properties) have values.
+        Write value of a node. Only variables(properties) have values.
         An exception will be generated for other node types.
         value argument is either:
         * a python built-in type, converted to opc-ua
@@ -218,7 +220,8 @@ class Node:
         dv = value_to_datavalue(value, varianttype)
         await self.set_attribute(ua.AttributeIds.Value, dv)
 
-    set_data_value = set_value
+    set_data_value = write_value  # legacy compatibility
+    set_value = write_value  # legacy compatibility
 
     async def set_writable(self, writable=True):
         """

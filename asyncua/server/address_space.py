@@ -1,8 +1,11 @@
+import asyncio
 import pickle
 import shelve
 import logging
 import collections
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 from asyncua import ua
 from .users import User
@@ -133,12 +136,12 @@ class ViewService(object):
                     res += self._get_sub_ref(ref.NodeId)
         return res
 
-    def _suitable_direction(self, desc, isforward):
-        if desc == ua.BrowseDirection.Both:
+    def _suitable_direction(self, direction, isforward):
+        if direction == ua.BrowseDirection.Both:
             return True
-        if desc == ua.BrowseDirection.Forward and isforward:
+        if direction == ua.BrowseDirection.Forward and isforward:
             return True
-        if desc == ua.BrowseDirection.Inverse and not isforward:
+        if direction == ua.BrowseDirection.Inverse and not isforward:
             return True
         return False
 
@@ -450,14 +453,19 @@ class MethodService:
     def __init__(self, aspace: "AddressSpace"):
         self.logger = logging.getLogger(__name__)
         self._aspace: "AddressSpace" = aspace
+        self._pool = ThreadPoolExecutor()
+
+    def stop(self):
+        self._pool.shutdown()
 
     async def call(self, methods):
         results = []
         for method in methods:
-            results.append(self._call(method))
+            res = await self._call(method)
+            results.append(res)
         return results
 
-    def _call(self, method):
+    async def _call(self, method):
         self.logger.info("Calling: %s", method)
         res = ua.CallMethodResult()
         if method.ObjectId not in self._aspace or method.MethodId not in self._aspace:
@@ -468,7 +476,11 @@ class MethodService:
                 res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNothingToDo)
             else:
                 try:
-                    result = node.call(method.ObjectId, *method.InputArguments)
+                    result = await self._run_method(node.call, method.ObjectId, *method.InputArguments)
+                except Exception:
+                    self.logger.exception("Error executing method call %s, an exception was raised: ", method)
+                    res.StatusCode = ua.StatusCode(ua.StatusCodes.BadUnexpectedError)
+                else:
                     if isinstance(result, ua.CallMethodResult):
                         res = result
                     elif isinstance(result, ua.StatusCode):
@@ -477,9 +489,13 @@ class MethodService:
                         res.OutputArguments = result
                     while len(res.InputArgumentResults) < len(method.InputArguments):
                         res.InputArgumentResults.append(ua.StatusCode())
-                except Exception:
-                    self.logger.exception("Error executing method call %s, an exception was raised: ", method)
-                    res.StatusCode = ua.StatusCode(ua.StatusCodes.BadUnexpectedError)
+        return res
+
+    async def _run_method(self, func, parent, *args):
+        if asyncio.iscoroutinefunction(func):
+            return await func(parent, *args)
+        p = partial(func, parent, *args)
+        res = await asyncio.get_event_loop().run_in_executor(self._pool, p)
         return res
 
 

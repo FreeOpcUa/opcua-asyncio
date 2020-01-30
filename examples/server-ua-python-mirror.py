@@ -58,16 +58,16 @@ class UaObject(object):
         sub = asyncua_server.create_subscription(500, handler)
         handle = sub.subscribe_data_change(sub_children)
 
-    def write(self, attr=None):
+    def write_value(self, attr=None):
         # if a specific attr isn't passed to write, write all OPC UA children
         if attr is None:
             for k, node in self.nodes.items():
                 node_class = node.get_node_class()
                 if node_class == ua.NodeClass.Variable:
-                    node.set_value(getattr(self, k))
+                    node.write_value(getattr(self, k))
         # only update a specific attr
         else:
-            self.nodes[attr].set_value(getattr(self, attr))
+            self.nodes[attr].write_value(getattr(self, attr))
 
 
 class MyObj(UaObject):
@@ -130,22 +130,22 @@ if __name__ == "__main__":
             # write a single attr to OPC UA
             my_python_obj.MyVariable = 12.3
             my_python_obj.MyProperty = 55  # this value will not be visible to clients because write is not called
-            my_python_obj.write('MyVariable')
+            my_python_obj.write_value('MyVariable')
 
             time.sleep(3)
 
             # write all attr of the object to OPC UA
             my_python_obj.MyVariable = 98.1
             my_python_obj.MyProperty = 99
-            my_python_obj.write()
+            my_python_obj.write_value()
 
             time.sleep(3)
 
             # write directly to the OPC UA node of the object
             dv = ua.DataValue(ua.Variant(5.5, ua.VariantType.Double))
-            my_python_obj.nodes['MyVariable'].set_value(dv)
+            my_python_obj.nodes['MyVariable'].write_value(dv)
             dv = ua.DataValue(ua.Variant(4, ua.VariantType.UInt64))
-            my_python_obj.nodes['MyVariable'].set_value(dv)
+            my_python_obj.nodes['MyVariable'].write_value(dv)
 
             time.sleep(3)
 

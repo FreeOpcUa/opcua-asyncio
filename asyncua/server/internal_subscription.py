@@ -51,17 +51,18 @@ class InternalSubscription:
             self._task = self.loop.create_task(self._subscription_loop())
 
     async def stop(self):
-        self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
-        self._task.cancel()
-        await self._task
-        self._task = None
+        if self._task:
+            self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
+            self._task.cancel()
+            await self._task
+            self._task = None
         self.monitored_item_srv.delete_all_monitored_items()
 
     def _trigger_publish(self):
         """
         Trigger immediate publication (if requested by the PublishingInterval).
         """
-        if self._task and self.data.RevisedPublishingInterval <= 0.0:
+        if not self._task and self.data.RevisedPublishingInterval <= 0.0:
             # Publish immediately (as fast as possible)
             self.publish_results()
 
@@ -170,10 +171,10 @@ class InternalSubscription:
 
     def republish(self, nb):
         #self.logger.info("re-publish request for ack %s in subscription %s", nb, self)
-        notification_message = self._not_acknowledged_results.pop(nb, None)
-        if notification_message:
+        result = self._not_acknowledged_results.pop(nb, None)
+        if result:
             self.logger.info("re-publishing ack %s in subscription %s", nb, self)
-            return notification_message
+            return result.NotificationMessage
         self.logger.info("Error request to re-published non existing ack %s in subscription %s", nb, self)
         return ua.NotificationMessage()
 

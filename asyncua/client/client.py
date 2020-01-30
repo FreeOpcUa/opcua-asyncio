@@ -38,8 +38,11 @@ class Client:
         :param timeout:
             Each request sent to the server expects an answer within this
             time. The timeout is specified in seconds.
+
+        Some other client parameters can be changed by setting
+        attributes on the constructed object:
+        See the source code for the exhaustive list.
         """
-        self.logger = logging.getLogger(__name__)
         self.loop = loop or asyncio.get_event_loop()
         self.server_url = urlparse(url)
         # take initial username and password from the url
@@ -70,6 +73,11 @@ class Client:
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.disconnect()
+
+    def __str__(self):
+        return f"Client({self.server_url.geturl()})"
+
+    __repr__ = __str__
 
     @staticmethod
     def find_endpoint(endpoints, security_mode, policy_uri):
@@ -145,11 +153,11 @@ class Client:
         """
         self.user_certificate = await uacrypto.load_certificate(path)
 
-    async def load_private_key(self, path: str):
+    async def load_private_key(self, path, password=None, format=None):
         """
         Load user private key. This is used for authenticating using certificate
         """
-        self.user_private_key = await uacrypto.load_private_key(path)
+        self.user_private_key = await uacrypto.load_private_key(path, password, format)
 
     async def connect_and_get_server_endpoints(self):
         """
@@ -251,11 +259,11 @@ class Client:
         params.SecurityMode = self.security_policy.Mode
         params.RequestedLifetime = self.secure_channel_timeout
         # length should be equal to the length of key of symmetric encryption
-        nonce = create_nonce(self.security_policy.symmetric_key_size)
-        params.ClientNonce = nonce  # this nonce is used to create a symmetric key
+        params.ClientNonce = create_nonce(self.security_policy.symmetric_key_size)
         result = await self.uaclient.open_secure_channel(params)
-        self.security_policy.make_symmetric_key(nonce, result.ServerNonce)
-        self.secure_channel_timeout = result.SecurityToken.RevisedLifetime
+        if self.secure_channel_timeout != result.SecurityToken.RevisedLifetime:
+            _logger.info("Requested secure channel timeout to be %dms, got %dms instead", self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
+            self.secure_channel_timeout = result.SecurityToken.RevisedLifetime
 
     async def close_secure_channel(self):
         return await self.uaclient.close_secure_channel()
@@ -321,7 +329,7 @@ class Client:
         params.EndpointUrl = self.server_url.geturl()
         params.SessionName = f"{self.description} Session{self._session_counter}"
         # Requested maximum number of milliseconds that a Session should remain open without activity
-        params.RequestedSessionTimeout = 60 * 60 * 1000
+        params.RequestedSessionTimeout = self.session_timeout
         params.MaxResponseMessageSize = 0  # means no max size
         response = await self.uaclient.create_session(params)
         if self.security_policy.client_certificate is None:
@@ -338,7 +346,9 @@ class Client:
         ep = Client.find_endpoint(response.ServerEndpoints, self.security_policy.Mode, self.security_policy.URI)
         self._policy_ids = ep.UserIdentityTokens
         #  Actual maximum number of milliseconds that a Session shall remain open without activity
-        self.session_timeout = response.RevisedSessionTimeout
+        if self.session_timeout != response.RevisedSessionTimeout:
+            _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
+            self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = self.loop.create_task(self._renew_channel_loop())
         return response
 
@@ -353,10 +363,10 @@ class Client:
             while True:
                 # 0.7 is from spec. 0.001 is because asyncio.sleep expects time in seconds
                 await asyncio.sleep(duration)
-                self.logger.debug("renewing channel")
+                _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
-                val = await self.nodes.server_state.get_value()
-                self.logger.debug("server state is: %s ", val)
+                val = await self.nodes.server_state.read_value()
+                _logger.debug("server state is: %s ", val)
         except asyncio.CancelledError:
             pass
 
@@ -397,7 +407,9 @@ class Client:
         if self.security_policy.AsymmetricSignatureURI:
             params.ClientSignature.Algorithm = self.security_policy.AsymmetricSignatureURI
         else:
-            params.ClientSignature.Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
+            params.ClientSignature.Algorithm = (
+                security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI
+            )
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
         params.LocaleIds.append("en")
         if not username and not certificate:
@@ -432,7 +444,7 @@ class Client:
             # then the password only contains UTF-8 encoded password
             # and EncryptionAlgorithm is null
             if self._password:
-                self.logger.warning("Sending plain-text password")
+                _logger.warning("Sending plain-text password")
                 params.UserIdentityToken.Password = password.encode("utf8")
             params.UserIdentityToken.EncryptionAlgorithm = None
         elif self._password:
@@ -464,7 +476,7 @@ class Client:
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.RootFolder))
 
     def get_objects_node(self):
-        self.logger.info("get_objects_node")
+        _logger.info("get_objects_node")
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.ObjectsFolder))
 
     def get_server_node(self):
@@ -502,7 +514,7 @@ class Client:
 
     def get_namespace_array(self) -> Coroutine:
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        return ns_node.get_value()
+        return ns_node.read_value()
 
     async def get_namespace_index(self, uri):
         uries = await self.get_namespace_array()
@@ -533,11 +545,11 @@ class Client:
         This method is mainly implemented for symetry with server
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        uries = await ns_node.get_value()
+        uries = await ns_node.read_value()
         if uri in uries:
             return uries.index(uri)
         uries.append(uri)
-        await ns_node.set_value(uries)
+        await ns_node.write_value(uries)
         return len(uries) - 1
 
     def load_type_definitions(self, nodes=None) -> Coroutine:
@@ -580,7 +592,7 @@ class Client:
             node.nodeid = node.basenodeid
             node.basenodeid = None
 
-    async def get_values(self, nodes):
+    async def read_values(self, nodes):
         """
         Read the value of multiple nodes in one ua call.
         """
@@ -588,7 +600,7 @@ class Client:
         results = await self.uaclient.get_attributes(nodeids, ua.AttributeIds.Value)
         return [result.Value.Value for result in results]
 
-    async def set_values(self, nodes, values):
+    async def write_values(self, nodes, values):
         """
         Write values to multiple nodes in one ua call
         """
@@ -597,3 +609,6 @@ class Client:
         results = await self.uaclient.set_attributes(nodeids, dvs, ua.AttributeIds.Value)
         for result in results:
             result.check()
+
+    get_values = read_values  # legacy compatibility
+    set_values = write_values  # legacy compatibility

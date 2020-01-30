@@ -189,7 +189,7 @@ async def test_data_type_dict_add_dictionary(srv):
     assert await dict_node.get_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeDictionaryType, 0)
     assert await dict_node.get_display_name() == ua.LocalizedText(dict_name)
     assert await dict_node.get_data_type() == ua.NodeId(ua.ObjectIds.ByteString)
-    assert await dict_node.get_value_rank() == -1
+    assert await dict_node.read_value_rank() == -1
 
 
 async def test_data_type_dict_create_data_type(srv):
@@ -215,8 +215,8 @@ async def test_data_type_dict_create_data_type(srv):
 
     assert await desc_node.get_display_name() == ua.LocalizedText(type_name)
     assert await desc_node.get_data_type() == ua.NodeId(ua.ObjectIds.String)
-    assert await desc_node.get_value() == type_name
-    assert await desc_node.get_value_rank() == -1
+    assert await desc_node.read_value() == type_name
+    assert await desc_node.read_value_rank() == -1
 
     # Test object node
     obj_node = (await type_node.get_children(refs=ua.ObjectIds.HasEncoding))[0]
@@ -255,7 +255,7 @@ async def test_data_type_dict_set_dict_byte_string(srv):
     field.attrib['Name'] = 'id'
     field.attrib['TypeName'] = 'opc:Int32'
     case = Et.tostring(srv.test_etree.getroot(), encoding='utf-8').decode("utf-8").replace(' ', '')
-    result = (await srv.srv.get_node(srv.dict_builder.dict_id).get_value()).decode("utf-8").replace(' ', '').replace('\n', '')
+    result = (await srv.srv.get_node(srv.dict_builder.dict_id).read_value()).decode("utf-8").replace(' ', '').replace('\n', '')
     assert result == case
 
 
@@ -349,9 +349,9 @@ async def test_functional_basic(srv):
     basic_msg.ID = 3
     basic_msg.Gender = True
     basic_msg.Comments = 'Test string'
-    await basic_var.set_value(basic_msg)
+    await basic_var.write_value(basic_msg)
 
-    basic_result = await basic_var.get_value()
+    basic_result = await basic_var.read_value()
     assert basic_result == basic_msg
 
 
@@ -379,7 +379,7 @@ async def test_functional_advance(srv):
     basic_msg.ID = 3
     basic_msg.Gender = True
     basic_msg.Comments = 'Test string'
-    await basic_var.set_value(basic_msg)
+    await basic_var.write_value(basic_msg)
 
     nested_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(namespaceidx=srv.idx), 'NestedStruct',
                                                      ua.Variant(None, ua.VariantType.Null),
@@ -389,9 +389,9 @@ async def test_functional_advance(srv):
     nested_msg.Stuff = basic_msg
     nested_msg.Name = 'Max'
     nested_msg.Surname = 'Karl'
-    await nested_var.set_value(nested_msg)
+    await nested_var.write_value(nested_msg)
 
-    basic_result = await basic_var.get_value()
+    basic_result = await basic_var.read_value()
     assert basic_result == basic_msg
-    nested_result = await nested_var.get_value()
+    nested_result = await nested_var.read_value()
     assert nested_result == nested_msg

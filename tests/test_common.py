@@ -6,10 +6,12 @@ client side since we have been carefull to have the exact
 same api on server and client side
 """
 
-import pytest
+import asyncio
 from datetime import datetime
 from datetime import timedelta
 import math
+
+import pytest
 
 from asyncua import ua, uamethod, Node
 from asyncua.common import ua_utils
@@ -80,6 +82,15 @@ async def add_server_methods(srv):
         [ua.VariantType.Int64, ua.VariantType.Int64, ua.VariantType.Int64]
     )
 
+    @uamethod
+    async def func6(parent):
+        await asyncio.sleep(0)
+
+    o = srv.get_objects_node()
+    await o.add_method(
+        ua.NodeId("ServerMethodAsync", 2), ua.QualifiedName('ServerMethodAsync', 2), func6, [], []
+    )
+
 
 async def test_find_servers(opc):
     servers = await opc.opc.find_servers()
@@ -113,7 +124,7 @@ async def test_delete_nodes(opc):
     assert var in childs
     await opc.opc.delete_nodes([var])
     with pytest.raises(ua.UaStatusCodeError):
-        await var.set_value(7.8)
+        await var.write_value(7.8)
     with pytest.raises(ua.UaStatusCodeError):
         await obj.get_child(["2:FolderToDelete", "2:VarToDelete"])
     childs = await fold.get_children()
@@ -126,7 +137,7 @@ async def test_delete_nodes_recursive(opc):
     var = await fold.add_variable(2, "VarToDeleteR", 9.1)
     await opc.opc.delete_nodes([fold, var])
     with pytest.raises(ua.UaStatusCodeError):
-        await var.set_value(7.8)
+        await var.write_value(7.8)
     with pytest.raises(ua.UaStatusCodeError):
         await obj.get_child(["2:FolderToDelete", "2:VarToDelete"])
 
@@ -303,7 +314,7 @@ async def test_non_existing_path(opc):
 async def test_bad_attribute(opc):
     root = opc.opc.get_root_node()
     with pytest.raises(ua.UaStatusCodeError):
-        await root.set_value(99)
+        await root.write_value(99)
 
 
 async def test_get_node_by_nodeid(opc):
@@ -313,20 +324,20 @@ async def test_get_node_by_nodeid(opc):
     assert server_time_node == correct
 
 
-async def test_datetime_read(opc):
+async def test_datetime_read_value(opc):
     time_node = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
-    dt = await time_node.get_value()
+    dt = await time_node.read_value()
     utcnow = datetime.utcnow()
     delta = utcnow - dt
     assert delta < timedelta(seconds=1)
 
 
-async def test_datetime_write(opc):
+async def test_datetime_write_value(opc):
     time_node = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
     now = datetime.utcnow()
     objects = opc.opc.get_objects_node()
     v1 = await objects.add_variable(4, "test_datetime", now)
-    tid = await v1.get_value()
+    tid = await v1.read_value()
     assert now == tid
 
 
@@ -340,11 +351,11 @@ async def test_variant_array_dim(opc):
     dim = await v.get_array_dimensions()
     assert [0, 0, 0] == dim
 
-    await v.set_value_rank(0)
-    rank = await v.get_value_rank()
+    await v.write_value_rank(0)
+    rank = await v.read_value_rank()
     assert 0 == rank
 
-    v2 = await v.get_value()
+    v2 = await v.read_value()
     assert l == v2
     dv = await v.get_data_value()
     assert [2, 3, 4] == dv.Value.Dimensions
@@ -352,7 +363,7 @@ async def test_variant_array_dim(opc):
     l = [[[], [], []], [[], [], []]]
     variant = ua.Variant(l, ua.VariantType.UInt32)
     v = await objects.add_variable(3, 'variableWithDimsEmpty', variant)
-    v2 = await v.get_value()
+    v2 = await v.read_value()
     assert l == v2
     dv = await v.get_data_value()
     assert [2, 3, 0] == dv.Value.Dimensions
@@ -384,7 +395,7 @@ async def test_utf8(opc):
     val = "æøå"
     v = await objects.add_variable(nid, bn, val)
     assert nid == v.nodeid
-    val2 = await v.get_value()
+    val2 = await v.read_value()
     assert val == val2
     bn2 = await v.get_browse_name()
     assert bn == bn2
@@ -393,11 +404,11 @@ async def test_utf8(opc):
 async def test_null_variable(opc):
     objects = opc.opc.get_objects_node()
     var = await objects.add_variable(3, 'nullstring', "a string")
-    await var.set_value(None)
-    val = await var.get_value()
+    await var.write_value(None)
+    val = await var.read_value()
     assert val is None
-    await var.set_value("")
-    val = await var.get_value()
+    await var.write_value("")
+    val = await var.read_value()
     assert val is not None
     assert "" == val
 
@@ -419,7 +430,7 @@ async def test_add_string_array_variable(opc):
     qn = ua.QualifiedName('stringarray', 9)
     assert nid == v.nodeid
     assert qn == await v.get_browse_name()
-    val = await v.get_value()
+    val = await v.read_value()
     assert ['l', 'b'] == val
 
 
@@ -468,7 +479,7 @@ async def test_add_read_node(opc):
 async def test_simple_value(opc):
     o = opc.opc.get_objects_node()
     v = await o.add_variable(3, 'VariableTestValue', 4.32)
-    val = await v.get_value()
+    val = await v.read_value()
     assert 4.32 == val
 
 
@@ -482,13 +493,13 @@ async def test_add_exception(opc):
 async def test_negative_value(opc):
     o = opc.opc.get_objects_node()
     v = await o.add_variable(3, 'VariableNegativeValue', 4)
-    await v.set_value(-4.54)
-    assert -4.54 == await v.get_value()
+    await v.write_value(-4.54)
+    assert -4.54 == await v.read_value()
 
 
 async def test_read_server_state(opc):
     statenode = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_State))
-    assert 0 == await statenode.get_value()
+    assert 0 == await statenode.read_value()
 
 
 async def test_bad_node(opc):
@@ -496,7 +507,7 @@ async def test_bad_node(opc):
     with pytest.raises(ua.UaStatusCodeError):
         await bad.get_browse_name()
     with pytest.raises(ua.UaStatusCodeError):
-        await bad.set_value(89)
+        await bad.write_value(89)
     with pytest.raises(ua.UaStatusCodeError):
         await bad.add_object(0, "0:myobj")
     with pytest.raises(ua.UaStatusCodeError):
@@ -507,7 +518,7 @@ async def test_value(opc):
     o = opc.opc.get_objects_node()
     var = ua.Variant(1.98, ua.VariantType.Double)
     v = await o.add_variable(3, 'VariableValue', var)
-    assert 1.98 == await v.get_value()
+    assert 1.98 == await v.read_value()
     dvar = ua.DataValue(var)
     dv = await v.get_data_value()
     assert ua.DataValue == type(dv)
@@ -515,18 +526,18 @@ async def test_value(opc):
     assert dvar.Value == var
 
 
-async def test_set_value(opc):
+async def test_write_value(opc):
     o = opc.opc.get_objects_node()
     var = ua.Variant(1.98, ua.VariantType.Double)
     dvar = ua.DataValue(var)
     v = await o.add_variable(3, 'VariableValue', var)
-    await v.set_value(var.Value)
-    v1 = await v.get_value()
+    await v.write_value(var.Value)
+    v1 = await v.read_value()
     assert v1 == var.Value
-    await v.set_value(var)
-    v2 = await v.get_value()
+    await v.write_value(var)
+    v2 = await v.read_value()
     assert v2 == var.Value
-    await v.set_data_value(dvar)
+    await v.write_value(dvar)
     v3 = await v.get_data_value()
     assert v3.Value == dvar.Value
 
@@ -534,7 +545,7 @@ async def test_set_value(opc):
 async def test_array_value(opc):
     o = opc.opc.get_objects_node()
     v = await o.add_variable(3, 'VariableArrayValue', [1, 2, 3])
-    assert [1, 2, 3] == await v.get_value()
+    assert [1, 2, 3] == await v.read_value()
 
 
 async def test_bool_variable(opc):
@@ -542,18 +553,18 @@ async def test_bool_variable(opc):
     v = await o.add_variable(3, 'BoolVariable', True)
     dt = await v.get_data_type_as_variant_type()
     assert ua.VariantType.Boolean == dt
-    val = await v.get_value()
+    val = await v.read_value()
     assert val is True
-    await v.set_value(False)
-    val = await v.get_value()
+    await v.write_value(False)
+    val = await v.read_value()
     assert val is False
 
 
 async def test_array_size_one_value(opc):
     o = opc.opc.get_objects_node()
     v = await o.add_variable(3, 'VariableArrayValue', [1, 2, 3])
-    await v.set_value([1])
-    assert [1] == await v.get_value()
+    await v.write_value([1])
+    assert [1] == await v.read_value()
 
 
 async def test_use_namespace(opc):
@@ -616,6 +627,13 @@ async def test_method_none(opc):
     assert result is None
     result = await call_method_full(o, m)
     assert [] == result.OutputArguments
+
+
+async def test_method_async(opc):
+    o = opc.opc.get_objects_node()
+    m = await o.get_child("2:ServerMethodAsync")
+    await o.call_method(m)
+    await call_method_full(o, m)
 
 
 async def test_add_nodes(opc):
@@ -792,7 +810,7 @@ async def test_copy_node(opc):
     obj = await mydevice.get_child(["0:controller"])
     prop = await mydevice.get_child(["0:controller", "0:state"])
     assert ua.ObjectIds.PropertyType == (await prop.get_type_definition()).Identifier
-    assert "Running" == await prop.get_value()
+    assert "Running" == await prop.read_value()
     assert prop.nodeid != prop_t.nodeid
 
 
@@ -833,7 +851,7 @@ async def test_instantiate_1(opc):
         await mydevice.get_child(["0:controller", "0:model"])
 
     assert ua.ObjectIds.PropertyType == (await prop.get_type_definition()).Identifier
-    assert "Running" == await prop.get_value()
+    assert "Running" == await prop.read_value()
     assert prop.nodeid != prop_t.nodeid
 
     # instanciate device subtype
@@ -869,7 +887,7 @@ async def test_instantiate_string_nodeid(opc):
     prop = await mydevice.get_child(["0:controller", "0:state"])
     assert "InstDevice.controller" == obj_nodeid_ident
     assert ua.ObjectIds.PropertyType == (await prop.get_type_definition()).Identifier
-    assert "Running" == await prop.get_value()
+    assert "Running" == await prop.read_value()
     assert prop.nodeid != prop_t.nodeid
 
 
@@ -895,14 +913,14 @@ async def test_enum(opc):
         0, "EnumStrings", [ua.LocalizedText("String0"), ua.LocalizedText("String1"), ua.LocalizedText("String2")],
         ua.VariantType.LocalizedText
     )
-    # es.set_value_rank(1)
+    # es.write_value_rank(1)
     # instantiate
     o = opc.opc.get_objects_node()
     myvar = await o.add_variable(2, "MyEnumVar", ua.LocalizedText("String1"), datatype=myenum_type.nodeid)
     # myvar.set_writable(True)
     # tests
     assert myenum_type.nodeid == await myvar.get_data_type()
-    await myvar.set_value(ua.LocalizedText("String2"))
+    await myvar.write_value(ua.LocalizedText("String2"))
 
 
 async def test_supertypes(opc):

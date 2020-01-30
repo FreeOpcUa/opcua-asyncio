@@ -344,7 +344,7 @@ async def _lsprint_1(node, depth, indent=""):
     for desc in await node.get_children_descriptions():
         if desc.NodeClass == ua.NodeClass.Variable:
             try:
-                val = await Node(node.server, desc.NodeId).get_value()
+                val = await Node(node.server, desc.NodeId).read_value()
             except UaStatusCodeError as err:
                 val = "Bad (0x{0:x})".format(err.code)
             print("{0}{1:30} {2!s:25} {3!s:25}, {4!s:3}".format(indent, desc.DisplayName.to_string(), desc.NodeId.to_string(), desc.BrowseName.to_string(), val))
@@ -494,7 +494,7 @@ def uaclient():
         client.load_client_certificate(args.certificate)
     if args.private_key:
         client.load_private_key(args.private_key)
-    
+
     sync.start_thread_loop()
     client.connect()
     try:
@@ -579,8 +579,8 @@ def uaserver():
             count = 0
             while True:
                 time.sleep(1)
-                myvar.set_value(math.sin(count / 10))
-                myarrayvar.set_value([math.sin(count / 10), math.sin(count / 100)])
+                myvar.write_value(math.sin(count / 10))
+                myarrayvar.write_value([math.sin(count / 10), math.sin(count / 100)])
                 count += 1
         else:
             while True:

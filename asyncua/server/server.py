@@ -74,7 +74,7 @@ class Server:
 
     def __init__(self, iserver: InternalServer = None, loop: asyncio.AbstractEventLoop = None):
         self.loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
-        self.logger = logging.getLogger(__name__)
+        _logger = logging.getLogger(__name__)
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
         self.product_uri = "urn:freeopcua.github.io:python:server"
@@ -101,19 +101,44 @@ class Server:
         # setup some expected values
         await self.set_application_uri(self._application_uri)
         sa_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerArray))
-        await sa_node.set_value([self._application_uri])
+        await sa_node.write_value([self._application_uri])
+
+        await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
+
+    async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version, build_number, build_date):
         status_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus))
         build_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo))
-        status = ua.ServerStatusDataType()
-        status.BuildInfo.ProductUri = self.product_uri
-        status.BuildInfo.ManufacturerName = self.manufacturer_name
-        status.BuildInfo.ProductName = self.name
-        status.BuildInfo.SoftwareVersion = "1.0pre"
-        status.BuildInfo.BuildNumber = "0"
-        status.BuildInfo.BuildDate = datetime.now()
-        status.SecondsTillShutdown = 0
-        await status_node.set_value(status)
-        await build_node.set_value(status.BuildInfo)
+
+        status = await status_node.read_value()
+        if status is None:
+            # first time
+            status = ua.ServerStatusDataType()
+            status.SecondsTillShutdown = 0
+
+        status.BuildInfo.ProductUri = product_uri
+        status.BuildInfo.ManufacturerName = manufacturer_name
+        status.BuildInfo.ProductName = product_name
+        status.BuildInfo.SoftwareVersion = software_version
+        status.BuildInfo.BuildNumber = build_number
+        status.BuildInfo.BuildDate = build_date
+
+        await status_node.write_value(status)
+        await build_node.write_value(status.BuildInfo)
+
+        # we also need to update all individual nodes :/
+        product_uri_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ProductUri))
+        product_name_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ProductName))
+        product_manufacturer_name_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ManufacturerName))
+        product_software_version_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_SoftwareVersion))
+        product_build_number_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_BuildNumber))
+        product_build_date_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_BuildDate))
+
+        await product_uri_node.write_value(status.BuildInfo.ProductUri)
+        await product_name_node.write_value(status.BuildInfo.ProductName)
+        await product_manufacturer_name_node.write_value(status.BuildInfo.ManufacturerName)
+        await product_software_version_node.write_value(status.BuildInfo.SoftwareVersion)
+        await product_build_number_node.write_value(status.BuildInfo.BuildNumber)
+        await product_build_date_node.write_value(status.BuildInfo.BuildDate)
 
     async def __aenter__(self):
         await self.start()
@@ -121,14 +146,18 @@ class Server:
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.stop()
 
-    async def load_certificate(self, path: str):
+    def __str__(self):
+        return f"OPC UA Server({self.endpoint.geturl()})"
+    __repr__ = __str__
+
+    async def load_certificate(self, path: str, format: str =None):
         """
         load server certificate from file, either pem or der
         """
-        self.certificate = await uacrypto.load_certificate(path)
+        self.certificate = await uacrypto.load_certificate(path, format)
 
-    async def load_private_key(self, path):
-        self.iserver.private_key = await uacrypto.load_private_key(path)
+    async def load_private_key(self, path, password=None, format=None):
+        self.iserver.private_key = await uacrypto.load_private_key(path, password, format)
 
     def disable_clock(self, val: bool = True):
         """
@@ -150,12 +179,12 @@ class Server:
         """
         self._application_uri = uri
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        uries = await ns_node.get_value()
+        uries = await ns_node.read_value()
         if len(uries) > 1:
             uries[1] = uri  # application uri is always namespace 1
         else:
             uries.append(uri)
-        await ns_node.set_value(uries)
+        await ns_node.write_value(uries)
 
     async def find_servers(self, uris=None):
         """
@@ -256,11 +285,11 @@ class Server:
 
         if self._security_policy != [ua.SecurityPolicyType.NoSecurity]:
             if not (self.certificate and self.iserver.private_key):
-                self.logger.warning("Endpoints other than open requested but private key and certificate are not set.")
+                _logger.warning("Endpoints other than open requested but private key and certificate are not set.")
                 return
 
             if ua.SecurityPolicyType.NoSecurity in self._security_policy:
-                self.logger.warning(
+                _logger.warning(
                     "Creating an open endpoint to the server, although encrypted endpoints are enabled.")
 
             if ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt in self._security_policy:
@@ -329,8 +358,11 @@ class Server:
             self.bserver.set_policies(self._policies)
             await self.bserver.start()
         except Exception as exp:
+            _logger.exception("%s error starting server", self)
             await self.iserver.stop()
             raise exp
+        else:
+            _logger.debug("%s server started", self)
 
     async def stop(self):
         """
@@ -340,6 +372,7 @@ class Server:
             await asyncio.wait([client.disconnect() for client in self._discovery_clients.values()])
         await self.bserver.stop()
         await self.iserver.stop()
+        _logger.debug("%s Internal server stopped, everything closed", self)
 
     def get_root_node(self):
         """
@@ -388,18 +421,18 @@ class Server:
         get all namespace defined in server
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        return ns_node.get_value()
+        return ns_node.read_value()
 
     async def register_namespace(self, uri) -> int:
         """
         Register a new namespace. Nodes should in custom namespace, not 0.
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        uries = await ns_node.get_value()
+        uries = await ns_node.read_value()
         if uri in uries:
             return uries.index(uri)
         uries.append(uri)
-        await ns_node.set_value(uries)
+        await ns_node.write_value(uries)
         return len(uries) - 1
 
     async def get_namespace_index(self, uri):

@@ -30,11 +30,11 @@ async def test_xml_import(opc):
     await opc.opc.import_xml(CUSTOM_NODES_XML_PATH)
     o = opc.opc.get_objects_node()
     v = await o.get_child(["1:MyXMLFolder", "1:MyXMLObject", "1:MyXMLVariable"])
-    val = await v.get_value()
+    val = await v.read_value()
     assert "StringValue" == val
     node_path = ["Types", "DataTypes", "BaseDataType", "Enumeration", "1:MyEnum", "0:EnumStrings"]
     o = await opc.opc.get_root_node().get_child(node_path)
-    assert 3 == len(await o.get_value())
+    assert 3 == len(await o.read_value())
     # Check if method is imported
     node_path = ["Types", "ObjectTypes", "BaseObjectType", "1:MyObjectType", "1:MyMethod"]
     o = await opc.opc.get_root_node().get_child(node_path)
@@ -72,11 +72,11 @@ async def test_xml_method(opc, tmpdir):
     m = await o.add_method(2, "callme", func, [ua.VariantType.Double, ua.VariantType.String], [ua.VariantType.Float])
     # set an arg dimension to a list to test list export
     inputs = await m.get_child("InputArguments")
-    val = await inputs.get_value()
+    val = await inputs.read_value()
     val[0].ArrayDimensions = [2, 2]
     desc = "My nce description"
     val[0].Description = ua.LocalizedText(desc)
-    await inputs.set_value(val)
+    await inputs.write_value(val)
     # get all nodes and export
     nodes = [o, m]
     nodes.extend(await m.get_children())
@@ -85,7 +85,7 @@ async def test_xml_method(opc, tmpdir):
     await opc.opc.delete_nodes(nodes)
     await opc.opc.import_xml(tmp_path)
     # now see if our nodes are here
-    val = await inputs.get_value()
+    val = await inputs.read_value()
     assert 2 == len(val)
     assert [2, 2] == val[0].ArrayDimensions
     assert desc == val[0].Description.Text
@@ -104,18 +104,18 @@ async def test_xml_vars(opc, tmpdir):
     await opc.opc.export_xml(nodes, tmp_path)
     await opc.opc.delete_nodes(nodes)
     await opc.opc.import_xml(tmp_path)
-    assert 6.78 == await v.get_value()
+    assert 6.78 == await v.read_value()
     assert ua.NodeId(ua.ObjectIds.Double) == await v.get_data_type()
     assert ua.NodeId(ua.ObjectIds.UInt16) == await a.get_data_type()
-    assert await a.get_value_rank() in (0, 1)
-    assert [6, 1] == await a.get_value()
-    assert [[1, 2], [3, 4]] == await a2.get_value()
+    assert await a.read_value_rank() in (0, 1)
+    assert [6, 1] == await a.read_value()
+    assert [[1, 2], [3, 4]] == await a2.read_value()
     assert ua.NodeId(ua.ObjectIds.UInt32) == await a2.get_data_type()
-    assert await a2.get_value_rank() in (0, 2)
+    assert await a2.read_value_rank() in (0, 2)
     assert [2, 2] == (await a2.get_attribute(ua.AttributeIds.ArrayDimensions)).Value.Value
-    # assert a3.get_value(), [[]])  # would require special code ...
+    # assert a3.read_value(), [[]])  # would require special code ...
     assert ua.NodeId(ua.ObjectIds.ByteString) == await a3.get_data_type()
-    assert await a3.get_value_rank() in (0, 2)
+    assert await a3.read_value_rank() in (0, 2)
     assert [1, 0] == (await a3.get_attribute(ua.AttributeIds.ArrayDimensions)).Value.Value
 
 
@@ -143,11 +143,11 @@ async def test_xml_ns(opc, tmpdir):
     # delete node and change index og new_ns before re-importing
     await opc.opc.delete_nodes(nodes)
     ns_node = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-    nss = await ns_node.get_value()
+    nss = await ns_node.read_value()
     nss.remove("my_new_namespace")
     # nss.remove("ref_namespace")
     nss.remove("bname_namespace")
-    await ns_node.set_value(nss)
+    await ns_node.write_value(nss)
     new_ns = await opc.opc.register_namespace("my_new_namespace_offsett")
     new_ns = await opc.opc.register_namespace("my_new_namespace")
     new_nodes = await opc.opc.import_xml(tmp_path)
@@ -279,7 +279,7 @@ async def test_xml_ext_obj(opc, tmpdir):
     arg.Name = "MyArg"
     node = await opc.opc.nodes.objects.add_variable(2, "xmlexportobj2", arg)
     node2 = await _test_xml_var_type(opc, tmpdir, node, "ext_obj", test_equality=False)
-    arg2 = await node2.get_value()
+    arg2 = await node2.read_value()
     assert arg.Name == arg2.Name
     assert arg.ArrayDimensions == arg2.ArrayDimensions
     assert arg.Description == arg2.Description
@@ -300,7 +300,7 @@ async def test_xml_ext_obj_array(opc, tmpdir):
     args = [arg, arg2]
     node = await opc.opc.nodes.objects.add_variable(2, "xmlexportobj2", args)
     node2 = await _test_xml_var_type(opc, tmpdir, node, "ext_obj_array", test_equality=False)
-    read_args = await node2.get_value()
+    read_args = await node2.read_value()
     for i, arg in enumerate(read_args):
         assert args[i].Name == read_args[i].Name
         assert args[i].ArrayDimensions == read_args[i].ArrayDimensions
@@ -368,14 +368,14 @@ async def test_xml_var_nillable(opc):
     _new_nodes = await opc.opc.import_xml(xmlstring=xml)
     var_string = opc.opc.get_node(ua.NodeId('test_xml.string.nillabel', 2))
     var_bool = opc.opc.get_node(ua.NodeId('test_xml.bool.nillabel', 2))
-    assert await var_string.get_value() is None
-    assert await var_bool.get_value() is None
+    assert await var_string.read_value() is None
+    assert await var_bool.read_value() is None
 
 
 async def _test_xml_var_type(opc, tmpdir, node: Node, typename: str, test_equality: bool = True):
     dtype = await node.get_data_type()
     dv = await node.get_data_value()
-    rank = await node.get_value_rank()
+    rank = await node.read_value_rank()
     dim = await node.get_array_dimensions()
     nclass = await node.get_node_class()
     tmp_path = tmpdir.join(f"tmp_test_export-{typename}.xml").strpath
@@ -386,9 +386,9 @@ async def _test_xml_var_type(opc, tmpdir, node: Node, typename: str, test_equali
     assert node == node
     assert dtype == await node2.get_data_type()
     if test_equality:
-        print("DEBUG", node, dv, node2, await node2.get_value())
+        print("DEBUG", node, dv, node2, await node2.read_value())
         assert dv.Value == (await node2.get_data_value()).Value
-    assert rank == await node2.get_value_rank()
+    assert rank == await node2.read_value_rank()
     assert dim == await node2.get_array_dimensions()
     assert nclass == await node2.get_node_class()
     return node2
