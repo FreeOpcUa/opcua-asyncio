@@ -88,11 +88,11 @@ class XmlImporter:
             raise ValueError(f"Not implemented node type: {nodedata.nodetype} ")
         return node
 
-    def _add_node(self, node: "Node") -> Coroutine:
+    async def _add_node(self, node: "Node") -> Coroutine:
         if hasattr(self.server, "iserver"):
-            return self.server.iserver.isession.add_nodes([node])
+            return await self.server.iserver.isession.add_nodes([node])
         else:
-            return self.server.uaclient.add_nodes([node])
+            return await self.server.uaclient.add_nodes([node])
 
     async def _add_references(self, refs):
         if hasattr(self.server, "iserver"):

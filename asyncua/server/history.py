@@ -4,7 +4,7 @@ from datetime import timedelta
 from datetime import datetime
 
 from asyncua import ua
-from ..common.subscription import Subscription
+from ..common.subscription import Subscription, SubHandler
 from ..common.utils import Buffer
 
 
@@ -149,7 +149,7 @@ class HistoryDict(HistoryStorageInterface):
         period, count = self._events_periods[event.emitting_node]
         now = datetime.utcnow()
         if period:
-            while len(evts) and now - evts[0].SourceTimestamp > period:
+            while len(evts) and now - evts[0].Time > period:
                 evts.pop(0)
         if count and len(evts) > count:
             evts.pop(0)
@@ -182,7 +182,7 @@ class HistoryDict(HistoryStorageInterface):
         pass
 
 
-class SubHandler:
+class SubHandler(SubHandler):
     def __init__(self, storage, loop):
         self.storage = storage
         self.loop = loop
@@ -375,8 +375,8 @@ class HistoryManager:
             results.append(results)
         return results
 
-    def stop(self) -> Coroutine:
+    async def stop(self) -> Coroutine:
         """
         call stop methods of active storage interface whenever the server is stopped
         """
-        return self.storage.stop()
+        return await self.storage.stop()

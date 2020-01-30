@@ -16,8 +16,8 @@ class Hello(uatypes.FrozenClass):
 
     def __init__(self):
         self.ProtocolVersion = 0
-        self.ReceiveBufferSize = 65536
-        self.SendBufferSize = 65536
+        self.ReceiveBufferSize = 2**32 - 1
+        self.SendBufferSize = 2**32 - 1
         self.MaxMessageSize = 0  # No limits
         self.MaxChunkCount = 0  # No limits
         self.EndpointUrl = ""
@@ -226,10 +226,15 @@ class SecurityPolicy:
         self.asymmetric_cryptography = CryptographyNone()
         self.symmetric_cryptography = CryptographyNone()
         self.Mode = auto.MessageSecurityMode.None_
-        self.server_certificate = None
-        self.client_certificate = None
+        self.peer_certificate = None
+        self.host_certificate = None
+        self.user = None
+        self.permissions = None
 
-    def make_symmetric_key(self, a, b):
+    def make_local_symmetric_key(self, secret, seed):
+        pass
+
+    def make_remote_symmetric_key(self, secret, seed):
         pass
 
 
@@ -240,11 +245,13 @@ class SecurityPolicyFactory:
     SecurityPolicy for every client and client's certificate
     """
 
-    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None):
+    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None,
+                 permission_ruleset=None):
         self.cls = cls
         self.mode = mode
         self.certificate = certificate
         self.private_key = private_key
+        self.permission_ruleset = permission_ruleset
 
     def matches(self, uri, mode=None):
         return self.cls.URI == uri and (mode is None or self.mode == mode)
@@ -253,7 +260,8 @@ class SecurityPolicyFactory:
         if self.cls is SecurityPolicy:
             return self.cls()
         else:
-            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode)
+            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode,
+                            permission_ruleset=self.permission_ruleset)
 
 
 class Message:

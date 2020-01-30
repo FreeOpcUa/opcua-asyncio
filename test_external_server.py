@@ -75,12 +75,12 @@ def test_find_endpoints(self):
 
 # @connect
 def test_get_root(self, client):
-    root = client.get_root_node()
-    self.assertEqual(root.get_browse_name(), ua.QualifiedName("Root", 0))
+    root = client.nodes.root
+    self.assertEqual(root.read_browse_name(), ua.QualifiedName("Root", 0))
 
 # @connect
 def test_get_root_children(self, client):
-    root = client.get_root_node()
+    root = client.nodes.root
     childs = root.get_children()
     assert len(childs) > 2
 
@@ -91,16 +91,16 @@ async def test_get_namespace_array(self, client):
 
 # @connect
 def test_get_server_node(self, client):
-    srv = client.get_server_node()
-    self.assertEqual(srv.get_browse_name(), ua.QualifiedName("Server", 0))
+    srv = client.nodes.server
+    self.assertEqual(srv.read_browse_name(), ua.QualifiedName("Server", 0))
     #childs = srv.get_children()
     #assert len(childs) > 4)
 
 # @connect
 def test_browsepathtonodeid(self, client):
-    root = client.get_root_node()
+    root = client.nodes.root
     node = root.get_child(["0:Objects", "0:Server" , "0:ServerArray"])
-    self.assertEqual(node.get_browse_name(), ua.QualifiedName("ServerArray", 0))
+    self.assertEqual(node.read_browse_name(), ua.QualifiedName("ServerArray", 0))
 
 # @connect
 def test_subscribe_server_time(self, client):

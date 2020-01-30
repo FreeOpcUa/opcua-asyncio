@@ -12,6 +12,6 @@ install:
   - pip install pytest --upgrade
   - pip install pytest-asyncio
   - pip install cryptography
+  - pip install dataclasses
 # command to run tests
-#script: pytest -v
-script: pytest -v
+script: pytest -v -s

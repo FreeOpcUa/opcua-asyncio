@@ -60,9 +60,9 @@ class MonitoredItemService:
         results = []
         for item in params.ItemsToCreate:
             if item.ItemToMonitor.AttributeId == ua.AttributeIds.EventNotifier:
-                result = self._create_events_monitored_item(item)
+                result = await self._create_events_monitored_item(item)
             else:
-                result = self._create_data_change_monitored_item(item)
+                result = await self._create_data_change_monitored_item(item)
             results.append(result)
         return results
 
@@ -72,10 +72,10 @@ class MonitoredItemService:
             results.append(self._modify_monitored_item(item))
         return results
 
-    def trigger_datachange(self, handle, nodeid, attr):
+    async def trigger_datachange(self, handle, nodeid, attr):
         self.logger.debug("triggering datachange for handle %s, nodeid %s, and attribute %s", handle, nodeid, attr)
-        variant = self.aspace.get_attribute_value(nodeid, attr)
-        self.datachange_callback(handle, variant)
+        dv = await self.aspace.read_attribute_value(nodeid, attr)
+        await self.datachange_callback(handle, dv)
 
     def _modify_monitored_item(self, params: ua.MonitoredItemModifyRequest):
         for mdata in self._monitored_items.values():
@@ -94,7 +94,6 @@ class MonitoredItemService:
     def _commit_monitored_item(self, result, mdata: MonitoredItemData):
         if result.StatusCode.is_good():
             self._monitored_items[result.MonitoredItemId] = mdata
-            self._monitored_item_counter += 1
 
     def _make_monitored_item_common(self, params):
         result = ua.MonitoredItemCreateResult()
@@ -111,13 +110,13 @@ class MonitoredItemService:
         mdata.filter = params.RequestedParameters.Filter
         return result, mdata
 
-    def _create_events_monitored_item(self, params: ua.MonitoredItemCreateRequest):
+    async def _create_events_monitored_item(self, params: ua.MonitoredItemCreateRequest):
         self.logger.info("request to subscribe to events for node %s and attribute %s", params.ItemToMonitor.NodeId,
                          params.ItemToMonitor.AttributeId)
 
         result, mdata = self._make_monitored_item_common(params)
-        ev_notify_byte = self.aspace.get_attribute_value(params.ItemToMonitor.NodeId,
-                                                         ua.AttributeIds.EventNotifier).Value.Value
+        ev_notify_byte = (await self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
+                                                         ua.AttributeIds.EventNotifier)).Value.Value
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadServiceUnsupported)
@@ -130,7 +129,7 @@ class MonitoredItemService:
         self._monitored_events[params.ItemToMonitor.NodeId].append(result.MonitoredItemId)
         return result
 
-    def _create_data_change_monitored_item(self, params: ua.MonitoredItemCreateRequest):
+    async def _create_data_change_monitored_item(self, params: ua.MonitoredItemCreateRequest):
         self.logger.info("request to subscribe to datachange for node %s and attribute %s", params.ItemToMonitor.NodeId,
                          params.ItemToMonitor.AttributeId)
 
@@ -145,7 +144,7 @@ class MonitoredItemService:
         if result.StatusCode.is_good():
             self._monitored_datachange[handle] = result.MonitoredItemId
             # force data change event generation
-            self.trigger_datachange(handle, params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId)
+            await self.trigger_datachange(handle, params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId)
         return result
 
     def delete_monitored_items(self, ids):
@@ -173,11 +172,11 @@ class MonitoredItemService:
         self._monitored_items.pop(mid)
         return ua.StatusCode()
 
-    def datachange_callback(self, handle: int, value, error=None):
+    async def datachange_callback(self, handle: int, value, error=None):
         if error:
             self.logger.info("subscription %s: datachange callback called with handle '%s' and error '%s'", self,
                              handle, error)
-            self.trigger_statuschange(error)
+            await self.trigger_statuschange(error)
         else:
             #self.logger.info("subscription %s: datachange callback called with handle '%s' and value '%s'", self, handle, value.Value)
             event = ua.MonitoredItemNotification()
@@ -191,7 +190,7 @@ class MonitoredItemService:
             if deadband_flag_pass:
                 event.ClientHandle = mdata.client_handle
                 event.Value = value
-                self.isub.enqueue_datachange_event(mid, event, mdata.queue_size)
+                await self.isub.enqueue_datachange_event(mid, event, mdata.queue_size)
 
     def deadband_callback(self, values, flt):
         if flt.DeadbandType == ua.DeadbandType.None_ or values.get_old_value() is None:
@@ -204,32 +203,32 @@ class MonitoredItemService:
             return True
         return False
 
-    def trigger_event(self, event):
+    async def trigger_event(self, event):
         if event.emitting_node not in self._monitored_events:
             self.logger.debug("%s has NO subscription for events %s from node: %s", self, event, event.emitting_node)
             return False
         self.logger.debug("%s has subscription for events %s from node: %s", self, event, event.emitting_node)
         mids = self._monitored_events[event.emitting_node]
         for mid in mids:
-            self._trigger_event(event, mid)
+            await self._trigger_event(event, mid)
         return True
 
-    def _trigger_event(self, event, mid: int):
+    async def _trigger_event(self, event, mid: int):
         if mid not in self._monitored_items:
             self.logger.debug("Could not find monitored items for id %s for event %s in subscription %s", mid, event,
                               self)
             return
         mdata = self._monitored_items[mid]
-        if not mdata.where_clause_evaluator.eval(event):
+        if not (await mdata.where_clause_evaluator.eval(event)):
             self.logger.info("%s, %s, Event %s does not fit WhereClause, not generating event", self, mid, event)
             return
         fieldlist = ua.EventFieldList()
         fieldlist.ClientHandle = mdata.client_handle
         fieldlist.EventFields = event.to_event_fields(mdata.filter.SelectClauses)
-        self.isub.enqueue_event(mid, fieldlist, mdata.queue_size)
+        await self.isub.enqueue_event(mid, fieldlist, mdata.queue_size)
 
-    def trigger_statuschange(self, code):
-        self.isub.enqueue_statuschange(code)
+    async def trigger_statuschange(self, code):
+        await self.isub.enqueue_statuschange(code)
 
 
 class WhereClauseEvaluator:
@@ -238,52 +237,52 @@ class WhereClauseEvaluator:
         self.elements = whereclause.Elements
         self._aspace = aspace
 
-    def eval(self, event):
+    async def eval(self, event):
         if not self.elements:
             return True
         # spec says we should only evaluate first element, which may use other elements
         try:
-            res = self._eval_el(0, event)
+            res = await self._eval_el(0, event)
         except Exception as ex:
             self.logger.exception("Exception while evaluating WhereClause %s for event %s: %s", self.elements, event,
                                   ex)
             return False
         return res
 
-    def _eval_el(self, index, event):
+    async def _eval_el(self, index, event):
         el = self.elements[index]
         # ops = [self._eval_op(op, event) for op in el.FilterOperands]
         ops = el.FilterOperands  # just to make code more readable
         if el.FilterOperator == ua.FilterOperator.Equals:
-            return self._eval_op(ops[0], event) == self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) == await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.IsNull:
-            return self._eval_op(ops[0], event) is None  # FIXME: might be too strict
+            return await self._eval_op(ops[0], event) is None  # FIXME: might be too strict
         if el.FilterOperator == ua.FilterOperator.GreaterThan:
-            return self._eval_op(ops[0], event) > self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) > await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.LessThan:
-            return self._eval_op(ops[0], event) < self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) < await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.GreaterThanOrEqual:
-            return self._eval_op(ops[0], event) >= self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) >= await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.LessThanOrEqual:
-            return self._eval_op(ops[0], event) <= self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) <= await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.Like:
-            return self._like_operator(self._eval_op(ops[0], event), self._eval_op(ops[1], event))
+            return await self._like_operator(await self._eval_op(ops[0], event), await self._eval_op(ops[1], event))
         if el.FilterOperator == ua.FilterOperator.Not:
-            return not self._eval_op(ops[0], event)
+            return not await self._eval_op(ops[0], event)
         if el.FilterOperator == ua.FilterOperator.Between:
-            return self._eval_op(ops[2], event) >= self._eval_op(ops[0], event) >= self._eval_op(ops[1], event)
+            return await self._eval_op(ops[2], event) >= await self._eval_op(ops[0], event) >= await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.InList:
-            return self._eval_op(ops[0], event) in [self._eval_op(op, event) for op in ops[1:]]
+            return await self._eval_op(ops[0], event) in [await self._eval_op(op, event) for op in ops[1:]]
         if el.FilterOperator == ua.FilterOperator.And:
             self.elements(ops[0].Index)
-            return self._eval_op(ops[0], event) and self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) and await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.Or:
-            return self._eval_op(ops[0], event) or self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) or await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.Cast:
             self.logger.warn("Cast operand not implemented, assuming True")
             return True
         if el.FilterOperator == ua.FilterOperator.OfType:
-            return event.EventType == self._eval_op(ops[0], event)
+            return event.EventType == await self._eval_op(ops[0], event)
         # TODO: implement missing operators
         self.logger.warning("WhereClause not implemented for element: %s", el)
         raise NotImplementedError
@@ -291,21 +290,21 @@ class WhereClauseEvaluator:
     def _like_operator(self, string, pattern):
         raise NotImplementedError
 
-    def _eval_op(self, op, event):
+    async def _eval_op(self, op, event):
         # seems spec says we should return Null if issues
         if isinstance(op, ua.ElementOperand):
             return self._eval_el(op.Index, event)
         if isinstance(op, ua.AttributeOperand):
             if op.BrowsePath:
                 return getattr(event, op.BrowsePath.Elements[0].TargetName.Name)
-            return self._aspace.get_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return await self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
             # FIXME: check, this is probably broken
         if isinstance(op, ua.SimpleAttributeOperand):
             if op.BrowsePath:
                 # we only support depth of 1
                 return getattr(event, op.BrowsePath[0].Name)
             # TODO: write code for index range.... but doe it make any sense
-            return self._aspace.get_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return await self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
         if isinstance(op, ua.LiteralOperand):
             return op.Value.Value
         self.logger.warning("Where clause element % is not of a known type", op)

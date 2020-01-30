@@ -209,9 +209,9 @@ class CodeGenerator:
             enum = self.model.get_enum(field.uatype)
             return f'{enum.name}(0)'
         if field.uatype == 'String':
-            return None 
+            return None
         elif field.uatype in ('ByteString', 'CharArray', 'Char'):
-            return None 
+            return None
         elif field.uatype == 'Boolean':
             return 'True'
         elif field.uatype == 'DateTime':
@@ -226,7 +226,7 @@ class CodeGenerator:
 
 if __name__ == '__main__':
     import generate_model as gm
-    xml_path = 'Opc.Ua.Types.bsd'
+    xml_path = 'UA-Nodeset/Schema/Opc.Ua.Types.bsd'
     protocol_path = '../asyncua/ua/uaprotocol_auto.py'
     p = gm.Parser(xml_path)
     model = p.parse()

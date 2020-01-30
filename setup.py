@@ -1,8 +1,13 @@
 from setuptools import setup, find_packages
+import sys
+
+# don't require pytest-runner unless we have been invoked as a test launch
+needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
+pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 setup(
     name="asyncua",
-    version="0.5.1",
+    version="0.8.3",
     description="Pure Python OPC-UA client and server library",
     author="Olivier Roulet-Dubonnet",
     author_email="olivier.roulet@gmail.com",
@@ -35,6 +40,6 @@ setup(
             'uageneratestructs = asyncua.tools:uageneratestructs',
         ]
     },
-    setup_requires=['pytest-runner'],
+    setup_requires=[] + pytest_runner,
     tests_require=['pytest'],
 )
