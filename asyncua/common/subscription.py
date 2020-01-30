@@ -3,7 +3,7 @@ high level interface to subscriptions
 """
 import asyncio
 import logging
-import collections
+import collections.abc
 from typing import Union, List, Iterable
 
 from asyncua import ua
@@ -88,7 +88,7 @@ class Subscription:
         self.subscription_id = response.SubscriptionId  # move to data class
         self.logger.info('Subscription created %s', self.subscription_id)
 
-    def publish_callback(self, publish_result: ua.PublishResult):
+    async def publish_callback(self, publish_result: ua.PublishResult):
         """
         Handle `PublishResult` callback.
         """
@@ -96,11 +96,11 @@ class Subscription:
         if publish_result.NotificationMessage.NotificationData is not None:
             for notif in publish_result.NotificationMessage.NotificationData:
                 if isinstance(notif, ua.DataChangeNotification):
-                    self._call_datachange(notif)
+                    await self._call_datachange(notif)
                 elif isinstance(notif, ua.EventNotificationList):
-                    self._call_event(notif)
+                    await self._call_event(notif)
                 elif isinstance(notif, ua.StatusChangeNotification):
-                    self._call_status(notif)
+                    await self._call_status(notif)
                 else:
                     self.logger.warning("Notification type not supported yet for notification %s", notif)
         else:
@@ -113,7 +113,7 @@ class Subscription:
         results = await self.server.delete_subscriptions([self.subscription_id])
         results[0].check()
 
-    def _call_datachange(self, datachange: ua.DataChangeNotification):
+    async def _call_datachange(self, datachange: ua.DataChangeNotification):
         for item in datachange.MonitoredItems:
             if item.ClientHandle not in self._monitored_items:
                 self.logger.warning("Received a notification for unknown handle: %s", item.ClientHandle)
@@ -122,28 +122,37 @@ class Subscription:
             if hasattr(self._handler, "datachange_notification"):
                 event_data = DataChangeNotif(data, item)
                 try:
-                    self._handler.datachange_notification(data.node, item.Value.Value.Value, event_data)
+                    if asyncio.iscoroutinefunction(self._handler.datachange_notification):
+                        await self._handler.datachange_notification(data.node, item.Value.Value.Value, event_data)
+                    else:
+                        self._handler.datachange_notification(data.node, item.Value.Value.Value, event_data)
                 except Exception:
                     self.logger.exception("Exception calling data change handler")
             else:
                 self.logger.error("DataChange subscription created but handler has no datachange_notification method")
 
-    def _call_event(self, eventlist: ua.EventNotificationList):
+    async def _call_event(self, eventlist: ua.EventNotificationList):
         for event in eventlist.Events:
             data = self._monitored_items[event.ClientHandle]
             result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)
             result.server_handle = data.server_handle
             if hasattr(self._handler, "event_notification"):
                 try:
-                    self._handler.event_notification(result)
+                    if asyncio.iscoroutinefunction(self._handler.event_notification):
+                        await self._handler.event_notification(result)
+                    else:
+                        self._handler.event_notification(result)
                 except Exception:
                     self.logger.exception("Exception calling event handler")
             else:
                 self.logger.error("Event subscription created but handler has no event_notification method")
 
-    def _call_status(self, status: ua.StatusChangeNotification):
+    async def _call_status(self, status: ua.StatusChangeNotification):
         try:
-            self._handler.status_change_notification(status.Status)
+            if asyncio.iscoroutinefunction(self._handler.status_change_notification):
+                await self._handler.status_change_notification(status.Status)
+            else:
+                self._handler.status_change_notification(status.Status)
         except Exception:
             self.logger.exception("Exception calling status change handler")
 
@@ -207,7 +216,7 @@ class Subscription:
         :return: Integer handle or if multiple Nodes were given a List of Integer handles/ua.StatusCode
         """
         is_list = True
-        if isinstance(nodes, collections.Iterable):
+        if isinstance(nodes, collections.abc.Iterable):
             nodes = list(nodes)
         else:
             nodes = [nodes]
@@ -287,15 +296,17 @@ class Subscription:
         :param handle: The handle that was returned when subscribing to the node/nodes
         """
         handles = [handle] if type(handle) is int else handle
+        if not handles:
+            return
         params = ua.DeleteMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
         params.MonitoredItemIds = handles
         results = await self.server.delete_monitored_items(params)
         results[0].check()
-        for k, v in self._monitored_items.items():
-            if v.server_handle in handles:
-                del (self._monitored_items[k])
-                return
+        handle_map = {v.server_handle: k for k, v in self._monitored_items.items()}
+        for handle in handles:
+            if handle in handle_map:
+                del self._monitored_items[handle_map[handle]]
 
     async def modify_monitored_item(self, handle: int, new_samp_time, new_queuesize=0, mod_filter_val=-1):
         """

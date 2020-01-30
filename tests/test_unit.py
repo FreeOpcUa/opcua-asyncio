@@ -228,33 +228,37 @@ def test_string_to_variant_localized_text():
     obj = ua.LocalizedText(string)
     assert obj == string_to_val(string, ua.VariantType.LocalizedText)
     assert string == val_to_string(obj)
-    
+
+
 def test_string_to_variant_localized_text_with_locale():
     locale = "cs-CZ"
     string = "Moje jméno"
-    string_repr = "LocalizedText(Encoding:3, Locale:{}, Text:{})".format(locale,string)
+    string_repr = "LocalizedText(Encoding:3, Locale:{}, Text:{})".format(locale, string)
     obj = ua.LocalizedText(string, locale)
     assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
     assert string_repr == val_to_string(obj)
 
+
 def test_string_to_variant_localized_text_with_none1():
     locale = "en-US"
     string = ""
-    string_repr = "LocalizedText(Encoding:1, Locale:{}, Text:{})".format(locale,string)
+    string_repr = "LocalizedText(Encoding:1, Locale:{}, Text:{})".format(locale, string)
     obj = ua.LocalizedText(string, locale)
     obj2 = ua.LocalizedText(string)
     assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
     assert obj2 == string_to_val(string, ua.VariantType.LocalizedText)
     assert "" == val_to_string(obj)
 
+
 def test_string_to_variant_localized_text_with_none2():
     locale = None
     string = "my name is ..."
-    string_repr = "LocalizedText(Encoding:2, Locale:{}, Text:{})".format(locale,string)
+    string_repr = "LocalizedText(Encoding:2, Locale:{}, Text:{})".format(locale, string)
     obj = ua.LocalizedText(string, locale)
     assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
     assert obj == string_to_val(string, ua.VariantType.LocalizedText)
     assert string == val_to_string(obj)
+
 
 def test_string_to_val_xml_element():
     string = "<p> titi toto </p>"
@@ -267,8 +271,7 @@ def test_string_to_val_xml_element():
 
 
 def test_variant_dimensions():
-    l = [[[1.0, 1.0, 1.0, 1.0], [2.0, 2.0, 2.0, 2.0], [3.0, 3.0, 3.0, 3.0]],
-         [[5.0, 5.0, 5.0, 5.0], [7.0, 8.0, 9.0, 01.0], [1.0, 1.0, 1.0, 1.0]]]
+    l = [[[1.0, 1.0, 1.0, 1.0], [2.0, 2.0, 2.0, 2.0], [3.0, 3.0, 3.0, 3.0]], [[5.0, 5.0, 5.0, 5.0], [7.0, 8.0, 9.0, 01.0], [1.0, 1.0, 1.0, 1.0]]]
     v = ua.Variant(l)
     assert [2, 3, 4] == v.Dimensions
     v2 = variant_from_binary(ua.utils.Buffer(variant_to_binary(v)))
@@ -285,8 +288,7 @@ def test_variant_dimensions():
 
 
 def test_flatten():
-    l = [[[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
-         [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]]
+    l = [[[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]], [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]]
     l2 = flatten(l)
     dims = get_shape(l)
     assert [2, 3, 4] == dims
@@ -400,6 +402,18 @@ def test_expandednodeid():
     assert nid.NodeIdType == ua.NodeIdType.TwoByte
     nid2 = nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(nid)))
     assert nid == nid2
+
+
+def test_null_guid():
+    n = ua.NodeId(b'000000', 0, nodeidtype=ua.NodeIdType.Guid)
+    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 0, nodeidtype=ua.NodeIdType.Guid)
+    assert n.is_null()
+    assert n.has_null_identifier()
+
+    n = ua.NodeId(b'000000', 1, nodeidtype=ua.NodeIdType.Guid)
+    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 1, nodeidtype=ua.NodeIdType.Guid)
+    assert not n.is_null()
+    assert n.has_null_identifier()
 
 
 def test_null_string():
@@ -576,11 +590,12 @@ def test_text():
     t4 = struct_from_binary(ua.LocalizedText, ua.utils.Buffer(struct_to_binary(t1)))
     assert t1 == t4
 
+
 def test_text_with_locale():
     t0 = ua.LocalizedText('Root')
-    t1 = ua.LocalizedText('Root','de-AT')
-    t2 = ua.LocalizedText('Root','de-AT')
-    t3 = ua.LocalizedText('Root','de-DE')
+    t1 = ua.LocalizedText('Root', 'de-AT')
+    t2 = ua.LocalizedText('Root', 'de-AT')
+    t3 = ua.LocalizedText('Root', 'de-DE')
     t4 = ua.LocalizedText(locale='de-DE')
     t5 = ua.LocalizedText(locale='de-DE')
     assert t0 != t1
@@ -590,6 +605,7 @@ def test_text_with_locale():
     assert t4 == t5
     t6 = struct_from_binary(ua.LocalizedText, ua.utils.Buffer(struct_to_binary(t1)))
     assert t1 == t6
+
 
 def test_message_chunk():
     pol = ua.SecurityPolicy()
@@ -616,14 +632,6 @@ def test_message_chunk():
 
 
 def test_null():
-    n = ua.NodeId(b'000000', 0, nodeidtype=ua.NodeIdType.Guid)
-    assert n.is_null()
-    assert n.has_null_identifier()
-
-    n = ua.NodeId(b'000000', 1, nodeidtype=ua.NodeIdType.Guid)
-    assert n.is_null() is False
-    assert n.has_null_identifier()
-
     n = ua.NodeId()
     assert n.is_null()
     assert n.has_null_identifier()

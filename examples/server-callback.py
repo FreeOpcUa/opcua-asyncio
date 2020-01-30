@@ -63,7 +63,7 @@ if __name__ == "__main__":
     idx = server.register_namespace(uri)
 
     # get Objects node, this is where we should put our custom stuff
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
 
     # populating our address space
     myfolder = objects.add_folder(idx, "myEmptyFolder")

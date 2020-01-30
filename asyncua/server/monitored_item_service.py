@@ -62,7 +62,7 @@ class MonitoredItemService:
             if item.ItemToMonitor.AttributeId == ua.AttributeIds.EventNotifier:
                 result = self._create_events_monitored_item(item)
             else:
-                result = self._create_data_change_monitored_item(item)
+                result = await self._create_data_change_monitored_item(item)
             results.append(result)
         return results
 
@@ -72,10 +72,10 @@ class MonitoredItemService:
             results.append(self._modify_monitored_item(item))
         return results
 
-    def trigger_datachange(self, handle, nodeid, attr):
+    async def trigger_datachange(self, handle, nodeid, attr):
         self.logger.debug("triggering datachange for handle %s, nodeid %s, and attribute %s", handle, nodeid, attr)
-        variant = self.aspace.get_attribute_value(nodeid, attr)
-        self.datachange_callback(handle, variant)
+        dv = self.aspace.read_attribute_value(nodeid, attr)
+        await self.datachange_callback(handle, dv)
 
     def _modify_monitored_item(self, params: ua.MonitoredItemModifyRequest):
         for mdata in self._monitored_items.values():
@@ -94,7 +94,6 @@ class MonitoredItemService:
     def _commit_monitored_item(self, result, mdata: MonitoredItemData):
         if result.StatusCode.is_good():
             self._monitored_items[result.MonitoredItemId] = mdata
-            self._monitored_item_counter += 1
 
     def _make_monitored_item_common(self, params):
         result = ua.MonitoredItemCreateResult()
@@ -116,7 +115,7 @@ class MonitoredItemService:
                          params.ItemToMonitor.AttributeId)
 
         result, mdata = self._make_monitored_item_common(params)
-        ev_notify_byte = self.aspace.get_attribute_value(params.ItemToMonitor.NodeId,
+        ev_notify_byte = self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
                                                          ua.AttributeIds.EventNotifier).Value.Value
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
@@ -130,7 +129,7 @@ class MonitoredItemService:
         self._monitored_events[params.ItemToMonitor.NodeId].append(result.MonitoredItemId)
         return result
 
-    def _create_data_change_monitored_item(self, params: ua.MonitoredItemCreateRequest):
+    async def _create_data_change_monitored_item(self, params: ua.MonitoredItemCreateRequest):
         self.logger.info("request to subscribe to datachange for node %s and attribute %s", params.ItemToMonitor.NodeId,
                          params.ItemToMonitor.AttributeId)
 
@@ -145,7 +144,7 @@ class MonitoredItemService:
         if result.StatusCode.is_good():
             self._monitored_datachange[handle] = result.MonitoredItemId
             # force data change event generation
-            self.trigger_datachange(handle, params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId)
+            await self.trigger_datachange(handle, params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId)
         return result
 
     def delete_monitored_items(self, ids):
@@ -173,11 +172,11 @@ class MonitoredItemService:
         self._monitored_items.pop(mid)
         return ua.StatusCode()
 
-    def datachange_callback(self, handle: int, value, error=None):
+    async def datachange_callback(self, handle: int, value, error=None):
         if error:
             self.logger.info("subscription %s: datachange callback called with handle '%s' and error '%s'", self,
                              handle, error)
-            self.trigger_statuschange(error)
+            await self.trigger_statuschange(error)
         else:
             #self.logger.info("subscription %s: datachange callback called with handle '%s' and value '%s'", self, handle, value.Value)
             event = ua.MonitoredItemNotification()
@@ -191,7 +190,7 @@ class MonitoredItemService:
             if deadband_flag_pass:
                 event.ClientHandle = mdata.client_handle
                 event.Value = value
-                self.isub.enqueue_datachange_event(mid, event, mdata.queue_size)
+                await self.isub.enqueue_datachange_event(mid, event, mdata.queue_size)
 
     def deadband_callback(self, values, flt):
         if flt.DeadbandType == ua.DeadbandType.None_ or values.get_old_value() is None:
@@ -204,17 +203,17 @@ class MonitoredItemService:
             return True
         return False
 
-    def trigger_event(self, event):
+    async def trigger_event(self, event):
         if event.emitting_node not in self._monitored_events:
             self.logger.debug("%s has NO subscription for events %s from node: %s", self, event, event.emitting_node)
             return False
         self.logger.debug("%s has subscription for events %s from node: %s", self, event, event.emitting_node)
         mids = self._monitored_events[event.emitting_node]
         for mid in mids:
-            self._trigger_event(event, mid)
+            await self._trigger_event(event, mid)
         return True
 
-    def _trigger_event(self, event, mid: int):
+    async def _trigger_event(self, event, mid: int):
         if mid not in self._monitored_items:
             self.logger.debug("Could not find monitored items for id %s for event %s in subscription %s", mid, event,
                               self)
@@ -226,10 +225,10 @@ class MonitoredItemService:
         fieldlist = ua.EventFieldList()
         fieldlist.ClientHandle = mdata.client_handle
         fieldlist.EventFields = event.to_event_fields(mdata.filter.SelectClauses)
-        self.isub.enqueue_event(mid, fieldlist, mdata.queue_size)
+        await self.isub.enqueue_event(mid, fieldlist, mdata.queue_size)
 
-    def trigger_statuschange(self, code):
-        self.isub.enqueue_statuschange(code)
+    async def trigger_statuschange(self, code):
+        await self.isub.enqueue_statuschange(code)
 
 
 class WhereClauseEvaluator:
@@ -298,14 +297,14 @@ class WhereClauseEvaluator:
         if isinstance(op, ua.AttributeOperand):
             if op.BrowsePath:
                 return getattr(event, op.BrowsePath.Elements[0].TargetName.Name)
-            return self._aspace.get_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
             # FIXME: check, this is probably broken
         if isinstance(op, ua.SimpleAttributeOperand):
             if op.BrowsePath:
                 # we only support depth of 1
                 return getattr(event, op.BrowsePath[0].Name)
             # TODO: write code for index range.... but doe it make any sense
-            return self._aspace.get_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
         if isinstance(op, ua.LiteralOperand):
             return op.Value.Value
         self.logger.warning("Where clause element % is not of a known type", op)

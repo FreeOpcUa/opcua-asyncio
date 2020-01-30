@@ -13,5 +13,4 @@ install:
   - pip install pytest-asyncio
   - pip install cryptography
 # command to run tests
-#script: pytest -v
-script: pytest -v
+script: pytest -v -s

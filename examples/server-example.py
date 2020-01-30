@@ -44,7 +44,6 @@ def multiply(parent, x, y):
 
 async def main():
     # optional: setup logging
-    logging.basicConfig(level=logging.INFO)
     #logger = logging.getLogger("asyncua.address_space")
     # logger.setLevel(logging.DEBUG)
     #logger = logging.getLogger("asyncua.internal_server")
@@ -85,7 +84,7 @@ async def main():
     myfolder = await server.nodes.objects.add_folder(idx, "myEmptyFolder")
     # instanciate one instance of our device
     mydevice = await server.nodes.objects.add_object(idx, "Device0001", dev)
-    mydevice_var = await mydevice.get_child([f"{idx}:controller", f"{idx}:state"])  # get proxy to our device state variable 
+    mydevice_var = await mydevice.get_child([f"{idx}:controller", f"{idx}:state"])  # get proxy to our device state variable
     # create directly some objects and variables
     myobj = await server.nodes.objects.add_object(idx, "MyObject")
     myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
@@ -110,31 +109,25 @@ async def main():
     myevgen.event.Severity = 300
 
     # starting!
-    await server.start()
-    print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
-    try:
+    async with server:
+        print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
         # enable following if you want to subscribe to nodes on server side
         #handler = SubHandler()
         #sub = server.create_subscription(500, handler)
         #handle = sub.subscribe_data_change(myvar)
         # trigger event, all subscribed clients wil receive it
-        var = await myarrayvar.get_value()  # return a ref to value in db server side! not a copy!
+        var = await myarrayvar.read_value()  # return a ref to value in db server side! not a copy!
         var = copy.copy(var)  # WARNING: we need to copy before writting again otherwise no data change event will be generated
         var.append(9.3)
-        await myarrayvar.set_value(var)
-        await mydevice_var.set_value("Running")
-        myevgen.trigger(message="This is BaseEvent")
-        server.set_attribute_value(myvar.nodeid, ua.DataValue(0.9))  # Server side write method which is a but faster than using set_value
+        await myarrayvar.write_value(var)
+        await mydevice_var.write_value("Running")
+        await myevgen.trigger(message="This is BaseEvent")
+        await server.write_attribute_value(myvar.nodeid, ua.DataValue(0.9))  # Server side write method which is a bit faster than using write_value
         while True:
             await asyncio.sleep(0.1)
-            server.set_attribute_value(myvar.nodeid, ua.DataValue(sin(time.time())))
-
-
-    finally:
-        await server.stop()
+            await server.write_attribute_value(myvar.nodeid, ua.DataValue(sin(time.time())))
 
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.set_debug(True)
-    loop.run_until_complete(main())
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(main())

@@ -579,6 +579,24 @@ class BadDominantValueChanged(UaStatusCodeError):
 class BadDependentValueChanged(UaStatusCodeError):
     code = 0x80E30000
 
+class BadEdited_OutOfRange(UaStatusCodeError):
+    code = 0x81190000
+
+class BadInitialValue_OutOfRange(UaStatusCodeError):
+    code = 0x811A0000
+
+class BadOutOfRange_DominantValueChanged(UaStatusCodeError):
+    code = 0x811B0000
+
+class BadEdited_OutOfRange_DominantValueChanged(UaStatusCodeError):
+    code = 0x811C0000
+
+class BadOutOfRange_DominantValueChanged_DependentValueChanged(UaStatusCodeError):
+    code = 0x811D0000
+
+class BadEdited_OutOfRange_DominantValueChanged_DependentValueChanged(UaStatusCodeError):
+    code = 0x811E0000
+
 class BadInvalidArgument(UaStatusCodeError):
     code = 0x80AB0000
 

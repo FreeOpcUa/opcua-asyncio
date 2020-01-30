@@ -85,7 +85,7 @@ class InternalServer:
         """
         uries = ['http://opcfoundation.org/UA/']
         ns_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        await ns_node.set_value(uries)
+        await ns_node.write_value(uries)
 
         params = ua.WriteParameters()
         for nodeid in (ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
@@ -103,7 +103,7 @@ class InternalServer:
             attr = ua.WriteValue()
             attr.NodeId = ua.NodeId(nodeid)
             attr.AttributeId = ua.AttributeIds.Value
-            attr.Value = ua.DataValue(ua.Variant(10000), ua.StatusCode(ua.StatusCodes.Good))
+            attr.Value = ua.DataValue(ua.Variant(10000, ua.VariantType.UInt32), ua.StatusCode(ua.StatusCodes.Good))
             attr.Value.ServerTimestamp = datetime.utcnow()
             params.NodesToWrite.append(attr)
         result = await self.isession.write(params)
@@ -126,7 +126,7 @@ class InternalServer:
             # path was supplied, but file doesn't exist - create one for next start up
             await self.loop.run_in_executor(None, self.aspace.make_aspace_shelf, shelf_file)
 
-    def _address_space_fixes(self) -> Coroutine:
+    async def _address_space_fixes(self) -> Coroutine:
         """
         Looks like the xml definition of address space has some error. This is a good place to fix them
         """
@@ -136,13 +136,17 @@ class InternalServer:
         it.IsForward = False
         it.TargetNodeId = ua.NodeId(ua.ObjectIds.ObjectTypesFolder)
         it.TargetNodeClass = ua.NodeClass.Object
+
         it2 = ua.AddReferencesItem()
         it2.SourceNodeId = ua.NodeId(ua.ObjectIds.BaseDataType)
         it2.ReferenceTypeId = ua.NodeId(ua.ObjectIds.Organizes)
         it2.IsForward = False
         it2.TargetNodeId = ua.NodeId(ua.ObjectIds.DataTypesFolder)
         it2.TargetNodeClass = ua.NodeClass.Object
-        return self.isession.add_references([it, it2])
+
+        results = await self.isession.add_references([it, it2])
+        for res in results:
+            res.check()
 
     def load_address_space(self, path):
         """
@@ -160,18 +164,19 @@ class InternalServer:
         self.logger.info('starting internal server')
         for edp in self.endpoints:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).set_value(0, ua.VariantType.Int32)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).set_value(datetime.utcnow())
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(ua.ServerState.Running, ua.VariantType.Int32)
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.utcnow())
         if not self.disabled_clock:
             self._set_current_time()
 
     async def stop(self):
         self.logger.info('stopping internal server')
+        self.method_service.stop()
         await self.isession.close_session()
         await self.history_manager.stop()
 
     def _set_current_time(self):
-        self.loop.create_task(self.current_time_node.set_value(datetime.utcnow()))
+        self.loop.create_task(self.current_time_node.write_value(datetime.utcnow()))
         self.loop.call_later(1, self._set_current_time)
 
     def get_new_channel_id(self):
@@ -230,7 +235,7 @@ class InternalServer:
         """
         Set attribute Historizing of node to True and start storing data for history
         """
-        await node.set_attribute(ua.AttributeIds.Historizing, ua.DataValue(True))
+        await node.write_attribute(ua.AttributeIds.Historizing, ua.DataValue(True))
         await node.set_attr_bit(ua.AttributeIds.AccessLevel, ua.AccessLevel.HistoryRead)
         await node.set_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.HistoryRead)
         await self.history_manager.historize_data_change(node, period, count)
@@ -239,7 +244,7 @@ class InternalServer:
         """
         Set attribute Historizing of node to False and stop storing data for history
         """
-        await node.set_attribute(ua.AttributeIds.Historizing, ua.DataValue(False))
+        await node.write_attribute(ua.AttributeIds.Historizing, ua.DataValue(False))
         await node.unset_attr_bit(ua.AttributeIds.AccessLevel, ua.AccessLevel.HistoryRead)
         await node.unset_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.HistoryRead)
         await self.history_manager.dehistorize(node)
@@ -248,7 +253,7 @@ class InternalServer:
         """
         Set attribute History Read of object events to True and start storing data for history
         """
-        event_notifier = await source.get_event_notifier()
+        event_notifier = await source.read_event_notifier()
         if ua.EventNotifier.SubscribeToEvents not in event_notifier:
             raise ua.UaError('Node does not generate events', event_notifier)
         if ua.EventNotifier.HistoryRead not in event_notifier:
@@ -275,12 +280,12 @@ class InternalServer:
         """
         self.server_callback_dispatcher.removeListener(event, handle)
 
-    def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+    async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
         directly write datavalue to the Attribute, bypassing some checks and structure creation
         so it is a little faster
         """
-        self.aspace.set_attribute_value(nodeid, attr, datavalue)
+        await self.aspace.write_attribute_value(nodeid, attr, datavalue)
 
     def set_user_manager(self, user_manager):
         """

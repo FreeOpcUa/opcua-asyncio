@@ -41,7 +41,7 @@ async def _copy_node(server, parent_nodeid, rdesc, nodeid, recursive):
 
 
 async def _rdesc_from_node(parent, node):
-    results = await node.get_attributes([
+    results = await node.read_attributes([
         ua.AttributeIds.NodeClass, ua.AttributeIds.BrowseName, ua.AttributeIds.DisplayName,
     ])
     nclass, qname, dname = [res.Value.Value for res in results]
@@ -64,9 +64,8 @@ async def _read_and_copy_attrs(node_type, struct, addnode):
     names = [name for name in struct.__dict__.keys() if not name.startswith("_") and name not in (
         "BodyLength", "TypeId", "SpecifiedAttributes", "Encoding", "IsAbstract", "EventNotifier",
     )]
-    attrs = [getattr(ua.AttributeIds, name) for name in names]            
-    for name in names:
-        results = await node_type.get_attributes(attrs)
+    attrs = [getattr(ua.AttributeIds, name) for name in names]
+    results = await node_type.read_attributes(attrs)
     for idx, name in enumerate(names):
         if results[idx].StatusCode.is_good():
             if name == "Value":
@@ -74,5 +73,5 @@ async def _read_and_copy_attrs(node_type, struct, addnode):
             else:
                 setattr(struct, name, results[idx].Value.Value)
         else:
-            logger.warning("Instantiate: while copying attributes from node type {0!s}, attribute {1!s}, statuscode is {2!s}".format(node_type, name, results[idx].StatusCode))            
+            logger.warning("Instantiate: while copying attributes from node type {0!s}, attribute {1!s}, statuscode is {2!s}".format(node_type, name, results[idx].StatusCode))
     addnode.NodeAttributes = struct

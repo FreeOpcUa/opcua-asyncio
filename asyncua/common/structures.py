@@ -76,7 +76,7 @@ class EnumeratedValue(object):
 
 class Struct(object):
     def __init__(self, name):
-        self.name = name
+        self.name = _clean_name(name)
         self.fields = []
         self.typeid = None
 
@@ -103,6 +103,11 @@ class {self.name}(object):
             code += f"        ('{field.name}', '{uatype}'),\n"
         code += "    ]"
         code += """
+    def __str__(self):
+        vals = [name + ": " + str(val) for name, val in self.__dict__.items()]
+        return self.__class__.__name__ + "(" + ", ".join(vals) + ")"
+
+    __repr__ = __str__
 
     def __init__(self):
 """
@@ -172,7 +177,7 @@ class StructGenerator(object):
             self.model.append(struct)
 
     def save_to_file(self, path, register=False):
-        _file = open(path, "wt")
+        _file = open(path, "w+")
         self._make_header(_file)
         for struct in self.model:
             _file.write(struct.get_code())
@@ -227,18 +232,17 @@ async def load_type_definitions(server, nodes=None):
     structs_dict = {}
     generators = []
     for node in nodes:
-        xml = await node.get_value()
-        xml = xml.decode("utf-8")
+        xml = await node.read_value()
         generator = StructGenerator()
         generators.append(generator)
         generator.make_model_from_string(xml)
         # generate and execute new code on the fly
         generator.get_python_classes(structs_dict)
         # same but using a file that is imported. This can be usefull for debugging library
-        # name = node.get_browse_name().Name
+        # name = node.read_browse_name().Name
         # Make sure structure names do not contain charaters that cannot be used in Python class file names
         # name = _clean_name(name)
-        # name = "structures_" + node.get_browse_name().Name
+        # name = "structures_" + node.read_browse_name().Name
         # generator.save_and_import(name + ".py", append_to=structs_dict)
 
         # register classes
@@ -258,7 +262,7 @@ async def load_type_definitions(server, nodes=None):
                 generator.set_typeid(name, nodeid.to_string())
 
         for key, val in structs_dict.items():
-            if isinstance(val, EnumMeta) and key is not "IntEnum":
+            if isinstance(val, EnumMeta) and key != "IntEnum":
                 setattr(ua, key, val)
 
     return generators, structs_dict
@@ -309,23 +313,24 @@ async def load_enums(server, env=None):
     if env is None:
         env = ua.__dict__
     for node in nodes:
-        name = (await node.get_browse_name()).Name
+        name = (await node.read_browse_name()).Name
         try:
             c = await _get_enum_strings(name, node)
         except ua.UaError as ex:
             try:
                 c = await _get_enum_values(name, node)
             except ua.UaError as ex:
-                _logger.info("Node %s, %s under DataTypes/Enumeration, does not seem to have a child called EnumString or EumValue: %s", name, node, ex)
+                _logger.warning("Node %s, %s under DataTypes/Enumeration, does not seem to have a child called EnumString or EumValue: %s", name, node, ex)
                 continue
         if not hasattr(ua, c.name):
+            _logger.warning("Adding enum %s to ua namespace", c)
             model.append(c)
     return _generate_python_class(model, env=env)
 
 
 async def _get_enum_values(name, node):
     def_node = await node.get_child("0:EnumValues")
-    val = await def_node.get_value()
+    val = await def_node.read_value()
     c = EnumType(name)
     c.fields = [EnumeratedValue(enumval.DisplayName.Text, enumval.Value) for enumval in val]
     return c
@@ -333,7 +338,7 @@ async def _get_enum_values(name, node):
 
 async def _get_enum_strings(name, node):
     def_node = await node.get_child("0:EnumStrings")
-    val = await def_node.get_value()
+    val = await def_node.read_value()
     c = EnumType(name)
     c.fields = [EnumeratedValue(st.Text, idx) for idx, st in enumerate(val)]
     return c

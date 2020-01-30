@@ -266,7 +266,7 @@ async def _create_variable(server, parentnodeid, nodeid, qname, var, datatype=No
             attrs.ArrayDimensions = var.Dimensions
     attrs.WriteMask = 0
     attrs.UserWriteMask = 0
-    attrs.Historizing = 0
+    attrs.Historizing = False
     attrs.AccessLevel = ua.AccessLevel.CurrentRead.mask
     attrs.UserAccessLevel = ua.AccessLevel.CurrentRead.mask
     addnode.NodeAttributes = attrs
@@ -397,6 +397,8 @@ def _guess_datatype(variant):
         else:
             extobj = variant.Value
         classname = extobj.__class__.__name__
+        if not hasattr(ua.ObjectIds, classname):
+            raise ua.UaError(f"Cannot guess DataType of {variant} of python type {type(variant)}")
         return ua.NodeId(getattr(ua.ObjectIds, classname))
     else:
         return ua.NodeId(getattr(ua.ObjectIds, variant.VariantType.name))

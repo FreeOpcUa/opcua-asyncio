@@ -1,8 +1,11 @@
+import asyncio
 import pickle
 import shelve
 import logging
 import collections
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 from asyncua import ua
 from .users import User
@@ -47,10 +50,10 @@ class AttributeService:
         #self.logger.debug("read %s", params)
         res = []
         for readvalue in params.NodesToRead:
-            res.append(self._aspace.get_attribute_value(readvalue.NodeId, readvalue.AttributeId))
+            res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
         return res
 
-    def write(self, params, user=User.Admin):
+    async def write(self, params, user=User.Admin):
         #self.logger.debug("write %s as user %s", params, user)
         res = []
         for writevalue in params.NodesToWrite:
@@ -58,14 +61,14 @@ class AttributeService:
                 if writevalue.AttributeId != ua.AttributeIds.Value:
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
-                al = self._aspace.get_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
-                ual = self._aspace.get_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
+                al = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
+                ual = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
                 if not al.StatusCode.is_good() or not ua.ua_binary.test_bit(
                         al.Value.Value, ua.AccessLevel.CurrentWrite) or not ua.ua_binary.test_bit(
                     ual.Value.Value, ua.AccessLevel.CurrentWrite):
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
-            res.append(self._aspace.set_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
+            res.append(await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
         return res
 
 
@@ -133,12 +136,12 @@ class ViewService(object):
                     res += self._get_sub_ref(ref.NodeId)
         return res
 
-    def _suitable_direction(self, desc, isforward):
-        if desc == ua.BrowseDirection.Both:
+    def _suitable_direction(self, direction, isforward):
+        if direction == ua.BrowseDirection.Both:
             return True
-        if desc == ua.BrowseDirection.Forward and isforward:
+        if direction == ua.BrowseDirection.Forward and isforward:
             return True
-        if desc == ua.BrowseDirection.Inverse and not isforward:
+        if direction == ua.BrowseDirection.Inverse and not isforward:
             return True
         return False
 
@@ -152,6 +155,11 @@ class ViewService(object):
     def _translate_browsepath_to_nodeid(self, path):
         #self.logger.debug("looking at path: %s", path)
         res = ua.BrowsePathResult()
+        if not path.RelativePath.Elements[-1].TargetName:
+            # OPC UA Part 4: Services, 5.8.4 TranslateBrowsePathsToNodeIds
+            # it's unclear if this the check should also handle empty strings
+            res.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameInvalid)
+            return res
         if path.StartingNode not in self._aspace:
             res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdInvalid)
             return res
@@ -171,9 +179,16 @@ class ViewService(object):
     def _find_element_in_node(self, el, nodeid):
         nodedata = self._aspace[nodeid]
         for ref in nodedata.references:
-            # FIXME: here we should check other arguments!!
-            if ref.BrowseName == el.TargetName:
-                return ref.NodeId
+            if ref.BrowseName != el.TargetName:
+                continue
+            if ref.IsForward == el.IsInverse:
+                continue
+            if not el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
+                continue
+            elif el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
+                if ref.ReferenceTypeId not in self._get_sub_ref(el.ReferenceTypeId):
+                    continue
+            return ref.NodeId
         self.logger.info("element %s was not found in node %s", el, nodeid)
         return None
 
@@ -367,14 +382,14 @@ class NodeManagementService:
         rdesc.IsForward = addref.IsForward
         rdesc.NodeId = addref.TargetNodeId
         if addref.TargetNodeClass == ua.NodeClass.Unspecified:
-            rdesc.NodeClass = self._aspace.get_attribute_value(
+            rdesc.NodeClass = self._aspace.read_attribute_value(
                 addref.TargetNodeId, ua.AttributeIds.NodeClass).Value.Value
         else:
             rdesc.NodeClass = addref.TargetNodeClass
-        bname = self._aspace.get_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value
+        bname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value
         if bname:
             rdesc.BrowseName = bname
-        dname = self._aspace.get_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName).Value.Value
+        dname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName).Value.Value
         if dname:
             rdesc.DisplayName = dname
         return self._add_unique_reference(sourcedata, rdesc)
@@ -450,14 +465,19 @@ class MethodService:
     def __init__(self, aspace: "AddressSpace"):
         self.logger = logging.getLogger(__name__)
         self._aspace: "AddressSpace" = aspace
+        self._pool = ThreadPoolExecutor()
+
+    def stop(self):
+        self._pool.shutdown()
 
     async def call(self, methods):
         results = []
         for method in methods:
-            results.append(self._call(method))
+            res = await self._call(method)
+            results.append(res)
         return results
 
-    def _call(self, method):
+    async def _call(self, method):
         self.logger.info("Calling: %s", method)
         res = ua.CallMethodResult()
         if method.ObjectId not in self._aspace or method.MethodId not in self._aspace:
@@ -468,7 +488,11 @@ class MethodService:
                 res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNothingToDo)
             else:
                 try:
-                    result = node.call(method.ObjectId, *method.InputArguments)
+                    result = await self._run_method(node.call, method.ObjectId, *method.InputArguments)
+                except Exception:
+                    self.logger.exception("Error executing method call %s, an exception was raised: ", method)
+                    res.StatusCode = ua.StatusCode(ua.StatusCodes.BadUnexpectedError)
+                else:
                     if isinstance(result, ua.CallMethodResult):
                         res = result
                     elif isinstance(result, ua.StatusCode):
@@ -477,9 +501,13 @@ class MethodService:
                         res.OutputArguments = result
                     while len(res.InputArgumentResults) < len(method.InputArguments):
                         res.InputArgumentResults.append(ua.StatusCode())
-                except Exception:
-                    self.logger.exception("Error executing method call %s, an exception was raised: ", method)
-                    res.StatusCode = ua.StatusCode(ua.StatusCodes.BadUnexpectedError)
+        return res
+
+    async def _run_method(self, func, parent, *args):
+        if asyncio.iscoroutinefunction(func):
+            return await func(parent, *args)
+        p = partial(func, parent, *args)
+        res = await asyncio.get_event_loop().run_in_executor(self._pool, p)
         return res
 
 
@@ -627,7 +655,7 @@ class AddressSpace:
 
         self._nodes = LazyLoadingDict(shelve.open(path, "r"))
 
-    def get_attribute_value(self, nodeid, attr):
+    def read_attribute_value(self, nodeid, attr):
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
         if nodeid not in self._nodes:
             dv = ua.DataValue()
@@ -643,7 +671,7 @@ class AddressSpace:
             return attval.value_callback()
         return attval.value
 
-    def set_attribute_value(self, nodeid, attr, value):
+    async def write_attribute_value(self, nodeid, attr, value):
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
         node = self._nodes.get(nodeid, None)
         if node is None:
@@ -660,7 +688,7 @@ class AddressSpace:
 
         for k, v in cbs:
             try:
-                v(k, value)
+                await v(k, value)
             except Exception as ex:
                 self.logger.exception("Error calling datachange callback %s, %s, %s", k, v, ex)
 
