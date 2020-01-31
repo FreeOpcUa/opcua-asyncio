@@ -118,7 +118,7 @@ class InternalServer:
                 await self.loop.run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
                 return
         # import address space from code generated from xml
-        standard_address_space.fill_address_space(self.node_mgt_service)
+        await standard_address_space.fill_address_space(self.node_mgt_service)
         # import address space directly from xml, this has performance impact so disabled
         # importer = xmlimporter.XmlImporter(self.node_mgt_service)
         # importer.import_xml("/path/to/python-asyncua/schemas/Opc.Ua.NodeSet2.xml", self)

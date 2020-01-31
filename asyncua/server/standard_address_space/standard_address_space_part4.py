@@ -10,7 +10,7 @@ from asyncua.ua import NodeId, QualifiedName, NumericNodeId, StringNodeId, GuidN
 from asyncua.ua import NodeClass, LocalizedText
 
 
-def create_standard_address_space_Part4(server):
+async def create_standard_address_space_Part4(server):
   
    
     node = ua.AddNodesItem()
@@ -23,7 +23,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("Describes a value that is an absolute identifier for a node.")
     attrs.DisplayName = LocalizedText("ExpandedNodeId")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -32,7 +32,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(24, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(19, 0)
@@ -44,7 +44,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("Describes a value that is a code representing the outcome of an operation by a Server.")
     attrs.DisplayName = LocalizedText("StatusCode")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -53,7 +53,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(24, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(23, 0)
@@ -65,7 +65,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("Describes a value that is a structure containing a value, a status code and timestamps.")
     attrs.DisplayName = LocalizedText("DataValue")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -74,7 +74,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(24, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(25, 0)
@@ -86,7 +86,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("Describes a value that is a structure containing diagnostics associated with a StatusCode.")
     attrs.DisplayName = LocalizedText("DiagnosticInfo")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -95,7 +95,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(24, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(288, 0)
@@ -107,7 +107,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A numeric identifier for an object.")
     attrs.DisplayName = LocalizedText("IntegerId")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -116,7 +116,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(7, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(307, 0)
@@ -128,7 +128,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("The types of applications.")
     attrs.DisplayName = LocalizedText("ApplicationType")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -144,7 +144,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(29, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(7597, 0)
@@ -156,10 +156,10 @@ def create_standard_address_space_Part4(server):
     attrs = ua.VariableAttributes()
     attrs.DisplayName = LocalizedText("EnumStrings")
     attrs.DataType = ua.NodeId(ua.ObjectIds.LocalizedText)
-    attrs.Value = [LocalizedText('Server'),LocalizedText('Client'),LocalizedText('ClientAndServer'),LocalizedText('DiscoveryServer')]
+    attrs.Value = [LocalizedText(text= 'Server', locale= None),LocalizedText(text= 'Client', locale= None),LocalizedText(text= 'ClientAndServer', locale= None),LocalizedText(text= 'DiscoveryServer', locale= None)]
     attrs.ValueRank = 1
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -182,7 +182,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(307, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(308, 0)
@@ -194,7 +194,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("Describes an application and how to find it.")
     attrs.DisplayName = LocalizedText("ApplicationDescription")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -203,7 +203,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(20998, 0)
@@ -214,7 +214,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("VersionTime")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -223,7 +223,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(7, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(12189, 0)
@@ -234,7 +234,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("ServerOnNetwork")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -243,7 +243,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(311, 0)
@@ -255,7 +255,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A certificate for an instance of an application.")
     attrs.DisplayName = LocalizedText("ApplicationInstanceCertificate")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -264,7 +264,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(15, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(302, 0)
@@ -276,7 +276,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("The type of security to use on a message.")
     attrs.DisplayName = LocalizedText("MessageSecurityMode")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -292,7 +292,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(29, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(7595, 0)
@@ -304,10 +304,10 @@ def create_standard_address_space_Part4(server):
     attrs = ua.VariableAttributes()
     attrs.DisplayName = LocalizedText("EnumStrings")
     attrs.DataType = ua.NodeId(ua.ObjectIds.LocalizedText)
-    attrs.Value = [LocalizedText('Invalid'),LocalizedText('None'),LocalizedText('Sign'),LocalizedText('SignAndEncrypt')]
+    attrs.Value = [LocalizedText(text= 'Invalid', locale= None),LocalizedText(text= 'None', locale= None),LocalizedText(text= 'Sign', locale= None),LocalizedText(text= 'SignAndEncrypt', locale= None)]
     attrs.ValueRank = 1
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -330,7 +330,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(302, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(303, 0)
@@ -342,7 +342,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("The possible user token types.")
     attrs.DisplayName = LocalizedText("UserTokenType")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -358,7 +358,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(29, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(7596, 0)
@@ -370,10 +370,10 @@ def create_standard_address_space_Part4(server):
     attrs = ua.VariableAttributes()
     attrs.DisplayName = LocalizedText("EnumStrings")
     attrs.DataType = ua.NodeId(ua.ObjectIds.LocalizedText)
-    attrs.Value = [LocalizedText('Anonymous'),LocalizedText('UserName'),LocalizedText('Certificate'),LocalizedText('IssuedToken')]
+    attrs.Value = [LocalizedText(text= 'Anonymous', locale= None),LocalizedText(text= 'UserName', locale= None),LocalizedText(text= 'Certificate', locale= None),LocalizedText(text= 'IssuedToken', locale= None)]
     attrs.ValueRank = 1
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -396,7 +396,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(303, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(304, 0)
@@ -408,7 +408,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("Describes a user token that can be used with a server.")
     attrs.DisplayName = LocalizedText("UserTokenPolicy")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -417,7 +417,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(312, 0)
@@ -429,7 +429,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("The description of a endpoint that can be used to access a server.")
     attrs.DisplayName = LocalizedText("EndpointDescription")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -438,7 +438,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(432, 0)
@@ -450,7 +450,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("The information required to register a server with a discovery server.")
     attrs.DisplayName = LocalizedText("RegisteredServer")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -459,7 +459,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(12890, 0)
@@ -471,7 +471,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A base type for discovery configuration information.")
     attrs.DisplayName = LocalizedText("DiscoveryConfiguration")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -480,7 +480,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(12891, 0)
@@ -492,7 +492,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("The discovery information needed for mDNS registration.")
     attrs.DisplayName = LocalizedText("MdnsDiscoveryConfiguration")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -501,7 +501,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(12890, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(315, 0)
@@ -513,7 +513,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("Indicates whether a token if being created or renewed.")
     attrs.DisplayName = LocalizedText("SecurityTokenRequestType")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -529,7 +529,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(29, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(7598, 0)
@@ -541,10 +541,10 @@ def create_standard_address_space_Part4(server):
     attrs = ua.VariableAttributes()
     attrs.DisplayName = LocalizedText("EnumStrings")
     attrs.DataType = ua.NodeId(ua.ObjectIds.LocalizedText)
-    attrs.Value = [LocalizedText('Issue'),LocalizedText('Renew')]
+    attrs.Value = [LocalizedText(text= 'Issue', locale= None),LocalizedText(text= 'Renew', locale= None)]
     attrs.ValueRank = 1
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -567,7 +567,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(315, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(344, 0)
@@ -579,7 +579,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A software certificate with a digital signature.")
     attrs.DisplayName = LocalizedText("SignedSoftwareCertificate")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -588,7 +588,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(388, 0)
@@ -600,7 +600,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A unique identifier for a session used to authenticate requests.")
     attrs.DisplayName = LocalizedText("SessionAuthenticationToken")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -609,7 +609,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(17, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(316, 0)
@@ -622,7 +622,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("UserIdentityToken")
     attrs.IsAbstract = True
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -631,7 +631,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(319, 0)
@@ -643,7 +643,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A token representing an anonymous user.")
     attrs.DisplayName = LocalizedText("AnonymousIdentityToken")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -652,7 +652,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(316, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(322, 0)
@@ -664,7 +664,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A token representing a user identified by a user name and password.")
     attrs.DisplayName = LocalizedText("UserNameIdentityToken")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -673,7 +673,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(316, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(325, 0)
@@ -685,7 +685,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A token representing a user identified by an X509 certificate.")
     attrs.DisplayName = LocalizedText("X509IdentityToken")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -694,7 +694,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(316, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(938, 0)
@@ -706,7 +706,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A token representing a user identified by a WS-Security XML token.")
     attrs.DisplayName = LocalizedText("IssuedIdentityToken")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -715,7 +715,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(316, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(348, 0)
@@ -727,7 +727,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("The bits used to specify default attributes for a new node.")
     attrs.DisplayName = LocalizedText("NodeAttributesMask")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -743,7 +743,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(29, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(11881, 0)
@@ -934,7 +934,7 @@ def create_standard_address_space_Part4(server):
     attrs.Value = ua.Variant(value, ua.VariantType.ExtensionObject)
     attrs.ValueRank = 1
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -957,7 +957,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(348, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(376, 0)
@@ -969,7 +969,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A request to add a node to the server address space.")
     attrs.DisplayName = LocalizedText("AddNodesItem")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -978,7 +978,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(379, 0)
@@ -990,7 +990,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A request to add a reference to the server address space.")
     attrs.DisplayName = LocalizedText("AddReferencesItem")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -999,7 +999,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(382, 0)
@@ -1011,7 +1011,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A request to delete a node to the server address space.")
     attrs.DisplayName = LocalizedText("DeleteNodesItem")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1020,7 +1020,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(385, 0)
@@ -1032,7 +1032,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A request to delete a node from the server address space.")
     attrs.DisplayName = LocalizedText("DeleteReferencesItem")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1041,7 +1041,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(347, 0)
@@ -1053,7 +1053,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("Define bits used to indicate which attributes are writable.")
     attrs.DisplayName = LocalizedText("AttributeWriteMask")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -1069,7 +1069,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(7, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15036, 0)
@@ -1081,10 +1081,10 @@ def create_standard_address_space_Part4(server):
     attrs = ua.VariableAttributes()
     attrs.DisplayName = LocalizedText("OptionSetValues")
     attrs.DataType = ua.NodeId(ua.ObjectIds.LocalizedText)
-    attrs.Value = [LocalizedText('AccessLevel'),LocalizedText('ArrayDimensions'),LocalizedText('BrowseName'),LocalizedText('ContainsNoLoops'),LocalizedText('DataType'),LocalizedText('Description'),LocalizedText('DisplayName'),LocalizedText('EventNotifier'),LocalizedText('Executable'),LocalizedText('Historizing'),LocalizedText('InverseName'),LocalizedText('IsAbstract'),LocalizedText('MinimumSamplingInterval'),LocalizedText('NodeClass'),LocalizedText('NodeId'),LocalizedText('Symmetric'),LocalizedText('UserAccessLevel'),LocalizedText('UserExecutable'),LocalizedText('UserWriteMask'),LocalizedText('ValueRank'),LocalizedText('WriteMask'),LocalizedText('ValueForVariableType'),LocalizedText('DataTypeDefinition'),LocalizedText('RolePermissions'),LocalizedText('AccessRestrictions'),LocalizedText('AccessLevelEx')]
+    attrs.Value = [LocalizedText(text= 'AccessLevel', locale= None),LocalizedText(text= 'ArrayDimensions', locale= None),LocalizedText(text= 'BrowseName', locale= None),LocalizedText(text= 'ContainsNoLoops', locale= None),LocalizedText(text= 'DataType', locale= None),LocalizedText(text= 'Description', locale= None),LocalizedText(text= 'DisplayName', locale= None),LocalizedText(text= 'EventNotifier', locale= None),LocalizedText(text= 'Executable', locale= None),LocalizedText(text= 'Historizing', locale= None),LocalizedText(text= 'InverseName', locale= None),LocalizedText(text= 'IsAbstract', locale= None),LocalizedText(text= 'MinimumSamplingInterval', locale= None),LocalizedText(text= 'NodeClass', locale= None),LocalizedText(text= 'NodeId', locale= None),LocalizedText(text= 'Symmetric', locale= None),LocalizedText(text= 'UserAccessLevel', locale= None),LocalizedText(text= 'UserExecutable', locale= None),LocalizedText(text= 'UserWriteMask', locale= None),LocalizedText(text= 'ValueRank', locale= None),LocalizedText(text= 'WriteMask', locale= None),LocalizedText(text= 'ValueForVariableType', locale= None),LocalizedText(text= 'DataTypeDefinition', locale= None),LocalizedText(text= 'RolePermissions', locale= None),LocalizedText(text= 'AccessRestrictions', locale= None),LocalizedText(text= 'AccessLevelEx', locale= None)]
     attrs.ValueRank = 1
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -1107,7 +1107,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(347, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(521, 0)
@@ -1119,7 +1119,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("An identifier for a suspended query or browse operation.")
     attrs.DisplayName = LocalizedText("ContinuationPoint")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1128,7 +1128,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(15, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(537, 0)
@@ -1140,7 +1140,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("An element in a relative path.")
     attrs.DisplayName = LocalizedText("RelativePathElement")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1149,7 +1149,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(540, 0)
@@ -1161,7 +1161,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A relative path constructed from reference types and browse names.")
     attrs.DisplayName = LocalizedText("RelativePath")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1170,7 +1170,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(289, 0)
@@ -1182,7 +1182,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A monotonically increasing value.")
     attrs.DisplayName = LocalizedText("Counter")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1191,7 +1191,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(7, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(291, 0)
@@ -1203,7 +1203,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("Specifies a range of array indexes.")
     attrs.DisplayName = LocalizedText("NumericRange")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1212,7 +1212,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(12, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(292, 0)
@@ -1224,7 +1224,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A time value specified as HH:MM:SS.SSS.")
     attrs.DisplayName = LocalizedText("Time")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1233,7 +1233,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(12, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(293, 0)
@@ -1245,7 +1245,7 @@ def create_standard_address_space_Part4(server):
     attrs.Description = LocalizedText("A date value.")
     attrs.DisplayName = LocalizedText("Date")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1254,7 +1254,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(13, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(331, 0)
@@ -1265,7 +1265,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("EndpointConfiguration")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1274,7 +1274,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(576, 0)
@@ -1285,7 +1285,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("FilterOperator")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -1301,7 +1301,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(29, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(7605, 0)
@@ -1313,10 +1313,10 @@ def create_standard_address_space_Part4(server):
     attrs = ua.VariableAttributes()
     attrs.DisplayName = LocalizedText("EnumStrings")
     attrs.DataType = ua.NodeId(ua.ObjectIds.LocalizedText)
-    attrs.Value = [LocalizedText('Equals'),LocalizedText('IsNull'),LocalizedText('GreaterThan'),LocalizedText('LessThan'),LocalizedText('GreaterThanOrEqual'),LocalizedText('LessThanOrEqual'),LocalizedText('Like'),LocalizedText('Not'),LocalizedText('Between'),LocalizedText('InList'),LocalizedText('And'),LocalizedText('Or'),LocalizedText('Cast'),LocalizedText('InView'),LocalizedText('OfType'),LocalizedText('RelatedTo'),LocalizedText('BitwiseAnd'),LocalizedText('BitwiseOr')]
+    attrs.Value = [LocalizedText(text= 'Equals', locale= None),LocalizedText(text= 'IsNull', locale= None),LocalizedText(text= 'GreaterThan', locale= None),LocalizedText(text= 'LessThan', locale= None),LocalizedText(text= 'GreaterThanOrEqual', locale= None),LocalizedText(text= 'LessThanOrEqual', locale= None),LocalizedText(text= 'Like', locale= None),LocalizedText(text= 'Not', locale= None),LocalizedText(text= 'Between', locale= None),LocalizedText(text= 'InList', locale= None),LocalizedText(text= 'And', locale= None),LocalizedText(text= 'Or', locale= None),LocalizedText(text= 'Cast', locale= None),LocalizedText(text= 'InView', locale= None),LocalizedText(text= 'OfType', locale= None),LocalizedText(text= 'RelatedTo', locale= None),LocalizedText(text= 'BitwiseAnd', locale= None),LocalizedText(text= 'BitwiseOr', locale= None)]
     attrs.ValueRank = 1
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -1339,7 +1339,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(576, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(583, 0)
@@ -1350,7 +1350,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("ContentFilterElement")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1359,7 +1359,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(586, 0)
@@ -1370,7 +1370,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("ContentFilter")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1379,7 +1379,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(589, 0)
@@ -1390,7 +1390,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("FilterOperand")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1399,7 +1399,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(592, 0)
@@ -1410,7 +1410,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("ElementOperand")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1419,7 +1419,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(589, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(595, 0)
@@ -1430,7 +1430,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("LiteralOperand")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1439,7 +1439,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(589, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(598, 0)
@@ -1450,7 +1450,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("AttributeOperand")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1459,7 +1459,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(589, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(601, 0)
@@ -1470,7 +1470,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("SimpleAttributeOperand")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1479,7 +1479,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(589, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(659, 0)
@@ -1490,7 +1490,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("HistoryEvent")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1499,7 +1499,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(11234, 0)
@@ -1510,7 +1510,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("HistoryUpdateType")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -1526,7 +1526,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(29, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(11884, 0)
@@ -1558,7 +1558,7 @@ def create_standard_address_space_Part4(server):
     attrs.Value = ua.Variant(value, ua.VariantType.ExtensionObject)
     attrs.ValueRank = 1
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -1581,7 +1581,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(11234, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(11293, 0)
@@ -1592,7 +1592,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("PerformUpdateType")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -1608,7 +1608,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(29, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(11885, 0)
@@ -1640,7 +1640,7 @@ def create_standard_address_space_Part4(server):
     attrs.Value = ua.Variant(value, ua.VariantType.ExtensionObject)
     attrs.ValueRank = 1
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = True
@@ -1663,7 +1663,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(11293, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(719, 0)
@@ -1674,7 +1674,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("MonitoringFilter")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1683,7 +1683,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(725, 0)
@@ -1694,7 +1694,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("EventFilter")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1703,7 +1703,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(719, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(948, 0)
@@ -1714,7 +1714,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("AggregateConfiguration")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1723,7 +1723,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(920, 0)
@@ -1734,7 +1734,7 @@ def create_standard_address_space_Part4(server):
     attrs = ua.DataTypeAttributes()
     attrs.DisplayName = LocalizedText("HistoryEventFieldList")
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1743,7 +1743,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(22, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(310, 0)
@@ -1756,7 +1756,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1779,7 +1779,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(12207, 0)
@@ -1792,7 +1792,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1815,7 +1815,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(306, 0)
@@ -1828,7 +1828,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1851,7 +1851,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(314, 0)
@@ -1864,7 +1864,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1887,7 +1887,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(434, 0)
@@ -1900,7 +1900,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1923,7 +1923,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(12900, 0)
@@ -1936,7 +1936,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1959,7 +1959,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(12901, 0)
@@ -1972,7 +1972,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -1995,7 +1995,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(346, 0)
@@ -2008,7 +2008,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2031,7 +2031,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(318, 0)
@@ -2044,7 +2044,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2067,7 +2067,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(321, 0)
@@ -2080,7 +2080,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2103,7 +2103,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(324, 0)
@@ -2116,7 +2116,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2139,7 +2139,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(327, 0)
@@ -2152,7 +2152,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2175,7 +2175,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(940, 0)
@@ -2188,7 +2188,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2211,7 +2211,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(378, 0)
@@ -2224,7 +2224,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2247,7 +2247,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(381, 0)
@@ -2260,7 +2260,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2283,7 +2283,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(384, 0)
@@ -2296,7 +2296,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2319,7 +2319,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(387, 0)
@@ -2332,7 +2332,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2355,7 +2355,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(539, 0)
@@ -2368,7 +2368,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2391,7 +2391,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(542, 0)
@@ -2404,7 +2404,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2427,7 +2427,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(333, 0)
@@ -2440,7 +2440,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2463,7 +2463,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(585, 0)
@@ -2476,7 +2476,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2499,7 +2499,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(588, 0)
@@ -2512,7 +2512,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2535,7 +2535,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(591, 0)
@@ -2548,7 +2548,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2571,7 +2571,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(594, 0)
@@ -2584,7 +2584,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2607,7 +2607,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(597, 0)
@@ -2620,7 +2620,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2643,7 +2643,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(600, 0)
@@ -2656,7 +2656,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2679,7 +2679,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(603, 0)
@@ -2692,7 +2692,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2715,7 +2715,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(661, 0)
@@ -2728,7 +2728,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2751,7 +2751,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(721, 0)
@@ -2764,7 +2764,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2787,7 +2787,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(727, 0)
@@ -2800,7 +2800,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2823,7 +2823,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(950, 0)
@@ -2836,7 +2836,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2859,7 +2859,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(922, 0)
@@ -2872,7 +2872,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default Binary")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2895,7 +2895,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(309, 0)
@@ -2908,7 +2908,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2931,7 +2931,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(12195, 0)
@@ -2944,7 +2944,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -2967,7 +2967,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(305, 0)
@@ -2980,7 +2980,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3003,7 +3003,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(313, 0)
@@ -3016,7 +3016,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3039,7 +3039,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(433, 0)
@@ -3052,7 +3052,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3075,7 +3075,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(12892, 0)
@@ -3088,7 +3088,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3111,7 +3111,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(12893, 0)
@@ -3124,7 +3124,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3147,7 +3147,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(345, 0)
@@ -3160,7 +3160,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3183,7 +3183,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(317, 0)
@@ -3196,7 +3196,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3219,7 +3219,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(320, 0)
@@ -3232,7 +3232,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3255,7 +3255,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(323, 0)
@@ -3268,7 +3268,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3291,7 +3291,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(326, 0)
@@ -3304,7 +3304,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3327,7 +3327,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(939, 0)
@@ -3340,7 +3340,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3363,7 +3363,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(377, 0)
@@ -3376,7 +3376,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3399,7 +3399,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(380, 0)
@@ -3412,7 +3412,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3435,7 +3435,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(383, 0)
@@ -3448,7 +3448,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3471,7 +3471,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(386, 0)
@@ -3484,7 +3484,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3507,7 +3507,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(538, 0)
@@ -3520,7 +3520,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3543,7 +3543,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(541, 0)
@@ -3556,7 +3556,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3579,7 +3579,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(332, 0)
@@ -3592,7 +3592,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3615,7 +3615,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(584, 0)
@@ -3628,7 +3628,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3651,7 +3651,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(587, 0)
@@ -3664,7 +3664,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3687,7 +3687,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(590, 0)
@@ -3700,7 +3700,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3723,7 +3723,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(593, 0)
@@ -3736,7 +3736,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3759,7 +3759,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(596, 0)
@@ -3772,7 +3772,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3795,7 +3795,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(599, 0)
@@ -3808,7 +3808,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3831,7 +3831,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(602, 0)
@@ -3844,7 +3844,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3867,7 +3867,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(660, 0)
@@ -3880,7 +3880,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3903,7 +3903,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(720, 0)
@@ -3916,7 +3916,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3939,7 +3939,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(726, 0)
@@ -3952,7 +3952,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -3975,7 +3975,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(949, 0)
@@ -3988,7 +3988,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4011,7 +4011,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(921, 0)
@@ -4024,7 +4024,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default XML")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4047,7 +4047,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15087, 0)
@@ -4060,7 +4060,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4076,7 +4076,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15095, 0)
@@ -4089,7 +4089,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4105,7 +4105,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15098, 0)
@@ -4118,7 +4118,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4134,7 +4134,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15099, 0)
@@ -4147,7 +4147,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4163,7 +4163,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15102, 0)
@@ -4176,7 +4176,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4192,7 +4192,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15105, 0)
@@ -4205,7 +4205,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4221,7 +4221,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15106, 0)
@@ -4234,7 +4234,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4250,7 +4250,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15136, 0)
@@ -4263,7 +4263,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4279,7 +4279,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15140, 0)
@@ -4292,7 +4292,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4308,7 +4308,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15141, 0)
@@ -4321,7 +4321,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4337,7 +4337,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15142, 0)
@@ -4350,7 +4350,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4366,7 +4366,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15143, 0)
@@ -4379,7 +4379,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4395,7 +4395,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15144, 0)
@@ -4408,7 +4408,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4424,7 +4424,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15165, 0)
@@ -4437,7 +4437,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4453,7 +4453,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15169, 0)
@@ -4466,7 +4466,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4482,7 +4482,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15172, 0)
@@ -4495,7 +4495,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4511,7 +4511,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15175, 0)
@@ -4524,7 +4524,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4540,7 +4540,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15188, 0)
@@ -4553,7 +4553,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4569,7 +4569,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15189, 0)
@@ -4582,7 +4582,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4598,7 +4598,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15199, 0)
@@ -4611,7 +4611,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4627,7 +4627,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15204, 0)
@@ -4640,7 +4640,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4656,7 +4656,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15205, 0)
@@ -4669,7 +4669,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4685,7 +4685,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15206, 0)
@@ -4698,7 +4698,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4714,7 +4714,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15207, 0)
@@ -4727,7 +4727,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4743,7 +4743,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15208, 0)
@@ -4756,7 +4756,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4772,7 +4772,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15209, 0)
@@ -4785,7 +4785,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4801,7 +4801,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15210, 0)
@@ -4814,7 +4814,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4830,7 +4830,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15273, 0)
@@ -4843,7 +4843,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4859,7 +4859,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15293, 0)
@@ -4872,7 +4872,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4888,7 +4888,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15295, 0)
@@ -4901,7 +4901,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4917,7 +4917,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15304, 0)
@@ -4930,7 +4930,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4946,7 +4946,7 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)
    
     node = ua.AddNodesItem()
     node.RequestedNewNodeId = NumericNodeId(15349, 0)
@@ -4959,7 +4959,7 @@ def create_standard_address_space_Part4(server):
     attrs.DisplayName = LocalizedText("Default JSON")
     attrs.EventNotifier = 0
     node.NodeAttributes = attrs
-    server.add_nodes([node])
+    await server.add_nodes([node])
     refs = []
     ref = ua.AddReferencesItem()
     ref.IsForward = False
@@ -4975,4 +4975,4 @@ def create_standard_address_space_Part4(server):
     ref.TargetNodeClass = NodeClass.DataType
     ref.TargetNodeId = NumericNodeId(76, 0)
     refs.append(ref)
-    server.add_references(refs)
+    await server.add_references(refs)

@@ -93,14 +93,14 @@ class InternalSession:
         return result
 
     async def read(self, params):
-        results = self.iserver.attribute_service.read(params)
+        results = await self.iserver.attribute_service.read(params)
         return results
 
     def history_read(self, params) -> Coroutine:
         return self.iserver.history_manager.read_history(params)
 
     async def write(self, params):
-        return self.iserver.attribute_service.write(params, self.user)
+        return await self.iserver.attribute_service.write(params, self.user)
 
     async def browse(self, params):
         return self.iserver.view_service.browse(params)
@@ -109,13 +109,13 @@ class InternalSession:
         return self.iserver.view_service.translate_browsepaths_to_nodeids(params)
 
     async def add_nodes(self, params):
-        return self.iserver.node_mgt_service.add_nodes(params, self.user)
+        return await self.iserver.node_mgt_service.add_nodes(params, self.user)
 
     async def delete_nodes(self, params):
         return self.iserver.node_mgt_service.delete_nodes(params, self.user)
 
     async def add_references(self, params):
-        return self.iserver.node_mgt_service.add_references(params, self.user)
+        return await self.iserver.node_mgt_service.add_references(params, self.user)
 
     async def delete_references(self, params):
         return self.iserver.node_mgt_service.delete_references(params, self.user)
