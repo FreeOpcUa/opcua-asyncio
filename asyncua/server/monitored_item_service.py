@@ -60,7 +60,7 @@ class MonitoredItemService:
         results = []
         for item in params.ItemsToCreate:
             if item.ItemToMonitor.AttributeId == ua.AttributeIds.EventNotifier:
-                result = self._create_events_monitored_item(item)
+                result = await self._create_events_monitored_item(item)
             else:
                 result = await self._create_data_change_monitored_item(item)
             results.append(result)
@@ -74,7 +74,7 @@ class MonitoredItemService:
 
     async def trigger_datachange(self, handle, nodeid, attr):
         self.logger.debug("triggering datachange for handle %s, nodeid %s, and attribute %s", handle, nodeid, attr)
-        dv = self.aspace.read_attribute_value(nodeid, attr)
+        dv = await self.aspace.read_attribute_value(nodeid, attr)
         await self.datachange_callback(handle, dv)
 
     def _modify_monitored_item(self, params: ua.MonitoredItemModifyRequest):
@@ -110,12 +110,12 @@ class MonitoredItemService:
         mdata.filter = params.RequestedParameters.Filter
         return result, mdata
 
-    def _create_events_monitored_item(self, params: ua.MonitoredItemCreateRequest):
+    async def _create_events_monitored_item(self, params: ua.MonitoredItemCreateRequest):
         self.logger.info("request to subscribe to events for node %s and attribute %s", params.ItemToMonitor.NodeId,
                          params.ItemToMonitor.AttributeId)
 
         result, mdata = self._make_monitored_item_common(params)
-        ev_notify_byte = self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
+        ev_notify_byte = await self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
                                                          ua.AttributeIds.EventNotifier).Value.Value
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
@@ -290,21 +290,21 @@ class WhereClauseEvaluator:
     def _like_operator(self, string, pattern):
         raise NotImplementedError
 
-    def _eval_op(self, op, event):
+    async def _eval_op(self, op, event):
         # seems spec says we should return Null if issues
         if isinstance(op, ua.ElementOperand):
             return self._eval_el(op.Index, event)
         if isinstance(op, ua.AttributeOperand):
             if op.BrowsePath:
                 return getattr(event, op.BrowsePath.Elements[0].TargetName.Name)
-            return self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return await self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
             # FIXME: check, this is probably broken
         if isinstance(op, ua.SimpleAttributeOperand):
             if op.BrowsePath:
                 # we only support depth of 1
                 return getattr(event, op.BrowsePath[0].Name)
             # TODO: write code for index range.... but doe it make any sense
-            return self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return await self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
         if isinstance(op, ua.LiteralOperand):
             return op.Value.Value
         self.logger.warning("Where clause element % is not of a known type", op)

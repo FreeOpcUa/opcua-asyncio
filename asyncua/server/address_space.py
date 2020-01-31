@@ -46,11 +46,11 @@ class AttributeService:
         self.logger = logging.getLogger(__name__)
         self._aspace: "AddressSpace" = aspace
 
-    def read(self, params):
+    async def read(self, params):
         #self.logger.debug("read %s", params)
         res = []
         for readvalue in params.NodesToRead:
-            res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
+            res.append(await self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
         return res
 
     async def write(self, params, user=User.Admin):
@@ -61,8 +61,8 @@ class AttributeService:
                 if writevalue.AttributeId != ua.AttributeIds.Value:
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
-                al = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
-                ual = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
+                al = await self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
+                ual = await self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
                 if not al.StatusCode.is_good() or not ua.ua_binary.test_bit(
                         al.Value.Value, ua.AccessLevel.CurrentWrite) or not ua.ua_binary.test_bit(
                     ual.Value.Value, ua.AccessLevel.CurrentWrite):
@@ -199,19 +199,19 @@ class NodeManagementService:
         self.logger = logging.getLogger(__name__)
         self._aspace: "AddressSpace" = aspace
 
-    def add_nodes(self, addnodeitems, user=User.Admin):
+    async def add_nodes(self, addnodeitems, user=User.Admin):
         results = []
         for item in addnodeitems:
-            results.append(self._add_node(item, user))
+            results.append(await self._add_node(item, user))
         return results
 
-    def try_add_nodes(self, addnodeitems, user=User.Admin, check=True):
+    async def try_add_nodes(self, addnodeitems, user=User.Admin, check=True):
         for item in addnodeitems:
-            ret = self._add_node(item, user, check=check)
+            ret = await self._add_node(item, user, check=check)
             if not ret.StatusCode.is_good():
                 yield item
 
-    def _add_node(self, item, user, check=True):
+    async def _add_node(self, item, user, check=True):
         #self.logger.debug("Adding node %s %s", item.RequestedNewNodeId, item.BrowseName)
         result = ua.AddNodesResult()
 
@@ -254,11 +254,11 @@ class NodeManagementService:
 
         if parentdata is not None:
             self._add_ref_from_parent(nodedata, item, parentdata)
-            self._add_ref_to_parent(nodedata, item, parentdata)
+            await self._add_ref_to_parent(nodedata, item, parentdata)
 
         # add type definition
         if item.TypeDefinition != ua.NodeId():
-            self._add_type_definition(nodedata, item)
+            await self._add_type_definition(nodedata, item)
 
         result.StatusCode = ua.StatusCode()
         result.AddedNodeId = nodedata.nodeid
@@ -301,23 +301,23 @@ class NodeManagementService:
         desc.IsForward = True
         self._add_unique_reference(parentdata, desc)
 
-    def _add_ref_to_parent(self, nodedata, item, parentdata):
+    async def _add_ref_to_parent(self, nodedata, item, parentdata):
         addref = ua.AddReferencesItem()
         addref.ReferenceTypeId = item.ReferenceTypeId
         addref.SourceNodeId = nodedata.nodeid
         addref.TargetNodeId = item.ParentNodeId
         addref.TargetNodeClass = parentdata.attributes[ua.AttributeIds.NodeClass].value.Value.Value
         addref.IsForward = False
-        self._add_reference_no_check(nodedata, addref)
+        await self._add_reference_no_check(nodedata, addref)
 
-    def _add_type_definition(self, nodedata, item):
+    async def _add_type_definition(self, nodedata, item):
         addref = ua.AddReferencesItem()
         addref.SourceNodeId = nodedata.nodeid
         addref.IsForward = True
         addref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasTypeDefinition)
         addref.TargetNodeId = item.TypeDefinition
         addref.TargetNodeClass = ua.NodeClass.DataType
-        self._add_reference_no_check(nodedata, addref)
+        await self._add_reference_no_check(nodedata, addref)
 
     def delete_nodes(self, deletenodeitems, user=User.Admin):
         results = []
@@ -355,18 +355,19 @@ class NodeManagementService:
                     self.logger.exception("Error calling delete node callback callback %s, %s, %s", nodedata,
                         ua.AttributeIds.Value, ex)
 
-    def add_references(self, refs, user=User.Admin):
+    async def add_references(self, refs, user=User.Admin):
         result = []
         for ref in refs:
-            result.append(self._add_reference(ref, user))
+            result.append(await self._add_reference(ref, user))
         return result
 
-    def try_add_references(self, refs, user=User.Admin):
+    async def try_add_references(self, refs, user=User.Admin):
         for ref in refs:
-            if not self._add_reference(ref, user).is_good():
+            ret = await self._add_reference(ref, user)
+            if not ret.is_good():
                 yield ref
 
-    def _add_reference(self, addref, user):
+    async def _add_reference(self, addref, user):
         sourcedata = self._aspace.get(addref.SourceNodeId)
         if sourcedata is None:
             return ua.StatusCode(ua.StatusCodes.BadSourceNodeIdInvalid)
@@ -374,9 +375,9 @@ class NodeManagementService:
             return ua.StatusCode(ua.StatusCodes.BadTargetNodeIdInvalid)
         if user != User.Admin:
             return ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)
-        return self._add_reference_no_check(sourcedata, addref)
+        return await self._add_reference_no_check(sourcedata, addref)
 
-    def _add_reference_no_check(self, sourcedata, addref):
+    async def _add_reference_no_check(self, sourcedata, addref):
         rdesc = ua.ReferenceDescription()
         rdesc.ReferenceTypeId = addref.ReferenceTypeId
         rdesc.IsForward = addref.IsForward
@@ -655,7 +656,7 @@ class AddressSpace:
 
         self._nodes = LazyLoadingDict(shelve.open(path, "r"))
 
-    def read_attribute_value(self, nodeid, attr):
+    async def read_attribute_value(self, nodeid, attr):
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
         if nodeid not in self._nodes:
             dv = ua.DataValue()
@@ -668,7 +669,10 @@ class AddressSpace:
             return dv
         attval = node.attributes[attr]
         if attval.value_callback:
-            return attval.value_callback()
+            if asyncio.iscoroutinefunction(attval.value_callback):
+                await attval.value_callback()
+            else:
+                return attval.value_callback()
         return attval.value
 
     async def write_attribute_value(self, nodeid, attr, value):
@@ -716,3 +720,13 @@ class AddressSpace:
     def add_method_callback(self, methodid, callback):
         node = self._nodes[methodid]
         node.call = callback
+
+    def add_value_callback_to_node(self, nodeid, attr, callback):
+        if nodeid not in self._nodes:
+            return ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown), 0
+        node = self._nodes[nodeid]
+        if attr not in node.attributes:
+            return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid), 0
+        attval = self._nodes[nodeid].attributes[attr]
+        attval.value_callback = callback
+        return ua.StatusCode()
