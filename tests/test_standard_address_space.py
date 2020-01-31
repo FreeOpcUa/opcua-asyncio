@@ -49,10 +49,10 @@ def get_refs(e):
                find_elem(e, 'References'))
 
 
-def test_std_address_space_references():
+async def test_std_address_space_references():
     aspace = AddressSpace()
     node_mgt_service = NodeManagementService(aspace)
-    standard_address_space.fill_address_space(node_mgt_service)
+    await standard_address_space.fill_address_space(node_mgt_service)
     std_nodes = read_nodes(
         os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'schemas', 'Opc.Ua.NodeSet2.xml'))
     )

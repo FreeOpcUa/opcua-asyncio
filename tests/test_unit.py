@@ -645,7 +645,7 @@ def test_null():
     assert n.has_null_identifier()
 
 
-def test_where_clause():
+async def test_where_clause():
     cf = ua.ContentFilter()
     el = ua.ContentFilterElement()
     op = ua.SimpleAttributeOperand()
@@ -661,7 +661,7 @@ def test_where_clause():
     ev = BaseEvent()
     ev._freeze = False
     ev.property = 3
-    assert wce.eval(ev)
+    assert await wce.eval(ev)
 
 
 class MyEnum(_MaskEnum):

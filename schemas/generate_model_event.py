@@ -15,8 +15,8 @@ class Node_struct:
         self.references = []
 
     def __hash__(self):
-        return hash(self.nodeId, self.browseName, self.isAbstract, self.parentNodeId, self.dataType, self.displayName,
-                    self.description, self.references)
+        return hash((self.nodeId, self.browseName, self.isAbstract, self.parentNodeId, self.dataType, self.displayName,
+                    self.description, self.references))
 
     def __eq__(self, other):
         return (self.nodeId, self.browseName, self.isAbstract, self.parentNodeId, self.dataType, self.displayName,
@@ -34,7 +34,7 @@ class Reference:
         self.refId = None
 
     def __hash__(self):
-        return hash(self.referenceType, self.refId)
+        return hash((self.referenceType, self.refId))
 
     def __eq__(self, other):
         return (self.referenceType, self.refId) == (other.referenceType, other.refValue)
