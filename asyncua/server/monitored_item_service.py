@@ -219,7 +219,7 @@ class MonitoredItemService:
                               self)
             return
         mdata = self._monitored_items[mid]
-        if not mdata.where_clause_evaluator.eval(event):
+        if not await mdata.where_clause_evaluator.eval(event):
             self.logger.info("%s, %s, Event %s does not fit WhereClause, not generating event", self, mid, event)
             return
         fieldlist = ua.EventFieldList()
@@ -237,47 +237,47 @@ class WhereClauseEvaluator:
         self.elements = whereclause.Elements
         self._aspace = aspace
 
-    def eval(self, event):
+    async def eval(self, event):
         if not self.elements:
             return True
         # spec says we should only evaluate first element, which may use other elements
         try:
-            res = self._eval_el(0, event)
+            res = await self._eval_el(0, event)
         except Exception as ex:
             self.logger.exception("Exception while evaluating WhereClause %s for event %s: %s", self.elements, event,
                                   ex)
             return False
         return res
 
-    def _eval_el(self, index, event):
+    async def _eval_el(self, index, event):
         el = self.elements[index]
         # ops = [self._eval_op(op, event) for op in el.FilterOperands]
         ops = el.FilterOperands  # just to make code more readable
         if el.FilterOperator == ua.FilterOperator.Equals:
-            return self._eval_op(ops[0], event) == self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) == await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.IsNull:
-            return self._eval_op(ops[0], event) is None  # FIXME: might be too strict
+            return await self._eval_op(ops[0], event) is None  # FIXME: might be too strict
         if el.FilterOperator == ua.FilterOperator.GreaterThan:
-            return self._eval_op(ops[0], event) > self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) > await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.LessThan:
-            return self._eval_op(ops[0], event) < self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) < await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.GreaterThanOrEqual:
-            return self._eval_op(ops[0], event) >= self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) >= await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.LessThanOrEqual:
-            return self._eval_op(ops[0], event) <= self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) <= await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.Like:
-            return self._like_operator(self._eval_op(ops[0], event), self._eval_op(ops[1], event))
+            return await self._like_operator(self._eval_op(ops[0], event), await self._eval_op(ops[1], event))
         if el.FilterOperator == ua.FilterOperator.Not:
-            return not self._eval_op(ops[0], event)
+            return not await self._eval_op(ops[0], event)
         if el.FilterOperator == ua.FilterOperator.Between:
-            return self._eval_op(ops[2], event) >= self._eval_op(ops[0], event) >= self._eval_op(ops[1], event)
+            return await self._eval_op(ops[2], event) >= await self._eval_op(ops[0], event) >= await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.InList:
-            return self._eval_op(ops[0], event) in [self._eval_op(op, event) for op in ops[1:]]
+            return await self._eval_op(ops[0], event) in [self._eval_op(op, event) for op in ops[1:]]
         if el.FilterOperator == ua.FilterOperator.And:
             self.elements(ops[0].Index)
-            return self._eval_op(ops[0], event) and self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) and await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.Or:
-            return self._eval_op(ops[0], event) or self._eval_op(ops[1], event)
+            return await self._eval_op(ops[0], event) or await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.Cast:
             self.logger.warn("Cast operand not implemented, assuming True")
             return True
