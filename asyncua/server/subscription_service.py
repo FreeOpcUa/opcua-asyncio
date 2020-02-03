@@ -98,6 +98,6 @@ class SubscriptionService:
             return ua.NotificationMessage()
         return self.subscriptions[params.SubscriptionId].republish(params.RetransmitSequenceNumber)
 
-    async def trigger_event(self, event):
+    def trigger_event(self, event):
         for sub in self.subscriptions.values():
-            await sub.monitored_item_srv.trigger_event(event)
+            sub.monitored_item_srv.trigger_event(event)
