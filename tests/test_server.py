@@ -140,7 +140,7 @@ async def test_historize_events(server):
     srvevgen = await server.get_event_generator()
     await server.iserver.enable_history_event(srv_node, period=None)
     assert await srv_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents, ua.EventNotifier.HistoryRead}
-    srvevgen.trigger(message='Message')
+    await srvevgen.trigger(message='Message')
     await server.iserver.disable_history_event(srv_node)
 
 
