@@ -428,7 +428,7 @@ async def test_events_default(opc):
     handle = await sub.subscribe_events()
     tid = datetime.utcnow()
     msg = "this is my msg "
-    evgen.trigger(tid, msg)
+    await evgen.trigger(tid, msg)
     ev = await myhandler.result()
     assert ev is not None  # we did not receive event
     assert ua.NodeId(ua.ObjectIds.BaseEventType) == ev.EventType
@@ -450,7 +450,7 @@ async def test_events_MyObject(opc):
     handle = await sub.subscribe_events(o)
     tid = datetime.utcnow()
     msg = "this is my msg "
-    evgen.trigger(tid, msg)
+    await evgen.trigger(tid, msg)
     ev = await myhandler.result()
     assert ev is not None  # we did not receive event
     assert ua.NodeId(ua.ObjectIds.BaseEventType) == ev.EventType
@@ -472,7 +472,7 @@ async def test_events_wrong_source(opc):
     handle = await sub.subscribe_events()
     tid = datetime.utcnow()
     msg = "this is my msg "
-    evgen.trigger(tid, msg)
+    await evgen.trigger(tid, msg)
     with pytest.raises(TimeoutError):  # we should not receive event
         ev = await myhandler.result()
     await sub.unsubscribe(handle)
@@ -495,7 +495,7 @@ async def test_events_CustomEvent(opc):
     evgen.event.Severity = serverity
     tid = datetime.utcnow()
     msg = "this is my msg "
-    evgen.trigger(tid, msg)
+    await evgen.trigger(tid, msg)
     ev = await myhandler.result()
     assert ev is not None  # we did not receive event
     assert etype.nodeid == ev.EventType
@@ -526,7 +526,7 @@ async def test_events_CustomEvent_MyObject(opc):
     evgen.event.PropertyString = propertystring
     tid = datetime.utcnow()
     msg = "this is my msg "
-    evgen.trigger(tid, msg)
+    await evgen.trigger(tid, msg)
     ev = await myhandler.result()
     assert ev is not None  # we did not receive event
     assert etype.nodeid == ev.EventType
@@ -564,16 +564,16 @@ async def test_several_different_events(opc):
     evgen2.event.PropertyNum = propertynum2
     evgen2.event.PropertyString = propertystring2
     for i in range(3):
-        evgen1.trigger()
-        evgen2.trigger()
+        await evgen1.trigger()
+        await evgen2.trigger()
     await sleep(1)  # ToDo: replace
     assert 3 == len(myhandler.results)
     ev = myhandler.results[-1]
     assert etype1.nodeid == ev.EventType
     handle = await sub.subscribe_events(o, etype2)
     for i in range(4):
-        evgen1.trigger()
-        evgen2.trigger()
+        await evgen1.trigger()
+        await evgen2.trigger()
     await sleep(1)  # ToDo: replace
     ev1s = [ev for ev in myhandler.results if ev.EventType == etype1.nodeid]
     ev2s = [ev for ev in myhandler.results if ev.EventType == etype2.nodeid]
@@ -618,11 +618,11 @@ async def test_several_different_events_2(opc):
     evgen3.event.PropertyNum3 = propertynum3
     evgen3.event.PropertyString = propertystring2
     for i in range(3):
-        evgen1.trigger()
-        evgen2.trigger()
-        evgen3.trigger()
+        await evgen1.trigger()
+        await evgen2.trigger()
+        await evgen3.trigger()
     evgen3.event.PropertyNum3 = 9999
-    evgen3.trigger()
+    await evgen3.trigger()
     await sleep(1)
     ev1s = [ev for ev in myhandler.results if ev.EventType == etype1.nodeid]
     ev2s = [ev for ev in myhandler.results if ev.EventType == etype2.nodeid]
