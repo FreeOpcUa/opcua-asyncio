@@ -220,7 +220,7 @@ class MonitoredItemService:
                               self)
             return
         mdata = self._monitored_items[mid]
-        if not await mdata.where_clause_evaluator.eval(event):
+        if not (await mdata.where_clause_evaluator.eval(event)):
             self.logger.info("%s, %s, Event %s does not fit WhereClause, not generating event", self, mid, event)
             return
         fieldlist = ua.EventFieldList()
@@ -267,13 +267,13 @@ class WhereClauseEvaluator:
         if el.FilterOperator == ua.FilterOperator.LessThanOrEqual:
             return await self._eval_op(ops[0], event) <= await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.Like:
-            return await self._like_operator(self._eval_op(ops[0], event), await self._eval_op(ops[1], event))
+            return await self._like_operator(await self._eval_op(ops[0], event), await self._eval_op(ops[1], event))
         if el.FilterOperator == ua.FilterOperator.Not:
             return not await self._eval_op(ops[0], event)
         if el.FilterOperator == ua.FilterOperator.Between:
             return await self._eval_op(ops[2], event) >= await self._eval_op(ops[0], event) >= await self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.InList:
-            return await self._eval_op(ops[0], event) in [self._eval_op(op, event) for op in ops[1:]]
+            return await self._eval_op(ops[0], event) in [await self._eval_op(op, event) for op in ops[1:]]
         if el.FilterOperator == ua.FilterOperator.And:
             self.elements(ops[0].Index)
             return await self._eval_op(ops[0], event) and await self._eval_op(ops[1], event)
@@ -283,7 +283,7 @@ class WhereClauseEvaluator:
             self.logger.warn("Cast operand not implemented, assuming True")
             return True
         if el.FilterOperator == ua.FilterOperator.OfType:
-            return event.EventType == self._eval_op(ops[0], event)
+            return event.EventType == await self._eval_op(ops[0], event)
         # TODO: implement missing operators
         self.logger.warning("WhereClause not implemented for element: %s", el)
         raise NotImplementedError
