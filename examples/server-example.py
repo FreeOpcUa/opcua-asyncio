@@ -123,7 +123,7 @@ async def main():
         var.append(9.3)
         await myarrayvar.write_value(var)
         await mydevice_var.write_value("Running")
-        await myevgen.trigger(message="This is BaseEvent")
+        myevgen.trigger(message="This is BaseEvent")
         server.set_attribute_value(myvar.nodeid, ua.DataValue(0.9))  # Server side write method which is a bit faster than using write_value
         while True:
             await asyncio.sleep(0.1)

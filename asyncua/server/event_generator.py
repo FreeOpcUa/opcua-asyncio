@@ -75,7 +75,7 @@ class EventGenerator:
 
     __repr__ = __str__
 
-    async def trigger(self, time_attr=None, message=None):
+    def trigger(self, time_attr=None, message=None):
         """
         Trigger the event. This will send a notification to all subscribed clients
         """
@@ -100,4 +100,4 @@ class EventGenerator:
         elif not self.event.Message:
             self.event.Message = ua.LocalizedText(Node(self.isession, self.event.SourceNode).get_browse_name().Text)
 
-        await self.isession.subscription_service.trigger_event(self.event)
+        self.isession.subscription_service.trigger_event(self.event)

@@ -40,8 +40,8 @@ def emmit_event(loop: asyncio.AbstractEventLoop, myevgen: EventGenerator, myseco
     myevgen.event.Severity = count
     myevgen.event.MyNumericProperty = count
     myevgen.event.MyStringProperty = "Property %d" % count
-    await myevgen.trigger()
-    await mysecondevgen.trigger(message="MySecondEvent %d" % count)
+    myevgen.trigger()
+    mysecondevgen.trigger(message="MySecondEvent %d" % count)
     count += 1
     loop.call_later(2, emmit_event, loop, myevgen, mysecondevgen, count)
 
