@@ -106,8 +106,8 @@ class InternalSession:
         results = await self.iserver.attribute_service.read(params)
         return results
 
-    async def history_read(self, params) -> Coroutine:
-        return await self.iserver.history_manager.read_history(params)
+    def history_read(self, params) -> Coroutine:
+        return self.iserver.history_manager.read_history(params)
 
     async def write(self, params):
         if self.user is None:
