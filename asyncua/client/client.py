@@ -108,12 +108,16 @@ class Client:
 
     async def set_security_string(self, string: str):
         """
-        Set SecureConnection mode. String format:
-        Policy,Mode,certificate,private_key[,server_private_key]
-        where Policy is Basic128Rsa15, Basic256 or Basic256Sha256,
-            Mode is Sign or SignAndEncrypt
-            certificate, private_key and server_private_key are
-                paths to .pem or .der files
+        Set SecureConnection mode.
+
+        :param string: Mode format ``Policy,Mode,certificate,private_key[,server_private_key]``
+
+        where:
+
+        - ``Policy`` is ``Basic128Rsa15``, ``Basic256`` or ``Basic256Sha256``
+        - ``Mode`` is ``Sign`` or ``SignAndEncrypt``
+        - ``certificate``, ``private_key`` and ``server_private_key`` are paths to ``.pem`` or ``.der`` files
+
         Call this before connect()
         """
         if not string:
@@ -269,6 +273,8 @@ class Client:
         return await self.uaclient.close_secure_channel()
 
     async def get_endpoints(self) -> list:
+        """Get a list of OPC-UA endpoints."""
+
         params = ua.GetEndpointsParameters()
         params.EndpointUrl = self.server_url.geturl()
         return await self.uaclient.get_endpoints(params)
@@ -494,9 +500,10 @@ class Client:
         Returns a Subscription object which allows to subscribe to events or data changes on server.
 
         :param period: Either a publishing interval in milliseconds or a `CreateSubscriptionParameters` instance.
-        The second option should be used, if the asyncua-server has problems with the default options.
+            The second option should be used, if the asyncua-server has problems with the default options.
+
         :param handler: Class instance with data_change and/or event methods (see `SubHandler`
-        base class for details). Remember not to block the main event loop inside the handler methods.
+            base class for details). Remember not to block the main event loop inside the handler methods.
         """
         if isinstance(period, ua.CreateSubscriptionParameters):
             params = period
