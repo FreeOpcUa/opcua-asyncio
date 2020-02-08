@@ -365,7 +365,7 @@ class Client:
         but it does not cost much..
         """
         try:
-            duration = min(self.session_timeout, self.secure_channel_timeout) * 0.7 * 0.001
+            duration = min(self.session_timeout, self.secure_channel_timeout) * 0.7 / 1000
             while True:
                 # 0.7 is from spec. 0.001 is because asyncio.sleep expects time in seconds
                 await asyncio.sleep(duration)
@@ -375,6 +375,9 @@ class Client:
                 _logger.debug("server state is: %s ", val)
         except asyncio.CancelledError:
             pass
+        except:
+            _logger.exception("Error while renewing session")
+            raise
 
     def server_policy_id(self, token_type, default):
         """
