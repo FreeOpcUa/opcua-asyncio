@@ -41,6 +41,8 @@ class ThreadLoop(Thread):
 
     def stop(self):
         self.loop.call_soon_threadsafe(self.loop.stop)
+        self.join()
+        self.loop.close()
 
     def post(self, coro):
         if not self.loop or not self.loop.is_running():
@@ -54,7 +56,6 @@ class ThreadLoop(Thread):
 
     def __exit__(self, exc_t, exc_v, trace):
         self.stop()
-        self.join()
 
 
 def syncmethod(func):
