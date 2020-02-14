@@ -123,6 +123,10 @@ class Client:
         pass
 
     @syncmethod
+    def set_security(self):
+        pass
+
+    @syncmethod
     def load_enums(self):
         pass
 
@@ -137,6 +141,10 @@ class Client:
 
     def get_node(self, nodeid):
         return Node(self.tloop, self.aio_obj.get_node(nodeid))
+
+    @syncmethod
+    def connect_and_get_server_endpoints(self):
+        pass
 
     def __enter__(self):
         self.connect()
@@ -360,6 +368,17 @@ class Node:
     def get_variables(self):
         pass
 
+    @syncmethod
+    def get_path(self):
+        pass
+
+    @syncmethod
+    def get_node_class(self):
+        pass
+
+    @syncmethod
+    def get_attributes(self):
+        pass
 
 class Subscription:
     def __init__(self, tloop, sub):
