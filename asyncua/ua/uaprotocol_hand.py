@@ -16,10 +16,10 @@ class Hello(uatypes.FrozenClass):
 
     def __init__(self):
         self.ProtocolVersion = 0
-        self.ReceiveBufferSize = 65536
-        self.SendBufferSize = 65536
-        self.MaxMessageSize = 0  # No limits
-        self.MaxChunkCount = 0  # No limits
+        self.ReceiveBufferSize = 2**32 - 1
+        self.SendBufferSize = 2**32 - 1
+        self.MaxMessageSize = 0 # No limits
+        self.MaxChunkCount = 0 # No limits
         self.EndpointUrl = ""
         self._freeze = True
 
