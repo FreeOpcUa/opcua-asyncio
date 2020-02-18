@@ -149,7 +149,7 @@ class HistoryDict(HistoryStorageInterface):
         period, count = self._events_periods[event.emitting_node]
         now = datetime.utcnow()
         if period:
-            while len(evts) and now - evts[0].SourceTimestamp > period:
+            while len(evts) and now - evts[0].Time > period:
                 evts.pop(0)
         if count and len(evts) > count:
             evts.pop(0)
