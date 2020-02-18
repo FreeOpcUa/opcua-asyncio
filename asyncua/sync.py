@@ -110,6 +110,11 @@ class Client:
         return "Sync" + self.aio_obj.__str__()
     __repr__ = __str__
 
+    def __del__(self):
+        """Delete method to ensure that the ThreadLoop is stopped."""
+        if self.close_tloop:
+            self.tloop.stop()
+
     @syncmethod
     def connect(self):
         pass
@@ -121,8 +126,6 @@ class Client:
             logger.warning("Disconnect did not raise expected CancelledError.")
         except CancelledError:
             pass
-        if self.close_tloop:
-            self.tloop.stop()
 
     @syncmethod
     def load_type_definitions(self, nodes=None):
