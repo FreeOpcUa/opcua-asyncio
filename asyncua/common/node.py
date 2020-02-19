@@ -518,6 +518,7 @@ class Node:
         details.NumValuesPerNode = numvalues
         details.ReturnBounds = True
         result = await self.history_read(details)
+        result.StatusCode.check()
         return result.HistoryData.DataValues
 
     async def history_read(self, details):
@@ -558,6 +559,7 @@ class Node:
         evfilter = await get_filter_from_event_type(evtypes)
         details.Filter = evfilter
         result = await self.history_read_events(details)
+        result.StatusCode.check()
         event_res = []
         for res in result.HistoryData.Events:
             event_res.append(

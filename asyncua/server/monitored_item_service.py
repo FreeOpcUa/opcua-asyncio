@@ -74,8 +74,8 @@ class MonitoredItemService:
 
     def trigger_datachange(self, handle, nodeid, attr):
         self.logger.debug("triggering datachange for handle %s, nodeid %s, and attribute %s", handle, nodeid, attr)
-        variant = self.aspace.get_attribute_value(nodeid, attr)
-        self.datachange_callback(handle, variant)
+        dv = self.aspace.get_attribute_value(nodeid, attr)
+        self.datachange_callback(handle, dv)
 
     def _modify_monitored_item(self, params: ua.MonitoredItemModifyRequest):
         for mdata in self._monitored_items.values():
@@ -94,7 +94,6 @@ class MonitoredItemService:
     def _commit_monitored_item(self, result, mdata: MonitoredItemData):
         if result.StatusCode.is_good():
             self._monitored_items[result.MonitoredItemId] = mdata
-            self._monitored_item_counter += 1
 
     def _make_monitored_item_common(self, params):
         result = ua.MonitoredItemCreateResult()

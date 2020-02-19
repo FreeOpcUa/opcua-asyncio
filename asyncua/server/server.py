@@ -271,7 +271,7 @@ class Server:
 
             E.g. to limit the number of IDs and disable anonymous clients:
 
-                set_security_policy(["Basic256Sha256"])
+                set_security_IDs(["Basic256Sha256"])
 
         (Implementation for ID check is currently not finalized...)
         """
