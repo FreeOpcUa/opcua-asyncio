@@ -695,7 +695,7 @@ async def _uahistoryread():
             for ev in evs:
                 print(ev)
         else:
-            print_history(node.read_raw_history(starttime, endtime, numvalues=args.limit))
+            print_history(await node.read_raw_history(starttime, endtime, numvalues=args.limit))
     finally:
         await client.disconnect()
     sys.exit(0)
