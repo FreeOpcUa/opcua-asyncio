@@ -260,9 +260,9 @@ class SecureConnection:
         Validates the symmetric header of the message chunk and revolves the
         security token if needed.
         """
-        assert isinstance(
-            securityHeader, ua.SymmetricAlgorithmHeader
-        ), "Expected SymAlgHeader, got: {0}".format(securityHeader)
+        assert isinstance(securityHeader, ua.SymmetricAlgorithmHeader), "Expected SymAlgHeader, got: {0}".format(
+            securityHeader
+        )
 
         if securityHeader.TokenId == self.security_token.TokenId:
             return
@@ -292,9 +292,7 @@ class SecureConnection:
         if self._allow_prev_token:
             expected_tokens.insert(0, self.prev_security_token.TokenId)
         raise ua.UaError(
-            "Invalid security token id {}, expected one of: {}".format(
-                securityHeader.TokenId, expected_tokens
-            )
+            "Invalid security token id {}, expected one of: {}".format(securityHeader.TokenId, expected_tokens)
         )
 
     def _check_incoming_chunk(self, chunk):
