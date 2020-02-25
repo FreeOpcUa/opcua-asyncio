@@ -223,7 +223,7 @@ class SecureConnection:
         if self.security_policy.URI != uri or (mode is not None and self.security_policy.Mode != mode):
             raise ua.UaError("No matching policy: {0}, {1}".format(uri, mode))
 
-    def revolve_tokens( self ):
+    def revolve_tokens(self):
         """
         Revolve security tokens of the security channel. Start using the
         next security token negotiated during the renewal of the channel and
@@ -233,6 +233,7 @@ class SecureConnection:
         self.security_token = self.next_security_token
         self.next_security_token = ua.ChannelSecurityToken()
         self.security_policy.make_local_symmetric_key(self.remote_nonce, self.local_nonce)
+        self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce)
 
     def message_to_binary(self, message, message_type=ua.MessageType.SecureMessage, request_id=0):
         """
@@ -259,28 +260,38 @@ class SecureConnection:
         Validates the symmetric header of the message chunk and revolves the
         security token if needed.
         """
-        assert isinstance(securityHeader, ua.SymmetricAlgorithmHeader), "Expected SymAlgHeader, got: {0}".format(securityHeader)
-        if securityHeader.TokenId != self.security_token.TokenId:
-            if securityHeader.TokenId != self.next_security_token.TokenId:
-                if self._allow_prev_token and \
-                   securityHeader.TokenId == self.prev_security_token.TokenId:
-                    timeout = self.prev_security_token.CreatedAt + timedelta(milliseconds=self.prev_security_token.RevisedLifetime * 1.25 )
-                    if timeout < datetime.utcnow():
-                        raise ua.UaError("Security token id {} has timed out ({} < {})"
-                                         .format(securityHeader.TokenId, timeout, datetime.utcnow()))
-                    else:
-                        return
-                raise ua.UaError("Invalid security token id {}, expected {} or {}"
-                                 .format(securityHeader.TokenId,
-                                         self.security_token.TokenId,
-                                         self.next_security_token.TokenId))
+        assert isinstance(
+            securityHeader, ua.SymmetricAlgorithmHeader
+        ), "Expected SymAlgHeader, got: {0}".format(securityHeader)
+
+        if securityHeader.TokenId == self.security_token.TokenId:
+            return
+
+        if securityHeader.TokenId == self.next_security_token.TokenId:
+            self.revolve_tokens()
+            return
+
+        if self._allow_prev_token and securityHeader.TokenId == self.prev_security_token.TokenId:
+            timeout = self.prev_security_token.CreatedAt + timedelta(
+                milliseconds=self.prev_security_token.RevisedLifetime * 1.25
+            )
+            if timeout < datetime.utcnow():
+                raise ua.UaError(
+                    "Security token id {} has timed out ({} < {})".format(
+                        securityHeader.TokenId, timeout, datetime.utcnow()
+                    )
+                )
             else:
-                self.revolve_tokens()
-                self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce)
-                self.prev_security_token = ua.ChannelSecurityToken()
-        if self.prev_security_token.TokenId != 0:
-            self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce)
-            self.prev_security_token = ua.ChannelSecurityToken()
+                return
+
+        expected_tokens = [securityHeader.TokenId, self.security_token.TokenId]
+        if self._allow_prev_token:
+            expected_tokens.append(self.prev_security_token.TokenId)
+        raise ua.UaError(
+            "Invalid security token id {}, expected one of: {}".format(
+                securityHeader.TokenId, expected_tokens
+            )
+        )
 
     def _check_incoming_chunk(self, chunk):
         if not isinstance(chunk, MessageChunk):
