@@ -233,7 +233,6 @@ class SecureConnection:
         self.security_token = self.next_security_token
         self.next_security_token = ua.ChannelSecurityToken()
         self.security_policy.make_local_symmetric_key(self.remote_nonce, self.local_nonce)
-        self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce)
 
     def message_to_binary(self, message, message_type=ua.MessageType.SecureMessage, request_id=0):
         """
@@ -269,9 +268,14 @@ class SecureConnection:
 
         if securityHeader.TokenId == self.next_security_token.TokenId:
             self.revolve_tokens()
+            self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce)
             return
 
         if self._allow_prev_token and securityHeader.TokenId == self.prev_security_token.TokenId:
+            # From spec, part 4, section 5.5.2.1: Clients should accept Messages secured by an
+            # expired SecurityToken for up to 25 % of the token lifetime. This should ensure that
+            # Messages sent by the Server before the token expired are not rejected because of
+            # network delays.
             timeout = self.prev_security_token.CreatedAt + timedelta(
                 milliseconds=self.prev_security_token.RevisedLifetime * 1.25
             )
@@ -284,9 +288,9 @@ class SecureConnection:
             else:
                 return
 
-        expected_tokens = [securityHeader.TokenId, self.security_token.TokenId]
+        expected_tokens = [self.security_token.TokenId, self.next_security_token.TokenId]
         if self._allow_prev_token:
-            expected_tokens.append(self.prev_security_token.TokenId)
+            expected_tokens.insert(0, self.prev_security_token.TokenId)
         raise ua.UaError(
             "Invalid security token id {}, expected one of: {}".format(
                 securityHeader.TokenId, expected_tokens
