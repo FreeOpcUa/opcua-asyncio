@@ -21,16 +21,21 @@ uri_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num1)
 uri_no_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num2)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 EXAMPLE_PATH = os.path.join(BASE_DIR, "examples") + os.sep
+srv_crypto_params = [(f"{EXAMPLE_PATH}private-key-example.pem",
+                      f"{EXAMPLE_PATH}certificate-example.der"),
+                     (f"{EXAMPLE_PATH}private-key-3072-example.pem",
+                      f"{EXAMPLE_PATH}certificate-3072-example.der")]
 
 
-@pytest.fixture()
-async def srv_crypto():
+@pytest.fixture(params=srv_crypto_params)
+async def srv_crypto(request):
     # start our own server
     srv = Server()
+    key, cert = request.param
     await srv.init()
     srv.set_endpoint(uri_crypto)
-    await srv.load_certificate(f"{EXAMPLE_PATH}certificate-example.der")
-    await srv.load_private_key(f"{EXAMPLE_PATH}private-key-example.pem")
+    await srv.load_certificate(cert)
+    await srv.load_private_key(key)
     await srv.start()
     yield srv
     # stop the server
