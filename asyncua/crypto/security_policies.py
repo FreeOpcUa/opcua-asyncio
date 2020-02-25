@@ -1,4 +1,5 @@
 import logging
+import struct
 
 from abc import ABCMeta, abstractmethod
 from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError
@@ -133,10 +134,14 @@ class Cryptography(CryptographyNone):
         if not self.is_encrypted:
             return b''
         block_size = self.Encryptor.plain_block_size()
-        rem = (size + self.signature_size() + 1) % block_size
+        extrapad_size = 2 if self.Encryptor.encrypted_block_size() > 256 else 1
+        rem = (size + self.signature_size() + extrapad_size) % block_size
         if rem != 0:
             rem = block_size - rem
-        return bytes(bytearray([rem])) * (rem + 1)
+        data = bytes(bytearray([rem%256])) * (rem + 1)
+        if self.Encryptor.encrypted_block_size() > 256:
+            data = data + bytes(bytearray([rem>>8]))
+        return data
 
     def min_padding_size(self):
         if self.is_encrypted:
@@ -169,7 +174,10 @@ class Cryptography(CryptographyNone):
 
     def remove_padding(self, data):
         if self.is_encrypted:
-            pad_size = bytearray(data[-1:])[0] + 1
+            if self.Decryptor.encrypted_block_size() > 256:
+                pad_size = struct.unpack('<h', data[-2:])[0] + 2
+            else:
+                pad_size = bytearray(data[-1:])[0] + 1
             return data[:-pad_size]
         return data
 
