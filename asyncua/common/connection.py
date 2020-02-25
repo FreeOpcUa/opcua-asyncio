@@ -233,6 +233,7 @@ class SecureConnection:
         self.security_token = self.next_security_token
         self.next_security_token = ua.ChannelSecurityToken()
         self.security_policy.make_local_symmetric_key(self.remote_nonce, self.local_nonce)
+        self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce)
 
     def message_to_binary(self, message, message_type=ua.MessageType.SecureMessage, request_id=0):
         """
@@ -268,7 +269,6 @@ class SecureConnection:
 
         if securityHeader.TokenId == self.next_security_token.TokenId:
             self.revolve_tokens()
-            self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce)
             return
 
         if self._allow_prev_token and securityHeader.TokenId == self.prev_security_token.TokenId:
