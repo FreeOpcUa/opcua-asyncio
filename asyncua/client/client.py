@@ -15,6 +15,7 @@ from ..common.structures import load_type_definitions, load_enums
 from ..common.utils import create_nonce
 from ..common.ua_utils import value_to_datavalue
 from ..crypto import uacrypto, security_policies
+from ..ua import ServerState
 
 _logger = logging.getLogger(__name__)
 
@@ -242,6 +243,20 @@ class Client:
 
     def disconnect_socket(self):
         self.uaclient.disconnect_socket()
+
+    async def is_server_running(self):
+        """
+        High level method to know if the connection is still Good
+        Access Server state and evaluates ServerState node.
+        Raises:
+            ua.UaError: OPCUA server is not running
+        """
+        server_state_node = self.get_node(ua.FourByteNodeId(ua.ObjectIds.Server_ServerStatus_State))
+        server_state = await server_state_node.get_value()
+        if server_state == ServerState.Running:
+            return True
+
+        raise ua.UaError("Server is not running. Server state: {0}".format(ServerState(server_state).name))
 
     async def send_hello(self):
         """
