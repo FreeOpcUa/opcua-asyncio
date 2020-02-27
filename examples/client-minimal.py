@@ -12,6 +12,9 @@ async def main():
     url = 'opc.tcp://localhost:4840/freeopcua/server/'
     # url = 'opc.tcp://commsvr.com:51234/UA/CAS_UA_Server'
     async with Client(url=url) as client:
+        if not await client.is_connected():
+            _logger.error("Connection drops")
+
         # Client has a few methods to get proxy to UA nodes that should always be in address space such as Root or Objects
         root = client.get_root_node()
         _logger.info('Objects node is: %r', root)

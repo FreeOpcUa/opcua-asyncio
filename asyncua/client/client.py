@@ -4,16 +4,16 @@ from typing import Union, Coroutine
 from urllib.parse import urlparse
 
 from asyncua import ua
-from .ua_client import UaClient
-from ..common.xmlimporter import XmlImporter
-from ..common.xmlexporter import XmlExporter
-from ..common.node import Node
+from .ua_client import UaClient, UASocketProtocol
 from ..common.manage_nodes import delete_nodes
-from ..common.subscription import Subscription
+from ..common.node import Node
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
-from ..common.utils import create_nonce
+from ..common.subscription import Subscription
 from ..common.ua_utils import value_to_datavalue
+from ..common.utils import create_nonce
+from ..common.xmlexporter import XmlExporter
+from ..common.xmlimporter import XmlImporter
 from ..crypto import uacrypto, security_policies
 
 _logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ class Client:
     use UaClient object, available as self.uaclient
     which offers the raw OPC-UA services interface.
     """
+
     def __init__(self, url: str, timeout: int = 4, loop=None):
         """
         :param url: url of the server.
@@ -86,7 +87,8 @@ class Client:
         """
         _logger.info("find_endpoint %r %r %r", endpoints, security_mode, policy_uri)
         for ep in endpoints:
-            if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and ep.SecurityPolicyUri == policy_uri):
+            if (ep.EndpointUrl.startswith(
+                    ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and ep.SecurityPolicyUri == policy_uri):
                 return ep
         raise ua.UaError("No matching endpoints: {0}, {1}".format(security_mode, policy_uri))
 
@@ -266,7 +268,8 @@ class Client:
         params.ClientNonce = create_nonce(self.security_policy.symmetric_key_size)
         result = await self.uaclient.open_secure_channel(params)
         if self.secure_channel_timeout != result.SecurityToken.RevisedLifetime:
-            _logger.info("Requested secure channel timeout to be %dms, got %dms instead", self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
+            _logger.info("Requested secure channel timeout to be %dms, got %dms instead", self.secure_channel_timeout,
+                         result.SecurityToken.RevisedLifetime)
             self.secure_channel_timeout = result.SecurityToken.RevisedLifetime
 
     async def close_secure_channel(self):
@@ -353,7 +356,8 @@ class Client:
         self._policy_ids = ep.UserIdentityTokens
         #  Actual maximum number of milliseconds that a Session shall remain open without activity
         if self.session_timeout != response.RevisedSessionTimeout:
-            _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
+            _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout,
+                            response.RevisedSessionTimeout)
             self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = self.loop.create_task(self._renew_channel_loop())
         return response
@@ -619,6 +623,12 @@ class Client:
         results = await self.uaclient.set_attributes(nodeids, dvs, ua.AttributeIds.Value)
         for result in results:
             result.check()
+
+    async def is_connected(self):
+        """
+        Get OPC-UA client connection status.
+        """
+        return self.uaclient.protocol.state == UASocketProtocol.OPEN
 
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
