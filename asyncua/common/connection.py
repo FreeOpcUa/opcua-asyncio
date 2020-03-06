@@ -62,7 +62,6 @@ class MessageChunk(ua.FrozenClass):
         size = plain_size + self.security_policy.signature_size()
         pbs = self.security_policy.plain_block_size()
         if size % pbs != 0:
-            print("ENC", plain_size, size, pbs)
             raise ua.UaError("Encryption error")
         return size // pbs * self.security_policy.encrypted_block_size()
 
