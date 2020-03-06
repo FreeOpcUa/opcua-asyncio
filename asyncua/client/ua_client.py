@@ -129,12 +129,13 @@ class UASocketProtocol(asyncio.Protocol):
         self.transport.write(msg)
         return future
 
-    async def send_request(self, request, timeout=10, message_type=ua.MessageType.SecureMessage):
+    async def send_request(self, request, timeout=None, message_type=ua.MessageType.SecureMessage):
         """
         Send a request to the server.
         Timeout is the timeout written in ua header.
         Returns response object if no callback is provided.
         """
+        timeout = self.timeout if timeout is None else timeout
         data = await asyncio.wait_for(
             self._send_request(request, timeout, message_type),
             timeout if timeout else None
