@@ -2,7 +2,6 @@
 sync API of asyncua
 """
 import asyncio
-from concurrent.futures import CancelledError
 from threading import Thread, Condition
 import logging
 
@@ -115,12 +114,7 @@ class Client:
         pass
 
     def disconnect(self):
-        try:
-            self.tloop.post(self.aio_obj.disconnect())
-            # an exception is expected, if it is not raise log a warning
-            logger.warning("Disconnect did not raise expected CancelledError.")
-        except CancelledError:
-            pass
+        self.tloop.post(self.aio_obj.disconnect())
         if self.close_tloop:
             self.tloop.stop()
 
