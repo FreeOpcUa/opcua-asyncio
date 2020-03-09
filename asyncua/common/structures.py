@@ -263,7 +263,7 @@ async def load_type_definitions(server, nodes=None):
                 generator.set_typeid(name, nodeid.to_string())
 
         for key, val in structs_dict.items():
-            if isinstance(val, EnumMeta) and key is not "IntEnum":
+            if isinstance(val, EnumMeta) and key != "IntEnum":
                 setattr(ua, key, val)
 
     return generators, structs_dict
