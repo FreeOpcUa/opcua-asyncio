@@ -7,7 +7,7 @@ pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 setup(
     name="asyncua",
-    version="0.8.1",
+    version="0.8.2",
     description="Pure Python OPC-UA client and server library",
     author="Olivier Roulet-Dubonnet",
     author_email="olivier.roulet@gmail.com",
