@@ -285,6 +285,7 @@ class UaClient:
 
     async def create_session(self, parameters):
         self.logger.info("create_session")
+        self.protocol.disconnecting = False
         request = ua.CreateSessionRequest()
         request.Parameters = parameters
         data = await self.protocol.send_request(request)
@@ -306,6 +307,7 @@ class UaClient:
 
     async def close_session(self, delete_subscriptions):
         self.logger.info("close_session")
+        self.protocol.disconnecting = True
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
