@@ -211,6 +211,7 @@ class Client:
         Connect, create and activate session
         """
         _logger.info("connect")
+        self.uaclient.protocol.disconnecting = False
         await self.connect_socket()
         try:
             await self.send_hello()
@@ -228,6 +229,7 @@ class Client:
         Close session, secure channel and socket
         """
         _logger.info("disconnect")
+        self.uaclient.protocol.disconnecting = True
         try:
             await self.close_session()
             await self.close_secure_channel()
