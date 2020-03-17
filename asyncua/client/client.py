@@ -439,10 +439,16 @@ class Client:
         params.UserIdentityToken.CertificateData = uacrypto.der_from_x509(certificate)
         # specs part 4, 5.6.3.1: the data to sign is created by appending
         # the last serverNonce to the serverCertificate
-        sig = uacrypto.sign_sha1(self.user_private_key, challenge)
         params.UserTokenSignature = ua.SignatureData()
-        params.UserTokenSignature.Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
-        params.UserTokenSignature.Signature = sig
+        # use signature algorithm that was used for certificate generation
+        if certificate.signature_hash_algorithm.name == "sha256":
+            sig = uacrypto.sign_sha256(self.user_private_key, challenge)
+            params.UserTokenSignature.Algorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+            params.UserTokenSignature.Signature = sig
+        else:
+            sig = uacrypto.sign_sha1(self.user_private_key, challenge)
+            params.UserTokenSignature.Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
+            params.UserTokenSignature.Signature = sig
 
     def _add_user_auth(self, params, username: str, password: str):
         params.UserIdentityToken = ua.UserNameIdentityToken()
