@@ -38,7 +38,7 @@ class UASocketProtocol(asyncio.Protocol):
         self._callbackmap: Dict[int, asyncio.Future] = {}
         self._connection = SecureConnection(security_policy)
         self.state = self.INITIALIZED
-        self.disconnecting: bool = False
+        self.closed: bool = False
 
     def connection_made(self, transport: asyncio.Transport):
         self.state = self.OPEN
@@ -162,7 +162,7 @@ class UASocketProtocol(asyncio.Protocol):
                 f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}"
             )
         except asyncio.InvalidStateError:
-            if not self.disconnecting:
+            if not self.closed:
                 raise ua.UaError(f"Future for request id {request_id} is already done")
             self.logger.debug("Future for request id %s not handled due to disconnect", request_id)
         del self._callbackmap[request_id]
@@ -285,7 +285,7 @@ class UaClient:
 
     async def create_session(self, parameters):
         self.logger.info("create_session")
-        self.protocol.disconnecting = False
+        self.protocol.closed = False
         request = ua.CreateSessionRequest()
         request.Parameters = parameters
         data = await self.protocol.send_request(request)
@@ -307,7 +307,7 @@ class UaClient:
 
     async def close_session(self, delete_subscriptions):
         self.logger.info("close_session")
-        self.protocol.disconnecting = True
+        self.protocol.closed = True
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
