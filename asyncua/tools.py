@@ -447,7 +447,7 @@ def cert_to_string(der):
     if not der:
         return '[no certificate]'
     try:
-        from ..crypto import uacrypto
+        from .crypto import uacrypto
     except ImportError:
         return "{0} bytes".format(len(der))
     cert = uacrypto.x509_from_der(der)
