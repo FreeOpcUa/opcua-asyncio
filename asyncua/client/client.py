@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Union, Coroutine
+from typing import Union, Coroutine, Optional
 from urllib.parse import urlparse
 
 from asyncua import ua
@@ -479,12 +479,15 @@ class Client:
         data, uri = security_policies.encrypt_asymmetric(pubkey, etoken, policy_uri)
         return data, uri
 
-    async def close_session(self) -> Coroutine:
+    async def close_session(self) -> Optional[Coroutine]:
         """
         Close session
         """
         self._renew_channel_task.cancel()
         await self._renew_channel_task
+        if not self.uaclient.protocol or self.uaclient.protocol.closed:
+            _logger.info("close_session was called, but session is closed already")
+            return None
         return await self.uaclient.close_session(True)
 
     def get_root_node(self):
