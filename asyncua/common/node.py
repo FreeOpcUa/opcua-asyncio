@@ -253,16 +253,18 @@ class Node:
         """
         return self.set_writable(False)
 
-    async def write_attribute(self, attributeid, datavalue):
+    async def write_attribute(self, attributeid, datavalue, indexrange=None):
         """
         Set an attribute of a node
         attributeid is a member of ua.AttributeIds
         datavalue is a ua.DataValue object
+        indexrange is a NumericRange (a string)
         """
         attr = ua.WriteValue()
         attr.NodeId = self.nodeid
         attr.AttributeId = attributeid
         attr.Value = datavalue
+        attr.IndexRange = indexrange
         params = ua.WriteParameters()
         params.NodesToWrite = [attr]
         result = await self.server.write(params)
