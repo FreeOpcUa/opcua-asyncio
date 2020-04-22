@@ -13,6 +13,7 @@ def _to_val(objs, attr, val):
     from asyncua import ua
     cls = getattr(ua, objs[0])
     for o in objs[1:]:
+        print(o, cls)
         cls = getattr(ua, _get_uatype_name(cls, o))
     if cls == ua.NodeId:
         return "NodeId.from_string('val')"
@@ -335,10 +336,13 @@ def save_aspace_to_disk():
 
 async def main():
     logging.basicConfig(level=logging.WARN)
-    for i in (3, 4, 5, 8, 9, 10, 11, 13):
-        xml_path = f'Opc.Ua.NodeSet2.Part{i}.xml'
-        py_path = f'../asyncua/server/standard_address_space/standard_address_space_part{i}.py'
-        await CodeGenerator(xml_path, py_path).run()
+    #for i in (3, 4, 5, 8, 9, 10, 11, 13):
+        #xml_path = f'Opc.Ua.NodeSet2.Part{i}.xml'
+        #py_path = f'../asyncua/server/standard_address_space/standard_address_space_part{i}.py'
+        #await CodeGenerator(xml_path, py_path).run()
+    xml_path = f'Opc.Ua.NodeSet2.xml'
+    py_path = f'../asyncua/server/standard_address_space/standard_address_space_all.py'
+    await CodeGenerator(xml_path, py_path).run()
     save_aspace_to_disk()
 
 
