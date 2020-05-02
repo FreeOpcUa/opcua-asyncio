@@ -155,6 +155,11 @@ class ViewService(object):
     def _translate_browsepath_to_nodeid(self, path):
         #self.logger.debug("looking at path: %s", path)
         res = ua.BrowsePathResult()
+        if not path.RelativePath.Elements[-1].TargetName:
+            # OPC UA Part 4: Services, 5.8.4 TranslateBrowsePathsToNodeIds
+            # it's unclear if this the check should also handle empty strings
+            res.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameInvalid)
+            return res
         if path.StartingNode not in self._aspace:
             res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdInvalid)
             return res
@@ -174,9 +179,16 @@ class ViewService(object):
     def _find_element_in_node(self, el, nodeid):
         nodedata = self._aspace[nodeid]
         for ref in nodedata.references:
-            # FIXME: here we should check other arguments!!
-            if ref.BrowseName == el.TargetName:
-                return ref.NodeId
+            if ref.BrowseName != el.TargetName:
+                continue
+            if ref.IsForward == el.IsInverse:
+                continue
+            if not el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
+                continue
+            elif el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
+                if ref.ReferenceTypeId not in self._get_sub_ref(el.ReferenceTypeId):
+                    continue
+            return ref.NodeId
         self.logger.info("element %s was not found in node %s", el, nodeid)
         return None
 
