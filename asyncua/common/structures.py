@@ -76,7 +76,7 @@ class EnumeratedValue(object):
 
 class Struct(object):
     def __init__(self, name):
-        self.name = name
+        self.name = _clean_name(name)
         self.fields = []
         self.typeid = None
 
