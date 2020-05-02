@@ -177,7 +177,7 @@ class StructGenerator(object):
             self.model.append(struct)
 
     def save_to_file(self, path, register=False):
-        _file = open(path, "wt")
+        _file = open(path, "w+")
         self._make_header(_file)
         for struct in self.model:
             _file.write(struct.get_code())

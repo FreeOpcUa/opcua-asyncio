@@ -293,7 +293,10 @@ class NodeId(object):
         self._freeze = True
         if self.Identifier is None:
             self.Identifier = 0
-            self.NodeIdType = NodeIdType.TwoByte
+            if namespaceidx == 0:
+                self.NodeIdType = NodeIdType.TwoByte
+            else:  # TwoByte NodeId does not encode namespace.
+                self.NodeIdType = NodeIdType.Numeric
             return
         if self.NodeIdType is None:
             if isinstance(self.Identifier, int):
@@ -331,7 +334,7 @@ class NodeId(object):
     def has_null_identifier(self):
         if not self.Identifier:
             return True
-        if self.NodeIdType == NodeIdType.Guid and re.match(b'0.', self.Identifier):
+        if self.NodeIdType == NodeIdType.Guid and re.match(b'\00+', self.Identifier.bytes):
             return True
         return False
 
@@ -565,7 +568,7 @@ class LocalizedText(FrozenClass):
         if m:
             text = m.group(3) if m.group(3)!=str(None) else None
             locale = m.group(2) if m.group(2)!=str(None) else None
-            return LocalizedText(text=text,locale=locale)            
+            return LocalizedText(text=text,locale=locale)
         else:
             return LocalizedText(string)
 
