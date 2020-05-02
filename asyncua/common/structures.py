@@ -233,7 +233,6 @@ async def load_type_definitions(server, nodes=None):
     generators = []
     for node in nodes:
         xml = await node.read_value()
-        xml = xml.decode("utf-8")
         generator = StructGenerator()
         generators.append(generator)
         generator.make_model_from_string(xml)
