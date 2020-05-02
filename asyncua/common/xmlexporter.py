@@ -227,7 +227,7 @@ class XmlExporter:
             dtype_name = o_ids.ObjectIdNames[dtype.Identifier]
             self.aliases[dtype] = dtype_name
         else:
-            dtype_name = dtype.to_string()
+            dtype_name = self._node_to_string(dtype)
         rank = await node.read_value_rank()
         if rank != -1:
             el.attrib["ValueRank"] = str(int(rank))
