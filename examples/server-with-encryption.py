@@ -1,20 +1,23 @@
 import asyncio
 import sys
-import time
 import logging
 sys.path.insert(0, "..")
-
-from asyncua import ua
+from asyncua.crypto.certificate_handler import CertificateHandler
 from asyncua import Server
+from asyncua import ua
 
 logging.basicConfig(level=logging.INFO)
 
 
 async def main():
     server = Server()
+    cert_handler = CertificateHandler()
     await server.init()
+    await cert_handler.trust_certificate("certificate-example.der")
+
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
-    server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt])
+    server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
+                               certificate_handler=cert_handler)
     # load server certificate and private key. This enables endpoints
     # with signing and encryption.
     await server.load_certificate("my_cert.der")

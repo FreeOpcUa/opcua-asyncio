@@ -330,7 +330,7 @@ class Client:
         # at least 32 random bytes for server to prove possession of private key (specs part 4, 5.6.2.2)
         nonce = create_nonce(32)
         params.ClientNonce = nonce
-        params.ClientCertificate = self.security_policy.client_certificate
+        params.ClientCertificate = self.security_policy.host_certificate
         params.ClientDescription = desc
         params.EndpointUrl = self.server_url.geturl()
         params.SessionName = f"{self.description} Session{self._session_counter}"
@@ -338,15 +338,15 @@ class Client:
         params.RequestedSessionTimeout = self.session_timeout
         params.MaxResponseMessageSize = 0  # means no max size
         response = await self.uaclient.create_session(params)
-        if self.security_policy.client_certificate is None:
+        if self.security_policy.host_certificate is None:
             data = nonce
         else:
-            data = self.security_policy.client_certificate + nonce
+            data = self.security_policy.host_certificate + nonce
         self.security_policy.asymmetric_cryptography.verify(data, response.ServerSignature.Signature)
         self._server_nonce = response.ServerNonce
-        if not self.security_policy.server_certificate:
-            self.security_policy.server_certificate = response.ServerCertificate
-        elif self.security_policy.server_certificate != response.ServerCertificate:
+        if not self.security_policy.peer_certificate:
+            self.security_policy.peer_certificate = response.ServerCertificate
+        elif self.security_policy.peer_certificate != response.ServerCertificate:
             raise ua.UaError("Server certificate mismatch")
         # remember PolicyId's: we will use them in activate_session()
         ep = Client.find_endpoint(response.ServerEndpoints, self.security_policy.Mode, self.security_policy.URI)
@@ -409,8 +409,8 @@ class Client:
         """
         params = ua.ActivateSessionParameters()
         challenge = b""
-        if self.security_policy.server_certificate is not None:
-            challenge += self.security_policy.server_certificate
+        if self.security_policy.peer_certificate is not None:
+            challenge += self.security_policy.peer_certificate
         if self._server_nonce is not None:
             challenge += self._server_nonce
         if self.security_policy.AsymmetricSignatureURI:
@@ -469,7 +469,7 @@ class Client:
         params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.UserName, "username_basic256")
 
     def _encrypt_password(self, password: str, policy_uri):
-        pubkey = uacrypto.x509_from_der(self.security_policy.server_certificate).public_key()
+        pubkey = uacrypto.x509_from_der(self.security_policy.peer_certificate).public_key()
         # see specs part 4, 7.36.3: if the token is encrypted, password
         # shall be converted to UTF-8 and serialized with server nonce
         passwd = password.encode("utf8")
