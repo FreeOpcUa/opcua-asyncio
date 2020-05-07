@@ -9,19 +9,6 @@ from asyncua import ua
 
 pytestmark = pytest.mark.asyncio
 
-
-class SubHandler:
-    """
-    Dummy subscription client
-    """
-
-    def datachange_notification(self, node, val, data):
-        pass
-
-    def event_notification(self, event):
-        pass
-
-
 class MySubHandler:
     """
     More advanced subscription client using Future, so we can await events in tests.
@@ -51,8 +38,8 @@ class MySubHandler2:
         self.limit = limit
         self._done = asyncio.Event()
 
-    def done(self):
-        return wait_for(self._done.wait(), 2)
+    async def done(self):
+        return await wait_for(self._done.wait(), 2)
 
     def check_done(self):
         if self.limit and len(self.results) == self.limit and not self._done.is_set():
@@ -79,6 +66,14 @@ class MySubHandlerCounter:
         self.event_count += 1
 
 
+class MySubHandlerCounterAsync(MySubHandlerCounter):
+    async def datachange_notification(self, node, val, data):
+        self.datachange_count += 1
+
+    async def event_notification(self, event):
+        self.event_count += 1
+
+
 async def test_subscription_failure(opc):
     myhandler = MySubHandler()
     o = opc.opc.get_objects_node()
@@ -89,9 +84,10 @@ async def test_subscription_failure(opc):
     await sub.delete()
 
 
-async def test_subscription_overload(opc):
+@pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
+async def test_subscription_overload(opc, handler_class):
     nb = 10
-    myhandler = MySubHandlerCounter()
+    myhandler = handler_class()
     o = opc.opc.get_objects_node()
     sub = await opc.opc.create_subscription(1, myhandler)
     variables = []
@@ -119,8 +115,9 @@ async def test_subscription_overload(opc):
     # assert myhandler.event_count == 0
 
 
-async def test_subscription_count(opc):
-    myhandler = MySubHandlerCounter()
+@pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
+async def test_subscription_count(opc, handler_class):
+    myhandler = handler_class()
     sub = await opc.opc.create_subscription(1, myhandler)
     o = opc.opc.get_objects_node()
     var = await o.add_variable(3, 'SubVarCounter', 0.1)
@@ -134,8 +131,9 @@ async def test_subscription_count(opc):
     await sub.delete()
 
 
-async def test_subscription_count_list(opc):
-    myhandler = MySubHandlerCounter()
+@pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
+async def test_subscription_count_list(opc, handler_class):
+    myhandler = handler_class()
     sub = await opc.opc.create_subscription(1, myhandler)
     o = opc.opc.get_objects_node()
     var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2])
@@ -152,8 +150,9 @@ async def test_subscription_count_list(opc):
     await sub.delete()
 
 
-async def test_subscription_count_no_change(opc):
-    myhandler = MySubHandlerCounter()
+@pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
+async def test_subscription_count_no_change(opc, handler_class):
+    myhandler = handler_class()
     sub = await opc.opc.create_subscription(1, myhandler)
     o = opc.opc.get_objects_node()
     var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2])
@@ -167,8 +166,9 @@ async def test_subscription_count_no_change(opc):
     await sub.delete()
 
 
-async def test_subscription_count_empty(opc):
-    myhandler = MySubHandlerCounter()
+@pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
+async def test_subscription_count_empty(opc, handler_class):
+    myhandler = handler_class()
     sub = await opc.opc.create_subscription(1, myhandler)
     o = opc.opc.get_objects_node()
     var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2, 0.3])

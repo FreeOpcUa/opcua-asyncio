@@ -110,7 +110,10 @@ class InternalSubscription:
             # The callback can be:
             #    Subscription.publish_callback -> server internal subscription
             #    UaProcessor.forward_publish_response -> client subscription
-            self.pub_result_callback(result)
+            if asyncio.iscoroutinefunction(self.pub_result_callback):
+                asyncio.create_task(self.pub_result_callback(result))
+            else:
+                self.loop.call_soon(self.pub_result_callback, result)
 
     def _pop_publish_result(self) -> ua.PublishResult:
         """
