@@ -416,7 +416,7 @@ class Server:
         await subscription.init()
         return subscription
 
-    async def get_namespace_array(self) -> Coroutine:
+    async def get_namespace_array(self):
         """
         get all namespace defined in server
         """

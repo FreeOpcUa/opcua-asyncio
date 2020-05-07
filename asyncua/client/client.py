@@ -528,7 +528,7 @@ class Client:
         await subscription.init()
         return subscription
 
-    async def get_namespace_array(self) -> Coroutine:
+    async def get_namespace_array(self):
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
         return await ns_node.read_value()
 
