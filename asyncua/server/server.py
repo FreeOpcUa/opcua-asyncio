@@ -298,7 +298,6 @@ class Server:
                     "Creating an open endpoint to the server, although encrypted endpoints are enabled.")
 
             if ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt in self._security_policy:
-                print('happening')
                 self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256,
                                     ua.MessageSecurityMode.SignAndEncrypt)
                 self._policies.append(
