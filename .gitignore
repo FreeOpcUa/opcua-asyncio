@@ -22,3 +22,4 @@ examples/history.db
 /.project
 /.pydevproject
 /.settings/
+/venv/

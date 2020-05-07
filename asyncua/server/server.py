@@ -416,12 +416,12 @@ class Server:
         await subscription.init()
         return subscription
 
-    def get_namespace_array(self) -> Coroutine:
+    async def get_namespace_array(self):
         """
         get all namespace defined in server
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        return ns_node.read_value()
+        return await ns_node.read_value()
 
     async def register_namespace(self, uri) -> int:
         """
