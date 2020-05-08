@@ -33,7 +33,4 @@ async def main():
         # var.write_value(3.9) # set node value using implicit data type
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.set_debug(True)
-    loop.run_until_complete(main())
-    loop.close()
+    asyncio.run(main())
