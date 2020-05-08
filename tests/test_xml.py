@@ -42,7 +42,7 @@ async def test_xml_import(opc):
     # Check if InputArgs are imported and can be read
     node_path = ["Types", "ObjectTypes", "BaseObjectType", "1:MyObjectType", "1:MyMethod", "InputArguments"]
     o = await opc.opc.get_root_node().get_child(node_path)
-    input_arg = (await o.get_data_value()).Value.Value[0]
+    input_arg = (await o.write_data_value()).Value.Value[0]
     assert "Context" == input_arg.Name
 
 
@@ -105,18 +105,18 @@ async def test_xml_vars(opc, tmpdir):
     await opc.opc.delete_nodes(nodes)
     await opc.opc.import_xml(tmp_path)
     assert 6.78 == await v.read_value()
-    assert ua.NodeId(ua.ObjectIds.Double) == await v.get_data_type()
-    assert ua.NodeId(ua.ObjectIds.UInt16) == await a.get_data_type()
+    assert ua.NodeId(ua.ObjectIds.Double) == await v.read_data_type()
+    assert ua.NodeId(ua.ObjectIds.UInt16) == await a.read_data_type()
     assert await a.read_value_rank() in (0, 1)
     assert [6, 1] == await a.read_value()
     assert [[1, 2], [3, 4]] == await a2.read_value()
-    assert ua.NodeId(ua.ObjectIds.UInt32) == await a2.get_data_type()
+    assert ua.NodeId(ua.ObjectIds.UInt32) == await a2.read_data_type()
     assert await a2.read_value_rank() in (0, 2)
-    assert [2, 2] == (await a2.get_attribute(ua.AttributeIds.ArrayDimensions)).Value.Value
+    assert [2, 2] == (await a2.read_attribute(ua.AttributeIds.ArrayDimensions)).Value.Value
     # assert a3.read_value(), [[]])  # would require special code ...
-    assert ua.NodeId(ua.ObjectIds.ByteString) == await a3.get_data_type()
+    assert ua.NodeId(ua.ObjectIds.ByteString) == await a3.read_data_type()
     assert await a3.read_value_rank() in (0, 2)
-    assert [1, 0] == (await a3.get_attribute(ua.AttributeIds.ArrayDimensions)).Value.Value
+    assert [1, 0] == (await a3.read_attribute(ua.AttributeIds.ArrayDimensions)).Value.Value
 
 
 async def test_xml_ns(opc, tmpdir):
@@ -152,9 +152,9 @@ async def test_xml_ns(opc, tmpdir):
     new_ns = await opc.opc.register_namespace("my_new_namespace")
     new_nodes = await opc.opc.import_xml(tmp_path)
     for i in [o, o50, o200]:
-        await i.get_browse_name()
+        await i.read_browse_name()
     with pytest.raises(uaerrors.BadNodeIdUnknown):
-        await onew.get_browse_name()
+        await onew.read_browse_name()
     # since my_new_namesspace2 is referenced byt a node it should have been reimported
     nss = await opc.opc.get_namespace_array()
     assert "bname_namespace" in nss
@@ -162,23 +162,23 @@ async def test_xml_ns(opc, tmpdir):
     new_ns = await opc.opc.register_namespace("my_new_namespace")
     bname_ns = await opc.opc.register_namespace("bname_namespace")
     onew.nodeid.NamespaceIndex = new_ns
-    await onew.get_browse_name()
+    await onew.read_browse_name()
     vnew2 = (await onew.get_children())[0]
     assert vnew2.nodeid.NamespaceIndex == new_ns
 
 
 async def test_xml_float(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlfloat", 5.67)
-    dtype = await o.get_data_type()
-    dv = await o.get_data_value()
+    dtype = await o.read_data_type()
+    dv = await o.write_data_value()
     tmp_path = tmpdir.join("tmp_test_export-float.xml").strpath
     await opc.opc.export_xml([o], tmp_path)
     await opc.opc.delete_nodes([o])
     new_nodes = await opc.opc.import_xml(tmp_path)
     o2 = opc.opc.get_node(new_nodes[0])
     assert o2 == o
-    assert await o2.get_data_type() == dtype
-    assert (await o2.get_data_value()).Value == dv.Value
+    assert await o2.read_data_type() == dtype
+    assert (await o2.write_data_value()).Value == dv.Value
 
 
 async def test_xml_bool(opc, tmpdir):
@@ -193,7 +193,7 @@ async def test_xml_string(opc, tmpdir):
 
 async def test_xml_string_with_null_description(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlstring", "mystring")
-    await o.set_attribute(ua.AttributeIds.Description, ua.DataValue(None))
+    await o.write_attribute(ua.AttributeIds.Description, ua.DataValue(None))
     o2 = await _test_xml_var_type(opc, tmpdir, o, "string")
     assert await o.get_description() == await o2.get_description()
 
@@ -201,7 +201,7 @@ async def test_xml_string_with_null_description(opc, tmpdir):
 async def test_xml_string_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlstringarray", ["mystring2", "mystring3"])
     node2 = await _test_xml_var_type(opc, tmpdir, o, "stringarray")
-    dv = await node2.get_data_value()
+    dv = await node2.write_data_value()
 
 
 async def test_xml_guid(opc, tmpdir):
@@ -373,36 +373,36 @@ async def test_xml_var_nillable(opc):
 
 
 async def _test_xml_var_type(opc, tmpdir, node: Node, typename: str, test_equality: bool = True):
-    dtype = await node.get_data_type()
-    dv = await node.get_data_value()
+    dtype = await node.read_data_type()
+    dv = await node.write_data_value()
     rank = await node.read_value_rank()
-    dim = await node.get_array_dimensions()
-    nclass = await node.get_node_class()
+    dim = await node.read_array_dimensions()
+    nclass = await node.read_node_class()
     tmp_path = tmpdir.join(f"tmp_test_export-{typename}.xml").strpath
     await opc.opc.export_xml([node], tmp_path)
     await opc.opc.delete_nodes([node])
     new_nodes = await opc.opc.import_xml(tmp_path)
     node2 = opc.opc.get_node(new_nodes[0])
     assert node == node
-    assert dtype == await node2.get_data_type()
+    assert dtype == await node2.read_data_type()
     if test_equality:
         print("DEBUG", node, dv, node2, await node2.read_value())
-        assert dv.Value == (await node2.get_data_value()).Value
+        assert dv.Value == (await node2.write_data_value()).Value
     assert rank == await node2.read_value_rank()
-    assert dim == await node2.get_array_dimensions()
-    assert nclass == await node2.get_node_class()
+    assert dim == await node2.read_array_dimensions()
+    assert nclass == await node2.read_node_class()
     return node2
 
 
 async def test_xml_byte(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "byte", 255, ua.VariantType.Byte)
-    dtype = await o.get_data_type()
-    dv = await o.get_data_value()
+    dtype = await o.read_data_type()
+    dv = await o.write_data_value()
     tmp_path = tmpdir.join("export-byte.xml").strpath
     await opc.opc.export_xml([o], tmp_path)
     await opc.opc.delete_nodes([o])
     new_nodes = await opc.opc.import_xml(tmp_path)
     o2 = opc.opc.get_node(new_nodes[0])
     assert o == o2
-    assert dtype == await o2.get_data_type()
-    assert dv.Value == (await o2.get_data_value()).Value
+    assert dtype == await o2.read_data_type()
+    assert dv.Value == (await o2.write_data_value()).Value

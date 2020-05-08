@@ -19,7 +19,7 @@ async def test_service_fault(server, admin_client):
 async def test_objects_anonymous(server, client):
     objects = client.get_objects_node()
     with pytest.raises(ua.UaStatusCodeError):
-        await objects.set_attribute(ua.AttributeIds.WriteMask, ua.DataValue(999))
+        await objects.write_attribute(ua.AttributeIds.WriteMask, ua.DataValue(999))
     with pytest.raises(ua.UaStatusCodeError):
         await objects.add_folder(3, 'MyFolder')
 

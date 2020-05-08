@@ -22,7 +22,7 @@ if __name__ == "__main__":
         results = client.delete_nodes([folder, var])
         try:
             #var.write_value(9.89) # just to check it does not work
-            var.get_browse_name()
+            var.read_browse_name()
         except ua.UaStatusCodeError:
             print("The variable has been removed OK")
 

@@ -160,7 +160,7 @@ async def test_delete_nodes_recursive2(opc):
     await opc.opc.delete_nodes([fold], recursive=True)
     for node in mynodes:
         with pytest.raises(ua.UaStatusCodeError):
-            await node.get_browse_name()
+            await node.read_browse_name()
 
 
 async def test_delete_references(opc):
@@ -218,20 +218,20 @@ async def test_delete_references(opc):
 
 async def test_server_node(opc):
     node = opc.opc.get_server_node()
-    assert ua.QualifiedName('Server', 0) == await node.get_browse_name()
+    assert ua.QualifiedName('Server', 0) == await node.read_browse_name()
 
 
 async def test_root(opc):
     root = opc.opc.get_root_node()
-    assert ua.QualifiedName('Root', 0) == await root.get_browse_name()
-    assert ua.LocalizedText('Root') == await root.get_display_name()
+    assert ua.QualifiedName('Root', 0) == await root.read_browse_name()
+    assert ua.LocalizedText('Root') == await root.read_display_name()
     nid = ua.NodeId(84, 0)
     assert nid == root.nodeid
 
 
 async def test_objects(opc):
     objects = opc.opc.get_objects_node()
-    assert ua.QualifiedName('Objects', 0) == await objects.get_browse_name()
+    assert ua.QualifiedName('Objects', 0) == await objects.read_browse_name()
     nid = ua.NodeId(85, 0)
     assert nid == objects.nodeid
 
@@ -347,8 +347,8 @@ async def test_variant_array_dim(opc):
         [[5.0, 5.0, 5.0, 5.0], [7.0, 8.0, 9.0, 01.0], [1.0, 1.0, 1.0, 1.0]]]
     v = await objects.add_variable(3, 'variableWithDims', l)
 
-    await v.set_array_dimensions([0, 0, 0])
-    dim = await v.get_array_dimensions()
+    await v.write_array_dimensions([0, 0, 0])
+    dim = await v.read_array_dimensions()
     assert [0, 0, 0] == dim
 
     await v.write_value_rank(0)
@@ -357,7 +357,7 @@ async def test_variant_array_dim(opc):
 
     v2 = await v.read_value()
     assert l == v2
-    dv = await v.get_data_value()
+    dv = await v.write_data_value()
     assert [2, 3, 4] == dv.Value.Dimensions
 
     l = [[[], [], []], [[], [], []]]
@@ -365,7 +365,7 @@ async def test_variant_array_dim(opc):
     v = await objects.add_variable(3, 'variableWithDimsEmpty', variant)
     v2 = await v.read_value()
     assert l == v2
-    dv = await v.get_data_value()
+    dv = await v.write_data_value()
     assert [2, 3, 0] == dv.Value.Dimensions
 
 
@@ -375,7 +375,7 @@ async def test_add_numeric_variable(opc):
     nid = ua.NodeId(888, 3)
     qn = ua.QualifiedName('numericnodefromstring', 3)
     assert nid == v.nodeid
-    assert qn == await v.get_browse_name()
+    assert qn == await v.read_browse_name()
 
 
 async def test_add_string_variable(opc):
@@ -384,7 +384,7 @@ async def test_add_string_variable(opc):
     nid = ua.NodeId('stringid', 3)
     qn = ua.QualifiedName('stringnodefromstring', 3)
     assert nid == v.nodeid
-    assert qn == await v.get_browse_name()
+    assert qn == await v.read_browse_name()
 
 
 async def test_utf8(opc):
@@ -397,7 +397,7 @@ async def test_utf8(opc):
     assert nid == v.nodeid
     val2 = await v.read_value()
     assert val == val2
-    bn2 = await v.get_browse_name()
+    bn2 = await v.read_browse_name()
     assert bn == bn2
 
 
@@ -416,10 +416,10 @@ async def test_null_variable(opc):
 async def test_variable_data_type(opc):
     objects = opc.opc.get_objects_node()
     var = await objects.add_variable(3, 'stringfordatatype', "a string")
-    val = await var.get_data_type_as_variant_type()
+    val = await var.read_data_type_as_variant_type()
     assert ua.VariantType.String == val
     var = await objects.add_variable(3, 'stringarrayfordatatype', ["a", "b"])
-    val = await var.get_data_type_as_variant_type()
+    val = await var.read_data_type_as_variant_type()
     assert ua.VariantType.String == val
 
 
@@ -429,7 +429,7 @@ async def test_add_string_array_variable(opc):
     nid = ua.NodeId('stringarrayid', 3)
     qn = ua.QualifiedName('stringarray', 9)
     assert nid == v.nodeid
-    assert qn == await v.get_browse_name()
+    assert qn == await v.read_browse_name()
     val = await v.read_value()
     assert ['l', 'b'] == val
 
@@ -440,7 +440,7 @@ async def test_add_numeric_node(opc):
     qn = ua.QualifiedName('AddNodeVar1', 3)
     v1 = await objects.add_variable(nid, qn, 0)
     assert nid == v1.nodeid
-    assert qn == await v1.get_browse_name()
+    assert qn == await v1.read_browse_name()
 
 
 async def test_add_string_node(opc):
@@ -449,7 +449,7 @@ async def test_add_string_node(opc):
     nid = ua.NodeId('AddNodeVar2Id', 3)
     v2 = await objects.add_variable(nid, qn, 0)
     assert nid == v2.nodeid
-    assert qn == await v2.get_browse_name()
+    assert qn == await v2.read_browse_name()
 
 
 async def test_add_find_node_(opc):
@@ -473,7 +473,7 @@ async def test_add_read_node(opc):
     nid = ua.NodeId(102, 2)
     assert nid == o.nodeid
     qn = ua.QualifiedName('AddReadObject', 2)
-    assert qn == await o.get_browse_name()
+    assert qn == await o.read_browse_name()
 
 
 async def test_simple_value(opc):
@@ -505,7 +505,7 @@ async def test_read_server_state(opc):
 async def test_bad_node(opc):
     bad = opc.opc.get_node(ua.NodeId(999, 999))
     with pytest.raises(ua.UaStatusCodeError):
-        await bad.get_browse_name()
+        await bad.read_browse_name()
     with pytest.raises(ua.UaStatusCodeError):
         await bad.write_value(89)
     with pytest.raises(ua.UaStatusCodeError):
@@ -520,7 +520,7 @@ async def test_value(opc):
     v = await o.add_variable(3, 'VariableValue', var)
     assert 1.98 == await v.read_value()
     dvar = ua.DataValue(var)
-    dv = await v.get_data_value()
+    dv = await v.write_data_value()
     assert ua.DataValue == type(dv)
     assert dvar.Value == dv.Value
     assert dvar.Value == var
@@ -538,7 +538,7 @@ async def test_write_value(opc):
     v2 = await v.read_value()
     assert v2 == var.Value
     await v.write_value(dvar)
-    v3 = await v.get_data_value()
+    v3 = await v.write_data_value()
     assert v3.Value == dvar.Value
 
 
@@ -551,7 +551,7 @@ async def test_array_value(opc):
 async def test_bool_variable(opc):
     o = opc.opc.get_objects_node()
     v = await o.add_variable(3, 'BoolVariable', True)
-    dt = await v.get_data_type_as_variant_type()
+    dt = await v.read_data_type_as_variant_type()
     assert ua.VariantType.Boolean == dt
     val = await v.read_value()
     assert val is True
@@ -805,7 +805,7 @@ async def test_copy_node(opc):
     p_t = await devd_t.add_property(0, "sensorx_id", "0340")
     nodes = await copy_node(opc.opc.nodes.objects, dev_t)
     mydevice = nodes[0]
-    assert ua.NodeClass.ObjectType == await mydevice.get_node_class()
+    assert ua.NodeClass.ObjectType == await mydevice.read_node_class()
     assert 4 == len(await mydevice.get_children())
     obj = await mydevice.get_child(["0:controller"])
     prop = await mydevice.get_child(["0:controller", "0:state"])
@@ -841,7 +841,7 @@ async def test_instantiate_1(opc):
     nodes = await instantiate(opc.opc.nodes.objects, dev_t, bname="2:Device0001")
     mydevice = nodes[0]
 
-    assert ua.NodeClass.Object == await mydevice.get_node_class()
+    assert ua.NodeClass.Object == await mydevice.read_node_class()
     assert dev_t.nodeid == await mydevice.get_type_definition()
     obj = await mydevice.get_child(["0:controller"])
     prop = await mydevice.get_child(["0:controller", "0:state"])
@@ -880,7 +880,7 @@ async def test_instantiate_string_nodeid(opc):
         bname="2:InstDevice")
     mydevice = nodes[0]
 
-    assert ua.NodeClass.Object == await mydevice.get_node_class()
+    assert ua.NodeClass.Object == await mydevice.read_node_class()
     assert dev_t.nodeid == await mydevice.get_type_definition()
     obj = await mydevice.get_child(["0:controller"])
     obj_nodeid_ident = obj.nodeid.Identifier
@@ -895,13 +895,13 @@ async def test_variable_with_datatype(opc):
     v1 = await opc.opc.nodes.objects.add_variable(
         3, 'VariableEnumType1', ua.ApplicationType.ClientAndServer, datatype=ua.NodeId(ua.ObjectIds.ApplicationType)
     )
-    tp1 = await v1.get_data_type()
+    tp1 = await v1.read_data_type()
     assert tp1 == ua.NodeId(ua.ObjectIds.ApplicationType)
 
     v2 = await opc.opc.nodes.objects.add_variable(
         3, 'VariableEnumType2', ua.ApplicationType.ClientAndServer, datatype=ua.NodeId(ua.ObjectIds.ApplicationType)
     )
-    tp2 = await v2.get_data_type()
+    tp2 = await v2.read_data_type()
     assert tp2 == ua.NodeId(ua.ObjectIds.ApplicationType)
 
 
@@ -919,7 +919,7 @@ async def test_enum(opc):
     myvar = await o.add_variable(2, "MyEnumVar", ua.LocalizedText("String1"), datatype=myenum_type.nodeid)
     # myvar.set_writable(True)
     # tests
-    assert myenum_type.nodeid == await myvar.get_data_type()
+    assert myenum_type.nodeid == await myvar.read_data_type()
     await myvar.write_value(ua.LocalizedText("String2"))
 
 
@@ -950,7 +950,7 @@ async def test_base_data_type(opc):
     assert nint32 == await ua_utils.get_base_data_type(dtype2)
 
     ext = await opc.opc.nodes.objects.add_variable(0, "MyExtensionObject", ua.Argument())
-    d = await ext.get_data_type()
+    d = await ext.read_data_type()
     d = opc.opc.get_node(d)
     assert opc.opc.get_node(ua.ObjectIds.Structure) == await ua_utils.get_base_data_type(d)
     assert ua.VariantType.ExtensionObject == await ua_utils.data_type_to_variant_type(d)

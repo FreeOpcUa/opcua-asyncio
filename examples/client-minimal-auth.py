@@ -10,10 +10,10 @@ async def browse_nodes(node: Node):
     """
     Build a nested node tree dict by recursion (filtered by OPC UA objects and variables).
     """
-    node_class = await node.get_node_class()
+    node_class = await node.read_node_class()
     children = []
     for child in await node.get_children():
-        if await child.get_node_class() in [ua.NodeClass.Object, ua.NodeClass.Variable]:
+        if await child.read_node_class() in [ua.NodeClass.Object, ua.NodeClass.Variable]:
             children.append(
                 await browse_nodes(child)
             )
@@ -21,13 +21,13 @@ async def browse_nodes(node: Node):
         var_type = None
     else:
         try:
-            var_type = (await node.get_data_type_as_variant_type()).value
+            var_type = (await node.read_data_type_as_variant_type()).value
         except ua.UaError:
             _logger.warning('Node Variable Type could not be determined for %r', node)
             var_type = None
     return {
         'id': node.nodeid.to_string(),
-        'name': (await node.get_display_name()).Text,
+        'name': (await node.read_display_name()).Text,
         'cls': node_class.value,
         'children': children,
         'type': var_type,

@@ -136,10 +136,10 @@ async def test_multiple_clients_with_subscriptions(server):
 
 async def test_historize_events(server):
     srv_node = server.get_node(ua.ObjectIds.Server)
-    assert await srv_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+    assert await srv_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
     srvevgen = await server.get_event_generator()
     await server.iserver.enable_history_event(srv_node, period=None)
-    assert await srv_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents, ua.EventNotifier.HistoryRead}
+    assert await srv_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents, ua.EventNotifier.HistoryRead}
     srvevgen.trigger(message='Message')
     await server.iserver.disable_history_event(srv_node)
 
@@ -358,10 +358,10 @@ async def test_create_custom_object_type_object_id(server):
     variables = await node_type.get_variables()
     assert await node_type.get_child("2:VariableString") in variables
     assert ua.VariantType.String == (
-        await(await node_type.get_child("2:VariableString")).get_data_value()).Value.VariantType
+        await(await node_type.get_child("2:VariableString")).write_data_value()).Value.VariantType
     assert await node_type.get_child("2:MyEnumVar") in variables
-    assert ua.VariantType.Int32 == (await(await node_type.get_child("2:MyEnumVar")).get_data_value()).Value.VariantType
-    assert ua.NodeId(ua.ObjectIds.ApplicationType) == await (await node_type.get_child("2:MyEnumVar")).get_data_type()
+    assert ua.VariantType.Int32 == (await(await node_type.get_child("2:MyEnumVar")).write_data_value()).Value.VariantType
+    assert ua.NodeId(ua.ObjectIds.ApplicationType) == await (await node_type.get_child("2:MyEnumVar")).read_data_type()
     methods = await node_type.get_methods()
     assert await node_type.get_child("2:MyMethod") in methods
 
@@ -544,23 +544,23 @@ async def test_load_enum_values(server):
 
 async def check_eventgenerator_source_server(evgen, server: Server):
     server_node = server.get_server_node()
-    assert evgen.event.SourceName == (await server_node.get_browse_name()).Name
+    assert evgen.event.SourceName == (await server_node.read_browse_name()).Name
     assert evgen.event.SourceNode == ua.NodeId(ua.ObjectIds.Server)
-    assert await server_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+    assert await server_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
     refs = await server_node.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward,
                                                   ua.NodeClass.ObjectType, False)
     assert len(refs) >= 1
 
 
 async def check_event_generator_object(evgen, obj, emitting_node=None):
-    assert evgen.event.SourceName == (await obj.get_browse_name()).Name
+    assert evgen.event.SourceName == (await obj.read_browse_name()).Name
     assert evgen.event.SourceNode == obj.nodeid
 
     if not emitting_node:
-        assert await obj.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+        assert await obj.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
         refs = await obj.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
     else:
-        assert await emitting_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+        assert await emitting_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
         refs = await emitting_node.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
 
     assert evgen.event.EventType in [x.nodeid for x in refs]
@@ -603,14 +603,14 @@ async def check_custom_type(ntype, base_type, server: Server, node_class=None):
                                             includesubtypes=True)
     assert base == nodes[0]
     if node_class:
-        assert node_class == await ntype.get_node_class()
+        assert node_class == await ntype.read_node_class()
     properties = await ntype.get_properties()
     assert properties is not None
     assert len(properties) == 2
     assert await ntype.get_child("2:PropertyNum") in properties
-    assert (await(await ntype.get_child("2:PropertyNum")).get_data_value()).Value.VariantType == ua.VariantType.Int32
+    assert (await(await ntype.get_child("2:PropertyNum")).write_data_value()).Value.VariantType == ua.VariantType.Int32
     assert await ntype.get_child("2:PropertyString") in properties
-    assert (await(await ntype.get_child("2:PropertyString")).get_data_value()).Value.VariantType == ua.VariantType.String
+    assert (await(await ntype.get_child("2:PropertyString")).write_data_value()).Value.VariantType == ua.VariantType.String
 
 
 """

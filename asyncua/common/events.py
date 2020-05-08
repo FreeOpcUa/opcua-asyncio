@@ -126,7 +126,7 @@ async def select_clauses_from_evtype(evtypes):
     selected_paths = []
     for evtype in evtypes:
         for prop in await get_event_properties_from_type_node(evtype):
-            browse_name = await prop.get_browse_name()
+            browse_name = await prop.read_browse_name()
             if browse_name not in selected_paths:
                 op = ua.SimpleAttributeOperand()
                 op.AttributeId = ua.AttributeIds.Value
@@ -199,8 +199,8 @@ async def get_event_obj_from_type_node(node):
                 curr_node = node
                 while curr_node.nodeid.Identifier != parent_identifier:
                     for prop in await curr_node.get_properties():
-                        name = (await prop.get_browse_name()).Name
-                        val = await prop.get_data_value()
+                        name = (await prop.read_browse_name()).Name
+                        val = await prop.write_data_value()
                         self.add_property(name, val.Value.Value, val.Value.VariantType)
                     parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True)
 

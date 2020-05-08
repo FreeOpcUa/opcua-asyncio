@@ -67,7 +67,7 @@ if __name__ == "__main__":
     es = myenum_type.add_property(0, "EnumStrings" , enum_to_stringlist(MyEnum))
 
     es.write_value_rank(1)
-    es.set_array_dimensions([0])
+    es.write_array_dimensions([0])
 
     # --------------------------------------------------------
     # create object with enum variable

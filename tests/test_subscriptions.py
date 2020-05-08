@@ -433,7 +433,7 @@ async def test_events_default(opc):
     assert ev is not None  # we did not receive event
     assert ua.NodeId(ua.ObjectIds.BaseEventType) == ev.EventType
     assert 1 == ev.Severity
-    assert (await opc.opc.get_server_node().get_browse_name()).Name == ev.SourceName
+    assert (await opc.opc.get_server_node().read_browse_name()).Name == ev.SourceName
     assert opc.opc.get_server_node().nodeid == ev.SourceNode
     assert msg == ev.Message.Text
     assert tid == ev.Time
@@ -500,7 +500,7 @@ async def test_events_CustomEvent(opc):
     assert ev is not None  # we did not receive event
     assert etype.nodeid == ev.EventType
     assert serverity == ev.Severity
-    assert (await opc.opc.get_server_node().get_browse_name()).Name == ev.SourceName
+    assert (await opc.opc.get_server_node().read_browse_name()).Name == ev.SourceName
     assert opc.opc.get_server_node().nodeid == ev.SourceNode
     assert msg == ev.Message.Text
     assert tid == ev.Time
