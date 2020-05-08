@@ -27,7 +27,7 @@ async def main():
         var = await root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
         print("My variable", var, await var.read_value())
         # print(var)
-        # var.get_data_value() # get value of node as a DataValue object
+        # var.write_data_value() # get value of node as a DataValue object
         # var.read_value() # get value of node as a python builtin
         # var.write_value(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
         # var.write_value(3.9) # set node value using implicit data type

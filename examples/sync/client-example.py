@@ -54,7 +54,7 @@ if __name__ == "__main__":
             #var = client.get_node(ua.NodeId(1002, 2))
             #var = client.get_node("ns=3;i=2002")
             #print(var)
-            #var.get_data_value() # get value of node as a DataValue object
+            #var.write_data_value() # get value of node as a DataValue object
             #var.read_value() # get value of node as a python builtin
             #var.write_value(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
             #var.write_value(3.9) # set node value using implicit data type

@@ -29,7 +29,7 @@ if __name__ == "__main__":
         root = client.get_root_node()
         print("Root is", root)
         print("childs of root are: ", root.get_children())
-        print("name of root is", root.get_browse_name())
+        print("name of root is", root.read_browse_name())
         objects = client.get_objects_node()
         print("childs og objects are: ", objects.get_children())
 

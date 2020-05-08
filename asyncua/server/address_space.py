@@ -50,7 +50,7 @@ class AttributeService:
         #self.logger.debug("read %s", params)
         res = []
         for readvalue in params.NodesToRead:
-            res.append(self._aspace.get_attribute_value(readvalue.NodeId, readvalue.AttributeId))
+            res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
         return res
 
     def write(self, params, user=User.Admin):
@@ -61,14 +61,14 @@ class AttributeService:
                 if writevalue.AttributeId != ua.AttributeIds.Value:
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
-                al = self._aspace.get_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
-                ual = self._aspace.get_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
+                al = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
+                ual = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
                 if not al.StatusCode.is_good() or not ua.ua_binary.test_bit(
                         al.Value.Value, ua.AccessLevel.CurrentWrite) or not ua.ua_binary.test_bit(
                     ual.Value.Value, ua.AccessLevel.CurrentWrite):
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
-            res.append(self._aspace.set_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
+            res.append(self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
         return res
 
 
@@ -382,14 +382,14 @@ class NodeManagementService:
         rdesc.IsForward = addref.IsForward
         rdesc.NodeId = addref.TargetNodeId
         if addref.TargetNodeClass == ua.NodeClass.Unspecified:
-            rdesc.NodeClass = self._aspace.get_attribute_value(
+            rdesc.NodeClass = self._aspace.read_attribute_value(
                 addref.TargetNodeId, ua.AttributeIds.NodeClass).Value.Value
         else:
             rdesc.NodeClass = addref.TargetNodeClass
-        bname = self._aspace.get_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value
+        bname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value
         if bname:
             rdesc.BrowseName = bname
-        dname = self._aspace.get_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName).Value.Value
+        dname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName).Value.Value
         if dname:
             rdesc.DisplayName = dname
         return self._add_unique_reference(sourcedata, rdesc)
@@ -655,7 +655,7 @@ class AddressSpace:
 
         self._nodes = LazyLoadingDict(shelve.open(path, "r"))
 
-    def get_attribute_value(self, nodeid, attr):
+    def read_attribute_value(self, nodeid, attr):
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
         if nodeid not in self._nodes:
             dv = ua.DataValue()
@@ -671,7 +671,7 @@ class AddressSpace:
             return attval.value_callback()
         return attval.value
 
-    def set_attribute_value(self, nodeid, attr, value):
+    def write_attribute_value(self, nodeid, attr, value):
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
         node = self._nodes.get(nodeid, None)
         if node is None:

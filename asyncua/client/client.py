@@ -613,7 +613,7 @@ class Client:
         Read the value of multiple nodes in one ua call.
         """
         nodeids = [node.nodeid for node in nodes]
-        results = await self.uaclient.get_attributes(nodeids, ua.AttributeIds.Value)
+        results = await self.uaclient.read_attributes(nodeids, ua.AttributeIds.Value)
         return [result.Value.Value for result in results]
 
     async def write_values(self, nodes, values):
@@ -622,7 +622,7 @@ class Client:
         """
         nodeids = [node.nodeid for node in nodes]
         dvs = [value_to_datavalue(val) for val in values]
-        results = await self.uaclient.set_attributes(nodeids, dvs, ua.AttributeIds.Value)
+        results = await self.uaclient.write_attributes(nodeids, dvs, ua.AttributeIds.Value)
         for result in results:
             result.check()
 
