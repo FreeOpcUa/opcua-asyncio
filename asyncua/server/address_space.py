@@ -53,7 +53,7 @@ class AttributeService:
             res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
         return res
 
-    def write(self, params, user=User.Admin):
+    async def write(self, params, user=User.Admin):
         #self.logger.debug("write %s as user %s", params, user)
         res = []
         for writevalue in params.NodesToWrite:
@@ -68,7 +68,7 @@ class AttributeService:
                     ual.Value.Value, ua.AccessLevel.CurrentWrite):
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
-            res.append(self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
+            res.append(await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
         return res
 
 
@@ -671,7 +671,7 @@ class AddressSpace:
             return attval.value_callback()
         return attval.value
 
-    def write_attribute_value(self, nodeid, attr, value):
+    async def write_attribute_value(self, nodeid, attr, value):
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
         node = self._nodes.get(nodeid, None)
         if node is None:
@@ -688,7 +688,7 @@ class AddressSpace:
 
         for k, v in cbs:
             try:
-                v(k, value)
+                await v(k, value)
             except Exception as ex:
                 self.logger.exception("Error calling datachange callback %s, %s, %s", k, v, ex)
 

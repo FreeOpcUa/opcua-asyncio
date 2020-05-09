@@ -58,7 +58,7 @@ class UaProcessor:
         response.Parameters = channel
         self.send_response(request.RequestHeader.RequestHandle, seqhdr, response, ua.MessageType.SecureOpen)
 
-    def forward_publish_response(self, result: ua.PublishResult):
+    async def forward_publish_response(self, result: ua.PublishResult):
         """
         Try to send a `PublishResponse` with the given `PublishResult`.
         """
@@ -372,7 +372,7 @@ class UaProcessor:
                 if result.SubscriptionId not in self.session.subscription_service.active_subscription_ids:
                     # Discard the result if the subscription is no longer active
                     continue
-                self.forward_publish_response(result)
+                await self.forward_publish_response(result)
                 break
             self.session.publish(params.SubscriptionAcknowledgements)
             #_logger.debug("publish forward to server")

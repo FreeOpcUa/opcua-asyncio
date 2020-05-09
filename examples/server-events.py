@@ -32,7 +32,6 @@ async def main():
     await custom_etype.add_property(2, 'MyBoolProperty', ua.Variant(True, ua.VariantType.Boolean))
     mysecondevgen = await server.get_event_generator(custom_etype, myobj)
 
-
     async with server:
         count = 0
         while True:
@@ -41,9 +40,8 @@ async def main():
             myevgen.event.Severity = count
             myevgen.event.MyNumericProperty = count
             myevgen.event.MyStringProperty = "Property %d" % count
-            myevgen.trigger()
-
-            mysecondevgen.trigger(message="MySecondEvent %d" % count)
+            await myevgen.trigger()
+            await mysecondevgen.trigger(message="MySecondEvent %d" % count)
 
             count += 1
 
