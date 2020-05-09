@@ -110,9 +110,8 @@ async def main():
     myevgen.event.Severity = 300
 
     # starting!
-    await server.start()
-    print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
-    try:
+    async with server:
+        print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
         # enable following if you want to subscribe to nodes on server side
         #handler = SubHandler()
         #sub = server.create_subscription(500, handler)
@@ -130,11 +129,8 @@ async def main():
             server.write_attribute_value(myvar.nodeid, ua.DataValue(sin(time.time())))
 
 
-    finally:
-        await server.stop()
-
-
 if __name__ == "__main__":
+    asyncio.run(main())
     loop = asyncio.get_event_loop()
     loop.set_debug(True)
     loop.run_until_complete(main())
