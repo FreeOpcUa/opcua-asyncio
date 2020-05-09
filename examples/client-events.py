@@ -1,10 +1,9 @@
-
 import asyncio
 import logging
 from asyncua import Client
 
 logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger('asyncua')
+_logger = logging.getLogger(__name__)
 
 
 class SubHandler:
@@ -18,20 +17,18 @@ class SubHandler:
         _logger.info("New event received: %r", event)
 
 
-async def task():
+async def main():
     url = "opc.tcp://localhost:4840/freeopcua/server/"
     # url = "opc.tcp://admin@localhost:4840/freeopcua/server/"  #connect using a user
-
     async with Client(url=url) as client:
         # Client has a few methods to get proxy to UA nodes that should always be in address space such as Root or Objects
-        root = client.get_root_node()
-        _logger.info("Objects node is: %r", root)
+        _logger.info("Objects node is: %r", client.nodes.root)
 
         # Now getting a variable node using its browse path
-        obj = await root.get_child(["0:Objects", "2:MyObject"])
+        obj = await client.nodes.root.get_child(["0:Objects", "2:MyObject"])
         _logger.info("MyObject is: %r", obj)
 
-        myevent = await root.get_child(["0:Types", "0:EventTypes", "0:BaseEventType", "2:MyFirstEvent"])
+        myevent = await client.nodes.root.get_child(["0:Types", "0:EventTypes", "0:BaseEventType", "2:MyFirstEvent"])
         _logger.info("MyFirstEventType is: %r", myevent)
 
         msclt = SubHandler()
@@ -42,12 +39,5 @@ async def task():
         await sub.delete()
 
 
-def main():
-    loop = asyncio.get_event_loop()
-    loop.set_debug(True)
-    loop.run_until_complete(task())
-    loop.close()
-
-
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
