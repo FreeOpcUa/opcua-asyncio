@@ -24,7 +24,7 @@ async def main():
         var = await client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
         print("My variable", var, await var.read_value())
         # print(var)
-        # await var.write_data_value() # get value of node as a DataValue object
+        # await var.read_data_value() # get value of node as a DataValue object
         # await var.read_value() # get value of node as a python builtin
         # await var.write_value(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
         # await var.write_value(3.9) # set node value using implicit data type

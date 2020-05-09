@@ -13,7 +13,7 @@ if __name__ == "__main__":
     try:
         client.connect()
 
-        objects = client.get_objects_node()
+        objects = client.nodes.objects
         folder = objects.add_folder("ns=2;i=3007", "2:Folder1")
         var = folder.add_variable("ns=2;i=3008", "2:Variable1", 3.45)
         # Now getting a variable node using its browse path

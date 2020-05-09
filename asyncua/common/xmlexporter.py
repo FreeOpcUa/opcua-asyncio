@@ -364,7 +364,7 @@ class XmlExporter:
                 await self.member_to_etree(el, name, ua.NodeId(getattr(ua.ObjectIds, vtype)), getattr(val, name))
 
     async def value_to_etree(self, el, dtype_name, dtype, node):
-        var = (await node.write_data_value()).Value
+        var = (await node.read_data_value()).Value
         if var.Value is not None:
             val_el = Et.SubElement(el, 'Value')
             await self._value_to_etree(val_el, dtype_name, dtype, var.Value)

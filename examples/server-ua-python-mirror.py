@@ -107,7 +107,7 @@ if __name__ == "__main__":
     idx = server.register_namespace(uri)
 
     # get Objects node, this is where we should put our nodes
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
 
     # populating our address space; in most real use cases this should be imported from UA spec XML
     myobj = objects.add_object(idx, "MyObject")

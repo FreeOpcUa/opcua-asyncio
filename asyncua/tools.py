@@ -562,7 +562,7 @@ def uaserver():
 
         uri = "http://examples.freeopcua.github.io"
         idx = server.register_namespace(uri)
-        objects = server.get_objects_node()
+        objects = server.nodes.objects
         myobj = objects.add_object(idx, "MyObject")
         mywritablevar = myobj.add_variable(idx, "MyWritableVariable", 6.7)
         mywritablevar.set_writable()    # Set MyVariable to be writable by clients

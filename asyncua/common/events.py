@@ -200,7 +200,7 @@ async def get_event_obj_from_type_node(node):
                 while curr_node.nodeid.Identifier != parent_identifier:
                     for prop in await curr_node.get_properties():
                         name = (await prop.read_browse_name()).Name
-                        val = await prop.write_data_value()
+                        val = await prop.read_data_value()
                         self.add_property(name, val.Value.Value, val.Value.VariantType)
                     parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True)
 

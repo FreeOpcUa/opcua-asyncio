@@ -57,7 +57,7 @@ async def srv_no_crypto():
 async def test_nocrypto(srv_no_crypto):
     clt = Client(uri_no_crypto)
     async with clt:
-        await clt.get_objects_node().get_children()
+        await clt.nodes.objects.get_children()
 
 
 async def test_nocrypto_fail(srv_no_crypto):
@@ -70,7 +70,7 @@ async def test_basic256(srv_crypto):
     clt = Client(uri_crypto)
     await clt.set_security_string(f"Basic256Sha256,Sign,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem")
     async with clt:
-        assert await clt.get_objects_node().get_children()
+        assert await clt.nodes.objects.get_children()
 
 
 async def test_basic256_encrypt(srv_crypto):
@@ -78,7 +78,7 @@ async def test_basic256_encrypt(srv_crypto):
     await clt.set_security_string(
             f"Basic256Sha256,SignAndEncrypt,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem")
     async with clt:
-        assert await clt.get_objects_node().get_children()
+        assert await clt.nodes.objects.get_children()
 
 
 async def test_basic256_encrypt_success(srv_crypto):
@@ -91,7 +91,7 @@ async def test_basic256_encrypt_success(srv_crypto):
             ua.MessageSecurityMode.SignAndEncrypt
         )
     async with clt:
-        assert await clt.get_objects_node().get_children()
+        assert await clt.nodes.objects.get_children()
 
 
 async def test_basic256_encrypt_fail(srv_crypto):

@@ -81,7 +81,7 @@ class MySubHandlerCounter:
 
 async def test_subscription_failure(opc):
     myhandler = MySubHandler()
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     sub = await opc.opc.create_subscription(100, myhandler)
     with pytest.raises(ua.UaStatusCodeError):
         # we can only subscribe to variables so this should fail
@@ -92,7 +92,7 @@ async def test_subscription_failure(opc):
 async def test_subscription_overload(opc):
     nb = 10
     myhandler = MySubHandlerCounter()
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     sub = await opc.opc.create_subscription(1, myhandler)
     variables = []
     subs = []
@@ -122,7 +122,7 @@ async def test_subscription_overload(opc):
 async def test_subscription_count(opc):
     myhandler = MySubHandlerCounter()
     sub = await opc.opc.create_subscription(1, myhandler)
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     var = await o.add_variable(3, 'SubVarCounter', 0.1)
     await sub.subscribe_data_change(var)
     nb = 100
@@ -137,7 +137,7 @@ async def test_subscription_count(opc):
 async def test_subscription_count_list(opc):
     myhandler = MySubHandlerCounter()
     sub = await opc.opc.create_subscription(1, myhandler)
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2])
     await sub.subscribe_data_change(var)
     nb = 12
@@ -155,7 +155,7 @@ async def test_subscription_count_list(opc):
 async def test_subscription_count_no_change(opc):
     myhandler = MySubHandlerCounter()
     sub = await opc.opc.create_subscription(1, myhandler)
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2])
     await sub.subscribe_data_change(var)
     nb = 12
@@ -170,7 +170,7 @@ async def test_subscription_count_no_change(opc):
 async def test_subscription_count_empty(opc):
     myhandler = MySubHandlerCounter()
     sub = await opc.opc.create_subscription(1, myhandler)
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2, 0.3])
     await sub.subscribe_data_change(var)
     while True:
@@ -189,7 +189,7 @@ async def test_subscription_count_empty(opc):
 async def test_subscription_overload_simple(opc):
     nb = 10
     myhandler = MySubHandler()
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     sub = await opc.opc.create_subscription(1, myhandler)
     variables = []
     for i in range(nb):
@@ -207,7 +207,7 @@ async def test_subscription_data_change(opc):
     to test as many things as possible
     """
     myhandler = MySubHandler()
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     # subscribe to a variable
     startv1 = [1, 2, 3]
     v1 = await o.add_variable(3, 'SubscriptionVariableV1', startv1)
@@ -241,7 +241,7 @@ async def test_subscription_data_change_bool(opc):
     to test as many things as possible
     """
     myhandler = MySubHandler()
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     # subscribe to a variable
     startv1 = True
     v1 = await o.add_variable(3, 'SubscriptionVariableBool', startv1)
@@ -268,7 +268,7 @@ async def test_subscription_data_change_many(opc):
     to test as many things as possible
     """
     myhandler = MySubHandler2()
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     startv1 = True
     v1 = await o.add_variable(3, 'SubscriptionVariableMany1', startv1)
     startv2 = [1.22, 1.65]
@@ -332,7 +332,7 @@ async def test_modify_monitored_item(opc):
 
 
 async def test_create_delete_subscription(opc):
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     v = await o.add_variable(3, 'SubscriptionVariable', [1, 2, 3])
     sub = await opc.opc.create_subscription(100, MySubHandler())
     handle = await sub.subscribe_data_change(v)
@@ -391,7 +391,7 @@ async def test_subscribe_events_to_wrong_node(opc):
     sub = await opc.opc.create_subscription(100, MySubHandler())
     with pytest.raises(ua.UaStatusCodeError):
         handle = await sub.subscribe_events(opc.opc.get_node("i=85"))
-    o = opc.opc.get_objects_node()
+    o = opc.opc.nodes.objects
     v = await o.add_variable(3, 'VariableNoEventNofierAttribute', 4)
     with pytest.raises(ua.UaStatusCodeError):
         handle = await sub.subscribe_events(v)
@@ -433,8 +433,8 @@ async def test_events_default(opc):
     assert ev is not None  # we did not receive event
     assert ua.NodeId(ua.ObjectIds.BaseEventType) == ev.EventType
     assert 1 == ev.Severity
-    assert (await opc.opc.get_server_node().read_browse_name()).Name == ev.SourceName
-    assert opc.opc.get_server_node().nodeid == ev.SourceNode
+    assert (await opc.opc.nodes.server.read_browse_name()).Name == ev.SourceName
+    assert opc.opc.nodes.server.nodeid == ev.SourceNode
     assert msg == ev.Message.Text
     assert tid == ev.Time
     await sub.unsubscribe(handle)
@@ -442,7 +442,7 @@ async def test_events_default(opc):
 
 
 async def test_events_MyObject(opc):
-    objects = opc.server.get_objects_node()
+    objects = opc.server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
     evgen = await opc.server.get_event_generator(emitting_node=o)
     myhandler = MySubHandler()
@@ -464,7 +464,7 @@ async def test_events_MyObject(opc):
 
 
 async def test_events_wrong_source(opc):
-    objects = opc.server.get_objects_node()
+    objects = opc.server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
     evgen = await opc.server.get_event_generator(emitting_node=o)
     myhandler = MySubHandler()
@@ -500,8 +500,8 @@ async def test_events_CustomEvent(opc):
     assert ev is not None  # we did not receive event
     assert etype.nodeid == ev.EventType
     assert serverity == ev.Severity
-    assert (await opc.opc.get_server_node().read_browse_name()).Name == ev.SourceName
-    assert opc.opc.get_server_node().nodeid == ev.SourceNode
+    assert (await opc.opc.nodes.server.read_browse_name()).Name == ev.SourceName
+    assert opc.opc.nodes.server.nodeid == ev.SourceNode
     assert msg == ev.Message.Text
     assert tid == ev.Time
     assert propertynum == ev.PropertyNum
@@ -511,7 +511,7 @@ async def test_events_CustomEvent(opc):
 
 
 async def test_events_CustomEvent_MyObject(opc):
-    objects = opc.server.get_objects_node()
+    objects = opc.server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
     etype = await opc.server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
         [('PropertyNum', ua.VariantType.Float),
@@ -542,7 +542,7 @@ async def test_events_CustomEvent_MyObject(opc):
 
 
 async def test_several_different_events(opc):
-    objects = opc.server.get_objects_node()
+    objects = opc.server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
     etype1 = await opc.server.create_custom_event_type(2, 'MyEvent1', ua.ObjectIds.BaseEventType,
         [('PropertyNum', ua.VariantType.Float),
@@ -585,7 +585,7 @@ async def test_several_different_events(opc):
 
 
 async def test_several_different_events_2(opc):
-    objects = opc.server.get_objects_node()
+    objects = opc.server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
     etype1 = await opc.server.create_custom_event_type(
         2, 'MyEvent1', ua.ObjectIds.BaseEventType,
@@ -647,7 +647,7 @@ async def test_internal_server_subscription(opc):
     sub_handler = MySubHandler2()
     uri = 'http://examples.freeopcua.github.io'
     idx = await opc.server.register_namespace(uri)
-    objects = opc.server.get_objects_node()
+    objects = opc.server.nodes.objects
     sub_obj = await objects.add_object(idx, 'SubTestObject')
     sub_var = await sub_obj.add_variable(idx, 'SubTestVariable', 0)
     sub = await opc.server.create_subscription(1, sub_handler)

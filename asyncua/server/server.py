@@ -386,12 +386,6 @@ class Server:
         """
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.ObjectsFolder))
 
-    def get_server_node(self):
-        """
-        Get Server node of server. Returns a Node object.
-        """
-        return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.Server))
-
     def get_node(self, nodeid):
         """
         Get a specific node using NodeId object or a string representing a NodeId

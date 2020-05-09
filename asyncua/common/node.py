@@ -162,12 +162,12 @@ class Node:
         WARNING: on server side, this function returns a ref to object in ua database. Do not modify it if it is a mutable
         object unless you know what you are doing
         """
-        result = await self.write_data_value()
+        result = await self.read_data_value()
         return result.Value.Value
 
     get_value = read_value  # legacy compatibility
 
-    async def write_data_value(self):
+    async def read_data_value(self):
         """
         Get value of a node as a DataValue object. Only variables (and properties) have values.
         An exception will be generated for other node types.

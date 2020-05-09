@@ -44,13 +44,13 @@ async def task(loop):
         # client.set_security_string()
         await client.connect()
         # Client has a few methods to get proxy to UA nodes that should always be in address space such as Root or Objects
-        root = client.get_root_node()
+        root = client.nodes.root
         _logger.info("Objects node is: %r", root)
 
         # Node objects have methods to read and write node attributes as well as browse or populate address space
         _logger.info("Children of root are: %r", await root.get_children())
 
-        tree = await browse_nodes(client.get_objects_node())
+        tree = await browse_nodes(client.nodes.objects)
         _logger.info('Node tree: %r', tree)
     except Exception:
         _logger.exception('error')
