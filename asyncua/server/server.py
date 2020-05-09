@@ -420,19 +420,17 @@ class Server:
         """
         get all namespace defined in server
         """
-        ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        return await ns_node.read_value()
+        return await self.nodes.namespace_array.read_value()
 
     async def register_namespace(self, uri) -> int:
         """
         Register a new namespace. Nodes should in custom namespace, not 0.
         """
-        ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        uries = await ns_node.read_value()
+        uries = await self.nodes.namespace_array.read_value()
         if uri in uries:
             return uries.index(uri)
         uries.append(uri)
-        await ns_node.write_value(uries)
+        await self.nodes.namespace_array.write_value(uries)
         return len(uries) - 1
 
     async def get_namespace_index(self, uri):
