@@ -26,11 +26,11 @@ if __name__ == "__main__":
     #client = Client("opc.tcp://olivier:olivierpass@localhost:53530/OPCUA/SimulationServer/")
     try:
         client.connect()
-        root = client.get_root_node()
+        root = client.nodes.root
         print("Root is", root)
         print("childs of root are: ", root.get_children())
-        print("name of root is", root.get_browse_name())
-        objects = client.get_objects_node()
+        print("name of root is", root.read_browse_name())
+        objects = client.nodes.objects
         print("childs og objects are: ", objects.get_children())
 
 

@@ -110,9 +110,8 @@ async def main():
     myevgen.event.Severity = 300
 
     # starting!
-    await server.start()
-    print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
-    try:
+    async with server:
+        print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
         # enable following if you want to subscribe to nodes on server side
         #handler = SubHandler()
         #sub = server.create_subscription(500, handler)
@@ -124,17 +123,11 @@ async def main():
         await myarrayvar.write_value(var)
         await mydevice_var.write_value("Running")
         await myevgen.trigger(message="This is BaseEvent")
-        await server.set_attribute_value(myvar.nodeid, ua.DataValue(0.9))  # Server side write method which is a bit faster than using write_value
+        await server.write_attribute_value(myvar.nodeid, ua.DataValue(0.9))  # Server side write method which is a bit faster than using write_value
         while True:
             await asyncio.sleep(0.1)
-            await server.set_attribute_value(myvar.nodeid, ua.DataValue(sin(time.time())))
-
-
-    finally:
-        await server.stop()
+            await server.write_attribute_value(myvar.nodeid, ua.DataValue(sin(time.time())))
 
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.set_debug(True)
-    loop.run_until_complete(main())
+    asyncio.run(main())

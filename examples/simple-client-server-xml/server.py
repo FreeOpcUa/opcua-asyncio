@@ -54,7 +54,7 @@ class HelloServer:
         self.server.set_endpoint(endpoint)
         self.server.set_server_name(name)
 
-        objects = self.server.get_objects_node()
+        objects = self.server.nodes.objects
 
         freeopcua_namespace = self.server.get_namespace_index("urn:freeopcua:python:server")
         hellower = objects.get_child("0:Hellower")

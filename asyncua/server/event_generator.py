@@ -53,7 +53,7 @@ class EventGenerator:
         if not self.event.SourceNode:
             self.event.SourceNode = emitting_node.nodeid
         if not self.event.SourceName:
-            self.event.SourceName = (await Node(self.isession, self.event.SourceNode).get_browse_name()).Name
+            self.event.SourceName = (await Node(self.isession, self.event.SourceNode).read_browse_name()).Name
 
         await emitting_node.set_event_notifier([ua.EventNotifier.SubscribeToEvents])
         refs = []
@@ -98,6 +98,6 @@ class EventGenerator:
         if message:
             self.event.Message = ua.LocalizedText(message)
         elif not self.event.Message:
-            self.event.Message = ua.LocalizedText(Node(self.isession, self.event.SourceNode).get_browse_name().Text)
+            self.event.Message = ua.LocalizedText(Node(self.isession, self.event.SourceNode).read_browse_name().Text)
 
         await self.isession.subscription_service.trigger_event(self.event)

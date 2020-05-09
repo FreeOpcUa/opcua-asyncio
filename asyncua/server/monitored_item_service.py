@@ -74,7 +74,7 @@ class MonitoredItemService:
 
     async def trigger_datachange(self, handle, nodeid, attr):
         self.logger.debug("triggering datachange for handle %s, nodeid %s, and attribute %s", handle, nodeid, attr)
-        dv = self.aspace.get_attribute_value(nodeid, attr)
+        dv = self.aspace.read_attribute_value(nodeid, attr)
         await self.datachange_callback(handle, dv)
 
     def _modify_monitored_item(self, params: ua.MonitoredItemModifyRequest):
@@ -115,7 +115,7 @@ class MonitoredItemService:
                          params.ItemToMonitor.AttributeId)
 
         result, mdata = self._make_monitored_item_common(params)
-        ev_notify_byte = self.aspace.get_attribute_value(params.ItemToMonitor.NodeId,
+        ev_notify_byte = self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
                                                          ua.AttributeIds.EventNotifier).Value.Value
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
@@ -297,14 +297,14 @@ class WhereClauseEvaluator:
         if isinstance(op, ua.AttributeOperand):
             if op.BrowsePath:
                 return getattr(event, op.BrowsePath.Elements[0].TargetName.Name)
-            return self._aspace.get_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
             # FIXME: check, this is probably broken
         if isinstance(op, ua.SimpleAttributeOperand):
             if op.BrowsePath:
                 # we only support depth of 1
                 return getattr(event, op.BrowsePath[0].Name)
             # TODO: write code for index range.... but doe it make any sense
-            return self._aspace.get_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
         if isinstance(op, ua.LiteralOperand):
             return op.Value.Value
         self.logger.warning("Where clause element % is not of a known type", op)

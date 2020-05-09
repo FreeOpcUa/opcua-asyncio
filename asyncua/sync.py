@@ -236,8 +236,8 @@ class Server:
     def load_type_definitions(self):
         pass
 
-    def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
-        return self.tloop.post(self.aio_obj.set_attribute_value(nodeid, datavalue, attr))
+    def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+        return self.tloop.post(self.aio_obj.write_attribute_value(nodeid, datavalue, attr))
 
 
 class EventGenerator:
@@ -277,11 +277,11 @@ class Node:
         return self.aio_obj.nodeid
 
     @syncmethod
-    def get_browse_name(self):
+    def read_browse_name(self):
         pass
 
     @syncmethod
-    def get_display_name(self):
+    def read_display_name(self):
         pass
 
     @syncmethod
@@ -374,11 +374,11 @@ class Node:
         pass
 
     @syncmethod
-    def get_node_class(self):
+    def read_node_class(self):
         pass
 
     @syncmethod
-    def get_attributes(self):
+    def read_attributes(self):
         pass
 
 class Subscription:

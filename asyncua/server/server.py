@@ -386,12 +386,6 @@ class Server:
         """
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.ObjectsFolder))
 
-    def get_server_node(self):
-        """
-        Get Server node of server. Returns a Node object.
-        """
-        return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.Server))
-
     def get_node(self, nodeid):
         """
         Get a specific node using NodeId object or a string representing a NodeId
@@ -420,19 +414,17 @@ class Server:
         """
         get all namespace defined in server
         """
-        ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        return await ns_node.read_value()
+        return await self.nodes.namespace_array.read_value()
 
     async def register_namespace(self, uri) -> int:
         """
         Register a new namespace. Nodes should in custom namespace, not 0.
         """
-        ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        uries = await ns_node.read_value()
+        uries = await self.nodes.namespace_array.read_value()
         if uri in uries:
             return uries.index(uri)
         uries.append(uri)
-        await ns_node.write_value(uries)
+        await self.nodes.namespace_array.write_value(uries)
         return len(uries) - 1
 
     async def get_namespace_index(self, uri):
@@ -622,9 +614,9 @@ class Server:
         """
         return load_enums(self)
 
-    async def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+    async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
         directly write datavalue to the Attribute, bypasing some checks and structure creation
         so it is a little faster
         """
-        return await self.iserver.set_attribute_value(nodeid, datavalue, attr)
+        return await self.iserver.write_attribute_value(nodeid, datavalue, attr)

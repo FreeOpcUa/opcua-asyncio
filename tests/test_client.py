@@ -17,15 +17,15 @@ async def test_service_fault(server, admin_client):
 
 
 async def test_objects_anonymous(server, client):
-    objects = client.get_objects_node()
+    objects = client.nodes.objects
     with pytest.raises(ua.UaStatusCodeError):
-        await objects.set_attribute(ua.AttributeIds.WriteMask, ua.DataValue(999))
+        await objects.write_attribute(ua.AttributeIds.WriteMask, ua.DataValue(999))
     with pytest.raises(ua.UaStatusCodeError):
         await objects.add_folder(3, 'MyFolder')
 
 
 async def test_folder_anonymous(server, admin_client, client):
-    objects = admin_client.get_objects_node()
+    objects = admin_client.nodes.objects
     f = await objects.add_folder(3, 'MyFolderRO')
     f_ro = client.get_node(f.nodeid)
     assert f == f_ro
@@ -34,7 +34,7 @@ async def test_folder_anonymous(server, admin_client, client):
 
 
 async def test_variable_anonymous(server, admin_client, client):
-    objects = admin_client.get_objects_node()
+    objects = admin_client.nodes.objects
     v = await objects.add_variable(3, 'MyROVariable', 6)
     await v.write_value(4)  # this should work
     v_ro = client.get_node(v.nodeid)

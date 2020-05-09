@@ -138,7 +138,7 @@ async def _uaread():
 
     try:
         node = await get_node(client, args)
-        attr = await node.get_attribute(args.attribute)
+        attr = await node.read_attribute(args.attribute)
         if args.datatype == "python":
             print(attr.Value.Value)
         elif args.datatype == "variant":
@@ -282,7 +282,7 @@ async def _uawrite():
     try:
         node = await get_node(client, args)
         val = _val_to_variant(args.value, args)
-        await node.set_attribute(args.attribute, ua.DataValue(val))
+        await node.write_attribute(args.attribute, ua.DataValue(val))
     finally:
         await client.disconnect()
 
@@ -359,7 +359,7 @@ def _lsprint_long(pnode, depth, indent=""):
         print("{0:30} {1:25} {2:25} {3:10} {4:30} {5:25}".format("DisplayName", "NodeId", "BrowseName", "DataType", "Timestamp", "Value"))
         print("")
     for node in pnode.get_children():
-        attrs = node.get_attributes([ua.AttributeIds.DisplayName,
+        attrs = node.read_attributes([ua.AttributeIds.DisplayName,
                                      ua.AttributeIds.BrowseName,
                                      ua.AttributeIds.NodeClass,
                                      ua.AttributeIds.WriteMask,
@@ -562,7 +562,7 @@ def uaserver():
 
         uri = "http://examples.freeopcua.github.io"
         idx = server.register_namespace(uri)
-        objects = server.get_objects_node()
+        objects = server.nodes.objects
         myobj = objects.add_object(idx, "MyObject")
         mywritablevar = myobj.add_variable(idx, "MyWritableVariable", 6.7)
         mywritablevar.set_writable()    # Set MyVariable to be writable by clients

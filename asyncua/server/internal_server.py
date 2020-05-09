@@ -235,7 +235,7 @@ class InternalServer:
         """
         Set attribute Historizing of node to True and start storing data for history
         """
-        await node.set_attribute(ua.AttributeIds.Historizing, ua.DataValue(True))
+        await node.write_attribute(ua.AttributeIds.Historizing, ua.DataValue(True))
         await node.set_attr_bit(ua.AttributeIds.AccessLevel, ua.AccessLevel.HistoryRead)
         await node.set_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.HistoryRead)
         await self.history_manager.historize_data_change(node, period, count)
@@ -244,7 +244,7 @@ class InternalServer:
         """
         Set attribute Historizing of node to False and stop storing data for history
         """
-        await node.set_attribute(ua.AttributeIds.Historizing, ua.DataValue(False))
+        await node.write_attribute(ua.AttributeIds.Historizing, ua.DataValue(False))
         await node.unset_attr_bit(ua.AttributeIds.AccessLevel, ua.AccessLevel.HistoryRead)
         await node.unset_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.HistoryRead)
         await self.history_manager.dehistorize(node)
@@ -253,7 +253,7 @@ class InternalServer:
         """
         Set attribute History Read of object events to True and start storing data for history
         """
-        event_notifier = await source.get_event_notifier()
+        event_notifier = await source.read_event_notifier()
         if ua.EventNotifier.SubscribeToEvents not in event_notifier:
             raise ua.UaError('Node does not generate events', event_notifier)
         if ua.EventNotifier.HistoryRead not in event_notifier:
@@ -280,12 +280,12 @@ class InternalServer:
         """
         self.server_callback_dispatcher.removeListener(event, handle)
 
-    async def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+    async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
         directly write datavalue to the Attribute, bypassing some checks and structure creation
         so it is a little faster
         """
-        await self.aspace.set_attribute_value(nodeid, attr, datavalue)
+        await self.aspace.write_attribute_value(nodeid, attr, datavalue)
 
     def set_user_manager(self, user_manager):
         """

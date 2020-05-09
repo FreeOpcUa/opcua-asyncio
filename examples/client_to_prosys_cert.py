@@ -14,8 +14,8 @@ if __name__ == "__main__":
     client.load_private_key("mykey.pem")
     try:
         client.connect()
-        root = client.get_root_node()
-        objects = client.get_objects_node()
+        root = client.nodes.root
+        objects = client.nodes.objects
         print("childs og objects are: ", objects.get_children())
 
         embed()
