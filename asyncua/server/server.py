@@ -622,9 +622,9 @@ class Server:
         """
         return load_enums(self)
 
-    def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+    async def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
         directly write datavalue to the Attribute, bypasing some checks and structure creation
         so it is a little faster
         """
-        return self.iserver.set_attribute_value(nodeid, datavalue, attr)
+        return await self.iserver.set_attribute_value(nodeid, datavalue, attr)

@@ -100,7 +100,7 @@ class InternalSession:
         return self.iserver.history_manager.read_history(params)
 
     async def write(self, params):
-        return self.iserver.attribute_service.write(params, self.user)
+        return await self.iserver.attribute_service.write(params, self.user)
 
     async def browse(self, params):
         return self.iserver.view_service.browse(params)

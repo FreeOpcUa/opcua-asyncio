@@ -32,18 +32,20 @@ async def start_server(loop: asyncio.AbstractEventLoop):
     await custom_etype.add_property(2, 'MyBoolProperty', ua.Variant(True, ua.VariantType.Boolean))
     mysecondevgen = await server.get_event_generator(custom_etype, myobj)
     await server.start()
-    loop.call_later(2, emmit_event, loop, myevgen, mysecondevgen, 1)
+    asyncio.create_task(emmit_event(myevgen, mysecondevgen))
 
 
-def emmit_event(loop: asyncio.AbstractEventLoop, myevgen: EventGenerator, mysecondevgen: EventGenerator, count: int):
-    myevgen.event.Message = ua.LocalizedText("MyFirstEvent %d" % count)
-    myevgen.event.Severity = count
-    myevgen.event.MyNumericProperty = count
-    myevgen.event.MyStringProperty = "Property %d" % count
-    myevgen.trigger()
-    mysecondevgen.trigger(message="MySecondEvent %d" % count)
-    count += 1
-    loop.call_later(2, emmit_event, loop, myevgen, mysecondevgen, count)
+async def emmit_event(loop: asyncio.AbstractEventLoop, myevgen: EventGenerator, mysecondevgen: EventGenerator, count: int):
+    count = 1
+    while True:
+        await asyncio.sleep(2)
+        myevgen.event.Message = ua.LocalizedText("MyFirstEvent %d" % count)
+        myevgen.event.Severity = count
+        myevgen.event.MyNumericProperty = count
+        myevgen.event.MyStringProperty = "Property %d" % count
+        await myevgen.trigger()
+        await mysecondevgen.trigger(message="MySecondEvent %d" % count)
+        count += 1
 
 
 def main():

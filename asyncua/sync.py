@@ -74,7 +74,7 @@ def syncmethod(func):
         if isinstance(result, list) and len(result) > 0 and isinstance(result[0], node.Node):
             return [Node(self.tloop, i) for i in result]
         if isinstance(result, server.event_generator.EventGenerator):
-            return EventGenerator(result)
+            return EventGenerator(self.tloop, result)
         if isinstance(result, subscription.Subscription):
             return Subscription(self.tloop, result)
         return result
@@ -237,19 +237,20 @@ class Server:
         pass
 
     def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
-        return self.aio_obj.set_attribute_value(nodeid, datavalue, attr)
+        return self.tloop.post(self.aio_obj.set_attribute_value(nodeid, datavalue, attr))
 
 
 class EventGenerator:
-    def __init__(self, aio_evgen):
+    def __init__(self, tloop, aio_evgen):
         self.aio_obj = aio_evgen
+        self.tloop = tloop
 
     @property
     def event(self):
         return self.aio_obj.event
 
     def trigger(self, time=None, message=None):
-        return self.aio_obj.trigger(time, message)
+        return self.tloop.post(self.aio_obj.trigger(time, message))
 
 
 class Node:
