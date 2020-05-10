@@ -44,7 +44,6 @@ def multiply(parent, x, y):
 
 async def main():
     # optional: setup logging
-    logging.basicConfig(level=logging.INFO)
     #logger = logging.getLogger("asyncua.address_space")
     # logger.setLevel(logging.DEBUG)
     #logger = logging.getLogger("asyncua.internal_server")
@@ -130,4 +129,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
