@@ -182,13 +182,13 @@ async def test_data_type_dict_add_dictionary(srv):
     add_dictionary = getattr(srv.dict_builder, '_add_dictionary')
     dict_name = 'TestDict'
     dict_node = srv.srv.get_node(await add_dictionary(dict_name))
-    assert await dict_node.get_browse_name() == ua.QualifiedName(dict_name, srv.idx)
-    assert await dict_node.get_node_class() == ua.NodeClass.Variable
+    assert await dict_node.read_browse_name() == ua.QualifiedName(dict_name, srv.idx)
+    assert await dict_node.read_node_class() == ua.NodeClass.Variable
     assert (await dict_node.get_parent()).nodeid == ua.NodeId(ua.ObjectIds.OPCBinarySchema_TypeSystem, 0)
     assert ua.NodeId(ua.ObjectIds.HasComponent, 0) == (await dict_node.get_references(refs=ua.ObjectIds.HasComponent))[0].ReferenceTypeId
     assert await dict_node.get_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeDictionaryType, 0)
-    assert await dict_node.get_display_name() == ua.LocalizedText(dict_name)
-    assert await dict_node.get_data_type() == ua.NodeId(ua.ObjectIds.ByteString)
+    assert await dict_node.read_display_name() == ua.LocalizedText(dict_name)
+    assert await dict_node.read_data_type() == ua.NodeId(ua.ObjectIds.ByteString)
     assert await dict_node.read_value_rank() == -1
 
 
@@ -198,35 +198,35 @@ async def test_data_type_dict_create_data_type(srv):
     assert isinstance(created_type, StructNode)
     # Test data type node
     type_node = srv.srv.get_node(created_type.data_type)
-    assert await type_node.get_browse_name() == ua.QualifiedName(type_name, srv.idx)
-    assert await type_node.get_node_class() == ua.NodeClass.DataType
+    assert await type_node.read_browse_name() == ua.QualifiedName(type_name, srv.idx)
+    assert await type_node.read_node_class() == ua.NodeClass.DataType
     assert (await type_node.get_parent()).nodeid == ua.NodeId(ua.ObjectIds.Structure, 0)
     assert ua.NodeId(ua.ObjectIds.HasSubtype, 0) == (await type_node.get_references(refs=ua.ObjectIds.HasSubtype))[0].ReferenceTypeId
-    assert await type_node.get_display_name() == ua.LocalizedText(type_name)
+    assert await type_node.read_display_name() == ua.LocalizedText(type_name)
 
     # Test description node
     n = srv.srv.get_node(srv.dict_builder.dict_id)
     desc_node = await n.get_child(f"{srv.dict_builder._idx}:{type_name}")
-    assert await desc_node.get_browse_name() == ua.QualifiedName(type_name, srv.idx)
-    assert await desc_node.get_node_class() == ua.NodeClass.Variable
+    assert await desc_node.read_browse_name() == ua.QualifiedName(type_name, srv.idx)
+    assert await desc_node.read_node_class() == ua.NodeClass.Variable
     assert (await desc_node.get_parent()).nodeid == srv.dict_builder.dict_id
     assert ua.NodeId(ua.ObjectIds.HasComponent, 0) == (await desc_node.get_references(refs=ua.ObjectIds.HasComponent))[0].ReferenceTypeId
     assert await desc_node.get_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeDescriptionType, 0)
 
-    assert await desc_node.get_display_name() == ua.LocalizedText(type_name)
-    assert await desc_node.get_data_type() == ua.NodeId(ua.ObjectIds.String)
+    assert await desc_node.read_display_name() == ua.LocalizedText(type_name)
+    assert await desc_node.read_data_type() == ua.NodeId(ua.ObjectIds.String)
     assert await desc_node.read_value() == type_name
     assert await desc_node.read_value_rank() == -1
 
     # Test object node
     obj_node = (await type_node.get_children(refs=ua.ObjectIds.HasEncoding))[0]
-    assert await obj_node.get_browse_name() == ua.QualifiedName('Default Binary', 0)
-    assert await obj_node.get_node_class() == ua.NodeClass.Object
+    assert await obj_node.read_browse_name() == ua.QualifiedName('Default Binary', 0)
+    assert await obj_node.read_node_class() == ua.NodeClass.Object
     assert (await obj_node.get_references(refs=ua.ObjectIds.HasEncoding))[0].NodeId == type_node.nodeid
     assert ua.NodeId(ua.ObjectIds.HasEncoding, 0) == (await obj_node.get_references(refs=ua.ObjectIds.HasEncoding))[0].ReferenceTypeId
     assert await obj_node.get_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeEncodingType, 0)
-    assert await obj_node.get_display_name() == ua.LocalizedText('Default Binary')
-    assert len(await obj_node.get_event_notifier()) == 0
+    assert await obj_node.read_display_name() == ua.LocalizedText('Default Binary')
+    assert len(await obj_node.read_event_notifier()) == 0
 
     # Test links, three were tested above
     struct_node = srv.srv.get_node(ua.NodeId(ua.ObjectIds.Structure, 0))

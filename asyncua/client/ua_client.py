@@ -534,7 +534,10 @@ class UaClient:
                 )
             else:
                 try:
-                    callback(response.Parameters)
+                    if asyncio.iscoroutinefunction(callback):
+                        await callback(response.Parameters)
+                    else:
+                        callback(response.Parameters)
                 except Exception:  # we call user code, catch everything!
                     self.logger.exception("Exception while calling user callback: %s")
             # Repeat with acknowledgement
@@ -651,8 +654,8 @@ class UaClient:
         response.ResponseHeader.ServiceResult.check()
         # nothing to return for this service
 
-    async def get_attributes(self, nodeids, attr):
-        self.logger.info("get_attributes of several nodes")
+    async def read_attributes(self, nodeids, attr):
+        self.logger.info("read_attributes of several nodes")
         request = ua.ReadRequest()
         for nodeid in nodeids:
             rv = ua.ReadValueId()
@@ -664,12 +667,12 @@ class UaClient:
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def set_attributes(self, nodeids, datavalues, attributeid=ua.AttributeIds.Value):
+    async def write_attributes(self, nodeids, datavalues, attributeid=ua.AttributeIds.Value):
         """
         Set an attribute of multiple nodes
         datavalue is a ua.DataValue object
         """
-        self.logger.info("set_attributes of several nodes")
+        self.logger.info("write_attributes of several nodes")
         request = ua.WriteRequest()
         for idx, nodeid in enumerate(nodeids):
             attr = ua.WriteValue()

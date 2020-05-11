@@ -80,7 +80,7 @@ async def test_register_existing_namespace(server):
 async def test_register_use_namespace(server):
     uri = 'http://my_very_custom.Namespace.com'
     idx = await server.register_namespace(uri)
-    root = server.get_root_node()
+    root = server.nodes.root
     myvar = await root.add_variable(idx, 'var_in_custom_namespace', [5])
     myid = myvar.nodeid
     assert idx == myid.NamespaceIndex
@@ -91,14 +91,14 @@ async def test_server_method(server):
         variant.Value *= 2
         return [variant]
 
-    o = server.get_objects_node()
+    o = server.nodes.objects
     v = await o.add_method(3, 'Method1', func, [ua.VariantType.Int64], [ua.VariantType.Int64])
     result = await o.call_method(v, ua.Variant(2.1))
     assert result == 4.2
 
 
 async def test_historize_variable(server):
-    o = server.get_objects_node()
+    o = server.nodes.objects
     var = await o.add_variable(3, "test_hist", 1.0)
     await server.iserver.enable_history_data_change(var, timedelta(days=1))
     await asyncio.sleep(1)
@@ -118,7 +118,7 @@ async def test_multiple_clients_with_subscriptions(server):
     client1 = Client(server.endpoint.geturl())
     client2 = Client(server.endpoint.geturl())
 
-    o = server.get_objects_node()
+    o = server.nodes.objects
     var = await o.add_variable(3, "some_variable", 1.0)
     async with client1:
         async with client2:
@@ -136,16 +136,16 @@ async def test_multiple_clients_with_subscriptions(server):
 
 async def test_historize_events(server):
     srv_node = server.get_node(ua.ObjectIds.Server)
-    assert await srv_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+    assert await srv_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
     srvevgen = await server.get_event_generator()
     await server.iserver.enable_history_event(srv_node, period=None)
-    assert await srv_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents, ua.EventNotifier.HistoryRead}
-    srvevgen.trigger(message='Message')
+    assert await srv_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents, ua.EventNotifier.HistoryRead}
+    await srvevgen.trigger(message='Message')
     await server.iserver.disable_history_event(srv_node)
 
 
 async def test_references_for_added_nodes_method(server):
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
     nodes = await objects.get_referenced_nodes(refs=ua.ObjectIds.Organizes, direction=ua.BrowseDirection.Forward,
                                                includesubtypes=False)
@@ -273,7 +273,7 @@ async def test_eventgenerator_sourceServer_ObjectIds(server):
 
 
 async def test_eventgenerator_sourceMyObject(server):
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
     evgen = await server.get_event_generator(emitting_node=o)
     await check_eventgenerator_base_event(evgen, server)
@@ -281,7 +281,7 @@ async def test_eventgenerator_sourceMyObject(server):
 
 
 async def test_eventgenerator_source_collision(server):
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
     event = BaseEvent(sourcenode=o.nodeid)
     evgen = await server.get_event_generator(event, ua.ObjectIds.Server)
@@ -358,10 +358,10 @@ async def test_create_custom_object_type_object_id(server):
     variables = await node_type.get_variables()
     assert await node_type.get_child("2:VariableString") in variables
     assert ua.VariantType.String == (
-        await(await node_type.get_child("2:VariableString")).get_data_value()).Value.VariantType
+        await(await node_type.get_child("2:VariableString")).read_data_value()).Value.VariantType
     assert await node_type.get_child("2:MyEnumVar") in variables
-    assert ua.VariantType.Int32 == (await(await node_type.get_child("2:MyEnumVar")).get_data_value()).Value.VariantType
-    assert ua.NodeId(ua.ObjectIds.ApplicationType) == await (await node_type.get_child("2:MyEnumVar")).get_data_type()
+    assert ua.VariantType.Int32 == (await(await node_type.get_child("2:MyEnumVar")).read_data_value()).Value.VariantType
+    assert ua.NodeId(ua.ObjectIds.ApplicationType) == await (await node_type.get_child("2:MyEnumVar")).read_data_type()
     methods = await node_type.get_methods()
     assert await node_type.get_child("2:MyMethod") in methods
 
@@ -427,7 +427,7 @@ async def test_eventgenerator_double_custom_event(server):
 
 
 async def test_eventgenerator_custom_event_my_object(server):
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
     etype = await server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
                                                   [('PropertyNum', ua.VariantType.Int32),
@@ -474,7 +474,7 @@ async def test_get_node_by_ns(server):
     idx_a = await server.register_namespace('a')
     idx_b = await server.register_namespace('b')
     idx_c = await server.register_namespace('c')
-    o = server.get_objects_node()
+    o = server.nodes.objects
     _myvar2 = await o.add_variable(idx_a, "MyBoolVar2", True)
     _myvar3 = await o.add_variable(idx_b, "MyBoolVar3", True)
     _myvar4 = await o.add_variable(idx_c, "MyBoolVar4", True)
@@ -543,24 +543,24 @@ async def test_load_enum_values(server):
 
 
 async def check_eventgenerator_source_server(evgen, server: Server):
-    server_node = server.get_server_node()
-    assert evgen.event.SourceName == (await server_node.get_browse_name()).Name
+    server_node = server.nodes.server
+    assert evgen.event.SourceName == (await server_node.read_browse_name()).Name
     assert evgen.event.SourceNode == ua.NodeId(ua.ObjectIds.Server)
-    assert await server_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+    assert await server_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
     refs = await server_node.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward,
                                                   ua.NodeClass.ObjectType, False)
     assert len(refs) >= 1
 
 
 async def check_event_generator_object(evgen, obj, emitting_node=None):
-    assert evgen.event.SourceName == (await obj.get_browse_name()).Name
+    assert evgen.event.SourceName == (await obj.read_browse_name()).Name
     assert evgen.event.SourceNode == obj.nodeid
 
     if not emitting_node:
-        assert await obj.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+        assert await obj.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
         refs = await obj.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
     else:
-        assert await emitting_node.get_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
+        assert await emitting_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
         refs = await emitting_node.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
 
     assert evgen.event.EventType in [x.nodeid for x in refs]
@@ -603,14 +603,14 @@ async def check_custom_type(ntype, base_type, server: Server, node_class=None):
                                             includesubtypes=True)
     assert base == nodes[0]
     if node_class:
-        assert node_class == await ntype.get_node_class()
+        assert node_class == await ntype.read_node_class()
     properties = await ntype.get_properties()
     assert properties is not None
     assert len(properties) == 2
     assert await ntype.get_child("2:PropertyNum") in properties
-    assert (await(await ntype.get_child("2:PropertyNum")).get_data_value()).Value.VariantType == ua.VariantType.Int32
+    assert (await(await ntype.get_child("2:PropertyNum")).read_data_value()).Value.VariantType == ua.VariantType.Int32
     assert await ntype.get_child("2:PropertyString") in properties
-    assert (await(await ntype.get_child("2:PropertyString")).get_data_value()).Value.VariantType == ua.VariantType.String
+    assert (await(await ntype.get_child("2:PropertyString")).read_data_value()).Value.VariantType == ua.VariantType.String
 
 
 """

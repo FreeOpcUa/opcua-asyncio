@@ -32,7 +32,7 @@ if __name__ == "__main__":
         root = client.nodes.root
         print("Root is", root)
         print("childs of root are: ", root.get_children())
-        print("name of root is", root.get_browse_name())
+        print("name of root is", root.read_browse_name())
         objects = client.nodes.objects
         print("childs og objects are: ", objects.get_children())
         myfloat = client.get_node("ns=4;s=Float")

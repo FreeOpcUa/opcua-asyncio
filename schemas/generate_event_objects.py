@@ -60,8 +60,10 @@ class EventsCodeGenerator:
             return "None"
 
     def get_property_data_type(self, reference):
-        if str(reference.refBrowseName).endswith("Time"):
+        if str(reference.refBrowseName) in ("Time", "ReceiveTime"):
             return "ua.VariantType.DateTime"
+        elif str(reference.refBrowseName) == "LocalTime":
+            return "ua.VariantType.ExtensionObject"
         elif str(reference.refDataType).startswith("i="):
             return "ua.NodeId(ua.ObjectIds.{0})".format(
                 str(obIds.ObjectIdNames[int(str(reference.refDataType).split("=")[1])]).split("_")[0])
@@ -117,7 +119,7 @@ class EventsCodeGenerator:
 
 
 if __name__ == "__main__":
-    xmlPath = "Opc.Ua.NodeSet2.xml"
+    xmlPath = "UA-Nodeset/Schema/Opc.Ua.NodeSet2.xml"
     output_path = "../asyncua/common/event_objects.py"
     p = gme.Parser(xmlPath)
     model = p.parse()

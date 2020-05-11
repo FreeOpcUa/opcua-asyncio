@@ -76,7 +76,7 @@ class EnumeratedValue(object):
 
 class Struct(object):
     def __init__(self, name):
-        self.name = name
+        self.name = _clean_name(name)
         self.fields = []
         self.typeid = None
 
@@ -177,7 +177,7 @@ class StructGenerator(object):
             self.model.append(struct)
 
     def save_to_file(self, path, register=False):
-        _file = open(path, "wt")
+        _file = open(path, "w+")
         self._make_header(_file)
         for struct in self.model:
             _file.write(struct.get_code())
@@ -233,17 +233,16 @@ async def load_type_definitions(server, nodes=None):
     generators = []
     for node in nodes:
         xml = await node.read_value()
-        xml = xml.decode("utf-8")
         generator = StructGenerator()
         generators.append(generator)
         generator.make_model_from_string(xml)
         # generate and execute new code on the fly
         generator.get_python_classes(structs_dict)
         # same but using a file that is imported. This can be usefull for debugging library
-        # name = node.get_browse_name().Name
+        # name = node.read_browse_name().Name
         # Make sure structure names do not contain charaters that cannot be used in Python class file names
         # name = _clean_name(name)
-        # name = "structures_" + node.get_browse_name().Name
+        # name = "structures_" + node.read_browse_name().Name
         # generator.save_and_import(name + ".py", append_to=structs_dict)
 
         # register classes
@@ -314,16 +313,17 @@ async def load_enums(server, env=None):
     if env is None:
         env = ua.__dict__
     for node in nodes:
-        name = (await node.get_browse_name()).Name
+        name = (await node.read_browse_name()).Name
         try:
             c = await _get_enum_strings(name, node)
         except ua.UaError as ex:
             try:
                 c = await _get_enum_values(name, node)
             except ua.UaError as ex:
-                _logger.info("Node %s, %s under DataTypes/Enumeration, does not seem to have a child called EnumString or EumValue: %s", name, node, ex)
+                _logger.warning("Node %s, %s under DataTypes/Enumeration, does not seem to have a child called EnumString or EumValue: %s", name, node, ex)
                 continue
         if not hasattr(ua, c.name):
+            _logger.warning("Adding enum %s to ua namespace", c)
             model.append(c)
     return _generate_python_class(model, env=env)
 

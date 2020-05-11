@@ -74,7 +74,7 @@ def syncmethod(func):
         if isinstance(result, list) and len(result) > 0 and isinstance(result[0], node.Node):
             return [Node(self.tloop, i) for i in result]
         if isinstance(result, server.event_generator.EventGenerator):
-            return EventGenerator(result)
+            return EventGenerator(self.tloop, result)
         if isinstance(result, subscription.Subscription):
             return Subscription(self.tloop, result)
         return result
@@ -236,20 +236,21 @@ class Server:
     def load_type_definitions(self):
         pass
 
-    def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
-        return self.aio_obj.set_attribute_value(nodeid, datavalue, attr)
+    def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+        return self.tloop.post(self.aio_obj.write_attribute_value(nodeid, datavalue, attr))
 
 
 class EventGenerator:
-    def __init__(self, aio_evgen):
+    def __init__(self, tloop, aio_evgen):
         self.aio_obj = aio_evgen
+        self.tloop = tloop
 
     @property
     def event(self):
         return self.aio_obj.event
 
     def trigger(self, time=None, message=None):
-        return self.aio_obj.trigger(time, message)
+        return self.tloop.post(self.aio_obj.trigger(time, message))
 
 
 class Node:
@@ -276,11 +277,11 @@ class Node:
         return self.aio_obj.nodeid
 
     @syncmethod
-    def get_browse_name(self):
+    def read_browse_name(self):
         pass
 
     @syncmethod
-    def get_display_name(self):
+    def read_display_name(self):
         pass
 
     @syncmethod
@@ -373,11 +374,11 @@ class Node:
         pass
 
     @syncmethod
-    def get_node_class(self):
+    def read_node_class(self):
         pass
 
     @syncmethod
-    def get_attributes(self):
+    def read_attributes(self):
         pass
 
 class Subscription:

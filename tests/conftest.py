@@ -143,13 +143,13 @@ async def create_srv_events(history_server: HistoryServer):
     await history_server.srv.historize_node_event(history_server.srv_node, period=None)
     for i in history_server.ev_values:
         srv_evgen.event.Severity = history_server.ev_values[i]
-        srv_evgen.trigger(message="test message")
+        await srv_evgen.trigger(message="test message")
         await asyncio.sleep(.1)
     await asyncio.sleep(2)
 
 
 async def create_var(history_server: HistoryServer):
-    o = history_server.srv.get_objects_node()
+    o = history_server.srv.nodes.objects
     history_server.values = [i for i in range(20)]
     history_server.var = await o.add_variable(3, "history_var", 0)
     await history_server.srv.historize_node_data_change(history_server.var, period=None, count=0)
