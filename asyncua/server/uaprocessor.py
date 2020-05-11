@@ -141,11 +141,11 @@ class UaProcessor:
             sessiondata = await self.session.create_session(params, sockname=self.sockname)
             response = ua.CreateSessionResponse()
             response.Parameters = sessiondata
-            response.Parameters.ServerCertificate = self._connection.security_policy.client_certificate
-            if self._connection.security_policy.server_certificate is None:
+            response.Parameters.ServerCertificate = self._connection.security_policy.host_certificate
+            if self._connection.security_policy.peer_certificate is None:
                 data = params.ClientNonce
             else:
-                data = self._connection.security_policy.server_certificate + params.ClientNonce
+                data = self._connection.security_policy.peer_certificate + params.ClientNonce
             response.Parameters.ServerSignature.Signature = \
                 self._connection.security_policy.asymmetric_cryptography.signature(data)
             response.Parameters.ServerSignature.Algorithm = self._connection.security_policy.AsymmetricSignatureURI
@@ -170,10 +170,10 @@ class UaProcessor:
             if not self.session:
                 _logger.info("request to activate non-existing session")
                 raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
-            if self._connection.security_policy.client_certificate is None:
+            if self._connection.security_policy.host_certificate is None:
                 data = self.session.nonce
             else:
-                data = self._connection.security_policy.client_certificate + self.session.nonce
+                data = self._connection.security_policy.host_certificate + self.session.nonce
             self._connection.security_policy.asymmetric_cryptography.verify(data, params.ClientSignature.Signature)
             result = self.session.activate_session(params)
             response = ua.ActivateSessionResponse()

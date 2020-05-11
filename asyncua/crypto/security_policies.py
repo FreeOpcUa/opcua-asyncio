@@ -138,9 +138,9 @@ class Cryptography(CryptographyNone):
         rem = (size + self.signature_size() + extrapad_size) % block_size
         if rem != 0:
             rem = block_size - rem
-        data = bytes(bytearray([rem%256])) * (rem + 1)
+        data = bytes(bytearray([rem % 256])) * (rem + 1)
         if self.Encryptor.encrypted_block_size() > 256:
-            data = data + bytes(bytearray([rem>>8]))
+            data = data + bytes(bytearray([rem >> 8]))
         return data
 
     def min_padding_size(self):
@@ -317,6 +317,7 @@ class DecryptorAesCbc(Decryptor):
     def decrypt(self, data):
         return uacrypto.cipher_decrypt(self.cipher, data)
 
+
 class SignerSha256(Signer):
 
     def __init__(self, client_pk):
@@ -330,6 +331,7 @@ class SignerSha256(Signer):
     def signature(self, data):
         return uacrypto.sign_sha256(self.client_pk, data)
 
+
 class VerifierSha256(Verifier):
 
     def __init__(self, server_cert):
@@ -342,6 +344,7 @@ class VerifierSha256(Verifier):
 
     def verify(self, data, signature):
         uacrypto.verify_sha256(self.server_cert, data, signature)
+
 
 class SignerHMac256(Signer):
 
@@ -369,6 +372,7 @@ class VerifierHMac256(Verifier):
         expected = uacrypto.hmac_sha256(self.key, data)
         if signature != expected:
             raise uacrypto.InvalidSignature
+
 
 class SecurityPolicyBasic128Rsa15(SecurityPolicy):
     """
@@ -522,6 +526,7 @@ class SecurityPolicyBasic256(SecurityPolicy):
         self.symmetric_cryptography.Verifier = VerifierAesCbc(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
+
 class SecurityPolicyBasic256Sha256(SecurityPolicy):
     """
     Security Basic 256Sha256
@@ -557,24 +562,26 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
     def encrypt_asymmetric(pubkey, data):
         return uacrypto.encrypt_rsa_oaep(pubkey, data)
 
-    def __init__(self, server_cert, client_cert, client_pk, mode):
+    def __init__(self, peer_cert, host_cert, client_pk, mode, certificate_handler=None):
         require_cryptography(self)
-        if isinstance(server_cert, bytes):
-            server_cert = uacrypto.x509_from_der(server_cert)
+        if isinstance(peer_cert, bytes):
+            peer_cert = uacrypto.x509_from_der(peer_cert)
         # even in Sign mode we need to asymmetrically encrypt secrets
         # transmitted in OpenSecureChannel. So SignAndEncrypt here
         self.asymmetric_cryptography = Cryptography(
             MessageSecurityMode.SignAndEncrypt)
         self.asymmetric_cryptography.Signer = SignerSha256(client_pk)
-        self.asymmetric_cryptography.Verifier = VerifierSha256(server_cert)
+        self.asymmetric_cryptography.Verifier = VerifierSha256(peer_cert)
         self.asymmetric_cryptography.Encryptor = EncryptorRsa(
-            server_cert, uacrypto.encrypt_rsa_oaep, 42)
+            peer_cert, uacrypto.encrypt_rsa_oaep, 42)
         self.asymmetric_cryptography.Decryptor = DecryptorRsa(
             client_pk, uacrypto.decrypt_rsa_oaep, 42)
         self.symmetric_cryptography = Cryptography(mode)
         self.Mode = mode
-        self.server_certificate = uacrypto.der_from_x509(server_cert)
-        self.client_certificate = uacrypto.der_from_x509(client_cert)
+        self.peer_certificate = uacrypto.der_from_x509(peer_cert)
+        self.host_certificate = uacrypto.der_from_x509(host_cert)
+        if certificate_handler:
+            assert self.peer_certificate in certificate_handler
 
     def make_local_symmetric_key(self, secret, seed):
         # specs part 6, 6.7.5
@@ -592,6 +599,7 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         (sigkey, key, init_vec) = uacrypto.p_sha256(secret, seed, key_sizes)
         self.symmetric_cryptography.Verifier = VerifierHMac256(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
+
 
 def encrypt_asymmetric(pubkey, data, policy_uri):
     """
