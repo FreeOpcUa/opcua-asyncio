@@ -383,14 +383,14 @@ class NodeManagementService:
         rdesc.IsForward = addref.IsForward
         rdesc.NodeId = addref.TargetNodeId
         if addref.TargetNodeClass == ua.NodeClass.Unspecified:
-            rdesc.NodeClass = self._aspace.read_attribute_value(
-                addref.TargetNodeId, ua.AttributeIds.NodeClass).Value.Value
+            rdesc.NodeClass = (await self._aspace.read_attribute_value(
+                addref.TargetNodeId, ua.AttributeIds.NodeClass)).Value.Value
         else:
             rdesc.NodeClass = addref.TargetNodeClass
-        bname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value
+        bname = (await self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName)).Value.Value
         if bname:
             rdesc.BrowseName = bname
-        dname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName).Value.Value
+        dname = (await self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName)).Value.Value
         if dname:
             rdesc.DisplayName = dname
         return self._add_unique_reference(sourcedata, rdesc)
