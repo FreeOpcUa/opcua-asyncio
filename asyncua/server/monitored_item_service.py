@@ -115,8 +115,8 @@ class MonitoredItemService:
                          params.ItemToMonitor.AttributeId)
 
         result, mdata = self._make_monitored_item_common(params)
-        ev_notify_byte = await self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
-                                                         ua.AttributeIds.EventNotifier).Value.Value
+        ev_notify_byte = (await self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
+                                                         ua.AttributeIds.EventNotifier)).Value.Value
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadServiceUnsupported)
