@@ -10,7 +10,7 @@ from asyncua import Client
 from asyncua import Server
 from asyncua import ua
 from asyncua.crypto.certificate_handler import CertificateHandler
-
+import asyncio
 try:
     from asyncua.crypto import uacrypto
     from asyncua.crypto import security_policies
@@ -161,7 +161,7 @@ async def test_certificate_handling_success(srv_crypto_one_cert):
 async def test_certificate_handling_failure(srv_crypto_one_cert):
     clt = Client(uri_crypto_cert)
 
-    with pytest.raises(TimeoutError):
+    with pytest.raises(asyncio.TimeoutError):
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             unauthorized_peer_creds['certificate'],
@@ -175,7 +175,7 @@ async def test_certificate_handling_failure(srv_crypto_one_cert):
 
 async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
     clt = Client(uri_crypto_cert)
-    with pytest.raises(TimeoutError):
+    with pytest.raises(asyncio.TimeoutError):
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             peer_creds['certificate'],

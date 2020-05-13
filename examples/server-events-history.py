@@ -67,9 +67,9 @@ if __name__ == "__main__":
             count += 0.1
 
             # generate events for subscribed clients and history
-            myevgen.trigger(message="This is MyFirstEvent " + str(count))
-            myevgen2.trigger(message="This is MySecondEvent " + str(count))
-            serverevgen.trigger(message="Server Event Message")
+            await myevgen.trigger(message="This is MyFirstEvent " + str(count))
+            await myevgen2.trigger(message="This is MySecondEvent " + str(count))
+            await serverevgen.trigger(message="Server Event Message")
 
             # read event history from sql
             end_time = datetime.utcnow()
