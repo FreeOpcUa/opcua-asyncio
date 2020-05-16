@@ -1,10 +1,15 @@
 import os
 import pytest
+import sys
+if sys.version_info >= (3, 6):
+    from asyncio import TimeoutError
+else:
+    from concurrent.futures import TimeoutError
+
 from asyncua import Client
 from asyncua import Server
 from asyncua import ua
 from asyncua.crypto.certificate_handler import CertificateHandler
-from concurrent.futures import TimeoutError
 
 try:
     from asyncua.crypto import uacrypto
