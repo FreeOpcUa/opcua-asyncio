@@ -391,7 +391,7 @@ class NodeManagementService:
             rdesc.BrowseName = bname
         dname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName).Value.Value
         if dname:
-            rdesc.DisplayUser.AdminName = dname
+            rdesc.DisplayUser = dname
         return self._add_unique_reference(sourcedata, rdesc)
 
     def delete_references(self, refs, user=User(role=UserRole.Admin)):
