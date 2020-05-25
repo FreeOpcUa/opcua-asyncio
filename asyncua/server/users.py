@@ -5,10 +5,15 @@ Implement user management here.
 from enum import Enum
 
 
-class User(Enum):
+class UserRole(Enum):
     """
-    Define some default users.
+    User Roles
     """
     Admin = 0
     Anonymous = 1
     User = 3
+
+
+class User:
+    def __init__(self, role=UserRole.Anonymous):
+        self.role = role

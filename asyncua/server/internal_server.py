@@ -19,7 +19,7 @@ from .history import HistoryManager
 from .address_space import AddressSpace, AttributeService, ViewService, NodeManagementService, MethodService
 from .subscription_service import SubscriptionService
 from .standard_address_space import standard_address_space
-from .users import User
+from .users import User, UserRole
 from .internal_session import InternalSession
 
 try:
@@ -40,7 +40,7 @@ def default_user_manager(iserver, isession, username, password):
     Default user_manager, does nothing much but check for admin
     """
     if iserver.allow_remote_admin and username in ("admin", "Admin"):
-        isession.user = User.Admin
+        isession.user = User(role=UserRole.Admin)
     return True
 
 
@@ -70,7 +70,8 @@ class InternalServer:
         self.history_manager = HistoryManager(self)
         self.user_manager = default_user_manager  # defined at the end of this file
         # create a session to use on server side
-        self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal", user=User.Admin)
+        self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal",
+                                        user=User(role=UserRole.Admin))
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
 
     async def init(self, shelffile=None):
@@ -228,7 +229,8 @@ class InternalServer:
     def register_server2(self, params):
         return self.register_server(params.Server, params.DiscoveryConfiguration)
 
-    def create_session(self, name, user=User.Anonymous, external=False):
+    def create_session(self, name, user=User(role=UserRole.Anonymous), external=False):
+        print(user)
         return InternalSession(self, self.aspace, self.subscription_service, name, user=user, external=external)
 
     async def enable_history_data_change(self, node, period=timedelta(days=7), count=0):
