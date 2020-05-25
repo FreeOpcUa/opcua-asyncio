@@ -34,6 +34,7 @@ class InternalSession:
         self.subscription_service: SubscriptionService = submgr
         self.name = name
         self.user = user
+        print(self.user)
         self.nonce = None
         self.state = SessionState.Created
         self.session_id = ua.NodeId(self._counter)
