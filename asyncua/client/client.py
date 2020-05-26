@@ -116,7 +116,9 @@ class Client:
 
         - ``Policy`` is ``Basic128Rsa15``, ``Basic256`` or ``Basic256Sha256``
         - ``Mode`` is ``Sign`` or ``SignAndEncrypt``
-        - ``certificate``, ``private_key`` and ``server_private_key`` are paths to ``.pem`` or ``.der`` files
+        - ``certificate`` and ``server_private_key`` are paths to ``.pem`` or ``.der`` files
+        - ``private_key`` may be a path to a ``.pem`` or ``.der`` file or a conjunction of ``path``::``password`` where
+          ``password`` is the private key password.
 
         Call this before connect()
         """
@@ -125,14 +127,22 @@ class Client:
         parts = string.split(",")
         if len(parts) < 4:
             raise ua.UaError("Wrong format: `{}`, expected at least 4 comma-separated values".format(string))
+
+        if '::' in parts[3]:  # if the filename contains a colon, assume it's a conjunction and parse it
+            parts[3], client_key_password = parts[3].split('::')
+        else:
+            client_key_password = None
+
         policy_class = getattr(security_policies, "SecurityPolicy{}".format(parts[0]))
         mode = getattr(ua.MessageSecurityMode, parts[1])
-        return await self.set_security(policy_class, parts[2], parts[3], parts[4] if len(parts) >= 5 else None, mode)
+        return await self.set_security(policy_class, parts[2], parts[3], client_key_password,
+                                       parts[4] if len(parts) >= 5 else None, mode)
 
     async def set_security(self,
                            policy,
                            certificate_path: str,
                            private_key_path: str,
+                           private_key_password: str = None,
                            server_certificate_path: str = None,
                            mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
         """
@@ -147,7 +157,7 @@ class Client:
         else:
             server_cert = await uacrypto.load_certificate(server_certificate_path)
         cert = await uacrypto.load_certificate(certificate_path)
-        pk = await uacrypto.load_private_key(private_key_path)
+        pk = await uacrypto.load_private_key(private_key_path, password=private_key_password)
         self.security_policy = policy(server_cert, cert, pk, mode)
         self.uaclient.set_security(self.security_policy)
 
