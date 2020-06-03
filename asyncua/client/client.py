@@ -550,12 +550,12 @@ class Client:
     def delete_nodes(self, nodes, recursive=False) -> Coroutine:
         return delete_nodes(self.uaclient, nodes, recursive)
 
-    def import_xml(self, path=None, xmlstring=None) -> Coroutine:
+    async def import_xml(self, path=None, xmlstring=None) -> Coroutine:
         """
         Import nodes defined in xml
         """
         importer = XmlImporter(self)
-        return importer.import_xml(path, xmlstring)
+        return await importer.import_xml(path, xmlstring)
 
     async def export_xml(self, nodes, path):
         """
