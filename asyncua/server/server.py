@@ -547,8 +547,8 @@ class Server:
         nodes = await get_nodes_of_namespace(self, namespaces)
         await self.export_xml(nodes, path)
 
-    def delete_nodes(self, nodes, recursive=False) -> Coroutine:
-        return delete_nodes(self.iserver.isession, nodes, recursive)
+    async def delete_nodes(self, nodes, recursive=False):
+        return await delete_nodes(self.iserver.isession, nodes, recursive)
 
     async def historize_node_data_change(self, node, period=timedelta(days=7), count=0):
         """
