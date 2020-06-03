@@ -547,15 +547,15 @@ class Client:
         _logger.info("get_namespace_index %s %r", type(uries), uries)
         return uries.index(uri)
 
-    def delete_nodes(self, nodes, recursive=False) -> Coroutine:
-        return delete_nodes(self.uaclient, nodes, recursive)
+    async def delete_nodes(self, nodes, recursive=False) -> Coroutine:
+        return await delete_nodes(self.uaclient, nodes, recursive)
 
-    def import_xml(self, path=None, xmlstring=None) -> Coroutine:
+    async def import_xml(self, path=None, xmlstring=None) -> Coroutine:
         """
         Import nodes defined in xml
         """
         importer = XmlImporter(self)
-        return importer.import_xml(path, xmlstring)
+        return await importer.import_xml(path, xmlstring)
 
     async def export_xml(self, nodes, path):
         """
@@ -578,20 +578,20 @@ class Client:
         await ns_node.write_value(uries)
         return len(uries) - 1
 
-    def load_type_definitions(self, nodes=None) -> Coroutine:
+    async def load_type_definitions(self, nodes=None) -> Coroutine:
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
         These classes will available in ua module
         """
-        return load_type_definitions(self, nodes)
+        return await load_type_definitions(self, nodes)
 
-    def load_enums(self) -> Coroutine:
+    async def load_enums(self) -> Coroutine:
         """
         generate Python enums for custom enums on server.
         This enums will be available in ua module
         """
-        return load_enums(self)
+        return await load_enums(self)
 
     async def register_nodes(self, nodes):
         """
