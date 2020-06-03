@@ -375,8 +375,8 @@ class HistoryManager:
             results.append(results)
         return results
 
-    def stop(self) -> Coroutine:
+    async def stop(self) -> Coroutine:
         """
         call stop methods of active storage interface whenever the server is stopped
         """
-        return self.storage.stop()
+        return await self.storage.stop()
