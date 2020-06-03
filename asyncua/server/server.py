@@ -613,11 +613,11 @@ class Server:
         """
         return load_type_definitions(self, nodes)
 
-    def load_enums(self) -> Coroutine:
+    async def load_enums(self) -> Coroutine:
         """
         load UA structures and generate python Enums in ua module for custom enums in server
         """
-        return load_enums(self)
+        return await load_enums(self)
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """

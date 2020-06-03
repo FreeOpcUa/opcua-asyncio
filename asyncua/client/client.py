@@ -586,12 +586,12 @@ class Client:
         """
         return load_type_definitions(self, nodes)
 
-    def load_enums(self) -> Coroutine:
+    async def load_enums(self) -> Coroutine:
         """
         generate Python enums for custom enums on server.
         This enums will be available in ua module
         """
-        return load_enums(self)
+        return await load_enums(self)
 
     async def register_nodes(self, nodes):
         """
