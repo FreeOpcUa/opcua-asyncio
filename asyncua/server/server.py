@@ -242,8 +242,8 @@ class Server:
     def set_endpoint(self, url):
         self.endpoint = urlparse(url)
 
-    def get_endpoints(self) -> Coroutine:
-        return self.iserver.get_endpoints()
+    async def get_endpoints(self) -> Coroutine:
+        return await self.iserver.get_endpoints()
 
     def set_security_policy(self, security_policy, certificate_handler=None):
         """
