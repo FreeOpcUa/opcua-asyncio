@@ -242,8 +242,8 @@ class Server:
     def set_endpoint(self, url):
         self.endpoint = urlparse(url)
 
-    def get_endpoints(self) -> Coroutine:
-        return self.iserver.get_endpoints()
+    async def get_endpoints(self) -> Coroutine:
+        return await self.iserver.get_endpoints()
 
     def set_security_policy(self, security_policy, certificate_handler=None):
         """
@@ -520,12 +520,12 @@ class Server:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
 
-    def import_xml(self, path=None, xmlstring=None) -> Coroutine:
+    async def import_xml(self, path=None, xmlstring=None) -> Coroutine:
         """
         Import nodes defined in xml
         """
         importer = XmlImporter(self)
-        return importer.import_xml(path, xmlstring)
+        return await importer.import_xml(path, xmlstring)
 
     async def export_xml(self, nodes, path):
         """
@@ -547,8 +547,8 @@ class Server:
         nodes = await get_nodes_of_namespace(self, namespaces)
         await self.export_xml(nodes, path)
 
-    def delete_nodes(self, nodes, recursive=False) -> Coroutine:
-        return delete_nodes(self.iserver.isession, nodes, recursive)
+    async def delete_nodes(self, nodes, recursive=False) -> Coroutine:
+        return await delete_nodes(self.iserver.isession, nodes, recursive)
 
     async def historize_node_data_change(self, node, period=timedelta(days=7), count=0):
         """
@@ -605,19 +605,19 @@ class Server:
         """
         self.iserver.isession.add_method_callback(node.nodeid, callback)
 
-    def load_type_definitions(self, nodes=None) -> Coroutine:
+    async def load_type_definitions(self, nodes=None) -> Coroutine:
         """
         load custom structures from our server.
         Server side this can be used to create python objects from custom structures
         imported through xml into server
         """
-        return load_type_definitions(self, nodes)
+        return await load_type_definitions(self, nodes)
 
-    def load_enums(self) -> Coroutine:
+    async def load_enums(self) -> Coroutine:
         """
         load UA structures and generate python Enums in ua module for custom enums in server
         """
-        return load_enums(self)
+        return await load_enums(self)
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
