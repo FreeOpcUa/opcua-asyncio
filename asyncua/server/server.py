@@ -605,13 +605,13 @@ class Server:
         """
         self.iserver.isession.add_method_callback(node.nodeid, callback)
 
-    def load_type_definitions(self, nodes=None) -> Coroutine:
+    async def load_type_definitions(self, nodes=None) -> Coroutine:
         """
         load custom structures from our server.
         Server side this can be used to create python objects from custom structures
         imported through xml into server
         """
-        return load_type_definitions(self, nodes)
+        return await load_type_definitions(self, nodes)
 
     def load_enums(self) -> Coroutine:
         """
