@@ -230,7 +230,6 @@ class InternalServer:
         return self.register_server(params.Server, params.DiscoveryConfiguration)
 
     def create_session(self, name, user=User(role=UserRole.Anonymous), external=False):
-        print(user)
         return InternalSession(self, self.aspace, self.subscription_service, name, user=user, external=external)
 
     async def enable_history_data_change(self, node, period=timedelta(days=7), count=0):

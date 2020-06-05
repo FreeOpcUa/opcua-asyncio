@@ -15,5 +15,6 @@ class UserRole(Enum):
 
 
 class User:
-    def __init__(self, role=UserRole.Anonymous):
+    def __init__(self, role=UserRole.Anonymous, name=None):
         self.role = role
+        self.name = name
