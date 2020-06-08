@@ -128,6 +128,12 @@ class UaProcessor:
             _logger.error("sending service fault response: %s (%s)", status.doc, status.name)
             self.send_response(requesthdr.RequestHandle, seqhdr, response)
             return True
+        except ua.uaerrors.BadUserAccessDenied as e:
+            user = self._connection.security_policy.user
+            _logger.warning(f"{user} attempted to do something they are not permitted to do")
+            response = ua.ServiceFault()
+            response.ResponseHeader.ServiceResult = ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)
+            self.send_response(requesthdr.RequestHandle, seqhdr, response)
         except Exception:
             _logger.exception('Error while processing message')
             response = ua.ServiceFault()
@@ -141,7 +147,8 @@ class UaProcessor:
             extra_log_str = "(user unknown)"
         else:
             extra_log_str = "(user {})".format(user.name)
-            user.check_privileges(typeid)
+            if self._connection.security_policy.permissions.check_validity(user, typeid, body) is False:
+                raise ua.uaerrors.BadUserAccessDenied
 
         if typeid == ua.NodeId(ua.ObjectIds.CreateSessionRequest_Encoding_DefaultBinary):
             _logger.info("Create session request {}".format(extra_log_str))

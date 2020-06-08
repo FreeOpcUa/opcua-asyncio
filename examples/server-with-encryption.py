@@ -6,6 +6,8 @@ sys.path.insert(0, "..")
 from asyncua.crypto.certificate_handler import CertificateHandler
 from asyncua import Server
 from asyncua import ua
+from asyncua.crypto.permission_rules import SimpleRoleRuleset
+from asyncua.server.users import UserRole
 
 
 logging.basicConfig(level=logging.INFO)
@@ -16,11 +18,12 @@ async def main():
 
     cert_handler = CertificateHandler()
     await server.init()
-    await cert_handler.trust_certificate("certificates/peer-certificate-example-1.der")
+    await cert_handler.trust_certificate("certificates/peer-certificate-example-1.der", user_role=UserRole.User)
 
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
     server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
-                               certificate_handler=cert_handler)
+                               certificate_handler=cert_handler,
+                               permission_ruleset=SimpleRoleRuleset())
     # load server certificate and private key. This enables endpoints
     # with signing and encryption.
 

@@ -245,7 +245,7 @@ class Server:
     def get_endpoints(self) -> Coroutine:
         return self.iserver.get_endpoints()
 
-    def set_security_policy(self, security_policy, certificate_handler=None):
+    def set_security_policy(self, security_policy, certificate_handler=None, permission_ruleset=None):
         """
         Method setting up the security policies for connections
         to the server, where security_policy is a list of integers.
@@ -265,6 +265,7 @@ class Server:
         """
         self._security_policy = security_policy
         self._certificate_handler = certificate_handler
+        self._permission_ruleset = permission_ruleset
 
     def set_security_IDs(self, policy_ids):
         """
@@ -303,7 +304,8 @@ class Server:
                 self._policies.append(
                     ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
                                              ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
-                                             self.iserver.private_key, certificate_handler=self._certificate_handler))
+                                             self.iserver.private_key, certificate_handler=self._certificate_handler,
+                                             permission_ruleset=self._permission_ruleset))
             if ua.SecurityPolicyType.Basic256Sha256_Sign in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256, ua.MessageSecurityMode.Sign)
                 self._policies.append(
