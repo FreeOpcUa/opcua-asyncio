@@ -127,6 +127,7 @@ async def test_delete_nodes(opc):
         await var.write_value(7.8)
     with pytest.raises(ua.UaStatusCodeError):
         await obj.get_child(["2:FolderToDelete", "2:VarToDelete"])
+        print('two')
     childs = await fold.get_children()
     assert var not in childs
 

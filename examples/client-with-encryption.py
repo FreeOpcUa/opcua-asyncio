@@ -22,9 +22,11 @@ async def task(loop):
             private_key_path=private_key
         )
         await client.connect()
-        root = client.nodes.root
-        print(await root.get_children())
-
+        root = client.nodes.objects
+        child = await root.get_child(['0:MyObject', '0:MyVariable'])
+        print(await child.get_value())
+        await child.set_value(42)
+        print(await child.get_value())
     except Exception:
         _logger.exception('error')
     finally:

@@ -580,11 +580,12 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         self.Mode = mode
         self.peer_certificate = uacrypto.der_from_x509(peer_cert)
         self.host_certificate = uacrypto.der_from_x509(host_cert)
-        self.user = None
         if certificate_handler:
             assert self.peer_certificate in certificate_handler
             self.user = certificate_handler.get_user(self.peer_certificate)
             assert self.user is not None
+        else:
+            self.user = None
 
     def make_local_symmetric_key(self, secret, seed):
         # specs part 6, 6.7.5

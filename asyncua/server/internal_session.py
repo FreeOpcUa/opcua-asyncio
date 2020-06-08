@@ -100,7 +100,14 @@ class InternalSession:
         return self.iserver.history_manager.read_history(params)
 
     async def write(self, params):
-        return await self.iserver.attribute_service.write(params, self.user)
+        if self.user is None:
+            subscription_result = await self.iserver.attribute_service.write(params, user=User())
+        else:
+            subscription_result = await self.iserver.attribute_service.write(params, user=self.user)
+
+        self.iserver.server_callback_dispatcher.dispatch(CallbackType.WritePerformed,
+                                                         ServerItemCallback(params, subscription_result))
+        return subscription_result
 
     async def browse(self, params):
         return self.iserver.view_service.browse(params)
@@ -136,13 +143,13 @@ class InternalSession:
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionCreated,
-            ServerItemCallback(params, subscription_result))
+                                                         ServerItemCallback(params, subscription_result))
         return subscription_result
 
     async def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionModified,
-            ServerItemCallback(params, subscription_result))
+                                                         ServerItemCallback(params, subscription_result))
         return subscription_result
 
     def republish(self, params):

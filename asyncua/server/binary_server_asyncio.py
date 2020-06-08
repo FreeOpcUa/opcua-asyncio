@@ -25,7 +25,6 @@ class OPCUAProtocol(asyncio.Protocol):
         self.processor = None
         self._buffer = b''
         self.iserver: InternalServer = iserver
-        print(self.iserver.certificate)
         self.policies = policies
         self.clients = clients
         self.protocol_tasks = protocol_tasks

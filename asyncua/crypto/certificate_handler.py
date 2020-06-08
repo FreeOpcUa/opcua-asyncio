@@ -17,7 +17,7 @@ class CertificateHandler:
         if label in self._trusted_certificates:
             logging.warning(f"certificate with label {label} "
                             f"attempted to be added multiple times, only the last version will be kept.")
-        self._trusted_certificates[label] = {'certificate':uacrypto.der_from_x509(certificate), 'user':user}
+        self._trusted_certificates[label] = {'certificate': uacrypto.der_from_x509(certificate), 'user':user}
 
     def __contains__(self, certificate):
         return any(certificate == prospective_cert['certificate']

@@ -137,6 +137,7 @@ class UaProcessor:
             extra_log_str = "(user unknown)"
         else:
             extra_log_str = "(user {})".format(user.name)
+            user.check_privileges(typeid)
 
         if typeid == ua.NodeId(ua.ObjectIds.CreateSessionRequest_Encoding_DefaultBinary):
             _logger.info("Create session request {}".format(extra_log_str))
