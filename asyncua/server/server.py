@@ -95,6 +95,7 @@ class Server:
         ]
         # allow all certificates by default
         self._certificate_handler = None
+        self._permission_ruleset = None
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
         self.certificate = None
 
