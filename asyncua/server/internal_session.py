@@ -106,8 +106,6 @@ class InternalSession:
         else:
             subscription_result = await self.iserver.attribute_service.write(params, user=self.user)
 
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.WritePerformed,
-                                                         ServerItemCallback(params, subscription_result))
         return subscription_result
 
     async def browse(self, params):

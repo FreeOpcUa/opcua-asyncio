@@ -5,6 +5,7 @@ import copy
 
 from asyncua import ua
 from ..ua.ua_binary import struct_from_binary, struct_to_binary, header_from_binary, header_to_binary
+
 logger = logging.getLogger('asyncua.uaprotocol')
 
 
