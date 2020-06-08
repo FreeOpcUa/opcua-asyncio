@@ -101,7 +101,8 @@ class InternalSession:
 
     async def write(self, params):
         if self.user is None:
-            subscription_result = await self.iserver.attribute_service.write(params, user=User())
+            user = User()
+            subscription_result = await self.iserver.attribute_service.write(params, user=user)
         else:
             subscription_result = await self.iserver.attribute_service.write(params, user=self.user)
 

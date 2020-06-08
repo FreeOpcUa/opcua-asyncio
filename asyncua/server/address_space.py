@@ -57,7 +57,6 @@ class AttributeService:
         #self.logger.debug("write %s as user %s", params, user)
         res = []
         for writevalue in params.NodesToWrite:
-            print(user)
             if user.role != UserRole.Admin:
                 if writevalue.AttributeId != ua.AttributeIds.Value:
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
@@ -327,7 +326,7 @@ class NodeManagementService:
         return results
 
     def _delete_node(self, item, user):
-        if user != User(role=UserRole.Admin):
+        if user.role != UserRole.Admin:
             return ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)
 
         if item.NodeId not in self._aspace:

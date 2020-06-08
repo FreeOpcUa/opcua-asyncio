@@ -3,7 +3,7 @@ Implement user management here.
 """
 
 from enum import Enum
-from asyncua import ua
+
 
 class UserRole(Enum):
     """
