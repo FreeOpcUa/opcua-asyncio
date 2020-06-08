@@ -31,7 +31,7 @@ async def main():
     await server.load_private_key("private-key-example.pem")
 
     idx = 0
-    print(idx)
+
     # populating our address space
     myobj = await server.nodes.objects.add_object(idx, "MyObject")
     myvar = await myobj.add_variable(idx, "MyVariable", 0.0)
