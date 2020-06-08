@@ -19,7 +19,6 @@ class OPCUAProtocol(asyncio.Protocol):
     """
 
     def __init__(self, iserver: InternalServer, policies, clients, protocol_tasks):
-        # InternalServer should bring a certificate
         self.peer_name = None
         self.transport = None
         self.processor = None
@@ -38,7 +37,7 @@ class OPCUAProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.peer_name = transport.get_extra_info('peername')
-        logger.error('New connection from %s', self.peer_name)
+        logger.info('New connection from %s', self.peer_name)
         self.transport = transport
         self.processor = UaProcessor(self.iserver, self.transport)
         self.processor.set_policies(self.policies)

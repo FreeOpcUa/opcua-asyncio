@@ -2,7 +2,7 @@ import logging
 import struct
 
 from abc import ABCMeta, abstractmethod
-from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError
+from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError, uaerrors
 try:
     from ..crypto import uacrypto
     CRYPTOGRAPHY_AVAILABLE = True
@@ -581,9 +581,11 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         self.peer_certificate = uacrypto.der_from_x509(peer_cert)
         self.host_certificate = uacrypto.der_from_x509(host_cert)
         if certificate_handler:
-            assert self.peer_certificate in certificate_handler
+            if self.peer_certificate not in certificate_handler:
+                raise uaerrors.BadUserAccessDenied
             self.user = certificate_handler.get_user(self.peer_certificate)
-            assert self.user is not None
+            if self.user is None:
+                raise uaerrors.BadUserAccessDenied
         else:
             self.user = None
 

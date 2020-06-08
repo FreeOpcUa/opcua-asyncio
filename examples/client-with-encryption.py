@@ -8,8 +8,8 @@ from asyncua.crypto.security_policies import SecurityPolicyBasic256Sha256
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger("asyncua")
 
-cert = "certificates/peer-certificate-example-1.der"
-private_key = "certificates/peer-private-key-example-1.pem"
+cert = "certificates/peer-certificate-example-2.der"
+private_key = "certificates/peer-private-key-example-2.pem"
 
 
 async def task(loop):

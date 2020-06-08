@@ -244,7 +244,8 @@ class SecurityPolicyFactory:
     SecurityPolicy for every client and client's certificate
     """
 
-    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None, certificate_handler=None):
+    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None,
+                 certificate_handler=None):
         self.cls = cls
         self.mode = mode
         self.certificate = certificate

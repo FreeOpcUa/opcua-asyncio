@@ -6,7 +6,7 @@ from collections import deque
 from asyncua import ua
 from ..ua.ua_binary import nodeid_from_binary, struct_from_binary, struct_to_binary, uatcp_to_binary
 from .internal_server import InternalServer, InternalSession
-from ..common.connection import SecureConnection
+from ..common.connection import SecureConnection, MessageChunk
 from ..common.utils import ServiceError
 
 _logger = logging.getLogger(__name__)
@@ -84,7 +84,11 @@ class UaProcessor:
         self.send_response(requestdata.requesthdr.RequestHandle, requestdata.seqhdr, response)
 
     async def process(self, header, body):
-        msg = self._connection.receive_from_header_and_body(header, body)
+        try:
+            msg = self._connection.receive_from_header_and_body(header, body)
+        except ua.uaerrors.BadUserAccessDenied as e:
+            _logger.warning("Unauthenticated user attempted to connect")
+            return False
         if isinstance(msg, ua.Message):
             if header.MessageType == ua.MessageType.SecureOpen:
                 self.open_secure_channel(msg.SecurityHeader(), msg.SequenceHeader(), msg.body())
