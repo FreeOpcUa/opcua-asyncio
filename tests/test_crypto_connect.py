@@ -175,7 +175,7 @@ async def test_basic256_encrypt_fail(srv_crypto_all_certs):
             f"{EXAMPLE_PATH}certificate-example.der",
             f"{EXAMPLE_PATH}private-key-example.pem",
             None,
-            cert,
+            None,
             mode=ua.MessageSecurityMode.None_
         )
 
