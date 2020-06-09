@@ -18,6 +18,7 @@ class CallbackType(Enum):
     ItemSubscriptionCreated = 1
     ItemSubscriptionModified = 2
     ItemSubscriptionDeleted = 3
+    WritePerformed = 4
 
 
 class Callback(object):

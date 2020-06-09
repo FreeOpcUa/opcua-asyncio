@@ -102,11 +102,13 @@ class InternalSession:
     async def write(self, params):
         if self.user is None:
             user = User()
-            subscription_result = await self.iserver.attribute_service.write(params, user=user)
+            write_result = await self.iserver.attribute_service.write(params, user=user)
         else:
-            subscription_result = await self.iserver.attribute_service.write(params, user=self.user)
+            write_result = await self.iserver.attribute_service.write(params, user=self.user)
 
-        return subscription_result
+        self.iserver.server_callback_dispatcher.dispatch(CallbackType.WritePerformed,
+                                                         ServerItemCallback(params, write_result))
+        return write_result
 
     async def browse(self, params):
         return self.iserver.view_service.browse(params)

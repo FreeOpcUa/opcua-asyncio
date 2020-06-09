@@ -106,6 +106,7 @@ async def test_historize_variable(server):
     await var.write_value(3.0)
     await server.iserver.disable_history_data_change(var)
 
+
 async def test_multiple_clients_with_subscriptions(server):
     """
     Tests that multiple clients can subscribe, and when one client disconnects, the other
