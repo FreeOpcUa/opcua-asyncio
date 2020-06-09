@@ -2,4 +2,3 @@ pytest
 pytest-asyncio
 coverage
 pytest-cov
-dataclasses
