@@ -85,6 +85,7 @@ async def test_permissions_admin(srv_crypto_one_cert):
         security_policies.SecurityPolicyBasic256Sha256,
         admin_peer_creds['certificate'],
         admin_peer_creds['private_key'],
+        None,
         server_certificate_path=srv_crypto_params[0][1],
         mode=ua.MessageSecurityMode.SignAndEncrypt
     )
@@ -103,6 +104,7 @@ async def test_permissions_user(srv_crypto_one_cert):
         security_policies.SecurityPolicyBasic256Sha256,
         user_peer_creds['certificate'],
         user_peer_creds['private_key'],
+        None,
         server_certificate_path=srv_crypto_params[0][1],
         mode=ua.MessageSecurityMode.SignAndEncrypt
     )
@@ -121,6 +123,7 @@ async def test_permissions_anonymous(srv_crypto_one_cert):
         security_policies.SecurityPolicyBasic256Sha256,
         anonymous_peer_creds['certificate'],
         anonymous_peer_creds['private_key'],
+        None,
         server_certificate_path=srv_crypto_params[0][1],
         mode=ua.MessageSecurityMode.SignAndEncrypt
     )

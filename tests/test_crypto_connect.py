@@ -156,6 +156,7 @@ async def test_basic256_encrypt_success(srv_crypto_all_certs):
         security_policies.SecurityPolicyBasic256Sha256,
         f"{EXAMPLE_PATH}certificate-example.der",
         f"{EXAMPLE_PATH}private-key-example.pem",
+        None,
         cert,
         ua.MessageSecurityMode.SignAndEncrypt
      )
@@ -173,6 +174,7 @@ async def test_basic256_encrypt_fail(srv_crypto_all_certs):
             security_policies.SecurityPolicyBasic256Sha256,
             f"{EXAMPLE_PATH}certificate-example.der",
             f"{EXAMPLE_PATH}private-key-example.pem",
+            None,
             cert,
             mode=ua.MessageSecurityMode.None_
         )
@@ -185,6 +187,7 @@ async def test_certificate_handling_success(srv_crypto_one_cert):
         security_policies.SecurityPolicyBasic256Sha256,
         peer_creds['certificate'],
         peer_creds['private_key'],
+        None,
         cert,
         mode=ua.MessageSecurityMode.SignAndEncrypt
     )
@@ -215,6 +218,7 @@ async def test_certificate_handling_failure(srv_crypto_one_cert):
         security_policies.SecurityPolicyBasic256Sha256,
         unauthorized_peer_creds['certificate'],
         unauthorized_peer_creds['private_key'],
+        None,
         cert,
         ua.MessageSecurityMode.SignAndEncrypt
     )
@@ -255,6 +259,7 @@ async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
             security_policies.SecurityPolicyBasic256Sha256,
             peer_creds['certificate'],
             unauthorized_peer_creds['private_key'],
+            None,
             cert,
             mode=ua.MessageSecurityMode.SignAndEncrypt
         )
