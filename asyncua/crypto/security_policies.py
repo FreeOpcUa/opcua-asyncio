@@ -583,11 +583,9 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         self.peer_certificate = uacrypto.der_from_x509(peer_cert)
         self.host_certificate = uacrypto.der_from_x509(host_cert)
         if certificate_handler:
-            self.user = certificate_handler.check_certificate(self.peer_certificate)
-            if self.user is None:
+            certificate_allowed = certificate_handler.check_certificate(self.peer_certificate)
+            if certificate_allowed is False:
                 raise uaerrors.BadUserAccessDenied
-        else:
-            self.user = None
         if permission_ruleset is None:
             from asyncua.crypto.permission_rules import SimpleRoleRuleset
             permission_ruleset = SimpleRoleRuleset()

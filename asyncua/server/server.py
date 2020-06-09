@@ -312,7 +312,8 @@ class Server:
                 self._policies.append(
                     ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
                                              ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
-                                             certificate_handler=self._certificate_handler))
+                                             certificate_handler=self._certificate_handler,
+                                             permission_ruleset=self._permission_ruleset))
 
     def _set_endpoints(self, policy=ua.SecurityPolicy, mode=ua.MessageSecurityMode.None_):
         idtokens = []

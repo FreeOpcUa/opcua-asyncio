@@ -56,7 +56,7 @@ async def srv_crypto_all_certs(request):
     await srv.load_certificate(cert)
     await srv.load_private_key(key)
     await srv.start()
-    yield srv
+    yield srv, cert
     # stop the server
     await srv.stop()
 
@@ -75,7 +75,7 @@ async def srv_crypto_one_cert(request):
     await srv.load_certificate(cert)
     await srv.load_private_key(key)
     await srv.start()
-    yield srv
+    yield srv, cert
     # stop the server
     await srv.stop()
 
@@ -105,27 +105,30 @@ async def test_nocrypto_fail(srv_no_crypto):
 
 
 async def test_basic256(srv_crypto_all_certs):
+    _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
-    await clt.set_security_string(f"Basic256Sha256,Sign,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem")
+    await clt.set_security_string(f"Basic256Sha256,Sign,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem,{cert}")
     async with clt:
         assert await clt.nodes.objects.get_children()
 
 
 async def test_basic256_encrypt(srv_crypto_all_certs):
+    _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
     await clt.set_security_string(
-            f"Basic256Sha256,SignAndEncrypt,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem")
+            f"Basic256Sha256,SignAndEncrypt,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem,{cert}")
     async with clt:
         assert await clt.nodes.objects.get_children()
 
 
 async def test_basic256_encrypt_success(srv_crypto_all_certs):
     clt = Client(uri_crypto)
+    _, cert = srv_crypto_all_certs
     await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             f"{EXAMPLE_PATH}certificate-example.der",
             f"{EXAMPLE_PATH}private-key-example.pem",
-            None,
+            cert,
             ua.MessageSecurityMode.SignAndEncrypt
         )
     async with clt:
@@ -134,24 +137,26 @@ async def test_basic256_encrypt_success(srv_crypto_all_certs):
 
 async def test_basic256_encrypt_fail(srv_crypto_all_certs):
     # FIXME: how to make it fail???
+    _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
     with pytest.raises(ua.UaError):
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             f"{EXAMPLE_PATH}certificate-example.der",
             f"{EXAMPLE_PATH}private-key-example.pem",
-            None,
+            cert,
             ua.MessageSecurityMode.None_
         )
 
 
 async def test_certificate_handling_success(srv_crypto_one_cert):
+    _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
     await clt.set_security(
         security_policies.SecurityPolicyBasic256Sha256,
         peer_creds['certificate'],
         peer_creds['private_key'],
-        None,
+        cert,
         ua.MessageSecurityMode.SignAndEncrypt
     )
     async with clt:
@@ -159,28 +164,30 @@ async def test_certificate_handling_success(srv_crypto_one_cert):
 
 
 async def test_certificate_handling_failure(srv_crypto_one_cert):
+    _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
 
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        unauthorized_peer_creds['certificate'],
+        unauthorized_peer_creds['private_key'],
+        cert,
+        ua.MessageSecurityMode.SignAndEncrypt
+    )
     with pytest.raises(TimeoutError):
-        await clt.set_security(
-            security_policies.SecurityPolicyBasic256Sha256,
-            unauthorized_peer_creds['certificate'],
-            unauthorized_peer_creds['private_key'],
-            None,
-            ua.MessageSecurityMode.SignAndEncrypt
-        )
         async with clt:
             assert await clt.get_objects_node().get_children()
 
 
 async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
+    _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
     with pytest.raises(TimeoutError):
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             peer_creds['certificate'],
             unauthorized_peer_creds['private_key'],
-            None,
+            cert,
             ua.MessageSecurityMode.SignAndEncrypt
         )
         async with clt:
