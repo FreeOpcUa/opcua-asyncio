@@ -60,7 +60,6 @@ async def srv_crypto_one_cert(request):
     await cert_handler.trust_certificate(anonymous_peer_certificate, user_role=UserRole.Anonymous)
     srv = Server(user_manager=CertificateUserManager(cert_handler))
 
-
     srv.set_endpoint(uri_crypto_cert)
     srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
                             certificate_handler=cert_handler,

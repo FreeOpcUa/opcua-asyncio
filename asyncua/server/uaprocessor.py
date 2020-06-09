@@ -129,7 +129,10 @@ class UaProcessor:
             self.send_response(requesthdr.RequestHandle, seqhdr, response)
             return True
         except ua.uaerrors.BadUserAccessDenied as e:
-            user = self._connection.security_policy.user
+            if self.session:
+                user = self.session.user
+            else:
+                user = 'Someone'
             _logger.warning("%s attempted to do something they are not permitted to do", user)
             response = ua.ServiceFault()
             response.ResponseHeader.ServiceResult = ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)
