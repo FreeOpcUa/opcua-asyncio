@@ -3,6 +3,7 @@ Implement user management here.
 """
 
 from enum import Enum
+from dataclasses import dataclass
 
 
 class UserRole(Enum):
@@ -14,7 +15,7 @@ class UserRole(Enum):
     User = 3
 
 
+@dataclass
 class User:
-    def __init__(self, role=UserRole.Anonymous, name=None):
-        self.role = role
-        self.name = name
+    role: UserRole = UserRole.Anonymous
+    name: str = None

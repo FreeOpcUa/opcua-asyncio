@@ -1,9 +1,9 @@
 # User Management
 ## Overview
-Currently user management on OPC servers here is done exclusively through certificates.
+Currently user management on OPC-UA servers here is done exclusively through certificates.
 
 How this works in practice is that every user generates a certificate/private key pair, and then the certificate is given
-to the OPC server. The administrator of the OPC server enters the certificate into the `certificate_handler` with a `UserRole`
+to the OPC-UA server. The administrator of the OPC-UA server enters the certificate into the `certificate_handler` with a `UserRole`
 and a `name`. When a user connects with this certificate, every action they do will be associated with their name in the logs,
 and the `permission_ruleset` will determine whether a user with that role can carry out that action.
 
