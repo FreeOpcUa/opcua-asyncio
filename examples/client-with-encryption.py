@@ -27,8 +27,8 @@ async def task(loop):
         objects = client.nodes.objects
         child = await objects.get_child(['0:MyObject', '0:MyVariable'])
         print(await child.get_value())
-        # await child.set_value(42)
-        # print(await child.get_value())
+        await child.set_value(42)
+        print(await child.get_value())
     except Exception:
         _logger.exception('error')
     finally:
