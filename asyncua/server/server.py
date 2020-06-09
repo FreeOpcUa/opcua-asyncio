@@ -72,7 +72,7 @@ class Server:
     :ivar nodes: shortcuts to common nodes - `Shortcuts` instance
     """
 
-    def __init__(self, iserver: InternalServer = None, loop: asyncio.AbstractEventLoop = None):
+    def __init__(self, iserver: InternalServer = None, loop: asyncio.AbstractEventLoop = None, user_manager=None):
         self.loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
         _logger = logging.getLogger(__name__)
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
@@ -82,7 +82,7 @@ class Server:
         self.manufacturer_name = "FreeOpcUa"
         self.application_type = ua.ApplicationType.ClientAndServer
         self.default_timeout: int = 60 * 60 * 1000
-        self.iserver = iserver if iserver else InternalServer(self.loop)
+        self.iserver = iserver if iserver else InternalServer(self.loop, user_manager=user_manager)
         self.bserver: Optional[BinaryServer] = None
         self._discovery_clients = {}
         self._discovery_period = 60
@@ -311,7 +311,8 @@ class Server:
                 self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256, ua.MessageSecurityMode.Sign)
                 self._policies.append(
                     ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
-                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key, certificate_handler=self._certificate_handler))
+                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
+                                             certificate_handler=self._certificate_handler))
 
     def _set_endpoints(self, policy=ua.SecurityPolicy, mode=ua.MessageSecurityMode.None_):
         idtokens = []

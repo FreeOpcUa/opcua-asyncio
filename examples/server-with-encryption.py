@@ -8,17 +8,19 @@ from asyncua import Server
 from asyncua import ua
 from asyncua.crypto.permission_rules import SimpleRoleRuleset
 from asyncua.server.users import UserRole
-
+from asyncua.server.user_managers import CertificateUserManager
 
 logging.basicConfig(level=logging.INFO)
 
 
 async def main():
-    server = Server()
 
     cert_handler = CertificateHandler()
-    await server.init()
     await cert_handler.trust_certificate("certificates/peer-certificate-example-1.der", user_role=UserRole.User)
+
+    server = Server(user_manager=CertificateUserManager(cert_handler))
+
+    await server.init()
 
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
     server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],

@@ -142,16 +142,21 @@ class UaProcessor:
             return True
 
     async def _process_message(self, typeid, requesthdr, seqhdr, body):
-        user = self._connection.security_policy.user
-        if user is not None and self._connection.security_policy.permissions is not None:
-            if self._connection.security_policy.permissions.check_validity(user, typeid, body) is False:
-                raise ua.uaerrors.BadUserAccessDenied
+        if typeid in [ua.NodeId(ua.ObjectIds.CreateSessionRequest_Encoding_DefaultBinary),
+                      ua.NodeId(ua.ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary)]:
+            # The connection is first created without a user being attached, and then during activation the
+            user = None
+        else:
+            user = self.session.user
+            if self._connection.security_policy.permissions is not None:
+                if self._connection.security_policy.permissions.check_validity(user, typeid, body) is False:
+                    raise ua.uaerrors.BadUserAccessDenied
 
         if typeid == ua.NodeId(ua.ObjectIds.CreateSessionRequest_Encoding_DefaultBinary):
             _logger.info("Create session request (%s)", user)
             params = struct_from_binary(ua.CreateSessionParameters, body)
             # create the session on server
-            self.session = self.iserver.create_session(self.name, user=user, external=True)
+            self.session = self.iserver.create_session(self.name, external=True)
             # get a session creation result to send back
             sessiondata = await self.session.create_session(params, sockname=self.sockname)
             response = ua.CreateSessionResponse()
@@ -190,7 +195,7 @@ class UaProcessor:
             else:
                 data = self._connection.security_policy.host_certificate + self.session.nonce
             self._connection.security_policy.asymmetric_cryptography.verify(data, params.ClientSignature.Signature)
-            result = self.session.activate_session(params)
+            result = self.session.activate_session(params, self._connection.security_policy.peer_certificate)
             response = ua.ActivateSessionResponse()
             response.Parameters = result
             #_logger.info("sending read response")

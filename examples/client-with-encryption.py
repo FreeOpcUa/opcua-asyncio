@@ -20,14 +20,15 @@ async def task(loop):
         await client.set_security(
             SecurityPolicyBasic256Sha256,
             certificate_path=cert,
-            private_key_path=private_key
+            private_key_path=private_key,
+            server_certificate_path="certificate-example.der"
         )
         await client.connect()
         objects = client.nodes.objects
         child = await objects.get_child(['0:MyObject', '0:MyVariable'])
         print(await child.get_value())
-        await child.set_value(42)
-        print(await child.get_value())
+        # await child.set_value(42)
+        # print(await child.get_value())
     except Exception:
         _logger.exception('error')
     finally:

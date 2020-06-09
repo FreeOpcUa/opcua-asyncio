@@ -583,9 +583,7 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         self.peer_certificate = uacrypto.der_from_x509(peer_cert)
         self.host_certificate = uacrypto.der_from_x509(host_cert)
         if certificate_handler:
-            if self.peer_certificate not in certificate_handler:
-                raise uaerrors.BadUserAccessDenied
-            self.user = certificate_handler.get_user(self.peer_certificate)
+            self.user = certificate_handler.check_certificate(self.peer_certificate)
             if self.user is None:
                 raise uaerrors.BadUserAccessDenied
         else:

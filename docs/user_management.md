@@ -1,6 +1,6 @@
 # User Management
 ## Overview
-Currently user management on OPC-UA servers here is done exclusively through certificates.
+Currently user management on OPC-UA servers here is done exclusively through certificates, though there is the potential to create new user management objects.
 
 How this works in practice is that every user generates a certificate/private key pair, and then the certificate is given
 to the OPC-UA server. The administrator of the OPC-UA server enters the certificate into the `certificate_handler` with a `UserRole`
@@ -13,6 +13,7 @@ an example of usage is in `examples/server-with-encryption.py`:
 cert_handler = CertificateHandler()
 await cert_handler.trust_certificate("certificates/peer-certificate-example-1.der", user_role=UserRole.User)
 
+server = Server(user_manager=CertificateUserManager(cert_handler))
 await server.init()
 server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
 server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
@@ -21,7 +22,11 @@ server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt]
 ```
 
 We can see here that a certificate handler object is made, and told to assign peer-certificate-example-1 with User credentials.
-This certificate handler is then provided to the server's `set_security_policy` command, with the permission ruleset. 
+
+This certificate handler is then provided to the server's `set_security_policy` command to determine which certificates to connect with at all.
+When the client wants to actually carry out some actions, the user manager `CertificateUserManager` will use the 
+certificate handler to associate a user to the certificate, and then the `permission_ruleset` will determine if they are
+allowed to do the action.
 
 
 ## Custom permission rules

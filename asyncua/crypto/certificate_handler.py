@@ -9,7 +9,8 @@ class CertificateHandler:
     def __init__(self):
         self._trusted_certificates = {}
 
-    async def trust_certificate(self, certificate_path: str, format: str = None, label: str = None, user_role=UserRole.User):
+    async def trust_certificate(self, certificate_path: str, format: str = None, label: str = None,
+                                user_role=UserRole.User):
         certificate = await uacrypto.load_certificate(certificate_path, format)
         if label is None:
             label = certificate_path
@@ -23,6 +24,9 @@ class CertificateHandler:
         return any(certificate == prospective_cert['certificate']
                    for prospective_cert
                    in self._trusted_certificates.values())
+
+    def check_certificate(self, certificate):
+        return certificate in self
 
     def get_user(self, certificate):
         correct_users = [prospective_certificate['user'] for prospective_certificate in self._trusted_certificates.values()

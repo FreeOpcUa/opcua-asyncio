@@ -72,7 +72,7 @@ class InternalSession:
         self.state = SessionState.Closed
         await self.delete_subscriptions(self.subscriptions)
 
-    def activate_session(self, params):
+    def activate_session(self, params, peer_certificate):
         self.logger.info('activate session')
         result = ua.ActivateSessionResult()
         if self.state != SessionState.Created:
@@ -86,9 +86,19 @@ class InternalSession:
         self.state = SessionState.Activated
         InternalSession._current_connections += 1
         id_token = params.UserIdentityToken
-        if isinstance(id_token, ua.UserNameIdentityToken):
-            if self.iserver.check_user_token(self, id_token) is False:
+        if self.iserver.user_manager is not None:
+            if isinstance(id_token, ua.UserNameIdentityToken):
+                username = id_token.UserName
+                password = id_token.Password
+            else:
+                username, password = None, None
+
+            user = self.iserver.user_manager.get_user(self.iserver, username=username, password=password,
+                                                      certificate=peer_certificate)
+            if user is None:
                 raise ServiceError(ua.StatusCodes.BadUserAccessDenied)
+            else:
+                self.user = user
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)
         return result
 
