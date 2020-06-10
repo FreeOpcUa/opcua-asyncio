@@ -115,7 +115,7 @@ class InternalSession:
         else:
             user = self.user
         write_result = await self.iserver.attribute_service.write(params, user=user)
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.WritePerformed,
+        await self.iserver.server_callback_dispatcher.dispatch(CallbackType.WritePerformed,
                                                  ServerItemCallback(params, write_result, user))
         return write_result
 
@@ -152,13 +152,13 @@ class InternalSession:
     async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionCreated,
+        await self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionCreated,
                                                          ServerItemCallback(params, subscription_result))
         return subscription_result
 
     async def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionModified,
+        await self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionModified,
                                                          ServerItemCallback(params, subscription_result))
         return subscription_result
 
@@ -172,8 +172,8 @@ class InternalSession:
     async def delete_monitored_items(self, params):
         # This is an async method, dues to symmetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionDeleted,
-            ServerItemCallback(params, subscription_result))
+        await self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionDeleted,
+                                                               ServerItemCallback(params, subscription_result))
         return subscription_result
 
     def publish(self, acks: Optional[Iterable[ua.SubscriptionAcknowledgement]] = None):
