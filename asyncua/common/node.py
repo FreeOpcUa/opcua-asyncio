@@ -70,9 +70,11 @@ class Node:
         return not self.__eq__(other)
 
     def __str__(self):
+        node_str = str(self.nodeid)
+        return node_str[node_str.find("(")+1:node_str.find(")")]
+    
+    def __repr__(self):
         return "Node({0})".format(self.nodeid)
-
-    __repr__ = __str__
 
     def __hash__(self):
         return self.nodeid.__hash__()
