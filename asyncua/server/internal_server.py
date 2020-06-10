@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 from typing import Coroutine
 
 from asyncua import ua
+from .user_managers import PermissiveUserManager, UserManager
 from ..common.callback import CallbackDispatcher
 from ..common.node import Node
 from .history import HistoryManager
@@ -28,6 +29,8 @@ except ImportError:
     logging.getLogger(__name__).warning("cryptography is not installed, use of crypto disabled")
     uacrypto = False
 
+logger = logging.getLogger()
+
 
 class ServerDesc:
     def __init__(self, serv, cap=None):
@@ -35,21 +38,12 @@ class ServerDesc:
         self.Capabilities = cap
 
 
-def default_user_manager(iserver, isession, username, password):
-    """
-    Default user_manager, does nothing much but check for admin
-    """
-    if iserver.allow_remote_admin and username in ("admin", "Admin"):
-        isession.user = User(role=UserRole.Admin)
-    return True
-
-
 class InternalServer:
     """
     There is one `InternalServer` for every `Server`.
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop):
+    def __init__(self, loop: asyncio.AbstractEventLoop, user_manager: UserManager = None):
         self.loop: asyncio.AbstractEventLoop = loop
         self.logger = logging.getLogger(__name__)
         self.server_callback_dispatcher = CallbackDispatcher()
@@ -68,7 +62,10 @@ class InternalServer:
         self.asyncio_transports = []
         self.subscription_service: SubscriptionService = SubscriptionService(self.loop, self.aspace)
         self.history_manager = HistoryManager(self)
-        self.user_manager = default_user_manager  # defined at the end of this file
+        if user_manager is None:
+            logger.warning("No user manager specified. Using default permissive manager instead.")
+            user_manager = PermissiveUserManager()
+        self.user_manager = user_manager
         # create a session to use on server side
         self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal",
                                         user=User(role=UserRole.Admin))
@@ -301,6 +298,7 @@ class InternalServer:
         """
         user_name = token.UserName
         password = token.Password
+
         # decrypt password if we can
         if str(token.EncryptionAlgorithm) != "None":
             if not uacrypto:

@@ -229,6 +229,7 @@ class SecurityPolicy:
         self.peer_certificate = None
         self.host_certificate = None
         self.user = None
+        self.permissions = None
 
     def make_local_symmetric_key(self, secret, seed):
         pass
