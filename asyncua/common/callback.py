@@ -33,9 +33,10 @@ class Callback(object):
 
 
 class ServerItemCallback(Callback):
-    def __init__(self, request_params, response_params):
+    def __init__(self, request_params, response_params, user=None):
         self.request_params = request_params
         self.response_params = response_params
+        self.user = user
 
 
 class CallbackSubscriberInterface(object):
