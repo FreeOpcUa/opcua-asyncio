@@ -2,7 +2,8 @@ import logging
 import struct
 
 from abc import ABCMeta, abstractmethod
-from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError
+from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError, uaerrors
+
 try:
     from ..crypto import uacrypto
     CRYPTOGRAPHY_AVAILABLE = True
@@ -562,7 +563,8 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
     def encrypt_asymmetric(pubkey, data):
         return uacrypto.encrypt_rsa_oaep(pubkey, data)
 
-    def __init__(self, peer_cert, host_cert, client_pk, mode, certificate_handler=None):
+    def __init__(self, peer_cert, host_cert, client_pk, mode,
+                 permission_ruleset=None):
         require_cryptography(self)
         if isinstance(peer_cert, bytes):
             peer_cert = uacrypto.x509_from_der(peer_cert)
@@ -580,8 +582,11 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         self.Mode = mode
         self.peer_certificate = uacrypto.der_from_x509(peer_cert)
         self.host_certificate = uacrypto.der_from_x509(host_cert)
-        if certificate_handler:
-            assert self.peer_certificate in certificate_handler
+        if permission_ruleset is None:
+            from asyncua.crypto.permission_rules import SimpleRoleRuleset
+            permission_ruleset = SimpleRoleRuleset()
+        
+        self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):
         # specs part 6, 6.7.5

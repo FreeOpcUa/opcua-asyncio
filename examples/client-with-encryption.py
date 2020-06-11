@@ -8,8 +8,9 @@ from asyncua.crypto.security_policies import SecurityPolicyBasic256Sha256
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger("asyncua")
 
-cert = "certificates/peer-certificate-example-1.der"
-private_key = "certificates/peer-private-key-example-1.pem"
+cert_idx = 1
+cert = f"certificates/peer-certificate-example-{cert_idx}.der"
+private_key = f"certificates/peer-private-key-example-{cert_idx}.pem"
 
 
 async def task(loop):
@@ -19,12 +20,15 @@ async def task(loop):
         await client.set_security(
             SecurityPolicyBasic256Sha256,
             certificate_path=cert,
-            private_key_path=private_key
+            private_key_path=private_key,
+            server_certificate_path="certificate-example.der"
         )
         await client.connect()
-        root = client.nodes.root
-        print(await root.get_children())
-
+        objects = client.nodes.objects
+        child = await objects.get_child(['0:MyObject', '0:MyVariable'])
+        print(await child.get_value())
+        await child.set_value(42)
+        print(await child.get_value())
     except Exception:
         _logger.exception('error')
     finally:

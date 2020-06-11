@@ -6,7 +6,7 @@ from asyncua import ua
 from ..common.callback import CallbackType, ServerItemCallback
 from ..common.utils import create_nonce, ServiceError
 from .address_space import AddressSpace
-from .users import User
+from .users import User, UserRole
 from .subscription_service import SubscriptionService
 
 
@@ -25,7 +25,8 @@ class InternalSession:
     _counter = 10
     _auth_counter = 1000
 
-    def __init__(self, internal_server, aspace: AddressSpace, submgr: SubscriptionService, name, user=User.Anonymous, external=False):
+    def __init__(self, internal_server, aspace: AddressSpace, submgr: SubscriptionService, name,
+                 user=User(role=UserRole.Anonymous), external=False):
         self.logger = logging.getLogger(__name__)
         self.iserver = internal_server
         # define if session is external, we need to copy some objects if it is internal
@@ -45,7 +46,6 @@ class InternalSession:
 
     def __str__(self):
         return f'InternalSession(name:{self.name}, user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})'
-
 
     async def get_endpoints(self, params=None, sockname=None):
         return await self.iserver.get_endpoints(params, sockname)
@@ -72,7 +72,7 @@ class InternalSession:
         self.state = SessionState.Closed
         await self.delete_subscriptions(self.subscriptions)
 
-    def activate_session(self, params):
+    def activate_session(self, params, peer_certificate):
         self.logger.info('activate session')
         result = ua.ActivateSessionResult()
         if self.state != SessionState.Created:
@@ -86,9 +86,19 @@ class InternalSession:
         self.state = SessionState.Activated
         InternalSession._current_connections += 1
         id_token = params.UserIdentityToken
-        if isinstance(id_token, ua.UserNameIdentityToken):
-            if self.iserver.check_user_token(self, id_token) is False:
+        if self.iserver.user_manager is not None:
+            if isinstance(id_token, ua.UserNameIdentityToken):
+                username = id_token.UserName
+                password = id_token.Password
+            else:
+                username, password = None, None
+
+            user = self.iserver.user_manager.get_user(self.iserver, username=username, password=password,
+                                                      certificate=peer_certificate)
+            if user is None:
                 raise ServiceError(ua.StatusCodes.BadUserAccessDenied)
+            else:
+                self.user = user
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)
         return result
 
@@ -100,7 +110,12 @@ class InternalSession:
         return await self.iserver.history_manager.read_history(params)
 
     async def write(self, params):
-        return await self.iserver.attribute_service.write(params, self.user)
+        if self.user is None:
+            user = User()
+        else:
+            user = self.user
+        write_result = await self.iserver.attribute_service.write(params, user=user)
+        return write_result
 
     async def browse(self, params):
         return self.iserver.view_service.browse(params)
@@ -136,13 +151,13 @@ class InternalSession:
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionCreated,
-            ServerItemCallback(params, subscription_result))
+                                                         ServerItemCallback(params, subscription_result))
         return subscription_result
 
     async def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionModified,
-            ServerItemCallback(params, subscription_result))
+                                                         ServerItemCallback(params, subscription_result))
         return subscription_result
 
     def republish(self, params):

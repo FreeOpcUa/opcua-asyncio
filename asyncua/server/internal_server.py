@@ -13,13 +13,14 @@ from urllib.parse import urlparse
 from typing import Coroutine
 
 from asyncua import ua
+from .user_managers import PermissiveUserManager, UserManager
 from ..common.callback import CallbackDispatcher
 from ..common.node import Node
 from .history import HistoryManager
 from .address_space import AddressSpace, AttributeService, ViewService, NodeManagementService, MethodService
 from .subscription_service import SubscriptionService
 from .standard_address_space import standard_address_space
-from .users import User
+from .users import User, UserRole
 from .internal_session import InternalSession
 
 try:
@@ -28,6 +29,8 @@ except ImportError:
     logging.getLogger(__name__).warning("cryptography is not installed, use of crypto disabled")
     uacrypto = False
 
+logger = logging.getLogger()
+
 
 class ServerDesc:
     def __init__(self, serv, cap=None):
@@ -35,21 +38,12 @@ class ServerDesc:
         self.Capabilities = cap
 
 
-def default_user_manager(iserver, isession, username, password):
-    """
-    Default user_manager, does nothing much but check for admin
-    """
-    if iserver.allow_remote_admin and username in ("admin", "Admin"):
-        isession.user = User.Admin
-    return True
-
-
 class InternalServer:
     """
     There is one `InternalServer` for every `Server`.
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop):
+    def __init__(self, loop: asyncio.AbstractEventLoop, user_manager: UserManager = None):
         self.loop: asyncio.AbstractEventLoop = loop
         self.logger = logging.getLogger(__name__)
         self.server_callback_dispatcher = CallbackDispatcher()
@@ -68,9 +62,13 @@ class InternalServer:
         self.asyncio_transports = []
         self.subscription_service: SubscriptionService = SubscriptionService(self.loop, self.aspace)
         self.history_manager = HistoryManager(self)
-        self.user_manager = default_user_manager  # defined at the end of this file
+        if user_manager is None:
+            logger.warning("No user manager specified. Using default permissive manager instead.")
+            user_manager = PermissiveUserManager()
+        self.user_manager = user_manager
         # create a session to use on server side
-        self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal", user=User.Admin)
+        self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal",
+                                        user=User(role=UserRole.Admin))
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
 
     async def init(self, shelffile=None):
@@ -228,7 +226,7 @@ class InternalServer:
     def register_server2(self, params):
         return self.register_server(params.Server, params.DiscoveryConfiguration)
 
-    def create_session(self, name, user=User.Anonymous, external=False):
+    def create_session(self, name, user=User(role=UserRole.Anonymous), external=False):
         return InternalSession(self, self.aspace, self.subscription_service, name, user=user, external=external)
 
     async def enable_history_data_change(self, node, period=timedelta(days=7), count=0):
@@ -300,6 +298,7 @@ class InternalServer:
         """
         user_name = token.UserName
         password = token.Password
+
         # decrypt password if we can
         if str(token.EncryptionAlgorithm) != "None":
             if not uacrypto:

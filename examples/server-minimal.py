@@ -1,8 +1,11 @@
 import logging
 import asyncio
+import sys
+sys.path.insert(0, "..")
 
 from asyncua import ua, Server
 from asyncua.common.methods import uamethod
+
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger('asyncua')
