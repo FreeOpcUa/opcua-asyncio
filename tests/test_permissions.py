@@ -5,7 +5,6 @@ import sys
 from asyncua import Client
 from asyncua import Server
 from asyncua import ua
-from asyncua.crypto.certificate_handler import CertificateHandler
 from asyncua.crypto.permission_rules import SimpleRoleRuleset
 from asyncua.server.users import UserRole
 from asyncua.server.user_managers import CertificateUserManager
@@ -50,19 +49,18 @@ anonymous_peer_creds = {
 
 @pytest.fixture(params=srv_crypto_params)
 async def srv_crypto_one_cert(request):
-    cert_handler = CertificateHandler()
+    cert_user_manager = CertificateUserManager()
     admin_peer_certificate = admin_peer_creds["certificate"]
     user_peer_certificate = user_peer_creds["certificate"]
     anonymous_peer_certificate = anonymous_peer_creds["certificate"]
     key, cert = request.param
-    await cert_handler.trust_certificate(admin_peer_certificate, user_role=UserRole.Admin)
-    await cert_handler.trust_certificate(user_peer_certificate, user_role=UserRole.User)
-    await cert_handler.trust_certificate(anonymous_peer_certificate, user_role=UserRole.Anonymous)
-    srv = Server(user_manager=CertificateUserManager(cert_handler))
+    await cert_user_manager.add_admin(admin_peer_certificate, name='Admin')
+    await cert_user_manager.add_user(user_peer_certificate, name='User')
+    await cert_user_manager.add_role(anonymous_peer_certificate, name='Anonymous', user_role=UserRole.Anonymous)
+    srv = Server(user_manager=cert_user_manager)
 
     srv.set_endpoint(uri_crypto_cert)
     srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
-                            certificate_handler=cert_handler,
                             permission_ruleset=SimpleRoleRuleset())
     await srv.init()
     await srv.load_certificate(cert)

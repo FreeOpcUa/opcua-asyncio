@@ -149,6 +149,8 @@ class UaProcessor:
                       ua.NodeId(ua.ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary)]:
             # The connection is first created without a user being attached, and then during activation the
             user = None
+        elif self.session is None:
+            raise ua.uaerrors.BadUserAccessDenied
         else:
             user = self.session.user
             if self._connection.security_policy.permissions is not None:

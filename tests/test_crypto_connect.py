@@ -10,7 +10,7 @@ else:
 from asyncua import Client
 from asyncua import Server
 from asyncua import ua
-from asyncua.crypto.certificate_handler import CertificateHandler
+from asyncua.server.user_managers import CertificateUserManager
 
 try:
     from asyncua.crypto import uacrypto
@@ -55,15 +55,16 @@ encrypted_private_key_peer_creds = {
 
 @pytest.fixture(params=srv_crypto_params)
 async def srv_crypto_encrypted_key_one_cert(request):
-    srv = Server()
     peer_certificate = encrypted_private_key_peer_creds["certificate"]
-    cert_handler = CertificateHandler()
+    user_manager = CertificateUserManager()
     key, cert = request.param
-    await cert_handler.trust_certificate(peer_certificate)
+    await user_manager.add_admin(peer_certificate, 'test1')
+
+    srv = Server(user_manager=user_manager)
+
     await srv.init()
     srv.set_endpoint(uri_crypto_cert)
-    srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
-                            certificate_handler=cert_handler)
+    srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt])
     await srv.load_certificate(cert)
     await srv.load_private_key(key)
     await srv.start()
@@ -89,15 +90,16 @@ async def srv_crypto_all_certs(request):
 
 @pytest.fixture(params=srv_crypto_params)
 async def srv_crypto_one_cert(request):
-    srv = Server()
     peer_certificate = peer_creds["certificate"]
-    cert_handler = CertificateHandler()
+    user_manager = CertificateUserManager()
     key, cert = request.param
-    await cert_handler.trust_certificate(peer_certificate)
+    await user_manager.add_admin(peer_certificate, 'test1')
+
+    srv = Server(user_manager=user_manager)
+
     await srv.init()
     srv.set_endpoint(uri_crypto_cert)
-    srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
-                            certificate_handler=cert_handler)
+    srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt])
     await srv.load_certificate(cert)
     await srv.load_private_key(key)
     await srv.start()
@@ -214,15 +216,7 @@ async def test_certificate_handling_failure(srv_crypto_one_cert):
     _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
 
-    await clt.set_security(
-        security_policies.SecurityPolicyBasic256Sha256,
-        unauthorized_peer_creds['certificate'],
-        unauthorized_peer_creds['private_key'],
-        None,
-        cert,
-        ua.MessageSecurityMode.SignAndEncrypt
-    )
-    with pytest.raises(TimeoutError):
+    with pytest.raises(ua.uaerrors.BadUserAccessDenied):
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             unauthorized_peer_creds['certificate'],
@@ -230,6 +224,7 @@ async def test_certificate_handling_failure(srv_crypto_one_cert):
             None,
             mode=ua.MessageSecurityMode.SignAndEncrypt
         )
+
         async with clt:
             assert await clt.get_objects_node().get_children()
 
@@ -238,7 +233,7 @@ async def test_encrypted_private_key_handling_failure(srv_crypto_one_cert):
     _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
 
-    with pytest.raises(TimeoutError):
+    with pytest.raises(ua.uaerrors.BadUserAccessDenied):
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             unauthorized_peer_creds['certificate'],

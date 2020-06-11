@@ -246,12 +246,11 @@ class SecurityPolicyFactory:
     """
 
     def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None,
-                 certificate_handler=None, permission_ruleset=None):
+                 permission_ruleset=None):
         self.cls = cls
         self.mode = mode
         self.certificate = certificate
         self.private_key = private_key
-        self.certificate_handler = certificate_handler
         self.permission_ruleset = permission_ruleset
 
     def matches(self, uri, mode=None):
@@ -262,7 +261,7 @@ class SecurityPolicyFactory:
             return self.cls()
         else:
             return self.cls(peer_certificate, self.certificate, self.private_key, self.mode,
-                            certificate_handler=self.certificate_handler, permission_ruleset=self.permission_ruleset)
+                            permission_ruleset=self.permission_ruleset)
 
 
 class Message:

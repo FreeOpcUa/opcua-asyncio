@@ -3,27 +3,25 @@
 Currently user management on OPC-UA servers here is done exclusively through certificates, though there is the potential to create new user management objects.
 
 How this works in practice is that every user generates a certificate/private key pair, and then the certificate is given
-to the OPC-UA server. The administrator of the OPC-UA server enters the certificate into the `certificate_handler` with a `UserRole`
+to the OPC-UA server. The administrator of the OPC-UA server enters the certificate into the `certificate_user_manager` with a `UserRole`
 and a `name`. When a user connects with this certificate, every action they do will be associated with their name in the logs,
 and the `permission_ruleset` will determine whether a user with that role can carry out that action.
 
 ## Usage
 an example of usage is in `examples/server-with-encryption.py`:
 ```python
-cert_handler = CertificateHandler()
-await cert_handler.trust_certificate("certificates/peer-certificate-example-1.der", user_role=UserRole.User)
+user_manager = CertificateUserManager()
+await user_manager.add_user("certificates/peer-certificate-example-1.der", name='user1')
 
-server = Server(user_manager=CertificateUserManager(cert_handler))
+server = Server(user_manager=user_manager)
 await server.init()
 server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
 server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
-                           certificate_handler=cert_handler,
                            permission_ruleset=SimpleRoleRuleset())
 ```
 
-We can see here that a certificate handler object is made, and told to assign peer-certificate-example-1 with User credentials.
+We can see here that a certificate user manager object is made, and told to assign peer-certificate-example-1 with User credentials.
 
-This certificate handler is then provided to the server's `set_security_policy` command to determine which certificates to connect with at all.
 When the client wants to actually carry out some actions, the user manager `CertificateUserManager` will use the 
 certificate handler to associate a user to the certificate, and then the `permission_ruleset` will determine if they are
 allowed to do the action.

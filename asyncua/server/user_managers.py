@@ -1,5 +1,6 @@
-from asyncua.server.users import User, UserRole
-from asyncua.crypto.certificate_handler import CertificateHandler
+from asyncua.crypto import uacrypto
+import logging
+from asyncua.server.users import UserRole, User
 
 
 class UserManager:
@@ -22,10 +23,33 @@ class CertificateUserManager:
     """
     Certificate user manager, takes a certificate handler with its associated users and provides those users.
     """
-    def __init__(self, certificate_handler: CertificateHandler):
-        self.certificate_handler = certificate_handler
+    def __init__(self):
+        self._trusted_certificates = {}
+
+    async def add_role(self, certificate_path: str, user_role: UserRole, name: str, format: str = None):
+        certificate = await uacrypto.load_certificate(certificate_path, format)
+        if name is None:
+            raise KeyError
+
+        user = User(role=user_role, name=name)
+
+        if name in self._trusted_certificates:
+            logging.warning(f"certificate with name {name} "
+                            f"attempted to be added multiple times, only the last version will be kept.")
+        self._trusted_certificates[name] = {'certificate': uacrypto.der_from_x509(certificate), 'user': user}
 
     def get_user(self, iserver, username=None, password=None, certificate=None):
         if certificate is None:
             return None
-        return self.certificate_handler.get_user(certificate)
+        correct_users = [prospective_certificate['user'] for prospective_certificate in self._trusted_certificates.values()
+                         if certificate == prospective_certificate['certificate']]
+        if len(correct_users) == 0:
+            return None
+        else:
+            return correct_users[0]
+
+    async def add_user(self, certificate_path: str, name: str, format: str = None):
+        await self.add_role(certificate_path=certificate_path, user_role=UserRole.User, name=name, format=format)
+
+    async def add_admin(self, certificate_path: str, name:str, format: str = None):
+        await self.add_role(certificate_path=certificate_path, user_role=UserRole.Admin, name=name, format=format)
