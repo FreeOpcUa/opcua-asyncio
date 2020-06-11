@@ -228,6 +228,8 @@ class SecurityPolicy:
         self.Mode = auto.MessageSecurityMode.None_
         self.peer_certificate = None
         self.host_certificate = None
+        self.user = None
+        self.permissions = None
 
     def make_local_symmetric_key(self, secret, seed):
         pass
@@ -243,12 +245,13 @@ class SecurityPolicyFactory:
     SecurityPolicy for every client and client's certificate
     """
 
-    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None, certificate_handler=None):
+    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None,
+                 permission_ruleset=None):
         self.cls = cls
         self.mode = mode
         self.certificate = certificate
         self.private_key = private_key
-        self.certificate_handler = certificate_handler
+        self.permission_ruleset = permission_ruleset
 
     def matches(self, uri, mode=None):
         return self.cls.URI == uri and (mode is None or self.mode == mode)
@@ -257,7 +260,8 @@ class SecurityPolicyFactory:
         if self.cls is SecurityPolicy:
             return self.cls()
         else:
-            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode, certificate_handler=self.certificate_handler)
+            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode,
+                            permission_ruleset=self.permission_ruleset)
 
 
 class Message:

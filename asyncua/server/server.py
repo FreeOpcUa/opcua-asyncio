@@ -72,7 +72,7 @@ class Server:
     :ivar nodes: shortcuts to common nodes - `Shortcuts` instance
     """
 
-    def __init__(self, iserver: InternalServer = None, loop: asyncio.AbstractEventLoop = None):
+    def __init__(self, iserver: InternalServer = None, loop: asyncio.AbstractEventLoop = None, user_manager=None):
         self.loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
         _logger = logging.getLogger(__name__)
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
@@ -82,7 +82,7 @@ class Server:
         self.manufacturer_name = "FreeOpcUa"
         self.application_type = ua.ApplicationType.ClientAndServer
         self.default_timeout: int = 60 * 60 * 1000
-        self.iserver = iserver if iserver else InternalServer(self.loop)
+        self.iserver = iserver if iserver else InternalServer(self.loop, user_manager=user_manager)
         self.bserver: Optional[BinaryServer] = None
         self._discovery_clients = {}
         self._discovery_period = 60
@@ -94,7 +94,7 @@ class Server:
             ua.SecurityPolicyType.Basic256Sha256_Sign
         ]
         # allow all certificates by default
-        self._certificate_handler = None
+        self._permission_ruleset = None
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
         self.certificate = None
 
@@ -245,7 +245,7 @@ class Server:
     async def get_endpoints(self) -> Coroutine:
         return await self.iserver.get_endpoints()
 
-    def set_security_policy(self, security_policy, certificate_handler=None):
+    def set_security_policy(self, security_policy, permission_ruleset=None):
         """
         Method setting up the security policies for connections
         to the server, where security_policy is a list of integers.
@@ -264,7 +264,7 @@ class Server:
 
         """
         self._security_policy = security_policy
-        self._certificate_handler = certificate_handler
+        self._permission_ruleset = permission_ruleset
 
     def set_security_IDs(self, policy_ids):
         """
@@ -303,12 +303,14 @@ class Server:
                 self._policies.append(
                     ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
                                              ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
-                                             self.iserver.private_key, certificate_handler=self._certificate_handler))
+                                             self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
             if ua.SecurityPolicyType.Basic256Sha256_Sign in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256, ua.MessageSecurityMode.Sign)
                 self._policies.append(
                     ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
-                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key, certificate_handler=self._certificate_handler))
+                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
 
     def _set_endpoints(self, policy=ua.SecurityPolicy, mode=ua.MessageSecurityMode.None_):
         idtokens = []
