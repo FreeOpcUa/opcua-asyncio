@@ -72,7 +72,8 @@ class Node:
     def __str__(self):
         return self.nodeid.to_string()
 
-    __repr__ = __str__
+    def __repr__(self):
+        return "Node({0})".format(self.nodeid)
 
     def __hash__(self):
         return self.nodeid.__hash__()
