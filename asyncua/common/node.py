@@ -70,7 +70,7 @@ class Node:
         return not self.__eq__(other)
 
     def __str__(self):
-        return "Node({0})".format(self.nodeid)
+        return self.nodeid.to_string()
 
     __repr__ = __str__
 
