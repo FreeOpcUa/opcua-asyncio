@@ -2,7 +2,6 @@
 
 from asyncua.ua.uaerrors import UaStatusCodeError
 
-
 class StatusCodes:
     Good = 0
     Uncertain = 0x40000000

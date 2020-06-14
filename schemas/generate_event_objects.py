@@ -2,7 +2,9 @@
 import xml.etree.ElementTree as ET
 import asyncua.ua.object_ids as obIds
 import generate_model_event as gme
+import os
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class EventsCodeGenerator:
 
@@ -119,8 +121,8 @@ class EventsCodeGenerator:
 
 
 if __name__ == "__main__":
-    xmlPath = "UA-Nodeset/Schema/Opc.Ua.NodeSet2.xml"
-    output_path = "../asyncua/common/event_objects.py"
+    xmlPath = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset-master', 'Schema', 'Opc.Ua.NodeSet2.xml')
+    output_path = os.path.join(BASE_DIR, 'asyncua', 'common', 'event_objects.py')
     p = gme.Parser(xmlPath)
     model = p.parse()
     with open(output_path, "w") as fp:

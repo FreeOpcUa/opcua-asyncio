@@ -1228,50 +1228,6 @@ class KeyValuePair(FrozenClass):
     __repr__ = __str__
 
 
-class AdditionalParametersType(FrozenClass):
-    """
-    :ivar Parameters:
-    :vartype Parameters: KeyValuePair
-    """
-
-    ua_types = [
-        ('Parameters', 'ListOfKeyValuePair'),
-               ]
-
-    def __init__(self):
-        self.Parameters = []
-        self._freeze = True
-
-    def __str__(self):
-        return f'AdditionalParametersType(Parameters:{self.Parameters})'
-
-    __repr__ = __str__
-
-
-class EphemeralKeyType(FrozenClass):
-    """
-    :ivar PublicKey:
-    :vartype PublicKey: ByteString
-    :ivar Signature:
-    :vartype Signature: ByteString
-    """
-
-    ua_types = [
-        ('PublicKey', 'ByteString'),
-        ('Signature', 'ByteString'),
-               ]
-
-    def __init__(self):
-        self.PublicKey = None
-        self.Signature = None
-        self._freeze = True
-
-    def __str__(self):
-        return f'EphemeralKeyType(PublicKey:{self.PublicKey}, Signature:{self.Signature})'
-
-    __repr__ = __str__
-
-
 class EndpointType(FrozenClass):
     """
     :ivar EndpointUrl:
@@ -11327,12 +11283,6 @@ class Annotation(FrozenClass):
 nid = FourByteNodeId(ObjectIds.KeyValuePair_Encoding_DefaultBinary)
 extension_object_classes[nid] = KeyValuePair
 extension_object_ids['KeyValuePair'] = nid
-nid = FourByteNodeId(ObjectIds.AdditionalParametersType_Encoding_DefaultBinary)
-extension_object_classes[nid] = AdditionalParametersType
-extension_object_ids['AdditionalParametersType'] = nid
-nid = FourByteNodeId(ObjectIds.EphemeralKeyType_Encoding_DefaultBinary)
-extension_object_classes[nid] = EphemeralKeyType
-extension_object_ids['EphemeralKeyType'] = nid
 nid = FourByteNodeId(ObjectIds.EndpointType_Encoding_DefaultBinary)
 extension_object_classes[nid] = EndpointType
 extension_object_ids['EndpointType'] = nid
