@@ -18,7 +18,7 @@ def _to_val(objs, attr, val):
     for o in objs[1:]:
         cls = getattr(ua, _get_uatype_name(cls, o))
     if cls == ua.NodeId:
-        return "NodeId.from_string('val')"
+        return f"NodeId.from_string('{val}')"
     return ua_type_to_python(val, _get_uatype_name(cls, attr))
 
 
