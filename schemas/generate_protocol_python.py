@@ -1,4 +1,5 @@
 import os
+import datetime
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IgnoredEnums = ["NodeIdType"]
@@ -72,7 +73,7 @@ class CodeGenerator:
 
     def make_header(self):
         self.write('"""')
-        self.write('Autogenerate code from xml spec')
+        self.write(f'Autogenerate code from xml spec\nDate:{datetime.datetime.now()}')
         self.write('"""')
         self.write('')
         self.write('from datetime import datetime')
