@@ -3,6 +3,7 @@ import pytest
 from copy import copy
 from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
+from asynctest import CoroutineMock
 
 import asyncua
 from asyncua import ua
@@ -113,6 +114,7 @@ async def test_subscription_overload(opc, handler_class):
         await s.delete()
     # assert myhandler.datachange_count == 1000
     # assert myhandler.event_count == 0
+    await opc.opc.delete_nodes(variables)
 
 
 @pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
@@ -129,6 +131,7 @@ async def test_subscription_count(opc, handler_class):
     await sleep(0.2)  # let last event arrive
     assert nb + 1 == myhandler.datachange_count
     await sub.delete()
+    await opc.opc.delete_nodes([var])
 
 
 @pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
@@ -136,7 +139,7 @@ async def test_subscription_count_list(opc, handler_class):
     myhandler = handler_class()
     sub = await opc.opc.create_subscription(1, myhandler)
     o = opc.opc.nodes.objects
-    var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2])
+    var = await o.add_variable(3, 'SubVarCounter1', [0.1, 0.2])
     await sub.subscribe_data_change(var)
     nb = 12
     for i in range(nb):
@@ -148,6 +151,7 @@ async def test_subscription_count_list(opc, handler_class):
     await sleep(0.2)  # let last event arrive
     assert nb + 1 == myhandler.datachange_count
     await sub.delete()
+    await opc.opc.delete_nodes([var])
 
 
 @pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
@@ -155,7 +159,7 @@ async def test_subscription_count_no_change(opc, handler_class):
     myhandler = handler_class()
     sub = await opc.opc.create_subscription(1, myhandler)
     o = opc.opc.nodes.objects
-    var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2])
+    var = await o.add_variable(3, 'SubVarCounter2', [0.1, 0.2])
     await sub.subscribe_data_change(var)
     nb = 12
     for i in range(nb):
@@ -164,6 +168,7 @@ async def test_subscription_count_no_change(opc, handler_class):
     await sleep(0.2)  # let last event arrive
     assert 1 == myhandler.datachange_count
     await sub.delete()
+    await opc.opc.delete_nodes([var])
 
 
 @pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
@@ -171,7 +176,7 @@ async def test_subscription_count_empty(opc, handler_class):
     myhandler = handler_class()
     sub = await opc.opc.create_subscription(1, myhandler)
     o = opc.opc.nodes.objects
-    var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2, 0.3])
+    var = await o.add_variable(3, 'SubVarCounter3', [0.1, 0.2, 0.3])
     await sub.subscribe_data_change(var)
     while True:
         val = await var.read_value()
@@ -184,6 +189,7 @@ async def test_subscription_count_empty(opc, handler_class):
     await sleep(0.2)  # let last event arrive
     assert 4 == myhandler.datachange_count
     await sub.delete()
+    await opc.opc.delete_nodes([var])
 
 
 async def test_subscription_overload_simple(opc):
@@ -231,7 +237,61 @@ async def test_subscription_data_change(opc):
     await sub.delete()
     with pytest.raises(ua.UaStatusCodeError):
         await sub.unsubscribe(handle1)  # sub does not exist anymore
+    await opc.opc.delete_nodes([v1])
 
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_create_subscription_publishing(opc):
+    """
+    Test the publishing argument is set during subscription creation
+    """
+    myhandler = MySubHandler()
+    o = opc.opc.nodes.objects
+    v = await o.add_variable(3, 'SubscriptionVariable', 123)
+    # publishing default to True
+    sub = await opc.opc.create_subscription(100, myhandler)
+    assert sub.parameters.PublishingEnabled == True
+
+    sub = await opc.opc.create_subscription(100, myhandler, publishing=False)
+    assert sub.parameters.PublishingEnabled == False
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_set_monitoring_mode(opc, mocker):
+    """
+    test set_monitoring_mode parameter for all MIs of a subscription
+    """
+    myhandler = MySubHandler()
+    o = opc.opc.nodes.objects
+    monitoring_mode = ua.SetMonitoringModeParameters()
+    mock_set_monitoring = mocker.patch.object(ua, "SetMonitoringModeParameters", return_value=monitoring_mode)
+    mock_client_monitoring = mocker.patch("asyncua.client.ua_client.UaClient.set_monitoring_mode", new=CoroutineMock())
+    v = await o.add_variable(3, 'SubscriptionVariable2', 123)
+    sub = await opc.opc.create_subscription(100, myhandler)
+
+    await sub.set_monitoring_mode(ua.MonitoringMode.Disabled)
+    assert monitoring_mode.MonitoringMode == ua.MonitoringMode.Disabled
+
+    await sub.set_monitoring_mode(ua.MonitoringMode.Reporting)
+    assert monitoring_mode.MonitoringMode == ua.MonitoringMode.Reporting
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_set_publishing_mode(opc, mocker):
+    """
+    test flipping the publishing parameter for an existing subscription
+    """
+    myhandler = MySubHandler()
+    o = opc.opc.nodes.objects
+    publishing_mode = ua.SetPublishingModeParameters()
+    mock_set_monitoring = mocker.patch.object(ua, "SetPublishingModeParameters", return_value=publishing_mode)
+    mock_client_monitoring = mocker.patch("asyncua.client.ua_client.UaClient.set_publishing_mode", new=CoroutineMock())
+    v = await o.add_variable(3, 'SubscriptionVariable3', 123)
+    sub = await opc.opc.create_subscription(100, myhandler)
+
+    await sub.set_publishing_mode(False)
+    assert publishing_mode.PublishingEnabled == False
+
+    await sub.set_publishing_mode(True)
+    assert publishing_mode.PublishingEnabled == True
 
 async def test_subscription_data_change_bool(opc):
     """
@@ -258,6 +318,7 @@ async def test_subscription_data_change_bool(opc):
     assert v1 == node
     assert val is False
     await sub.delete()  # should delete our monitoreditem too
+    await opc.opc.delete_nodes([v1])
 
 
 async def test_subscription_data_change_many(opc):
@@ -291,8 +352,9 @@ async def test_subscription_data_change_many(opc):
         elif node == v2:
             assert val == startv2
         else:
-            raise RuntimeError("Error node {0} is neither {1} nor {2}".format(node, v1, v2))
+            raise RuntimeError(f"Error node {node} is neither {v1} nor {v2}")
     await sub.delete()
+    await opc.opc.delete_nodes([v1, v2])
 
 
 async def test_subscribe_server_time(opc):
@@ -333,12 +395,13 @@ async def test_modify_monitored_item(opc):
 
 async def test_create_delete_subscription(opc):
     o = opc.opc.nodes.objects
-    v = await o.add_variable(3, 'SubscriptionVariable', [1, 2, 3])
+    v = await o.add_variable(3, 'SubscriptionVariable4', [1, 2, 3])
     sub = await opc.opc.create_subscription(100, MySubHandler())
     handle = await sub.subscribe_data_change(v)
     await sleep(0.1)
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([v])
 
 
 async def test_unsubscribe_two_objects_simultaneously(opc):
@@ -396,7 +459,7 @@ async def test_subscribe_events_to_wrong_node(opc):
     with pytest.raises(ua.UaStatusCodeError):
         handle = await sub.subscribe_events(v)
     await sub.delete()
-
+    await opc.opc.delete_nodes([v])
 
 async def test_get_event_from_type_node_BaseEvent(opc):
     etype = opc.opc.get_node(ua.ObjectIds.BaseEventType)
@@ -419,6 +482,7 @@ async def test_get_event_from_type_node_CustomEvent(opc):
         assert child in properties
     assert await etype.get_child("2:PropertyNum") in properties
     assert await etype.get_child("2:PropertyString") in properties
+    await opc.opc.delete_nodes([etype])
 
 
 async def test_events_default(opc):
@@ -461,6 +525,7 @@ async def test_events_MyObject(opc):
     assert tid == ev.Time
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([o])
 
 
 async def test_events_wrong_source(opc):
@@ -477,6 +542,7 @@ async def test_events_wrong_source(opc):
         ev = await myhandler.result()
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([o])
 
 
 async def test_events_CustomEvent(opc):
@@ -508,6 +574,7 @@ async def test_events_CustomEvent(opc):
     assert propertystring == ev.PropertyString
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([etype])
 
 
 async def test_events_CustomEvent_MyObject(opc):
@@ -539,6 +606,7 @@ async def test_events_CustomEvent_MyObject(opc):
     assert propertystring == ev.PropertyString
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([etype, o])
 
 
 async def test_several_different_events(opc):
@@ -582,7 +650,8 @@ async def test_several_different_events(opc):
     assert 7 == len(ev1s)
     await sub.unsubscribe(handle)
     await sub.delete()
-
+    await opc.opc.delete_nodes([etype1, etype2])
+    await opc.opc.delete_nodes([o])
 
 async def test_several_different_events_2(opc):
     objects = opc.server.nodes.objects
@@ -637,7 +706,8 @@ async def test_several_different_events_2(opc):
     assert ev1s[0].PropertyNum3 is None
     await sub.unsubscribe(handle)
     await sub.delete()
-
+    await opc.opc.delete_nodes([etype1, etype2, etype3])
+    await opc.opc.delete_nodes([o])
 
 async def test_internal_server_subscription(opc):
     """
@@ -661,3 +731,4 @@ async def test_internal_server_subscription(opc):
     internal_sub = opc.server.iserver.subscription_service.subscriptions[sub.subscription_id]
     # Check that the results are not left un-acknowledged on internal Server Subscriptions.
     assert len(internal_sub._not_acknowledged_results) == 0
+    await opc.opc.delete_nodes([sub_obj])

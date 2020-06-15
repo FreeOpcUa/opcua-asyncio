@@ -6,7 +6,7 @@ import asyncio
 import pytest
 import logging
 from datetime import timedelta
-from enum import Enum, EnumMeta
+from enum import EnumMeta
 
 import asyncua
 from asyncua import Server, Client, ua, uamethod
@@ -30,6 +30,22 @@ async def test_discovery(server, discovery_server):
         assert len(new_servers) - len(servers) == 1
         assert new_app_uri not in [s.ApplicationUri for s in servers]
         assert new_app_uri in [s.ApplicationUri for s in new_servers]
+
+
+async def test_unregister_discovery(server, discovery_server):
+    client = Client(discovery_server.endpoint.geturl())
+    async with client:
+        new_app_uri = 'urn:freeopcua:python:server:test_discovery2'
+        await server.set_application_uri(new_app_uri)
+        # register without automatic renewal
+        await server.register_to_discovery(discovery_server.endpoint.geturl(), period=0)
+        await asyncio.sleep(0.1)
+        # unregister, no automatic renewal to stop
+        await server.unregister_to_discovery(discovery_server.endpoint.geturl())
+        # reregister with automatic renewal
+        await server.register_to_discovery(discovery_server.endpoint.geturl(), period=60)
+        # unregister, cancel scheduled renewal
+        await server.unregister_to_discovery(discovery_server.endpoint.geturl())
 
 
 async def test_find_servers2(server, discovery_server):
@@ -106,6 +122,7 @@ async def test_historize_variable(server):
     await var.write_value(3.0)
     await server.iserver.disable_history_data_change(var)
 
+
 async def test_multiple_clients_with_subscriptions(server):
     """
     Tests that multiple clients can subscribe, and when one client disconnects, the other
@@ -154,7 +171,7 @@ async def test_references_for_added_nodes_method(server):
                                          includesubtypes=False)
     assert objects in nodes
     assert await o.get_parent() == objects
-    assert (await o.get_type_definition()).Identifier == ua.ObjectIds.BaseObjectType
+    assert (await o.read_type_definition()).Identifier == ua.ObjectIds.BaseObjectType
 
     @uamethod
     def callback(parent):
@@ -168,7 +185,7 @@ async def test_references_for_added_nodes_method(server):
                                          includesubtypes=False)
     assert o in nodes
     assert await m.get_parent() == o
-
+    await server.delete_nodes([o])
 
 async def test_get_event_from_type_node_BaseEvent(server):
     """
@@ -278,7 +295,7 @@ async def test_eventgenerator_sourceMyObject(server):
     evgen = await server.get_event_generator(emitting_node=o)
     await check_eventgenerator_base_event(evgen, server)
     await check_event_generator_object(evgen, o)
-
+    await server.delete_nodes([o])
 
 async def test_eventgenerator_source_collision(server):
     objects = server.nodes.objects
@@ -287,7 +304,7 @@ async def test_eventgenerator_source_collision(server):
     evgen = await server.get_event_generator(event, ua.ObjectIds.Server)
     await check_eventgenerator_base_event(evgen, server)
     await check_event_generator_object(evgen, o, emitting_node=asyncua.Node(server.iserver.isession, ua.ObjectIds.Server))
-
+    await server.delete_nodes([o])
 
 async def test_eventgenerator_inherited_event(server):
     evgen = await server.get_event_generator(ua.ObjectIds.AuditEventType)
@@ -341,11 +358,12 @@ async def test_create_custom_event_type_object_id(server):
                                                  [('PropertyNum', ua.VariantType.Int32),
                                                   ('PropertyString', ua.VariantType.String)])
     await check_custom_type(type, ua.ObjectIds.BaseEventType, server)
+    await server.delete_nodes([type])
 
 
 async def test_create_custom_object_type_object_id(server):
     def func(parent, variant):
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(True, ua.VariantType.Boolean)]
 
     properties = [('PropertyNum', ua.VariantType.Int32),
                   ('PropertyString', ua.VariantType.String)]
@@ -378,28 +396,31 @@ async def test_create_custom_event_type_node_id(server):
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
     await check_custom_type(etype, ua.ObjectIds.BaseEventType, server)
+    await server.delete_nodes([etype])
 
 
 async def test_create_custom_event_type_node(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent', asyncua.Node(server.iserver.isession,
+    etype = await server.create_custom_event_type(2, 'MyEvent1', asyncua.Node(server.iserver.isession,
                                                                            ua.NodeId(ua.ObjectIds.BaseEventType)),
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
     await check_custom_type(etype, ua.ObjectIds.BaseEventType, server)
+    await server.delete_nodes([etype])
 
 
 async def test_get_event_from_type_node_custom_event(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
+    etype = await server.create_custom_event_type(2, 'MyEvent2', ua.ObjectIds.BaseEventType,
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
     ev = await asyncua.common.events.get_event_obj_from_type_node(etype)
     check_custom_event(ev, etype)
     assert 0 == ev.PropertyNum
     assert ev.PropertyString is None
+    await server.delete_nodes([etype])
 
 
 async def test_eventgenerator_custom_event(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
+    etype = await server.create_custom_event_type(2, 'MyEvent3', ua.ObjectIds.BaseEventType,
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
     evgen = await server.get_event_generator(etype, ua.ObjectIds.Server)
@@ -407,13 +428,14 @@ async def test_eventgenerator_custom_event(server):
     await check_eventgenerator_source_server(evgen, server)
     assert 0 == evgen.event.PropertyNum
     assert evgen.event.PropertyString is None
+    await server.delete_nodes([etype])
 
 
 async def test_eventgenerator_double_custom_event(server):
-    event1 = await server.create_custom_event_type(3, 'MyEvent1', ua.ObjectIds.BaseEventType,
+    event1 = await server.create_custom_event_type(3, 'MyEvent4', ua.ObjectIds.BaseEventType,
                                                    [('PropertyNum', ua.VariantType.Int32),
                                                     ('PropertyString', ua.VariantType.String)])
-    event2 = await server.create_custom_event_type(4, 'MyEvent2', event1, [('PropertyBool', ua.VariantType.Boolean),
+    event2 = await server.create_custom_event_type(4, 'MyEvent5', event1, [('PropertyBool', ua.VariantType.Boolean),
                                                                            ('PropertyInt', ua.VariantType.Int32)])
     evgen = await server.get_event_generator(event2, ua.ObjectIds.Server)
     check_eventgenerator_custom_event(evgen, event2, server)
@@ -424,12 +446,13 @@ async def test_eventgenerator_double_custom_event(server):
     # Properties from MyEvent2
     assert not evgen.event.PropertyBool
     assert 0 == evgen.event.PropertyInt
+    await server.delete_nodes([event1, event2])
 
 
 async def test_eventgenerator_custom_event_my_object(server):
     objects = server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
-    etype = await server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
+    etype = await server.create_custom_event_type(2, 'MyEvent6', ua.ObjectIds.BaseEventType,
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
 
@@ -438,6 +461,7 @@ async def test_eventgenerator_custom_event_my_object(server):
     await check_event_generator_object(evgen, o)
     assert 0 == evgen.event.PropertyNum
     assert evgen.event.PropertyString is None
+    await server.delete_nodes([o, etype])
 
 
 async def test_context_manager():
@@ -481,38 +505,38 @@ async def test_get_node_by_ns(server):
     # the tests
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=[idx_a, idx_b, idx_c])
     assert 3 == len(nodes)
-    assert set([idx_a, idx_b, idx_c]) == get_ns_of_nodes(nodes)
+    assert {idx_a, idx_b, idx_c} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=[idx_a])
     assert 1 == len(nodes)
-    assert set([idx_a]) == get_ns_of_nodes(nodes)
+    assert {idx_a} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=[idx_b])
     assert 1 == len(nodes)
-    assert set([idx_b]) == get_ns_of_nodes(nodes)
+    assert {idx_b} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=['a'])
     assert 1 == len(nodes)
-    assert set([idx_a]) == get_ns_of_nodes(nodes)
+    assert {idx_a} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=['a', 'c'])
     assert 2 == len(nodes)
-    assert set([idx_a, idx_c]) == get_ns_of_nodes(nodes)
+    assert {idx_a, idx_c} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces='b')
     assert 1 == len(nodes)
-    assert set([idx_b]) == get_ns_of_nodes(nodes)
+    assert {idx_b} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=idx_b)
     assert 1 == len(nodes)
-    assert set([idx_b]) == get_ns_of_nodes(nodes)
+    assert {idx_b} == get_ns_of_nodes(nodes)
     with pytest.raises(ValueError):
         await ua_utils.get_nodes_of_namespace(server, namespaces='non_existing_ns')
 
 
 async def test_load_enum_strings(server):
     dt = await server.nodes.enum_data_type.add_data_type(0, "MyStringEnum")
-    await dt.add_variable(0, "EnumStrings", [ua.LocalizedText("e1"), ua.LocalizedText("e2"), ua.LocalizedText("e3"),
+    await dt.add_property(0, "EnumStrings", [ua.LocalizedText("e1"), ua.LocalizedText("e2"), ua.LocalizedText("e3"),
                                        ua.LocalizedText("e 4")])
     await server.load_enums()
     e = getattr(ua, "MyStringEnum")
@@ -533,7 +557,7 @@ async def test_load_enum_values(server):
     v3 = ua.EnumValueType()
     v3.DisplayName.Text = "v 3 "
     v3.Value = 4
-    await dt.add_variable(0, "EnumValues", [v1, v2, v3])
+    await dt.add_property(0, "EnumValues", [v1, v2, v3])
     await server.load_enums()
     e = getattr(ua, "MyValuesEnum")
     assert isinstance(e, EnumMeta)

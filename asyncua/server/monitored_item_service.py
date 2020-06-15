@@ -178,7 +178,8 @@ class MonitoredItemService:
                              handle, error)
             await self.trigger_statuschange(error)
         else:
-            #self.logger.info("subscription %s: datachange callback called with handle '%s' and value '%s'", self, handle, value.Value)
+            # self.logger.info(f"subscription {self}: datachange callback called "
+            #                 f"with handle '{handle}' and value '{value.Value}'")
             event = ua.MonitoredItemNotification()
             mid = self._monitored_datachange[handle]
             mdata = self._monitored_items[mid]

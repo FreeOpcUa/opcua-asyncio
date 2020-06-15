@@ -35,7 +35,7 @@ async def main():
     # Add enumerations as EnumStrings (Not yet tested with EnumValues)
     # Essential to use namespace 0 for EnumStrings !
 
-    es = await myenum_type.add_variable(0, "EnumStrings", [
+    es = await myenum_type.add_property(0, "EnumStrings", [
         ua.LocalizedText("ok"),
         ua.LocalizedText("idle"),
     ])

@@ -1,20 +1,15 @@
-OPC UA / IEC 62541 Client and Server for Python >= 3.6 and pypy .
+OPC UA / IEC 62541 Client and Server for Python >= 3.7 and pypy3 .
 http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
-[![Build Status](https://travis-ci.org/FreeOpcUa/opcua-asyncio.svg?branch=master)](https://travis-ci.org/FreeOpcUa/opcua-asyncio)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/FreeOpcUa/opcua-asyncio/?branch=master)
+[![Python package](https://github.com/FreeOpcUa/opcua-asyncio/workflows/Python%20package/badge.svg)](https://github.com/FreeOpcUa/opcua-asyncio/actions)
 
 [![PyPI Package](https://badge.fury.io/py/asyncua.svg)](https://badge.fury.io/py/asyncua)
 
 # opcua-asyncio
 
-This repository is a fork of [python-opcua](https://github.com/FreeOpcUa/python-opcua) to rebase it completely on asyncio and drop support for Python < 3.6.
-This library has also [sync wrapper](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/asyncua/sync.py) over async API which may completely replace python-opcua in the future.
-
-## Motivation
-
-opcua-asyncio is an asyncio-based asynchronous OPC UA client based on python-opcua, removing hacks for support of python < 3.6.
+opcua-asyncio is an asyncio-based asynchronous OPC UA client and server based on python-opcua, removing support of python < 3.7.
 Asynchronous programming allows for simpler code (e.g. less need for locks) and potentially performance gains.
+This library has also [sync wrapper](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/asyncua/sync.py) over async API which may can be used in sync code instead of python-opcua
 
 ---
 
@@ -124,6 +119,7 @@ Not implemented yet:
 * localized text feature
 * XML protocol
 * UDP
+* WebSocket
 * maybe automatic reconnection...
 
 
@@ -151,6 +147,7 @@ Tested clients: freeopcua C++, freeopcua Python, uaexpert, prosys, quickopc
 Not yet implemented:
 
 * UDP
+* WebSocket
 * session restore
 * alarms
 * XML protocol
@@ -169,7 +166,7 @@ cache-file which leads to significantly better startup performance (~3.5 vs 125 
 
 # Development
 
-Code follows PEP8 apart for line lengths which should be max 120 characters and OPC UA structures that keep camel case
+Code follows PEP8 apart for line lengths which should be max 160 characters and OPC UA structures that keep camel case
 from XML definition.
 
 All protocol code is under opcua directory

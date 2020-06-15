@@ -45,7 +45,8 @@ class InternalSession:
         self.logger.info('Created internal session %s', self.name)
 
     def __str__(self):
-        return f'InternalSession(name:{self.name}, user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})'
+        return f'InternalSession(name:{self.name},' \
+               f' user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})'
 
     async def get_endpoints(self, params=None, sockname=None):
         return await self.iserver.get_endpoints(params, sockname)
@@ -88,8 +89,7 @@ class InternalSession:
         id_token = params.UserIdentityToken
         if self.iserver.user_manager is not None:
             if isinstance(id_token, ua.UserNameIdentityToken):
-                username = id_token.UserName
-                password = id_token.Password
+                username, password = self.iserver.check_user_token(self, id_token)
             else:
                 username, password = None, None
 
@@ -103,18 +103,30 @@ class InternalSession:
         return result
 
     async def read(self, params):
-        results = await self.iserver.attribute_service.read(params)
+        if self.user is None:
+            user = User()
+        else:
+            user = self.user
+        await self.iserver.callback_service.dispatch(CallbackType.PreRead,
+                                                     ServerItemCallback(params, None, user))
+        results = self.iserver.attribute_service.read(params)
+        await self.iserver.callback_service.dispatch(CallbackType.PostRead,
+                                                     ServerItemCallback(params, results, user))
         return results
 
-    def history_read(self, params) -> Coroutine:
-        return self.iserver.history_manager.read_history(params)
+    async def history_read(self, params) -> Coroutine:
+        return await self.iserver.history_manager.read_history(params)
 
     async def write(self, params):
         if self.user is None:
             user = User()
         else:
             user = self.user
+        await self.iserver.callback_service.dispatch(CallbackType.PreWrite,
+                                                     ServerItemCallback(params, None, user))
         write_result = await self.iserver.attribute_service.write(params, user=user)
+        await self.iserver.callback_service.dispatch(CallbackType.PostWrite,
+                                                     ServerItemCallback(params, write_result, user))
         return write_result
 
     async def browse(self, params):
@@ -150,14 +162,14 @@ class InternalSession:
     async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionCreated,
-                                                         ServerItemCallback(params, subscription_result))
+        await self.iserver.callback_service.dispatch(CallbackType.ItemSubscriptionCreated,
+                                                     ServerItemCallback(params, subscription_result))
         return subscription_result
 
     async def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionModified,
-                                                         ServerItemCallback(params, subscription_result))
+        await self.iserver.callback_service.dispatch(CallbackType.ItemSubscriptionModified,
+                                                     ServerItemCallback(params, subscription_result))
         return subscription_result
 
     def republish(self, params):
@@ -170,9 +182,13 @@ class InternalSession:
     async def delete_monitored_items(self, params):
         # This is an async method, dues to symmetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
-        self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionDeleted,
-            ServerItemCallback(params, subscription_result))
+        await self.iserver.callback_service.dispatch(CallbackType.ItemSubscriptionDeleted,
+                                                     ServerItemCallback(params, subscription_result))
+
         return subscription_result
 
     def publish(self, acks: Optional[Iterable[ua.SubscriptionAcknowledgement]] = None):
         return self.subscription_service.publish(acks or [])
+
+    def modify_subscription(self, params, callback):
+        return self.subscription_service.modify_subscription(params, callback)

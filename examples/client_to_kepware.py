@@ -1,14 +1,15 @@
 import sys
+import asyncio
 sys.path.insert(0, "..")
 import logging
 
-from asyncua import Client
+from asyncua import Client, ua
 
 
 class SubHandler(object):
 
     """
-    Client to subscription. It will receive events from server
+    Subscription Handler. To receive events from server for a subscription
     """
 
     def datachange_notification(self, node, val, data):
@@ -18,38 +19,26 @@ class SubHandler(object):
         print("Python: New event", event)
 
 
-if __name__ == "__main__":
-    #from IPython import embed
-    logging.basicConfig(level=logging.WARN)
-    client = Client("opc.tcp://192.168.56.100:49320/OPCUA/SimulationServer/")
-    #client = Client("opc.tcp://192.168.56.100:4840/OPCUA/SimulationServer/")
-    #client = Client("opc.tcp://olivier:olivierpass@localhost:53530/OPCUA/SimulationServer/")
-    try:
-        client.connect()
-        root = client.nodes.root
-        print("Root is", root)
-        print("childs of root are: ", root.get_children())
-        print("name of root is", root.read_browse_name())
-        objects = client.nodes.objects
-        print("childs og objects are: ", objects.get_children())
-
+async def main():
+    url = "opc.tcp://localhost:53530/OPCUA/SimulationServer/"
+    # url = "opc.tcp://olivier:olivierpass@localhost:53530/OPCUA/SimulationServer/"
+    async with Client(url=url) as client:
+        print("Root children are", await client.nodes.root.get_children())
 
         tag1 = client.get_node("ns=2;s=Channel1.Device1.Tag1")
-        print("tag1 is: {0} with value {1} ".format(tag1, tag1.read_value()))
+        print(f"tag1 is: {tag1} with value {await tag1.read_value()} ")
         tag2 = client.get_node("ns=2;s=Channel1.Device1.Tag2")
-        print("tag2 is: {0} with value {1} ".format(tag2, tag2.read_value()))
+        print(f"tag2 is: {tag2} with value {await tag2.read_value()} ")
 
         handler = SubHandler()
-        sub = client.create_subscription(500, handler)
-        handle1 = sub.subscribe_data_change(tag1)
-        handle2 = sub.subscribe_data_change(tag2)
+        sub = await client.create_subscription(500, handler)
+        handle1 = await sub.subscribe_data_change(tag1)
+        handle2 = await sub.subscribe_data_change(tag2)
 
-        from IPython import embed
-        embed()
+        # await sub.unsubscribe(handle1)
+        # await sub.unsubscribe(handle2)
+        # await sub.delete()
 
-        
-        sub.unsubscribe(handle1)
-        sub.unsubscribe(handle2)
-        sub.delete()
-    finally:
-        client.disconnect()
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.WARN)
+    asyncio.run(main())

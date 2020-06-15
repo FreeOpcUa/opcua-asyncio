@@ -115,7 +115,7 @@ class XmlExporter:
         Write the XML etree in the exporter object to a file
         Args:
             xmlpath: string representing the path/file name
-
+            pretty: add spaces and newlines, to be more readable
         Returns:
         """
         # try to write the XML etree to a file
@@ -185,7 +185,7 @@ class XmlExporter:
         nodeid = node.nodeid
         parent = await node.get_parent()
         displayname = (await node.read_display_name()).Text
-        desc = await node.get_description()
+        desc = await node.read_description()
         if desc:
             desc = desc.Text
         node_el = Et.SubElement(self.etree.getroot(), nodetype)
@@ -409,7 +409,7 @@ class XmlExporter:
             if vtype.startswith("ListOf"):
                 vtype = vtype[6:]
             await self.member_to_etree(struct_el, name, ua.NodeId(getattr(ua.ObjectIds, vtype)), getattr(val, name))
-            # self.member_to_etree(struct_el, name, extension_object_ids[vtype], getattr(val, name))
+            # self.member_to_etree(struct_el, name, extension_object_typeids[vtype], getattr(val, name))
         # for name in self._get_member_order(dtype, val):
         # self.member_to_etree(struct_el, name, ua.NodeId(getattr(ua.ObjectIds, val.ua_types[name])), getattr(val, name))
 
@@ -422,9 +422,10 @@ class XmlExporter:
             return val.ua_types.keys()
         else:
             member_keys = [name for name in XmlExporter.extobj_ordered_elements[dtype] if
-                name in val.ua_types.keys() and getattr(val, name) is not None]
+                           name in val.ua_types.keys() and getattr(val, name) is not None]
 
         return member_keys
+
 
 def indent(elem, level=0):
     """

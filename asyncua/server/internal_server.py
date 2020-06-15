@@ -14,7 +14,7 @@ from typing import Coroutine
 
 from asyncua import ua
 from .user_managers import PermissiveUserManager, UserManager
-from ..common.callback import CallbackDispatcher
+from ..common.callback import CallbackService
 from ..common.node import Node
 from .history import HistoryManager
 from .address_space import AddressSpace, AttributeService, ViewService, NodeManagementService, MethodService
@@ -46,7 +46,7 @@ class InternalServer:
     def __init__(self, loop: asyncio.AbstractEventLoop, user_manager: UserManager = None):
         self.loop: asyncio.AbstractEventLoop = loop
         self.logger = logging.getLogger(__name__)
-        self.server_callback_dispatcher = CallbackDispatcher()
+        self.callback_service = CallbackService()
         self.endpoints = []
         self._channel_id_counter = 5
         self.allow_remote_admin = True
@@ -162,7 +162,8 @@ class InternalServer:
         self.logger.info('starting internal server')
         for edp in self.endpoints:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(ua.ServerState.Running, ua.VariantType.Int32)
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(ua.ServerState.Running,
+                                                                                                 ua.VariantType.Int32)
         await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.utcnow())
         if not self.disabled_clock:
             self._set_current_time()
@@ -270,13 +271,13 @@ class InternalServer:
         """
         Create a subscription from event to handle
         """
-        self.server_callback_dispatcher.addListener(event, handle)
+        self.callback_service.addListener(event, handle)
 
     def unsubscribe_server_callback(self, event, handle):
         """
         Remove a subscription from event to handle
         """
-        self.server_callback_dispatcher.removeListener(event, handle)
+        self.callback_service.removeListener(event, handle)
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
@@ -299,9 +300,17 @@ class InternalServer:
         user_name = token.UserName
         password = token.Password
 
+        # TODO Support all Token Types
+        # AnonimousIdentityToken
+        # UserIdentityToken
+        # UserNameIdentityToken
+        # X509IdentityToken
+        # IssuedIdentityToken
+
         # decrypt password if we can
         if str(token.EncryptionAlgorithm) != "None":
             if not uacrypto:
+                # raise  # Should I raise a significant exception?
                 return False
             try:
                 if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
@@ -310,12 +319,15 @@ class InternalServer:
                     raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, password)
                 else:
                     self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
-                    return False
+                    # raise  # Should I raise a significant exception?
+                    return user_name, password
                 length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
                 password = raw_pw[4:4 + length]
                 password = password.decode('utf-8')
             except Exception:
                 self.logger.exception("Unable to decrypt password")
                 return False
-        # call user_manager
-        return self.user_manager(self, isession, user_name, password)
+        elif type(password) == bytes:  # TODO check
+            password = password.decode('utf-8')
+
+        return user_name, password

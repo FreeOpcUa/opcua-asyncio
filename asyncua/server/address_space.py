@@ -64,11 +64,12 @@ class AttributeService:
                 al = await self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
                 ual = await self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
                 if not al.StatusCode.is_good() or not ua.ua_binary.test_bit(
-                        al.Value.Value, ua.AccessLevel.CurrentWrite) or not ua.ua_binary.test_bit(
-                    ual.Value.Value, ua.AccessLevel.CurrentWrite):
+                        al.Value.Value, ua.AccessLevel.CurrentWrite) or not \
+                        ua.ua_binary.test_bit(ual.Value.Value, ua.AccessLevel.CurrentWrite):
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
-            res.append(await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
+            res.append(
+                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
         return res
 
 
@@ -79,7 +80,7 @@ class ViewService(object):
         self._aspace: "AddressSpace" = aspace
 
     def browse(self, params):
-        #self.logger.debug("browse %s", params)
+        # self.logger.debug("browse %s", params)
         res = []
         for desc in params.NodesToBrowse:
             res.append(self._browse(desc))
@@ -99,15 +100,15 @@ class ViewService(object):
 
     def _is_suitable_ref(self, desc, ref):
         if not self._suitable_direction(desc.BrowseDirection, ref.IsForward):
-            #self.logger.debug("%s is not suitable due to direction", ref)
+            # self.logger.debug("%s is not suitable due to direction", ref)
             return False
         if not self._suitable_reftype(desc.ReferenceTypeId, ref.ReferenceTypeId, desc.IncludeSubtypes):
-            #self.logger.debug("%s is not suitable due to type", ref)
+            # self.logger.debug("%s is not suitable due to type", ref)
             return False
         if desc.NodeClassMask and ((desc.NodeClassMask & ref.NodeClass) == 0):
-            #self.logger.debug("%s is not suitable due to class", ref)
+            # self.logger.debug("%s is not suitable due to class", ref)
             return False
-        #self.logger.debug("%s is a suitable ref for desc %s", ref, desc)
+        # self.logger.debug("%s is a suitable ref for desc %s", ref, desc)
         return True
 
     def _suitable_reftype(self, ref1, ref2, subtypes):
@@ -146,14 +147,14 @@ class ViewService(object):
         return False
 
     def translate_browsepaths_to_nodeids(self, browsepaths):
-        #self.logger.debug("translate browsepath: %s", browsepaths)
+        # self.logger.debug("translate browsepath: %s", browsepaths)
         results = []
         for path in browsepaths:
             results.append(self._translate_browsepath_to_nodeid(path))
         return results
 
     def _translate_browsepath_to_nodeid(self, path):
-        #self.logger.debug("looking at path: %s", path)
+        # self.logger.debug("looking at path: %s", path)
         res = ua.BrowsePathResult()
         if not path.RelativePath.Elements[-1].TargetName:
             # OPC UA Part 4: Services, 5.8.4 TranslateBrowsePathsToNodeIds
@@ -223,7 +224,7 @@ class NodeManagementService:
             # If Identifier of requested NodeId is null we generate a new NodeId using
             # the namespace of the nodeid, this is an extention of the spec to allow
             # to requests the server to generate a new nodeid in a specified namespace
-            #self.logger.debug("RequestedNewNodeId has null identifier, generating Identifier")
+            # self.logger.debug("RequestedNewNodeId has null identifier, generating Identifier")
             item.RequestedNewNodeId = self._aspace.generate_nodeid(item.RequestedNewNodeId.NamespaceIndex)
         else:
             if item.RequestedNewNodeId in self._aspace:
@@ -241,9 +242,22 @@ class NodeManagementService:
         parentdata = self._aspace.get(item.ParentNodeId)
         if parentdata is None and not item.ParentNodeId.is_null():
             self.logger.info("add_node: while adding node %s, requested parent node %s does not exists",
-                item.RequestedNewNodeId, item.ParentNodeId)
+                             item.RequestedNewNodeId, item.ParentNodeId)
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
             return result
+
+        if item.ParentNodeId in self._aspace:
+            for ref in self._aspace[item.ParentNodeId].references:
+                # Check if the Parent has a "HasChild" Reference (or subtype of it) with the Node
+                if ref.ReferenceTypeId.Identifier in [ua.ObjectIds.HasChild, ua.ObjectIds.HasComponent,
+                                           ua.ObjectIds.HasProperty, ua.ObjectIds.HasSubtype,
+                                           ua.ObjectIds.HasOrderedComponent] and ref.IsForward:
+                    if item.BrowseName.Name == ref.BrowseName.Name:
+                        self.logger.warning(f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
+                                            f" already exists in Parent Node. ParentID:{item.ParentNodeId} --- "
+                                            f"ItemId:{item.RequestedNewNodeId}")
+                        result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
+                        return result
 
         nodedata = NodeData(item.RequestedNewNodeId)
 
@@ -335,7 +349,7 @@ class NodeManagementService:
 
         if item.DeleteTargetReferences:
             for elem in self._aspace.keys():
-                for rdesc in self._aspace[elem].references:
+                for rdesc in self._aspace[elem].references[:]:
                     if rdesc.NodeId == item.NodeId:
                         self._aspace[elem].references.remove(rdesc)
 
@@ -353,7 +367,7 @@ class NodeManagementService:
                     self._aspace.delete_datachange_callback(handle)
                 except Exception as ex:
                     self.logger.exception("Error calling delete node callback callback %s, %s, %s", nodedata,
-                        ua.AttributeIds.Value, ex)
+                                          ua.AttributeIds.Value, ex)
 
     async def add_references(self, refs, user=User(role=UserRole.Admin)):
         result = []
@@ -458,6 +472,7 @@ class NodeManagementService:
         self._add_node_attr(item, nodedata, "ValueRank", ua.VariantType.Int32)
         self._add_node_attr(item, nodedata, "WriteMask", ua.VariantType.UInt32)
         self._add_node_attr(item, nodedata, "UserWriteMask", ua.VariantType.UInt32)
+        self._add_node_attr(item, nodedata, "DataTypeDefinition", ua.VariantType.ExtensionObject)
         self._add_node_attr(item, nodedata, "Value", add_timestamps=add_timestamps)
 
 

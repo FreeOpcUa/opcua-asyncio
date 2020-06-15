@@ -20,7 +20,7 @@ class MessageChunk(ua.FrozenClass):
         elif msg_type == ua.MessageType.SecureOpen:
             self.SecurityHeader = ua.AsymmetricAlgorithmHeader()
         else:
-            raise ua.UaError("Unsupported message type: {0}".format(msg_type))
+            raise ua.UaError(f"Unsupported message type: {msg_type}")
         self.SequenceHeader = ua.SequenceHeader()
         self.Body = body
         self.security_policy = security_policy
@@ -43,7 +43,7 @@ class MessageChunk(ua.FrozenClass):
             security_header = struct_from_binary(ua.AsymmetricAlgorithmHeader, data)
             crypto = security_policy.asymmetric_cryptography
         else:
-            raise ua.UaError("Unsupported message type: {0}".format(header.MessageType))
+            raise ua.UaError(f"Unsupported message type: {header.MessageType}")
         obj = MessageChunk(crypto)
         obj.MessageHeader = header
         obj.SecurityHeader = security_header
@@ -119,7 +119,8 @@ class MessageChunk(ua.FrozenClass):
         return chunks
 
     def __str__(self):
-        return "{0}({1}, {2}, {3}, {4} bytes)".format(self.__class__.__name__, self.MessageHeader, self.SequenceHeader, self.SecurityHeader, len(self.Body))
+        return f"{self.__class__.__name__}({self.MessageHeader}, {self.SequenceHeader}," \
+               f" {self.SecurityHeader}, {len(self.Body)} bytes)"
 
     __repr__ = __str__
 
@@ -215,7 +216,7 @@ class SecureConnection:
                 self.security_policy = policy.create(peer_certificate)
                 return
         if self.security_policy.URI != uri or (mode is not None and self.security_policy.Mode != mode):
-            raise ua.UaError("No matching policy: {0}, {1}".format(uri, mode))
+            raise ua.UaError(f"No matching policy: {uri}, {mode}")
 
     def revolve_tokens(self):
         """
@@ -235,7 +236,15 @@ class SecureConnection:
         The only supported types are SecureOpen, SecureMessage, SecureClose.
         If message_type is SecureMessage, the AlgorithmHeader should be passed as arg.
         """
-        chunks = MessageChunk.message_to_chunks(self.security_policy, message, self._max_chunk_size, message_type=message_type, channel_id=self.security_token.ChannelId, request_id=request_id, token_id=self.security_token.TokenId)
+        chunks = MessageChunk.message_to_chunks(
+            self.security_policy,
+            message,
+            self._max_chunk_size,
+            message_type=message_type,
+            channel_id=self.security_token.ChannelId,
+            request_id=request_id,
+            token_id=self.security_token.TokenId,
+        )
         for chunk in chunks:
             self._sequence_number += 1
             if self._sequence_number >= (1 << 32):
@@ -249,7 +258,7 @@ class SecureConnection:
         Validates the symmetric header of the message chunk and revolves the
         security token if needed.
         """
-        assert isinstance(security_hdr, ua.SymmetricAlgorithmHeader), "Expected SymAlgHeader, got: {0}".format(security_hdr)
+        assert isinstance(security_hdr, ua.SymmetricAlgorithmHeader), f"Expected SymAlgHeader, got: {security_hdr}"
 
         if security_hdr.TokenId == self.security_token.TokenId:
             return
@@ -263,25 +272,26 @@ class SecureConnection:
             # expired SecurityToken for up to 25 % of the token lifetime. This should ensure that
             # Messages sent by the Server before the token expired are not rejected because of
             # network delays.
-            timeout = self.prev_security_token.CreatedAt + timedelta(milliseconds=self.prev_security_token.RevisedLifetime * 1.25)
+            timeout = self.prev_security_token.CreatedAt + \
+                timedelta(milliseconds=self.prev_security_token.RevisedLifetime * 1.25)
             if timeout < datetime.utcnow():
-                raise ua.UaError("Security token id {} has timed out ({} < {})".format(security_hdr.TokenId, timeout, datetime.utcnow()))
+                raise ua.UaError(f"Security token id {security_hdr.TokenId} has timed out " f"({timeout} < {datetime.utcnow()})")
             return
 
         expected_tokens = [self.security_token.TokenId, self.next_security_token.TokenId]
         if self._allow_prev_token:
             expected_tokens.insert(0, self.prev_security_token.TokenId)
-        raise ua.UaError("Invalid security token id {}, expected one of: {}".format(security_hdr.TokenId, expected_tokens))
+        raise ua.UaError(f"Invalid security token id {security_hdr.TokenId}, expected one of: {expected_tokens}")
 
     def _check_incoming_chunk(self, chunk):
         if not isinstance(chunk, MessageChunk):
             raise ValueError(f'Expected chunk, got: {chunk}')
         if chunk.MessageHeader.MessageType != ua.MessageType.SecureOpen:
             if chunk.MessageHeader.ChannelId != self.security_token.ChannelId:
-                raise ua.UaError('Wrong channel id {0}, expected {1}'.format(chunk.MessageHeader.ChannelId, self.security_token.ChannelId))
+                raise ua.UaError(f'Wrong channel id {chunk.MessageHeader.ChannelId},' f' expected {self.security_token.ChannelId}')
         if self._incoming_parts:
             if self._incoming_parts[0].SequenceHeader.RequestId != chunk.SequenceHeader.RequestId:
-                raise ua.UaError('Wrong request id {0}, expected {1}'.format(chunk.SequenceHeader.RequestId, self._incoming_parts[0].SequenceHeader.RequestId))
+                raise ua.UaError(f'Wrong request id {chunk.SequenceHeader.RequestId},' f' expected {self._incoming_parts[0].SequenceHeader.RequestId}')
         # The sequence number must monotonically increase (but it can wrap around)
         seq_num = chunk.SequenceHeader.SequenceNumber
         if self._peer_sequence_number is not None:
@@ -292,7 +302,7 @@ class SecureConnection:
                     logger.debug('Sequence number wrapped: %d -> %d', self._peer_sequence_number, seq_num)
                 else:
                     # Condition for monotonically increase is not met
-                    raise ua.UaError("Received chunk: {0} with wrong sequence expecting: {1}, received: {2}, spec says to close connection".format(chunk, self._peer_sequence_number, seq_num))
+                    raise ua.UaError(f"Received chunk: {chunk} with wrong sequence expecting:" f" {self._peer_sequence_number}, received: {seq_num}," f" spec says to close connection")
         self._peer_sequence_number = seq_num
 
     def receive_from_header_and_body(self, header, body):
@@ -304,7 +314,12 @@ class SecureConnection:
         if header.MessageType == ua.MessageType.SecureOpen:
             data = body.copy(header.body_size)
             security_header = struct_from_binary(ua.AsymmetricAlgorithmHeader, data)
-            self.select_policy(security_header.SecurityPolicyURI, security_header.SenderCertificate)
+
+            if not self.is_open():
+                # Only call select_policy if the channel isn't open. Otherwise
+                # it will break the Secure channel renewal.
+                self.select_policy(security_header.SecurityPolicyURI, security_header.SenderCertificate)
+
         elif header.MessageType in (ua.MessageType.SecureMessage, ua.MessageType.SecureClose):
             data = body.copy(header.body_size)
             security_header = struct_from_binary(ua.SymmetricAlgorithmHeader, data)
@@ -323,9 +338,9 @@ class SecureConnection:
             return msg
         if header.MessageType == ua.MessageType.Error:
             msg = struct_from_binary(ua.ErrorMessage, body)
-            logger.warning("Received an error: %s", msg)
+            logger.warning(f"Received an error: {msg}")
             return msg
-        raise ua.UaError("Unsupported message type {0}".format(header.MessageType))
+        raise ua.UaError(f"Unsupported message type {header.MessageType}")
 
     def _receive(self, msg):
         self._check_incoming_chunk(msg)
@@ -334,7 +349,7 @@ class SecureConnection:
             return None
         if msg.MessageHeader.ChunkType == ua.ChunkType.Abort:
             err = struct_from_binary(ua.ErrorMessage, ua.utils.Buffer(msg.Body))
-            logger.warning("Message %s aborted: %s", msg, err)
+            logger.warning(f"Message {msg} aborted: {err}")
             # specs Part 6, 6.7.3 say that aborted message shall be ignored
             # and SecureChannel should not be closed
             self._incoming_parts = []
@@ -343,4 +358,4 @@ class SecureConnection:
             message = ua.Message(self._incoming_parts)
             self._incoming_parts = []
             return message
-        raise ua.UaError("Unsupported chunk type: {0}".format(msg))
+        raise ua.UaError(f"Unsupported chunk type: {msg}")

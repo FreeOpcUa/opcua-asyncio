@@ -233,7 +233,7 @@ def test_string_to_variant_localized_text():
 def test_string_to_variant_localized_text_with_locale():
     locale = "cs-CZ"
     string = "Moje jméno"
-    string_repr = "LocalizedText(Encoding:3, Locale:{}, Text:{})".format(locale, string)
+    string_repr = f"LocalizedText(Encoding:3, Locale:{locale}, Text:{string})"
     obj = ua.LocalizedText(string, locale)
     assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
     assert string_repr == val_to_string(obj)
@@ -242,7 +242,7 @@ def test_string_to_variant_localized_text_with_locale():
 def test_string_to_variant_localized_text_with_none1():
     locale = "en-US"
     string = ""
-    string_repr = "LocalizedText(Encoding:1, Locale:{}, Text:{})".format(locale, string)
+    string_repr = f"LocalizedText(Encoding:1, Locale:{locale}, Text:{string})"
     obj = ua.LocalizedText(string, locale)
     obj2 = ua.LocalizedText(string)
     assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
@@ -253,7 +253,7 @@ def test_string_to_variant_localized_text_with_none1():
 def test_string_to_variant_localized_text_with_none2():
     locale = None
     string = "my name is ..."
-    string_repr = "LocalizedText(Encoding:2, Locale:{}, Text:{})".format(locale, string)
+    string_repr = f"LocalizedText(Encoding:2, Locale:{locale}, Text:{string})"
     obj = ua.LocalizedText(string, locale)
     assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
     assert obj == string_to_val(string, ua.VariantType.LocalizedText)
@@ -405,15 +405,21 @@ def test_expandednodeid():
 
 
 def test_null_guid():
-    n = ua.NodeId(b'000000', 0, nodeidtype=ua.NodeIdType.Guid)
+    with pytest.raises(ua.UaError):
+        n = ua.NodeId(b'000000', 0, nodeidtype=ua.NodeIdType.Guid)
     n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 0, nodeidtype=ua.NodeIdType.Guid)
     assert n.is_null()
     assert n.has_null_identifier()
 
-    n = ua.NodeId(b'000000', 1, nodeidtype=ua.NodeIdType.Guid)
+    with pytest.raises(ua.UaError):
+        n = ua.NodeId(b'000000', 1, nodeidtype=ua.NodeIdType.Guid)
     n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 1, nodeidtype=ua.NodeIdType.Guid)
     assert not n.is_null()
     assert n.has_null_identifier()
+
+    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000001000000'), 1, nodeidtype=ua.NodeIdType.Guid)
+    assert not n.is_null()
+    assert not n.has_null_identifier()
 
 
 def test_null_string():
@@ -702,3 +708,16 @@ def test_variant_intenum():
     ase = ua.AxisScaleEnumeration(ua.AxisScaleEnumeration.Linear)  # Just pick an existing IntEnum class
     vAse = ua.Variant(ase)
     assert vAse.VariantType == ua.VariantType.Int32
+
+
+def test_bin_data_type_def():
+    ad = ua.AddNodesItem()
+    ad.ParentNodeId = ua.NodeId(22)
+    dta = ua.DataTypeAttributes()
+    dta.DisplayName = ua.LocalizedText("titi")
+    ad.NodeAttributes = dta
+
+    data = struct_to_binary(ad)
+    ad2 = struct_from_binary(ua.AddNodesItem, ua.utils.Buffer(data))
+    assert ad.ParentNodeId == ad2.ParentNodeId
+    assert ad.NodeAttributes.DisplayName == ad2.NodeAttributes.DisplayName

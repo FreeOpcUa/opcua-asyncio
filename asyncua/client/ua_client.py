@@ -39,6 +39,9 @@ class UASocketProtocol(asyncio.Protocol):
         self._connection = SecureConnection(security_policy)
         self.state = self.INITIALIZED
         self.closed: bool = False
+        # needed to pass params from asynchronous request to synchronous data receive callback, as well as
+        # passing back the processed response to the request so that it can return it.
+        self._open_secure_channel_exchange = None
 
     def connection_made(self, transport: asyncio.Transport):
         self.state = self.OPEN
@@ -71,13 +74,16 @@ class UASocketProtocol(asyncio.Protocol):
                     self.receive_buffer = data
                     return
                 if len(buf) < header.body_size:
-                    self.logger.debug(
-                        'We did not receive enough data from server. Need %s got %s', header.body_size, len(buf)
-                    )
+                    self.logger.debug('We did not receive enough data from server. Need %s got %s', header.body_size, len(buf))
                     self.receive_buffer = data
                     return
                 msg = self._connection.receive_from_header_and_body(header, buf)
                 self._process_received_message(msg)
+                if header.MessageType == ua.MessageType.SecureOpen:
+                    params = self._open_secure_channel_exchange
+                    self._open_secure_channel_exchange = struct_from_binary(ua.OpenSecureChannelResponse, msg.body())
+                    self._open_secure_channel_exchange.ResponseHeader.ServiceResult.check()
+                    self._connection.set_channel(self._open_secure_channel_exchange.Parameters, params.RequestType, params.ClientNonce)
                 if not buf:
                     return
                 # Buffer still has bytes left, try to process again
@@ -137,10 +143,14 @@ class UASocketProtocol(asyncio.Protocol):
         Returns response object if no callback is provided.
         """
         timeout = self.timeout if timeout is None else timeout
-        data = await asyncio.wait_for(
-            self._send_request(request, timeout, message_type),
-            timeout if timeout else None
-        )
+        try:
+            data = await asyncio.wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
+        except Exception:
+            if self.state != self.OPEN:
+                raise ConnectionError("Connection is closed") from None
+
+            raise
+
         self.check_answer(data, f" in response to {request.__class__.__name__}")
         return data
 
@@ -158,9 +168,7 @@ class UASocketProtocol(asyncio.Protocol):
         try:
             self._callbackmap[request_id].set_result(body)
         except KeyError:
-            raise ua.UaError(
-                f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}"
-            )
+            raise ua.UaError(f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}")
         except asyncio.InvalidStateError:
             if not self.closed:
                 raise ua.UaError(f"Future for request id {request_id} is already done")
@@ -200,14 +208,13 @@ class UASocketProtocol(asyncio.Protocol):
         self.logger.info("open_secure_channel")
         request = ua.OpenSecureChannelRequest()
         request.Parameters = params
-        result = await asyncio.wait_for(
-            self._send_request(request, message_type=ua.MessageType.SecureOpen),
-            self.timeout
-        )
-        response = struct_from_binary(ua.OpenSecureChannelResponse, result)
-        response.ResponseHeader.ServiceResult.check()
-        self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
-        return response.Parameters
+        if self._open_secure_channel_exchange is not None:
+            raise RuntimeError('Two Open Secure Channel requests can not happen too close to each other. ' 'The response must be processed and returned before the next request can be sent.')
+        self._open_secure_channel_exchange = params
+        await asyncio.wait_for(self._send_request(request, message_type=ua.MessageType.SecureOpen), self.timeout)
+        _return = self._open_secure_channel_exchange.Parameters
+        self._open_secure_channel_exchange = None
+        return _return
 
     async def close_secure_channel(self):
         """
@@ -235,7 +242,6 @@ class UaClient:
     In this Python implementation  most of the structures are defined in
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
-
     def __init__(self, timeout=1, loop=None):
         """
         :param timeout: Timout in seconds
@@ -259,7 +265,8 @@ class UaClient:
     async def connect_socket(self, host: str, port: int):
         """Connect to server socket."""
         self.logger.info("opening connection")
-        await self.loop.create_connection(self._make_protocol, host, port)
+        # Timeout the connection when the server isn't available
+        await asyncio.wait_for(self.loop.create_connection(self._make_protocol, host, port), self._timeout)
 
     def disconnect_socket(self):
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
@@ -441,10 +448,7 @@ class UaClient:
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
         data = await self.protocol.send_request(request)
-        response = struct_from_binary(
-            ua.CreateSubscriptionResponse,
-            data
-        )
+        response = struct_from_binary(ua.CreateSubscriptionResponse, data)
         response.ResponseHeader.ServiceResult.check()
         self._subscription_callbacks[response.Parameters.SubscriptionId] = callback
         self.logger.info("create_subscription success SubscriptionId %s", response.Parameters.SubscriptionId)
@@ -461,10 +465,7 @@ class UaClient:
         request = ua.DeleteSubscriptionsRequest()
         request.Parameters.SubscriptionIds = subscription_ids
         data = await self.protocol.send_request(request)
-        response = struct_from_binary(
-            ua.DeleteSubscriptionsResponse,
-            data
-        )
+        response = struct_from_binary(ua.DeleteSubscriptionsResponse, data)
         response.ResponseHeader.ServiceResult.check()
         self.logger.info("remove subscription callbacks for %r", subscription_ids)
         for sid in subscription_ids:
@@ -528,10 +529,7 @@ class UaClient:
             try:
                 callback = self._subscription_callbacks[subscription_id]
             except KeyError:
-                self.logger.warning(
-                    "Received data for unknown subscription %s active are %s", subscription_id,
-                    self._subscription_callbacks.keys()
-                )
+                self.logger.warning("Received data for unknown subscription %s active are %s", subscription_id, self._subscription_callbacks.keys())
             else:
                 try:
                     if asyncio.iscoroutinefunction(callback):
@@ -541,9 +539,12 @@ class UaClient:
                 except Exception:  # we call user code, catch everything!
                     self.logger.exception("Exception while calling user callback: %s")
             # Repeat with acknowledgement
-            ack = ua.SubscriptionAcknowledgement()
-            ack.SubscriptionId = subscription_id
-            ack.SequenceNumber = response.Parameters.NotificationMessage.SequenceNumber
+            if response.Parameters.NotificationMessage.NotificationData:
+                ack = ua.SubscriptionAcknowledgement()
+                ack.SubscriptionId = subscription_id
+                ack.SequenceNumber = response.Parameters.NotificationMessage.SequenceNumber
+            else:
+                ack = None
 
     async def create_monitored_items(self, params):
         self.logger.info("create_monitored_items")
@@ -685,4 +686,28 @@ class UaClient:
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
+    async def set_monitoring_mode(self, params) -> ua.uatypes.StatusCode:
+        """
+        Update the subscription monitoring mode
+        """
+        self.logger.info("set_monitoring_mode")
+        request = ua.SetMonitoringModeRequest()
+        request.Parameters = params
+        data = await self.protocol.send_request(request)
+        response = struct_from_binary(ua.SetMonitoringModeResponse, data)
+        self.logger.debug(response)
+        response.ResponseHeader.ServiceResult.check()
+        return response.Parameters.Results
 
+    async def set_publishing_mode(self, params) -> ua.uatypes.StatusCode:
+        """
+        Update the subscription publishing mode
+        """
+        self.logger.info("set_publishing_mode")
+        request = ua.SetPublishingModeRequest()
+        request.Parameters = params
+        data = await self.protocol.send_request(request)
+        response = struct_from_binary(ua.SetPublishingModeResponse, data)
+        self.logger.debug(response)
+        response.ResponseHeader.ServiceResult.check()
+        return response.Parameters.Results

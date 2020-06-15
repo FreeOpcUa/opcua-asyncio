@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Union, Coroutine
+from typing import Union, Coroutine, Optional
 from urllib.parse import urlparse
 
 from asyncua import ua
@@ -12,6 +12,7 @@ from ..common.manage_nodes import delete_nodes
 from ..common.subscription import Subscription
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
+from ..common.structures104 import load_data_type_definitions
 from ..common.utils import create_nonce
 from ..common.ua_utils import value_to_datavalue
 from ..crypto import uacrypto, security_policies
@@ -22,7 +23,6 @@ _logger = logging.getLogger(__name__)
 class Client:
     """
     High level client to connect to an OPC-UA server.
-
     This class makes it easy to connect and browse address space.
     It attempts to expose as much functionality as possible
     but if you want more flexibility it is possible and advised to
@@ -34,11 +34,9 @@ class Client:
         :param url: url of the server.
             if you are unsure of url, write at least hostname
             and port and call get_endpoints
-
         :param timeout:
             Each request sent to the server expects an answer within this
             time. The timeout is specified in seconds.
-
         Some other client parameters can be changed by setting
         attributes on the constructed object:
         See the source code for the exhaustive list.
@@ -88,7 +86,7 @@ class Client:
         for ep in endpoints:
             if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and ep.SecurityPolicyUri == policy_uri):
                 return ep
-        raise ua.UaError("No matching endpoints: {0}, {1}".format(security_mode, policy_uri))
+        raise ua.UaError(f"No matching endpoints: {security_mode}, {policy_uri}")
 
     def set_user(self, username: str):
         """
@@ -109,69 +107,87 @@ class Client:
     async def set_security_string(self, string: str):
         """
         Set SecureConnection mode.
-
         :param string: Mode format ``Policy,Mode,certificate,private_key[,server_private_key]``
-
         where:
-
         - ``Policy`` is ``Basic128Rsa15``, ``Basic256`` or ``Basic256Sha256``
         - ``Mode`` is ``Sign`` or ``SignAndEncrypt``
         - ``certificate`` and ``server_private_key`` are paths to ``.pem`` or ``.der`` files
         - ``private_key`` may be a path to a ``.pem`` or ``.der`` file or a conjunction of ``path``::``password`` where
           ``password`` is the private key password.
-
         Call this before connect()
         """
         if not string:
             return
         parts = string.split(",")
         if len(parts) < 4:
-            raise ua.UaError("Wrong format: `{}`, expected at least 4 comma-separated values".format(string))
+            raise ua.UaError(f"Wrong format: `{string}`, expected at least 4 comma-separated values")
 
         if '::' in parts[3]:  # if the filename contains a colon, assume it's a conjunction and parse it
             parts[3], client_key_password = parts[3].split('::')
         else:
             client_key_password = None
 
-        policy_class = getattr(security_policies, "SecurityPolicy{}".format(parts[0]))
+        policy_class = getattr(security_policies, f"SecurityPolicy{parts[0]}")
         mode = getattr(ua.MessageSecurityMode, parts[1])
-        return await self.set_security(policy_class, parts[2], parts[3], client_key_password,
-                                       parts[4] if len(parts) >= 5 else None, mode)
+        return await self.set_security(policy_class, parts[2], parts[3], client_key_password, parts[4] if len(parts) >= 5 else None, mode)
 
-    async def set_security(self,
-                           policy,
-                           certificate_path: str,
-                           private_key_path: str,
-                           private_key_password: str = None,
-                           server_certificate_path: str = None,
-                           mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
+    async def set_security(
+        self,
+        policy: ua.SecurityPolicy,
+        certificate: Union[str, uacrypto.CertProperties],
+        private_key: Union[str, uacrypto.CertProperties],
+        private_key_password: Optional[Union[str, bytes]] = None,
+        server_certificate: Optional[Union[str, uacrypto.CertProperties]] = None,
+        mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
+    ):
         """
         Set SecureConnection mode.
         Call this before connect()
         """
-        if server_certificate_path is None:
+        if server_certificate is None:
             # load certificate from server's list of endpoints
             endpoints = await self.connect_and_get_server_endpoints()
             endpoint = Client.find_endpoint(endpoints, mode, policy.URI)
-            server_cert = uacrypto.x509_from_der(endpoint.ServerCertificate)
-        else:
-            server_cert = await uacrypto.load_certificate(server_certificate_path)
-        cert = await uacrypto.load_certificate(certificate_path)
-        pk = await uacrypto.load_private_key(private_key_path, password=private_key_password)
+            server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate)
+        elif not isinstance(server_certificate, uacrypto.CertProperties):
+            server_certificate = uacrypto.CertProperties(server_certificate)
+        if not isinstance(certificate, uacrypto.CertProperties):
+            certificate = uacrypto.CertProperties(certificate)
+        if not isinstance(private_key, uacrypto.CertProperties):
+            private_key = uacrypto.CertProperties(private_key, password=private_key_password)
+        return await self._set_security(policy, certificate, private_key, server_certificate, mode)
+
+    async def _set_security(
+        self,
+        policy: ua.SecurityPolicy,
+        certificate: uacrypto.CertProperties,
+        private_key: uacrypto.CertProperties,
+        server_cert: uacrypto.CertProperties,
+        mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
+    ):
+
+        if isinstance(server_cert, uacrypto.CertProperties):
+            server_cert = await uacrypto.load_certificate(server_cert.path, server_cert.extension)
+        cert = await uacrypto.load_certificate(certificate.path, certificate.extension)
+        pk = await uacrypto.load_private_key(
+            private_key.path,
+            private_key.password,
+            private_key.extension,
+        )
         self.security_policy = policy(server_cert, cert, pk, mode)
         self.uaclient.set_security(self.security_policy)
 
-    async def load_client_certificate(self, path: str):
+    async def load_client_certificate(self, path: str, extension: Optional[str] = None):
         """
         load our certificate from file, either pem or der
         """
-        self.user_certificate = await uacrypto.load_certificate(path)
+        self.user_certificate = await uacrypto.load_certificate(path, extension)
 
-    async def load_private_key(self, path, password=None, format=None):
+    async def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
         """
         Load user private key. This is used for authenticating using certificate
         """
-        self.user_private_key = await uacrypto.load_private_key(path, password, format)
+        self.user_private_key = await uacrypto.load_private_key(path, password, extension)
 
     async def connect_and_get_server_endpoints(self):
         """
@@ -385,7 +401,7 @@ class Client:
                 _logger.debug("server state is: %s ", val)
         except asyncio.CancelledError:
             pass
-        except:
+        except Exception:
             _logger.exception("Error while renewing session")
             raise
 
@@ -426,9 +442,7 @@ class Client:
         if self.security_policy.AsymmetricSignatureURI:
             params.ClientSignature.Algorithm = self.security_policy.AsymmetricSignatureURI
         else:
-            params.ClientSignature.Algorithm = (
-                security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI
-            )
+            params.ClientSignature.Algorithm = (security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI)
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
         params.LocaleIds.append("en")
         if not username and not certificate:
@@ -445,17 +459,18 @@ class Client:
 
     def _add_certificate_auth(self, params, certificate, challenge):
         params.UserIdentityToken = ua.X509IdentityToken()
-        params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.Certificate, "certificate_basic256")
         params.UserIdentityToken.CertificateData = uacrypto.der_from_x509(certificate)
         # specs part 4, 5.6.3.1: the data to sign is created by appending
         # the last serverNonce to the serverCertificate
         params.UserTokenSignature = ua.SignatureData()
         # use signature algorithm that was used for certificate generation
         if certificate.signature_hash_algorithm.name == "sha256":
+            params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.Certificate, "certificate_basic256sha256")
             sig = uacrypto.sign_sha256(self.user_private_key, challenge)
             params.UserTokenSignature.Algorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
             params.UserTokenSignature.Signature = sig
         else:
+            params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.Certificate, "certificate_basic256")
             sig = uacrypto.sign_sha1(self.user_private_key, challenge)
             params.UserTokenSignature.Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
             params.UserTokenSignature.Signature = sig
@@ -494,7 +509,10 @@ class Client:
         Close session
         """
         self._renew_channel_task.cancel()
-        await self._renew_channel_task
+        try:
+            await self._renew_channel_task
+        except Exception:
+            _logger.exception("Error while closing secure channel loop")
         return await self.uaclient.close_session(True)
 
     def get_root_node(self):
@@ -513,14 +531,12 @@ class Client:
         """
         return Node(self.uaclient, nodeid)
 
-    async def create_subscription(self, period, handler):
+    async def create_subscription(self, period, handler, publishing=True):
         """
         Create a subscription.
         Returns a Subscription object which allows to subscribe to events or data changes on server.
-
         :param period: Either a publishing interval in milliseconds or a `CreateSubscriptionParameters` instance.
             The second option should be used, if the asyncua-server has problems with the default options.
-
         :param handler: Class instance with data_change and/or event methods (see `SubHandler`
             base class for details). Remember not to block the main event loop inside the handler methods.
         """
@@ -532,7 +548,7 @@ class Client:
             params.RequestedLifetimeCount = 10000
             params.RequestedMaxKeepAliveCount = 3000
             params.MaxNotificationsPerPublish = 10000
-            params.PublishingEnabled = True
+            params.PublishingEnabled = publishing
             params.Priority = 0
         subscription = Subscription(self.uaclient, params, handler)
         await subscription.init()
@@ -578,19 +594,30 @@ class Client:
         await ns_node.write_value(uries)
         return len(uries) - 1
 
-    async def load_type_definitions(self, nodes=None) -> Coroutine:
+    async def load_type_definitions(self, nodes=None):
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
         These classes will available in ua module
+        WARNING: protocol has changed in 1.04. use load_data_type_definitions()
         """
+        _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_type_definitions(self, nodes)
 
-    async def load_enums(self) -> Coroutine:
+    async def load_data_type_definitions(self, node=None):
+        """
+        Load custom types (custom structures/extension objects) definition from server
+        Generate Python classes for custom structures/extension objects defined in server
+        These classes will be available in ua module
+        """
+        return await load_data_type_definitions(self, node)
+
+    async def load_enums(self):
         """
         generate Python enums for custom enums on server.
         This enums will be available in ua module
         """
+        _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_enums(self)
 
     async def register_nodes(self, nodes):
