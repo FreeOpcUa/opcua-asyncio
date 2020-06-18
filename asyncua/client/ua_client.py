@@ -197,17 +197,23 @@ class UASocketProtocol(asyncio.Protocol):
         return await asyncio.wait_for(ack, self.timeout)
 
     async def open_secure_channel(self, params):
-        self.logger.info("open_secure_channel")
-        request = ua.OpenSecureChannelRequest()
-        request.Parameters = params
-        result = await asyncio.wait_for(
-            self._send_request(request, message_type=ua.MessageType.SecureOpen),
-            self.timeout
-        )
-        response = struct_from_binary(ua.OpenSecureChannelResponse, result)
-        response.ResponseHeader.ServiceResult.check()
-        self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
-        return response.Parameters
+        try:
+            self.logger.info("open_secure_channel")
+            request = ua.OpenSecureChannelRequest()
+            request.Parameters = params
+            result = await asyncio.wait_for(
+                self._send_request(request, message_type=ua.MessageType.SecureOpen),
+                self.timeout
+            )
+            response = struct_from_binary(ua.OpenSecureChannelResponse, result)
+            response.ResponseHeader.ServiceResult.check()
+            self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
+            return response.Parameters
+        except Exception as err:
+            self.loop.call_exception_handler({
+                'message': 'Error while open secure channel',
+                'exception': err
+            })
 
     async def close_secure_channel(self):
         """

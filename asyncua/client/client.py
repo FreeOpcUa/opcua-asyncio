@@ -385,8 +385,12 @@ class Client:
                 _logger.debug("server state is: %s ", val)
         except asyncio.CancelledError:
             pass
-        except:
+        except Exception as err:
             _logger.exception("Error while renewing session")
+            self.loop.call_exception_handler({
+                'message':'Error while renewing session',
+                'exception': err
+            })
             raise
 
     def server_policy_id(self, token_type, default):
