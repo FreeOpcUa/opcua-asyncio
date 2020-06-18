@@ -291,6 +291,10 @@ class Node:
         pass
 
     @syncmethod
+    def get_properties(self):
+        pass
+
+    @syncmethod
     def get_children_descriptions(
         self,
         refs=ua.ObjectIds.HierarchicalReferences,
