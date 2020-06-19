@@ -2,7 +2,7 @@ import logging
 import struct
 
 from abc import ABCMeta, abstractmethod
-from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError, uaerrors
+from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError
 
 try:
     from ..crypto import uacrypto
@@ -20,7 +20,7 @@ def require_cryptography(obj):
     Call this function in constructors.
     """
     if not CRYPTOGRAPHY_AVAILABLE:
-        raise UaError("Can't use {0}, cryptography module is not installed".format(obj.__class__.__name__))
+        raise UaError(f"Can't use {obj.__class__.__name__}, cryptography module is not installed")
 
 
 class Signer(object):
@@ -618,4 +618,4 @@ def encrypt_asymmetric(pubkey, data, policy_uri):
                     cls.AsymmetricEncryptionURI)
     if not policy_uri or policy_uri == POLICY_NONE_URI:
         return data, ''
-    raise UaError("Unsupported security policy `{0}`".format(policy_uri))
+    raise UaError(f"Unsupported security policy `{policy_uri}`")

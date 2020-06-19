@@ -291,7 +291,7 @@ async def test_subscription_data_change_many(opc):
         elif node == v2:
             assert val == startv2
         else:
-            raise RuntimeError("Error node {0} is neither {1} nor {2}".format(node, v1, v2))
+            raise RuntimeError(f"Error node {node} is neither {v1} nor {v2}")
     await sub.delete()
 
 

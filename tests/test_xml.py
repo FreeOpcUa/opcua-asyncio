@@ -136,7 +136,7 @@ async def test_xml_ns(opc, tmpdir):
     vnew = await onew.add_variable(new_ns, "xmlns_new_var", 9.99)
     o_no_export = await opc.opc.nodes.objects.add_object(ref_ns, "xmlns_parent")
     v_no_parent = await o_no_export.add_variable(new_ns, "xmlns_new_var_no_parent", 9.99)
-    o_bname = await onew.add_object("ns={0};i=4000".format(new_ns), "{0}:BNAME".format(bname_ns))
+    o_bname = await onew.add_object(f"ns={new_ns};i=4000", f"{bname_ns}:BNAME")
     nodes = [o, o50, o200, onew, vnew, v_no_parent, o_bname]
     tmp_path = tmpdir.join("tmp_test_export-ns.xml").strpath
     await opc.opc.export_xml(nodes, tmp_path)

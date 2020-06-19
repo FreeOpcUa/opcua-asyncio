@@ -70,8 +70,8 @@ class EventGenerator:
         self.emitting_node = emitting_node
 
     def __str__(self):
-        return "EventGenerator(Type:{0}, Emitting Node:{1}, Time:{2}, Message: {3})".format(
-            self.event.EventType, self.emitting_node, self.event.Time, self.event.Message)
+        return f"EventGenerator(Type:{self.event.EventType}, Emitting Node:{self.emitting_node}, " \
+               f"Time:{self.event.Time}, Message: {self.event.Message})"
 
     __repr__ = __str__
 

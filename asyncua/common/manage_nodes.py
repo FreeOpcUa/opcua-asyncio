@@ -32,8 +32,8 @@ def _parse_nodeid_qname(*args):
         raise
     except Exception as ex:
         raise TypeError(
-            "This method takes either a namespace index and a string as argument or a nodeid and a qualifiedname. Received arguments {0} and got exception {1}".format(
-                args, ex)
+            f"This method takes either a namespace index and a string as argument or a nodeid and a qualifiedname."
+            f" Received arguments {args} and got exception {ex}"
         )
 
 
@@ -118,7 +118,7 @@ async def create_variable_type(parent, nodeid, bname, datatype):
         datatype = ua.NodeId(datatype, 0)
     if datatype and not isinstance(datatype, ua.NodeId):
         raise RuntimeError(
-            "Data type argument must be a nodeid or an int refering to a nodeid, received: {}".format(datatype))
+            f"Data type argument must be a nodeid or an int refering to a nodeid, received: {datatype}")
     return make_node(
         parent.server,
         await _create_variable_type(parent.server, parent.nodeid, nodeid, qname, datatype)
@@ -155,7 +155,8 @@ async def create_method(parent, *args):
     args are nodeid, browsename, method_to_be_called, [input argument types], [output argument types]
     or idx, name, method_to_be_called, [input argument types], [output argument types]
     if argument types is specified, child nodes advertising what arguments the method uses and returns will be created
-    a callback is a method accepting the nodeid of the parent as first argument and variants after. returns a list of variants
+    a callback is a method accepting the nodeid of the parent as first argument and variants after.
+    returns a list of variants
     """
     _logger.info('create_method %r', parent)
     nodeid, qname = _parse_nodeid_qname(*args[:2])
