@@ -86,9 +86,10 @@ class Client:
         """
         _logger.info("find_endpoint %r %r %r", endpoints, security_mode, policy_uri)
         for ep in endpoints:
-            if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and ep.SecurityPolicyUri == policy_uri):
+            if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and
+                    ep.SecurityPolicyUri == policy_uri):
                 return ep
-        raise ua.UaError("No matching endpoints: {0}, {1}".format(security_mode, policy_uri))
+        raise ua.UaError(f"No matching endpoints: {security_mode}, {policy_uri}")
 
     def set_user(self, username: str):
         """
@@ -126,14 +127,14 @@ class Client:
             return
         parts = string.split(",")
         if len(parts) < 4:
-            raise ua.UaError("Wrong format: `{}`, expected at least 4 comma-separated values".format(string))
+            raise ua.UaError(f"Wrong format: `{string}`, expected at least 4 comma-separated values")
 
         if '::' in parts[3]:  # if the filename contains a colon, assume it's a conjunction and parse it
             parts[3], client_key_password = parts[3].split('::')
         else:
             client_key_password = None
 
-        policy_class = getattr(security_policies, "SecurityPolicy{}".format(parts[0]))
+        policy_class = getattr(security_policies, f"SecurityPolicy{parts[0]}")
         mode = getattr(ua.MessageSecurityMode, parts[1])
         return await self.set_security(policy_class, parts[2], parts[3], client_key_password,
                                        parts[4] if len(parts) >= 5 else None, mode)
@@ -276,7 +277,8 @@ class Client:
         params.ClientNonce = create_nonce(self.security_policy.symmetric_key_size)
         result = await self.uaclient.open_secure_channel(params)
         if self.secure_channel_timeout != result.SecurityToken.RevisedLifetime:
-            _logger.info("Requested secure channel timeout to be %dms, got %dms instead", self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
+            _logger.info("Requested secure channel timeout to be %dms, got %dms instead",
+                         self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
             self.secure_channel_timeout = result.SecurityToken.RevisedLifetime
 
     async def close_secure_channel(self):
@@ -363,7 +365,8 @@ class Client:
         self._policy_ids = ep.UserIdentityTokens
         #  Actual maximum number of milliseconds that a Session shall remain open without activity
         if self.session_timeout != response.RevisedSessionTimeout:
-            _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
+            _logger.warning("Requested session timeout to be %dms, got %dms instead",
+                            self.secure_channel_timeout, response.RevisedSessionTimeout)
             self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = self.loop.create_task(self._renew_channel_loop())
         return response

@@ -34,7 +34,8 @@ async def _copy_node(server, parent_nodeid, rdesc, nodeid, recursive):
     if recursive:
         descs = await node_to_copy.get_children_descriptions()
         for desc in descs:
-            nodes = await _copy_node(server, res.AddedNodeId, desc, nodeid=ua.NodeId(namespaceidx=desc.NodeId.NamespaceIndex), recursive=True)
+            nodes = await _copy_node(server, res.AddedNodeId, desc,
+                                     nodeid=ua.NodeId(namespaceidx=desc.NodeId.NamespaceIndex), recursive=True)
             added_nodes.extend(nodes)
 
     return added_nodes
@@ -73,5 +74,6 @@ async def _read_and_copy_attrs(node_type, struct, addnode):
             else:
                 setattr(struct, name, results[idx].Value.Value)
         else:
-            logger.warning("Instantiate: while copying attributes from node type {0!s}, attribute {1!s}, statuscode is {2!s}".format(node_type, name, results[idx].StatusCode))
+            logger.warning(f"Instantiate: while copying attributes from node type {str(node_type)},"
+                           f" attribute {str(name)}, statuscode is {str(results[idx].StatusCode)}")
     addnode.NodeAttributes = struct

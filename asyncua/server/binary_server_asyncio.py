@@ -31,7 +31,7 @@ class OPCUAProtocol(asyncio.Protocol):
         self._task = None
 
     def __str__(self):
-        return 'OPCUAProtocol({}, {})'.format(self.peer_name, self.processor.session)
+        return f'OPCUAProtocol({self.peer_name}, {self.processor.session})'
 
     __repr__ = __str__
 

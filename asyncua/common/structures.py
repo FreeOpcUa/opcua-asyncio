@@ -60,7 +60,7 @@ class {0}(IntEnum):
         for EnumeratedValue in self.fields:
             name = EnumeratedValue.Name
             value = EnumeratedValue.Value
-            code += "    {} = {}\n".format(name, value)
+            code += f"    {name} = {value}\n"
 
         return code
 
@@ -81,7 +81,7 @@ class Struct(object):
         self.typeid = None
 
     def __str__(self):
-        return "Struct(name={}, fields={}".format(self.name, self.fields)
+        return f"Struct(name={self.name}, fields={self.fields}"
     __repr__ = __str__
 
     def get_code(self):
@@ -126,7 +126,7 @@ class Field(object):
         self.array = False
 
     def __str__(self):
-        return "Field(name={}, uatype={}".format(self.name, self.uatype)
+        return f"Field(name={self.name}, uatype={self.uatype}"
     __repr__ = __str__
 
 
@@ -188,7 +188,8 @@ class StructGenerator(object):
     def _make_registration(self):
         code = "\n\n"
         for struct in self.model:
-            code += f"ua.register_extension_object('{struct.name}', ua.NodeId.from_string('{struct.typeid}'), {struct.name})\n"
+            code += f"ua.register_extension_object('{struct.name}'," \
+                    f" ua.NodeId.from_string('{struct.typeid}'), {struct.name})\n"
         return code
 
     def get_python_classes(self, env=None):
@@ -211,7 +212,6 @@ from asyncua import ua
             if struct.name == name:
                 struct.typeid = typeid
                 return
-
 
 
 async def load_type_definitions(server, nodes=None):
@@ -250,10 +250,10 @@ async def load_type_definitions(server, nodes=None):
         for ndesc in await node.get_children_descriptions():
             ndesc_node = server.get_node(ndesc.NodeId)
             ref_desc_list = await ndesc_node.get_references(refs=ua.ObjectIds.HasDescription,
-                direction=ua.BrowseDirection.Inverse)
+                                                            direction=ua.BrowseDirection.Inverse)
             if ref_desc_list:  # some server put extra things here
                 name = _clean_name(ndesc.BrowseName.Name)
-                if not name in structs_dict:
+                if name not in structs_dict:
                     _logger.warning("%s is found as child of binary definition node but is not found in xml", name)
                     continue
                 nodeid = ref_desc_list[0].NodeId
@@ -320,7 +320,8 @@ async def load_enums(server, env=None):
             try:
                 c = await _get_enum_values(name, node)
             except ua.UaError as ex:
-                _logger.warning("Node %s, %s under DataTypes/Enumeration, does not seem to have a child called EnumString or EumValue: %s", name, node, ex)
+                _logger.warning(f"Node {name}, {node} under DataTypes/Enumeration,"
+                                f" does not seem to have a child called EnumString or EumValue: {ex}")
                 continue
         if not hasattr(ua, c.name):
             _logger.warning("Adding enum %s to ua namespace", c)

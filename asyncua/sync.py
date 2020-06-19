@@ -60,7 +60,7 @@ class ThreadLoop(Thread):
 
 def syncmethod(func):
     def wrapper(self, *args, **kwargs):
-        args = list(args)  #FIXME: might be very inefficient...
+        args = list(args)  # FIXME: might be very inefficient...
         for idx, arg in enumerate(args):
             if isinstance(arg, Node):
                 args[idx] = arg.aio_obj
@@ -384,6 +384,7 @@ class Node:
     @syncmethod
     def read_attributes(self):
         pass
+
 
 class Subscription:
     def __init__(self, tloop, sub):

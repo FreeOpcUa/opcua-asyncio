@@ -34,7 +34,7 @@ def _to_nodeid(nodeid):
     elif type(nodeid) in (str, bytes):
         return ua.NodeId.from_string(nodeid)
     else:
-        raise ua.UaError("Could not resolve '{0}' to a type id".format(nodeid))
+        raise ua.UaError(f"Could not resolve '{nodeid}' to a type id")
 
 
 class Node:
@@ -58,7 +58,8 @@ class Node:
         elif isinstance(nodeid, int):
             self.nodeid = ua.NodeId(nodeid, 0)
         else:
-            raise ua.UaError("argument to node must be a NodeId object or a string defining a nodeid found {0} of type {1}".format(nodeid, type(nodeid)))
+            raise ua.UaError(f"argument to node must be a NodeId object or a string"
+                             f" defining a nodeid found {nodeid} of type {type(nodeid)}")
         self.basenodeid = None
 
     def __eq__(self, other):
@@ -73,7 +74,7 @@ class Node:
         return self.nodeid.to_string()
 
     def __repr__(self):
-        return "Node({0})".format(self.nodeid)
+        return f"Node({self.nodeid})"
 
     def __hash__(self):
         return self.nodeid.__hash__()
@@ -160,8 +161,8 @@ class Node:
         """
         Get value of a node as a python type. Only variables ( and properties) have values.
         An exception will be generated for other node types.
-        WARNING: on server side, this function returns a ref to object in ua database. Do not modify it if it is a mutable
-        object unless you know what you are doing
+        WARNING: on server side, this function returns a ref to object in ua database.
+        Do not modify it if it is a mutable object unless you know what you are doing
         """
         result = await self.read_data_value()
         return result.Value.Value
@@ -410,7 +411,7 @@ class Node:
         returns type definition of the node.
         """
         references = await self.get_references(refs=ua.ObjectIds.HasTypeDefinition,
-            direction=ua.BrowseDirection.Forward)
+                                               direction=ua.BrowseDirection.Forward)
         if len(references) == 0:
             return None
         return references[0].NodeId

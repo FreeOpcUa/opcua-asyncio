@@ -155,7 +155,7 @@ class HistorySQLite(HistoryStorageInterface):
                 await self._db.execute(f'DELETE FROM "{table}" WHERE Time < ?', (date_limit.isoformat(' '),))
                 await self._db.commit()
             except aiosqlite.Error as e:
-                self.logger.error("Historizing SQL Delete Old Data Error for events from %s: %s", event.emitting_node, e)
+                self.logger.error(f"Historizing SQL Delete Old Data Error for events from {event.emitting_node}: {e}")
 
     async def read_event_history(self, source_id, start, end, nb_values, evfilter):
         table = self._get_table_name(source_id)

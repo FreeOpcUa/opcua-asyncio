@@ -116,7 +116,7 @@ class MonitoredItemService:
 
         result, mdata = self._make_monitored_item_common(params)
         ev_notify_byte = self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
-                                                         ua.AttributeIds.EventNotifier).Value.Value
+                                                          ua.AttributeIds.EventNotifier).Value.Value
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadServiceUnsupported)
@@ -178,7 +178,8 @@ class MonitoredItemService:
                              handle, error)
             await self.trigger_statuschange(error)
         else:
-            #self.logger.info("subscription %s: datachange callback called with handle '%s' and value '%s'", self, handle, value.Value)
+            # self.logger.info(f"subscription {self}: datachange callback called "
+            #                 f"with handle '{handle}' and value '{value.Value}'")
             event = ua.MonitoredItemNotification()
             mid = self._monitored_datachange[handle]
             mdata = self._monitored_items[mid]

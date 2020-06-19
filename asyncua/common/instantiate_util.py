@@ -95,12 +95,12 @@ async def _instantiate_node(server,
                     if not refs:
                         # spec says to ignore nodes without modelling rules
                         logger.info("Instantiate: Skip node without modelling rule %s as part of %s",
-                            c_rdesc.BrowseName, addnode.BrowseName)
+                                    c_rdesc.BrowseName, addnode.BrowseName)
                         continue
                         # exclude nodes with optional ModellingRule if requested
                     if not instantiate_optional and refs[0].nodeid == ua.NodeId(ua.ObjectIds.ModellingRule_Optional):
                         logger.info("Instantiate: Skip optional node %s as part of %s", c_rdesc.BrowseName,
-                            addnode.BrowseName)
+                                    addnode.BrowseName)
                         continue
                     # if root node being instantiated has a String NodeId, create the children with a String NodeId
                     if res.AddedNodeId.NodeIdType is ua.NodeIdType.String:
