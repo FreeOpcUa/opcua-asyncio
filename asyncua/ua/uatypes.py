@@ -556,7 +556,7 @@ class LocalizedText(FrozenClass):
                              f" not a {type(locale)}, {locale}")
         self._locale = locale
         if self._locale:
-            self.Encoding |= 1
+            self.Encoding |= (1)
 
     def to_string(self):
         if self.Text is None:
