@@ -125,5 +125,4 @@ async def test_permissions_anonymous(srv_crypto_one_cert):
         mode=ua.MessageSecurityMode.SignAndEncrypt
     )
     await clt.connect()
-    with pytest.raises(ua.uaerrors.BadUserAccessDenied):
-        await clt.get_endpoints()
+    await clt.get_endpoints()
