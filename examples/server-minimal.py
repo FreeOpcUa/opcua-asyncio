@@ -35,12 +35,11 @@ async def main():
     await server.nodes.objects.add_method(ua.NodeId('ServerMethod', 2), ua.QualifiedName('ServerMethod', 2), func, [ua.VariantType.Int64], [ua.VariantType.Int64])
     _logger.info('Starting server!')
     async with server:
-        count = 0
         while True:
             await asyncio.sleep(1)
-            count += 0.1
-            _logger.info('Set value of %s to %.1f', myvar, count)
-            await myvar.write_value(count)
+            new_val = await myvar.get_value() + 0.1
+            _logger.info('Set value of %s to %.1f', myvar, new_val)
+            await myvar.write_value(new_val)
 
 
 if __name__ == '__main__':

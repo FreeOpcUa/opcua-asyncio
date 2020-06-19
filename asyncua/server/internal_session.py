@@ -106,8 +106,8 @@ class InternalSession:
         results = self.iserver.attribute_service.read(params)
         return results
 
-    def history_read(self, params) -> Coroutine:
-        return self.iserver.history_manager.read_history(params)
+    async def history_read(self, params) -> Coroutine:
+        return await self.iserver.history_manager.read_history(params)
 
     async def write(self, params):
         if self.user is None:
@@ -140,9 +140,9 @@ class InternalSession:
     def add_method_callback(self, methodid, callback):
         return self.aspace.add_method_callback(methodid, callback)
 
-    def call(self, params):
+    async def call(self, params):
         """COROUTINE"""
-        return self.iserver.method_service.call(params)
+        return await self.iserver.method_service.call(params)
 
     async def create_subscription(self, params, callback=None):
         result = await self.subscription_service.create_subscription(params, callback, external=self.external)
