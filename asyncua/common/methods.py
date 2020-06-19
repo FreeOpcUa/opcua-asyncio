@@ -86,12 +86,12 @@ def uamethod(func):
 
 def _format_call_inputs(parent, *args):
     if isinstance(parent, ua.NodeId):
-        return parent, *[arg.Value for arg in args]
+        return (parent, *[arg.Value for arg in args])
     else:
         self = parent
         parent = args[0]
         args = args[1:]
-    return self, parent, *[arg.Value for arg in args]
+    return (self, parent, *[arg.Value for arg in args])
 
 
 def _format_call_outputs(result):
