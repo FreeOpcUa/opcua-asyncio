@@ -83,7 +83,7 @@ class CallbackDispatcher(object):
                 self.addListener(eventName, getattr(subscriber, params))
             elif isinstance(params, list):
                 if not params:
-                    raise ValueError('Invalid params "{0!r}" for event "{1!s}"'.format(params, eventName))
+                    raise ValueError(f'Invalid params "{repr(params)}" for event "{str(eventName)}"')
                 if len(params) <= 2 and isinstance(params[0], str):
                     priority = params[1] if len(params) > 1 else 0
                     self.addListener(eventName, getattr(subscriber, params[0]), priority)
@@ -92,4 +92,4 @@ class CallbackDispatcher(object):
                         priority = listener[1] if len(listener) > 1 else 0
                         self.addListener(eventName, getattr(subscriber, listener[0]), priority)
             else:
-                raise ValueError('Invalid params for event "{0!s}"'.format(eventName))
+                raise ValueError(f'Invalid params for event "{str(eventName)}"')

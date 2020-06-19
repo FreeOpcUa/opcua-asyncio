@@ -422,9 +422,10 @@ class XmlExporter:
             return val.ua_types.keys()
         else:
             member_keys = [name for name in XmlExporter.extobj_ordered_elements[dtype] if
-                name in val.ua_types.keys() and getattr(val, name) is not None]
+                           name in val.ua_types.keys() and getattr(val, name) is not None]
 
         return member_keys
+
 
 def indent(elem, level=0):
     """

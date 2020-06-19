@@ -64,8 +64,8 @@ if __name__ == "__main__":
             idx = client.get_namespace_index(uri)
 
             # Now getting a variable node using its browse path
-            myvar = client.nodes.root.get_child(["0:Objects", "{}:MyObject".format(idx), "{}:MyVariable".format(idx)])
-            obj = client.nodes.root.get_child(["0:Objects", "{}:MyObject".format(idx)])
+            myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
+            obj = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject"])
             print("myvar is: ", myvar)
 
             # subscribing to a variable node
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             # sub.delete()
 
             # calling a method on server
-            res = obj.call_method("{}:multiply".format(idx), 3, "klk")
+            res = obj.call_method(f"{idx}:multiply", 3, "klk")
             print("method result is: ", res)
 
             embed()

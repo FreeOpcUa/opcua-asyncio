@@ -107,7 +107,8 @@ class Server:
 
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
 
-    async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version, build_number, build_date):
+    async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
+                             build_number, build_date):
         status_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus))
         build_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo))
 
@@ -452,7 +453,8 @@ class Server:
         await ev_gen.init(etype, emitting_node=emitting_node)
         return ev_gen
 
-    async def create_custom_data_type(self, idx, name, basetype=ua.ObjectIds.BaseDataType, properties=None, description=None) -> Coroutine:
+    async def create_custom_data_type(self, idx, name, basetype=ua.ObjectIds.BaseDataType,
+                                      properties=None, description=None) -> Coroutine:
         if properties is None:
             properties = []
         base_t = _get_node(self.iserver.isession, basetype)
@@ -462,10 +464,12 @@ class Server:
             datatype = None
             if len(prop) > 2:
                 datatype = prop[2]
-            await custom_t.add_property(idx, prop[0], ua.get_default_value(prop[1]), varianttype=prop[1], datatype=datatype)
+            await custom_t.add_property(idx, prop[0], ua.get_default_value(prop[1]),
+                                        varianttype=prop[1], datatype=datatype)
         return custom_t
 
-    async def create_custom_event_type(self, idx, name, basetype=ua.ObjectIds.BaseEventType, properties=None) -> Coroutine:
+    async def create_custom_event_type(self, idx, name,
+                                       basetype=ua.ObjectIds.BaseEventType, properties=None) -> Coroutine:
         if properties is None:
             properties = []
         return await self._create_custom_type(idx, name, basetype, properties, [], [])
@@ -542,7 +546,8 @@ class Server:
         Export nodes of one or more namespaces to an XML file.
         Namespaces used by nodes are always exported for consistency.
         :param path: name of the xml file to write
-        :param namespaces: list of string uris or int indexes of the namespace to export, if not provide all ns are used except 0
+        :param namespaces: list of string uris or int indexes of the namespace to export,
+         if not provide all ns are used except 0
         """
         if namespaces is None:
             namespaces = []

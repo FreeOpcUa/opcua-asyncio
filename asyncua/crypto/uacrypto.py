@@ -51,12 +51,14 @@ def sign_sha1(private_key, data):
         hashes.SHA1()
     )
 
+
 def sign_sha256(private_key, data):
     return private_key.sign(
         data,
         padding.PKCS1v15(),
         hashes.SHA256()
     )
+
 
 def verify_sha1(certificate, data, signature):
     certificate.public_key().verify(
@@ -73,6 +75,7 @@ def verify_sha256(certificate, data, signature):
         data,
         padding.PKCS1v15(),
         hashes.SHA256())
+
 
 def encrypt_basic256(public_key, data):
     ciphertext = public_key.encrypt(
@@ -142,16 +145,20 @@ def hmac_sha1(key, message):
     hasher.update(message)
     return hasher.finalize()
 
+
 def hmac_sha256(key, message):
     hasher = hmac.HMAC(key, hashes.SHA256(), backend=default_backend())
     hasher.update(message)
     return hasher.finalize()
 
+
 def sha1_size():
     return hashes.SHA1.digest_size
 
+
 def sha256_size():
     return hashes.SHA256.digest_size
+
 
 def p_sha1(secret, seed, sizes=()):
     """
@@ -175,6 +182,7 @@ def p_sha1(secret, seed, sizes=()):
         result = result[size:]
     return tuple(parts)
 
+
 def p_sha256(secret, seed, sizes=()):
     """
     Derive one or more keys from secret and seed.
@@ -197,8 +205,9 @@ def p_sha256(secret, seed, sizes=()):
         result = result[size:]
     return tuple(parts)
 
+
 def x509_name_to_string(name):
-    parts = ["{0}={1}".format(attr.oid._name, attr.value) for attr in name]
+    parts = [f"{attr.oid._name}={attr.value}" for attr in name]
     return ', '.join(parts)
 
 
@@ -209,6 +218,6 @@ def x509_to_string(cert):
     if cert.subject == cert.issuer:
         issuer = ' (self-signed)'
     else:
-        issuer = ', issuer: {0}'.format(x509_name_to_string(cert.issuer))
+        issuer = f', issuer: {x509_name_to_string(cert.issuer)}'
     # TODO: show more information
-    return "{0}{1}, {2} - {3}".format(x509_name_to_string(cert.subject), issuer, cert.not_valid_before, cert.not_valid_after)
+    return f"{x509_name_to_string(cert.subject)}{issuer}, {cert.not_valid_before} - {cert.not_valid_after}"

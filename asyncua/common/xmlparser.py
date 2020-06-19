@@ -298,9 +298,9 @@ class XMLParser:
         for localized_text in el:
             mylist = self._parse_body(localized_text)
             # each localized text is in a dictionary with "Locale" and "Text" keys
-            item = {"Text":None,"Locale":None}
+            item = {"Text": None, "Locale": None}
             for name, val in mylist:
-                item.update({str(name):val})
+                item.update({str(name): val})
             # value is an array of dictionaries with localized texts
             value.append(item) 
         return value

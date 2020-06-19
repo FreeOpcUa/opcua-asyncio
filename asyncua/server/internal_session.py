@@ -45,7 +45,8 @@ class InternalSession:
         self.logger.info('Created internal session %s', self.name)
 
     def __str__(self):
-        return f'InternalSession(name:{self.name}, user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})'
+        return f'InternalSession(name:{self.name},' \
+               f' user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})'
 
     async def get_endpoints(self, params=None, sockname=None):
         return await self.iserver.get_endpoints(params, sockname)
@@ -171,7 +172,7 @@ class InternalSession:
         # This is an async method, dues to symmetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
         self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionDeleted,
-            ServerItemCallback(params, subscription_result))
+                                                         ServerItemCallback(params, subscription_result))
         return subscription_result
 
     def publish(self, acks: Optional[Iterable[ua.SubscriptionAcknowledgement]] = None):
