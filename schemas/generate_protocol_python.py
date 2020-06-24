@@ -1,3 +1,6 @@
+import os
+import datetime
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IgnoredEnums = ["NodeIdType"]
 IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "FilterOperand", "Variant", "DataValue", "ExtensionObject", "XmlElement", "LocalizedText"]
@@ -70,7 +73,7 @@ class CodeGenerator:
 
     def make_header(self):
         self.write('"""')
-        self.write('Autogenerate code from xml spec')
+        self.write(f'Autogenerate code from xml spec\nDate:{datetime.datetime.now()}')
         self.write('"""')
         self.write('')
         self.write('from datetime import datetime')
@@ -226,8 +229,8 @@ class CodeGenerator:
 
 if __name__ == '__main__':
     import generate_model as gm
-    xml_path = 'UA-Nodeset/Schema/Opc.Ua.Types.bsd'
-    protocol_path = '../asyncua/ua/uaprotocol_auto.py'
+    xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset-master', 'Schema', 'Opc.Ua.Types.bsd')
+    protocol_path = os.path.join(BASE_DIR, "asyncua", "ua", "uaprotocol_auto.py")
     p = gm.Parser(xml_path)
     model = p.parse()
     gm.add_basetype_members(model)

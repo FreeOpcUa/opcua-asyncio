@@ -70,9 +70,10 @@ class Node:
         return not self.__eq__(other)
 
     def __str__(self):
-        return "Node({0})".format(self.nodeid)
+        return self.nodeid.to_string()
 
-    __repr__ = __str__
+    def __repr__(self):
+        return "Node({0})".format(self.nodeid)
 
     def __hash__(self):
         return self.nodeid.__hash__()
@@ -252,16 +253,19 @@ class Node:
         """
         return self.set_writable(False)
 
-    async def write_attribute(self, attributeid, datavalue):
+    async def write_attribute(self, attributeid, datavalue, indexrange=None):
         """
         Set an attribute of a node
         attributeid is a member of ua.AttributeIds
         datavalue is a ua.DataValue object
+        indexrange is a NumericRange (a string; e.g. "1" or "1:3".  
+            See https://reference.opcfoundation.org/v104/Core/docs/Part4/7.22/)
         """
         attr = ua.WriteValue()
         attr.NodeId = self.nodeid
         attr.AttributeId = attributeid
         attr.Value = datavalue
+        attr.IndexRange = indexrange
         params = ua.WriteParameters()
         params.NodesToWrite = [attr]
         result = await self.server.write(params)
