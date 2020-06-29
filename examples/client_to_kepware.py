@@ -25,9 +25,9 @@ async def main():
     async with Client(url=url) as client:
         print("Root children are", await client.nodes.root.get_children())
 
-        tag1 = await client.get_node("ns=2;s=Channel1.Device1.Tag1")
+        tag1 = client.get_node("ns=2;s=Channel1.Device1.Tag1")
         print(f"tag1 is: {tag1} with value {await tag1.read_value()} ")
-        tag2 = await client.get_node("ns=2;s=Channel1.Device1.Tag2")
+        tag2 = client.get_node("ns=2;s=Channel1.Device1.Tag2")
         print(f"tag2 is: {tag2} with value {await tag2.read_value()} ")
 
         handler = SubHandler()
