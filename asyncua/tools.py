@@ -83,16 +83,16 @@ def _require_nodeid(parser, args):
     # check that a nodeid has been given explicitly, a bit hackish...
     if args.nodeid == "i=84" and args.path == "":
         parser.print_usage()
-        print("{0}: error: A NodeId or BrowsePath is required".format(parser.prog))
+        print(f"{parser.prog}: error: A NodeId or BrowsePath is required")
         sys.exit(1)
 
 
 def parse_args(parser, requirenodeid=False):
     args = parser.parse_args()
-    #logging.basicConfig(format="%(levelname)s: %(message)s", level=getattr(logging, args.loglevel))
+    # logging.basicConfig(format="%(levelname)s: %(message)s", level=getattr(logging, args.loglevel))
     logging.basicConfig(level=getattr(logging, args.loglevel))
     if args.url and '://' not in args.url:
-        logging.info("Adding default scheme %s to URL %s", ua.OPC_TCP_SCHEME, args.url)
+        logging.info(f"Adding default scheme {ua.OPC_TCP_SCHEME} to URL {args.url}")
         args.url = ua.OPC_TCP_SCHEME + '://' + args.url
     if requirenodeid:
         _require_nodeid(parser, args)
@@ -195,16 +195,16 @@ def _val_to_variant(val, args):
         return _arg_to_variant(val, array, int, ua.VariantType.SByte)
     elif args.datatype == "byte":
         return _arg_to_variant(val, array, int, ua.VariantType.Byte)
-    #elif args.datatype == "uint8":
-        #return _arg_to_variant(val, array, int, ua.VariantType.Byte)
+    # elif args.datatype == "uint8":
+        # return _arg_to_variant(val, array, int, ua.VariantType.Byte)
     elif args.datatype == "uint16":
         return _arg_to_variant(val, array, int, ua.VariantType.UInt16)
     elif args.datatype == "uint32":
         return _arg_to_variant(val, array, int, ua.VariantType.UInt32)
     elif args.datatype == "uint64":
         return _arg_to_variant(val, array, int, ua.VariantType.UInt64)
-    #elif args.datatype == "int8":
-        #return ua.Variant(int(val), ua.VariantType.Int8)
+    # elif args.datatype == "int8":
+        # return ua.Variant(int(val), ua.VariantType.Int8)
     elif args.datatype == "int16":
         return _arg_to_variant(val, array, int, ua.VariantType.Int16)
     elif args.datatype == "int32":
@@ -315,7 +315,7 @@ async def _uals():
     await client.connect()
     try:
         node = await get_node(client, args)
-        print("Browsing node {0} at {1}\n".format(node, args.url))
+        print(f"Browsing node {node} at {args.url}\n")
         if args.long_format == 0:
             await _lsprint_0(node, args.depth - 1)
         elif args.long_format == 1:
@@ -426,8 +426,7 @@ async def _uasubscribe():
 
 
 def application_to_strings(app):
-    result = []
-    result.append(('Application URI', app.ApplicationUri))
+    result = [('Application URI', app.ApplicationUri)]
     optionals = [
         ('Product URI', app.ProductUri),
         ('Application Name', app.ApplicationName.to_string()),
@@ -449,7 +448,7 @@ def cert_to_string(der):
     try:
         from .crypto import uacrypto
     except ImportError:
-        return "{0} bytes".format(len(der))
+        return f"{len(der)} bytes"
     cert = uacrypto.x509_from_der(der)
     return uacrypto.x509_to_string(cert)
 
@@ -602,37 +601,37 @@ async def _uadiscover():
                         "--network",
                         action="store_true",
                         help="Also send a FindServersOnNetwork request to server")
-    #parser.add_argument("-s",
-                        #"--servers",
-                        #action="store_false",
-                        #help="send a FindServers request to server")
-    #parser.add_argument("-e",
-                        #"--endpoints",
-                        #action="store_false",
-                        #help="send a GetEndpoints request to server")
+    # parser.add_argument("-s",
+                        # "--servers",
+                        # action="store_false",
+                        # help="send a FindServers request to server")
+    # parser.add_argument("-e",
+                        # "--endpoints",
+                        # action="store_false",
+                        # help="send a GetEndpoints request to server")
     args = parse_args(parser)
 
     client = Client(args.url, timeout=args.timeout)
 
     if args.network:
-        print("Performing discovery at {0}\n".format(args.url))
+        print(f"Performing discovery at {args.url}\n")
         for i, server in enumerate(await client.connect_and_find_servers_on_network(), start=1):
-            print('Server {0}:'.format(i))
-            #for (n, v) in application_to_strings(server):
-                #print('  {}: {}'.format(n, v))
+            print(f'Server {i}:')
+            # for (n, v) in application_to_strings(server):
+                # print('  {}: {}'.format(n, v))
             print('')
 
-    print("Performing discovery at {0}\n".format(args.url))
+    print(f"Performing discovery at {args.url}\n")
     for i, server in enumerate(await client.connect_and_find_servers(), start=1):
-        print('Server {0}:'.format(i))
+        print(f'Server {i}:')
         for (n, v) in application_to_strings(server):
-            print('  {0}: {1}'.format(n, v))
+            print(f'  {n}: {v}')
         print('')
 
     for i, ep in enumerate(await client.connect_and_get_server_endpoints(), start=1):
-        print('Endpoint {0}:'.format(i))
+        print(f'Endpoint {i}:')
         for (n, v) in endpoint_to_strings(ep):
-            print('  {0}: {1}'.format(n, v))
+            print(f'  {n}: {v}')
         print('')
 
     sys.exit(0)
@@ -689,7 +688,7 @@ async def _uahistoryread():
         node = await get_node(client, args)
         starttime = str_to_datetime(args.starttime, datetime.utcnow() - timedelta(days=1))
         endtime = str_to_datetime(args.endtime, datetime.utcnow())
-        print("Reading raw history of node {0} at {1}; start at {2}, end at {3}\n".format(node, args.url, starttime, endtime))
+        print(f"Reading raw history of node {node} at {args.url}; start at {starttime}, end at {endtime}\n")
         if args.events:
             evs = await node.read_event_history(starttime, endtime, numvalues=args.limit)
             for ev in evs:

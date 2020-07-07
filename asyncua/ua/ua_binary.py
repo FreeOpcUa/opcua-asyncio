@@ -2,7 +2,6 @@
 Binary protocol specific functions and constants
 """
 
-import sys
 import struct
 import logging
 import uuid
@@ -130,7 +129,7 @@ class _Primitive1(object):
             return Primitives.Int32.pack(-1)
         if not isinstance(data, list):
             logger.warning(f'ua_binary.py > _Primitive1 > pack_array > data: {data} is not a instance of "list"!')
-            return Primitives.Int32.pack(-1) #to prevent crashing while runtime
+            return Primitives.Int32.pack(-1) # to prevent crashing while runtime
         size_data = Primitives.Int32.pack(len(data))
         return size_data + struct.pack(self._fmt.format(len(data)), *data)
 
@@ -255,7 +254,7 @@ def to_binary(uatype, val):
     Pack a python object to binary given a string defining its type
     """
     if uatype.startswith('ListOf'):
-        #if isinstance(val, (list, tuple)):
+        # if isinstance(val, (list, tuple)):
         return list_to_binary(uatype[6:], val)
     elif type(uatype) is str and hasattr(ua.VariantType, uatype):
         vtype = getattr(ua.VariantType, uatype)

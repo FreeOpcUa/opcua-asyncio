@@ -54,7 +54,7 @@ class OPCTypeDictionaryBuilder:
         if data_type in self._build_in_list:
             data_type = 'opc:' + data_type
         else:
-            #data_type = 'tns:' + _to_camel_case(data_type)
+            # data_type = 'tns:' + _to_camel_case(data_type)
             data_type = 'tns:' + data_type
         return data_type
 
@@ -86,7 +86,7 @@ class OPCTypeDictionaryBuilder:
     def append_struct(self, name):
         appended_struct = Et.SubElement(self.etree.getroot(), 'opc:StructuredType')
         appended_struct.attrib['BaseType'] = 'ua:ExtensionObject'
-        #appended_struct.attrib['Name'] = _to_camel_case(name)
+        # appended_struct.attrib['Name'] = _to_camel_case(name)
         appended_struct.attrib['Name'] = name
         self._structs_dict[name] = appended_struct
         return appended_struct
@@ -160,7 +160,7 @@ class DataTypeDictionaryBuilder:
             res = await self._session_server.add_nodes([node])
             return res[0].AddedNodeId
         logger.warning("Making %s object for node %s which already exist, its data will be overriden", self, node)
-        #FIXME: we have an issue 
+        # FIXME: we have an issue
         return node.nodeid
 
     async def _link_nodes(self, linked_obj_node_id, data_type_node_id, description_node_id):
@@ -193,7 +193,7 @@ class DataTypeDictionaryBuilder:
         await self._session_server.add_references(refs)
 
     async def _create_data_type(self, type_name, nodeid=None, init=True):
-        #name = _to_camel_case(type_name)
+        # name = _to_camel_case(type_name)
         name = type_name
 
         if nodeid is None:

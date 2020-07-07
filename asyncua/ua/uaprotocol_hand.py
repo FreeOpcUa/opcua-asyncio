@@ -59,7 +59,8 @@ class Header(uatypes.FrozenClass):
         return struct.calcsize("<3scII")
 
     def __str__(self):
-        return f'Header(type:{self.MessageType}, chunk_type:{self.ChunkType}, body_size:{self.body_size}, channel:{self.ChannelId})'
+        return f'Header(type:{self.MessageType}, chunk_type:{self.ChunkType}, body_size:{self.body_size},' \
+               f' channel:{self.ChannelId})'
 
     __repr__ = __str__
 
@@ -112,7 +113,8 @@ class AsymmetricAlgorithmHeader(uatypes.FrozenClass):
     def __str__(self):
         size1 = len(self.SenderCertificate) if self.SenderCertificate is not None else None
         size2 = len(self.ReceiverCertificateThumbPrint) if self.ReceiverCertificateThumbPrint is not None else None
-        return f'{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI}, certificatesize:{size2}, receiverCertificatesize:{size2} )'
+        return f'{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI},' \
+               f' certificatesize:{size2}, receiverCertificatesize:{size2} )'
 
     __repr__ = __str__
 
@@ -344,11 +346,11 @@ class Argument(auto.Argument):
 
 
 class XmlElement(FrozenClass):
-    '''
+    """
     An XML element encoded as a UTF-8 string.
     :ivar Value:
     :vartype Value: String
-    '''
+    """
 
     ua_types = [
         ('Value', 'String'),

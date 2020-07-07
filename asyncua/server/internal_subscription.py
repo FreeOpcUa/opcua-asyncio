@@ -86,7 +86,7 @@ class InternalSubscription:
             return True
         if self._keep_alive_count > self.data.RevisedMaxKeepAliveCount:
             self.logger.debug("keep alive count %s is > than max keep alive count %s, sending publish event",
-                self._keep_alive_count, self.data.RevisedMaxKeepAliveCount)
+                              self._keep_alive_count, self.data.RevisedMaxKeepAliveCount)
             return True
         self._keep_alive_count += 1
         return False
@@ -97,7 +97,7 @@ class InternalSubscription:
         """
         if self._publish_cycles_count > self.data.RevisedLifetimeCount:
             self.logger.warning("Subscription %s has expired, publish cycle count(%s) > lifetime count (%s)", self,
-                self._publish_cycles_count, self.data.RevisedLifetimeCount)
+                                self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
             await self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
         result = None
@@ -106,7 +106,7 @@ class InternalSubscription:
                 self._publish_cycles_count += 1
             result = self._pop_publish_result()
         if result is not None:
-            #self.logger.info('publish_results for %s', self.data.SubscriptionId)
+            # self.logger.info('publish_results for %s', self.data.SubscriptionId)
             # The callback can be:
             #    Subscription.publish_callback -> server internal subscription
             #    UaProcessor.forward_publish_response -> client subscription
@@ -139,7 +139,7 @@ class InternalSubscription:
             notif = ua.DataChangeNotification()
             notif.MonitoredItems = [item for sublist in self._triggered_datachanges.values() for item in sublist]
             self._triggered_datachanges = {}
-            #self.logger.debug("sending datachanges notification with %s events", len(notif.MonitoredItems))
+            # self.logger.debug("sending datachanges notification with %s events", len(notif.MonitoredItems))
             result.NotificationMessage.NotificationData.append(notif)
 
     def _pop_triggered_events(self, result: ua.PublishResult):
@@ -149,7 +149,7 @@ class InternalSubscription:
             notif.Events = [item for sublist in self._triggered_events.values() for item in sublist]
             self._triggered_events = {}
             result.NotificationMessage.NotificationData.append(notif)
-            #self.logger.debug("sending event notification with %s events", len(notif.Events))
+            # self.logger.debug("sending event notification with %s events", len(notif.Events))
 
     def _pop_triggered_statuschanges(self, result: ua.PublishResult):
         """Append all enqueued status changes to the given `PublishResult` and clear the queue."""
@@ -157,20 +157,20 @@ class InternalSubscription:
             notif = ua.StatusChangeNotification()
             notif.Status = self._triggered_statuschanges.pop(0)
             result.NotificationMessage.NotificationData.append(notif)
-            #self.logger.debug("sending event notification %s", notif.Status)
+            # self.logger.debug("sending event notification %s", notif.Status)
 
     def publish(self, acks: Iterable[int]):
         """
         Reset publish cycle count, acknowledge PublishResults.
         :param acks: Sequence number of the PublishResults to acknowledge
         """
-        #self.logger.info("publish request with acks %s", acks)
+        # self.logger.info("publish request with acks %s", acks)
         self._publish_cycles_count = 0
         for nb in acks:
             self._not_acknowledged_results.pop(nb, None)
 
     def republish(self, nb):
-        #self.logger.info("re-publish request for ack %s in subscription %s", nb, self)
+        # self.logger.info("re-publish request for ack %s in subscription %s", nb, self)
         result = self._not_acknowledged_results.pop(nb, None)
         if result:
             self.logger.info("re-publishing ack %s in subscription %s", nb, self)
@@ -204,8 +204,8 @@ class InternalSubscription:
         self._triggered_statuschanges.append(code)
         await self._trigger_publish()
 
-    async def _enqueue_event(self, mid: int, eventdata: Union[ua.MonitoredItemNotification, ua.EventFieldList], size: int,
-                       queue: dict):
+    async def _enqueue_event(self, mid: int,
+                             eventdata: Union[ua.MonitoredItemNotification, ua.EventFieldList], size: int, queue: dict):
         if mid not in queue:
             # New Monitored Item Id
             queue[mid] = [eventdata]
