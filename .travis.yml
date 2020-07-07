@@ -11,6 +11,7 @@ install:
   - pip install aiosqlite
   - pip install pytest --upgrade
   - pip install pytest-asyncio
+  - pip install pytest-mock
   - pip install cryptography
   - pip install dataclasses
 # command to run tests
