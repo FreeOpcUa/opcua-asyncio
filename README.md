@@ -124,6 +124,7 @@ Not implemented yet:
 * localized text feature
 * XML protocol
 * UDP
+* WebSocket
 * maybe automatic reconnection...
 
 
@@ -151,6 +152,7 @@ Tested clients: freeopcua C++, freeopcua Python, uaexpert, prosys, quickopc
 Not yet implemented:
 
 * UDP
+* WebSocket
 * session restore
 * alarms
 * XML protocol
