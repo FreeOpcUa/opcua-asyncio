@@ -147,10 +147,12 @@ class UaProcessor:
     async def _process_message(self, typeid, requesthdr, seqhdr, body):
         if typeid in [ua.NodeId(ua.ObjectIds.CreateSessionRequest_Encoding_DefaultBinary),
                       ua.NodeId(ua.ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary),
+                      ua.NodeId(ua.ObjectIds.FindServersRequest_Encoding_DefaultBinary),
                       ua.NodeId(ua.ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary)]:
             # The connection is first created without a user being attached, and then during activation the
             user = None
         elif self.session is None:
+            _logger.warning("Received a request of type %d without an existing session", typeid.Identifier)
             raise ua.uaerrors.BadUserAccessDenied
         else:
             user = self.session.user

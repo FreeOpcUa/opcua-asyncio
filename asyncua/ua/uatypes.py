@@ -872,8 +872,8 @@ class DataValue(FrozenClass):
         ('ServerTimestamp', 'DateTime'),
         ('ServerPicoseconds', 'UInt16'),
     )
-
-    def __init__(self, variant=None, status=None):
+    
+    def __init__(self, variant=None, status=None, sourceTimestamp=None, sourcePicoseconds=None, serverTimestamp=None, serverPicoseconds=None):
         self.Encoding = 0
         if not isinstance(variant, Variant):
             variant = Variant(variant)
@@ -882,10 +882,10 @@ class DataValue(FrozenClass):
             self.StatusCode = StatusCode()
         else:
             self.StatusCode = status
-        self.SourceTimestamp = None  # DateTime()
-        self.SourcePicoseconds = None
-        self.ServerTimestamp = None  # DateTime()
-        self.ServerPicoseconds = None
+        self.SourceTimestamp = sourceTimestamp
+        self.SourcePicoseconds = sourcePicoseconds
+        self.ServerTimestamp = serverTimestamp
+        self.ServerPicoseconds = serverPicoseconds
         self._freeze = True
 
     def __str__(self):
