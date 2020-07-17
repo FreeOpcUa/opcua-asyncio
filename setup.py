@@ -41,5 +41,5 @@ setup(
         ]
     },
     setup_requires=[] + pytest_runner,
-    tests_require=['pytest'],
+    tests_require=['pytest', 'pytest-mock'],
 )
