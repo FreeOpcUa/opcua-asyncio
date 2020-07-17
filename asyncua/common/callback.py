@@ -58,12 +58,15 @@ class CallbackDispatcher(object):
         if eventName not in self._listeners:
             return event
         for listener in self._listeners[eventName].values():
-            if asyncio.iscoroutinefunction(listener):
-                await listener(event, self)
-            else:
-                listener(event, self)
+            await self.call_listener(event, listener)
 
         return event
+
+    async def call_listener(self, event, listener):
+        if asyncio.iscoroutinefunction(listener):
+            await listener(event, self)
+        else:
+            listener(event, self)
 
     def addListener(self, eventName, listener, priority=0):
         if eventName not in self._listeners:
