@@ -10,16 +10,24 @@ OPC_TCP_SCHEME = 'opc.tcp'
 
 class Hello(uatypes.FrozenClass):
     ua_types = (
-        ('ProtocolVersion', 'UInt32'), ('ReceiveBufferSize', 'UInt32'), ('SendBufferSize', 'UInt32'),
-        ('MaxMessageSize', 'UInt32'), ('MaxChunkCount', 'UInt32'), ('EndpointUrl', 'String'),
+        ('ProtocolVersion', 'UInt32'),
+        ('ReceiveBufferSize', 'UInt32'),
+        ('SendBufferSize', 'UInt32'),
+        ('MaxMessageSize', 'UInt32'),
+        ('MaxChunkCount', 'UInt32'),
+        ('EndpointUrl', 'String'),
     )
 
     def __init__(self):
         self.ProtocolVersion = 0
-        self.ReceiveBufferSize = 2**32 - 1
-        self.SendBufferSize = 2**32 - 1
-        self.MaxMessageSize = 0  # No limits
-        self.MaxChunkCount = 0  # No limits
+        # the following values couldbe set to 0 (meaning no limits)
+        # unfortunaltely many servers do not support it
+        # even newer version of prosys are broken
+        # so we set then to a high value known to work most places
+        self.ReceiveBufferSize = 2**31 - 1
+        self.SendBufferSize = 2**31 - 1
+        self.MaxMessageSize = 2**31 - 1
+        self.MaxChunkCount = 2**31 - 1
         self.EndpointUrl = ""
         self._freeze = True
 
@@ -66,7 +74,10 @@ class Header(uatypes.FrozenClass):
 
 
 class ErrorMessage(uatypes.FrozenClass):
-    ua_types = (('Error', 'StatusCode'), ('Reason', 'String'),)
+    ua_types = (
+        ('Error', 'StatusCode'),
+        ('Reason', 'String'),
+    )
 
     def __init__(self):
         self.Error = uatypes.StatusCode()
@@ -163,7 +174,6 @@ class CryptographyNone:
     """
     Base class for symmetric/asymmetric cryprography
     """
-
     def __init__(self):
         pass
 
@@ -246,9 +256,7 @@ class SecurityPolicyFactory:
     Server has one certificate and private key, but needs a separate
     SecurityPolicy for every client and client's certificate
     """
-
-    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None,
-                 permission_ruleset=None):
+    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None, permission_ruleset=None):
         self.cls = cls
         self.mode = mode
         self.certificate = certificate
@@ -262,8 +270,7 @@ class SecurityPolicyFactory:
         if self.cls is SecurityPolicy:
             return self.cls()
         else:
-            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode,
-                            permission_ruleset=self.permission_ruleset)
+            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode, permission_ruleset=self.permission_ruleset)
 
 
 class Message:
