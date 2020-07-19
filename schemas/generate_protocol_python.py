@@ -61,7 +61,7 @@ class CodeGenerator:
                 continue
             if struct.name.endswith('Node') or struct.name.endswith('NodeId'):
                 continue
-            if 'ExtensionObject' in struct.parents:
+            if 'ExtensionObject' in struct.parents or "DataTypeDefinition" in struct.parents:
                 self.write(f"nid = FourByteNodeId(ObjectIds.{struct.name}_Encoding_DefaultBinary)")
                 self.write(f"extension_object_classes[nid] = {struct.name}")
                 self.write(f"extension_object_ids['{struct.name}'] = nid")
@@ -229,7 +229,7 @@ class CodeGenerator:
 
 if __name__ == '__main__':
     import generate_model as gm
-    xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset-master', 'Schema', 'Opc.Ua.Types.bsd')
+    xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset', 'Schema', 'Opc.Ua.Types.bsd')
     protocol_path = os.path.join(BASE_DIR, "asyncua", "ua", "uaprotocol_auto.py")
     p = gm.Parser(xml_path)
     model = p.parse()
