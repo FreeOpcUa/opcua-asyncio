@@ -149,11 +149,14 @@ async def load_data_type_definitions(server, base_node=None):
         logger.warning("Registring structure %s %s", desc.NodeId, desc.BrowseName)
         node = server.get_node(desc.NodeId)
         try:
-            await _generate_object(node)
+            env = await _generate_object(node)
+            name = desc.BrowseName.Name
+            ua.register_extension_object(name, desc.NodeId, env[name])
         except ua.uaerrors.BadAttributeIdInvalid:
             logger.warning("%s has no DataTypeDefinition atttribute", node)
         except Exception:
             logger.exception("Error getting datatype for node %s", node)
+
 
 
 async def make_enum_code(data_type_node):
