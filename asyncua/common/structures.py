@@ -4,7 +4,6 @@ We only support a subset of features but should be enough
 for custom structures
 """
 
-import re
 import uuid
 import logging
 # The next two imports are for generated code
@@ -14,30 +13,9 @@ from lxml import objectify
 
 from asyncua import ua
 
+from .structures104 import get_default_value, clean_name
+
 _logger = logging.getLogger(__name__)
-
-
-def get_default_value(uatype, enums):
-    if uatype == "String":
-        return "None"
-    elif uatype == "Guid":
-        return "uuid.uuid4()"
-    elif uatype in ("ByteString", "CharArray", "Char"):
-        return b''
-    elif uatype == "Boolean":
-        return "True"
-    elif uatype == "DateTime":
-        return "datetime.utcnow()"
-    elif uatype in ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte", "SByte"):
-        return 0
-    elif uatype in enums:
-        return f"ua.{uatype}({enums[uatype]})"
-    elif hasattr(ua, uatype) and issubclass(getattr(ua, uatype), Enum):
-        # We have an enum, try to initilize it correctly
-        val = list(getattr(ua, uatype).__members__)[0]
-        return f"ua.{uatype}.{val}"
-    else:
-        return f"ua.{uatype}()"
 
 
 class EnumType(object):
@@ -76,12 +54,13 @@ class EnumeratedValue(object):
 
 class Struct(object):
     def __init__(self, name):
-        self.name = _clean_name(name)
+        self.name = clean_name(name)
         self.fields = []
         self.typeid = None
 
     def __str__(self):
         return f"Struct(name={self.name}, fields={self.fields}"
+
     __repr__ = __str__
 
     def get_code(self):
@@ -127,6 +106,7 @@ class Field(object):
 
     def __str__(self):
         return f"Field(name={self.name}, uatype={self.uatype}"
+
     __repr__ = __str__
 
 
@@ -163,11 +143,11 @@ class StructGenerator(object):
                 if name.startswith("NoOf"):
                     array = True
                     continue
-                field = Field(_clean_name(name))
+                field = Field(clean_name(name))
                 field.uatype = xmlfield.get("TypeName")
                 if ":" in field.uatype:
                     field.uatype = field.uatype.split(":")[1]
-                field.uatype = _clean_name(field.uatype)
+                field.uatype = clean_name(field.uatype)
                 field.value = get_default_value(field.uatype, enums)
                 if array:
                     field.array = True
@@ -241,7 +221,7 @@ async def load_type_definitions(server, nodes=None):
         # same but using a file that is imported. This can be usefull for debugging library
         # name = node.read_browse_name().Name
         # Make sure structure names do not contain charaters that cannot be used in Python class file names
-        # name = _clean_name(name)
+        # name = clean_name(name)
         # name = "structures_" + node.read_browse_name().Name
         # generator.save_and_import(name + ".py", append_to=structs_dict)
 
@@ -249,10 +229,9 @@ async def load_type_definitions(server, nodes=None):
         # every children of our node should represent a class
         for ndesc in await node.get_children_descriptions():
             ndesc_node = server.get_node(ndesc.NodeId)
-            ref_desc_list = await ndesc_node.get_references(refs=ua.ObjectIds.HasDescription,
-                                                            direction=ua.BrowseDirection.Inverse)
+            ref_desc_list = await ndesc_node.get_references(refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse)
             if ref_desc_list:  # some server put extra things here
-                name = _clean_name(ndesc.BrowseName.Name)
+                name = clean_name(ndesc.BrowseName.Name)
                 if name not in structs_dict:
                     _logger.warning("%s is found as child of binary definition node but is not found in xml", name)
                     continue
@@ -266,17 +245,6 @@ async def load_type_definitions(server, nodes=None):
                 setattr(ua, key, val)
 
     return generators, structs_dict
-
-
-def _clean_name(name):
-    """
-    Remove characters that might be present in  OPC UA structures
-    but cannot be part of of Python class names
-    """
-    name = re.sub(r'\W+', '_', name)
-    name = re.sub(r'^[0-9]+', r'_\g<0>', name)
-
-    return name
 
 
 def _generate_python_class(model, env=None):
@@ -320,8 +288,7 @@ async def load_enums(server, env=None):
             try:
                 c = await _get_enum_values(name, node)
             except ua.UaError as ex:
-                _logger.warning(f"Node {name}, {node} under DataTypes/Enumeration,"
-                                f" does not seem to have a child called EnumString or EumValue: {ex}")
+                _logger.warning(f"Node {name}, {node} under DataTypes/Enumeration," f" does not seem to have a child called EnumString or EumValue: {ex}")
                 continue
         if not hasattr(ua, c.name):
             _logger.warning("Adding enum %s to ua namespace", c)

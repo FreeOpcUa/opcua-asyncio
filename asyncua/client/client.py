@@ -12,6 +12,7 @@ from ..common.manage_nodes import delete_nodes
 from ..common.subscription import Subscription
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
+from ..common.structures104 import load_data_type_definitions #, load_enums
 from ..common.utils import create_nonce
 from ..common.ua_utils import value_to_datavalue
 from ..crypto import uacrypto, security_policies
@@ -581,15 +582,24 @@ class Client:
         await ns_node.write_value(uries)
         return len(uries) - 1
 
-    async def load_type_definitions(self, nodes=None) -> Coroutine:
+    async def load_type_definitions(self, nodes=None):
+        """
+        Load custom types (custom structures/extension objects) definition from server
+        Generate Python classes for custom structures/extension objects defined in server
+        These classes will available in ua module
+        WARNING: protocol has changed in 1.04. use load_data_type_definitions()
+        """
+        return await load_type_definitions(self, nodes)
+
+    async def load_data_type_definitions(self, node=None):
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
         These classes will available in ua module
         """
-        return await load_type_definitions(self, nodes)
+        return await load_data_type_definitions(self, node)
 
-    async def load_enums(self) -> Coroutine:
+    async def load_enums(self):
         """
         generate Python enums for custom enums on server.
         This enums will be available in ua module

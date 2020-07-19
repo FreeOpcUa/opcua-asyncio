@@ -185,7 +185,7 @@ class XmlExporter:
         nodeid = node.nodeid
         parent = await node.get_parent()
         displayname = (await node.read_display_name()).Text
-        desc = await node.get_description()
+        desc = await node.read_description()
         if desc:
             desc = desc.Text
         node_el = Et.SubElement(self.etree.getroot(), nodetype)

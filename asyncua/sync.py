@@ -366,7 +366,7 @@ class Node:
         pass
 
     @syncmethod
-    def get_description(self):
+    def read_description(self):
         pass
 
     @syncmethod
