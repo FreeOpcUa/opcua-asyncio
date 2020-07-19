@@ -195,7 +195,7 @@ async def test_xml_string_with_null_description(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlstring", "mystring")
     await o.write_attribute(ua.AttributeIds.Description, ua.DataValue(None))
     o2 = await _test_xml_var_type(opc, tmpdir, o, "string")
-    assert await o.get_description() == await o2.get_description()
+    assert await o.read_description() == await o2.read_description()
 
 
 async def test_xml_string_array(opc, tmpdir):
