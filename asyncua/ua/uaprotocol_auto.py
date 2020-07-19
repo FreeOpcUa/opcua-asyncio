@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2020-06-15 19:32:40.808637
+Date:2020-07-19 10:35:00.028485
 """
 
 from datetime import datetime
@@ -11479,6 +11479,12 @@ extension_object_ids['RolePermissionType'] = nid
 nid = FourByteNodeId(ObjectIds.StructureField_Encoding_DefaultBinary)
 extension_object_classes[nid] = StructureField
 extension_object_ids['StructureField'] = nid
+nid = FourByteNodeId(ObjectIds.StructureDefinition_Encoding_DefaultBinary)
+extension_object_classes[nid] = StructureDefinition
+extension_object_ids['StructureDefinition'] = nid
+nid = FourByteNodeId(ObjectIds.EnumDefinition_Encoding_DefaultBinary)
+extension_object_classes[nid] = EnumDefinition
+extension_object_ids['EnumDefinition'] = nid
 nid = FourByteNodeId(ObjectIds.Argument_Encoding_DefaultBinary)
 extension_object_classes[nid] = Argument
 extension_object_ids['Argument'] = nid
