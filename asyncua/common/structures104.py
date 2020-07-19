@@ -53,8 +53,9 @@ async def make_structure_code(data_type_node):
     """
     sdef = await data_type_node.read_data_type_definition()
     name = clean_name((await data_type_node.read_browse_name()).Name)
-    if sdef.StructureType != ua.StructureType.Structure:
-        raise NotImplementedError("Only StructureType implemented")
+    if sdef.StructureType not in (ua.StructureType.Structure, ua.StructureType.StructureWithOptionalFields):
+        #if sdef.StructureType != ua.StructureType.Structure:
+        raise NotImplementedError(f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {name} {data_type_node} with DataTypdeDefinition {sdef}")
 
     code = f"""
 
@@ -65,22 +66,32 @@ class {name}:
     '''
 
 """
+    counter = 0
+    if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
+        code += '    ua_switches = {\n'
+        for field in sdef.Fields:
+
+            if field.IsOptional:
+                code += f"        '{field.Name}': ('Encoding', {counter}),\n"
+                counter += 1
+        code += "    }\n\n"
+
     code += '    ua_types = [\n'
     uatypes = []
     for field in sdef.Fields:
         prefix = 'ListOf' if field.ValueRank >= 1 else ''
         if field.DataType.Identifier not in ua.ObjectIdNames:
-            raise RuntimeError(f"Unknown  field datatype for field: {field} in structure:{sdef.Name}")
+            raise RuntimeError(f"Unknown field datatype for field: {field} in structure:{name}")
         uatype = prefix + ua.ObjectIdNames[field.DataType.Identifier]
-        if uatype == 'ListOfChar':
+        if field.ValueRank >= 1 and uatype == 'Char':
             uatype = 'String'
         uatypes.append((field, uatype))
-        code += f"        ('{field.Name}', '{uatype}'),\n"
-    code += "    ]"
-    code += """
+        code += f"        ('{field.Name}', '{prefix + uatype}'),\n"
+    code += "    ]\n"
+    code += f"""
     def __str__(self):
         vals = [name + ": " + str(val) for name, val in self.__dict__.items()]
-        return self.__class__.__name__ + "(" + ", ".join(vals) + ")"
+        return "{name}(" + ", ".join(vals) + ")"
 
     __repr__ = __str__
 
@@ -89,8 +100,12 @@ class {name}:
     if not sdef.Fields:
         code += "      pass"
     for field, uatype in uatypes:
-        default_value = get_default_value(uatype)
+        if field.ValueRank >= 1:
+            default_value = "[]"
+        else:
+            default_value = get_default_value(uatype)
         code += f"        self.{field.Name} = {default_value}\n"
+    print("CODE", code)
     return code
 
 
@@ -133,7 +148,12 @@ async def load_data_type_definitions(server, base_node=None):
             continue
         logger.warning("Registring structure %s %s", desc.NodeId, desc.BrowseName)
         node = server.get_node(desc.NodeId)
-        await _generate_object(node)
+        try:
+            await _generate_object(node)
+        except ua.uaerrors.BadAttributeIdInvalid:
+            logger.warning("%s has no DataTypeDefinition atttribute", node)
+        except Exception:
+            logger.exception("Error getting datatype for node %s", node)
 
 
 async def make_enum_code(data_type_node):
