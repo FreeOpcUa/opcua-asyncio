@@ -15,10 +15,12 @@ def clean_name(name):
     Remove characters that might be present in  OPC UA structures
     but cannot be part of of Python class names
     """
-    name = re.sub(r'\W+', '_', name)
-    name = re.sub(r'^[0-9]+', r'_\g<0>', name)
+    newname = re.sub(r'\W+', '_', name)
+    newname = re.sub(r'^[0-9]+', r'_\g<0>', newname)
 
-    return name
+    if name != newname:
+        logger.warning("renamed %s to %s due to Python syntax", name, newname)
+    return newname
 
 
 def get_default_value(uatype, enums=None):
@@ -79,10 +81,10 @@ class {name}:
         prefix = 'ListOf' if field.ValueRank >= 1 else ''
         if field.DataType.NamespaceIndex == 0 and field.DataType.Identifier in ua.ObjectIdNames:
             uatype = ua.ObjectIdNames[field.DataType.Identifier]
-        elif field.DataType in ua.extension_objects:
-            uatype = ua.extension_objects[field.DataType].__name__
-        elif field.DataType in ua.enums:
-            uatype = ua.enums[field.DataType].__name__
+        elif field.DataType in ua.extension_objects_by_datatype:
+            uatype = ua.extension_objects_by_datatype[field.DataType].__name__
+        elif field.DataType in ua.enums_by_datatype:
+            uatype = ua.enums_by_datatype[field.DataType].__name__
         else:
             raise RuntimeError(f"Unknown datatype for field: {field} in structure:{name}")
         if field.ValueRank >= 1 and uatype == 'Char':

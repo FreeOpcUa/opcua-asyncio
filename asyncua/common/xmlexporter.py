@@ -409,7 +409,7 @@ class XmlExporter:
             if vtype.startswith("ListOf"):
                 vtype = vtype[6:]
             await self.member_to_etree(struct_el, name, ua.NodeId(getattr(ua.ObjectIds, vtype)), getattr(val, name))
-            # self.member_to_etree(struct_el, name, extension_object_ids[vtype], getattr(val, name))
+            # self.member_to_etree(struct_el, name, extension_object_typeids[vtype], getattr(val, name))
         # for name in self._get_member_order(dtype, val):
         # self.member_to_etree(struct_el, name, ua.NodeId(getattr(ua.ObjectIds, val.ua_types[name])), getattr(val, name))
 
