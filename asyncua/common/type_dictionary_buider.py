@@ -26,7 +26,7 @@ def _to_camel_case(name):
          turtle_actionlib/ShapeActionFeedback -> TurtleActionlibShapeActionFeedback
     """
     name = re.sub(r'[^a-zA-Z0-9]+', ' ', name)
-    name = re.sub('(^|\s)(\S)', _repl_func, name)
+    name = re.sub(r'(^|\s)(\S)', _repl_func, name)
     name = name.replace(' ', '')
     return name
 
