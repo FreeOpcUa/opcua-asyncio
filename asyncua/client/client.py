@@ -12,7 +12,7 @@ from ..common.manage_nodes import delete_nodes
 from ..common.subscription import Subscription
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
-from ..common.structures104 import load_data_type_definitions #, load_enums
+from ..common.structures104 import load_data_type_definitions
 from ..common.utils import create_nonce
 from ..common.ua_utils import value_to_datavalue
 from ..crypto import uacrypto, security_policies
@@ -589,6 +589,7 @@ class Client:
         These classes will available in ua module
         WARNING: protocol has changed in 1.04. use load_data_type_definitions()
         """
+        _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_type_definitions(self, nodes)
 
     async def load_data_type_definitions(self, node=None):
@@ -604,6 +605,7 @@ class Client:
         generate Python enums for custom enums on server.
         This enums will be available in ua module
         """
+        _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_enums(self)
 
     async def register_nodes(self, nodes):
