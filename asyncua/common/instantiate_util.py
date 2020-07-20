@@ -98,7 +98,7 @@ async def _instantiate_node(server,
                             c_rdesc.BrowseName, addnode.BrowseName)
                         continue
                         # exclude nodes with optional ModellingRule if requested
-                    if refs[0].nodeid == ua.NodeId(ua.ObjectIds.ModellingRule_Optional):
+                    if refs[0].nodeid in (ua.NodeId(ua.ObjectIds.ModellingRule_Optional), ua.NodeId(ua.ObjectIds.ModellingRule_OptionalPlaceholder)):
                         # instatiate optionals
                         if not instantiate_optional:
                             logger.info("Instantiate: Skip optional node %s as part of %s", c_rdesc.BrowseName,
