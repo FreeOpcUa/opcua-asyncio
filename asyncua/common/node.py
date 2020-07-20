@@ -645,13 +645,13 @@ class Node:
         Add a modelling rule reference to Node.
         When creating a new object type, its variable and child nodes will not
         be instanciated if they do not have modelling rule
-        if mandatory is None or False, the modelling rule is removed
+        if mandatory is None, the modelling rule is removed
         """
         # remove all existing modelling rule
         rules = await self.get_references(ua.ObjectIds.HasModellingRule)
         await self.server.delete_references(list(map(self._fill_delete_reference_item, rules)))
         # add new modelling rule as requested
-        if mandatory is not None and mandatory is not False:
+        if mandatory is not None:
             rule = ua.ObjectIds.ModellingRule_Mandatory if mandatory else ua.ObjectIds.ModellingRule_Optional
             await self.add_reference(rule, ua.ObjectIds.HasModellingRule, True, False)
 
