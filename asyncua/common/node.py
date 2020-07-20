@@ -651,7 +651,7 @@ class Node:
         rules = await self.get_references(ua.ObjectIds.HasModellingRule)
         await self.server.delete_references(list(map(self._fill_delete_reference_item, rules)))
         # add new modelling rule as requested
-        if mandatory is not None and not False:
+        if mandatory is not None and mandatory is not False:
             rule = ua.ObjectIds.ModellingRule_Mandatory if mandatory else ua.ObjectIds.ModellingRule_Optional
             await self.add_reference(rule, ua.ObjectIds.HasModellingRule, True, False)
 
