@@ -414,8 +414,8 @@ def extensionobject_from_binary(data):
             data.skip(length)
     if typeid.Identifier == 0:
         return None
-    elif typeid in ua.extension_object_classes:
-        cls = ua.extension_object_classes[typeid]
+    elif typeid in ua.extension_objects_by_typeid:
+        cls = ua.extension_objects_by_typeid[typeid]
         if body is None:
             raise UaError(f'parsing ExtensionObject {cls.__name__} without data')
         return from_binary(cls, body)
@@ -441,7 +441,7 @@ def extensionobject_to_binary(obj):
         encoding = 0
         body = None
     else:
-        type_id = ua.extension_object_ids[obj.__class__.__name__]
+        type_id = ua.extension_object_typeids[obj.__class__.__name__]
         encoding = 0x01
         body = struct_to_binary(obj)
     packet = [

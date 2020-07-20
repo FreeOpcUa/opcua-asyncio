@@ -63,8 +63,8 @@ class CodeGenerator:
                 continue
             if 'ExtensionObject' in struct.parents or "DataTypeDefinition" in struct.parents:
                 self.write(f"nid = FourByteNodeId(ObjectIds.{struct.name}_Encoding_DefaultBinary)")
-                self.write(f"extension_object_classes[nid] = {struct.name}")
-                self.write(f"extension_object_ids['{struct.name}'] = nid")
+                self.write(f"extension_objects_by_typeid[nid] = {struct.name}")
+                self.write(f"extension_object_typeids['{struct.name}'] = nid")
 
     def write(self, line):
         if line:
