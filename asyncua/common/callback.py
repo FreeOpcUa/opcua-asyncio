@@ -45,7 +45,7 @@ class CallbackSubscriberInterface(object):
         raise NotImplementedError()
 
 
-class CallbackDispatcher(object):
+class CallbackService(object):
     def __init__(self):
         self._listeners = {}
 

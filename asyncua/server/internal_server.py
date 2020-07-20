@@ -14,7 +14,7 @@ from typing import Coroutine
 
 from asyncua import ua
 from .user_managers import PermissiveUserManager, UserManager
-from ..common.callback import CallbackDispatcher
+from ..common.callback import CallbackService
 from ..common.node import Node
 from .history import HistoryManager
 from .address_space import AddressSpace, AttributeService, ViewService, NodeManagementService, MethodService
@@ -46,7 +46,7 @@ class InternalServer:
     def __init__(self, loop: asyncio.AbstractEventLoop, user_manager: UserManager = None):
         self.loop: asyncio.AbstractEventLoop = loop
         self.logger = logging.getLogger(__name__)
-        self.server_callback_dispatcher = CallbackDispatcher()
+        self.server_callback_service = CallbackService()
         self.endpoints = []
         self._channel_id_counter = 5
         self.allow_remote_admin = True
@@ -271,13 +271,13 @@ class InternalServer:
         """
         Create a subscription from event to handle
         """
-        self.server_callback_dispatcher.addListener(event, handle)
+        self.server_callback_service.addListener(event, handle)
 
     def unsubscribe_server_callback(self, event, handle):
         """
         Remove a subscription from event to handle
         """
-        self.server_callback_dispatcher.removeListener(event, handle)
+        self.server_callback_service.removeListener(event, handle)
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """

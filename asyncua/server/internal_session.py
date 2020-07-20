@@ -116,8 +116,8 @@ class InternalSession:
         else:
             user = self.user
         write_result = await self.iserver.attribute_service.write(params, user=user)
-        await self.iserver.server_callback_dispatcher.dispatch(CallbackType.WritePerformed,
-                                                 ServerItemCallback(params, write_result, user))
+        await self.iserver.server_callback_service.dispatch(CallbackType.WritePerformed,
+                                                            ServerItemCallback(params, write_result, user))
         return write_result
 
     async def browse(self, params):
@@ -153,14 +153,14 @@ class InternalSession:
     async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
-        await self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionCreated,
-                                                         ServerItemCallback(params, subscription_result))
+        await self.iserver.server_callback_service.dispatch(CallbackType.ItemSubscriptionCreated,
+                                                            ServerItemCallback(params, subscription_result))
         return subscription_result
 
     async def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
-        await self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionModified,
-                                                         ServerItemCallback(params, subscription_result))
+        await self.iserver.server_callback_service.dispatch(CallbackType.ItemSubscriptionModified,
+                                                            ServerItemCallback(params, subscription_result))
         return subscription_result
 
     def republish(self, params):
@@ -173,8 +173,8 @@ class InternalSession:
     async def delete_monitored_items(self, params):
         # This is an async method, dues to symmetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
-        await self.iserver.server_callback_dispatcher.dispatch(CallbackType.ItemSubscriptionDeleted,
-                                                               ServerItemCallback(params, subscription_result))
+        await self.iserver.server_callback_service.dispatch(CallbackType.ItemSubscriptionDeleted,
+                                                            ServerItemCallback(params, subscription_result))
 
         return subscription_result
 
