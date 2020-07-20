@@ -872,7 +872,7 @@ class DataValue(FrozenClass):
         ('ServerTimestamp', 'DateTime'),
         ('ServerPicoseconds', 'UInt16'),
     )
-    
+
     def __init__(self, variant=None, status=None, sourceTimestamp=None, sourcePicoseconds=None, serverTimestamp=None, serverPicoseconds=None):
         self.Encoding = 0
         if not isinstance(variant, Variant):
@@ -964,20 +964,34 @@ def get_default_value(vtype):
     else:
         raise RuntimeError(f"function take a uatype as argument, got: {vtype}")
 
+# register of custom enums (Those loaded with load_enums())
+enums = {}
+def register_enum(name, nodeid, class_type):
+    """
+    Register a new enum for automatic decoding and make them available in ua module
+    """
+    logger.info("registring new enum: %s %s %s", name, nodeid, class_type)
+    enums[nodeid] = class_type
+    import asyncua.ua
+    setattr(asyncua.ua, name, class_type)
+
 
 # These dictionnaries are used to register extensions classes for automatic
 # decoding and encoding
-extension_object_classes = {}
+extension_objects = {}  #Dict[Datatype, type]
+extension_object_classes = {}  #Dict[EncodingId, type]
 extension_object_ids = {}
 
 
-def register_extension_object(name, nodeid, class_type):
+def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid=None):
     """
     Register a new extension object for automatic decoding and make them available in ua module
     """
-    logger.info("registring new extension object: %s %s %s", name, nodeid, class_type)
-    extension_object_classes[nodeid] = class_type
-    extension_object_ids[name] = nodeid
+    logger.info("registring new extension object: %s %s %s %s", name, encoding_nodeid, class_type, datatype_nodeid)
+    if datatype_nodeid:
+        extension_objects[datatype_nodeid] = class_type
+    extension_object_classes[encoding_nodeid] = class_type
+    extension_object_ids[name] = encoding_nodeid
     # FIXME: Next line is not exactly a Python best practices, so feel free to propose something else
     # add new extensions objects to ua modules to automate decoding
     import asyncua.ua
