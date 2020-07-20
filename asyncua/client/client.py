@@ -596,7 +596,7 @@ class Client:
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
-        These classes will available in ua module
+        These classes will be available in ua module
         """
         return await load_data_type_definitions(self, node)
 
