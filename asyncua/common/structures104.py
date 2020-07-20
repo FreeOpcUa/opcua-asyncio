@@ -7,8 +7,8 @@ import re
 
 from asyncua import ua
 
-
 logger = logging.getLogger(__name__)
+
 
 def clean_name(name):
     """
@@ -19,7 +19,6 @@ def clean_name(name):
     name = re.sub(r'^[0-9]+', r'_\g<0>', name)
 
     return name
-
 
 
 def get_default_value(uatype, enums=None):
@@ -47,15 +46,13 @@ def get_default_value(uatype, enums=None):
         return f"ua.{uatype}()"
 
 
-async def make_structure_code(data_type_node):
+def make_structure_code(name, sdef):
     """
     given a StructureDefinition object, generate Python code
     """
-    sdef = await data_type_node.read_data_type_definition()
-    name = clean_name((await data_type_node.read_browse_name()).Name)
     if sdef.StructureType not in (ua.StructureType.Structure, ua.StructureType.StructureWithOptionalFields):
         #if sdef.StructureType != ua.StructureType.Structure:
-        raise NotImplementedError(f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {name} {data_type_node} with DataTypdeDefinition {sdef}")
+        raise NotImplementedError(f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {name} with DataTypdeDefinition {sdef}")
 
     code = f"""
 
@@ -80,9 +77,14 @@ class {name}:
     uatypes = []
     for field in sdef.Fields:
         prefix = 'ListOf' if field.ValueRank >= 1 else ''
-        if field.DataType.Identifier not in ua.ObjectIdNames:
-            raise RuntimeError(f"Unknown field datatype for field: {field} in structure:{name}")
-        uatype = prefix + ua.ObjectIdNames[field.DataType.Identifier]
+        if field.DataType.NamespaceIndex == 0 and field.DataType.Identifier in ua.ObjectIdNames:
+            uatype = ua.ObjectIdNames[field.DataType.Identifier]
+        elif field.DataType in ua.extension_objects:
+            uatype = ua.extension_objects[field.DataType].__name__
+        elif field.DataType in ua.enums:
+            uatype = ua.enums[field.DataType].__name__
+        else:
+            raise RuntimeError(f"Unknown datatype for field: {field} in structure:{name}")
         if field.ValueRank >= 1 and uatype == 'Char':
             uatype = 'String'
         uatypes.append((field, uatype))
@@ -109,7 +111,7 @@ class {name}:
     return code
 
 
-async def _generate_object(data_type_node, env=None, enum=False):
+async def _generate_object(name, sdef, env=None, enum=False):
     """
     generate Python code and execute in a new environment
     return a dict of structures {name: class}
@@ -129,48 +131,84 @@ async def _generate_object(data_type_node, env=None, enum=False):
         env['IntEnum'] = IntEnum
     # generate classe add it to env dict
     if enum:
-        code = await make_enum_code(data_type_node)
+        code = make_enum_code(name, sdef)
     else:
-        code = await make_structure_code(data_type_node)
+        code = make_structure_code(name, sdef)
     logger.debug("Executing code: %s", code)
+    print("CODE", code)
     exec(code, env)
     return env
 
 
+class DataTypeSorter:
+    def __init__(self, name, desc, sdef):
+        self.name = name
+        self.desc = desc
+        self.sdef = sdef
+        self.encoding_id = self.sdef.DefaultEncodingId
+        self.deps = [field.DataType for field in self.sdef.Fields]
+
+    def __lt__(self, other):
+        if self.desc.NodeId in other.deps:
+            return True
+        return False
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.desc.NodeId, self.deps, self.encoding_id})"
+
+    __repr__ = __str__
+
+
+async def _recursive_parse(server, base_node, dtypes):
+    for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
+        sdef = await _read_data_type_definition(server, desc)
+        if not sdef:
+            continue
+        name = clean_name(desc.BrowseName.Name)
+        dtypes.append(DataTypeSorter(name, desc, sdef))
+        await _recursive_parse(server, server.get_node(desc.NodeId), dtypes)
+
+
 async def load_data_type_definitions(server, base_node=None):
+    await load_enums(server)  # we need all enums to generate structure code
     if base_node is None:
         base_node = server.nodes.base_structure_type
-    for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
-        if desc.BrowseName.Name == "FilterOperand":
-            #FIXME: find out why that one is not in ua namespace...
-            continue
-        if hasattr(ua, desc.BrowseName.Name):
-            continue
-        logger.warning("Registring structure %s %s", desc.NodeId, desc.BrowseName)
-        node = server.get_node(desc.NodeId)
-        try:
-            env = await _generate_object(node)
-            name = desc.BrowseName.Name
-            ua.register_extension_object(name, desc.NodeId, env[name])
-        except ua.uaerrors.BadAttributeIdInvalid:
-            logger.warning("%s has no DataTypeDefinition atttribute", node)
-        except Exception:
-            logger.exception("Error getting datatype for node %s", node)
+    dtypes = []
+    await _recursive_parse(server, base_node, dtypes)
+    for dts in dtypes:
+        env = await _generate_object(dts.name, dts.sdef)
+        ua.register_extension_object(dts.name, dts.encoding_id, env[dts.name], dts.desc.NodeId)
 
 
+async def _read_data_type_definition(server, desc):
+    if desc.BrowseName.Name == "FilterOperand":
+        #FIXME: find out why that one is not in ua namespace...
+        return None
+    if hasattr(ua, desc.BrowseName.Name):
+        return None
+    logger.warning("Registring data type %s %s", desc.NodeId, desc.BrowseName)
+    node = server.get_node(desc.NodeId)
+    try:
+        sdef = await node.read_data_type_definition()
+    except ua.uaerrors.BadAttributeIdInvalid:
+        logger.warning("%s has no DataTypeDefinition atttribute", node)
+        return None
+    except Exception:
+        logger.exception("Error getting datatype for node %s", node)
+        return None
+    return sdef
 
-async def make_enum_code(data_type_node):
+
+def make_enum_code(name, edef):
     """
     if node has a DataTypeDefinition arttribute, generate enum code
     """
-    edef = await data_type_node.read_data_type_definition()
-    name = clean_name((await data_type_node.read_browse_name()).Name)
     code = f"""
 
 class {name}(IntEnum):
 
     '''
-    {name} EnumInt autogenerated from xml
+    {name} EnumInt autogenerated from EnumDefinition
     '''
 
 """
@@ -183,7 +221,6 @@ class {name}(IntEnum):
     return code
 
 
-
 async def load_enums(server, base_node=None):
     if base_node is None:
         base_node = server.nodes.enum_data_type
@@ -191,7 +228,12 @@ async def load_enums(server, base_node=None):
         if hasattr(ua, desc.BrowseName.Name):
             continue
         logger.warning("Registring Enum %s %s", desc.NodeId, desc.BrowseName)
+        name = clean_name(desc.BrowseName.Name)
+        print("LOOKING AT ENUM", name)
+        sdef = await _read_data_type_definition(server, desc)
+        if not sdef:
+            continue
+        print("SDEF", sdef)
         node = server.get_node(desc.NodeId)
-        await _generate_object(node)
-
-
+        env = await _generate_object(name, sdef, enum=True)
+        ua.register_enum(name, desc.NodeId, env[name])
