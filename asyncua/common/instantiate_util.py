@@ -12,7 +12,7 @@ from .node_factory import make_node
 logger = logging.getLogger(__name__)
 
 
-async def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, idx=0, instantiate_optional=True):
+async def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, idx=0, instantiate_optional=False):
     """
     instantiate a node type under a parent node.
     nodeid and browse name of new node can be specified, or just namespace index
@@ -49,7 +49,7 @@ async def _instantiate_node(server,
                             bname,
                             dname=None,
                             recursive=True,
-                            instantiate_optional=True):
+                            instantiate_optional=False):
     """
     instantiate a node type under parent
     """
@@ -95,13 +95,16 @@ async def _instantiate_node(server,
                     if not refs:
                         # spec says to ignore nodes without modelling rules
                         logger.info("Instantiate: Skip node without modelling rule %s as part of %s",
-                                    c_rdesc.BrowseName, addnode.BrowseName)
+                            c_rdesc.BrowseName, addnode.BrowseName)
                         continue
                         # exclude nodes with optional ModellingRule if requested
-                    if not instantiate_optional or refs[0].nodeid == ua.NodeId(ua.ObjectIds.ModellingRule_Optional):
-                        logger.info("Instantiate: Skip optional node %s as part of %s", c_rdesc.BrowseName,
-                                    addnode.BrowseName)
-                        continue
+                    if refs[0].nodeid == ua.NodeId(ua.ObjectIds.ModellingRule_Optional):#not instantiate_optional or refs[0].nodeid == ua.NodeId(ua.ObjectIds.ModellingRule_Optional):
+                        if instantiate_optional:
+                            pass
+                        else:
+                            logger.info("Instantiate: Skip optional node %s as part of %s", c_rdesc.BrowseName,
+                                addnode.BrowseName)
+                            continue
                     # if root node being instantiated has a String NodeId, create the children with a String NodeId
                     if res.AddedNodeId.NodeIdType is ua.NodeIdType.String:
                         inst_nodeid = res.AddedNodeId.Identifier + "." + c_rdesc.BrowseName.Name
