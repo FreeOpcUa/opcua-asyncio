@@ -118,6 +118,12 @@ class Client:
         if self.close_tloop:
             self.tloop.stop()
 
+    def set_user(self, username: str):
+        self.aio_obj.set_user(username)
+
+    def set_password(self, pwd: str):
+        self.aio_obj.set_password(pwd)
+
     @syncmethod
     def load_type_definitions(self, nodes=None):
         pass
@@ -259,7 +265,7 @@ class Node:
         self.tloop = tloop
 
     def __eq__(self, other):
-        return self.aio_obj == other.aio_obj
+        return other != None and self.aio_obj == other.aio_obj
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -305,6 +311,10 @@ class Node:
         pass
 
     @syncmethod
+    def get_user_access_level(self):
+        pass
+
+    @syncmethod
     def get_child(self, path):
         pass
 
@@ -347,10 +357,24 @@ class Node:
     set_value = write_value  # legacy
 
     @syncmethod
+    def write_params(self, params):
+        pass
+
+    @syncmethod
+    def read_params(self, params):
+        pass
+
+    @syncmethod
     def read_value(self):
         pass
 
     get_value = read_value  # legacy
+
+    @syncmethod
+    def read_data_type_as_variant_type(self):
+        pass
+
+    #get_data_type_as_variant_type = read_data_type_as_variant_type #legacy
 
     @syncmethod
     def call_method(self, methodid, *args):
@@ -405,6 +429,9 @@ class Subscription:
         queuesize=0,
     ):
         pass
+
+    def _make_monitored_item_request(self, node: Node, attr, mfilter, queuesize) -> ua.MonitoredItemCreateRequest:
+        return self.aio_obj._make_monitored_item_request(node, attr, mfilter, queuesize)
 
     @syncmethod
     def unsubscribe(self, handle):

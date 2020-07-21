@@ -288,6 +288,12 @@ class Node:
         result = await self.server.write(params)
         result[0].check()
 
+
+    async def write_params(self, params):
+        result = await self.server.write(params)
+        return result
+    
+
     async def read_attribute(self, attr):
         """
         Read one attribute of a node
@@ -317,6 +323,10 @@ class Node:
         results = await self.server.read(params)
         return results
 
+    async def read_params(self, params):
+        result = await self.server.read(params)
+        return result
+    
     async def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
         """
         Get all children of a node. By default hierarchical references and all node classes are returned.
