@@ -151,7 +151,7 @@ class CodeGenerator:
                 self.write("self.Encoding = 1")
             elif field.uatype == obj.name:  # help!!! selv referencing class
                 self.write("self.{} = None".format(field.name))
-            elif not obj.name in "ExtensionObject" and field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
+            elif not obj.name in ("ExtensionObject",) and field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
                 self.write(f"self.TypeId = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultBinary)")
             else:
                 self.write(f"self.{field.name} = {'[]' if field.length else self.get_default_value(field)}")
