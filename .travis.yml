@@ -22,20 +22,20 @@ jobs:
       os: windows           # Windows 10.0.17134 N/A Build 17134
       language: shell       # 'language: python' is an error on Travis CI Windows
       before_install:
-        - choco install python --version 3.6.11
-        - python -m pip install --upgrade pip
+        - choco install python --version 3.6
+        - py -m pip install --upgrade pip
     - name: "Python 3.7.8 on Windows"
       os: windows           # Windows 10.0.17134 N/A Build 17134
       language: shell       # 'language: python' is an error on Travis CI Windows
       before_install:
         - choco install python --version 3.7.8
-        - python -m pip install --upgrade pip
+        - py -m pip install --upgrade pip
     - name: "Python 3.8.5 on Windows"
       os: windows           # Windows 10.0.17134 N/A Build 17134
       language: shell       # 'language: python' is an error on Travis CI Windows
       before_install:
         - choco install python --version 3.8.5
-        - python -m pip install --upgrade pip
+        - py -m pip install --upgrade pip
 install:
   - pip install python-dateutil
   - pip install pytz
