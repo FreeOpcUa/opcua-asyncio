@@ -69,11 +69,14 @@ class NodeData:
 
 class Field:
     def __init__(self, data):
-        self.datatype = data.get("DataType")
+        self.datatype = data.get("DataType", "")
         self.name = data.get("Name")
+        self.dname = data.get("DisplayName", "")
         self.optional = bool(data.get("IsOptional", False))
         self.valuerank = int(data.get("ValueRank", -1))
         self.arraydim = data.get("ArrayDimensions", None) #FIXME: check type
+        self.value = int(data.get("Value", 0))
+        self.desc = data.get("Description", "")
 
 class RefStruct:
 

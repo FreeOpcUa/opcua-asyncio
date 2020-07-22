@@ -342,6 +342,11 @@ class DataTypeAttributes(auto.DataTypeAttributes):
         self.DataTypeDefinition = auto.ExtensionObject()
         self._freeze = True
 
+# we now need to register DataTypeAttributes since we added a new attritbute
+nid = uatypes.FourByteNodeId(auto.ObjectIds.DataTypeAttributes_Encoding_DefaultBinary)
+uatypes.extension_objects_by_typeid[nid] = DataTypeAttributes
+uatypes.extension_object_typeids['DataTypeAttributes'] = nid
+
 
 class ViewAttributes(auto.ViewAttributes):
     def __init__(self):

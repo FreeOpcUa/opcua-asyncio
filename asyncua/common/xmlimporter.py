@@ -380,7 +380,14 @@ class XmlImporter:
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
-        attrs.DataTypeDefinition = self._get_sdef(node, obj)
+        if obj.definitions and obj.parent == ua.NodeId(29):
+            attrs.DataTypeDefinition = self._get_edef(node, obj)
+            pass
+        elif obj.definitions and obj.parent == ua.NodeId(22):
+            #FIXME need better check for subclasses!!
+            attrs.DataTypeDefinition = self._get_sdef(node, obj)
+        else:
+            print("NOT DEFINITON", obj.parent, obj)
         node.NodeAttributes = attrs
         res = await self._get_server().add_nodes([node])
         res[0].StatusCode.check()
@@ -400,26 +407,51 @@ class XmlImporter:
             refs.append(ref)
         await self._add_references(refs)
 
+    def _get_edef(self, node, obj):
+        if not obj.definitions:
+            return None
+        edef = ua.EnumDefinition()
+        if obj.parent:
+            edef.BaseDataType = obj.parent
+        for field in obj.definitions:
+            f = ua.EnumField()
+            f.Name = field.name
+            if field.dname:
+                f.DisplayName = ua.LocalizedText(text=field.dname)
+            else:
+                f.DisplayName = ua.LocalizedText(text=field.name)
+            f.Value = field.value
+            f.Description = ua.LocalizedText(text=field.desc)
+            edef.Fields.append(f)
+        return edef
+
     def _get_sdef(self, node, obj):
         if not obj.definitions:
             return None
         sdef = ua.StructureDefinition()
         if obj.parent:
             sdef.BaseDataType = self.to_nodeid(obj.parent)
-        sdef.StructureType = ua.StructureType.Structure
         for data in obj.refs:
             if data.reftype == "HasEncoding":
                 # looks likebinary encodingisthe firt one...can someone confirm?
                 sdef.DefaultEncodingId = self.to_nodeid(data.target)
                 break
+        optional = False
         for field in obj.definitions:
             f = ua.StructureField()
             f.Name = field.name
             f.DataType = self.to_nodeid(field.datatype)
             f.ValueRank = field.valuerank
             f.IsOptional = field.optional
+            if f.IsOptional:
+                optional = True
             f.ArrayDimensions = field.arraydim
+            f.Description = ua.LocalizedText(text=field.desc)
             sdef.Fields.append(f)
+        if optional:
+            sdef.StructureType = ua.StructureType.StructureWithOptionalFields
+        else:
+            sdef.StructureType = ua.StructureType.Structure
         return sdef
 
     def _sort_nodes_by_parentid(self, ndatas):
