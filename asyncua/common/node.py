@@ -152,11 +152,19 @@ class Node:
 
     async def read_data_type_definition(self):
         """
-        get node class attribute of node
+        read data type definition attribute of node
+        only DataType nodes following spec >= 1.04 have that atttribute
         """
         result = await self.read_attribute(ua.AttributeIds.DataTypeDefinition)
         return result.Value.Value
 
+    async def write_data_type_definition(self, sdef: ua.DataTypeDefinition):
+        """
+        write data type definition attribute of node
+        only DataType nodes following spec >= 1.04 have that atttribute
+        """
+        v = ua.Variant(sdef, ua.VariantType.ExtensionObject)
+        await self.write_attribute(ua.AttributeIds.DataTypeDefinition, ua.DataValue(v))
 
     async def read_description(self):
         """

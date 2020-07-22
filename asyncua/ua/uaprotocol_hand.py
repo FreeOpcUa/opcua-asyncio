@@ -337,7 +337,10 @@ class ReferenceTypeAttributes(auto.ReferenceTypeAttributes):
 class DataTypeAttributes(auto.DataTypeAttributes):
     def __init__(self):
         auto.DataTypeAttributes.__init__(self)
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract
+        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract | ana.DataTypeDefinition
+        self._freeze = False
+        self.DataTypeDefinition = auto.ExtensionObject()
+        self._freeze = True
 
 
 class ViewAttributes(auto.ViewAttributes):

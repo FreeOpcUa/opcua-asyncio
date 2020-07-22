@@ -88,17 +88,14 @@ class XmlImporter:
             raise ValueError(f"Not implemented node type: {nodedata.nodetype} ")
         return node
 
-    async def _add_node(self, node: "Node") -> Coroutine:
+    def _get_server(self):
         if hasattr(self.server, "iserver"):
-            return await self.server.iserver.isession.add_nodes([node])
+            return self.server.iserver.isession
         else:
-            return await self.server.uaclient.add_nodes([node])
+            return self.server.uaclient
 
     async def _add_references(self, refs):
-        if hasattr(self.server, "iserver"):
-            res = await self.server.iserver.isession.add_references(refs)
-        else:
-            res = await self.server.uaclient.add_references(refs)
+        res = await self._get_server().add_references(refs)
 
         for sc, ref in zip(res, refs):
             if not sc.is_good():
@@ -171,7 +168,7 @@ class XmlImporter:
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
         attrs.EventNotifier = obj.eventnotifier
         node.NodeAttributes = attrs
-        res = await self._add_node(node)
+        res = await self._get_server().add_nodes([node])
         await self._add_refs(obj)
         res[0].StatusCode.check()
         return res[0].AddedNodeId
@@ -184,7 +181,7 @@ class XmlImporter:
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
         attrs.IsAbstract = obj.abstract
         node.NodeAttributes = attrs
-        res = await self._add_node(node)
+        res = await self._get_server().add_nodes([node])
         await self._add_refs(obj)
         res[0].StatusCode.check()
         return res[0].AddedNodeId
@@ -209,7 +206,7 @@ class XmlImporter:
         if obj.dimensions:
             attrs.ArrayDimensions = obj.dimensions
         node.NodeAttributes = attrs
-        res = await self._add_node(node)
+        res = await self._get_server().add_nodes([node])
         await self._add_refs(obj)
         res[0].StatusCode.check()
         return res[0].AddedNodeId
@@ -332,7 +329,7 @@ class XmlImporter:
         if obj.dimensions:
             attrs.ArrayDimensions = obj.dimensions
         node.NodeAttributes = attrs
-        res = await self._add_node(node)
+        res = await self._get_server().add_nodes([node])
         await self._add_refs(obj)
         res[0].StatusCode.check()
         return res[0].AddedNodeId
@@ -352,7 +349,7 @@ class XmlImporter:
         if obj.dimensions:
             attrs.ArrayDimensions = obj.dimensions
         node.NodeAttributes = attrs
-        res = await self._add_node(node)
+        res = await self._get_server().add_nodes([node])
         await self._add_refs(obj)
         res[0].StatusCode.check()
         return res[0].AddedNodeId
@@ -370,7 +367,7 @@ class XmlImporter:
         if obj.symmetric:
             attrs.Symmetric = obj.symmetric
         node.NodeAttributes = attrs
-        res = await self._add_node(node)
+        res = await self._get_server().add_nodes([node])
         await self._add_refs(obj)
         res[0].StatusCode.check()
         return res[0].AddedNodeId
@@ -383,10 +380,11 @@ class XmlImporter:
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
+        attrs.DataTypeDefinition = self._get_sdef(node, obj)
         node.NodeAttributes = attrs
-        res = await self._add_node(node)
-        await self._add_refs(obj)
+        res = await self._get_server().add_nodes([node])
         res[0].StatusCode.check()
+        await self._add_refs(obj)
         return res[0].AddedNodeId
 
     async def _add_refs(self, obj):
@@ -401,6 +399,28 @@ class XmlImporter:
             ref.TargetNodeId = self.to_nodeid(data.target)
             refs.append(ref)
         await self._add_references(refs)
+
+    def _get_sdef(self, node, obj):
+        if not obj.definitions:
+            return None
+        sdef = ua.StructureDefinition()
+        if obj.parent:
+            sdef.BaseDataType = self.to_nodeid(obj.parent)
+        sdef.StructureType = ua.StructureType.Structure
+        for data in obj.refs:
+            if data.reftype == "HasEncoding":
+                # looks likebinary encodingisthe firt one...can someone confirm?
+                sdef.DefaultEncodingId = self.to_nodeid(data.target)
+                break
+        for field in obj.definitions:
+            f = ua.StructureField()
+            f.Name = field.name
+            f.DataType = self.to_nodeid(field.datatype)
+            f.ValueRank = field.valuerank
+            f.IsOptional = field.optional
+            f.ArrayDimensions = field.arraydim
+            sdef.Fields.append(f)
+        return sdef
 
     def _sort_nodes_by_parentid(self, ndatas):
         """
