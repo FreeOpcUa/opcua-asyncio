@@ -113,7 +113,8 @@ async def _instantiate_node(server,
                             res.AddedNodeId,
                             c_rdesc,
                             nodeid=ua.NodeId(identifier=inst_nodeid, namespaceidx=res.AddedNodeId.NamespaceIndex),
-                            bname=c_rdesc.BrowseName
+                            bname=c_rdesc.BrowseName,
+                            instantiate_optional=instantiate_optional
                         )
                     else:
                         nodeids = await _instantiate_node(
@@ -122,7 +123,7 @@ async def _instantiate_node(server,
                             res.AddedNodeId,
                             c_rdesc,
                             nodeid=ua.NodeId(namespaceidx=res.AddedNodeId.NamespaceIndex),
-                            bname=c_rdesc.BrowseName
+                            bname=c_rdesc.BrowseName,instantiate_optional=instantiate_optional
                         )
                     added_nodes.extend(nodeids)
     return added_nodes
