@@ -5,7 +5,7 @@ from unittest.mock import patch
 import sys
 import subprocess
 
-from asyncua.tools import uaread, uals, uawrite, uasubscribe, uahistoryread, uaclient, uaserver, uadiscover, uacall, uageneratestructs
+from asyncua.tools import uaread, uals, uawrite, uasubscribe, uahistoryread, uaserver, uaclient, uadiscover, uacall, uageneratestructs
 
 @pytest.mark.parametrize("tool", [uaread, uals, uawrite, uasubscribe, uahistoryread, uaclient, uadiscover, uacall, uageneratestructs])
 def test_that_tool_can_be_invoked_without_internal_error(tool):
@@ -17,11 +17,8 @@ def test_that_tool_can_be_invoked_without_internal_error(tool):
             pass
 
 def test_that_server_can_be_invoked_without_internal_error():
-    with patch.object(sys, 'argv', [""]):
-        proc = subprocess.Popen(['uaserver'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(1)
-        proc.send_signal(subprocess.signal.SIGKILL)
-        proc.wait(timeout=1)
-        assert proc.returncode == 0
-
-    
+    proc = subprocess.Popen(['uaserver'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    time.sleep(2)
+    proc.send_signal(subprocess.signal.SIGINT)
+    proc.wait(timeout=2)
+    assert proc.returncode == 0
