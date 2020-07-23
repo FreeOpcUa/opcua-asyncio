@@ -178,14 +178,18 @@ async def load_data_type_definitions(server, base_node=None):
     dtypes = []
     await _recursive_parse(server, base_node, dtypes)
     for dts in dtypes:
-        env = await _generate_object(dts.name, dts.sdef)
-        ua.register_extension_object(dts.name, dts.encoding_id, env[dts.name], dts.desc.NodeId)
+        try:
+            env = await _generate_object(dts.name, dts.sdef)
+            ua.register_extension_object(dts.name, dts.encoding_id, env[dts.name], dts.desc.NodeId)
+        except NotImplementedError:
+            logger.exception("Structure type %s not implemented", dts.sdef)
 
 
 async def _read_data_type_definition(server, desc):
     if desc.BrowseName.Name == "FilterOperand":
         #FIXME: find out why that one is not in ua namespace...
         return None
+    # FIXME: this is fishy, we may have same name in different Namespaces
     if hasattr(ua, desc.BrowseName.Name):
         return None
     logger.warning("Registring data type %s %s", desc.NodeId, desc.BrowseName)
