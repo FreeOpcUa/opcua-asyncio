@@ -12,7 +12,7 @@ from .node_factory import make_node
 logger = logging.getLogger(__name__)
 
 
-async def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, idx=0, instantiate_optional=False):
+async def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, idx=0, instantiate_optional=True):
     """
     instantiate a node type under a parent node.
     nodeid and browse name of new node can be specified, or just namespace index
