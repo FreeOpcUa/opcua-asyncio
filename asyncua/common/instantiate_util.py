@@ -95,7 +95,7 @@ async def _instantiate_node(server,
                     if not refs:
                         # spec says to ignore nodes without modelling rules
                         logger.info("Instantiate: Skip node without modelling rule %s as part of %s",
-                        c_rdesc.BrowseName, addnode.BrowseName)
+                                    c_rdesc.BrowseName, addnode.BrowseName)
                         continue
                         # exclude nodes with optional ModellingRule if requested
                     if refs[0].nodeid in (ua.NodeId(ua.ObjectIds.ModellingRule_Optional), ua.NodeId(ua.ObjectIds.ModellingRule_OptionalPlaceholder)):
