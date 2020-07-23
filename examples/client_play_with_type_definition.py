@@ -17,7 +17,6 @@ async def main():
     #client.secure_channel_timeout=8000
     async with client:
         dt = await client.nodes.base_structure_type.get_child("AddNodesItem")
-        code = await make_structure_code(dt)
         df = await dt.read_data_type_definition()
         await client.load_data_type_definitions()
         edt = await client.nodes.enum_data_type.get_child("ApplicationType")
