@@ -49,7 +49,7 @@ async def _instantiate_node(server,
                             bname,
                             dname=None,
                             recursive=True,
-                            instantiate_optional=False):
+                            instantiate_optional=True):
     """
     instantiate a node type under parent
     """
