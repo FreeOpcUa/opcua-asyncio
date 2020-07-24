@@ -94,8 +94,8 @@ class {name}:
     code += "    ]\n"
     code += f"""
     def __str__(self):
-        vals = [name + ": " + str(val) for name, val in self.__dict__.items()]
-        return "{name}(" + ", ".join(vals) + ")"
+        vals = [f"{{name}}:{{val}}" for name, val in self.__dict__.items()]
+        return f"{name}({{','.join(vals)}})"
 
     __repr__ = __str__
 
@@ -235,11 +235,9 @@ async def load_enums(server, base_node=None):
             continue
         logger.warning("Registring Enum %s %s", desc.NodeId, desc.BrowseName)
         name = clean_name(desc.BrowseName.Name)
-        print("LOOKING AT ENUM", name)
         sdef = await _read_data_type_definition(server, desc)
         if not sdef:
             continue
-        print("SDEF", sdef)
         node = server.get_node(desc.NodeId)
         env = await _generate_object(name, sdef, enum=True)
         ua.register_enum(name, desc.NodeId, env[name])
