@@ -115,7 +115,7 @@ class XmlExporter:
         Write the XML etree in the exporter object to a file
         Args:
             xmlpath: string representing the path/file name
-
+            pretty: add spaces and newlines, to be more readable
         Returns:
         """
         # try to write the XML etree to a file

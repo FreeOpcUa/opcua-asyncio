@@ -7,6 +7,7 @@ import datetime
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+
 class EventsCodeGenerator:
 
     def __init__(self, event_model, output_file):

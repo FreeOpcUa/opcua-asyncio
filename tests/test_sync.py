@@ -77,7 +77,7 @@ def test_sync_server_get_node(server):
     assert isinstance(nodes[0], Node)
 
 
-class MySubHandler():
+class MySubHandler:
 
     def __init__(self):
         self.future = Future()

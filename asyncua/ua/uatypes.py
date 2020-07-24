@@ -567,7 +567,7 @@ class LocalizedText(FrozenClass):
 
     @staticmethod
     def from_string(string):
-        m = re.match("^LocalizedText\(Encoding:(.*), Locale:(.*), Text:(.*)\)$", string)
+        m = re.match(r"^LocalizedText\(Encoding:(.*), Locale:(.*), Text:(.*)\)$", string)
         if m:
             text = m.group(3) if m.group(3) != str(None) else None
             locale = m.group(2) if m.group(2) != str(None) else None
