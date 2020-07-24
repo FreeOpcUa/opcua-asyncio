@@ -13,5 +13,6 @@ install:
   - pip install pytest-asyncio
   - pip install cryptography
   - pip install dataclasses
+  - pip install --editable .
 # command to run tests
 script: pytest -v -s
