@@ -404,9 +404,10 @@ class NodeId(object):
         return ";".join(string)
 
     def __str__(self):
-        return f"{self.NodeIdType.name}NodeId({self.to_string()})"
+        return self.to_string()
 
-    __repr__ = __str__
+    def __repr__(self):
+        return f"{self.NodeIdType.name}NodeId({self.to_string()})"
 
     def to_binary(self):
         import asyncua
