@@ -137,10 +137,17 @@ class UASocketProtocol(asyncio.Protocol):
         Returns response object if no callback is provided.
         """
         timeout = self.timeout if timeout is None else timeout
-        data = await asyncio.wait_for(
-            self._send_request(request, timeout, message_type),
-            timeout if timeout else None
-        )
+        try:
+            data = await asyncio.wait_for(
+                self._send_request(request, timeout, message_type),
+                timeout if timeout else None
+            )
+        except Exception:
+            if self.state != self.OPEN:
+                raise ConnectionError("Connection is closed") from None
+
+            raise
+
         self.check_answer(data, f" in response to {request.__class__.__name__}")
         return data
 
