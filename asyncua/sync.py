@@ -265,9 +265,10 @@ class Node:
         return not self.__eq__(other)
 
     def __str__(self):
-        return "Sync" + self.aio_obj.__str__()
+        return self.aio_obj.__str__()
 
-    __repr__ = __str__
+    def __repr__(self):
+        return "Sync" + self.aio_obj.__repr__()
 
     def __hash__(self):
         return self.aio_obj.__hash__()
