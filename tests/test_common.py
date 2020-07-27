@@ -131,6 +131,26 @@ async def test_delete_nodes(opc):
     assert var not in childs
 
 
+async def test_delete_nodes_with_inverse_references(opc):
+    obj = opc.opc.nodes.objects
+    fold = await obj.add_folder(2, "FolderToDelete")
+    var = await fold.add_variable(2, "VarToDelete", 9.1)
+    var2 = await fold.add_variable(2, "VarWithReference", 9.2)
+    childs = await fold.get_children()
+    assert var in childs
+    assert var2 in childs
+    # add two references to var, this includes adding the inverse references to var2
+    await var.add_reference(var2.nodeid, reftype=ua.ObjectIds.HasDescription, forward=True, bidirectional=True)
+    await var.add_reference(var2.nodeid, reftype=ua.ObjectIds.HasEffect, forward=True, bidirectional=True)
+    await opc.opc.delete_nodes([var])
+    childs = await fold.get_children()
+    assert var not in childs
+    has_desc_refs = await var2.get_referenced_nodes(refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse)
+    assert len(has_desc_refs) == 0
+    has_effect_refs = await var2.get_referenced_nodes(refs=ua.ObjectIds.HasEffect, direction=ua.BrowseDirection.Inverse)
+    assert len(has_effect_refs) == 0
+
+
 async def test_delete_nodes_recursive(opc):
     obj = opc.opc.nodes.objects
     fold = await obj.add_folder(2, "FolderToDeleteR")
