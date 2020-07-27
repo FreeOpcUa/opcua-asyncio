@@ -86,7 +86,9 @@ class {name}:
         elif field.DataType in ua.enums_by_datatype:
             uatype = ua.enums_by_datatype[field.DataType].__name__
         else:
-            raise RuntimeError(f"Unknown datatype for field: {field} in structure:{name}")
+            #FIXME: we are probably missing many custom tyes here based on builtin types
+            #maybe we can use ua_utils.get_base_data_type()
+            raise RuntimeError(f"Unknown datatype for field: {field} in structure:{name}, please report")
         if field.ValueRank >= 1 and uatype == 'Char':
             uatype = 'String'
         uatypes.append((field, uatype))
@@ -177,6 +179,7 @@ async def load_data_type_definitions(server, base_node=None):
         base_node = server.nodes.base_structure_type
     dtypes = []
     await _recursive_parse(server, base_node, dtypes)
+    dtypes.sort()
     for dts in dtypes:
         try:
             env = await _generate_object(dts.name, dts.sdef)
