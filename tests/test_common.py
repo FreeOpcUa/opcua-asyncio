@@ -982,3 +982,8 @@ async def test_guid_node_id():
     node = Node(None, "ns=4;g=35d5f86f-2777-4550-9d48-b098f5ee285c")
     binary_node_id = ua.ua_binary.nodeid_to_binary(node.nodeid)
     assert type(binary_node_id) is bytes
+
+
+async def test_import_xml_data_type_definition(opc):
+    nodes = await opc.opc.import_xml("tests/substructs.xml")
+    await opc.opc.load_data_type_definitions()
