@@ -59,8 +59,8 @@ async def test_write_callback(mocker):
     # starting!
     await server.start()
 
-    mocked_create_monitored_items = mocker.patch('tests.test_callback.create_monitored_items')
-    mocked_write_items = mocker.patch('tests.test_callback.write_items')
+    mocked_create_monitored_items = mocker.patch('tests.test_callback_service.create_monitored_items')
+    mocked_write_items = mocker.patch('tests.test_callback_service.write_items')
     # Create Callback for item event
     server.subscribe_server_callback(CallbackType.ItemSubscriptionCreated, mocked_create_monitored_items)
     server.subscribe_server_callback(CallbackType.WritePerformed, mocked_write_items)
