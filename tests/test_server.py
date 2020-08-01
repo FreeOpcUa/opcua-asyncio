@@ -512,7 +512,7 @@ async def test_get_node_by_ns(server):
 
 async def test_load_enum_strings(server):
     dt = await server.nodes.enum_data_type.add_data_type(0, "MyStringEnum")
-    await dt.add_variable(0, "EnumStrings", [ua.LocalizedText("e1"), ua.LocalizedText("e2"), ua.LocalizedText("e3"),
+    await dt.add_property(0, "EnumStrings", [ua.LocalizedText("e1"), ua.LocalizedText("e2"), ua.LocalizedText("e3"),
                                        ua.LocalizedText("e 4")])
     await server.load_enums()
     e = getattr(ua, "MyStringEnum")
@@ -533,7 +533,7 @@ async def test_load_enum_values(server):
     v3 = ua.EnumValueType()
     v3.DisplayName.Text = "v 3 "
     v3.Value = 4
-    await dt.add_variable(0, "EnumValues", [v1, v2, v3])
+    await dt.add_property(0, "EnumValues", [v1, v2, v3])
     await server.load_enums()
     e = getattr(ua, "MyValuesEnum")
     assert isinstance(e, EnumMeta)
