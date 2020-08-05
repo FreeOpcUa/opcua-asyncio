@@ -279,9 +279,13 @@ class Node:
     def __hash__(self):
         return self.aio_obj.__hash__()
 
-    @property
-    def nodeid(self):
+    def __get_nodeid(self):
         return self.aio_obj.nodeid
+
+    def __set_nodeid(self, value):
+        self.aio_obj.nodeid = value
+
+    nodeid = property(__get_nodeid, __set_nodeid)
 
     @syncmethod
     def read_browse_name(self):
@@ -290,6 +294,8 @@ class Node:
     @syncmethod
     def read_display_name(self):
         pass
+
+    get_display_name = read_display_name  # legacy
 
     @syncmethod
     def get_children(
@@ -374,7 +380,7 @@ class Node:
     def read_data_type_as_variant_type(self):
         pass
 
-    #get_data_type_as_variant_type = read_data_type_as_variant_type #legacy
+    get_data_type_as_variant_type = read_data_type_as_variant_type #legacy
 
     @syncmethod
     def call_method(self, methodid, *args):
