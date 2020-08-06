@@ -174,7 +174,7 @@ class XMLParser:
         obj.nodetype = nodetype
         for key, val in child.attrib.items():
             self._set_attr(key, val, obj)
-        self.logger.info("Parsing node: %s %s", obj.nodeid, obj.browsename)
+        self.logger.debug("Parsing node: %s %s", obj.nodeid, obj.browsename)
         obj.displayname = obj.browsename  # give a default value to display name
         for el in child:
             self._parse_attr(el, obj)
