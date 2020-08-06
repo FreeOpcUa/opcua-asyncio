@@ -261,6 +261,15 @@ class MonitoredItemService:
             for event in self._mid_with_retain[mid]:
                 self._trigger_event(event, mid)
 
+    def condition_refresh(self):
+        for event in self._events_with_retain.values():
+            self.trigger_event(event)
+
+    def condition_refresh2(self, mid):
+        if mid in self._mid_with_retain:
+            for event in self._mid_with_retain[mid]:
+                self._trigger_event(event, mid)
+
 
 class WhereClauseEvaluator:
     def __init__(self, logger, aspace: AddressSpace, whereclause):
