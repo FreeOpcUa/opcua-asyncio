@@ -52,10 +52,12 @@ class XmlImporter:
         self.parser = XMLParser()
         await self.parser.parse(xmlpath, xmlstring)
         self.namespaces = await self._map_namespaces(self.parser.get_used_namespaces())
+        _logger.info("namespace map: %s", self.namespaces)
         self.aliases = self._map_aliases(self.parser.get_aliases())
         self.refs = []
         dnodes = self.parser.get_node_datas()
         dnodes = self.make_objects(dnodes)
+        self._add_missing_parents(dnodes)
         nodes_parsed = self._sort_nodes_by_parentid(dnodes)
         nodes = []
         for nodedata in nodes_parsed:  # self.parser:
@@ -70,6 +72,27 @@ class XmlImporter:
         if len(self.refs):
             _logger.warning("The following references could not be imported and are probably broken: %s", self.refs)
         return nodes
+
+    def _add_missing_parents(self, dnodes):
+        missing = []
+        childs = {}
+        for nd in dnodes:
+            if not nd.parent or nd.parent == nd.nodeid:
+                missing.append(nd)
+            for ref in nd.refs:
+                if ref.forward:
+                    if ref.reftype in [self.server.nodes.HasComponent.nodeid, self.server.nodes.HasProperty.nodeid, self.server.nodes.Organizes.nodeid]:
+                        # if a node has several links, the last one will win
+                        if ref.target in childs:
+                            _logger.warning("overwriting parent target, shouldbe fixed", ref.target, nd.nodeid, ref.reftype, childs[ref.target])
+                        childs[ref.target] = (nd.nodeid, ref.reftype)
+        for nd in missing:
+            if nd.nodeid in childs:
+                target, reftype = childs[nd.nodeid]
+                nd.parent = target
+                nd.parentlink = reftype
+                from IPython import embed
+                embed()
 
     async def _add_node_data(self, nodedata) -> "Node":
         if nodedata.nodetype == "UAObject":
