@@ -161,7 +161,7 @@ class XmlImporter:
             nodeid.NamespaceIndex = self.namespaces[nodeid.NamespaceIndex]
         return nodeid
 
-    def _get_node(self, obj):
+    def _get_add_node_item(self, obj):
         node = ua.AddNodesItem()
         node.RequestedNewNodeId = self._migrate_ns(obj.nodeid)
         node.BrowseName = self._migrate_ns(obj.browsename)
@@ -195,7 +195,7 @@ class XmlImporter:
                 return ua.NodeId(getattr(ua.ObjectIds, nodeid))
 
     async def add_object(self, obj):
-        node = self._get_node(obj)
+        node = self._get_add_node_item(obj)
         attrs = ua.ObjectAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -208,7 +208,7 @@ class XmlImporter:
         return res[0].AddedNodeId
 
     async def add_object_type(self, obj):
-        node = self._get_node(obj)
+        node = self._get_add_node_item(obj)
         attrs = ua.ObjectTypeAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -221,7 +221,7 @@ class XmlImporter:
         return res[0].AddedNodeId
 
     async def add_variable(self, obj):
-        node = self._get_node(obj)
+        node = self._get_add_node_item(obj)
         attrs = ua.VariableAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -348,7 +348,7 @@ class XmlImporter:
             return ua.Variant(obj.value, getattr(ua.VariantType, obj.valuetype))
 
     async def add_variable_type(self, obj):
-        node = self._get_node(obj)
+        node = self._get_add_node_item(obj)
         attrs = ua.VariableTypeAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -369,7 +369,7 @@ class XmlImporter:
         return res[0].AddedNodeId
 
     async def add_method(self, obj):
-        node = self._get_node(obj)
+        node = self._get_add_node_item(obj)
         attrs = ua.MethodAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -389,7 +389,7 @@ class XmlImporter:
         return res[0].AddedNodeId
 
     async def add_reference_type(self, obj):
-        node = self._get_node(obj)
+        node = self._get_add_node_item(obj)
         attrs = ua.ReferenceTypeAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -407,7 +407,7 @@ class XmlImporter:
         return res[0].AddedNodeId
 
     async def add_datatype(self, obj):
-        node = self._get_node(obj)
+        node = self._get_add_node_item(obj)
         attrs = ua.DataTypeAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -472,7 +472,7 @@ class XmlImporter:
         if obj.parent:
             sdef.BaseDataType = obj.parent
         for data in obj.refs:
-            if data.reftype == "HasEncoding":
+            if data.reftype == self.server.nodes.HasEncoding.nodeid:
                 # looks likebinary encodingisthe firt one...can someone confirm?
                 sdef.DefaultEncodingId = data.target
                 break
