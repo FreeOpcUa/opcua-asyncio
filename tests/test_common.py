@@ -1007,3 +1007,10 @@ async def test_import_xml_data_type_definition(opc):
 
     s2 = await var.read_value()
     assert s2.structs[1].toto == ss.structs[1].toto == 0.1
+
+
+async def test_struct_data_type(opc):
+    assert isinstance(ua.AddNodesItem.data_type, ua.NodeId)
+    node = opc.opc.get_node(ua.AddNodesItem.data_type)
+    path = await node.get_path()
+    assert opc.opc.nodes.base_structure_type in path
