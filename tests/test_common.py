@@ -987,3 +987,23 @@ async def test_guid_node_id():
 async def test_import_xml_data_type_definition(opc):
     nodes = await opc.opc.import_xml("tests/substructs.xml")
     await opc.opc.load_data_type_definitions()
+    assert hasattr(ua, "MySubstruct")
+    assert hasattr(ua, "MyStruct")
+
+    datatype = opc.opc.get_node(ua.MySubstruct.data_type)
+    sdef = await datatype.read_data_type_definition()
+    assert isinstance(sdef, ua.StructureDefinition)
+    s = ua.MyStruct()
+    s.toto = 0.1
+    ss = ua.MySubstruct()
+    assert ss.titi == 0
+    assert isinstance(ss.structs, list)
+
+    ss.titi = 1
+    ss.structs.append(s)
+    ss.structs.append(s)
+
+    var = await opc.opc.nodes.objects.add_variable(2, "MySubStructVar", ss, datatype=ua.MySubstruct.data_type)
+
+    s2 = await var.read_value()
+    assert s2.structs[1].toto == ss.structs[1].toto == 0.1

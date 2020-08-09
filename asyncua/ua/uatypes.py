@@ -732,7 +732,7 @@ class Variant(FrozenClass):
             self.VariantType = value.VariantType
         if self.VariantType is None:
             self.VariantType = self._guess_type(self.Value)
-        if self.Value is None and not self.is_array and self.VariantType not in (VariantType.Null, VariantType.String, VariantType.DateTime):
+        if self.Value is None and not self.is_array and self.VariantType not in (VariantType.Null, VariantType.String, VariantType.DateTime, VariantType.ExtensionObject):
             raise UaError(f"Non array Variant of type {self.VariantType} cannot have value None")
         if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
             dims = get_shape(self.Value)
@@ -972,7 +972,7 @@ def register_enum(name, nodeid, class_type):
 # decoding and encoding
 extension_objects_by_datatype = {}  #Dict[Datatype, type]
 extension_objects_by_typeid = {}  #Dict[EncodingId, type]
-extension_object_typeids  = {}
+extension_object_typeids = {}
 
 
 def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid=None):

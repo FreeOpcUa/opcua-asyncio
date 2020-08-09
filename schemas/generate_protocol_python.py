@@ -116,6 +116,10 @@ class CodeGenerator:
         self.write('"""')
 
         self.write('')
+        #FIXME: next line is a weak way to find out if object is a datatype or not...
+        if not "Parameter" in obj.name and not "Result" in obj.name:
+            self.write(f'data_type = ObjectIds.{obj.name}')
+            self.write('')
         switch_written = False
         for field in obj.fields:
             if field.switchfield is not None:

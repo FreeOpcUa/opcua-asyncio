@@ -30,3 +30,4 @@ class Shortcuts(object):
         self.HasComponent = Node(server, ObjectIds.HasComponent)
         self.HasProperty = Node(server, ObjectIds.HasProperty)
         self.Organizes = Node(server, ObjectIds.Organizes)
+        self.HasEncoding = Node(server, ObjectIds.HasEncoding)
