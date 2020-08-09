@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2020-08-09 20:11:42.865863
+Date:2020-08-09 20:26:35.196239
 """
 
 from datetime import datetime
@@ -1134,7 +1134,7 @@ class DataTypeDefinition(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.DataTypeDefinition
+    data_type = NodeId(ObjectIds.DataTypeDefinition)
 
     ua_types = [
                ]
@@ -1170,7 +1170,7 @@ class DiagnosticInfo(FrozenClass):
     :vartype InnerDiagnosticInfo: DiagnosticInfo
     """
 
-    data_type = ObjectIds.DiagnosticInfo
+    data_type = NodeId(ObjectIds.DiagnosticInfo)
 
     ua_switches = {
         'SymbolicId': ('Encoding', 0),
@@ -1217,7 +1217,7 @@ class KeyValuePair(FrozenClass):
     :vartype Value: Variant
     """
 
-    data_type = ObjectIds.KeyValuePair
+    data_type = NodeId(ObjectIds.KeyValuePair)
 
     ua_types = [
         ('Key', 'QualifiedName'),
@@ -1247,7 +1247,7 @@ class EndpointType(FrozenClass):
     :vartype TransportProfileUri: String
     """
 
-    data_type = ObjectIds.EndpointType
+    data_type = NodeId(ObjectIds.EndpointType)
 
     ua_types = [
         ('EndpointUrl', 'String'),
@@ -1277,7 +1277,7 @@ class RationalNumber(FrozenClass):
     :vartype Denominator: UInt32
     """
 
-    data_type = ObjectIds.RationalNumber
+    data_type = NodeId(ObjectIds.RationalNumber)
 
     ua_types = [
         ('Numerator', 'Int32'),
@@ -1299,7 +1299,7 @@ class Vector(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.Vector
+    data_type = NodeId(ObjectIds.Vector)
 
     ua_types = [
                ]
@@ -1323,7 +1323,7 @@ class ThreeDVector(FrozenClass):
     :vartype Z: Double
     """
 
-    data_type = ObjectIds.ThreeDVector
+    data_type = NodeId(ObjectIds.ThreeDVector)
 
     ua_types = [
         ('X', 'Double'),
@@ -1347,7 +1347,7 @@ class CartesianCoordinates(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.CartesianCoordinates
+    data_type = NodeId(ObjectIds.CartesianCoordinates)
 
     ua_types = [
                ]
@@ -1371,7 +1371,7 @@ class ThreeDCartesianCoordinates(FrozenClass):
     :vartype Z: Double
     """
 
-    data_type = ObjectIds.ThreeDCartesianCoordinates
+    data_type = NodeId(ObjectIds.ThreeDCartesianCoordinates)
 
     ua_types = [
         ('X', 'Double'),
@@ -1395,7 +1395,7 @@ class Orientation(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.Orientation
+    data_type = NodeId(ObjectIds.Orientation)
 
     ua_types = [
                ]
@@ -1419,7 +1419,7 @@ class ThreeDOrientation(FrozenClass):
     :vartype C: Double
     """
 
-    data_type = ObjectIds.ThreeDOrientation
+    data_type = NodeId(ObjectIds.ThreeDOrientation)
 
     ua_types = [
         ('A', 'Double'),
@@ -1443,7 +1443,7 @@ class Frame(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.Frame
+    data_type = NodeId(ObjectIds.Frame)
 
     ua_types = [
                ]
@@ -1465,7 +1465,7 @@ class ThreeDFrame(FrozenClass):
     :vartype Orientation: ThreeDOrientation
     """
 
-    data_type = ObjectIds.ThreeDFrame
+    data_type = NodeId(ObjectIds.ThreeDFrame)
 
     ua_types = [
         ('CartesianCoordinates', 'ThreeDCartesianCoordinates'),
@@ -1491,7 +1491,7 @@ class IdentityMappingRuleType(FrozenClass):
     :vartype Criteria: String
     """
 
-    data_type = ObjectIds.IdentityMappingRuleType
+    data_type = NodeId(ObjectIds.IdentityMappingRuleType)
 
     ua_types = [
         ('CriteriaType', 'IdentityCriteriaType'),
@@ -1521,7 +1521,7 @@ class CurrencyUnitType(FrozenClass):
     :vartype Currency: LocalizedText
     """
 
-    data_type = ObjectIds.CurrencyUnitType
+    data_type = NodeId(ObjectIds.CurrencyUnitType)
 
     ua_types = [
         ('NumericCode', 'Int16'),
@@ -1557,7 +1557,7 @@ class TrustListDataType(FrozenClass):
     :vartype IssuerCrls: ByteString
     """
 
-    data_type = ObjectIds.TrustListDataType
+    data_type = NodeId(ObjectIds.TrustListDataType)
 
     ua_types = [
         ('SpecifiedLists', 'UInt32'),
@@ -1589,7 +1589,7 @@ class DecimalDataType(FrozenClass):
     :vartype Value: ByteString
     """
 
-    data_type = ObjectIds.DecimalDataType
+    data_type = NodeId(ObjectIds.DecimalDataType)
 
     ua_types = [
         ('Scale', 'Int16'),
@@ -1619,7 +1619,7 @@ class DataTypeSchemaHeader(FrozenClass):
     :vartype SimpleDataTypes: SimpleTypeDescription
     """
 
-    data_type = ObjectIds.DataTypeSchemaHeader
+    data_type = NodeId(ObjectIds.DataTypeSchemaHeader)
 
     ua_types = [
         ('Namespaces', 'ListOfString'),
@@ -1649,7 +1649,7 @@ class DataTypeDescription(FrozenClass):
     :vartype Name: QualifiedName
     """
 
-    data_type = ObjectIds.DataTypeDescription
+    data_type = NodeId(ObjectIds.DataTypeDescription)
 
     ua_types = [
         ('DataTypeId', 'NodeId'),
@@ -1677,7 +1677,7 @@ class StructureDescription(FrozenClass):
     :vartype StructureDefinition: StructureDefinition
     """
 
-    data_type = ObjectIds.StructureDescription
+    data_type = NodeId(ObjectIds.StructureDescription)
 
     ua_types = [
         ('DataTypeId', 'NodeId'),
@@ -1709,7 +1709,7 @@ class EnumDescription(FrozenClass):
     :vartype BuiltInType: Byte
     """
 
-    data_type = ObjectIds.EnumDescription
+    data_type = NodeId(ObjectIds.EnumDescription)
 
     ua_types = [
         ('DataTypeId', 'NodeId'),
@@ -1743,7 +1743,7 @@ class SimpleTypeDescription(FrozenClass):
     :vartype BuiltInType: Byte
     """
 
-    data_type = ObjectIds.SimpleTypeDescription
+    data_type = NodeId(ObjectIds.SimpleTypeDescription)
 
     ua_types = [
         ('DataTypeId', 'NodeId'),
@@ -1783,7 +1783,7 @@ class UABinaryFileDataType(FrozenClass):
     :vartype Body: Variant
     """
 
-    data_type = ObjectIds.UABinaryFileDataType
+    data_type = NodeId(ObjectIds.UABinaryFileDataType)
 
     ua_types = [
         ('Namespaces', 'ListOfString'),
@@ -1833,7 +1833,7 @@ class DataSetMetaDataType(FrozenClass):
     :vartype ConfigurationVersion: ConfigurationVersionDataType
     """
 
-    data_type = ObjectIds.DataSetMetaDataType
+    data_type = NodeId(ObjectIds.DataSetMetaDataType)
 
     ua_types = [
         ('Namespaces', 'ListOfString'),
@@ -1889,7 +1889,7 @@ class FieldMetaData(FrozenClass):
     :vartype Properties: KeyValuePair
     """
 
-    data_type = ObjectIds.FieldMetaData
+    data_type = NodeId(ObjectIds.FieldMetaData)
 
     ua_types = [
         ('Name', 'String'),
@@ -1931,7 +1931,7 @@ class ConfigurationVersionDataType(FrozenClass):
     :vartype MinorVersion: UInt32
     """
 
-    data_type = ObjectIds.ConfigurationVersionDataType
+    data_type = NodeId(ObjectIds.ConfigurationVersionDataType)
 
     ua_types = [
         ('MajorVersion', 'UInt32'),
@@ -1963,7 +1963,7 @@ class PublishedDataSetDataType(FrozenClass):
     :vartype DataSetSource: ExtensionObject
     """
 
-    data_type = ObjectIds.PublishedDataSetDataType
+    data_type = NodeId(ObjectIds.PublishedDataSetDataType)
 
     ua_types = [
         ('Name', 'String'),
@@ -1991,7 +1991,7 @@ class PublishedDataSetSourceDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.PublishedDataSetSourceDataType
+    data_type = NodeId(ObjectIds.PublishedDataSetSourceDataType)
 
     ua_types = [
                ]
@@ -2025,7 +2025,7 @@ class PublishedVariableDataType(FrozenClass):
     :vartype MetaDataProperties: QualifiedName
     """
 
-    data_type = ObjectIds.PublishedVariableDataType
+    data_type = NodeId(ObjectIds.PublishedVariableDataType)
 
     ua_types = [
         ('PublishedVariable', 'NodeId'),
@@ -2061,7 +2061,7 @@ class PublishedDataItemsDataType(FrozenClass):
     :vartype PublishedData: PublishedVariableDataType
     """
 
-    data_type = ObjectIds.PublishedDataItemsDataType
+    data_type = NodeId(ObjectIds.PublishedDataItemsDataType)
 
     ua_types = [
         ('PublishedData', 'ListOfPublishedVariableDataType'),
@@ -2087,7 +2087,7 @@ class PublishedEventsDataType(FrozenClass):
     :vartype Filter: ContentFilter
     """
 
-    data_type = ObjectIds.PublishedEventsDataType
+    data_type = NodeId(ObjectIds.PublishedEventsDataType)
 
     ua_types = [
         ('EventNotifier', 'NodeId'),
@@ -2129,7 +2129,7 @@ class DataSetWriterDataType(FrozenClass):
     :vartype MessageSettings: ExtensionObject
     """
 
-    data_type = ObjectIds.DataSetWriterDataType
+    data_type = NodeId(ObjectIds.DataSetWriterDataType)
 
     ua_types = [
         ('Name', 'String'),
@@ -2165,7 +2165,7 @@ class DataSetWriterTransportDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.DataSetWriterTransportDataType
+    data_type = NodeId(ObjectIds.DataSetWriterTransportDataType)
 
     ua_types = [
                ]
@@ -2183,7 +2183,7 @@ class DataSetWriterMessageDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.DataSetWriterMessageDataType
+    data_type = NodeId(ObjectIds.DataSetWriterMessageDataType)
 
     ua_types = [
                ]
@@ -2215,7 +2215,7 @@ class PubSubGroupDataType(FrozenClass):
     :vartype GroupProperties: KeyValuePair
     """
 
-    data_type = ObjectIds.PubSubGroupDataType
+    data_type = NodeId(ObjectIds.PubSubGroupDataType)
 
     ua_types = [
         ('Name', 'String'),
@@ -2279,7 +2279,7 @@ class WriterGroupDataType(FrozenClass):
     :vartype DataSetWriters: DataSetWriterDataType
     """
 
-    data_type = ObjectIds.WriterGroupDataType
+    data_type = NodeId(ObjectIds.WriterGroupDataType)
 
     ua_types = [
         ('Name', 'String'),
@@ -2329,7 +2329,7 @@ class WriterGroupTransportDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.WriterGroupTransportDataType
+    data_type = NodeId(ObjectIds.WriterGroupTransportDataType)
 
     ua_types = [
                ]
@@ -2347,7 +2347,7 @@ class WriterGroupMessageDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.WriterGroupMessageDataType
+    data_type = NodeId(ObjectIds.WriterGroupMessageDataType)
 
     ua_types = [
                ]
@@ -2383,7 +2383,7 @@ class PubSubConnectionDataType(FrozenClass):
     :vartype ReaderGroups: ReaderGroupDataType
     """
 
-    data_type = ObjectIds.PubSubConnectionDataType
+    data_type = NodeId(ObjectIds.PubSubConnectionDataType)
 
     ua_types = [
         ('Name', 'String'),
@@ -2419,7 +2419,7 @@ class ConnectionTransportDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.ConnectionTransportDataType
+    data_type = NodeId(ObjectIds.ConnectionTransportDataType)
 
     ua_types = [
                ]
@@ -2439,7 +2439,7 @@ class NetworkAddressDataType(FrozenClass):
     :vartype NetworkInterface: String
     """
 
-    data_type = ObjectIds.NetworkAddressDataType
+    data_type = NodeId(ObjectIds.NetworkAddressDataType)
 
     ua_types = [
         ('NetworkInterface', 'String'),
@@ -2463,7 +2463,7 @@ class NetworkAddressUrlDataType(FrozenClass):
     :vartype Url: String
     """
 
-    data_type = ObjectIds.NetworkAddressUrlDataType
+    data_type = NodeId(ObjectIds.NetworkAddressUrlDataType)
 
     ua_types = [
         ('NetworkInterface', 'String'),
@@ -2505,7 +2505,7 @@ class ReaderGroupDataType(FrozenClass):
     :vartype DataSetReaders: DataSetReaderDataType
     """
 
-    data_type = ObjectIds.ReaderGroupDataType
+    data_type = NodeId(ObjectIds.ReaderGroupDataType)
 
     ua_types = [
         ('Name', 'String'),
@@ -2543,7 +2543,7 @@ class ReaderGroupTransportDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.ReaderGroupTransportDataType
+    data_type = NodeId(ObjectIds.ReaderGroupTransportDataType)
 
     ua_types = [
                ]
@@ -2561,7 +2561,7 @@ class ReaderGroupMessageDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.ReaderGroupMessageDataType
+    data_type = NodeId(ObjectIds.ReaderGroupMessageDataType)
 
     ua_types = [
                ]
@@ -2613,7 +2613,7 @@ class DataSetReaderDataType(FrozenClass):
     :vartype SubscribedDataSet: ExtensionObject
     """
 
-    data_type = ObjectIds.DataSetReaderDataType
+    data_type = NodeId(ObjectIds.DataSetReaderDataType)
 
     ua_types = [
         ('Name', 'String'),
@@ -2665,7 +2665,7 @@ class DataSetReaderTransportDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.DataSetReaderTransportDataType
+    data_type = NodeId(ObjectIds.DataSetReaderTransportDataType)
 
     ua_types = [
                ]
@@ -2683,7 +2683,7 @@ class DataSetReaderMessageDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.DataSetReaderMessageDataType
+    data_type = NodeId(ObjectIds.DataSetReaderMessageDataType)
 
     ua_types = [
                ]
@@ -2701,7 +2701,7 @@ class SubscribedDataSetDataType(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.SubscribedDataSetDataType
+    data_type = NodeId(ObjectIds.SubscribedDataSetDataType)
 
     ua_types = [
                ]
@@ -2721,7 +2721,7 @@ class TargetVariablesDataType(FrozenClass):
     :vartype TargetVariables: FieldTargetDataType
     """
 
-    data_type = ObjectIds.TargetVariablesDataType
+    data_type = NodeId(ObjectIds.TargetVariablesDataType)
 
     ua_types = [
         ('TargetVariables', 'ListOfFieldTargetDataType'),
@@ -2755,7 +2755,7 @@ class FieldTargetDataType(FrozenClass):
     :vartype OverrideValue: Variant
     """
 
-    data_type = ObjectIds.FieldTargetDataType
+    data_type = NodeId(ObjectIds.FieldTargetDataType)
 
     ua_types = [
         ('DataSetFieldId', 'Guid'),
@@ -2791,7 +2791,7 @@ class SubscribedDataSetMirrorDataType(FrozenClass):
     :vartype RolePermissions: RolePermissionType
     """
 
-    data_type = ObjectIds.SubscribedDataSetMirrorDataType
+    data_type = NodeId(ObjectIds.SubscribedDataSetMirrorDataType)
 
     ua_types = [
         ('ParentNodeName', 'String'),
@@ -2819,7 +2819,7 @@ class PubSubConfigurationDataType(FrozenClass):
     :vartype Enabled: Boolean
     """
 
-    data_type = ObjectIds.PubSubConfigurationDataType
+    data_type = NodeId(ObjectIds.PubSubConfigurationDataType)
 
     ua_types = [
         ('PublishedDataSets', 'ListOfPublishedDataSetDataType'),
@@ -2853,7 +2853,7 @@ class UadpWriterGroupMessageDataType(FrozenClass):
     :vartype PublishingOffset: Double
     """
 
-    data_type = ObjectIds.UadpWriterGroupMessageDataType
+    data_type = NodeId(ObjectIds.UadpWriterGroupMessageDataType)
 
     ua_types = [
         ('GroupVersion', 'UInt32'),
@@ -2889,7 +2889,7 @@ class UadpDataSetWriterMessageDataType(FrozenClass):
     :vartype DataSetOffset: UInt16
     """
 
-    data_type = ObjectIds.UadpDataSetWriterMessageDataType
+    data_type = NodeId(ObjectIds.UadpDataSetWriterMessageDataType)
 
     ua_types = [
         ('DataSetMessageContentMask', 'UadpDataSetMessageContentMask'),
@@ -2933,7 +2933,7 @@ class UadpDataSetReaderMessageDataType(FrozenClass):
     :vartype ProcessingOffset: Double
     """
 
-    data_type = ObjectIds.UadpDataSetReaderMessageDataType
+    data_type = NodeId(ObjectIds.UadpDataSetReaderMessageDataType)
 
     ua_types = [
         ('GroupVersion', 'UInt32'),
@@ -2971,7 +2971,7 @@ class JsonWriterGroupMessageDataType(FrozenClass):
     :vartype NetworkMessageContentMask: JsonNetworkMessageContentMask
     """
 
-    data_type = ObjectIds.JsonWriterGroupMessageDataType
+    data_type = NodeId(ObjectIds.JsonWriterGroupMessageDataType)
 
     ua_types = [
         ('NetworkMessageContentMask', 'JsonNetworkMessageContentMask'),
@@ -2993,7 +2993,7 @@ class JsonDataSetWriterMessageDataType(FrozenClass):
     :vartype DataSetMessageContentMask: JsonDataSetMessageContentMask
     """
 
-    data_type = ObjectIds.JsonDataSetWriterMessageDataType
+    data_type = NodeId(ObjectIds.JsonDataSetWriterMessageDataType)
 
     ua_types = [
         ('DataSetMessageContentMask', 'JsonDataSetMessageContentMask'),
@@ -3017,7 +3017,7 @@ class JsonDataSetReaderMessageDataType(FrozenClass):
     :vartype DataSetMessageContentMask: JsonDataSetMessageContentMask
     """
 
-    data_type = ObjectIds.JsonDataSetReaderMessageDataType
+    data_type = NodeId(ObjectIds.JsonDataSetReaderMessageDataType)
 
     ua_types = [
         ('NetworkMessageContentMask', 'JsonNetworkMessageContentMask'),
@@ -3041,7 +3041,7 @@ class DatagramConnectionTransportDataType(FrozenClass):
     :vartype DiscoveryAddress: ExtensionObject
     """
 
-    data_type = ObjectIds.DatagramConnectionTransportDataType
+    data_type = NodeId(ObjectIds.DatagramConnectionTransportDataType)
 
     ua_types = [
         ('DiscoveryAddress', 'ExtensionObject'),
@@ -3065,7 +3065,7 @@ class DatagramWriterGroupTransportDataType(FrozenClass):
     :vartype MessageRepeatDelay: Double
     """
 
-    data_type = ObjectIds.DatagramWriterGroupTransportDataType
+    data_type = NodeId(ObjectIds.DatagramWriterGroupTransportDataType)
 
     ua_types = [
         ('MessageRepeatCount', 'Byte'),
@@ -3091,7 +3091,7 @@ class BrokerConnectionTransportDataType(FrozenClass):
     :vartype AuthenticationProfileUri: String
     """
 
-    data_type = ObjectIds.BrokerConnectionTransportDataType
+    data_type = NodeId(ObjectIds.BrokerConnectionTransportDataType)
 
     ua_types = [
         ('ResourceUri', 'String'),
@@ -3121,7 +3121,7 @@ class BrokerWriterGroupTransportDataType(FrozenClass):
     :vartype RequestedDeliveryGuarantee: BrokerTransportQualityOfService
     """
 
-    data_type = ObjectIds.BrokerWriterGroupTransportDataType
+    data_type = NodeId(ObjectIds.BrokerWriterGroupTransportDataType)
 
     ua_types = [
         ('QueueName', 'String'),
@@ -3159,7 +3159,7 @@ class BrokerDataSetWriterTransportDataType(FrozenClass):
     :vartype MetaDataUpdateTime: Double
     """
 
-    data_type = ObjectIds.BrokerDataSetWriterTransportDataType
+    data_type = NodeId(ObjectIds.BrokerDataSetWriterTransportDataType)
 
     ua_types = [
         ('QueueName', 'String'),
@@ -3199,7 +3199,7 @@ class BrokerDataSetReaderTransportDataType(FrozenClass):
     :vartype MetaDataQueueName: String
     """
 
-    data_type = ObjectIds.BrokerDataSetReaderTransportDataType
+    data_type = NodeId(ObjectIds.BrokerDataSetReaderTransportDataType)
 
     ua_types = [
         ('QueueName', 'String'),
@@ -3231,7 +3231,7 @@ class AliasNameDataType(FrozenClass):
     :vartype ReferencedNodes: ExpandedNodeId
     """
 
-    data_type = ObjectIds.AliasNameDataType
+    data_type = NodeId(ObjectIds.AliasNameDataType)
 
     ua_types = [
         ('AliasName', 'QualifiedName'),
@@ -3257,7 +3257,7 @@ class RolePermissionType(FrozenClass):
     :vartype Permissions: PermissionType
     """
 
-    data_type = ObjectIds.RolePermissionType
+    data_type = NodeId(ObjectIds.RolePermissionType)
 
     ua_types = [
         ('RoleId', 'NodeId'),
@@ -3293,7 +3293,7 @@ class StructureField(FrozenClass):
     :vartype IsOptional: Boolean
     """
 
-    data_type = ObjectIds.StructureField
+    data_type = NodeId(ObjectIds.StructureField)
 
     ua_types = [
         ('Name', 'String'),
@@ -3333,7 +3333,7 @@ class StructureDefinition(FrozenClass):
     :vartype Fields: StructureField
     """
 
-    data_type = ObjectIds.StructureDefinition
+    data_type = NodeId(ObjectIds.StructureDefinition)
 
     ua_types = [
         ('DefaultEncodingId', 'NodeId'),
@@ -3361,7 +3361,7 @@ class EnumDefinition(FrozenClass):
     :vartype Fields: EnumField
     """
 
-    data_type = ObjectIds.EnumDefinition
+    data_type = NodeId(ObjectIds.EnumDefinition)
 
     ua_types = [
         ('Fields', 'ListOfEnumField'),
@@ -3391,7 +3391,7 @@ class Argument(FrozenClass):
     :vartype Description: LocalizedText
     """
 
-    data_type = ObjectIds.Argument
+    data_type = NodeId(ObjectIds.Argument)
 
     ua_types = [
         ('Name', 'String'),
@@ -3425,7 +3425,7 @@ class EnumValueType(FrozenClass):
     :vartype Description: LocalizedText
     """
 
-    data_type = ObjectIds.EnumValueType
+    data_type = NodeId(ObjectIds.EnumValueType)
 
     ua_types = [
         ('Value', 'Int64'),
@@ -3457,7 +3457,7 @@ class EnumField(FrozenClass):
     :vartype Name: String
     """
 
-    data_type = ObjectIds.EnumField
+    data_type = NodeId(ObjectIds.EnumField)
 
     ua_types = [
         ('Value', 'Int64'),
@@ -3487,7 +3487,7 @@ class OptionSet(FrozenClass):
     :vartype ValidBits: ByteString
     """
 
-    data_type = ObjectIds.OptionSet
+    data_type = NodeId(ObjectIds.OptionSet)
 
     ua_types = [
         ('Value', 'ByteString'),
@@ -3509,7 +3509,7 @@ class Union(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.Union
+    data_type = NodeId(ObjectIds.Union)
 
     ua_types = [
                ]
@@ -3531,7 +3531,7 @@ class TimeZoneDataType(FrozenClass):
     :vartype DaylightSavingInOffset: Boolean
     """
 
-    data_type = ObjectIds.TimeZoneDataType
+    data_type = NodeId(ObjectIds.TimeZoneDataType)
 
     ua_types = [
         ('Offset', 'Int16'),
@@ -3567,7 +3567,7 @@ class ApplicationDescription(FrozenClass):
     :vartype DiscoveryUrls: String
     """
 
-    data_type = ObjectIds.ApplicationDescription
+    data_type = NodeId(ObjectIds.ApplicationDescription)
 
     ua_types = [
         ('ApplicationUri', 'String'),
@@ -3613,7 +3613,7 @@ class RequestHeader(FrozenClass):
     :vartype AdditionalHeader: ExtensionObject
     """
 
-    data_type = ObjectIds.RequestHeader
+    data_type = NodeId(ObjectIds.RequestHeader)
 
     ua_types = [
         ('AuthenticationToken', 'NodeId'),
@@ -3657,7 +3657,7 @@ class ResponseHeader(FrozenClass):
     :vartype AdditionalHeader: ExtensionObject
     """
 
-    data_type = ObjectIds.ResponseHeader
+    data_type = NodeId(ObjectIds.ResponseHeader)
 
     ua_types = [
         ('Timestamp', 'DateTime'),
@@ -3691,7 +3691,7 @@ class ServiceFault(FrozenClass):
     :vartype ResponseHeader: ResponseHeader
     """
 
-    data_type = ObjectIds.ServiceFault
+    data_type = NodeId(ObjectIds.ServiceFault)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3723,7 +3723,7 @@ class SessionlessInvokeRequestType(FrozenClass):
     :vartype ServiceId: UInt32
     """
 
-    data_type = ObjectIds.SessionlessInvokeRequestType
+    data_type = NodeId(ObjectIds.SessionlessInvokeRequestType)
 
     ua_types = [
         ('UrisVersion', 'ListOfUInt32'),
@@ -3757,7 +3757,7 @@ class SessionlessInvokeResponseType(FrozenClass):
     :vartype ServiceId: UInt32
     """
 
-    data_type = ObjectIds.SessionlessInvokeResponseType
+    data_type = NodeId(ObjectIds.SessionlessInvokeResponseType)
 
     ua_types = [
         ('NamespaceUris', 'ListOfString'),
@@ -3815,7 +3815,7 @@ class FindServersRequest(FrozenClass):
     :vartype Parameters: FindServersParameters
     """
 
-    data_type = ObjectIds.FindServersRequest
+    data_type = NodeId(ObjectIds.FindServersRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3845,7 +3845,7 @@ class FindServersResponse(FrozenClass):
     :vartype Servers: ApplicationDescription
     """
 
-    data_type = ObjectIds.FindServersResponse
+    data_type = NodeId(ObjectIds.FindServersResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3877,7 +3877,7 @@ class ServerOnNetwork(FrozenClass):
     :vartype ServerCapabilities: String
     """
 
-    data_type = ObjectIds.ServerOnNetwork
+    data_type = NodeId(ObjectIds.ServerOnNetwork)
 
     ua_types = [
         ('RecordId', 'UInt32'),
@@ -3937,7 +3937,7 @@ class FindServersOnNetworkRequest(FrozenClass):
     :vartype Parameters: FindServersOnNetworkParameters
     """
 
-    data_type = ObjectIds.FindServersOnNetworkRequest
+    data_type = NodeId(ObjectIds.FindServersOnNetworkRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3991,7 +3991,7 @@ class FindServersOnNetworkResponse(FrozenClass):
     :vartype Parameters: FindServersOnNetworkResult
     """
 
-    data_type = ObjectIds.FindServersOnNetworkResponse
+    data_type = NodeId(ObjectIds.FindServersOnNetworkResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4025,7 +4025,7 @@ class UserTokenPolicy(FrozenClass):
     :vartype SecurityPolicyUri: String
     """
 
-    data_type = ObjectIds.UserTokenPolicy
+    data_type = NodeId(ObjectIds.UserTokenPolicy)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -4069,7 +4069,7 @@ class EndpointDescription(FrozenClass):
     :vartype SecurityLevel: Byte
     """
 
-    data_type = ObjectIds.EndpointDescription
+    data_type = NodeId(ObjectIds.EndpointDescription)
 
     ua_types = [
         ('EndpointUrl', 'String'),
@@ -4137,7 +4137,7 @@ class GetEndpointsRequest(FrozenClass):
     :vartype Parameters: GetEndpointsParameters
     """
 
-    data_type = ObjectIds.GetEndpointsRequest
+    data_type = NodeId(ObjectIds.GetEndpointsRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4167,7 +4167,7 @@ class GetEndpointsResponse(FrozenClass):
     :vartype Endpoints: EndpointDescription
     """
 
-    data_type = ObjectIds.GetEndpointsResponse
+    data_type = NodeId(ObjectIds.GetEndpointsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4207,7 +4207,7 @@ class RegisteredServer(FrozenClass):
     :vartype IsOnline: Boolean
     """
 
-    data_type = ObjectIds.RegisteredServer
+    data_type = NodeId(ObjectIds.RegisteredServer)
 
     ua_types = [
         ('ServerUri', 'String'),
@@ -4247,7 +4247,7 @@ class RegisterServerRequest(FrozenClass):
     :vartype Server: RegisteredServer
     """
 
-    data_type = ObjectIds.RegisterServerRequest
+    data_type = NodeId(ObjectIds.RegisterServerRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4275,7 +4275,7 @@ class RegisterServerResponse(FrozenClass):
     :vartype ResponseHeader: ResponseHeader
     """
 
-    data_type = ObjectIds.RegisterServerResponse
+    data_type = NodeId(ObjectIds.RegisterServerResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4297,7 +4297,7 @@ class DiscoveryConfiguration(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.DiscoveryConfiguration
+    data_type = NodeId(ObjectIds.DiscoveryConfiguration)
 
     ua_types = [
                ]
@@ -4319,7 +4319,7 @@ class MdnsDiscoveryConfiguration(FrozenClass):
     :vartype ServerCapabilities: String
     """
 
-    data_type = ObjectIds.MdnsDiscoveryConfiguration
+    data_type = NodeId(ObjectIds.MdnsDiscoveryConfiguration)
 
     ua_types = [
         ('MdnsServerName', 'String'),
@@ -4371,7 +4371,7 @@ class RegisterServer2Request(FrozenClass):
     :vartype Parameters: RegisterServer2Parameters
     """
 
-    data_type = ObjectIds.RegisterServer2Request
+    data_type = NodeId(ObjectIds.RegisterServer2Request)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4403,7 +4403,7 @@ class RegisterServer2Response(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.RegisterServer2Response
+    data_type = NodeId(ObjectIds.RegisterServer2Response)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4437,7 +4437,7 @@ class ChannelSecurityToken(FrozenClass):
     :vartype RevisedLifetime: UInt32
     """
 
-    data_type = ObjectIds.ChannelSecurityToken
+    data_type = NodeId(ObjectIds.ChannelSecurityToken)
 
     ua_types = [
         ('ChannelId', 'UInt32'),
@@ -4505,7 +4505,7 @@ class OpenSecureChannelRequest(FrozenClass):
     :vartype Parameters: OpenSecureChannelParameters
     """
 
-    data_type = ObjectIds.OpenSecureChannelRequest
+    data_type = NodeId(ObjectIds.OpenSecureChannelRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4563,7 +4563,7 @@ class OpenSecureChannelResponse(FrozenClass):
     :vartype Parameters: OpenSecureChannelResult
     """
 
-    data_type = ObjectIds.OpenSecureChannelResponse
+    data_type = NodeId(ObjectIds.OpenSecureChannelResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4591,7 +4591,7 @@ class CloseSecureChannelRequest(FrozenClass):
     :vartype RequestHeader: RequestHeader
     """
 
-    data_type = ObjectIds.CloseSecureChannelRequest
+    data_type = NodeId(ObjectIds.CloseSecureChannelRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4617,7 +4617,7 @@ class CloseSecureChannelResponse(FrozenClass):
     :vartype ResponseHeader: ResponseHeader
     """
 
-    data_type = ObjectIds.CloseSecureChannelResponse
+    data_type = NodeId(ObjectIds.CloseSecureChannelResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4643,7 +4643,7 @@ class SignedSoftwareCertificate(FrozenClass):
     :vartype Signature: ByteString
     """
 
-    data_type = ObjectIds.SignedSoftwareCertificate
+    data_type = NodeId(ObjectIds.SignedSoftwareCertificate)
 
     ua_types = [
         ('CertificateData', 'ByteString'),
@@ -4669,7 +4669,7 @@ class SignatureData(FrozenClass):
     :vartype Signature: ByteString
     """
 
-    data_type = ObjectIds.SignatureData
+    data_type = NodeId(ObjectIds.SignatureData)
 
     ua_types = [
         ('Algorithm', 'String'),
@@ -4745,7 +4745,7 @@ class CreateSessionRequest(FrozenClass):
     :vartype Parameters: CreateSessionParameters
     """
 
-    data_type = ObjectIds.CreateSessionRequest
+    data_type = NodeId(ObjectIds.CreateSessionRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4827,7 +4827,7 @@ class CreateSessionResponse(FrozenClass):
     :vartype Parameters: CreateSessionResult
     """
 
-    data_type = ObjectIds.CreateSessionResponse
+    data_type = NodeId(ObjectIds.CreateSessionResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4853,7 +4853,7 @@ class UserIdentityToken(FrozenClass):
     :vartype PolicyId: String
     """
 
-    data_type = ObjectIds.UserIdentityToken
+    data_type = NodeId(ObjectIds.UserIdentityToken)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -4875,7 +4875,7 @@ class AnonymousIdentityToken(FrozenClass):
     :vartype PolicyId: String
     """
 
-    data_type = ObjectIds.AnonymousIdentityToken
+    data_type = NodeId(ObjectIds.AnonymousIdentityToken)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -4903,7 +4903,7 @@ class UserNameIdentityToken(FrozenClass):
     :vartype EncryptionAlgorithm: String
     """
 
-    data_type = ObjectIds.UserNameIdentityToken
+    data_type = NodeId(ObjectIds.UserNameIdentityToken)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -4933,7 +4933,7 @@ class X509IdentityToken(FrozenClass):
     :vartype CertificateData: ByteString
     """
 
-    data_type = ObjectIds.X509IdentityToken
+    data_type = NodeId(ObjectIds.X509IdentityToken)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -4961,7 +4961,7 @@ class IssuedIdentityToken(FrozenClass):
     :vartype EncryptionAlgorithm: String
     """
 
-    data_type = ObjectIds.IssuedIdentityToken
+    data_type = NodeId(ObjectIds.IssuedIdentityToken)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -5027,7 +5027,7 @@ class ActivateSessionRequest(FrozenClass):
     :vartype Parameters: ActivateSessionParameters
     """
 
-    data_type = ObjectIds.ActivateSessionRequest
+    data_type = NodeId(ObjectIds.ActivateSessionRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5085,7 +5085,7 @@ class ActivateSessionResponse(FrozenClass):
     :vartype Parameters: ActivateSessionResult
     """
 
-    data_type = ObjectIds.ActivateSessionResponse
+    data_type = NodeId(ObjectIds.ActivateSessionResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5115,7 +5115,7 @@ class CloseSessionRequest(FrozenClass):
     :vartype DeleteSubscriptions: Boolean
     """
 
-    data_type = ObjectIds.CloseSessionRequest
+    data_type = NodeId(ObjectIds.CloseSessionRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5143,7 +5143,7 @@ class CloseSessionResponse(FrozenClass):
     :vartype ResponseHeader: ResponseHeader
     """
 
-    data_type = ObjectIds.CloseSessionResponse
+    data_type = NodeId(ObjectIds.CloseSessionResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5191,7 +5191,7 @@ class CancelRequest(FrozenClass):
     :vartype Parameters: CancelParameters
     """
 
-    data_type = ObjectIds.CancelRequest
+    data_type = NodeId(ObjectIds.CancelRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5241,7 +5241,7 @@ class CancelResponse(FrozenClass):
     :vartype Parameters: CancelResult
     """
 
-    data_type = ObjectIds.CancelResponse
+    data_type = NodeId(ObjectIds.CancelResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5275,7 +5275,7 @@ class NodeAttributes(FrozenClass):
     :vartype UserWriteMask: UInt32
     """
 
-    data_type = ObjectIds.NodeAttributes
+    data_type = NodeId(ObjectIds.NodeAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5315,7 +5315,7 @@ class ObjectAttributes(FrozenClass):
     :vartype EventNotifier: Byte
     """
 
-    data_type = ObjectIds.ObjectAttributes
+    data_type = NodeId(ObjectIds.ObjectAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5371,7 +5371,7 @@ class VariableAttributes(FrozenClass):
     :vartype Historizing: Boolean
     """
 
-    data_type = ObjectIds.VariableAttributes
+    data_type = NodeId(ObjectIds.VariableAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5429,7 +5429,7 @@ class MethodAttributes(FrozenClass):
     :vartype UserExecutable: Boolean
     """
 
-    data_type = ObjectIds.MethodAttributes
+    data_type = NodeId(ObjectIds.MethodAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5473,7 +5473,7 @@ class ObjectTypeAttributes(FrozenClass):
     :vartype IsAbstract: Boolean
     """
 
-    data_type = ObjectIds.ObjectTypeAttributes
+    data_type = NodeId(ObjectIds.ObjectTypeAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5523,7 +5523,7 @@ class VariableTypeAttributes(FrozenClass):
     :vartype IsAbstract: Boolean
     """
 
-    data_type = ObjectIds.VariableTypeAttributes
+    data_type = NodeId(ObjectIds.VariableTypeAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5577,7 +5577,7 @@ class ReferenceTypeAttributes(FrozenClass):
     :vartype InverseName: LocalizedText
     """
 
-    data_type = ObjectIds.ReferenceTypeAttributes
+    data_type = NodeId(ObjectIds.ReferenceTypeAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5623,7 +5623,7 @@ class DataTypeAttributes(FrozenClass):
     :vartype IsAbstract: Boolean
     """
 
-    data_type = ObjectIds.DataTypeAttributes
+    data_type = NodeId(ObjectIds.DataTypeAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5667,7 +5667,7 @@ class ViewAttributes(FrozenClass):
     :vartype EventNotifier: Byte
     """
 
-    data_type = ObjectIds.ViewAttributes
+    data_type = NodeId(ObjectIds.ViewAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5703,7 +5703,7 @@ class GenericAttributeValue(FrozenClass):
     :vartype Value: Variant
     """
 
-    data_type = ObjectIds.GenericAttributeValue
+    data_type = NodeId(ObjectIds.GenericAttributeValue)
 
     ua_types = [
         ('AttributeId', 'UInt32'),
@@ -5737,7 +5737,7 @@ class GenericAttributes(FrozenClass):
     :vartype AttributeValues: GenericAttributeValue
     """
 
-    data_type = ObjectIds.GenericAttributes
+    data_type = NodeId(ObjectIds.GenericAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5781,7 +5781,7 @@ class AddNodesItem(FrozenClass):
     :vartype TypeDefinition: ExpandedNodeId
     """
 
-    data_type = ObjectIds.AddNodesItem
+    data_type = NodeId(ObjectIds.AddNodesItem)
 
     ua_types = [
         ('ParentNodeId', 'ExpandedNodeId'),
@@ -5863,7 +5863,7 @@ class AddNodesRequest(FrozenClass):
     :vartype Parameters: AddNodesParameters
     """
 
-    data_type = ObjectIds.AddNodesRequest
+    data_type = NodeId(ObjectIds.AddNodesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5895,7 +5895,7 @@ class AddNodesResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.AddNodesResponse
+    data_type = NodeId(ObjectIds.AddNodesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5933,7 +5933,7 @@ class AddReferencesItem(FrozenClass):
     :vartype TargetNodeClass: NodeClass
     """
 
-    data_type = ObjectIds.AddReferencesItem
+    data_type = NodeId(ObjectIds.AddReferencesItem)
 
     ua_types = [
         ('SourceNodeId', 'NodeId'),
@@ -5989,7 +5989,7 @@ class AddReferencesRequest(FrozenClass):
     :vartype Parameters: AddReferencesParameters
     """
 
-    data_type = ObjectIds.AddReferencesRequest
+    data_type = NodeId(ObjectIds.AddReferencesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6021,7 +6021,7 @@ class AddReferencesResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.AddReferencesResponse
+    data_type = NodeId(ObjectIds.AddReferencesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6051,7 +6051,7 @@ class DeleteNodesItem(FrozenClass):
     :vartype DeleteTargetReferences: Boolean
     """
 
-    data_type = ObjectIds.DeleteNodesItem
+    data_type = NodeId(ObjectIds.DeleteNodesItem)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -6099,7 +6099,7 @@ class DeleteNodesRequest(FrozenClass):
     :vartype Parameters: DeleteNodesParameters
     """
 
-    data_type = ObjectIds.DeleteNodesRequest
+    data_type = NodeId(ObjectIds.DeleteNodesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6131,7 +6131,7 @@ class DeleteNodesResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.DeleteNodesResponse
+    data_type = NodeId(ObjectIds.DeleteNodesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6167,7 +6167,7 @@ class DeleteReferencesItem(FrozenClass):
     :vartype DeleteBidirectional: Boolean
     """
 
-    data_type = ObjectIds.DeleteReferencesItem
+    data_type = NodeId(ObjectIds.DeleteReferencesItem)
 
     ua_types = [
         ('SourceNodeId', 'NodeId'),
@@ -6221,7 +6221,7 @@ class DeleteReferencesRequest(FrozenClass):
     :vartype Parameters: DeleteReferencesParameters
     """
 
-    data_type = ObjectIds.DeleteReferencesRequest
+    data_type = NodeId(ObjectIds.DeleteReferencesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6275,7 +6275,7 @@ class DeleteReferencesResponse(FrozenClass):
     :vartype Parameters: DeleteReferencesResult
     """
 
-    data_type = ObjectIds.DeleteReferencesResponse
+    data_type = NodeId(ObjectIds.DeleteReferencesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6305,7 +6305,7 @@ class ViewDescription(FrozenClass):
     :vartype ViewVersion: UInt32
     """
 
-    data_type = ObjectIds.ViewDescription
+    data_type = NodeId(ObjectIds.ViewDescription)
 
     ua_types = [
         ('ViewId', 'NodeId'),
@@ -6341,7 +6341,7 @@ class BrowseDescription(FrozenClass):
     :vartype ResultMask: UInt32
     """
 
-    data_type = ObjectIds.BrowseDescription
+    data_type = NodeId(ObjectIds.BrowseDescription)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -6385,7 +6385,7 @@ class ReferenceDescription(FrozenClass):
     :vartype TypeDefinition: ExpandedNodeId
     """
 
-    data_type = ObjectIds.ReferenceDescription
+    data_type = NodeId(ObjectIds.ReferenceDescription)
 
     ua_types = [
         ('ReferenceTypeId', 'NodeId'),
@@ -6479,7 +6479,7 @@ class BrowseRequest(FrozenClass):
     :vartype Parameters: BrowseParameters
     """
 
-    data_type = ObjectIds.BrowseRequest
+    data_type = NodeId(ObjectIds.BrowseRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6511,7 +6511,7 @@ class BrowseResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.BrowseResponse
+    data_type = NodeId(ObjectIds.BrowseResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6567,7 +6567,7 @@ class BrowseNextRequest(FrozenClass):
     :vartype Parameters: BrowseNextParameters
     """
 
-    data_type = ObjectIds.BrowseNextRequest
+    data_type = NodeId(ObjectIds.BrowseNextRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6621,7 +6621,7 @@ class BrowseNextResponse(FrozenClass):
     :vartype Parameters: BrowseNextResult
     """
 
-    data_type = ObjectIds.BrowseNextResponse
+    data_type = NodeId(ObjectIds.BrowseNextResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6653,7 +6653,7 @@ class RelativePathElement(FrozenClass):
     :vartype TargetName: QualifiedName
     """
 
-    data_type = ObjectIds.RelativePathElement
+    data_type = NodeId(ObjectIds.RelativePathElement)
 
     ua_types = [
         ('ReferenceTypeId', 'NodeId'),
@@ -6681,7 +6681,7 @@ class RelativePath(FrozenClass):
     :vartype Elements: RelativePathElement
     """
 
-    data_type = ObjectIds.RelativePath
+    data_type = NodeId(ObjectIds.RelativePath)
 
     ua_types = [
         ('Elements', 'ListOfRelativePathElement'),
@@ -6705,7 +6705,7 @@ class BrowsePath(FrozenClass):
     :vartype RelativePath: RelativePath
     """
 
-    data_type = ObjectIds.BrowsePath
+    data_type = NodeId(ObjectIds.BrowsePath)
 
     ua_types = [
         ('StartingNode', 'NodeId'),
@@ -6731,7 +6731,7 @@ class BrowsePathTarget(FrozenClass):
     :vartype RemainingPathIndex: UInt32
     """
 
-    data_type = ObjectIds.BrowsePathTarget
+    data_type = NodeId(ObjectIds.BrowsePathTarget)
 
     ua_types = [
         ('TargetId', 'ExpandedNodeId'),
@@ -6803,7 +6803,7 @@ class TranslateBrowsePathsToNodeIdsRequest(FrozenClass):
     :vartype Parameters: TranslateBrowsePathsToNodeIdsParameters
     """
 
-    data_type = ObjectIds.TranslateBrowsePathsToNodeIdsRequest
+    data_type = NodeId(ObjectIds.TranslateBrowsePathsToNodeIdsRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6835,7 +6835,7 @@ class TranslateBrowsePathsToNodeIdsResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.TranslateBrowsePathsToNodeIdsResponse
+    data_type = NodeId(ObjectIds.TranslateBrowsePathsToNodeIdsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6887,7 +6887,7 @@ class RegisterNodesRequest(FrozenClass):
     :vartype Parameters: RegisterNodesParameters
     """
 
-    data_type = ObjectIds.RegisterNodesRequest
+    data_type = NodeId(ObjectIds.RegisterNodesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6937,7 +6937,7 @@ class RegisterNodesResponse(FrozenClass):
     :vartype Parameters: RegisterNodesResult
     """
 
-    data_type = ObjectIds.RegisterNodesResponse
+    data_type = NodeId(ObjectIds.RegisterNodesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6987,7 +6987,7 @@ class UnregisterNodesRequest(FrozenClass):
     :vartype Parameters: UnregisterNodesParameters
     """
 
-    data_type = ObjectIds.UnregisterNodesRequest
+    data_type = NodeId(ObjectIds.UnregisterNodesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7015,7 +7015,7 @@ class UnregisterNodesResponse(FrozenClass):
     :vartype ResponseHeader: ResponseHeader
     """
 
-    data_type = ObjectIds.UnregisterNodesResponse
+    data_type = NodeId(ObjectIds.UnregisterNodesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7055,7 +7055,7 @@ class EndpointConfiguration(FrozenClass):
     :vartype SecurityTokenLifetime: Int32
     """
 
-    data_type = ObjectIds.EndpointConfiguration
+    data_type = NodeId(ObjectIds.EndpointConfiguration)
 
     ua_types = [
         ('OperationTimeout', 'Int32'),
@@ -7097,7 +7097,7 @@ class QueryDataDescription(FrozenClass):
     :vartype IndexRange: String
     """
 
-    data_type = ObjectIds.QueryDataDescription
+    data_type = NodeId(ObjectIds.QueryDataDescription)
 
     ua_types = [
         ('RelativePath', 'RelativePath'),
@@ -7127,7 +7127,7 @@ class NodeTypeDescription(FrozenClass):
     :vartype DataToReturn: QueryDataDescription
     """
 
-    data_type = ObjectIds.NodeTypeDescription
+    data_type = NodeId(ObjectIds.NodeTypeDescription)
 
     ua_types = [
         ('TypeDefinitionNode', 'ExpandedNodeId'),
@@ -7157,7 +7157,7 @@ class QueryDataSet(FrozenClass):
     :vartype Values: Variant
     """
 
-    data_type = ObjectIds.QueryDataSet
+    data_type = NodeId(ObjectIds.QueryDataSet)
 
     ua_types = [
         ('NodeId', 'ExpandedNodeId'),
@@ -7189,7 +7189,7 @@ class NodeReference(FrozenClass):
     :vartype ReferencedNodeIds: NodeId
     """
 
-    data_type = ObjectIds.NodeReference
+    data_type = NodeId(ObjectIds.NodeReference)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -7219,7 +7219,7 @@ class ContentFilterElement(FrozenClass):
     :vartype FilterOperands: ExtensionObject
     """
 
-    data_type = ObjectIds.ContentFilterElement
+    data_type = NodeId(ObjectIds.ContentFilterElement)
 
     ua_types = [
         ('FilterOperator', 'FilterOperator'),
@@ -7243,7 +7243,7 @@ class ContentFilter(FrozenClass):
     :vartype Elements: ContentFilterElement
     """
 
-    data_type = ObjectIds.ContentFilter
+    data_type = NodeId(ObjectIds.ContentFilter)
 
     ua_types = [
         ('Elements', 'ListOfContentFilterElement'),
@@ -7265,7 +7265,7 @@ class ElementOperand(FrozenClass):
     :vartype Index: UInt32
     """
 
-    data_type = ObjectIds.ElementOperand
+    data_type = NodeId(ObjectIds.ElementOperand)
 
     ua_types = [
         ('Index', 'UInt32'),
@@ -7287,7 +7287,7 @@ class LiteralOperand(FrozenClass):
     :vartype Value: Variant
     """
 
-    data_type = ObjectIds.LiteralOperand
+    data_type = NodeId(ObjectIds.LiteralOperand)
 
     ua_types = [
         ('Value', 'Variant'),
@@ -7317,7 +7317,7 @@ class AttributeOperand(FrozenClass):
     :vartype IndexRange: String
     """
 
-    data_type = ObjectIds.AttributeOperand
+    data_type = NodeId(ObjectIds.AttributeOperand)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -7353,7 +7353,7 @@ class SimpleAttributeOperand(FrozenClass):
     :vartype IndexRange: String
     """
 
-    data_type = ObjectIds.SimpleAttributeOperand
+    data_type = NodeId(ObjectIds.SimpleAttributeOperand)
 
     ua_types = [
         ('TypeDefinitionId', 'NodeId'),
@@ -7501,7 +7501,7 @@ class QueryFirstRequest(FrozenClass):
     :vartype Parameters: QueryFirstParameters
     """
 
-    data_type = ObjectIds.QueryFirstRequest
+    data_type = NodeId(ObjectIds.QueryFirstRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7567,7 +7567,7 @@ class QueryFirstResponse(FrozenClass):
     :vartype Parameters: QueryFirstResult
     """
 
-    data_type = ObjectIds.QueryFirstResponse
+    data_type = NodeId(ObjectIds.QueryFirstResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7621,7 +7621,7 @@ class QueryNextRequest(FrozenClass):
     :vartype Parameters: QueryNextParameters
     """
 
-    data_type = ObjectIds.QueryNextRequest
+    data_type = NodeId(ObjectIds.QueryNextRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7675,7 +7675,7 @@ class QueryNextResponse(FrozenClass):
     :vartype Parameters: QueryNextResult
     """
 
-    data_type = ObjectIds.QueryNextResponse
+    data_type = NodeId(ObjectIds.QueryNextResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7707,7 +7707,7 @@ class ReadValueId(FrozenClass):
     :vartype DataEncoding: QualifiedName
     """
 
-    data_type = ObjectIds.ReadValueId
+    data_type = NodeId(ObjectIds.ReadValueId)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -7767,7 +7767,7 @@ class ReadRequest(FrozenClass):
     :vartype Parameters: ReadParameters
     """
 
-    data_type = ObjectIds.ReadRequest
+    data_type = NodeId(ObjectIds.ReadRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7799,7 +7799,7 @@ class ReadResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.ReadResponse
+    data_type = NodeId(ObjectIds.ReadResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7833,7 +7833,7 @@ class HistoryReadValueId(FrozenClass):
     :vartype ContinuationPoint: ByteString
     """
 
-    data_type = ObjectIds.HistoryReadValueId
+    data_type = NodeId(ObjectIds.HistoryReadValueId)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -7887,7 +7887,7 @@ class HistoryReadDetails(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.HistoryReadDetails
+    data_type = NodeId(ObjectIds.HistoryReadDetails)
 
     ua_types = [
                ]
@@ -7913,7 +7913,7 @@ class ReadEventDetails(FrozenClass):
     :vartype Filter: EventFilter
     """
 
-    data_type = ObjectIds.ReadEventDetails
+    data_type = NodeId(ObjectIds.ReadEventDetails)
 
     ua_types = [
         ('NumValuesPerNode', 'UInt32'),
@@ -7949,7 +7949,7 @@ class ReadRawModifiedDetails(FrozenClass):
     :vartype ReturnBounds: Boolean
     """
 
-    data_type = ObjectIds.ReadRawModifiedDetails
+    data_type = NodeId(ObjectIds.ReadRawModifiedDetails)
 
     ua_types = [
         ('IsReadModified', 'Boolean'),
@@ -7987,7 +7987,7 @@ class ReadProcessedDetails(FrozenClass):
     :vartype AggregateConfiguration: AggregateConfiguration
     """
 
-    data_type = ObjectIds.ReadProcessedDetails
+    data_type = NodeId(ObjectIds.ReadProcessedDetails)
 
     ua_types = [
         ('StartTime', 'DateTime'),
@@ -8019,7 +8019,7 @@ class ReadAtTimeDetails(FrozenClass):
     :vartype UseSimpleBounds: Boolean
     """
 
-    data_type = ObjectIds.ReadAtTimeDetails
+    data_type = NodeId(ObjectIds.ReadAtTimeDetails)
 
     ua_types = [
         ('ReqTimes', 'ListOfDateTime'),
@@ -8043,7 +8043,7 @@ class ReadAnnotationDataDetails(FrozenClass):
     :vartype ReqTimes: DateTime
     """
 
-    data_type = ObjectIds.ReadAnnotationDataDetails
+    data_type = NodeId(ObjectIds.ReadAnnotationDataDetails)
 
     ua_types = [
         ('ReqTimes', 'ListOfDateTime'),
@@ -8065,7 +8065,7 @@ class HistoryData(FrozenClass):
     :vartype DataValues: DataValue
     """
 
-    data_type = ObjectIds.HistoryData
+    data_type = NodeId(ObjectIds.HistoryData)
 
     ua_types = [
         ('DataValues', 'ListOfDataValue'),
@@ -8091,7 +8091,7 @@ class ModificationInfo(FrozenClass):
     :vartype UserName: String
     """
 
-    data_type = ObjectIds.ModificationInfo
+    data_type = NodeId(ObjectIds.ModificationInfo)
 
     ua_types = [
         ('ModificationTime', 'DateTime'),
@@ -8119,7 +8119,7 @@ class HistoryModifiedData(FrozenClass):
     :vartype ModificationInfos: ModificationInfo
     """
 
-    data_type = ObjectIds.HistoryModifiedData
+    data_type = NodeId(ObjectIds.HistoryModifiedData)
 
     ua_types = [
         ('DataValues', 'ListOfDataValue'),
@@ -8143,7 +8143,7 @@ class HistoryEvent(FrozenClass):
     :vartype Events: HistoryEventFieldList
     """
 
-    data_type = ObjectIds.HistoryEvent
+    data_type = NodeId(ObjectIds.HistoryEvent)
 
     ua_types = [
         ('Events', 'ListOfHistoryEventFieldList'),
@@ -8201,7 +8201,7 @@ class HistoryReadRequest(FrozenClass):
     :vartype Parameters: HistoryReadParameters
     """
 
-    data_type = ObjectIds.HistoryReadRequest
+    data_type = NodeId(ObjectIds.HistoryReadRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -8233,7 +8233,7 @@ class HistoryReadResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.HistoryReadResponse
+    data_type = NodeId(ObjectIds.HistoryReadResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -8267,7 +8267,7 @@ class WriteValue(FrozenClass):
     :vartype Value: DataValue
     """
 
-    data_type = ObjectIds.WriteValue
+    data_type = NodeId(ObjectIds.WriteValue)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -8319,7 +8319,7 @@ class WriteRequest(FrozenClass):
     :vartype Parameters: WriteParameters
     """
 
-    data_type = ObjectIds.WriteRequest
+    data_type = NodeId(ObjectIds.WriteRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -8351,7 +8351,7 @@ class WriteResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.WriteResponse
+    data_type = NodeId(ObjectIds.WriteResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -8379,7 +8379,7 @@ class HistoryUpdateDetails(FrozenClass):
     :vartype NodeId: NodeId
     """
 
-    data_type = ObjectIds.HistoryUpdateDetails
+    data_type = NodeId(ObjectIds.HistoryUpdateDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -8405,7 +8405,7 @@ class UpdateDataDetails(FrozenClass):
     :vartype UpdateValues: DataValue
     """
 
-    data_type = ObjectIds.UpdateDataDetails
+    data_type = NodeId(ObjectIds.UpdateDataDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -8435,7 +8435,7 @@ class UpdateStructureDataDetails(FrozenClass):
     :vartype UpdateValues: DataValue
     """
 
-    data_type = ObjectIds.UpdateStructureDataDetails
+    data_type = NodeId(ObjectIds.UpdateStructureDataDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -8467,7 +8467,7 @@ class UpdateEventDetails(FrozenClass):
     :vartype EventData: HistoryEventFieldList
     """
 
-    data_type = ObjectIds.UpdateEventDetails
+    data_type = NodeId(ObjectIds.UpdateEventDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -8501,7 +8501,7 @@ class DeleteRawModifiedDetails(FrozenClass):
     :vartype EndTime: DateTime
     """
 
-    data_type = ObjectIds.DeleteRawModifiedDetails
+    data_type = NodeId(ObjectIds.DeleteRawModifiedDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -8531,7 +8531,7 @@ class DeleteAtTimeDetails(FrozenClass):
     :vartype ReqTimes: DateTime
     """
 
-    data_type = ObjectIds.DeleteAtTimeDetails
+    data_type = NodeId(ObjectIds.DeleteAtTimeDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -8557,7 +8557,7 @@ class DeleteEventDetails(FrozenClass):
     :vartype EventIds: ByteString
     """
 
-    data_type = ObjectIds.DeleteEventDetails
+    data_type = NodeId(ObjectIds.DeleteEventDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -8633,7 +8633,7 @@ class HistoryUpdateRequest(FrozenClass):
     :vartype Parameters: HistoryUpdateParameters
     """
 
-    data_type = ObjectIds.HistoryUpdateRequest
+    data_type = NodeId(ObjectIds.HistoryUpdateRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -8665,7 +8665,7 @@ class HistoryUpdateResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.HistoryUpdateResponse
+    data_type = NodeId(ObjectIds.HistoryUpdateResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -8697,7 +8697,7 @@ class CallMethodRequest(FrozenClass):
     :vartype InputArguments: Variant
     """
 
-    data_type = ObjectIds.CallMethodRequest
+    data_type = NodeId(ObjectIds.CallMethodRequest)
 
     ua_types = [
         ('ObjectId', 'NodeId'),
@@ -8779,7 +8779,7 @@ class CallRequest(FrozenClass):
     :vartype Parameters: CallParameters
     """
 
-    data_type = ObjectIds.CallRequest
+    data_type = NodeId(ObjectIds.CallRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -8811,7 +8811,7 @@ class CallResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.CallResponse
+    data_type = NodeId(ObjectIds.CallResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -8837,7 +8837,7 @@ class MonitoringFilter(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.MonitoringFilter
+    data_type = NodeId(ObjectIds.MonitoringFilter)
 
     ua_types = [
                ]
@@ -8861,7 +8861,7 @@ class DataChangeFilter(FrozenClass):
     :vartype DeadbandValue: Double
     """
 
-    data_type = ObjectIds.DataChangeFilter
+    data_type = NodeId(ObjectIds.DataChangeFilter)
 
     ua_types = [
         ('Trigger', 'DataChangeTrigger'),
@@ -8889,7 +8889,7 @@ class EventFilter(FrozenClass):
     :vartype WhereClause: ContentFilter
     """
 
-    data_type = ObjectIds.EventFilter
+    data_type = NodeId(ObjectIds.EventFilter)
 
     ua_types = [
         ('SelectClauses', 'ListOfSimpleAttributeOperand'),
@@ -8921,7 +8921,7 @@ class AggregateConfiguration(FrozenClass):
     :vartype UseSlopedExtrapolation: Boolean
     """
 
-    data_type = ObjectIds.AggregateConfiguration
+    data_type = NodeId(ObjectIds.AggregateConfiguration)
 
     ua_types = [
         ('UseServerCapabilitiesDefaults', 'Boolean'),
@@ -8957,7 +8957,7 @@ class AggregateFilter(FrozenClass):
     :vartype AggregateConfiguration: AggregateConfiguration
     """
 
-    data_type = ObjectIds.AggregateFilter
+    data_type = NodeId(ObjectIds.AggregateFilter)
 
     ua_types = [
         ('StartTime', 'DateTime'),
@@ -9097,7 +9097,7 @@ class MonitoredItemCreateRequest(FrozenClass):
     :vartype RequestedParameters: MonitoringParameters
     """
 
-    data_type = ObjectIds.MonitoredItemCreateRequest
+    data_type = NodeId(ObjectIds.MonitoredItemCreateRequest)
 
     ua_types = [
         ('ItemToMonitor', 'ReadValueId'),
@@ -9191,7 +9191,7 @@ class CreateMonitoredItemsRequest(FrozenClass):
     :vartype Parameters: CreateMonitoredItemsParameters
     """
 
-    data_type = ObjectIds.CreateMonitoredItemsRequest
+    data_type = NodeId(ObjectIds.CreateMonitoredItemsRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9223,7 +9223,7 @@ class CreateMonitoredItemsResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.CreateMonitoredItemsResponse
+    data_type = NodeId(ObjectIds.CreateMonitoredItemsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9253,7 +9253,7 @@ class MonitoredItemModifyRequest(FrozenClass):
     :vartype RequestedParameters: MonitoringParameters
     """
 
-    data_type = ObjectIds.MonitoredItemModifyRequest
+    data_type = NodeId(ObjectIds.MonitoredItemModifyRequest)
 
     ua_types = [
         ('MonitoredItemId', 'UInt32'),
@@ -9341,7 +9341,7 @@ class ModifyMonitoredItemsRequest(FrozenClass):
     :vartype Parameters: ModifyMonitoredItemsParameters
     """
 
-    data_type = ObjectIds.ModifyMonitoredItemsRequest
+    data_type = NodeId(ObjectIds.ModifyMonitoredItemsRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9373,7 +9373,7 @@ class ModifyMonitoredItemsResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.ModifyMonitoredItemsResponse
+    data_type = NodeId(ObjectIds.ModifyMonitoredItemsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9433,7 +9433,7 @@ class SetMonitoringModeRequest(FrozenClass):
     :vartype Parameters: SetMonitoringModeParameters
     """
 
-    data_type = ObjectIds.SetMonitoringModeRequest
+    data_type = NodeId(ObjectIds.SetMonitoringModeRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9487,7 +9487,7 @@ class SetMonitoringModeResponse(FrozenClass):
     :vartype Parameters: SetMonitoringModeResult
     """
 
-    data_type = ObjectIds.SetMonitoringModeResponse
+    data_type = NodeId(ObjectIds.SetMonitoringModeResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9549,7 +9549,7 @@ class SetTriggeringRequest(FrozenClass):
     :vartype Parameters: SetTriggeringParameters
     """
 
-    data_type = ObjectIds.SetTriggeringRequest
+    data_type = NodeId(ObjectIds.SetTriggeringRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9611,7 +9611,7 @@ class SetTriggeringResponse(FrozenClass):
     :vartype Parameters: SetTriggeringResult
     """
 
-    data_type = ObjectIds.SetTriggeringResponse
+    data_type = NodeId(ObjectIds.SetTriggeringResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9665,7 +9665,7 @@ class DeleteMonitoredItemsRequest(FrozenClass):
     :vartype Parameters: DeleteMonitoredItemsParameters
     """
 
-    data_type = ObjectIds.DeleteMonitoredItemsRequest
+    data_type = NodeId(ObjectIds.DeleteMonitoredItemsRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9697,7 +9697,7 @@ class DeleteMonitoredItemsResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.DeleteMonitoredItemsResponse
+    data_type = NodeId(ObjectIds.DeleteMonitoredItemsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9769,7 +9769,7 @@ class CreateSubscriptionRequest(FrozenClass):
     :vartype Parameters: CreateSubscriptionParameters
     """
 
-    data_type = ObjectIds.CreateSubscriptionRequest
+    data_type = NodeId(ObjectIds.CreateSubscriptionRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9831,7 +9831,7 @@ class CreateSubscriptionResponse(FrozenClass):
     :vartype Parameters: CreateSubscriptionResult
     """
 
-    data_type = ObjectIds.CreateSubscriptionResponse
+    data_type = NodeId(ObjectIds.CreateSubscriptionResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9901,7 +9901,7 @@ class ModifySubscriptionRequest(FrozenClass):
     :vartype Parameters: ModifySubscriptionParameters
     """
 
-    data_type = ObjectIds.ModifySubscriptionRequest
+    data_type = NodeId(ObjectIds.ModifySubscriptionRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9959,7 +9959,7 @@ class ModifySubscriptionResponse(FrozenClass):
     :vartype Parameters: ModifySubscriptionResult
     """
 
-    data_type = ObjectIds.ModifySubscriptionResponse
+    data_type = NodeId(ObjectIds.ModifySubscriptionResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10013,7 +10013,7 @@ class SetPublishingModeRequest(FrozenClass):
     :vartype Parameters: SetPublishingModeParameters
     """
 
-    data_type = ObjectIds.SetPublishingModeRequest
+    data_type = NodeId(ObjectIds.SetPublishingModeRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10067,7 +10067,7 @@ class SetPublishingModeResponse(FrozenClass):
     :vartype Parameters: SetPublishingModeResult
     """
 
-    data_type = ObjectIds.SetPublishingModeResponse
+    data_type = NodeId(ObjectIds.SetPublishingModeResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10097,7 +10097,7 @@ class NotificationMessage(FrozenClass):
     :vartype NotificationData: ExtensionObject
     """
 
-    data_type = ObjectIds.NotificationMessage
+    data_type = NodeId(ObjectIds.NotificationMessage)
 
     ua_types = [
         ('SequenceNumber', 'UInt32'),
@@ -10121,7 +10121,7 @@ class NotificationData(FrozenClass):
     """
     """
 
-    data_type = ObjectIds.NotificationData
+    data_type = NodeId(ObjectIds.NotificationData)
 
     ua_types = [
                ]
@@ -10143,7 +10143,7 @@ class DataChangeNotification(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.DataChangeNotification
+    data_type = NodeId(ObjectIds.DataChangeNotification)
 
     ua_types = [
         ('MonitoredItems', 'ListOfMonitoredItemNotification'),
@@ -10169,7 +10169,7 @@ class MonitoredItemNotification(FrozenClass):
     :vartype Value: DataValue
     """
 
-    data_type = ObjectIds.MonitoredItemNotification
+    data_type = NodeId(ObjectIds.MonitoredItemNotification)
 
     ua_types = [
         ('ClientHandle', 'UInt32'),
@@ -10193,7 +10193,7 @@ class EventNotificationList(FrozenClass):
     :vartype Events: EventFieldList
     """
 
-    data_type = ObjectIds.EventNotificationList
+    data_type = NodeId(ObjectIds.EventNotificationList)
 
     ua_types = [
         ('Events', 'ListOfEventFieldList'),
@@ -10217,7 +10217,7 @@ class EventFieldList(FrozenClass):
     :vartype EventFields: Variant
     """
 
-    data_type = ObjectIds.EventFieldList
+    data_type = NodeId(ObjectIds.EventFieldList)
 
     ua_types = [
         ('ClientHandle', 'UInt32'),
@@ -10241,7 +10241,7 @@ class HistoryEventFieldList(FrozenClass):
     :vartype EventFields: Variant
     """
 
-    data_type = ObjectIds.HistoryEventFieldList
+    data_type = NodeId(ObjectIds.HistoryEventFieldList)
 
     ua_types = [
         ('EventFields', 'ListOfVariant'),
@@ -10265,7 +10265,7 @@ class StatusChangeNotification(FrozenClass):
     :vartype DiagnosticInfo: DiagnosticInfo
     """
 
-    data_type = ObjectIds.StatusChangeNotification
+    data_type = NodeId(ObjectIds.StatusChangeNotification)
 
     ua_types = [
         ('Status', 'StatusCode'),
@@ -10291,7 +10291,7 @@ class SubscriptionAcknowledgement(FrozenClass):
     :vartype SequenceNumber: UInt32
     """
 
-    data_type = ObjectIds.SubscriptionAcknowledgement
+    data_type = NodeId(ObjectIds.SubscriptionAcknowledgement)
 
     ua_types = [
         ('SubscriptionId', 'UInt32'),
@@ -10339,7 +10339,7 @@ class PublishRequest(FrozenClass):
     :vartype Parameters: PublishParameters
     """
 
-    data_type = ObjectIds.PublishRequest
+    data_type = NodeId(ObjectIds.PublishRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10409,7 +10409,7 @@ class PublishResponse(FrozenClass):
     :vartype Parameters: PublishResult
     """
 
-    data_type = ObjectIds.PublishResponse
+    data_type = NodeId(ObjectIds.PublishResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10463,7 +10463,7 @@ class RepublishRequest(FrozenClass):
     :vartype Parameters: RepublishParameters
     """
 
-    data_type = ObjectIds.RepublishRequest
+    data_type = NodeId(ObjectIds.RepublishRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10493,7 +10493,7 @@ class RepublishResponse(FrozenClass):
     :vartype NotificationMessage: NotificationMessage
     """
 
-    data_type = ObjectIds.RepublishResponse
+    data_type = NodeId(ObjectIds.RepublishResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10571,7 +10571,7 @@ class TransferSubscriptionsRequest(FrozenClass):
     :vartype Parameters: TransferSubscriptionsParameters
     """
 
-    data_type = ObjectIds.TransferSubscriptionsRequest
+    data_type = NodeId(ObjectIds.TransferSubscriptionsRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10625,7 +10625,7 @@ class TransferSubscriptionsResponse(FrozenClass):
     :vartype Parameters: TransferSubscriptionsResult
     """
 
-    data_type = ObjectIds.TransferSubscriptionsResponse
+    data_type = NodeId(ObjectIds.TransferSubscriptionsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10675,7 +10675,7 @@ class DeleteSubscriptionsRequest(FrozenClass):
     :vartype Parameters: DeleteSubscriptionsParameters
     """
 
-    data_type = ObjectIds.DeleteSubscriptionsRequest
+    data_type = NodeId(ObjectIds.DeleteSubscriptionsRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10707,7 +10707,7 @@ class DeleteSubscriptionsResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    data_type = ObjectIds.DeleteSubscriptionsResponse
+    data_type = NodeId(ObjectIds.DeleteSubscriptionsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10745,7 +10745,7 @@ class BuildInfo(FrozenClass):
     :vartype BuildDate: DateTime
     """
 
-    data_type = ObjectIds.BuildInfo
+    data_type = NodeId(ObjectIds.BuildInfo)
 
     ua_types = [
         ('ProductUri', 'String'),
@@ -10781,7 +10781,7 @@ class RedundantServerDataType(FrozenClass):
     :vartype ServerState: ServerState
     """
 
-    data_type = ObjectIds.RedundantServerDataType
+    data_type = NodeId(ObjectIds.RedundantServerDataType)
 
     ua_types = [
         ('ServerId', 'String'),
@@ -10807,7 +10807,7 @@ class EndpointUrlListDataType(FrozenClass):
     :vartype EndpointUrlList: String
     """
 
-    data_type = ObjectIds.EndpointUrlListDataType
+    data_type = NodeId(ObjectIds.EndpointUrlListDataType)
 
     ua_types = [
         ('EndpointUrlList', 'ListOfString'),
@@ -10831,7 +10831,7 @@ class NetworkGroupDataType(FrozenClass):
     :vartype NetworkPaths: EndpointUrlListDataType
     """
 
-    data_type = ObjectIds.NetworkGroupDataType
+    data_type = NodeId(ObjectIds.NetworkGroupDataType)
 
     ua_types = [
         ('ServerUri', 'String'),
@@ -10861,7 +10861,7 @@ class SamplingIntervalDiagnosticsDataType(FrozenClass):
     :vartype DisabledMonitoredItemCount: UInt32
     """
 
-    data_type = ObjectIds.SamplingIntervalDiagnosticsDataType
+    data_type = NodeId(ObjectIds.SamplingIntervalDiagnosticsDataType)
 
     ua_types = [
         ('SamplingInterval', 'Double'),
@@ -10911,7 +10911,7 @@ class ServerDiagnosticsSummaryDataType(FrozenClass):
     :vartype RejectedRequestsCount: UInt32
     """
 
-    data_type = ObjectIds.ServerDiagnosticsSummaryDataType
+    data_type = NodeId(ObjectIds.ServerDiagnosticsSummaryDataType)
 
     ua_types = [
         ('ServerViewCount', 'UInt32'),
@@ -10965,7 +10965,7 @@ class ServerStatusDataType(FrozenClass):
     :vartype ShutdownReason: LocalizedText
     """
 
-    data_type = ObjectIds.ServerStatusDataType
+    data_type = NodeId(ObjectIds.ServerStatusDataType)
 
     ua_types = [
         ('StartTime', 'DateTime'),
@@ -11081,7 +11081,7 @@ class SessionDiagnosticsDataType(FrozenClass):
     :vartype UnregisterNodesCount: ServiceCounterDataType
     """
 
-    data_type = ObjectIds.SessionDiagnosticsDataType
+    data_type = NodeId(ObjectIds.SessionDiagnosticsDataType)
 
     ua_types = [
         ('SessionId', 'NodeId'),
@@ -11203,7 +11203,7 @@ class SessionSecurityDiagnosticsDataType(FrozenClass):
     :vartype ClientCertificate: ByteString
     """
 
-    data_type = ObjectIds.SessionSecurityDiagnosticsDataType
+    data_type = NodeId(ObjectIds.SessionSecurityDiagnosticsDataType)
 
     ua_types = [
         ('SessionId', 'NodeId'),
@@ -11243,7 +11243,7 @@ class ServiceCounterDataType(FrozenClass):
     :vartype ErrorCount: UInt32
     """
 
-    data_type = ObjectIds.ServiceCounterDataType
+    data_type = NodeId(ObjectIds.ServiceCounterDataType)
 
     ua_types = [
         ('TotalCount', 'UInt32'),
@@ -11351,7 +11351,7 @@ class SubscriptionDiagnosticsDataType(FrozenClass):
     :vartype EventQueueOverFlowCount: UInt32
     """
 
-    data_type = ObjectIds.SubscriptionDiagnosticsDataType
+    data_type = NodeId(ObjectIds.SubscriptionDiagnosticsDataType)
 
     ua_types = [
         ('SessionId', 'NodeId'),
@@ -11437,7 +11437,7 @@ class ModelChangeStructureDataType(FrozenClass):
     :vartype Verb: Byte
     """
 
-    data_type = ObjectIds.ModelChangeStructureDataType
+    data_type = NodeId(ObjectIds.ModelChangeStructureDataType)
 
     ua_types = [
         ('Affected', 'NodeId'),
@@ -11465,7 +11465,7 @@ class SemanticChangeStructureDataType(FrozenClass):
     :vartype AffectedType: NodeId
     """
 
-    data_type = ObjectIds.SemanticChangeStructureDataType
+    data_type = NodeId(ObjectIds.SemanticChangeStructureDataType)
 
     ua_types = [
         ('Affected', 'NodeId'),
@@ -11491,7 +11491,7 @@ class Range(FrozenClass):
     :vartype High: Double
     """
 
-    data_type = ObjectIds.Range
+    data_type = NodeId(ObjectIds.Range)
 
     ua_types = [
         ('Low', 'Double'),
@@ -11521,7 +11521,7 @@ class EUInformation(FrozenClass):
     :vartype Description: LocalizedText
     """
 
-    data_type = ObjectIds.EUInformation
+    data_type = NodeId(ObjectIds.EUInformation)
 
     ua_types = [
         ('NamespaceUri', 'String'),
@@ -11551,7 +11551,7 @@ class ComplexNumberType(FrozenClass):
     :vartype Imaginary: Float
     """
 
-    data_type = ObjectIds.ComplexNumberType
+    data_type = NodeId(ObjectIds.ComplexNumberType)
 
     ua_types = [
         ('Real', 'Float'),
@@ -11577,7 +11577,7 @@ class DoubleComplexNumberType(FrozenClass):
     :vartype Imaginary: Double
     """
 
-    data_type = ObjectIds.DoubleComplexNumberType
+    data_type = NodeId(ObjectIds.DoubleComplexNumberType)
 
     ua_types = [
         ('Real', 'Double'),
@@ -11609,7 +11609,7 @@ class AxisInformation(FrozenClass):
     :vartype AxisSteps: Double
     """
 
-    data_type = ObjectIds.AxisInformation
+    data_type = NodeId(ObjectIds.AxisInformation)
 
     ua_types = [
         ('EngineeringUnits', 'EUInformation'),
@@ -11641,7 +11641,7 @@ class XVType(FrozenClass):
     :vartype Value: Float
     """
 
-    data_type = ObjectIds.XVType
+    data_type = NodeId(ObjectIds.XVType)
 
     ua_types = [
         ('X', 'Double'),
@@ -11683,7 +11683,7 @@ class ProgramDiagnosticDataType(FrozenClass):
     :vartype LastMethodReturnStatus: StatusResult
     """
 
-    data_type = ObjectIds.ProgramDiagnosticDataType
+    data_type = NodeId(ObjectIds.ProgramDiagnosticDataType)
 
     ua_types = [
         ('CreateSessionId', 'NodeId'),
@@ -11745,7 +11745,7 @@ class ProgramDiagnostic2DataType(FrozenClass):
     :vartype LastMethodReturnStatus: StatusResult
     """
 
-    data_type = ObjectIds.ProgramDiagnostic2DataType
+    data_type = NodeId(ObjectIds.ProgramDiagnostic2DataType)
 
     ua_types = [
         ('CreateSessionId', 'NodeId'),
@@ -11793,7 +11793,7 @@ class Annotation(FrozenClass):
     :vartype AnnotationTime: DateTime
     """
 
-    data_type = ObjectIds.Annotation
+    data_type = NodeId(ObjectIds.Annotation)
 
     ua_types = [
         ('Message', 'String'),
