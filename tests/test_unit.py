@@ -702,3 +702,18 @@ def test_variant_intenum():
     ase = ua.AxisScaleEnumeration(ua.AxisScaleEnumeration.Linear)  # Just pick an existing IntEnum class
     vAse = ua.Variant(ase)
     assert vAse.VariantType == ua.VariantType.Int32
+
+
+def test_bin_data_type_def():
+    ad = ua.AddNodesItem()
+    ad.ParentNodeId = ua.NodeId(22)
+    dta = ua.DataTypeAttributes()
+    dta.DisplayName = ua.LocalizedText("titi")
+    ad.NodeAttributes = dta
+
+    data = struct_to_binary(ad)
+    ad2 = struct_from_binary(ua.AddNodesItem, ua.utils.Buffer(data))
+    assert ad.ParentNodeId == ad2.ParentNodeId
+    from IPython import embed
+    #embed()
+    assert ad.NodeAttributes.DisplayName == ad2.NodeAttributes.DisplayName

@@ -334,7 +334,12 @@ class ReferenceTypeAttributes(auto.ReferenceTypeAttributes):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract | ana.Symmetric | ana.InverseName
 
 
+# FIXME: changes in that class donnot seem to be part of spec as of 1.04
+#not sure what the spec expect, maybe DataTypeDefinition must be set using an extra call...
+# maybe it will be part of spec in 1.05??? no ideas
 class DataTypeAttributes(auto.DataTypeAttributes):
+    auto.DataTypeAttributes.ua_types.append(('DataTypeDefinition', 'ExtensionObject'))
+
     def __init__(self):
         auto.DataTypeAttributes.__init__(self)
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract | ana.DataTypeDefinition
