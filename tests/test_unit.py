@@ -714,6 +714,4 @@ def test_bin_data_type_def():
     data = struct_to_binary(ad)
     ad2 = struct_from_binary(ua.AddNodesItem, ua.utils.Buffer(data))
     assert ad.ParentNodeId == ad2.ParentNodeId
-    from IPython import embed
-    #embed()
     assert ad.NodeAttributes.DisplayName == ad2.NodeAttributes.DisplayName
