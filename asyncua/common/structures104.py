@@ -68,6 +68,8 @@ class {name}:
 
 """
     counter = 0
+    # FIXME: with subscturutre weprobably need to add all fields from parents
+    # this requires network call etc...
     if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
         code += '    ua_switches = {\n'
         for field in sdef.Fields:
@@ -170,14 +172,17 @@ class DataTypeSorter:
     __repr__ = __str__
 
 
-async def _recursive_parse(server, base_node, dtypes):
+async def _recursive_parse(server, base_node, dtypes, parent_sdef=None):
     for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
         sdef = await _read_data_type_definition(server, desc)
         if not sdef:
             continue
         name = clean_name(desc.BrowseName.Name)
+        if parent_sdef:
+            for field in reversed(parent_sdef.Fields):
+                sdef.Fields.insert(0, field)
         dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
-        await _recursive_parse(server, server.get_node(desc.NodeId), dtypes)
+        await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef)
 
 
 async def load_data_type_definitions(server, base_node=None):
