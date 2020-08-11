@@ -417,9 +417,9 @@ class XmlImporter:
         if not obj.definitions:
             print("NOT DEFINITON", obj.parent, obj)
         else:
-            if obj.parent == self.server.nodes.enum_data_type:
+            if obj.parent == self.server.nodes.enum_data_type.nodeid:
                 attrs.DataTypeDefinition = self._get_edef(node, obj)
-            elif obj.parent == self.server.nodes.base_structure_type:
+            elif obj.parent == self.server.nodes.base_structure_type.nodeid:
                 attrs.DataTypeDefinition = self._get_sdef(node, obj)
             else:
                 parent_node = self.server.get_node(obj.parent)

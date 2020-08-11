@@ -1014,3 +1014,16 @@ async def test_struct_data_type(opc):
     node = opc.opc.get_node(ua.AddNodesItem.data_type)
     path = await node.get_path()
     assert opc.opc.nodes.base_structure_type in path
+
+
+
+async def test_import_xml_enum_data_type_definition(opc):
+    nodes = await opc.opc.import_xml("tests/testenum104.xml")
+    await opc.opc.load_data_type_definitions()
+    assert hasattr(ua, "MyEnum")
+    e = ua.MyEnum.val2
+    var = await opc.opc.nodes.objects.add_variable(2, "MyEnumVar", e, datatype=ua.enums_datatypes[ua.MyEnum])
+    e2 = await var.read_value()
+    assert e2 == ua.MyEnum.val2
+
+
