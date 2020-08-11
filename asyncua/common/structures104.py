@@ -119,7 +119,6 @@ class {name}:
         else:
             default_value = get_default_value(uatype)
         code += f"        self.{field.Name} = {default_value}\n"
-    print("CODE", code)
     return code
 
 
@@ -250,9 +249,8 @@ async def load_enums(server, base_node=None):
             continue
         logger.warning("Registring Enum %s %s", desc.NodeId, desc.BrowseName)
         name = clean_name(desc.BrowseName.Name)
-        sdef = await _read_data_type_definition(server, desc)
-        if not sdef:
+        edef = await _read_data_type_definition(server, desc)
+        if not edef:
             continue
-        node = server.get_node(desc.NodeId)
-        env = await _generate_object(name, sdef, enum=True)
+        env = await _generate_object(name, edef, enum=True)
         ua.register_enum(name, desc.NodeId, env[name])

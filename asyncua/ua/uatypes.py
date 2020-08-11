@@ -956,6 +956,7 @@ def get_default_value(vtype):
 
 # register of custom enums (Those loaded with load_enums())
 enums_by_datatype = {}
+enums_datatypes = {}
 
 
 def register_enum(name, nodeid, class_type):
@@ -964,6 +965,7 @@ def register_enum(name, nodeid, class_type):
     """
     logger.info("registring new enum: %s %s %s", name, nodeid, class_type)
     enums_by_datatype[nodeid] = class_type
+    enums_datatypes[class_type] = nodeid
     import asyncua.ua
     setattr(asyncua.ua, name, class_type)
 
