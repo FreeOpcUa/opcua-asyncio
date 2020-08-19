@@ -548,9 +548,12 @@ class UaClient:
                 except Exception:  # we call user code, catch everything!
                     self.logger.exception("Exception while calling user callback: %s")
             # Repeat with acknowledgement
-            ack = ua.SubscriptionAcknowledgement()
-            ack.SubscriptionId = subscription_id
-            ack.SequenceNumber = response.Parameters.NotificationMessage.SequenceNumber
+            if response.Parameters.NotificationMessage.NotificationData:
+                ack = ua.SubscriptionAcknowledgement()
+                ack.SubscriptionId = subscription_id
+                ack.SequenceNumber = response.Parameters.NotificationMessage.SequenceNumber
+            else:
+                ack = None
 
     async def create_monitored_items(self, params):
         self.logger.info("create_monitored_items")
