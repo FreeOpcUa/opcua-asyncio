@@ -104,7 +104,15 @@ class InternalSession:
         return result
 
     async def read(self, params):
+        if self.user is None:
+            user = User()
+        else:
+            user = self.user
+        await self.iserver.callback_service.dispatch(CallbackType.PreRead,
+                                                     ServerItemCallback(params, None, user))
         results = self.iserver.attribute_service.read(params)
+        await self.iserver.callback_service.dispatch(CallbackType.PostRead,
+                                                     ServerItemCallback(params, results, user))
         return results
 
     async def history_read(self, params) -> Coroutine:
@@ -115,8 +123,10 @@ class InternalSession:
             user = User()
         else:
             user = self.user
+        await self.iserver.callback_service.dispatch(CallbackType.PostWrite,
+                                                     ServerItemCallback(params, None, user))
         write_result = await self.iserver.attribute_service.write(params, user=user)
-        await self.iserver.callback_service.dispatch(CallbackType.WritePerformed,
+        await self.iserver.callback_service.dispatch(CallbackType.PostWrite,
                                                      ServerItemCallback(params, write_result, user))
         return write_result
 
