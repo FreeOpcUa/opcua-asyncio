@@ -111,6 +111,7 @@ class BinaryServer:
         self._policies = []
         self.clients = []
         self.closing_tasks = []
+        self.cleanup_task = None
 
     def set_policies(self, policies):
         self._policies = policies
@@ -135,29 +136,32 @@ class BinaryServer:
             self.hostname = sockname[0]
             self.port = sockname[1]
         self.logger.info('Listening on %s:%s', self.hostname, self.port)
-        await self._await_closing_tasks()
+        self.cleanup_task = asyncio.create_task(self._await_closing_tasks())
 
     async def stop(self):
         self.logger.info('Closing asyncio socket server')
         for transport in self.iserver.asyncio_transports:
             transport.close()
 
-        # Wait for all transport closing tasks to complete
-        results = await asyncio.gather(*self.closing_tasks, return_exceptions=True)
-        for result in results:
-            if isinstance(result, Exception):
-                self.logger.error(f"An error ocurred while closing a transport: {result}")
-        self.closing_tasks = []
+        # stop cleanup process and run it a last time
+        self.cleanup_task.cancel()
+        try:
+            await self.cleanup_task
+        except asyncio.CancelledError:
+            pass
+        await self._await_closing_tasks(recursive=False)
 
         if self._server:
             self.iserver.loop.call_soon(self._server.close)
             await self._server.wait_closed()
 
-    async def _await_closing_tasks(self):
-        await asyncio.sleep(10)
+    async def _await_closing_tasks(self, recursive=True):
         while self.closing_tasks:
             task = self.closing_tasks.pop()
             try:
                 await task
             except Exception:
                 logger.exception("Unexpected crash in BinaryServer._await_closing_tasks")
+        if recursive:
+            await asyncio.sleep(10)
+            await self._await_closing_tasks()
