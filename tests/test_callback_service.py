@@ -9,7 +9,7 @@ pytestmark = pytest.mark.asyncio
 port_num = 48560
 
 
-def create_monitored_items(event, dispatcher):
+async def create_monitored_items(event, dispatcher):
     print("Monitored Item")
 
     for idx in range(len(event.response_params)):
@@ -18,15 +18,15 @@ def create_monitored_items(event, dispatcher):
             print(f"Node {nodeId} was created")
 
 
-def modify_monitored_items(event, dispatcher):
+async def modify_monitored_items(event, dispatcher):
     print('modify_monitored_items')
 
 
-def delete_monitored_items(event, dispatcher):
+async def delete_monitored_items(event, dispatcher):
     print('delete_monitored_items')
 
 
-def write_items(event, dispatcher):
+async def write_items(event, dispatcher):
     print('write', event.response_params)
 
 
@@ -63,7 +63,7 @@ async def test_write_callback(mocker):
     mocked_write_items = mocker.patch('tests.test_callback_service.write_items')
     # Create Callback for item event
     server.subscribe_server_callback(CallbackType.ItemSubscriptionCreated, mocked_create_monitored_items)
-    server.subscribe_server_callback(CallbackType.PreWrite, mocked_write_items)
+    server.subscribe_server_callback(CallbackType.PostWrite, mocked_write_items)
 
     assert not mocked_create_monitored_items.called
     assert not mocked_write_items.called
