@@ -4,6 +4,7 @@ server side implementation of callback event
 
 from collections import OrderedDict
 from enum import Enum
+import asyncio
 
 
 class CallbackType(Enum):
@@ -18,6 +19,10 @@ class CallbackType(Enum):
     ItemSubscriptionCreated = 1
     ItemSubscriptionModified = 2
     ItemSubscriptionDeleted = 3
+    PreWrite = 4
+    PostWrite = 5
+    PreRead = 6
+    PostRead = 7
 
 
 class Callback(object):
@@ -32,9 +37,10 @@ class Callback(object):
 
 
 class ServerItemCallback(Callback):
-    def __init__(self, request_params, response_params):
+    def __init__(self, request_params, response_params, user=None):
         self.request_params = request_params
         self.response_params = response_params
+        self.user = user
 
 
 class CallbackSubscriberInterface(object):
@@ -42,11 +48,11 @@ class CallbackSubscriberInterface(object):
         raise NotImplementedError()
 
 
-class CallbackDispatcher(object):
+class CallbackService(object):
     def __init__(self):
         self._listeners = {}
 
-    def dispatch(self, eventName, event=None):
+    async def dispatch(self, eventName, event=None):
         if event is None:
             event = Callback()
         elif not isinstance(event, Callback):
@@ -55,8 +61,15 @@ class CallbackDispatcher(object):
         if eventName not in self._listeners:
             return event
         for listener in self._listeners[eventName].values():
-            listener(event, self)
+            await self.call_listener(event, listener)
+
         return event
+
+    async def call_listener(self, event, listener):
+        if asyncio.iscoroutinefunction(listener):
+            await listener(event, self)
+        else:
+            listener(event, self)
 
     def addListener(self, eventName, listener, priority=0):
         if eventName not in self._listeners:
