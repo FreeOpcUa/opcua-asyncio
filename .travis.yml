@@ -1,6 +1,8 @@
  language: python
 python:
   - "3.6"
+  - "3.7"
+  - "3.8"
   - "pypy3"
 # command to install dependencies
 install:
@@ -14,5 +16,6 @@ install:
   - pip install pytest-mock
   - pip install cryptography
   - pip install dataclasses
+  - pip install --editable .
 # command to run tests
 script: pytest -v -s

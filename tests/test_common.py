@@ -131,6 +131,26 @@ async def test_delete_nodes(opc):
     assert var not in childs
 
 
+async def test_delete_nodes_with_inverse_references(opc):
+    obj = opc.opc.nodes.objects
+    fold = await obj.add_folder(2, "FolderToDelete")
+    var = await fold.add_variable(2, "VarToDelete", 9.1)
+    var2 = await fold.add_variable(2, "VarWithReference", 9.2)
+    childs = await fold.get_children()
+    assert var in childs
+    assert var2 in childs
+    # add two references to var, this includes adding the inverse references to var2
+    await var.add_reference(var2.nodeid, reftype=ua.ObjectIds.HasDescription, forward=True, bidirectional=True)
+    await var.add_reference(var2.nodeid, reftype=ua.ObjectIds.HasEffect, forward=True, bidirectional=True)
+    await opc.opc.delete_nodes([var])
+    childs = await fold.get_children()
+    assert var not in childs
+    has_desc_refs = await var2.get_referenced_nodes(refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse)
+    assert len(has_desc_refs) == 0
+    has_effect_refs = await var2.get_referenced_nodes(refs=ua.ObjectIds.HasEffect, direction=ua.BrowseDirection.Inverse)
+    assert len(has_effect_refs) == 0
+
+
 async def test_delete_nodes_recursive(opc):
     obj = opc.opc.nodes.objects
     fold = await obj.add_folder(2, "FolderToDeleteR")
@@ -982,3 +1002,48 @@ async def test_guid_node_id():
     node = Node(None, "ns=4;g=35d5f86f-2777-4550-9d48-b098f5ee285c")
     binary_node_id = ua.ua_binary.nodeid_to_binary(node.nodeid)
     assert type(binary_node_id) is bytes
+
+
+async def test_import_xml_data_type_definition(opc):
+    nodes = await opc.opc.import_xml("tests/substructs.xml")
+    await opc.opc.load_data_type_definitions()
+    assert hasattr(ua, "MySubstruct")
+    assert hasattr(ua, "MyStruct")
+
+    datatype = opc.opc.get_node(ua.MySubstruct.data_type)
+    sdef = await datatype.read_data_type_definition()
+    assert isinstance(sdef, ua.StructureDefinition)
+    s = ua.MyStruct()
+    s.toto = 0.1
+    ss = ua.MySubstruct()
+    assert ss.titi == 0
+    assert isinstance(ss.structs, list)
+
+    ss.titi = 1
+    ss.structs.append(s)
+    ss.structs.append(s)
+
+    var = await opc.opc.nodes.objects.add_variable(2, "MySubStructVar", ss, datatype=ua.MySubstruct.data_type)
+
+    s2 = await var.read_value()
+    assert s2.structs[1].toto == ss.structs[1].toto == 0.1
+
+
+async def test_struct_data_type(opc):
+    assert isinstance(ua.AddNodesItem.data_type, ua.NodeId)
+    node = opc.opc.get_node(ua.AddNodesItem.data_type)
+    path = await node.get_path()
+    assert opc.opc.nodes.base_structure_type in path
+
+
+
+async def test_import_xml_enum_data_type_definition(opc):
+    nodes = await opc.opc.import_xml("tests/testenum104.xml")
+    await opc.opc.load_data_type_definitions()
+    assert hasattr(ua, "MyEnum")
+    e = ua.MyEnum.val2
+    var = await opc.opc.nodes.objects.add_variable(2, "MyEnumVar", e, datatype=ua.enums_datatypes[ua.MyEnum])
+    e2 = await var.read_value()
+    assert e2 == ua.MyEnum.val2
+
+

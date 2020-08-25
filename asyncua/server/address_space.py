@@ -336,7 +336,7 @@ class NodeManagementService:
 
         if item.DeleteTargetReferences:
             for elem in self._aspace.keys():
-                for rdesc in self._aspace[elem].references:
+                for rdesc in self._aspace[elem].references[:]:
                     if rdesc.NodeId == item.NodeId:
                         self._aspace[elem].references.remove(rdesc)
 
@@ -392,7 +392,7 @@ class NodeManagementService:
             rdesc.BrowseName = bname
         dname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName).Value.Value
         if dname:
-            rdesc.DisplayUser = dname
+            rdesc.DisplayName = dname
         return self._add_unique_reference(sourcedata, rdesc)
 
     def delete_references(self, refs, user=User(role=UserRole.Admin)):
@@ -458,6 +458,7 @@ class NodeManagementService:
         self._add_node_attr(item, nodedata, "ValueRank", ua.VariantType.Int32)
         self._add_node_attr(item, nodedata, "WriteMask", ua.VariantType.UInt32)
         self._add_node_attr(item, nodedata, "UserWriteMask", ua.VariantType.UInt32)
+        self._add_node_attr(item, nodedata, "DataTypeDefinition", ua.VariantType.ExtensionObject)
         self._add_node_attr(item, nodedata, "Value", add_timestamps=add_timestamps)
 
 

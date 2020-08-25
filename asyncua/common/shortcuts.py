@@ -27,3 +27,7 @@ class Shortcuts(object):
         self.opc_binary = Node(server, ObjectIds.OPCBinarySchema_TypeSystem)
         self.base_structure_type = Node(server, ObjectIds.Structure)
         self.server_state = Node(server, ObjectIds.Server_ServerStatus_State)
+        self.HasComponent = Node(server, ObjectIds.HasComponent)
+        self.HasProperty = Node(server, ObjectIds.HasProperty)
+        self.Organizes = Node(server, ObjectIds.Organizes)
+        self.HasEncoding = Node(server, ObjectIds.HasEncoding)

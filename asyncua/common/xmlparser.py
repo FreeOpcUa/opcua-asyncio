@@ -60,13 +60,23 @@ class NodeData:
         self.symmetric = False
 
         # datatype
-        self.definition = []
+        self.definitions = []
 
     def __str__(self):
         return f"NodeData(nodeid:{self.nodeid})"
 
     __repr__ = __str__
 
+class Field:
+    def __init__(self, data):
+        self.datatype = data.get("DataType", "")
+        self.name = data.get("Name")
+        self.dname = data.get("DisplayName", "")
+        self.optional = bool(data.get("IsOptional", False))
+        self.valuerank = int(data.get("ValueRank", -1))
+        self.arraydim = data.get("ArrayDimensions", None) #FIXME: check type
+        self.value = int(data.get("Value", 0))
+        self.desc = data.get("Description", "")
 
 class RefStruct:
 
@@ -74,6 +84,10 @@ class RefStruct:
         self.reftype = None
         self.forward = True
         self.target = None
+
+    def __str__(self):
+        return f"RefStruct({self.reftype, self.forward, self.target})"
+    __repr__ = __str__
 
 
 class ExtObj:
@@ -160,7 +174,7 @@ class XMLParser:
         obj.nodetype = nodetype
         for key, val in child.attrib.items():
             self._set_attr(key, val, obj)
-        self.logger.info("Parsing node: %s %s", obj.nodeid, obj.browsename)
+        self.logger.debug("Parsing node: %s %s", obj.nodeid, obj.browsename)
         obj.displayname = obj.browsename  # give a default value to display name
         for el in child:
             self._parse_attr(el, obj)
@@ -213,9 +227,13 @@ class XMLParser:
             obj.inversename = el.text
         elif tag == "Definition":
             for field in el:
-                obj.definition.append(field)
+                field = self._parse_field(field)
+                obj.definitions.append(field)
         else:
             self.logger.info("Not implemented tag: %s", el)
+
+    def _parse_field(self, field):
+        return Field(field)
 
     def _parse_contained_value(self, el, obj):
         """
@@ -302,7 +320,7 @@ class XMLParser:
             for name, val in mylist:
                 item.update({str(name): val})
             # value is an array of dictionaries with localized texts
-            value.append(item) 
+            value.append(item)
         return value
 
     def _parse_list_of_extension_object(self, el):
@@ -365,4 +383,5 @@ class XMLParser:
             obj.parentlink = "HasComponent"
         if not obj.parent:
             obj.parent, obj.parentlink = parent, parentlink
+        if not obj.parent:
             self.logger.info("Could not find parent for node '%s'", obj.nodeid)

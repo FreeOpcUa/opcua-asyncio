@@ -150,7 +150,23 @@ class Node:
         result = await self.read_attribute(ua.AttributeIds.NodeClass)
         return result.Value.Value
 
-    async def get_description(self):
+    async def read_data_type_definition(self):
+        """
+        read data type definition attribute of node
+        only DataType nodes following spec >= 1.04 have that atttribute
+        """
+        result = await self.read_attribute(ua.AttributeIds.DataTypeDefinition)
+        return result.Value.Value
+
+    async def write_data_type_definition(self, sdef: ua.DataTypeDefinition):
+        """
+        write data type definition attribute of node
+        only DataType nodes following spec >= 1.04 have that atttribute
+        """
+        v = ua.Variant(sdef, ua.VariantType.ExtensionObject)
+        await self.write_attribute(ua.AttributeIds.DataTypeDefinition, ua.DataValue(v))
+
+    async def read_description(self):
         """
         get description attribute class of node
         """
@@ -259,7 +275,7 @@ class Node:
         Set an attribute of a node
         attributeid is a member of ua.AttributeIds
         datavalue is a ua.DataValue object
-        indexrange is a NumericRange (a string; e.g. "1" or "1:3".  
+        indexrange is a NumericRange (a string; e.g. "1" or "1:3".
             See https://reference.opcfoundation.org/v104/Core/docs/Part4/7.22/)
         """
         attr = ua.WriteValue()
@@ -271,6 +287,12 @@ class Node:
         params.NodesToWrite = [attr]
         result = await self.server.write(params)
         result[0].check()
+
+
+    async def write_params(self, params):
+        result = await self.server.write(params)
+        return result
+    
 
     async def read_attribute(self, attr):
         """
@@ -301,6 +323,10 @@ class Node:
         results = await self.server.read(params)
         return results
 
+    async def read_params(self, params):
+        result = await self.server.read(params)
+        return result
+    
     async def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
         """
         Get all children of a node. By default hierarchical references and all node classes are returned.

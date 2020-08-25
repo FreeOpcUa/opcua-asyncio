@@ -137,10 +137,17 @@ class UASocketProtocol(asyncio.Protocol):
         Returns response object if no callback is provided.
         """
         timeout = self.timeout if timeout is None else timeout
-        data = await asyncio.wait_for(
-            self._send_request(request, timeout, message_type),
-            timeout if timeout else None
-        )
+        try:
+            data = await asyncio.wait_for(
+                self._send_request(request, timeout, message_type),
+                timeout if timeout else None
+            )
+        except Exception:
+            if self.state != self.OPEN:
+                raise ConnectionError("Connection is closed") from None
+
+            raise
+
         self.check_answer(data, f" in response to {request.__class__.__name__}")
         return data
 
@@ -541,9 +548,12 @@ class UaClient:
                 except Exception:  # we call user code, catch everything!
                     self.logger.exception("Exception while calling user callback: %s")
             # Repeat with acknowledgement
-            ack = ua.SubscriptionAcknowledgement()
-            ack.SubscriptionId = subscription_id
-            ack.SequenceNumber = response.Parameters.NotificationMessage.SequenceNumber
+            if response.Parameters.NotificationMessage.NotificationData:
+                ack = ua.SubscriptionAcknowledgement()
+                ack.SubscriptionId = subscription_id
+                ack.SequenceNumber = response.Parameters.NotificationMessage.SequenceNumber
+            else:
+                ack = None
 
     async def create_monitored_items(self, params):
         self.logger.info("create_monitored_items")

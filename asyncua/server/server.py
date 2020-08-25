@@ -21,6 +21,7 @@ from ..common.manage_nodes import delete_nodes
 from ..common.event_objects import BaseEvent
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
+from ..common.structures104 import load_data_type_definitions
 from ..common.ua_utils import get_nodes_of_namespace
 
 from ..crypto import security_policies, uacrypto
@@ -618,12 +619,22 @@ class Server:
         Server side this can be used to create python objects from custom structures
         imported through xml into server
         """
+        _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_type_definitions(self, nodes)
+
+    async def load_data_type_definitions(self, node=None):
+        """
+        Load custom types (custom structures/extension objects) definition from server
+        Generate Python classes for custom structures/extension objects defined in server
+        These classes will be available in ua module
+        """
+        return await load_data_type_definitions(self, node)
 
     async def load_enums(self) -> Coroutine:
         """
         load UA structures and generate python Enums in ua module for custom enums in server
         """
+        _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_enums(self)
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
