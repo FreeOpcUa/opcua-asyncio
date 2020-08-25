@@ -387,7 +387,7 @@ class SubHandler(object):
         print("New event", event)
 
 
-async def uasubscribe():
+def uasubscribe():
     run(_uasubscribe())
 
 
@@ -480,7 +480,7 @@ def endpoint_to_strings(ep):
 
 def uaclient():
     run(_uaclient())
-    
+
 async def _uaclient():
     parser = argparse.ArgumentParser(description="Connect to server and start python shell. root and objects nodes are available. Node specificed in command line is available as mynode variable")
     add_common_args(parser)
@@ -595,7 +595,7 @@ async def _uaserver():
     except KeyboardInterrupt:
         pass
     sys.exit(0)
-    
+
 def uaserver():
     run(_uaserver())
 
