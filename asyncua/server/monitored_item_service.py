@@ -115,8 +115,8 @@ class MonitoredItemService:
                          params.ItemToMonitor.AttributeId)
 
         result, mdata = self._make_monitored_item_common(params)
-        ev_notify_byte = await self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
-                                                         ua.AttributeIds.EventNotifier).Value.Value
+        ev_notify_byte = (await self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
+                                                         ua.AttributeIds.EventNotifier)).Value.Value
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadServiceUnsupported)
@@ -298,14 +298,14 @@ class WhereClauseEvaluator:
         if isinstance(op, ua.AttributeOperand):
             if op.BrowsePath:
                 return getattr(event, op.BrowsePath.Elements[0].TargetName.Name)
-            return await self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return (await self._aspace.read_attribute_value(event.EventType, op.AttributeId)).Value.Value
             # FIXME: check, this is probably broken
         if isinstance(op, ua.SimpleAttributeOperand):
             if op.BrowsePath:
                 # we only support depth of 1
                 return getattr(event, op.BrowsePath[0].Name)
             # TODO: write code for index range.... but doe it make any sense
-            return await self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value
+            return (await self._aspace.read_attribute_value(event.EventType, op.AttributeId)).Value.Value
         if isinstance(op, ua.LiteralOperand):
             return op.Value.Value
         self.logger.warning("Where clause element % is not of a known type", op)

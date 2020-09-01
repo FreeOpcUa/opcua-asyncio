@@ -354,9 +354,7 @@ class NodeManagementService:
                         self._aspace[elem].references.remove(rdesc)
 
         self._delete_node_callbacks(self._aspace[item.NodeId])
-
         del (self._aspace[item.NodeId])
-
         return ua.StatusCode()
 
     def _delete_node_callbacks(self, nodedata):

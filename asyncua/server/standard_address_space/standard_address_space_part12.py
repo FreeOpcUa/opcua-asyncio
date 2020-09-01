@@ -13,7 +13,7 @@ from asyncua.ua import NodeId, QualifiedName, NumericNodeId, StringNodeId, GuidN
 from asyncua.ua import NodeClass, LocalizedText
 
 
-def create_standard_address_space_Part12(server):
+async def create_standard_address_space_Part12(server):
   
    
     node = ua.AddNodesItem()

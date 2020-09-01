@@ -109,7 +109,7 @@ class InternalSession:
             user = self.user
         await self.iserver.callback_service.dispatch(CallbackType.PreRead,
                                                      ServerItemCallback(params, None, user))
-        results = self.iserver.attribute_service.read(params)
+        results = await self.iserver.attribute_service.read(params)
         await self.iserver.callback_service.dispatch(CallbackType.PostRead,
                                                      ServerItemCallback(params, results, user))
         return results
