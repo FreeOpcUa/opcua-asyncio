@@ -123,7 +123,7 @@ class InternalSession:
             user = User()
         else:
             user = self.user
-        await self.iserver.callback_service.dispatch(CallbackType.PostWrite,
+        await self.iserver.callback_service.dispatch(CallbackType.PreWrite,
                                                      ServerItemCallback(params, None, user))
         write_result = await self.iserver.attribute_service.write(params, user=user)
         await self.iserver.callback_service.dispatch(CallbackType.PostWrite,
