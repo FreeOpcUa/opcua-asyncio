@@ -133,7 +133,7 @@ class HistorySQLite(HistoryStorageInterface):
             self.logger.info("Historizing SQL Table Creation Error for events from %s: %s", source_id, e)
 
     async def save_event(self, event):
-        table = self._get_table_name(event.emitting_node)
+        table = self._get_table_name(event.SourceNode)
         columns, placeholders, evtup = self._format_event(event)
         event_type = event.EventType  # useful for troubleshooting database
         # insert the event into the database
@@ -145,9 +145,9 @@ class HistorySQLite(HistoryStorageInterface):
             )
             await self._db.commit()
         except aiosqlite.Error as e:
-            self.logger.error("Historizing SQL Insert Error for events from %s: %s", event.emitting_node, e)
+            self.logger.error("Historizing SQL Insert Error for events from %s: %s", event.SourceNode, e)
         # get this node's period from the period dict and calculate the limit
-        period = self._datachanges_period[event.emitting_node]
+        period = self._datachanges_period[event.SourceNode]
         if period:
             # after the insert, if a period was specified delete all records older than period
             date_limit = datetime.utcnow() - period
@@ -155,7 +155,7 @@ class HistorySQLite(HistoryStorageInterface):
                 await self._db.execute(f'DELETE FROM "{table}" WHERE Time < ?', (date_limit.isoformat(' '),))
                 await self._db.commit()
             except aiosqlite.Error as e:
-                self.logger.error(f"Historizing SQL Delete Old Data Error for events from {event.emitting_node}: {e}")
+                self.logger.error(f"Historizing SQL Delete Old Data Error for events from {event.SourceNode}: {e}")
 
     async def read_event_history(self, source_id, start, end, nb_values, evfilter):
         table = self._get_table_name(source_id)
