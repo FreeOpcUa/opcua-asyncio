@@ -136,7 +136,7 @@ class BinaryServer:
             self.hostname = sockname[0]
             self.port = sockname[1]
         self.logger.info('Listening on %s:%s', self.hostname, self.port)
-        self.cleanup_task = asyncio.create_task(self._await_closing_tasks())
+        self.cleanup_task = self.iserver.loop.create_task(self._await_closing_tasks())
 
     async def stop(self):
         self.logger.info('Closing asyncio socket server')
