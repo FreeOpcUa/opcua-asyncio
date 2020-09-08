@@ -83,7 +83,7 @@ async def test_permissions_admin(srv_crypto_one_cert):
         admin_peer_creds['certificate'],
         admin_peer_creds['private_key'],
         None,
-        server_certificate_path=srv_crypto_params[0][1],
+        server_certificate=srv_crypto_params[0][1],
         mode=ua.MessageSecurityMode.SignAndEncrypt
     )
 
@@ -102,7 +102,7 @@ async def test_permissions_user(srv_crypto_one_cert):
         user_peer_creds['certificate'],
         user_peer_creds['private_key'],
         None,
-        server_certificate_path=srv_crypto_params[0][1],
+        server_certificate=srv_crypto_params[0][1],
         mode=ua.MessageSecurityMode.SignAndEncrypt
     )
     async with clt:
@@ -121,7 +121,7 @@ async def test_permissions_anonymous(srv_crypto_one_cert):
         anonymous_peer_creds['certificate'],
         anonymous_peer_creds['private_key'],
         None,
-        server_certificate_path=srv_crypto_params[0][1],
+        server_certificate=srv_crypto_params[0][1],
         mode=ua.MessageSecurityMode.SignAndEncrypt
     )
     await clt.connect()
