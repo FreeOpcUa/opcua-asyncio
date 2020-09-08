@@ -212,6 +212,27 @@ async def test_encrypted_private_key_handling_success(srv_crypto_encrypted_key_o
         assert await clt.get_objects_node().get_children()
 
 
+async def test_encrypted_private_key_handling_success_with_cert_props(srv_crypto_encrypted_key_one_cert):
+    _, cert = srv_crypto_encrypted_key_one_cert
+    clt = Client(uri_crypto_cert)
+    user_cert = uacrypto.CertProperties(encrypted_private_key_peer_creds['certificate'], "DER")
+    user_key = uacrypto.CertProperties(
+        path=encrypted_private_key_peer_creds['private_key'],
+        password=encrypted_private_key_peer_creds['password'],
+        extension="PEM",
+    )
+    server_cert = uacrypto.CertProperties(cert)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        user_cert,
+        user_key,
+        server_certificate=server_cert,
+        mode=ua.MessageSecurityMode.SignAndEncrypt
+    )
+    async with clt:
+        assert await clt.get_objects_node().get_children()
+
+
 async def test_certificate_handling_failure(srv_crypto_one_cert):
     _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Union, Coroutine
+from typing import Union, Coroutine, Optional
 from urllib.parse import urlparse
 
 from asyncua import ua
@@ -142,38 +142,53 @@ class Client:
 
     async def set_security(self,
                            policy,
-                           certificate_path: str,
-                           private_key_path: str,
+                           certificate: Union[str, uacrypto.CertProperties],
+                           private_key: Union[str, uacrypto.CertProperties],
                            private_key_password: str = None,
-                           server_certificate_path: str = None,
+                           server_certificate: Optional[Union[str, uacrypto.CertProperties]] = None,
                            mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
         """
         Set SecureConnection mode.
         Call this before connect()
         """
-        if server_certificate_path is None:
+        if server_certificate is None:
             # load certificate from server's list of endpoints
             endpoints = await self.connect_and_get_server_endpoints()
             endpoint = Client.find_endpoint(endpoints, mode, policy.URI)
-            server_cert = uacrypto.x509_from_der(endpoint.ServerCertificate)
-        else:
-            server_cert = await uacrypto.load_certificate(server_certificate_path)
-        cert = await uacrypto.load_certificate(certificate_path)
-        pk = await uacrypto.load_private_key(private_key_path, password=private_key_password)
+            server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate)
+        elif not isinstance(server_certificate, uacrypto.CertProperties):
+            server_certificate = uacrypto.CertProperties(server_certificate)
+        if not isinstance(certificate, uacrypto.CertProperties):
+            certificate = uacrypto.CertProperties(certificate)
+        if not isinstance(private_key, uacrypto.CertProperties):
+            private_key = uacrypto.CertProperties(private_key, password=private_key_password)
+        return await self._set_security(policy, certificate, private_key, server_certificate, mode)
+
+    async def _set_security(self,
+                            policy,
+                            certificate: uacrypto.CertProperties,
+                            private_key: uacrypto.CertProperties,
+                            server_cert: uacrypto.CertProperties,
+                            mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
+
+        if isinstance(server_cert, uacrypto.CertProperties):
+            server_cert = await uacrypto.load_certificate(server_cert.path, server_cert.extension)
+        cert = await uacrypto.load_certificate(certificate.path, certificate.extension)
+        pk = await uacrypto.load_private_key(private_key.path, private_key.password, private_key.extension)
         self.security_policy = policy(server_cert, cert, pk, mode)
         self.uaclient.set_security(self.security_policy)
 
-    async def load_client_certificate(self, path: str):
+    async def load_client_certificate(self, path: str, extension: str = None):
         """
         load our certificate from file, either pem or der
         """
-        self.user_certificate = await uacrypto.load_certificate(path)
+        self.user_certificate = await uacrypto.load_certificate(path, extension)
 
-    async def load_private_key(self, path, password=None, format=None):
+    async def load_private_key(self, path: str, password: str = None, extension: str = None):
         """
         Load user private key. This is used for authenticating using certificate
         """
-        self.user_private_key = await uacrypto.load_private_key(path, password, format)
+        self.user_private_key = await uacrypto.load_private_key(path, password, extension)
 
     async def connect_and_get_server_endpoints(self):
         """

@@ -18,9 +18,9 @@ async def task(loop):
     client = Client(url=url)
     await client.set_security(
         SecurityPolicyBasic256Sha256,
-        certificate_path=cert,
-        private_key_path=private_key,
-        server_certificate_path="certificate-example.der"
+        certificate=cert,
+        private_key=private_key,
+        server_certificate="certificate-example.der"
     )
     async with client:
         objects = client.nodes.objects
