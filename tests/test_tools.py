@@ -19,7 +19,7 @@ def test_that_tool_can_be_invoked_without_internal_error(tool):
 
 
 def test_that_server_can_be_invoked_without_internal_error():
-    proc = subprocess.Popen(['uaserver'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(['tools/uaserver'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     time.sleep(2)
     proc.send_signal(subprocess.signal.SIGINT)
     proc.wait(timeout=2)
