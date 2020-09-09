@@ -8,13 +8,15 @@ from asyncua.tools import uaread, uals, uawrite, uahistoryread, uaclient, uadisc
 
 pytestmark = pytest.mark.asyncio
 
+ROOT_NODE = "i=85"
+RW_NODE = "i=3078"
 
 async def test_cli_tools(running_server):
     # admin privileges are only needed for uawrite
     url = running_server.replace("//", "//admin@")
     default_opts = ["mock_func", "-u", f"{url}"]
-    rw_node = ["-n", "i=3078"]
-    call_node = ["-n", "i=85"]
+    rw_node = ["-n", RW_NODE]
+    call_node = ["-n", ROOT_NODE]
     write_val = ["val_to_write"]
     rw_opts = default_opts + rw_node
     write_opts = rw_opts + write_val
@@ -36,14 +38,16 @@ async def test_cli_tools(running_server):
                 result = executor.submit(tool)
                 for future in concurrent.futures.as_completed([result]):
                     exception = future.exception()
-                    assert (repr(exception) == "SystemExit(0)")
+                    # py3.6 returns SystemExit(0,)
+                    str_exp = repr(exception).replace(",", "")
+                    assert str_exp == "SystemExit(0)"
 
 
 async def test_cli_tools_which_require_sigint(running_server):
     url = running_server
     tools = (
-        ["tools/uaserver"], 
-        ["tools/uasubscribe", "-u", url, "-n", "i=3078"]
+        ["tools/uaserver"],
+        ["tools/uasubscribe", "-u", url, "-n", RW_NODE]
     )
     for tool in tools:
         proc = subprocess.Popen(tool, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

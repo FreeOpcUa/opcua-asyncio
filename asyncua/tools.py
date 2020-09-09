@@ -29,7 +29,7 @@ if sys.version_info.minor >= 7:
         return asyncio.run(coro)
 else:
     def run(coro):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         return loop.run_until_complete(coro)
 
 

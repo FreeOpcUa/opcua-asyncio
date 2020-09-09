@@ -34,7 +34,7 @@ def event_loop(request):
     loop.close()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 async def running_server(request):
     """
     Spawn a server in a separate thread
@@ -51,6 +51,7 @@ async def running_server(request):
             async with srv:
                 while t.do_run:
                     await asyncio.sleep(1)
+            await srv.stop()
         loop = asyncio.new_event_loop()
         loop.run_until_complete(server(url))
 
@@ -63,6 +64,7 @@ async def running_server(request):
 
     def fin():
         t.do_run = False
+        t.join()
     request.addfinalizer(fin)
 
 
