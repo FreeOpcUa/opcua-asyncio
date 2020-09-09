@@ -7,6 +7,7 @@ from asyncua.server.history_sql import HistorySQLite
 
 from .test_common import add_server_methods
 from .util_enum_struct import add_server_custom_enum_struct
+from threading import Thread
 
 port_num = 48540
 port_num1 = 48510
@@ -31,6 +32,38 @@ def event_loop(request):
     loop.set_debug(True)
     yield loop
     loop.close()
+
+
+@pytest.fixture(scope='module')
+async def running_server(request):
+    """
+    Spawn a server in a separate thread
+    which can handle OPCUA requests
+    """
+
+    def wrapper(url):
+        async def server(url):
+            srv = Server()
+            srv.set_endpoint(url)
+            await srv.init()
+            await add_server_methods(srv)
+            await add_server_custom_enum_struct(srv)
+            async with srv:
+                while t.do_run:
+                    await asyncio.sleep(1)
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(server(url))
+
+    url = f"opc.tcp://127.0.0.1:{port_num}"
+    t = Thread(target=wrapper, args=(url,))
+    t.do_run = True
+    t.start()
+    await asyncio.sleep(3)
+    yield url
+
+    def fin():
+        t.do_run = False
+    request.addfinalizer(fin)
 
 
 @pytest.fixture(scope='module')
