@@ -205,7 +205,7 @@ class Server:
 
     @syncmethod
     def register_namespace(self, url):
-        return self.aio_obj.register_namespace(url)
+        pass
 
     @syncmethod
     def start(self):
@@ -242,8 +242,9 @@ class Server:
     def load_type_definitions(self):
         pass
 
+    @syncmethod
     def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
-        return self.tloop.post(self.aio_obj.write_attribute_value(nodeid, datavalue, attr))
+        pass
 
 
 class EventGenerator:
