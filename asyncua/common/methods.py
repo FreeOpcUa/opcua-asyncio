@@ -41,6 +41,8 @@ async def call_method_full(parent, methodid, *args):
         methodid = methodid.nodeid
 
     result = await _call_method(parent.server, parent.nodeid, methodid, to_variant(*args))
+    if result.OutputArguments is None:
+        result.OutputArguments = []
     result.OutputArguments = [var.Value for var in result.OutputArguments]
     return result
 
