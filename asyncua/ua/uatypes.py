@@ -329,7 +329,7 @@ class NodeId(object):
     def has_null_identifier(self):
         if not self.Identifier:
             return True
-        if self.NodeIdType == NodeIdType.Guid and re.match(b'\00+', self.Identifier.bytes):
+        if self.NodeIdType == NodeIdType.Guid and self.Identifier.bytes == b'\00'*16:
             return True
         return False
 

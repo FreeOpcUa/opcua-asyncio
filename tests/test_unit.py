@@ -415,6 +415,10 @@ def test_null_guid():
     assert not n.is_null()
     assert n.has_null_identifier()
 
+    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000001000000'), 1, nodeidtype=ua.NodeIdType.Guid)
+    assert not n.is_null()
+    assert not n.has_null_identifier()
+
 
 def test_null_string():
     v = ua.Variant(None, ua.VariantType.String)
