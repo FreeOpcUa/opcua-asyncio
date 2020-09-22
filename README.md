@@ -8,12 +8,12 @@ http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
 # opcua-asyncio
 
-This repository is a fork of [python-opcua](https://github.com/FreeOpcUa/python-opcua) to rebase it completely on asyncio and drop support for Python < 3.6.
+This repository is a fork of [python-opcua](https://github.com/FreeOpcUa/python-opcua) to rebase it completely on asyncio and drop support for Python < 3.7.
 This library has also [sync wrapper](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/asyncua/sync.py) over async API which may completely replace python-opcua in the future.
 
 ## Motivation
 
-opcua-asyncio is an asyncio-based asynchronous OPC UA client based on python-opcua, removing hacks for support of python < 3.6.
+opcua-asyncio is an asyncio-based asynchronous OPC UA client based on python-opcua, removing hacks for support of python < 3.7.
 Asynchronous programming allows for simpler code (e.g. less need for locks) and potentially performance gains.
 
 ---
