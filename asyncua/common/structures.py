@@ -9,11 +9,15 @@ import logging
 # The next two imports are for generated code
 from datetime import datetime
 from enum import Enum, IntEnum, EnumMeta
-from lxml import objectify
 
 from asyncua import ua
 
 from .structures104 import get_default_value, clean_name
+
+# Use lazy loading of lxml.objectify to speed up server startup and to 
+# slim down frozen code that doesn't require XML processing
+import lazy_import
+objectify = lazy_import.lazy_module("lxml.objectify")
 
 _logger = logging.getLogger(__name__)
 
