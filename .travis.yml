@@ -16,7 +16,6 @@ install:
   - pip install pytest-mock
   - pip install cryptography
   - pip install dataclasses
-  - pip install lazy_import
   - pip install --editable .
 # command to run tests
 script: pytest -v -s

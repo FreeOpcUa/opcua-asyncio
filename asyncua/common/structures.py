@@ -16,8 +16,20 @@ from .structures104 import get_default_value, clean_name
 
 # Use lazy loading of lxml.objectify to speed up server startup and to 
 # slim down frozen code that doesn't require XML processing
-import lazy_import
-objectify = lazy_import.lazy_module("lxml.objectify")
+import importlib.util
+
+def lazy(fullname):
+  try:
+    return sys.modules[fullname]
+  except KeyError:
+    spec = importlib.util.find_spec(fullname)
+    module = importlib.util.module_from_spec(spec)
+    loader = importlib.util.LazyLoader(spec.loader)
+    # Make module with proper locking and get it inserted into sys.modules.
+    loader.exec_module(module)
+    return module
+
+objectify = lazy("lxml.objectify")
 
 _logger = logging.getLogger(__name__)
 
