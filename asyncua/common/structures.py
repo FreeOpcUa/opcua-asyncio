@@ -31,7 +31,7 @@ def lazy(fullname):
         loader.exec_module(module)
         return module
 
-lxml = lazy("lxml")
+tempmod = lazy("lxml")
 objectify = lxml.objectify
 
 _logger = logging.getLogger(__name__)
