@@ -31,7 +31,8 @@ def lazy(fullname):
         loader.exec_module(module)
         return module
 
-objectify = lazy("lxml.objectify")
+lxml = lazy("lxml")
+objectify = lxml.objectify
 
 _logger = logging.getLogger(__name__)
 
