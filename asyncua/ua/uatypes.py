@@ -308,7 +308,7 @@ class NodeId(object):
                 raise UaError("NodeId: Could not guess type of NodeId, set NodeIdType")
         else:
             if not (isinstance(self.Identifier, int) and self.NodeIdType in [NodeIdType.Numeric, NodeIdType.TwoByte, NodeIdType.FourByte] or
-                    isinstance(self.Identifier, str) and self.NodeIdType is NodeIdType.String or
+                    isinstance(self.Identifier, str) and self.NodeIdType in [NodeIdType.String, NodeIdType.ByteString] or
                     isinstance(self.Identifier, bytes) and self.NodeIdType in [NodeIdType.ByteString, NodeIdType.TwoByte, NodeIdType.FourByte] or
                     isinstance(self.Identifier, uuid.UUID) and self.NodeIdType is NodeIdType.Guid):
                 raise UaError("NodeId: Incompatible identifier and nodeidtype")
