@@ -267,7 +267,7 @@ class NodeId(object):
     Args:
         identifier: The identifier might be an int, a string, bytes or a Guid
         namespaceidx(int): The index of the namespace
-        nodeidtype(NodeIdType): The type of the nodeid if it cannor be guess or you want something
+        nodeidtype(NodeIdType): The type of the nodeid if it cannot be guess or you want something
         special like twobyte nodeid or fourbytenodeid
 
 
@@ -306,6 +306,12 @@ class NodeId(object):
                 self.NodeIdType = NodeIdType.Guid
             else:
                 raise UaError("NodeId: Could not guess type of NodeId, set NodeIdType")
+        else:
+            if not (isinstance(self.Identifier, int) and self.NodeIdType in [NodeIdType.Numeric, NodeIdType.TwoByte, NodeIdType.FourByte] or
+                    isinstance(self.Identifier, str) and self.NodeIdType is NodeIdType.String or
+                    isinstance(self.Identifier, bytes) and self.NodeIdType in [NodeIdType.ByteString, NodeIdType.TwoByte, NodeIdType.FourByte] or
+                    isinstance(self.Identifier, uuid.UUID) and self.NodeIdType is NodeIdType.Guid):
+                raise UaError("NodeId: Incompatible identifier and nodeidtype")
 
     def __eq__(self, node):
         return isinstance(node, NodeId) and self.NamespaceIndex == node.NamespaceIndex and self.Identifier == node.Identifier
@@ -329,7 +335,7 @@ class NodeId(object):
     def has_null_identifier(self):
         if not self.Identifier:
             return True
-        if self.NodeIdType == NodeIdType.Guid and self.Identifier.bytes == b'\00'*16:
+        if self.NodeIdType is NodeIdType.Guid and self.Identifier.int == 0:
             return True
         return False
 
