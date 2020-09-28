@@ -307,9 +307,9 @@ class NodeId(object):
             else:
                 raise UaError("NodeId: Could not guess type of NodeId, set NodeIdType")
         else:
-            self.check_type_compatibility()
+            self.check_identifier_type_compatibility()
 
-    def check_type_compatibility(self):
+    def check_identifier_type_compatibility(self):
         '''
         Check whether the given identifier can be interpreted as the given node identifier type.
         '''
