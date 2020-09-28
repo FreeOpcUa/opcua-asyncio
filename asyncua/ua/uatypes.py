@@ -321,9 +321,8 @@ class NodeId(object):
         ]
         for identifier, valid_node_types in valid_type_combinations:
             if isinstance(self.Identifier, identifier) and self.NodeIdType in valid_node_types:
-                break
-        else:
-            raise UaError(f"NodeId of type {self.NodeIdType} has an incompatible identifier {self.Identifier} of type {type(self.Identifier)}")
+                return
+        raise UaError(f"NodeId of type {self.NodeIdType} has an incompatible identifier {self.Identifier} of type {type(self.Identifier)}")
 
     def __eq__(self, node):
         return isinstance(node, NodeId) and self.NamespaceIndex == node.NamespaceIndex and self.Identifier == node.Identifier
