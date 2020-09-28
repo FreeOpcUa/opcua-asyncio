@@ -413,7 +413,7 @@ async def delete_nodes(server, nodes, recursive=False, delete_target_references=
     """
     nodestodelete = []
     if recursive:
-        nodes += await _add_childs(nodes)
+        nodes = await _add_childs(nodes)
     for mynode in nodes:
         it = ua.DeleteNodesItem()
         it.NodeId = mynode.nodeid
