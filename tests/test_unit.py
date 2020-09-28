@@ -405,15 +405,21 @@ def test_expandednodeid():
 
 
 def test_null_guid():
-    n = ua.NodeId(b'000000', 0, nodeidtype=ua.NodeIdType.Guid)
+    with pytest.raises(ua.UaError):
+        n = ua.NodeId(b'000000', 0, nodeidtype=ua.NodeIdType.Guid)
     n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 0, nodeidtype=ua.NodeIdType.Guid)
     assert n.is_null()
     assert n.has_null_identifier()
 
-    n = ua.NodeId(b'000000', 1, nodeidtype=ua.NodeIdType.Guid)
+    with pytest.raises(ua.UaError):
+        n = ua.NodeId(b'000000', 1, nodeidtype=ua.NodeIdType.Guid)
     n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 1, nodeidtype=ua.NodeIdType.Guid)
     assert not n.is_null()
     assert n.has_null_identifier()
+
+    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000001000000'), 1, nodeidtype=ua.NodeIdType.Guid)
+    assert not n.is_null()
+    assert not n.has_null_identifier()
 
 
 def test_null_string():
