@@ -167,4 +167,4 @@ class BinaryServer:
                 logger.exception("Unexpected crash in BinaryServer._await_closing_tasks")
         if recursive:
             await asyncio.sleep(10)
-            await self._await_closing_tasks()
+            self.iserver.loop.create_task(self._await_closing_tasks())
