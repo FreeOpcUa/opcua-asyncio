@@ -307,11 +307,17 @@ class NodeId(object):
             else:
                 raise UaError("NodeId: Could not guess type of NodeId, set NodeIdType")
         else:
-            if not (isinstance(self.Identifier, int) and self.NodeIdType in [NodeIdType.Numeric, NodeIdType.TwoByte, NodeIdType.FourByte] or
-                    isinstance(self.Identifier, str) and self.NodeIdType in [NodeIdType.String, NodeIdType.ByteString] or
-                    isinstance(self.Identifier, bytes) and self.NodeIdType in [NodeIdType.ByteString, NodeIdType.TwoByte, NodeIdType.FourByte] or
-                    isinstance(self.Identifier, uuid.UUID) and self.NodeIdType is NodeIdType.Guid):
-                raise UaError("NodeId: Incompatible identifier and nodeidtype")
+            valid_type_combinations = [
+                (int, [NodeIdType.Numeric, NodeIdType.TwoByte, NodeIdType.FourByte]),
+                (str, [NodeIdType.String, NodeIdType.ByteString]),
+                (bytes, [NodeIdType.ByteString, NodeIdType.TwoByte, NodeIdType.FourByte]),
+                (uuid.UUID, [NodeIdType.Guid])
+            ]
+            for identifier, valid_node_types in valid_type_combinations:
+                if isinstance(self.Identifier, identifier) and self.NodeIdType in valid_node_types:
+                    break
+            else:
+                raise UaError(f"NodeId of type {self.NodeIdType} has an incompatible identifier {self.Identifier} of type {type(self.Identifier)}")
 
     def __eq__(self, node):
         return isinstance(node, NodeId) and self.NamespaceIndex == node.NamespaceIndex and self.Identifier == node.Identifier
