@@ -168,11 +168,11 @@ async def test_delete_nodes_recursive2(opc):
     nfold = fold
     mynodes = []
     for i in range(7):
-        nfold = await fold.add_folder(2, "FolderToDeleteRoot")
-        var = await fold.add_variable(2, "VarToDeleteR", 9.1)
-        var = await fold.add_property(2, "ProToDeleteR", 9.1)
-        prop = await fold.add_property(2, "ProToDeleteR", 9.1)
-        o = await fold.add_object(3, "ObjToDeleteR")
+        nfold = await fold.add_folder(2, f"FolderToDeleteRoot{i}")
+        var = await nfold.add_variable(2, "VarToDeleteR", 9.1)
+        var = await nfold.add_property(2, "ProToDeleteR", 9.1)
+        prop = await nfold.add_property(2, "ProToDeleteR2", 9.1)
+        o = await nfold.add_object(3, "ObjToDeleteR")
         mynodes.append(nfold)
         mynodes.append(var)
         mynodes.append(prop)
@@ -680,7 +680,7 @@ async def test_modelling_rules(opc):
     obj = await opc.opc.nodes.base_object_type.add_object_type(2, 'MyFooObjectType')
     v = await obj.add_variable(2, "myvar", 1.1)
     await v.set_modelling_rule(True)
-    p = await obj.add_property(2, "myvar", 1.1)
+    p = await obj.add_property(2, "myvar2", 1.1)
     await p.set_modelling_rule(False)
 
     refs = await obj.get_referenced_nodes(refs=ua.ObjectIds.HasModellingRule)
