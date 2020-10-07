@@ -246,10 +246,13 @@ class NodeManagementService:
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
             return result
 
-        if bool(self._aspace._nodes) and type(item.ParentNodeId) in [ua.NumericNodeId, ua.NodeId] and item.ParentNodeId.Identifier != 0 and item.ParentNodeId.NamespaceIndex != 0:
+        if bool(self._aspace._nodes) and type(item.ParentNodeId) in [ua.NumericNodeId, ua.NodeId] and \
+                item.ParentNodeId.Identifier != 0 and item.ParentNodeId.NamespaceIndex != 0:
             try:
-                if item.BrowseName.Name in [ref.BrowseName.Name for ref in self._aspace._nodes[item.ParentNodeId].references]:
-                    self.logger.warning("AddNodesItem: Requested Browsename %s already exists in Parent Node", item.BrowseName.Name)
+                if item.BrowseName.Name in [ref.BrowseName.Name
+                                            for ref in self._aspace._nodes[item.ParentNodeId].references]:
+                    self.logger.warning("AddNodesItem: Requested Browsename %s already exists in Parent Node",
+                                        item.BrowseName.Name)
                     result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
                     return result
             except KeyError as e:
