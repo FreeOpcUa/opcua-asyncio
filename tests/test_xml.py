@@ -98,7 +98,7 @@ async def test_xml_vars(opc, tmpdir):
     v = await o.add_variable(3, "myxmlvar", 6.78, ua.VariantType.Double)
     a = await o.add_variable(3, "myxmlvar-array", [6, 1], ua.VariantType.UInt16)
     a2 = await o.add_variable(3, "myxmlvar-2dim", [[1, 2], [3, 4]], ua.VariantType.UInt32)
-    a3 = await o.add_variable(3, "myxmlvar-2dim", [[]], ua.VariantType.ByteString)
+    a3 = await o.add_variable(3, "myxmlvar-2dim2", [[]], ua.VariantType.ByteString)
     nodes = [o, v, a, a2, a3]
     await opc.opc.export_xml(nodes, tmp_path)
     await opc.opc.delete_nodes(nodes)
