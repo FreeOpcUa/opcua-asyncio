@@ -246,17 +246,16 @@ class NodeManagementService:
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
             return result
 
-        if bool(self._aspace._nodes) and type(item.ParentNodeId) in [ua.NumericNodeId, ua.NodeId]:
+        if bool(self._aspace._nodes) and type(item.ParentNodeId) in [ua.NumericNodeId, ua.NodeId] and item.ParentNodeId.Identifier != 0 and item.ParentNodeId.NamespaceIndex != 0:
             try:
                 if item.BrowseName.Name in [ref.BrowseName.Name for ref in self._aspace._nodes[item.ParentNodeId].references]:
                     self.logger.warning("AddNodesItem: Requested Browsename %s already exists in Parent Node", item.BrowseName.Name)
                     result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
                     return result
             except KeyError as e:
-                if e.args[0].Identifier == 0 and e.args[0].NamespaceIndex == 0:
-                    pass
-                else:
-                    self.logger.warning(f"{e} - NodeParent does not exist in Server")
+                self.logger.warning(f"{e} - NodeParent does not exist in Server")
+            except BaseException as e:
+                self.logger.warning(f"Unknown Exception thrown: {e}")
                 pass
 
 
