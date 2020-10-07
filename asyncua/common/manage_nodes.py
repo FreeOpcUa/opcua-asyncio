@@ -43,9 +43,6 @@ async def create_folder(parent, nodeid, bname):
     arguments are nodeid, browsename
     or namespace index, name
     """
-    status = _check_browsename_exist(parent, bname)
-    if status is not None:
-        return status
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
     return make_node(
         parent.server,
@@ -60,9 +57,6 @@ async def create_object(parent, nodeid, bname, objecttype=None, instantiate_opti
     or namespace index, name, [objecttype]
     if objectype is given (a NodeId) then the type node is instantiated inclusive its child nodes
     """
-    status = _check_browsename_exist(parent, bname)
-    if status is not None:
-        return status
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
     if objecttype is not None:
         objecttype = make_node(parent.server, objecttype)
@@ -82,9 +76,6 @@ async def create_property(parent, nodeid, bname, val, varianttype=None, datatype
     args are nodeid, browsename, value, [variant type]
     or idx, name, value, [variant type]
     """
-    status = _check_browsename_exist(parent, bname)
-    if status is not None:
-        return status
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
     var = ua.Variant(val, varianttype)
     if datatype and isinstance(datatype, int):
@@ -103,9 +94,6 @@ async def create_variable(parent, nodeid, bname, val, varianttype=None, datatype
     args are nodeid, browsename, value, [variant type], [data type]
     or idx, name, value, [variant type], [data type]
     """
-    status = _check_browsename_exist(parent, bname)
-    if status is not None:
-        return status
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
     var = ua.Variant(val, varianttype)
     if datatype and isinstance(datatype, int):
@@ -125,9 +113,6 @@ async def create_variable_type(parent, nodeid, bname, datatype):
     args are nodeid, browsename and datatype
     or idx, name and data type
     """
-    status = _check_browsename_exist(parent, bname)
-    if status is not None:
-        return status
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
     if datatype and isinstance(datatype, int):
         datatype = ua.NodeId(datatype, 0)
@@ -146,9 +131,6 @@ async def create_reference_type(parent, nodeid, bname, symmetric=True, inversena
     args are nodeid and browsename
     or idx and name
     """
-    status = _check_browsename_exist(parent, bname)
-    if status is not None:
-        return status
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
     return make_node(
         parent.server,
@@ -162,9 +144,6 @@ async def create_object_type(parent, nodeid, bname):
     arguments are nodeid, browsename
     or namespace index, name
     """
-    status = _check_browsename_exist(parent, bname)
-    if status is not None:
-        return status
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
     return make_node(parent.server, await _create_object_type(parent.server, parent.nodeid, nodeid, qname))
 
@@ -181,9 +160,6 @@ async def create_method(parent, *args):
     """
     _logger.info('create_method %r', parent)
     nodeid, qname = _parse_nodeid_qname(*args[:2])
-    status = _check_browsename_exist(parent, qname)
-    if status is not None:
-        return status
     callback = args[2]
     if len(args) > 3:
         inputs = args[3]
@@ -453,10 +429,3 @@ async def _add_childs(nodes):
         results += await _add_childs(await mynode.get_children())
         results += [mynode]
     return results
-
-
-def _check_browsename_exist(parent, bname):
-    for ref in parent.server.aspace._nodes[parent.nodeid].references:
-        if bname == ref.BrowseName.Name and (ref.ReferenceTypeId.Identifier in [ua.ObjectIds.HasChild, ua.ObjectIds.HasComponent, ua.ObjectIds.HasProperty, ua.ObjectIds.HasSubtype, ua.ObjectIds.HasOrderedComponent]):
-            _logger.error(ua.status_codes.code_to_name_doc[ua.StatusCodes.BadBrowseNameDuplicated])
-            return ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
