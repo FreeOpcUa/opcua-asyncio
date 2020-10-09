@@ -246,15 +246,18 @@ class NodeManagementService:
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
             return result
 
-        if bool(self._aspace._nodes) and (type(item.ParentNodeId) == ua.NodeId or
-                                          ua.NodeId in type(item.ParentNodeId).__bases__):
+        if type(item.ParentNodeId) == ua.NodeId or ua.NodeId in type(item.ParentNodeId).__bases__:
             try:
-                if item.BrowseName.Name in [ref.BrowseName.Name
-                                            for ref in self._aspace._nodes[item.ParentNodeId].references]:
-                    self.logger.warning("AddNodesItem: Requested Browsename %s already exists in Parent Node",
-                                        item.BrowseName.Name)
-                    result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
-                    return result
+                for ref in self._aspace._nodes[item.ParentNodeId].references:
+                    # Check if the Parent has a "HasChild" Reference (or subtype of it) with the Node
+                    if ref.ReferenceTypeId.Identifier in [ua.ObjectIds.HasChild, ua.ObjectIds.HasComponent,
+                                               ua.ObjectIds.HasProperty, ua.ObjectIds.HasSubtype,
+                                               ua.ObjectIds.HasOrderedComponent] and \
+                            item.BrowseName.Name == ref.BrowseName.Name:
+                        self.logger.warning("AddNodesItem: Requested Browsename %s already exists in Parent Node",
+                                            item.BrowseName.Name)
+                        result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
+                        return result
             except KeyError as e:
                 self.logger.warning(f"{e} - NodeParent does not exist in Server")
             except BaseException as e:
