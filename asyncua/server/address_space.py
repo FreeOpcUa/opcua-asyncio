@@ -246,8 +246,8 @@ class NodeManagementService:
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
             return result
 
-        if bool(self._aspace._nodes) and type(item.ParentNodeId) in [ua.NumericNodeId, ua.NodeId] and \
-                item.ParentNodeId.Identifier != 0 and item.ParentNodeId.NamespaceIndex != 0:
+        if bool(self._aspace._nodes) and (type(item.ParentNodeId) == ua.NodeId or
+                                          ua.NodeId in type(item.ParentNodeId).__bases__):
             try:
                 if item.BrowseName.Name in [ref.BrowseName.Name
                                             for ref in self._aspace._nodes[item.ParentNodeId].references]:
