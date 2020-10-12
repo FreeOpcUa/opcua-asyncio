@@ -246,24 +246,24 @@ class NodeManagementService:
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
             return result
 
-        if type(item.ParentNodeId) == ua.NodeId or ua.NodeId in type(item.ParentNodeId).__bases__:
-            try:
-                for ref in self._aspace._nodes[item.ParentNodeId].references:
-                    # Check if the Parent has a "HasChild" Reference (or subtype of it) with the Node
-                    if ref.ReferenceTypeId.Identifier in [ua.ObjectIds.HasChild, ua.ObjectIds.HasComponent,
-                                               ua.ObjectIds.HasProperty, ua.ObjectIds.HasSubtype,
-                                               ua.ObjectIds.HasOrderedComponent] and \
-                            item.BrowseName.Name == ref.BrowseName.Name:
-                        self.logger.warning("AddNodesItem: Requested Browsename %s already exists in Parent Node",
-                                            item.BrowseName.Name)
+        try:
+            for ref in self._aspace._nodes[item.ParentNodeId].references:
+                # Check if the Parent has a "HasChild" Reference (or subtype of it) with the Node
+                if ref.ReferenceTypeId.Identifier in [ua.ObjectIds.HasChild, ua.ObjectIds.HasComponent,
+                                           ua.ObjectIds.HasProperty, ua.ObjectIds.HasSubtype,
+                                           ua.ObjectIds.HasOrderedComponent] and ref.IsForward:
+                    if item.BrowseName.Name == ref.BrowseName.Name:
+                        self.logger.warning(f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
+                                            f" already exists in Parent Node")
                         result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
                         return result
-            except KeyError as e:
-                self.logger.warning(f"{e} - NodeParent does not exist in Server")
-            except BaseException as e:
-                self.logger.warning(f"Unknown Exception thrown: {e}")
-                pass
-
+        except KeyError as e:
+            if item.ParentNodeId.Identifier == 0 and item.ParentNodeId.NamespaceIndex == 0:
+                self.logger.debug(f"{e} - NodeParent seems to be Root Node")
+            self.logger.warning(f"{e} - NodeParent does not exist in Server")
+        except BaseException as e:
+            self.logger.warning(f"Unknown Exception thrown: {e}")
+            pass
 
         nodedata = NodeData(item.RequestedNewNodeId)
 
