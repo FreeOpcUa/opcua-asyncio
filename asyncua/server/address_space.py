@@ -254,7 +254,7 @@ class NodeManagementService:
                                            ua.ObjectIds.HasOrderedComponent] and ref.IsForward:
                     if item.BrowseName.Name == ref.BrowseName.Name:
                         self.logger.warning(f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
-                                            f" already exists in Parent Node. ParentID:{item.ParentNodeId} -- "
+                                            f" already exists in Parent Node. ParentID:{item.ParentNodeId} --- "
                                             f"ItemId:{item.RequestedNewNodeId}")
                         result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
                         return result
