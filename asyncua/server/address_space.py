@@ -260,7 +260,8 @@ class NodeManagementService:
         except KeyError as e:
             if item.ParentNodeId.Identifier == 0 and item.ParentNodeId.NamespaceIndex == 0:
                 self.logger.debug(f"{e} - NodeParent seems to be Root Node")
-            self.logger.warning(f"{e} - NodeParent does not exist in Server")
+            else:
+                self.logger.debug(f"{e} - NodeParent does not exist in Server")
         except BaseException as e:
             self.logger.warning(f"Unknown Exception thrown: {e}")
             pass
