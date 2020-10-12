@@ -1,6 +1,7 @@
 import os
 
 import aiofiles
+from typing import Optional, Union
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -13,13 +14,15 @@ from cryptography.hazmat.primitives.ciphers import modes
 from cryptography.exceptions import InvalidSignature
 from dataclasses import dataclass
 
+
 @dataclass
 class CertProperties:
-    path: str = None
-    extension: str = None
-    password: str = None
+    path: str
+    extension: Optional[str] = None
+    password: Optional[Union[str, bytes]] = None
 
-async def load_certificate(path, extension=None):
+
+async def load_certificate(path: str, extension: Optional[str] = None):
     _, ext = os.path.splitext(path)
     async with aiofiles.open(path, mode='rb') as f:
         if ext == ".pem" or extension == 'pem' or extension == 'PEM':
@@ -34,10 +37,12 @@ def x509_from_der(data):
     return x509.load_der_x509_certificate(data, default_backend())
 
 
-async def load_private_key(path, password=None, extension=None):
+async def load_private_key(path: str,
+                           password: Optional[Union[str, bytes]] = None,
+                           extension: Optional[str] = None):
     _, ext = os.path.splitext(path)
     if isinstance(password, str):
-        password.encode('utf-8')
+        password = password.encode('utf-8')
     async with aiofiles.open(path, mode='rb') as f:
         if ext == ".pem" or extension == 'pem' or extension == 'PEM':
             return serialization.load_pem_private_key(await f.read(), password=password, backend=default_backend())

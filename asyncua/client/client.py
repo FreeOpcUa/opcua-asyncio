@@ -141,10 +141,10 @@ class Client:
                                        parts[4] if len(parts) >= 5 else None, mode)
 
     async def set_security(self,
-                           policy,
+                           policy: ua.SecurityPolicy,
                            certificate: Union[str, uacrypto.CertProperties],
                            private_key: Union[str, uacrypto.CertProperties],
-                           private_key_password: str = None,
+                           private_key_password: Optional[Union[str, bytes]] = None,
                            server_certificate: Optional[Union[str, uacrypto.CertProperties]] = None,
                            mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
         """
@@ -165,7 +165,7 @@ class Client:
         return await self._set_security(policy, certificate, private_key, server_certificate, mode)
 
     async def _set_security(self,
-                            policy,
+                            policy: ua.SecurityPolicy,
                             certificate: uacrypto.CertProperties,
                             private_key: uacrypto.CertProperties,
                             server_cert: uacrypto.CertProperties,
@@ -178,13 +178,16 @@ class Client:
         self.security_policy = policy(server_cert, cert, pk, mode)
         self.uaclient.set_security(self.security_policy)
 
-    async def load_client_certificate(self, path: str, extension: str = None):
+    async def load_client_certificate(self, path: str, extension: Optional[str] = None):
         """
         load our certificate from file, either pem or der
         """
         self.user_certificate = await uacrypto.load_certificate(path, extension)
 
-    async def load_private_key(self, path: str, password: str = None, extension: str = None):
+    async def load_private_key(self,
+                               path: str,
+                               password: Optional[Union[str, bytes]] = None,
+                               extension: Optional[str] = None):
         """
         Load user private key. This is used for authenticating using certificate
         """
