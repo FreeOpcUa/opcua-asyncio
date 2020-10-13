@@ -83,7 +83,7 @@ async def test_opc_type_dict_process_type_tns(srv):
 async def test_opc_type_dict_append_struct_1(srv):
     case = 'tns:CustomizedStruct'
     result = getattr(srv.opc_type_builder, '_process_type')('CustomizedStruct')
-    assert result == case
+    assert result == case, "Preperation is not fine - original test not running"
 
     case = {'BaseType': 'ua:ExtensionObject',
             'Name': 'CustomizedStruct'}
