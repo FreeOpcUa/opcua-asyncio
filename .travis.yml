@@ -1,10 +1,19 @@
- language: python
-python:
-  - "3.6"
-  - "3.7"
-  - "3.8"
-  - "pypy3"
-# command to install dependencies
+language: python
+
+jobs:
+  include:
+    - name: "Python 3.7 with ubuntu 18.04 - Bionic"
+      os: linux
+      dist: bionic
+      python: 3.7
+    - name: "Python 3.8 with ubuntu 18.04 - Bionic"
+      os: linux
+      dist: bionic
+      python: 3.8
+    - name: "Python pypy3 with ubuntu 18.04 - Bionic"
+      os: linux
+      dist: bionic
+      python: pypy3
 install:
   - pip install python-dateutil
   - pip install pytz
