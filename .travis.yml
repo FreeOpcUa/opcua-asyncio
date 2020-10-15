@@ -13,7 +13,7 @@ jobs:
     - name: "Python 3.9 with ubuntu 18.04 - Bionic"
       os: linux
       dist: bionic
-      python: 3.9
+      python: 3.9-dev
     - name: "Python pypy3 with ubuntu 18.04 - Bionic"
       os: linux
       dist: bionic
