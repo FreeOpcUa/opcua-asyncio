@@ -105,6 +105,9 @@ class Server:
         await self.set_application_uri(self._application_uri)
         sa_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerArray))
         await sa_node.write_value([self._application_uri])
+        #TODO: ServiceLevel is 255 default, should be calculated in later Versions
+        sl_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServiceLevel))
+        await sl_node.write_value(ua.Variant(255, ua.VariantType.Byte))
 
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
 
