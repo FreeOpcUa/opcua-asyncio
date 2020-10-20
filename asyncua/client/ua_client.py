@@ -206,6 +206,7 @@ class UASocketProtocol(asyncio.Protocol):
     async def open_secure_channel(self, params):
         self.logger.info("open_secure_channel")
         request = ua.OpenSecureChannelRequest()
+        self._connection.start_renewal()
         request.Parameters = params
         result = await asyncio.wait_for(
             self._send_request(request, message_type=ua.MessageType.SecureOpen),

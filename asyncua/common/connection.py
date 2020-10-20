@@ -146,11 +146,16 @@ class SecureConnection:
         self.remote_nonce = 0
         self._allow_prev_token = False
         self._max_chunk_size = 65536
+        self._renewal_started = False
+
+    def start_renewal(self):
+        self._renewal_started = True
 
     def set_channel(self, params, request_type, client_nonce):
         """
         Called on client side when getting secure channel data from server.
         """
+        self._renewal_started = False
         if request_type == ua.SecurityTokenRequestType.Issue:
             self.security_token = params.SecurityToken
             self.local_nonce = client_nonce
@@ -264,6 +269,9 @@ class SecureConnection:
             self.revolve_tokens()
             return
 
+        if self._renewal_started and security_hdr.TokenId == self.security_token.TokenId + 1:
+            return
+
         if self._allow_prev_token and security_hdr.TokenId == self.prev_security_token.TokenId:
             # From spec, part 4, section 5.5.2.1: Clients should accept Messages secured by an
             # expired SecurityToken for up to 25 % of the token lifetime. This should ensure that
@@ -277,6 +285,11 @@ class SecureConnection:
             return
 
         expected_tokens = [self.security_token.TokenId, self.next_security_token.TokenId]
+
+        if self._renewal_started:
+            extra_token = self.security_token.TokenId + 1
+            expected_tokens.append(extra_token)
+
         if self._allow_prev_token:
             expected_tokens.insert(0, self.prev_security_token.TokenId)
         raise ua.UaError(f"Invalid security token id {security_hdr.TokenId}, expected one of: {expected_tokens}")
