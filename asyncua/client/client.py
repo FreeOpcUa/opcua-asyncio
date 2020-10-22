@@ -517,7 +517,10 @@ class Client:
         Close session
         """
         self._renew_channel_task.cancel()
-        await self._renew_channel_task
+        try:
+            await self._renew_channel_task
+        except Exception:
+            _logger.exception("Error while closing secure channel loop")
         return await self.uaclient.close_session(True)
 
     def get_root_node(self):
