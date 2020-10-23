@@ -16,8 +16,8 @@ class Hello(uatypes.FrozenClass):
 
     def __init__(self):
         self.ProtocolVersion = 0
-        self.ReceiveBufferSize = 65536
-        self.SendBufferSize = 65536
+        self.ReceiveBufferSize = 2**32 - 1
+        self.SendBufferSize = 2**32 - 1
         self.MaxMessageSize = 0  # No limits
         self.MaxChunkCount = 0  # No limits
         self.EndpointUrl = ""
@@ -59,7 +59,8 @@ class Header(uatypes.FrozenClass):
         return struct.calcsize("<3scII")
 
     def __str__(self):
-        return f'Header(type:{self.MessageType}, chunk_type:{self.ChunkType}, body_size:{self.body_size}, channel:{self.ChannelId})'
+        return f'Header(type:{self.MessageType}, chunk_type:{self.ChunkType}, body_size:{self.body_size},' \
+               f' channel:{self.ChannelId})'
 
     __repr__ = __str__
 
@@ -112,7 +113,8 @@ class AsymmetricAlgorithmHeader(uatypes.FrozenClass):
     def __str__(self):
         size1 = len(self.SenderCertificate) if self.SenderCertificate is not None else None
         size2 = len(self.ReceiverCertificateThumbPrint) if self.ReceiverCertificateThumbPrint is not None else None
-        return f'{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI}, certificatesize:{size2}, receiverCertificatesize:{size2} )'
+        return f'{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI},' \
+               f' certificatesize:{size2}, receiverCertificatesize:{size2} )'
 
     __repr__ = __str__
 
@@ -226,10 +228,15 @@ class SecurityPolicy:
         self.asymmetric_cryptography = CryptographyNone()
         self.symmetric_cryptography = CryptographyNone()
         self.Mode = auto.MessageSecurityMode.None_
-        self.server_certificate = None
-        self.client_certificate = None
+        self.peer_certificate = None
+        self.host_certificate = None
+        self.user = None
+        self.permissions = None
 
-    def make_symmetric_key(self, a, b):
+    def make_local_symmetric_key(self, secret, seed):
+        pass
+
+    def make_remote_symmetric_key(self, secret, seed):
         pass
 
 
@@ -240,11 +247,13 @@ class SecurityPolicyFactory:
     SecurityPolicy for every client and client's certificate
     """
 
-    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None):
+    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None,
+                 permission_ruleset=None):
         self.cls = cls
         self.mode = mode
         self.certificate = certificate
         self.private_key = private_key
+        self.permission_ruleset = permission_ruleset
 
     def matches(self, uri, mode=None):
         return self.cls.URI == uri and (mode is None or self.mode == mode)
@@ -253,7 +262,8 @@ class SecurityPolicyFactory:
         if self.cls is SecurityPolicy:
             return self.cls()
         else:
-            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode)
+            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode,
+                            permission_ruleset=self.permission_ruleset)
 
 
 class Message:
@@ -336,11 +346,11 @@ class Argument(auto.Argument):
 
 
 class XmlElement(FrozenClass):
-    '''
+    """
     An XML element encoded as a UTF-8 string.
     :ivar Value:
     :vartype Value: String
-    '''
+    """
 
     ua_types = [
         ('Value', 'String'),

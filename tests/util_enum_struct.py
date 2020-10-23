@@ -44,4 +44,4 @@ async def add_server_custom_enum_struct(server: Server):
     val.IntVal1 = 242
     val.EnumVal = ua.ExampleEnum.EnumVal2
     myvar = server.get_node(ua.NodeId(6009, ns))
-    await myvar.set_value(val)
+    await myvar.write_value(val)

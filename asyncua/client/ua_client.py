@@ -38,6 +38,7 @@ class UASocketProtocol(asyncio.Protocol):
         self._callbackmap: Dict[int, asyncio.Future] = {}
         self._connection = SecureConnection(security_policy)
         self.state = self.INITIALIZED
+        self.closed: bool = False
 
     def connection_made(self, transport: asyncio.Transport):
         self.state = self.OPEN
@@ -120,20 +121,33 @@ class UASocketProtocol(asyncio.Protocol):
         self._request_id += 1
         future = self.loop.create_future()
         self._callbackmap[self._request_id] = future
+
+        # Change to the new security token if the connection has been renewed.
+        if self._connection.next_security_token.TokenId != 0:
+            self._connection.revolve_tokens()
+
         msg = self._connection.message_to_binary(binreq, message_type=message_type, request_id=self._request_id)
         self.transport.write(msg)
         return future
 
-    async def send_request(self, request, timeout=10, message_type=ua.MessageType.SecureMessage):
+    async def send_request(self, request, timeout=None, message_type=ua.MessageType.SecureMessage):
         """
         Send a request to the server.
         Timeout is the timeout written in ua header.
         Returns response object if no callback is provided.
         """
-        data = await asyncio.wait_for(
-            self._send_request(request, timeout, message_type),
-            timeout if timeout else None
-        )
+        timeout = self.timeout if timeout is None else timeout
+        try:
+            data = await asyncio.wait_for(
+                self._send_request(request, timeout, message_type),
+                timeout if timeout else None
+            )
+        except Exception:
+            if self.state != self.OPEN:
+                raise ConnectionError("Connection is closed") from None
+
+            raise
+
         self.check_answer(data, f" in response to {request.__class__.__name__}")
         return data
 
@@ -155,7 +169,9 @@ class UASocketProtocol(asyncio.Protocol):
                 f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}"
             )
         except asyncio.InvalidStateError:
-            raise ua.UaError(f"Future for request id {request_id} is already done")
+            if not self.closed:
+                raise ua.UaError(f"Future for request id {request_id} is already done")
+            self.logger.debug("Future for request id %s not handled due to disconnect", request_id)
         del self._callbackmap[request_id]
 
     def _create_request_header(self, timeout=1) -> ua.RequestHeader:
@@ -195,11 +211,9 @@ class UASocketProtocol(asyncio.Protocol):
             self._send_request(request, message_type=ua.MessageType.SecureOpen),
             self.timeout
         )
-        # FIXME: we have a race condition here
-        # we can get a packet with the new token id before we reach to store it..
         response = struct_from_binary(ua.OpenSecureChannelResponse, result)
         response.ResponseHeader.ServiceResult.check()
-        self._connection.set_channel(response.Parameters)
+        self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
         return response.Parameters
 
     async def close_secure_channel(self):
@@ -278,6 +292,7 @@ class UaClient:
 
     async def create_session(self, parameters):
         self.logger.info("create_session")
+        self.protocol.closed = False
         request = ua.CreateSessionRequest()
         request.Parameters = parameters
         data = await self.protocol.send_request(request)
@@ -299,6 +314,7 @@ class UaClient:
 
     async def close_session(self, delete_subscriptions):
         self.logger.info("close_session")
+        self.protocol.closed = True
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
@@ -525,7 +541,10 @@ class UaClient:
                 )
             else:
                 try:
-                    callback(response.Parameters)
+                    if asyncio.iscoroutinefunction(callback):
+                        await callback(response.Parameters)
+                    else:
+                        callback(response.Parameters)
                 except Exception:  # we call user code, catch everything!
                     self.logger.exception("Exception while calling user callback: %s")
             # Repeat with acknowledgement
@@ -642,8 +661,8 @@ class UaClient:
         response.ResponseHeader.ServiceResult.check()
         # nothing to return for this service
 
-    async def get_attributes(self, nodeids, attr):
-        self.logger.info("get_attributes of several nodes")
+    async def read_attributes(self, nodeids, attr):
+        self.logger.info("read_attributes of several nodes")
         request = ua.ReadRequest()
         for nodeid in nodeids:
             rv = ua.ReadValueId()
@@ -655,12 +674,12 @@ class UaClient:
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def set_attributes(self, nodeids, datavalues, attributeid=ua.AttributeIds.Value):
+    async def write_attributes(self, nodeids, datavalues, attributeid=ua.AttributeIds.Value):
         """
         Set an attribute of multiple nodes
         datavalue is a ua.DataValue object
         """
-        self.logger.info("set_attributes of several nodes")
+        self.logger.info("write_attributes of several nodes")
         request = ua.WriteRequest()
         for idx, nodeid in enumerate(nodeids):
             attr = ua.WriteValue()

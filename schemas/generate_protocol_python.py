@@ -1,3 +1,6 @@
+import os
+import datetime
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IgnoredEnums = ["NodeIdType"]
 IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "FilterOperand", "Variant", "DataValue", "ExtensionObject", "XmlElement", "LocalizedText"]
@@ -70,7 +73,7 @@ class CodeGenerator:
 
     def make_header(self):
         self.write('"""')
-        self.write('Autogenerate code from xml spec')
+        self.write(f'Autogenerate code from xml spec\nDate:{datetime.datetime.now()}')
         self.write('"""')
         self.write('')
         self.write('from datetime import datetime')
@@ -148,7 +151,7 @@ class CodeGenerator:
                 self.write("self.Encoding = 1")
             elif field.uatype == obj.name:  # help!!! selv referencing class
                 self.write("self.{} = None".format(field.name))
-            elif not obj.name in ("ExtensionObject") and field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
+            elif not obj.name in ("ExtensionObject",) and field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
                 self.write(f"self.TypeId = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultBinary)")
             else:
                 self.write(f"self.{field.name} = {'[]' if field.length else self.get_default_value(field)}")
@@ -209,9 +212,9 @@ class CodeGenerator:
             enum = self.model.get_enum(field.uatype)
             return f'{enum.name}(0)'
         if field.uatype == 'String':
-            return None 
+            return None
         elif field.uatype in ('ByteString', 'CharArray', 'Char'):
-            return None 
+            return None
         elif field.uatype == 'Boolean':
             return 'True'
         elif field.uatype == 'DateTime':
@@ -226,8 +229,8 @@ class CodeGenerator:
 
 if __name__ == '__main__':
     import generate_model as gm
-    xml_path = 'Opc.Ua.Types.bsd'
-    protocol_path = '../asyncua/ua/uaprotocol_auto.py'
+    xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset-master', 'Schema', 'Opc.Ua.Types.bsd')
+    protocol_path = os.path.join(BASE_DIR, "asyncua", "ua", "uaprotocol_auto.py")
     p = gm.Parser(xml_path)
     model = p.parse()
     gm.add_basetype_members(model)

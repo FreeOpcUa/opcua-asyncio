@@ -10,10 +10,10 @@ async def browse_nodes(node: Node):
     """
     Build a nested node tree dict by recursion (filtered by OPC UA objects and variables).
     """
-    node_class = await node.get_node_class()
+    node_class = await node.read_node_class()
     children = []
     for child in await node.get_children():
-        if await child.get_node_class() in [ua.NodeClass.Object, ua.NodeClass.Variable]:
+        if await child.read_node_class() in [ua.NodeClass.Object, ua.NodeClass.Variable]:
             children.append(
                 await browse_nodes(child)
             )
@@ -21,13 +21,13 @@ async def browse_nodes(node: Node):
         var_type = None
     else:
         try:
-            var_type = (await node.get_data_type_as_variant_type()).value
+            var_type = (await node.read_data_type_as_variant_type()).value
         except ua.UaError:
             _logger.warning('Node Variable Type could not be determined for %r', node)
             var_type = None
     return {
         'id': node.nodeid.to_string(),
-        'name': (await node.get_display_name()).Text,
+        'name': (await node.read_display_name()).Text,
         'cls': node_class.value,
         'children': children,
         'type': var_type,
@@ -44,13 +44,13 @@ async def task(loop):
         # client.set_security_string()
         await client.connect()
         # Client has a few methods to get proxy to UA nodes that should always be in address space such as Root or Objects
-        root = client.get_root_node()
+        root = client.nodes.root
         _logger.info("Objects node is: %r", root)
 
         # Node objects have methods to read and write node attributes as well as browse or populate address space
         _logger.info("Children of root are: %r", await root.get_children())
 
-        tree = await browse_nodes(client.get_objects_node())
+        tree = await browse_nodes(client.nodes.objects)
         _logger.info('Node tree: %r', tree)
     except Exception:
         _logger.exception('error')

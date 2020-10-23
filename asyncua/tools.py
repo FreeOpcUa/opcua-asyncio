@@ -5,6 +5,7 @@ import argparse
 from datetime import datetime, timedelta
 import math
 import time
+import concurrent.futures._base
 
 try:
     from IPython import embed
@@ -15,7 +16,7 @@ except ImportError:
         code.interact(local=dict(globals(), **locals()))
 
 from asyncua import ua
-from asyncua import Client
+from asyncua import Client, Server
 from asyncua import Node, uamethod
 from asyncua import sync
 from asyncua.ua.uaerrors import UaStatusCodeError
@@ -83,16 +84,16 @@ def _require_nodeid(parser, args):
     # check that a nodeid has been given explicitly, a bit hackish...
     if args.nodeid == "i=84" and args.path == "":
         parser.print_usage()
-        print("{0}: error: A NodeId or BrowsePath is required".format(parser.prog))
+        print(f"{parser.prog}: error: A NodeId or BrowsePath is required")
         sys.exit(1)
 
 
 def parse_args(parser, requirenodeid=False):
     args = parser.parse_args()
-    #logging.basicConfig(format="%(levelname)s: %(message)s", level=getattr(logging, args.loglevel))
+    # logging.basicConfig(format="%(levelname)s: %(message)s", level=getattr(logging, args.loglevel))
     logging.basicConfig(level=getattr(logging, args.loglevel))
     if args.url and '://' not in args.url:
-        logging.info("Adding default scheme %s to URL %s", ua.OPC_TCP_SCHEME, args.url)
+        logging.info(f"Adding default scheme {ua.OPC_TCP_SCHEME} to URL {args.url}")
         args.url = ua.OPC_TCP_SCHEME + '://' + args.url
     if requirenodeid:
         _require_nodeid(parser, args)
@@ -138,7 +139,7 @@ async def _uaread():
 
     try:
         node = await get_node(client, args)
-        attr = await node.get_attribute(args.attribute)
+        attr = await node.read_attribute(args.attribute)
         if args.datatype == "python":
             print(attr.Value.Value)
         elif args.datatype == "variant":
@@ -195,16 +196,16 @@ def _val_to_variant(val, args):
         return _arg_to_variant(val, array, int, ua.VariantType.SByte)
     elif args.datatype == "byte":
         return _arg_to_variant(val, array, int, ua.VariantType.Byte)
-    #elif args.datatype == "uint8":
-        #return _arg_to_variant(val, array, int, ua.VariantType.Byte)
+    # elif args.datatype == "uint8":
+        # return _arg_to_variant(val, array, int, ua.VariantType.Byte)
     elif args.datatype == "uint16":
         return _arg_to_variant(val, array, int, ua.VariantType.UInt16)
     elif args.datatype == "uint32":
         return _arg_to_variant(val, array, int, ua.VariantType.UInt32)
     elif args.datatype == "uint64":
         return _arg_to_variant(val, array, int, ua.VariantType.UInt64)
-    #elif args.datatype == "int8":
-        #return ua.Variant(int(val), ua.VariantType.Int8)
+    # elif args.datatype == "int8":
+        # return ua.Variant(int(val), ua.VariantType.Int8)
     elif args.datatype == "int16":
         return _arg_to_variant(val, array, int, ua.VariantType.Int16)
     elif args.datatype == "int32":
@@ -278,11 +279,11 @@ async def _uawrite():
 
     client = Client(args.url, timeout=args.timeout)
     await _configure_client_with_args(client, args)
-    await client.connect()
     try:
+        await client.connect()
         node = await get_node(client, args)
         val = _val_to_variant(args.value, args)
-        await node.set_attribute(args.attribute, ua.DataValue(val))
+        await node.write_attribute(args.attribute, ua.DataValue(val))
     finally:
         await client.disconnect()
 
@@ -312,18 +313,19 @@ async def _uals():
 
     client = Client(args.url, timeout=args.timeout)
     await _configure_client_with_args(client, args)
-    await client.connect()
     try:
-        node = await get_node(client, args)
-        print("Browsing node {0} at {1}\n".format(node, args.url))
-        if args.long_format == 0:
-            await _lsprint_0(node, args.depth - 1)
-        elif args.long_format == 1:
-            await _lsprint_1(node, args.depth - 1)
-        else:
-            _lsprint_long(node, args.depth - 1)
-    finally:
-        await client.disconnect()
+        async with client:
+            node = await get_node(client, args)
+            print(f"Browsing node {node} at {args.url}\n")
+            if args.long_format == 0:
+                await _lsprint_0(node, args.depth - 1)
+            elif args.long_format == 1:
+                await _lsprint_1(node, args.depth - 1)
+            else:
+                _lsprint_long(node, args.depth - 1)
+    except (OSError, concurrent.futures._base.TimeoutError) as e:
+        print(e)
+        sys.exit(1)
 
 
 async def _lsprint_0(node, depth, indent=""):
@@ -344,7 +346,7 @@ async def _lsprint_1(node, depth, indent=""):
     for desc in await node.get_children_descriptions():
         if desc.NodeClass == ua.NodeClass.Variable:
             try:
-                val = await Node(node.server, desc.NodeId).get_value()
+                val = await Node(node.server, desc.NodeId).read_value()
             except UaStatusCodeError as err:
                 val = "Bad (0x{0:x})".format(err.code)
             print("{0}{1:30} {2!s:25} {3!s:25}, {4!s:3}".format(indent, desc.DisplayName.to_string(), desc.NodeId.to_string(), desc.BrowseName.to_string(), val))
@@ -359,7 +361,7 @@ def _lsprint_long(pnode, depth, indent=""):
         print("{0:30} {1:25} {2:25} {3:10} {4:30} {5:25}".format("DisplayName", "NodeId", "BrowseName", "DataType", "Timestamp", "Value"))
         print("")
     for node in pnode.get_children():
-        attrs = node.get_attributes([ua.AttributeIds.DisplayName,
+        attrs = node.read_attributes([ua.AttributeIds.DisplayName,
                                      ua.AttributeIds.BrowseName,
                                      ua.AttributeIds.NodeClass,
                                      ua.AttributeIds.WriteMask,
@@ -426,8 +428,7 @@ async def _uasubscribe():
 
 
 def application_to_strings(app):
-    result = []
-    result.append(('Application URI', app.ApplicationUri))
+    result = [('Application URI', app.ApplicationUri)]
     optionals = [
         ('Product URI', app.ProductUri),
         ('Application Name', app.ApplicationName.to_string()),
@@ -447,9 +448,9 @@ def cert_to_string(der):
     if not der:
         return '[no certificate]'
     try:
-        from ..crypto import uacrypto
+        from .crypto import uacrypto
     except ImportError:
-        return "{0} bytes".format(len(der))
+        return f"{len(der)} bytes"
     cert = uacrypto.x509_from_der(der)
     return uacrypto.x509_to_string(cert)
 
@@ -478,6 +479,9 @@ def endpoint_to_strings(ep):
 
 
 def uaclient():
+    run(_uaclient())
+    
+async def _uaclient():
     parser = argparse.ArgumentParser(description="Connect to server and start python shell. root and objects nodes are available. Node specificed in command line is available as mynode variable")
     add_common_args(parser)
     parser.add_argument("-c",
@@ -488,25 +492,25 @@ def uaclient():
                         help="set client private key")
     args = parse_args(parser)
 
-    client = sync.Client(args.url, timeout=args.timeout)
-    _configure_client_with_args(client, args)
+    client = Client(args.url, timeout=args.timeout)
+    await _configure_client_with_args(client, args)
     if args.certificate:
         client.load_client_certificate(args.certificate)
     if args.private_key:
         client.load_private_key(args.private_key)
-    
-    sync.start_thread_loop()
-    client.connect()
+
     try:
-        mynode = get_node(client, args)
-        embed()
-        client.disconnect()
-    finally:
-        sync.stop_thread_loop()
+        async with client:
+            mynode = await get_node(client, args)
+            # embed()
+    except (OSError, concurrent.futures._base.TimeoutError) as e:
+        print(e)
+        sys.exit(1)
+
     sys.exit(0)
 
 
-def uaserver():
+async def _uaserver():
     parser = argparse.ArgumentParser(description="Run an example OPC-UA server. By importing xml definition and using uawrite command line, it is even possible to expose real data using this server")
     # we setup a server, this is a bit different from other tool so we do not reuse common arguments
     parser.add_argument("-u",
@@ -543,8 +547,7 @@ def uaserver():
     args = parser.parse_args()
     logging.basicConfig(format="%(levelname)s: %(message)s", level=getattr(logging, args.loglevel))
 
-    sync.start_thread_loop()
-    server = sync.Server()
+    server = Server()
     server.set_endpoint(args.url)
     if args.certificate:
         server.load_certificate(args.certificate)
@@ -562,7 +565,7 @@ def uaserver():
 
         uri = "http://examples.freeopcua.github.io"
         idx = server.register_namespace(uri)
-        objects = server.get_objects_node()
+        objects = server.nodes.objects
         myobj = objects.add_object(idx, "MyObject")
         mywritablevar = myobj.add_variable(idx, "MyWritableVariable", 6.7)
         mywritablevar.set_writable()    # Set MyVariable to be writable by clients
@@ -571,24 +574,30 @@ def uaserver():
         myprop = myobj.add_property(idx, "MyProperty", "I am a property")
         mymethod = myobj.add_method(idx, "MyMethod", multiply, [ua.VariantType.Double, ua.VariantType.Int64], [ua.VariantType.Double])
 
-    server.start()
     try:
-        if args.shell:
-            embed()
-        elif args.populate:
-            count = 0
-            while True:
-                time.sleep(1)
-                myvar.set_value(math.sin(count / 10))
-                myarrayvar.set_value([math.sin(count / 10), math.sin(count / 100)])
-                count += 1
-        else:
-            while True:
-                time.sleep(1)
-        server.stop()
-    finally:
-        sync.stop_thread_loop()
+        await server.init()
+        async with server:
+            if args.shell:
+                embed()
+            elif args.populate:
+                count = 0
+                while True:
+                    time.sleep(1)
+                    myvar.write_value(math.sin(count / 10))
+                    myarrayvar.write_value([math.sin(count / 10), math.sin(count / 100)])
+                    count += 1
+            else:
+                while True:
+                    time.sleep(1)
+    except OSError as e:
+        print(e)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        pass
     sys.exit(0)
+    
+def uaserver():
+    run(_uaserver())
 
 
 def uadiscover():
@@ -602,38 +611,42 @@ async def _uadiscover():
                         "--network",
                         action="store_true",
                         help="Also send a FindServersOnNetwork request to server")
-    #parser.add_argument("-s",
-                        #"--servers",
-                        #action="store_false",
-                        #help="send a FindServers request to server")
-    #parser.add_argument("-e",
-                        #"--endpoints",
-                        #action="store_false",
-                        #help="send a GetEndpoints request to server")
+    # parser.add_argument("-s",
+                        # "--servers",
+                        # action="store_false",
+                        # help="send a FindServers request to server")
+    # parser.add_argument("-e",
+                        # "--endpoints",
+                        # action="store_false",
+                        # help="send a GetEndpoints request to server")
     args = parse_args(parser)
 
     client = Client(args.url, timeout=args.timeout)
 
-    if args.network:
-        print("Performing discovery at {0}\n".format(args.url))
-        for i, server in enumerate(await client.connect_and_find_servers_on_network(), start=1):
-            print('Server {0}:'.format(i))
-            #for (n, v) in application_to_strings(server):
-                #print('  {}: {}'.format(n, v))
+    try:
+        if args.network:
+            print(f"Performing discovery at {args.url}\n")
+            for i, server in enumerate(await client.connect_and_find_servers_on_network(), start=1):
+                print(f'Server {i}:')
+                # for (n, v) in application_to_strings(server):
+                    # print('  {}: {}'.format(n, v))
+                print('')
+
+        print(f"Performing discovery at {args.url}\n")
+        for i, server in enumerate(await client.connect_and_find_servers(), start=1):
+            print(f'Server {i}:')
+            for (n, v) in application_to_strings(server):
+                print(f'  {n}: {v}')
             print('')
 
-    print("Performing discovery at {0}\n".format(args.url))
-    for i, server in enumerate(await client.connect_and_find_servers(), start=1):
-        print('Server {0}:'.format(i))
-        for (n, v) in application_to_strings(server):
-            print('  {0}: {1}'.format(n, v))
-        print('')
-
-    for i, ep in enumerate(await client.connect_and_get_server_endpoints(), start=1):
-        print('Endpoint {0}:'.format(i))
-        for (n, v) in endpoint_to_strings(ep):
-            print('  {0}: {1}'.format(n, v))
-        print('')
+        for i, ep in enumerate(await client.connect_and_get_server_endpoints(), start=1):
+            print(f'Endpoint {i}:')
+            for (n, v) in endpoint_to_strings(ep):
+                print(f'  {n}: {v}')
+            print('')
+    except (OSError, concurrent.futures._base.TimeoutError) as e:
+        print(e)
+        sys.exit(1)
 
     sys.exit(0)
 
@@ -689,13 +702,13 @@ async def _uahistoryread():
         node = await get_node(client, args)
         starttime = str_to_datetime(args.starttime, datetime.utcnow() - timedelta(days=1))
         endtime = str_to_datetime(args.endtime, datetime.utcnow())
-        print("Reading raw history of node {0} at {1}; start at {2}, end at {3}\n".format(node, args.url, starttime, endtime))
+        print(f"Reading raw history of node {node} at {args.url}; start at {starttime}, end at {endtime}\n")
         if args.events:
             evs = await node.read_event_history(starttime, endtime, numvalues=args.limit)
             for ev in evs:
                 print(ev)
         else:
-            print_history(node.read_raw_history(starttime, endtime, numvalues=args.limit))
+            print_history(await node.read_raw_history(starttime, endtime, numvalues=args.limit))
     finally:
         await client.disconnect()
     sys.exit(0)

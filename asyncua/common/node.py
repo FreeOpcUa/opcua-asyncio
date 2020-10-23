@@ -34,7 +34,7 @@ def _to_nodeid(nodeid):
     elif type(nodeid) in (str, bytes):
         return ua.NodeId.from_string(nodeid)
     else:
-        raise ua.UaError("Could not resolve '{0}' to a type id".format(nodeid))
+        raise ua.UaError(f"Could not resolve '{nodeid}' to a type id")
 
 
 class Node:
@@ -58,7 +58,8 @@ class Node:
         elif isinstance(nodeid, int):
             self.nodeid = ua.NodeId(nodeid, 0)
         else:
-            raise ua.UaError("argument to node must be a NodeId object or a string defining a nodeid found {0} of type {1}".format(nodeid, type(nodeid)))
+            raise ua.UaError(f"argument to node must be a NodeId object or a string"
+                             f" defining a nodeid found {nodeid} of type {type(nodeid)}")
         self.basenodeid = None
 
     def __eq__(self, other):
@@ -70,63 +71,64 @@ class Node:
         return not self.__eq__(other)
 
     def __str__(self):
-        return "Node({0})".format(self.nodeid)
+        return self.nodeid.to_string()
 
-    __repr__ = __str__
+    def __repr__(self):
+        return f"Node({self.nodeid})"
 
     def __hash__(self):
         return self.nodeid.__hash__()
 
-    async def get_browse_name(self):
+    async def read_browse_name(self):
         """
         Get browse name of a node. A browse name is a QualifiedName object
         composed of a string(name) and a namespace index.
         """
-        result = await self.get_attribute(ua.AttributeIds.BrowseName)
+        result = await self.read_attribute(ua.AttributeIds.BrowseName)
         return result.Value.Value
 
-    async def get_display_name(self):
+    async def read_display_name(self):
         """
         get description attribute of node
         """
-        result = await self.get_attribute(ua.AttributeIds.DisplayName)
+        result = await self.read_attribute(ua.AttributeIds.DisplayName)
         return result.Value.Value
 
-    async def get_data_type(self):
+    async def read_data_type(self):
         """
         get data type of node as NodeId
         """
-        result = await self.get_attribute(ua.AttributeIds.DataType)
+        result = await self.read_attribute(ua.AttributeIds.DataType)
         return result.Value.Value
 
-    async def get_data_type_as_variant_type(self):
+    async def read_data_type_as_variant_type(self):
         """
         get data type of node as VariantType
         This only works if node is a variable, otherwise type
         may not be convertible to VariantType
         """
-        result = await self.get_attribute(ua.AttributeIds.DataType)
+        result = await self.read_attribute(ua.AttributeIds.DataType)
         return await data_type_to_variant_type(Node(self.server, result.Value.Value))
 
     async def get_access_level(self):
         """
         Get the access level attribute of the node as a set of AccessLevel enum values.
         """
-        result = await self.get_attribute(ua.AttributeIds.AccessLevel)
+        result = await self.read_attribute(ua.AttributeIds.AccessLevel)
         return ua.AccessLevel.parse_bitfield(result.Value.Value)
 
     async def get_user_access_level(self):
         """
         Get the user access level attribute of the node as a set of AccessLevel enum values.
         """
-        result = await self.get_attribute(ua.AttributeIds.UserAccessLevel)
+        result = await self.read_attribute(ua.AttributeIds.UserAccessLevel)
         return ua.AccessLevel.parse_bitfield(result.Value.Value)
 
-    async def get_event_notifier(self):
+    async def read_event_notifier(self):
         """
         Get the event notifier attribute of the node as a set of EventNotifier enum values.
         """
-        result = await self.get_attribute(ua.AttributeIds.EventNotifier)
+        result = await self.read_attribute(ua.AttributeIds.EventNotifier)
         return ua.EventNotifier.parse_bitfield(result.Value.Value)
 
     async def set_event_notifier(self, values):
@@ -136,75 +138,77 @@ class Node:
         :param values: an iterable of EventNotifier enum values.
         """
         event_notifier_bitfield = ua.EventNotifier.to_bitfield(values)
-        await self.set_attribute(
+        await self.write_attribute(
             ua.AttributeIds.EventNotifier,
             ua.DataValue(ua.Variant(event_notifier_bitfield, ua.VariantType.Byte))
         )
 
-    async def get_node_class(self):
+    async def read_node_class(self):
         """
         get node class attribute of node
         """
-        result = await self.get_attribute(ua.AttributeIds.NodeClass)
+        result = await self.read_attribute(ua.AttributeIds.NodeClass)
         return result.Value.Value
 
     async def get_description(self):
         """
         get description attribute class of node
         """
-        result = await self.get_attribute(ua.AttributeIds.Description)
+        result = await self.read_attribute(ua.AttributeIds.Description)
         return result.Value.Value
 
-    async def get_value(self):
+    async def read_value(self):
         """
         Get value of a node as a python type. Only variables ( and properties) have values.
         An exception will be generated for other node types.
-        WARNING: on server side, this function returns a ref to object in ua database. Do not modify it if it is a mutable
-        object unless you know what you are doing
+        WARNING: on server side, this function returns a ref to object in ua database.
+        Do not modify it if it is a mutable object unless you know what you are doing
         """
-        result = await self.get_data_value()
+        result = await self.read_data_value()
         return result.Value.Value
 
-    async def get_data_value(self):
+    get_value = read_value  # legacy compatibility
+
+    async def read_data_value(self):
         """
         Get value of a node as a DataValue object. Only variables (and properties) have values.
         An exception will be generated for other node types.
         DataValue contain a variable value as a variant as well as server and source timestamps
         """
-        return await self.get_attribute(ua.AttributeIds.Value)
+        return await self.read_attribute(ua.AttributeIds.Value)
 
-    async def set_array_dimensions(self, value):
+    async def write_array_dimensions(self, value):
         """
         Set attribute ArrayDimensions of node
         make sure it has the correct data type
         """
         v = ua.Variant(value, ua.VariantType.UInt32)
-        await self.set_attribute(ua.AttributeIds.ArrayDimensions, ua.DataValue(v))
+        await self.write_attribute(ua.AttributeIds.ArrayDimensions, ua.DataValue(v))
 
-    async def get_array_dimensions(self):
+    async def read_array_dimensions(self):
         """
         Read and return ArrayDimensions attribute of node
         """
-        res = await self.get_attribute(ua.AttributeIds.ArrayDimensions)
+        res = await self.read_attribute(ua.AttributeIds.ArrayDimensions)
         return res.Value.Value
 
-    async def set_value_rank(self, value):
+    async def write_value_rank(self, value):
         """
         Set attribute ArrayDimensions of node
         """
         v = ua.Variant(value, ua.VariantType.Int32)
-        await self.set_attribute(ua.AttributeIds.ValueRank, ua.DataValue(v))
+        await self.write_attribute(ua.AttributeIds.ValueRank, ua.DataValue(v))
 
-    async def get_value_rank(self):
+    async def read_value_rank(self):
         """
         Read and return ArrayDimensions attribute of node
         """
-        res = await self.get_attribute(ua.AttributeIds.ValueRank)
+        res = await self.read_attribute(ua.AttributeIds.ValueRank)
         return res.Value.Value
 
-    async def set_value(self, value, varianttype=None):
+    async def write_value(self, value, varianttype=None):
         """
-        Set value of a node. Only variables(properties) have values.
+        Write value of a node. Only variables(properties) have values.
         An exception will be generated for other node types.
         value argument is either:
         * a python built-in type, converted to opc-ua
@@ -216,9 +220,10 @@ class Node:
         data change event generated
         """
         dv = value_to_datavalue(value, varianttype)
-        await self.set_attribute(ua.AttributeIds.Value, dv)
+        await self.write_attribute(ua.AttributeIds.Value, dv)
 
-    set_data_value = set_value
+    set_data_value = write_value  # legacy compatibility
+    set_value = write_value  # legacy compatibility
 
     async def set_writable(self, writable=True):
         """
@@ -233,14 +238,14 @@ class Node:
             await self.unset_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.CurrentWrite)
 
     async def set_attr_bit(self, attr, bit):
-        val = await self.get_attribute(attr)
+        val = await self.read_attribute(attr)
         val.Value.Value = ua.ua_binary.set_bit(val.Value.Value, bit)
-        await self.set_attribute(attr, val)
+        await self.write_attribute(attr, val)
 
     async def unset_attr_bit(self, attr, bit):
-        val = await self.get_attribute(attr)
+        val = await self.read_attribute(attr)
         val.Value.Value = ua.ua_binary.unset_bit(val.Value.Value, bit)
-        await self.set_attribute(attr, val)
+        await self.write_attribute(attr, val)
 
     def set_read_only(self):
         """
@@ -249,22 +254,25 @@ class Node:
         """
         return self.set_writable(False)
 
-    async def set_attribute(self, attributeid, datavalue):
+    async def write_attribute(self, attributeid, datavalue, indexrange=None):
         """
         Set an attribute of a node
         attributeid is a member of ua.AttributeIds
         datavalue is a ua.DataValue object
+        indexrange is a NumericRange (a string; e.g. "1" or "1:3".  
+            See https://reference.opcfoundation.org/v104/Core/docs/Part4/7.22/)
         """
         attr = ua.WriteValue()
         attr.NodeId = self.nodeid
         attr.AttributeId = attributeid
         attr.Value = datavalue
+        attr.IndexRange = indexrange
         params = ua.WriteParameters()
         params.NodesToWrite = [attr]
         result = await self.server.write(params)
         result[0].check()
 
-    async def get_attribute(self, attr):
+    async def read_attribute(self, attr):
         """
         Read one attribute of a node
         result code from server is checked and an exception is raised in case of error
@@ -278,7 +286,7 @@ class Node:
         result[0].StatusCode.check()
         return result[0]
 
-    async def get_attributes(self, attrs):
+    async def read_attributes(self, attrs):
         """
         Read several attributes of a node
         list of DataValue is returned
@@ -403,7 +411,7 @@ class Node:
         returns type definition of the node.
         """
         references = await self.get_references(refs=ua.ObjectIds.HasTypeDefinition,
-            direction=ua.BrowseDirection.Forward)
+                                               direction=ua.BrowseDirection.Forward)
         if len(references) == 0:
             return None
         return references[0].NodeId
@@ -421,7 +429,7 @@ class Node:
         path = [Node(self.server, ref.NodeId) for ref in path]
         path.append(self)
         if as_string:
-            path = [(await el.get_browse_name()).to_string() for el in path]
+            path = [(await el.read_browse_name()).to_string() for el in path]
         return path
 
     async def _get_path(self, max_length=20):
@@ -515,6 +523,7 @@ class Node:
         details.NumValuesPerNode = numvalues
         details.ReturnBounds = True
         result = await self.history_read(details)
+        result.StatusCode.check()
         return result.HistoryData.DataValues
 
     async def history_read(self, details):
@@ -555,6 +564,7 @@ class Node:
         evfilter = await get_filter_from_event_type(evtypes)
         details.Filter = evfilter
         result = await self.history_read_events(details)
+        result.StatusCode.check()
         event_res = []
         for res in result.HistoryData.Events:
             event_res.append(

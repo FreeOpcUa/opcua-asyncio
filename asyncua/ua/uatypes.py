@@ -68,7 +68,8 @@ class _FrozenClass(object):
     def __setattr__(self, key, value):
         if self._freeze and not hasattr(self, key):
             raise TypeError(
-                f"Error adding member '{key}' to class '{self.__class__.__name__}', class is frozen, members are {self.__dict__.keys()}"
+                f"Error adding member '{key}' to class '{self.__class__.__name__}',"
+                f" class is frozen, members are {self.__dict__.keys()}"
             )
         object.__setattr__(self, key, value)
 
@@ -270,7 +271,8 @@ class NodeId(object):
     Args:
         identifier: The identifier might be an int, a string, bytes or a Guid
         namespaceidx(int): The index of the namespace
-        nodeidtype(NodeIdType): The type of the nodeid if it cannor be guess or you want something special like twobyte nodeid or fourbytenodeid
+        nodeidtype(NodeIdType): The type of the nodeid if it cannor be guess or you want something
+        special like twobyte nodeid or fourbytenodeid
 
 
     :ivar Identifier:
@@ -293,7 +295,10 @@ class NodeId(object):
         self._freeze = True
         if self.Identifier is None:
             self.Identifier = 0
-            self.NodeIdType = NodeIdType.TwoByte
+            if namespaceidx == 0:
+                self.NodeIdType = NodeIdType.TwoByte
+            else:  # TwoByte NodeId does not encode namespace.
+                self.NodeIdType = NodeIdType.Numeric
             return
         if self.NodeIdType is None:
             if isinstance(self.Identifier, int):
@@ -331,7 +336,7 @@ class NodeId(object):
     def has_null_identifier(self):
         if not self.Identifier:
             return True
-        if self.NodeIdType == NodeIdType.Guid and re.match(b'0.', self.Identifier):
+        if self.NodeIdType == NodeIdType.Guid and re.match(b'\00+', self.Identifier.bytes):
             return True
         return False
 
@@ -384,7 +389,7 @@ class NodeId(object):
     def to_string(self):
         string = []
         if self.NamespaceIndex != 0:
-            string.append("ns={0}".format(self.NamespaceIndex))
+            string.append(f"ns={self.NamespaceIndex}")
         ntype = None
         if self.NodeIdType == NodeIdType.Numeric:
             ntype = "i"
@@ -398,11 +403,11 @@ class NodeId(object):
             ntype = "g"
         elif self.NodeIdType == NodeIdType.ByteString:
             ntype = "b"
-        string.append("{0}={1}".format(ntype, self.Identifier))
+        string.append(f"{ntype}={self.Identifier}")
         if self.ServerIndex:
-            string.append("srv={}".format(self.ServerIndex))
+            string.append(f"srv={self.ServerIndex}")
         if self.NamespaceUri:
-            string.append("nsu={0}".format(self.NamespaceUri))
+            string.append(f"nsu={self.NamespaceUri}")
         return ";".join(string)
 
     def __str__(self):
@@ -466,7 +471,7 @@ class QualifiedName(FrozenClass):
         self._freeze = True
 
     def to_string(self):
-        return "{0}:{1}".format(self.NamespaceIndex, self.Name)
+        return f"{self.NamespaceIndex}:{self.Name}"
 
     @staticmethod
     def from_string(string):
@@ -539,7 +544,7 @@ class LocalizedText(FrozenClass):
     @Text.setter
     def Text(self, text):
         if not isinstance(text, str):
-            raise ValueError("A LocalizedText object takes a string as argument \"text\", not a {}, {}".format(type(text), text))
+            raise ValueError(f"A LocalizedText object takes a string as argument \"text\", not a {type(text)}, {text}")
         self._text = text
         if self._text:
             self.Encoding |= (1 << 1)
@@ -547,7 +552,8 @@ class LocalizedText(FrozenClass):
     @Locale.setter
     def Locale(self, locale):
         if not isinstance(locale, str):
-            raise ValueError("A LocalizedText object takes a string as argument \"locale\", not a {}, {}".format(type(locale), locale))
+            raise ValueError(f"A LocalizedText object takes a string as argument \"locale\","
+                             f" not a {type(locale)}, {locale}")
         self._locale = locale
         if self._locale:
             self.Encoding |= (1)
@@ -561,11 +567,11 @@ class LocalizedText(FrozenClass):
 
     @staticmethod
     def from_string(string):
-        m = re.match("^LocalizedText\(Encoding:(.*), Locale:(.*), Text:(.*)\)$", string)
+        m = re.match(r"^LocalizedText\(Encoding:(.*), Locale:(.*), Text:(.*)\)$", string)
         if m:
-            text = m.group(3) if m.group(3)!=str(None) else None
-            locale = m.group(2) if m.group(2)!=str(None) else None
-            return LocalizedText(text=text,locale=locale)            
+            text = m.group(3) if m.group(3) != str(None) else None
+            locale = m.group(2) if m.group(2) != str(None) else None
+            return LocalizedText(text=text, locale=locale)
         else:
             return LocalizedText(string)
 
@@ -798,8 +804,7 @@ def _split_list(l, n):
 
 
 def flatten_and_get_shape(mylist):
-    dims = []
-    dims.append(len(mylist))
+    dims = [len(mylist)]
     while isinstance(mylist[0], (list, tuple)):
         dims.append(len(mylist[0]))
         mylist = [item for sublist in mylist for item in sublist]
@@ -867,8 +872,8 @@ class DataValue(FrozenClass):
         ('ServerTimestamp', 'DateTime'),
         ('ServerPicoseconds', 'UInt16'),
     )
-
-    def __init__(self, variant=None, status=None):
+    
+    def __init__(self, variant=None, status=None, sourceTimestamp=None, sourcePicoseconds=None, serverTimestamp=None, serverPicoseconds=None):
         self.Encoding = 0
         if not isinstance(variant, Variant):
             variant = Variant(variant)
@@ -877,10 +882,10 @@ class DataValue(FrozenClass):
             self.StatusCode = StatusCode()
         else:
             self.StatusCode = status
-        self.SourceTimestamp = None  # DateTime()
-        self.SourcePicoseconds = None
-        self.ServerTimestamp = None  # DateTime()
-        self.ServerPicoseconds = None
+        self.SourceTimestamp = sourceTimestamp
+        self.SourcePicoseconds = sourcePicoseconds
+        self.ServerTimestamp = serverTimestamp
+        self.ServerPicoseconds = serverPicoseconds
         self._freeze = True
 
     def __str__(self):
@@ -939,7 +944,7 @@ def get_default_value(vtype):
     elif vtype == VariantType.Guid:
         return uuid.uuid4()
     elif vtype == VariantType.XmlElement:
-        return None  #Not sure this is correct
+        return None  # Not sure this is correct
     elif vtype == VariantType.NodeId:
         return NodeId()
     elif vtype == VariantType.ExpandedNodeId:

@@ -88,11 +88,11 @@ class XmlImporter:
             raise ValueError(f"Not implemented node type: {nodedata.nodetype} ")
         return node
 
-    def _add_node(self, node: "Node") -> Coroutine:
+    async def _add_node(self, node: "Node") -> Coroutine:
         if hasattr(self.server, "iserver"):
-            return self.server.iserver.isession.add_nodes([node])
+            return await self.server.iserver.isession.add_nodes([node])
         else:
-            return self.server.uaclient.add_nodes([node])
+            return await self.server.uaclient.add_nodes([node])
 
     async def _add_references(self, refs):
         if hasattr(self.server, "iserver"):
@@ -135,7 +135,8 @@ class XmlImporter:
         node = ua.AddNodesItem()
         node.RequestedNewNodeId = self._migrate_ns(obj.nodeid)
         node.BrowseName = self._migrate_ns(obj.browsename)
-        self.logger.info("Importing xml node (%s, %s) as (%s %s)", obj.browsename, obj.nodeid, node.BrowseName, node.RequestedNewNodeId)
+        self.logger.info("Importing xml node (%s, %s) as (%s %s)", obj.browsename,
+                         obj.nodeid, node.BrowseName, node.RequestedNewNodeId)
         node.NodeClass = getattr(ua.NodeClass, obj.nodetype[2:])
         if obj.parent and obj.parentlink:
             node.ParentNodeId = self._migrate_ns(obj.parent)
@@ -240,7 +241,7 @@ class XmlImporter:
         for name, uatype in obj.ua_types:
             if name == attname:
                 return uatype
-        raise UaError("Attribute '{}' defined in xml is not found in object '{}'".format(attname, obj))
+        raise UaError(f"Attribute '{attname}' defined in xml is not found in object '{obj}'")
 
     def _set_attr(self, obj, attname: str, val):
         # tow possible values:
@@ -292,7 +293,7 @@ class XmlImporter:
             if hasattr(ua.ua_binary.Primitives, vtype):
                 return ua.Variant(obj.value, getattr(ua.VariantType, vtype))
             elif vtype == "LocalizedText":
-                return ua.Variant([getattr(ua, vtype)(text=item["Text"],locale=item["Locale"]) for item in obj.value])
+                return ua.Variant([getattr(ua, vtype)(text=item["Text"], locale=item["Locale"]) for item in obj.value])
             else:
                 return ua.Variant([getattr(ua, vtype)(v) for v in obj.value])
         elif obj.valuetype == 'ExtensionObject':

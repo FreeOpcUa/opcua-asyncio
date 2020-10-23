@@ -1,7 +1,8 @@
 import sys
 sys.path.insert(0, "..")
-import time
 import logging
+import asyncio
+
 from IPython import embed
 
 from asyncua import Client
@@ -9,19 +10,15 @@ from asyncua import ua
 
 
 
-if __name__ == "__main__":
+async def main():
     logging.basicConfig(level=logging.WARN)
-    client = Client("opc.tcp://asyncua.demo-this.com:51210/UA/SampleServer")
-    try:
-        client.connect()
-        root = client.get_root_node()
-        objects = client.get_objects_node()
+    async with Client("opc.tcp://opcua.demo-this.com:51210/UA/SampleServer") as client:
         struct = client.get_node("ns=2;i=10239")
-        before = struct.get_value()
-        client.load_type_definitions()  # scan server for custom structures and import them
-        after = struct.get_value()
-        
+        before = await struct.read_value()
+        data = await client.load_type_definitions()  # scan server for custom structures and import them
+        after = await struct.read_value()
+        print("BEFORE", before)
+        print("AFTER", after)
 
-        embed()
-    finally:
-        client.disconnect()
+if __name__ == '__main__':
+    asyncio.run(main())

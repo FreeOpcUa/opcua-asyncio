@@ -145,13 +145,22 @@ async def select_clauses_from_evtype(evtypes):
     selected_paths = []
     for evtype in evtypes:
         for prop in await get_event_properties_from_type_node(evtype):
-            browse_name = await prop.get_browse_name()
+            browse_name = await prop.read_browse_name()
             if browse_name not in selected_paths:
                 op = ua.SimpleAttributeOperand()
                 op.AttributeId = ua.AttributeIds.Value
                 op.BrowsePath = [browse_name]
                 clauses.append(op)
                 selected_paths.append(browse_name)
+        for var in await get_event_variables_from_type_node(evtype):
+            browse_name = await var.get_browse_name()
+            if browse_name not in selected_paths:
+                op = ua.SimpleAttributeOperand()
+                op.AttributeId = ua.AttributeIds.Value
+                op.BrowsePath = [browse_name]
+                clauses.append(op)
+                selected_paths.append(browse_name)
+
         for var in await get_event_variables_from_type_node(evtype):
             browse_name = await var.get_browse_name()
             if browse_name not in selected_paths:
@@ -234,6 +243,7 @@ async def get_event_obj_from_type_node(node):
     """
     return an Event object from an event type node
     """
+
     if node.nodeid.NamespaceIndex == 0:
         if node.nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
             return asyncua.common.event_objects.IMPLEMENTED_EVENTS[node.nodeid.Identifier]()
@@ -268,7 +278,6 @@ async def get_event_obj_from_type_node(node):
                 if len(parents) != 1:  # Something went wrong
                     raise UaError("Parent of event type could not be found")
                 curr_node = parents[0]
-
             self._freeze = True
 
     ce = CustomEvent()
@@ -279,6 +288,7 @@ async def get_event_obj_from_type_node(node):
 async def _find_parent_eventtype(node):
     """
     """
+
     parents = await node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse,
                                               includesubtypes=True)
 

@@ -64,7 +64,7 @@ class EventGenerator:
         if not self.event.SourceNode:
             self.event.SourceNode = emitting_node.nodeid
         if not self.event.SourceName:
-            self.event.SourceName = (await Node(self.isession, self.event.SourceNode).get_browse_name()).Name
+            self.event.SourceName = (await Node(self.isession, self.event.SourceNode).read_browse_name()).Name
 
         refs = []
         if notifier_path is not None:
@@ -112,12 +112,12 @@ class EventGenerator:
         self.emitting_node = emitting_node
 
     def __str__(self):
-        return "EventGenerator(Type:{0}, Emitting Node:{1}, Time:{2}, Message: {3})".format(
-            self.event.EventType, self.emitting_node, self.event.Time, self.event.Message)
+        return f"EventGenerator(Type:{self.event.EventType}, Emitting Node:{self.emitting_node}, " \
+               f"Time:{self.event.Time}, Message: {self.event.Message})"
 
     __repr__ = __str__
 
-    def trigger(self, time_attr=None, message=None):
+    async def trigger(self, time_attr=None, message=None):
         """
         Trigger the event. This will send a notification to all subscribed clients
         """
@@ -139,5 +139,7 @@ class EventGenerator:
 
         if message:
             self.event.Message = ua.LocalizedText(message)
+        elif not self.event.Message:
+            self.event.Message = ua.LocalizedText(Node(self.isession, self.event.SourceNode).read_browse_name().Text)
 
-        self.isession.subscription_service.trigger_event(self.event)
+        await self.isession.subscription_service.trigger_event(self.event)

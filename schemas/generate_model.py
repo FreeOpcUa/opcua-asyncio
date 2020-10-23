@@ -448,7 +448,7 @@ def add_basetype_members(model):
         emptystruct = False
         if len(struct.fields) == 0:
             emptystruct = True
-        if struct.basetype in ('ExtensionObject'):
+        if struct.basetype in ('ExtensionObject',):
             struct.basetype = None
             continue
         base = model.get_struct(struct.basetype)

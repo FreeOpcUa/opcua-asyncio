@@ -13,12 +13,11 @@ dist
 t.py
 tmp
 old
-dist
 *.egg-info
-*.swp
 newdocs
 examples/history.db
 *.sql
 /.project
 /.pydevproject
 /.settings/
+/venv/

@@ -1,5 +1,6 @@
 """
 Autogenerate code from xml spec
+Date:2020-06-15 19:32:40.808637
 """
 
 from datetime import datetime
@@ -128,8 +129,8 @@ class DataSetFieldContentMask(IntEnum):
     :vartype SourcePicoSeconds: 8
     :ivar ServerPicoSeconds:
     :vartype ServerPicoSeconds: 16
-    :ivar RawDataEncoding:
-    :vartype RawDataEncoding: 32
+    :ivar RawData:
+    :vartype RawData: 32
     """
     None_ = 0
     StatusCode = 1
@@ -137,20 +138,20 @@ class DataSetFieldContentMask(IntEnum):
     ServerTimestamp = 4
     SourcePicoSeconds = 8
     ServerPicoSeconds = 16
-    RawDataEncoding = 32
+    RawData = 32
 
 
 class OverrideValueHandling(IntEnum):
     """
     :ivar Disabled:
     :vartype Disabled: 0
-    :ivar LastUseableValue:
-    :vartype LastUseableValue: 1
+    :ivar LastUsableValue:
+    :vartype LastUsableValue: 1
     :ivar OverrideValue:
     :vartype OverrideValue: 2
     """
     Disabled = 0
-    LastUseableValue = 1
+    LastUsableValue = 1
     OverrideValue = 2
 
 
@@ -188,8 +189,8 @@ class UadpNetworkMessageContentMask(IntEnum):
     :vartype PayloadHeader: 64
     :ivar Timestamp:
     :vartype Timestamp: 128
-    :ivar Picoseconds:
-    :vartype Picoseconds: 256
+    :ivar PicoSeconds:
+    :vartype PicoSeconds: 256
     :ivar DataSetClassId:
     :vartype DataSetClassId: 512
     :ivar PromotedFields:
@@ -204,7 +205,7 @@ class UadpNetworkMessageContentMask(IntEnum):
     SequenceNumber = 32
     PayloadHeader = 64
     Timestamp = 128
-    Picoseconds = 256
+    PicoSeconds = 256
     DataSetClassId = 512
     PromotedFields = 1024
 
@@ -337,8 +338,6 @@ class PubSubDiagnosticsCounterClassification(IntEnum):
 
 class IdType(IntEnum):
     """
-    The type of identifier used in a node id.
-
     :ivar Numeric:
     :vartype Numeric: 0
     :ivar String:
@@ -356,8 +355,6 @@ class IdType(IntEnum):
 
 class NodeClass(IntEnum):
     """
-    A mask specifying the class of the node.
-
     :ivar Unspecified:
     :vartype Unspecified: 0
     :ivar Object:
@@ -458,7 +455,9 @@ class AccessLevelType(IntEnum):
     :ivar HistoryRead:
     :vartype HistoryRead: 4
     :ivar HistoryWrite:
-    :vartype HistoryWrite: 16
+    :vartype HistoryWrite: 8
+    :ivar SemanticChange:
+    :vartype SemanticChange: 16
     :ivar StatusWrite:
     :vartype StatusWrite: 32
     :ivar TimestampWrite:
@@ -468,7 +467,8 @@ class AccessLevelType(IntEnum):
     CurrentRead = 1
     CurrentWrite = 2
     HistoryRead = 4
-    HistoryWrite = 16
+    HistoryWrite = 8
+    SemanticChange = 16
     StatusWrite = 32
     TimestampWrite = 64
 
@@ -484,7 +484,9 @@ class AccessLevelExType(IntEnum):
     :ivar HistoryRead:
     :vartype HistoryRead: 4
     :ivar HistoryWrite:
-    :vartype HistoryWrite: 16
+    :vartype HistoryWrite: 8
+    :ivar SemanticChange:
+    :vartype SemanticChange: 16
     :ivar StatusWrite:
     :vartype StatusWrite: 32
     :ivar TimestampWrite:
@@ -500,7 +502,8 @@ class AccessLevelExType(IntEnum):
     CurrentRead = 1
     CurrentWrite = 2
     HistoryRead = 4
-    HistoryWrite = 16
+    HistoryWrite = 8
+    SemanticChange = 16
     StatusWrite = 32
     TimestampWrite = 64
     NonatomicRead = 256
@@ -525,6 +528,23 @@ class EventNotifierType(IntEnum):
     HistoryWrite = 8
 
 
+class AccessRestrictionType(IntEnum):
+    """
+    :ivar None_:
+    :vartype None_: 0
+    :ivar SigningRequired:
+    :vartype SigningRequired: 1
+    :ivar EncryptionRequired:
+    :vartype EncryptionRequired: 2
+    :ivar SessionRequired:
+    :vartype SessionRequired: 4
+    """
+    None_ = 0
+    SigningRequired = 1
+    EncryptionRequired = 2
+    SessionRequired = 4
+
+
 class StructureType(IntEnum):
     """
     :ivar Structure:
@@ -541,8 +561,6 @@ class StructureType(IntEnum):
 
 class ApplicationType(IntEnum):
     """
-    The types of applications.
-
     :ivar Server:
     :vartype Server: 0
     :ivar Client:
@@ -560,8 +578,6 @@ class ApplicationType(IntEnum):
 
 class MessageSecurityMode(IntEnum):
     """
-    The type of security to use on a message.
-
     :ivar Invalid:
     :vartype Invalid: 0
     :ivar None_:
@@ -579,8 +595,6 @@ class MessageSecurityMode(IntEnum):
 
 class UserTokenType(IntEnum):
     """
-    The possible user token types.
-
     :ivar Anonymous:
     :vartype Anonymous: 0
     :ivar UserName:
@@ -598,8 +612,6 @@ class UserTokenType(IntEnum):
 
 class SecurityTokenRequestType(IntEnum):
     """
-    Indicates whether a token if being created or renewed.
-
     :ivar Issue:
     :vartype Issue: 0
     :ivar Renew:
@@ -611,8 +623,6 @@ class SecurityTokenRequestType(IntEnum):
 
 class NodeAttributesMask(IntEnum):
     """
-    The bits used to specify default attributes for a new node.
-
     :ivar None_:
     :vartype None_: 0
     :ivar AccessLevel:
@@ -723,8 +733,6 @@ class NodeAttributesMask(IntEnum):
 
 class AttributeWriteMask(IntEnum):
     """
-    Define bits used to indicate which attributes are writable.
-
     :ivar None_:
     :vartype None_: 0
     :ivar AccessLevel:
@@ -811,8 +819,6 @@ class AttributeWriteMask(IntEnum):
 
 class BrowseDirection(IntEnum):
     """
-    The directions of the references to return.
-
     :ivar Forward:
     :vartype Forward: 0
     :ivar Inverse:
@@ -830,8 +836,6 @@ class BrowseDirection(IntEnum):
 
 class BrowseResultMask(IntEnum):
     """
-    A bit mask which specifies what should be returned in a browse response.
-
     :ivar None_:
     :vartype None_: 0
     :ivar ReferenceTypeId:
@@ -1167,8 +1171,8 @@ class DiagnosticInfo(FrozenClass):
     ua_switches = {
         'SymbolicId': ('Encoding', 0),
         'NamespaceURI': ('Encoding', 1),
-        'Locale': ('Encoding', 2),
-        'LocalizedText': ('Encoding', 3),
+        'Locale': ('Encoding', 3),
+        'LocalizedText': ('Encoding', 2),
         'AdditionalInfo': ('Encoding', 4),
         'InnerStatusCode': ('Encoding', 5),
         'InnerDiagnosticInfo': ('Encoding', 6),
@@ -1257,6 +1261,202 @@ class EndpointType(FrozenClass):
     __repr__ = __str__
 
 
+class RationalNumber(FrozenClass):
+    """
+    :ivar Numerator:
+    :vartype Numerator: Int32
+    :ivar Denominator:
+    :vartype Denominator: UInt32
+    """
+
+    ua_types = [
+        ('Numerator', 'Int32'),
+        ('Denominator', 'UInt32'),
+               ]
+
+    def __init__(self):
+        self.Numerator = 0
+        self.Denominator = 0
+        self._freeze = True
+
+    def __str__(self):
+        return f'RationalNumber(Numerator:{self.Numerator}, Denominator:{self.Denominator})'
+
+    __repr__ = __str__
+
+
+class Vector(FrozenClass):
+    """
+    """
+
+    ua_types = [
+               ]
+
+    def __init__(self):
+        self._freeze = True
+
+    def __str__(self):
+        return 'Vector()'
+
+    __repr__ = __str__
+
+
+class ThreeDVector(FrozenClass):
+    """
+    :ivar X:
+    :vartype X: Double
+    :ivar Y:
+    :vartype Y: Double
+    :ivar Z:
+    :vartype Z: Double
+    """
+
+    ua_types = [
+        ('X', 'Double'),
+        ('Y', 'Double'),
+        ('Z', 'Double'),
+               ]
+
+    def __init__(self):
+        self.X = 0
+        self.Y = 0
+        self.Z = 0
+        self._freeze = True
+
+    def __str__(self):
+        return f'ThreeDVector(X:{self.X}, Y:{self.Y}, Z:{self.Z})'
+
+    __repr__ = __str__
+
+
+class CartesianCoordinates(FrozenClass):
+    """
+    """
+
+    ua_types = [
+               ]
+
+    def __init__(self):
+        self._freeze = True
+
+    def __str__(self):
+        return 'CartesianCoordinates()'
+
+    __repr__ = __str__
+
+
+class ThreeDCartesianCoordinates(FrozenClass):
+    """
+    :ivar X:
+    :vartype X: Double
+    :ivar Y:
+    :vartype Y: Double
+    :ivar Z:
+    :vartype Z: Double
+    """
+
+    ua_types = [
+        ('X', 'Double'),
+        ('Y', 'Double'),
+        ('Z', 'Double'),
+               ]
+
+    def __init__(self):
+        self.X = 0
+        self.Y = 0
+        self.Z = 0
+        self._freeze = True
+
+    def __str__(self):
+        return f'ThreeDCartesianCoordinates(X:{self.X}, Y:{self.Y}, Z:{self.Z})'
+
+    __repr__ = __str__
+
+
+class Orientation(FrozenClass):
+    """
+    """
+
+    ua_types = [
+               ]
+
+    def __init__(self):
+        self._freeze = True
+
+    def __str__(self):
+        return 'Orientation()'
+
+    __repr__ = __str__
+
+
+class ThreeDOrientation(FrozenClass):
+    """
+    :ivar A:
+    :vartype A: Double
+    :ivar B:
+    :vartype B: Double
+    :ivar C:
+    :vartype C: Double
+    """
+
+    ua_types = [
+        ('A', 'Double'),
+        ('B', 'Double'),
+        ('C', 'Double'),
+               ]
+
+    def __init__(self):
+        self.A = 0
+        self.B = 0
+        self.C = 0
+        self._freeze = True
+
+    def __str__(self):
+        return f'ThreeDOrientation(A:{self.A}, B:{self.B}, C:{self.C})'
+
+    __repr__ = __str__
+
+
+class Frame(FrozenClass):
+    """
+    """
+
+    ua_types = [
+               ]
+
+    def __init__(self):
+        self._freeze = True
+
+    def __str__(self):
+        return 'Frame()'
+
+    __repr__ = __str__
+
+
+class ThreeDFrame(FrozenClass):
+    """
+    :ivar CartesianCoordinates:
+    :vartype CartesianCoordinates: ThreeDCartesianCoordinates
+    :ivar Orientation:
+    :vartype Orientation: ThreeDOrientation
+    """
+
+    ua_types = [
+        ('CartesianCoordinates', 'ThreeDCartesianCoordinates'),
+        ('Orientation', 'ThreeDOrientation'),
+               ]
+
+    def __init__(self):
+        self.CartesianCoordinates = ThreeDCartesianCoordinates()
+        self.Orientation = ThreeDOrientation()
+        self._freeze = True
+
+    def __str__(self):
+        return f'ThreeDFrame(CartesianCoordinates:{self.CartesianCoordinates}, Orientation:{self.Orientation})'
+
+    __repr__ = __str__
+
+
 class IdentityMappingRuleType(FrozenClass):
     """
     :ivar CriteriaType:
@@ -1277,6 +1477,38 @@ class IdentityMappingRuleType(FrozenClass):
 
     def __str__(self):
         return f'IdentityMappingRuleType(CriteriaType:{self.CriteriaType}, Criteria:{self.Criteria})'
+
+    __repr__ = __str__
+
+
+class CurrencyUnitType(FrozenClass):
+    """
+    :ivar NumericCode:
+    :vartype NumericCode: Int16
+    :ivar Exponent:
+    :vartype Exponent: SByte
+    :ivar AlphabeticCode:
+    :vartype AlphabeticCode: String
+    :ivar Currency:
+    :vartype Currency: LocalizedText
+    """
+
+    ua_types = [
+        ('NumericCode', 'Int16'),
+        ('Exponent', 'SByte'),
+        ('AlphabeticCode', 'String'),
+        ('Currency', 'LocalizedText'),
+               ]
+
+    def __init__(self):
+        self.NumericCode = 0
+        self.Exponent = SByte()
+        self.AlphabeticCode = None
+        self.Currency = LocalizedText()
+        self._freeze = True
+
+    def __str__(self):
+        return f'CurrencyUnitType(NumericCode:{self.NumericCode}, Exponent:{self.Exponent}, AlphabeticCode:{self.AlphabeticCode}, Currency:{self.Currency})'
 
     __repr__ = __str__
 
@@ -1967,6 +2199,8 @@ class WriterGroupDataType(FrozenClass):
     :vartype Priority: Byte
     :ivar LocaleIds:
     :vartype LocaleIds: String
+    :ivar HeaderLayoutUri:
+    :vartype HeaderLayoutUri: String
     :ivar TransportSettings:
     :vartype TransportSettings: ExtensionObject
     :ivar MessageSettings:
@@ -1988,6 +2222,7 @@ class WriterGroupDataType(FrozenClass):
         ('KeepAliveTime', 'Double'),
         ('Priority', 'Byte'),
         ('LocaleIds', 'ListOfString'),
+        ('HeaderLayoutUri', 'String'),
         ('TransportSettings', 'ExtensionObject'),
         ('MessageSettings', 'ExtensionObject'),
         ('DataSetWriters', 'ListOfDataSetWriterDataType'),
@@ -2006,13 +2241,14 @@ class WriterGroupDataType(FrozenClass):
         self.KeepAliveTime = 0
         self.Priority = 0
         self.LocaleIds = []
+        self.HeaderLayoutUri = None
         self.TransportSettings = ExtensionObject()
         self.MessageSettings = ExtensionObject()
         self.DataSetWriters = []
         self._freeze = True
 
     def __str__(self):
-        return f'WriterGroupDataType(Name:{self.Name}, Enabled:{self.Enabled}, SecurityMode:{self.SecurityMode}, SecurityGroupId:{self.SecurityGroupId}, SecurityKeyServices:{self.SecurityKeyServices}, MaxNetworkMessageSize:{self.MaxNetworkMessageSize}, GroupProperties:{self.GroupProperties}, WriterGroupId:{self.WriterGroupId}, PublishingInterval:{self.PublishingInterval}, KeepAliveTime:{self.KeepAliveTime}, Priority:{self.Priority}, LocaleIds:{self.LocaleIds}, TransportSettings:{self.TransportSettings}, MessageSettings:{self.MessageSettings}, DataSetWriters:{self.DataSetWriters})'
+        return f'WriterGroupDataType(Name:{self.Name}, Enabled:{self.Enabled}, SecurityMode:{self.SecurityMode}, SecurityGroupId:{self.SecurityGroupId}, SecurityKeyServices:{self.SecurityKeyServices}, MaxNetworkMessageSize:{self.MaxNetworkMessageSize}, GroupProperties:{self.GroupProperties}, WriterGroupId:{self.WriterGroupId}, PublishingInterval:{self.PublishingInterval}, KeepAliveTime:{self.KeepAliveTime}, Priority:{self.Priority}, LocaleIds:{self.LocaleIds}, HeaderLayoutUri:{self.HeaderLayoutUri}, TransportSettings:{self.TransportSettings}, MessageSettings:{self.MessageSettings}, DataSetWriters:{self.DataSetWriters})'
 
     __repr__ = __str__
 
@@ -2267,6 +2503,10 @@ class DataSetReaderDataType(FrozenClass):
     :vartype DataSetFieldContentMask: DataSetFieldContentMask
     :ivar MessageReceiveTimeout:
     :vartype MessageReceiveTimeout: Double
+    :ivar KeyFrameCount:
+    :vartype KeyFrameCount: UInt32
+    :ivar HeaderLayoutUri:
+    :vartype HeaderLayoutUri: String
     :ivar SecurityMode:
     :vartype SecurityMode: MessageSecurityMode
     :ivar SecurityGroupId:
@@ -2292,6 +2532,8 @@ class DataSetReaderDataType(FrozenClass):
         ('DataSetMetaData', 'DataSetMetaDataType'),
         ('DataSetFieldContentMask', 'DataSetFieldContentMask'),
         ('MessageReceiveTimeout', 'Double'),
+        ('KeyFrameCount', 'UInt32'),
+        ('HeaderLayoutUri', 'String'),
         ('SecurityMode', 'MessageSecurityMode'),
         ('SecurityGroupId', 'String'),
         ('SecurityKeyServices', 'ListOfEndpointDescription'),
@@ -2310,6 +2552,8 @@ class DataSetReaderDataType(FrozenClass):
         self.DataSetMetaData = DataSetMetaDataType()
         self.DataSetFieldContentMask = DataSetFieldContentMask(0)
         self.MessageReceiveTimeout = 0
+        self.KeyFrameCount = 0
+        self.HeaderLayoutUri = None
         self.SecurityMode = MessageSecurityMode(0)
         self.SecurityGroupId = None
         self.SecurityKeyServices = []
@@ -2320,7 +2564,7 @@ class DataSetReaderDataType(FrozenClass):
         self._freeze = True
 
     def __str__(self):
-        return f'DataSetReaderDataType(Name:{self.Name}, Enabled:{self.Enabled}, PublisherId:{self.PublisherId}, WriterGroupId:{self.WriterGroupId}, DataSetWriterId:{self.DataSetWriterId}, DataSetMetaData:{self.DataSetMetaData}, DataSetFieldContentMask:{self.DataSetFieldContentMask}, MessageReceiveTimeout:{self.MessageReceiveTimeout}, SecurityMode:{self.SecurityMode}, SecurityGroupId:{self.SecurityGroupId}, SecurityKeyServices:{self.SecurityKeyServices}, DataSetReaderProperties:{self.DataSetReaderProperties}, TransportSettings:{self.TransportSettings}, MessageSettings:{self.MessageSettings}, SubscribedDataSet:{self.SubscribedDataSet})'
+        return f'DataSetReaderDataType(Name:{self.Name}, Enabled:{self.Enabled}, PublisherId:{self.PublisherId}, WriterGroupId:{self.WriterGroupId}, DataSetWriterId:{self.DataSetWriterId}, DataSetMetaData:{self.DataSetMetaData}, DataSetFieldContentMask:{self.DataSetFieldContentMask}, MessageReceiveTimeout:{self.MessageReceiveTimeout}, KeyFrameCount:{self.KeyFrameCount}, HeaderLayoutUri:{self.HeaderLayoutUri}, SecurityMode:{self.SecurityMode}, SecurityGroupId:{self.SecurityGroupId}, SecurityKeyServices:{self.SecurityKeyServices}, DataSetReaderProperties:{self.DataSetReaderProperties}, TransportSettings:{self.TransportSettings}, MessageSettings:{self.MessageSettings}, SubscribedDataSet:{self.SubscribedDataSet})'
 
     __repr__ = __str__
 
@@ -2781,6 +3025,8 @@ class BrokerDataSetWriterTransportDataType(FrozenClass):
     :vartype ResourceUri: String
     :ivar AuthenticationProfileUri:
     :vartype AuthenticationProfileUri: String
+    :ivar RequestedDeliveryGuarantee:
+    :vartype RequestedDeliveryGuarantee: BrokerTransportQualityOfService
     :ivar MetaDataQueueName:
     :vartype MetaDataQueueName: String
     :ivar MetaDataUpdateTime:
@@ -2791,6 +3037,7 @@ class BrokerDataSetWriterTransportDataType(FrozenClass):
         ('QueueName', 'String'),
         ('ResourceUri', 'String'),
         ('AuthenticationProfileUri', 'String'),
+        ('RequestedDeliveryGuarantee', 'BrokerTransportQualityOfService'),
         ('MetaDataQueueName', 'String'),
         ('MetaDataUpdateTime', 'Double'),
                ]
@@ -2799,12 +3046,13 @@ class BrokerDataSetWriterTransportDataType(FrozenClass):
         self.QueueName = None
         self.ResourceUri = None
         self.AuthenticationProfileUri = None
+        self.RequestedDeliveryGuarantee = BrokerTransportQualityOfService(0)
         self.MetaDataQueueName = None
         self.MetaDataUpdateTime = 0
         self._freeze = True
 
     def __str__(self):
-        return f'BrokerDataSetWriterTransportDataType(QueueName:{self.QueueName}, ResourceUri:{self.ResourceUri}, AuthenticationProfileUri:{self.AuthenticationProfileUri}, MetaDataQueueName:{self.MetaDataQueueName}, MetaDataUpdateTime:{self.MetaDataUpdateTime})'
+        return f'BrokerDataSetWriterTransportDataType(QueueName:{self.QueueName}, ResourceUri:{self.ResourceUri}, AuthenticationProfileUri:{self.AuthenticationProfileUri}, RequestedDeliveryGuarantee:{self.RequestedDeliveryGuarantee}, MetaDataQueueName:{self.MetaDataQueueName}, MetaDataUpdateTime:{self.MetaDataUpdateTime})'
 
     __repr__ = __str__
 
@@ -2841,6 +3089,30 @@ class BrokerDataSetReaderTransportDataType(FrozenClass):
 
     def __str__(self):
         return f'BrokerDataSetReaderTransportDataType(QueueName:{self.QueueName}, ResourceUri:{self.ResourceUri}, AuthenticationProfileUri:{self.AuthenticationProfileUri}, RequestedDeliveryGuarantee:{self.RequestedDeliveryGuarantee}, MetaDataQueueName:{self.MetaDataQueueName})'
+
+    __repr__ = __str__
+
+
+class AliasNameDataType(FrozenClass):
+    """
+    :ivar AliasName:
+    :vartype AliasName: QualifiedName
+    :ivar ReferencedNodes:
+    :vartype ReferencedNodes: ExpandedNodeId
+    """
+
+    ua_types = [
+        ('AliasName', 'QualifiedName'),
+        ('ReferencedNodes', 'ListOfExpandedNodeId'),
+               ]
+
+    def __init__(self):
+        self.AliasName = QualifiedName()
+        self.ReferencedNodes = []
+        self._freeze = True
+
+    def __str__(self):
+        return f'AliasNameDataType(AliasName:{self.AliasName}, ReferencedNodes:{self.ReferencedNodes})'
 
     __repr__ = __str__
 
@@ -2967,8 +3239,6 @@ class EnumDefinition(FrozenClass):
 
 class Argument(FrozenClass):
     """
-    An argument for a method.
-
     :ivar Name:
     :vartype Name: String
     :ivar DataType:
@@ -3005,8 +3275,6 @@ class Argument(FrozenClass):
 
 class EnumValueType(FrozenClass):
     """
-    A mapping between a value of an enumerated type and a name and description.
-
     :ivar Value:
     :vartype Value: Int64
     :ivar DisplayName:
@@ -3067,8 +3335,6 @@ class EnumField(FrozenClass):
 
 class OptionSet(FrozenClass):
     """
-    This abstract Structured DataType is the base DataType for all DataTypes representing a bit mask.
-
     :ivar Value:
     :vartype Value: ByteString
     :ivar ValidBits:
@@ -3093,8 +3359,6 @@ class OptionSet(FrozenClass):
 
 class Union(FrozenClass):
     """
-    This abstract DataType is the base DataType for all union DataTypes.
-
     """
 
     ua_types = [
@@ -3135,8 +3399,6 @@ class TimeZoneDataType(FrozenClass):
 
 class ApplicationDescription(FrozenClass):
     """
-    Describes an application and how to find it.
-
     :ivar ApplicationUri:
     :vartype ApplicationUri: String
     :ivar ProductUri:
@@ -3181,8 +3443,6 @@ class ApplicationDescription(FrozenClass):
 
 class RequestHeader(FrozenClass):
     """
-    The header passed with every server request.
-
     :ivar AuthenticationToken:
     :vartype AuthenticationToken: NodeId
     :ivar Timestamp:
@@ -3227,8 +3487,6 @@ class RequestHeader(FrozenClass):
 
 class ResponseHeader(FrozenClass):
     """
-    The header passed with every server response.
-
     :ivar Timestamp:
     :vartype Timestamp: DateTime
     :ivar RequestHandle:
@@ -3269,8 +3527,6 @@ class ResponseHeader(FrozenClass):
 
 class ServiceFault(FrozenClass):
     """
-    The response returned by all services when there is a service level error.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -3387,8 +3643,6 @@ class FindServersParameters(FrozenClass):
 
 class FindServersRequest(FrozenClass):
     """
-    Finds the servers known to the discovery server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -3417,8 +3671,6 @@ class FindServersRequest(FrozenClass):
 
 class FindServersResponse(FrozenClass):
     """
-    Finds the servers known to the discovery server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -3587,8 +3839,6 @@ class FindServersOnNetworkResponse(FrozenClass):
 
 class UserTokenPolicy(FrozenClass):
     """
-    Describes a user token that can be used with a server.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     :ivar TokenType:
@@ -3625,8 +3875,6 @@ class UserTokenPolicy(FrozenClass):
 
 class EndpointDescription(FrozenClass):
     """
-    The description of a endpoint that can be used to access a server.
-
     :ivar EndpointUrl:
     :vartype EndpointUrl: String
     :ivar Server:
@@ -3703,8 +3951,6 @@ class GetEndpointsParameters(FrozenClass):
 
 class GetEndpointsRequest(FrozenClass):
     """
-    Gets the endpoints used by the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -3733,8 +3979,6 @@ class GetEndpointsRequest(FrozenClass):
 
 class GetEndpointsResponse(FrozenClass):
     """
-    Gets the endpoints used by the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -3763,8 +4007,6 @@ class GetEndpointsResponse(FrozenClass):
 
 class RegisteredServer(FrozenClass):
     """
-    The information required to register a server with a discovery server.
-
     :ivar ServerUri:
     :vartype ServerUri: String
     :ivar ProductUri:
@@ -3813,8 +4055,6 @@ class RegisteredServer(FrozenClass):
 
 class RegisterServerRequest(FrozenClass):
     """
-    Registers a server with the discovery server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -3843,8 +4083,6 @@ class RegisterServerRequest(FrozenClass):
 
 class RegisterServerResponse(FrozenClass):
     """
-    Registers a server with the discovery server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -3869,8 +4107,6 @@ class RegisterServerResponse(FrozenClass):
 
 class DiscoveryConfiguration(FrozenClass):
     """
-    A base type for discovery configuration information.
-
     """
 
     ua_types = [
@@ -3887,8 +4123,6 @@ class DiscoveryConfiguration(FrozenClass):
 
 class MdnsDiscoveryConfiguration(FrozenClass):
     """
-    The discovery information needed for mDNS registration.
-
     :ivar MdnsServerName:
     :vartype MdnsServerName: String
     :ivar ServerCapabilities:
@@ -3997,8 +4231,6 @@ class RegisterServer2Response(FrozenClass):
 
 class ChannelSecurityToken(FrozenClass):
     """
-    The token that identifies a set of keys for an active secure channel.
-
     :ivar ChannelId:
     :vartype ChannelId: UInt32
     :ivar TokenId:
@@ -4067,8 +4299,6 @@ class OpenSecureChannelParameters(FrozenClass):
 
 class OpenSecureChannelRequest(FrozenClass):
     """
-    Creates a secure channel with a server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4125,8 +4355,6 @@ class OpenSecureChannelResult(FrozenClass):
 
 class OpenSecureChannelResponse(FrozenClass):
     """
-    Creates a secure channel with a server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4155,8 +4383,6 @@ class OpenSecureChannelResponse(FrozenClass):
 
 class CloseSecureChannelRequest(FrozenClass):
     """
-    Closes a secure channel.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4181,8 +4407,6 @@ class CloseSecureChannelRequest(FrozenClass):
 
 class CloseSecureChannelResponse(FrozenClass):
     """
-    Closes a secure channel.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4207,8 +4431,6 @@ class CloseSecureChannelResponse(FrozenClass):
 
 class SignedSoftwareCertificate(FrozenClass):
     """
-    A software certificate with a digital signature.
-
     :ivar CertificateData:
     :vartype CertificateData: ByteString
     :ivar Signature:
@@ -4233,8 +4455,6 @@ class SignedSoftwareCertificate(FrozenClass):
 
 class SignatureData(FrozenClass):
     """
-    A digital signature.
-
     :ivar Algorithm:
     :vartype Algorithm: String
     :ivar Signature:
@@ -4307,8 +4527,6 @@ class CreateSessionParameters(FrozenClass):
 
 class CreateSessionRequest(FrozenClass):
     """
-    Creates a new session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4389,8 +4607,6 @@ class CreateSessionResult(FrozenClass):
 
 class CreateSessionResponse(FrozenClass):
     """
-    Creates a new session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4419,8 +4635,6 @@ class CreateSessionResponse(FrozenClass):
 
 class UserIdentityToken(FrozenClass):
     """
-    A base type for a user identity token.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     """
@@ -4441,8 +4655,6 @@ class UserIdentityToken(FrozenClass):
 
 class AnonymousIdentityToken(FrozenClass):
     """
-    A token representing an anonymous user.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     """
@@ -4463,8 +4675,6 @@ class AnonymousIdentityToken(FrozenClass):
 
 class UserNameIdentityToken(FrozenClass):
     """
-    A token representing a user identified by a user name and password.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     :ivar UserName:
@@ -4497,8 +4707,6 @@ class UserNameIdentityToken(FrozenClass):
 
 class X509IdentityToken(FrozenClass):
     """
-    A token representing a user identified by an X509 certificate.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     :ivar CertificateData:
@@ -4523,8 +4731,6 @@ class X509IdentityToken(FrozenClass):
 
 class IssuedIdentityToken(FrozenClass):
     """
-    A token representing a user identified by a WS-Security XML token.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     :ivar TokenData:
@@ -4589,8 +4795,6 @@ class ActivateSessionParameters(FrozenClass):
 
 class ActivateSessionRequest(FrozenClass):
     """
-    Activates a session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4647,8 +4851,6 @@ class ActivateSessionResult(FrozenClass):
 
 class ActivateSessionResponse(FrozenClass):
     """
-    Activates a session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4677,8 +4879,6 @@ class ActivateSessionResponse(FrozenClass):
 
 class CloseSessionRequest(FrozenClass):
     """
-    Closes a session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4707,8 +4907,6 @@ class CloseSessionRequest(FrozenClass):
 
 class CloseSessionResponse(FrozenClass):
     """
-    Closes a session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4753,8 +4951,6 @@ class CancelParameters(FrozenClass):
 
 class CancelRequest(FrozenClass):
     """
-    Cancels an outstanding request.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4803,8 +4999,6 @@ class CancelResult(FrozenClass):
 
 class CancelResponse(FrozenClass):
     """
-    Cancels an outstanding request.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4833,8 +5027,6 @@ class CancelResponse(FrozenClass):
 
 class NodeAttributes(FrozenClass):
     """
-    The base attributes for all nodes.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -4871,8 +5063,6 @@ class NodeAttributes(FrozenClass):
 
 class ObjectAttributes(FrozenClass):
     """
-    The attributes for an object node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -4913,8 +5103,6 @@ class ObjectAttributes(FrozenClass):
 
 class VariableAttributes(FrozenClass):
     """
-    The attributes for a variable node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -4983,8 +5171,6 @@ class VariableAttributes(FrozenClass):
 
 class MethodAttributes(FrozenClass):
     """
-    The attributes for a method node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5029,8 +5215,6 @@ class MethodAttributes(FrozenClass):
 
 class ObjectTypeAttributes(FrozenClass):
     """
-    The attributes for an object type node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5071,8 +5255,6 @@ class ObjectTypeAttributes(FrozenClass):
 
 class VariableTypeAttributes(FrozenClass):
     """
-    The attributes for a variable type node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5129,8 +5311,6 @@ class VariableTypeAttributes(FrozenClass):
 
 class ReferenceTypeAttributes(FrozenClass):
     """
-    The attributes for a reference type node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5179,8 +5359,6 @@ class ReferenceTypeAttributes(FrozenClass):
 
 class DataTypeAttributes(FrozenClass):
     """
-    The attributes for a data type node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5221,8 +5399,6 @@ class DataTypeAttributes(FrozenClass):
 
 class ViewAttributes(FrozenClass):
     """
-    The attributes for a view node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5331,8 +5507,6 @@ class GenericAttributes(FrozenClass):
 
 class AddNodesItem(FrozenClass):
     """
-    A request to add a node to the server address space.
-
     :ivar ParentNodeId:
     :vartype ParentNodeId: ExpandedNodeId
     :ivar ReferenceTypeId:
@@ -5377,8 +5551,6 @@ class AddNodesItem(FrozenClass):
 
 class AddNodesResult(FrozenClass):
     """
-    A result of an add node operation.
-
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
     :ivar AddedNodeId:
@@ -5423,8 +5595,6 @@ class AddNodesParameters(FrozenClass):
 
 class AddNodesRequest(FrozenClass):
     """
-    Adds one or more nodes to the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -5453,8 +5623,6 @@ class AddNodesRequest(FrozenClass):
 
 class AddNodesResponse(FrozenClass):
     """
-    Adds one or more nodes to the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -5487,8 +5655,6 @@ class AddNodesResponse(FrozenClass):
 
 class AddReferencesItem(FrozenClass):
     """
-    A request to add a reference to the server address space.
-
     :ivar SourceNodeId:
     :vartype SourceNodeId: NodeId
     :ivar ReferenceTypeId:
@@ -5549,8 +5715,6 @@ class AddReferencesParameters(FrozenClass):
 
 class AddReferencesRequest(FrozenClass):
     """
-    Adds one or more references to the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -5579,8 +5743,6 @@ class AddReferencesRequest(FrozenClass):
 
 class AddReferencesResponse(FrozenClass):
     """
-    Adds one or more references to the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -5613,8 +5775,6 @@ class AddReferencesResponse(FrozenClass):
 
 class DeleteNodesItem(FrozenClass):
     """
-    A request to delete a node to the server address space.
-
     :ivar NodeId:
     :vartype NodeId: NodeId
     :ivar DeleteTargetReferences:
@@ -5659,8 +5819,6 @@ class DeleteNodesParameters(FrozenClass):
 
 class DeleteNodesRequest(FrozenClass):
     """
-    Delete one or more nodes from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -5689,8 +5847,6 @@ class DeleteNodesRequest(FrozenClass):
 
 class DeleteNodesResponse(FrozenClass):
     """
-    Delete one or more nodes from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -5723,8 +5879,6 @@ class DeleteNodesResponse(FrozenClass):
 
 class DeleteReferencesItem(FrozenClass):
     """
-    A request to delete a node from the server address space.
-
     :ivar SourceNodeId:
     :vartype SourceNodeId: NodeId
     :ivar ReferenceTypeId:
@@ -5781,8 +5935,6 @@ class DeleteReferencesParameters(FrozenClass):
 
 class DeleteReferencesRequest(FrozenClass):
     """
-    Delete one or more references from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -5835,8 +5987,6 @@ class DeleteReferencesResult(FrozenClass):
 
 class DeleteReferencesResponse(FrozenClass):
     """
-    Delete one or more references from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -5865,8 +6015,6 @@ class DeleteReferencesResponse(FrozenClass):
 
 class ViewDescription(FrozenClass):
     """
-    The view to browse.
-
     :ivar ViewId:
     :vartype ViewId: NodeId
     :ivar Timestamp:
@@ -5895,8 +6043,6 @@ class ViewDescription(FrozenClass):
 
 class BrowseDescription(FrozenClass):
     """
-    A request to browse the the references from a node.
-
     :ivar NodeId:
     :vartype NodeId: NodeId
     :ivar BrowseDirection:
@@ -5937,8 +6083,6 @@ class BrowseDescription(FrozenClass):
 
 class ReferenceDescription(FrozenClass):
     """
-    The description of a reference.
-
     :ivar ReferenceTypeId:
     :vartype ReferenceTypeId: NodeId
     :ivar IsForward:
@@ -5983,8 +6127,6 @@ class ReferenceDescription(FrozenClass):
 
 class BrowseResult(FrozenClass):
     """
-    The result of a browse operation.
-
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
     :ivar ContinuationPoint:
@@ -6041,8 +6183,6 @@ class BrowseParameters(FrozenClass):
 
 class BrowseRequest(FrozenClass):
     """
-    Browse the references for one or more nodes from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -6071,8 +6211,6 @@ class BrowseRequest(FrozenClass):
 
 class BrowseResponse(FrozenClass):
     """
-    Browse the references for one or more nodes from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -6129,8 +6267,6 @@ class BrowseNextParameters(FrozenClass):
 
 class BrowseNextRequest(FrozenClass):
     """
-    Continues one or more browse operations.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -6183,8 +6319,6 @@ class BrowseNextResult(FrozenClass):
 
 class BrowseNextResponse(FrozenClass):
     """
-    Continues one or more browse operations.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -6213,8 +6347,6 @@ class BrowseNextResponse(FrozenClass):
 
 class RelativePathElement(FrozenClass):
     """
-    An element in a relative path.
-
     :ivar ReferenceTypeId:
     :vartype ReferenceTypeId: NodeId
     :ivar IsInverse:
@@ -6247,8 +6379,6 @@ class RelativePathElement(FrozenClass):
 
 class RelativePath(FrozenClass):
     """
-    A relative path constructed from reference types and browse names.
-
     :ivar Elements:
     :vartype Elements: RelativePathElement
     """
@@ -6269,8 +6399,6 @@ class RelativePath(FrozenClass):
 
 class BrowsePath(FrozenClass):
     """
-    A request to translate a path into a node id.
-
     :ivar StartingNode:
     :vartype StartingNode: NodeId
     :ivar RelativePath:
@@ -6295,8 +6423,6 @@ class BrowsePath(FrozenClass):
 
 class BrowsePathTarget(FrozenClass):
     """
-    The target of the translated path.
-
     :ivar TargetId:
     :vartype TargetId: ExpandedNodeId
     :ivar RemainingPathIndex:
@@ -6321,8 +6447,6 @@ class BrowsePathTarget(FrozenClass):
 
 class BrowsePathResult(FrozenClass):
     """
-    The result of a translate opearation.
-
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
     :ivar Targets:
@@ -6367,8 +6491,6 @@ class TranslateBrowsePathsToNodeIdsParameters(FrozenClass):
 
 class TranslateBrowsePathsToNodeIdsRequest(FrozenClass):
     """
-    Translates one or more paths in the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -6397,8 +6519,6 @@ class TranslateBrowsePathsToNodeIdsRequest(FrozenClass):
 
 class TranslateBrowsePathsToNodeIdsResponse(FrozenClass):
     """
-    Translates one or more paths in the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -6451,8 +6571,6 @@ class RegisterNodesParameters(FrozenClass):
 
 class RegisterNodesRequest(FrozenClass):
     """
-    Registers one or more nodes for repeated use within a session.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -6501,8 +6619,6 @@ class RegisterNodesResult(FrozenClass):
 
 class RegisterNodesResponse(FrozenClass):
     """
-    Registers one or more nodes for repeated use within a session.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -6551,8 +6667,6 @@ class UnregisterNodesParameters(FrozenClass):
 
 class UnregisterNodesRequest(FrozenClass):
     """
-    Unregisters one or more previously registered nodes.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -6581,8 +6695,6 @@ class UnregisterNodesRequest(FrozenClass):
 
 class UnregisterNodesResponse(FrozenClass):
     """
-    Unregisters one or more previously registered nodes.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -7557,6 +7669,26 @@ class ReadAtTimeDetails(FrozenClass):
 
     def __str__(self):
         return f'ReadAtTimeDetails(ReqTimes:{self.ReqTimes}, UseSimpleBounds:{self.UseSimpleBounds})'
+
+    __repr__ = __str__
+
+
+class ReadAnnotationDataDetails(FrozenClass):
+    """
+    :ivar ReqTimes:
+    :vartype ReqTimes: DateTime
+    """
+
+    ua_types = [
+        ('ReqTimes', 'ListOfDateTime'),
+               ]
+
+    def __init__(self):
+        self.ReqTimes = []
+        self._freeze = True
+
+    def __str__(self):
+        return f'ReadAnnotationDataDetails(ReqTimes:{self.ReqTimes})'
 
     __repr__ = __str__
 
@@ -11155,9 +11287,39 @@ extension_object_ids['KeyValuePair'] = nid
 nid = FourByteNodeId(ObjectIds.EndpointType_Encoding_DefaultBinary)
 extension_object_classes[nid] = EndpointType
 extension_object_ids['EndpointType'] = nid
+nid = FourByteNodeId(ObjectIds.RationalNumber_Encoding_DefaultBinary)
+extension_object_classes[nid] = RationalNumber
+extension_object_ids['RationalNumber'] = nid
+nid = FourByteNodeId(ObjectIds.Vector_Encoding_DefaultBinary)
+extension_object_classes[nid] = Vector
+extension_object_ids['Vector'] = nid
+nid = FourByteNodeId(ObjectIds.ThreeDVector_Encoding_DefaultBinary)
+extension_object_classes[nid] = ThreeDVector
+extension_object_ids['ThreeDVector'] = nid
+nid = FourByteNodeId(ObjectIds.CartesianCoordinates_Encoding_DefaultBinary)
+extension_object_classes[nid] = CartesianCoordinates
+extension_object_ids['CartesianCoordinates'] = nid
+nid = FourByteNodeId(ObjectIds.ThreeDCartesianCoordinates_Encoding_DefaultBinary)
+extension_object_classes[nid] = ThreeDCartesianCoordinates
+extension_object_ids['ThreeDCartesianCoordinates'] = nid
+nid = FourByteNodeId(ObjectIds.Orientation_Encoding_DefaultBinary)
+extension_object_classes[nid] = Orientation
+extension_object_ids['Orientation'] = nid
+nid = FourByteNodeId(ObjectIds.ThreeDOrientation_Encoding_DefaultBinary)
+extension_object_classes[nid] = ThreeDOrientation
+extension_object_ids['ThreeDOrientation'] = nid
+nid = FourByteNodeId(ObjectIds.Frame_Encoding_DefaultBinary)
+extension_object_classes[nid] = Frame
+extension_object_ids['Frame'] = nid
+nid = FourByteNodeId(ObjectIds.ThreeDFrame_Encoding_DefaultBinary)
+extension_object_classes[nid] = ThreeDFrame
+extension_object_ids['ThreeDFrame'] = nid
 nid = FourByteNodeId(ObjectIds.IdentityMappingRuleType_Encoding_DefaultBinary)
 extension_object_classes[nid] = IdentityMappingRuleType
 extension_object_ids['IdentityMappingRuleType'] = nid
+nid = FourByteNodeId(ObjectIds.CurrencyUnitType_Encoding_DefaultBinary)
+extension_object_classes[nid] = CurrencyUnitType
+extension_object_ids['CurrencyUnitType'] = nid
 nid = FourByteNodeId(ObjectIds.TrustListDataType_Encoding_DefaultBinary)
 extension_object_classes[nid] = TrustListDataType
 extension_object_ids['TrustListDataType'] = nid
@@ -11308,6 +11470,9 @@ extension_object_ids['BrokerDataSetWriterTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.BrokerDataSetReaderTransportDataType_Encoding_DefaultBinary)
 extension_object_classes[nid] = BrokerDataSetReaderTransportDataType
 extension_object_ids['BrokerDataSetReaderTransportDataType'] = nid
+nid = FourByteNodeId(ObjectIds.AliasNameDataType_Encoding_DefaultBinary)
+extension_object_classes[nid] = AliasNameDataType
+extension_object_ids['AliasNameDataType'] = nid
 nid = FourByteNodeId(ObjectIds.RolePermissionType_Encoding_DefaultBinary)
 extension_object_classes[nid] = RolePermissionType
 extension_object_ids['RolePermissionType'] = nid
@@ -11671,6 +11836,9 @@ extension_object_ids['ReadProcessedDetails'] = nid
 nid = FourByteNodeId(ObjectIds.ReadAtTimeDetails_Encoding_DefaultBinary)
 extension_object_classes[nid] = ReadAtTimeDetails
 extension_object_ids['ReadAtTimeDetails'] = nid
+nid = FourByteNodeId(ObjectIds.ReadAnnotationDataDetails_Encoding_DefaultBinary)
+extension_object_classes[nid] = ReadAnnotationDataDetails
+extension_object_ids['ReadAnnotationDataDetails'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryData_Encoding_DefaultBinary)
 extension_object_classes[nid] = HistoryData
 extension_object_ids['HistoryData'] = nid

@@ -26,7 +26,7 @@ def create_monitored_items(event, dispatcher):
     for idx in range(len(event.response_params)) :
         if (event.response_params[idx].StatusCode.is_good()) :
             nodeId = event.request_params.ItemsToCreate[idx].ItemToMonitor.NodeId
-            print("Node {0} was created".format(nodeId))     
+            print(f"Node {nodeId} was created")
          
     
 def modify_monitored_items(event, dispatcher):
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     idx = server.register_namespace(uri)
 
     # get Objects node, this is where we should put our custom stuff
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
 
     # populating our address space
     myfolder = objects.add_folder(idx, "myEmptyFolder")
