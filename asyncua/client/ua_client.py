@@ -526,6 +526,8 @@ class UaClient:
             except UaStructParsingError:
                 ack = None
                 continue
+            except ConnectionError:
+                break
             subscription_id = response.Parameters.SubscriptionId
             if not subscription_id:
                 # The value 0 is used to indicate that there were no Subscriptions defined for which a
