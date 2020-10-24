@@ -1,22 +1,22 @@
 import sys
 sys.path.insert(0, "..")
 import logging
-
-from IPython import embed
+import asyncio
 
 from asyncua import Client
 
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+async def main():
     client = Client("opc.tcp://localhost:53530/OPCUA/SimulationServer/")
     client.set_security_string("Basic256Sha256,Sign,certificate-example.der,private-key-example.pem")
-    try:
-        client.connect()
+    async with client:
         root = client.nodes.root
         objects = client.nodes.objects
-        print("childs og objects are: ", objects.get_children())
+        print("childs og objects are: ", await objects.get_children())
+        await asyncio.sleep(3)
 
-        embed()
-    finally:
-        client.disconnect()
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.WARN)
+    asyncio.run(main())
