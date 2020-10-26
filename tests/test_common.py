@@ -1046,6 +1046,7 @@ async def test_import_xml_enum_data_type_definition(opc):
     var = await opc.opc.nodes.objects.add_variable(2, "MyEnumVar", e, datatype=ua.enums_datatypes[ua.MyEnum])
     e2 = await var.read_value()
     assert e2 == ua.MyEnum.val2
+    await opc.opc.delete_nodes([var])
 
 
 async def test_duplicated_browsenames_same_ns(opc):
@@ -1053,16 +1054,18 @@ async def test_duplicated_browsenames_same_ns(opc):
     childfolder = await parentfolder.add_folder(2, "child_folder")
     try:
         childfolder2 = await parentfolder.add_folder(2, "child_folder")
+        await opc.opc.delete_nodes([parentfolder])
         pytest.fail("Childfolder2 should never be created!")
     except:
+        await opc.opc.delete_nodes([parentfolder])
         return
-
 
 async def test_duplicated_browsenames_different_ns(opc):
     parentfolder = await opc.opc.nodes.objects.add_folder(2, "parent_folder")
     childfolder = await parentfolder.add_folder(2, "child_folder")
     try:
         childfolder2 = await parentfolder.add_folder(3, "child_folder")
+        await opc.opc.delete_nodes([parentfolder])
         pytest.fail("Childfolder2 should never be created!")
     except:
         return
