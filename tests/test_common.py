@@ -129,6 +129,7 @@ async def test_delete_nodes(opc):
         await obj.get_child(["2:FolderToDelete", "2:VarToDelete"])
     childs = await fold.get_children()
     assert var not in childs
+    await opc.opc.delete_nodes([fold])
 
 
 async def test_delete_nodes_with_inverse_references(opc):
@@ -149,7 +150,7 @@ async def test_delete_nodes_with_inverse_references(opc):
     assert len(has_desc_refs) == 0
     has_effect_refs = await var2.get_referenced_nodes(refs=ua.ObjectIds.HasEffect, direction=ua.BrowseDirection.Inverse)
     assert len(has_effect_refs) == 0
-
+    await opc.opc.delete_nodes([fold])
 
 async def test_delete_nodes_recursive(opc):
     obj = opc.opc.nodes.objects
@@ -161,11 +162,9 @@ async def test_delete_nodes_recursive(opc):
     with pytest.raises(ua.UaStatusCodeError):
         await obj.get_child(["2:FolderToDelete", "2:VarToDelete"])
 
-
 async def test_delete_nodes_recursive2(opc):
     obj = opc.opc.nodes.objects
     fold = await obj.add_folder(2, "FolderToDeleteRoot")
-    nfold = fold
     mynodes = []
     for i in range(7):
         nfold = await fold.add_folder(2, f"FolderToDeleteRoot{i}")
@@ -181,7 +180,7 @@ async def test_delete_nodes_recursive2(opc):
     for node in mynodes:
         with pytest.raises(ua.UaStatusCodeError):
             await node.read_browse_name()
-
+    await opc.opc.delete_nodes([fold])
 
 async def test_delete_references(opc):
     newtype = await opc.opc.get_node(ua.ObjectIds.HierarchicalReferences).add_reference_type(0, "HasSuperSecretVariable")
@@ -285,6 +284,10 @@ async def test_browse(opc):
     assert folder in all_objs
     assert obj2 in all_objs
     assert var not in all_objs
+    await opc.opc.delete_nodes([folder, prop, prop2, var, obj2, obj])
+    await opc.opc.delete_nodes(props)
+    await opc.opc.delete_nodes(all_vars)
+    await opc.opc.delete_nodes(all_objs)
 
 
 async def test_browse_references(opc):
@@ -323,6 +326,7 @@ async def test_browsename_with_spaces(opc):
     v = await o.add_variable(3, 'BNVariable with spaces and %&+?/', 1.3)
     v2 = await o.get_child("3:BNVariable with spaces and %&+?/")
     assert v == v2
+    await opc.opc.delete_nodes([v])
 
 
 async def test_non_existing_path(opc):
@@ -359,6 +363,7 @@ async def test_datetime_write_value(opc):
     v1 = await objects.add_variable(4, "test_datetime", now)
     tid = await v1.read_value()
     assert now == tid
+    await opc.opc.delete_nodes([v1])
 
 
 async def test_variant_array_dim(opc):
@@ -382,12 +387,12 @@ async def test_variant_array_dim(opc):
 
     l = [[[], [], []], [[], [], []]]
     variant = ua.Variant(l, ua.VariantType.UInt32)
-    v = await objects.add_variable(3, 'variableWithDimsEmpty', variant)
-    v2 = await v.read_value()
+    v1 = await objects.add_variable(3, 'variableWithDimsEmpty', variant)
+    v2 = await v1.read_value()
     assert l == v2
-    dv = await v.read_data_value()
+    dv = await v1.read_data_value()
     assert [2, 3, 0] == dv.Value.Dimensions
-
+    await opc.opc.delete_nodes([v, v1])
 
 async def test_add_numeric_variable(opc):
     objects = opc.opc.nodes.objects
@@ -396,6 +401,7 @@ async def test_add_numeric_variable(opc):
     qn = ua.QualifiedName('numericnodefromstring', 3)
     assert nid == v.nodeid
     assert qn == await v.read_browse_name()
+    await opc.opc.delete_nodes([v])
 
 
 async def test_add_string_variable(opc):
@@ -405,6 +411,7 @@ async def test_add_string_variable(opc):
     qn = ua.QualifiedName('stringnodefromstring', 3)
     assert nid == v.nodeid
     assert qn == await v.read_browse_name()
+    await opc.opc.delete_nodes([v])
 
 
 async def test_utf8(opc):
@@ -419,6 +426,7 @@ async def test_utf8(opc):
     assert val == val2
     bn2 = await v.read_browse_name()
     assert bn == bn2
+    await opc.opc.delete_nodes([v])
 
 
 async def test_null_variable(opc):
@@ -431,6 +439,7 @@ async def test_null_variable(opc):
     val = await var.read_value()
     assert val is not None
     assert "" == val
+    await opc.opc.delete_nodes([var])
 
 
 async def test_variable_data_type(opc):
@@ -438,9 +447,11 @@ async def test_variable_data_type(opc):
     var = await objects.add_variable(3, 'stringfordatatype', "a string")
     val = await var.read_data_type_as_variant_type()
     assert ua.VariantType.String == val
+    await opc.opc.delete_nodes([var])
     var = await objects.add_variable(3, 'stringarrayfordatatype', ["a", "b"])
     val = await var.read_data_type_as_variant_type()
     assert ua.VariantType.String == val
+    await opc.opc.delete_nodes([var])
 
 
 async def test_add_string_array_variable(opc):
@@ -452,7 +463,7 @@ async def test_add_string_array_variable(opc):
     assert qn == await v.read_browse_name()
     val = await v.read_value()
     assert ['l', 'b'] == val
-
+    await opc.opc.delete_nodes([v])
 
 async def test_add_numeric_node(opc):
     objects = opc.opc.nodes.objects
@@ -461,7 +472,7 @@ async def test_add_numeric_node(opc):
     v1 = await objects.add_variable(nid, qn, 0)
     assert nid == v1.nodeid
     assert qn == await v1.read_browse_name()
-
+    await opc.opc.delete_nodes([v1])
 
 async def test_add_string_node(opc):
     objects = opc.opc.nodes.objects
@@ -470,14 +481,14 @@ async def test_add_string_node(opc):
     v2 = await objects.add_variable(nid, qn, 0)
     assert nid == v2.nodeid
     assert qn == await v2.read_browse_name()
-
+    await opc.opc.delete_nodes([v2])
 
 async def test_add_find_node_(opc):
     objects = opc.opc.nodes.objects
     o = await objects.add_object('ns=2;i=101;', '2:AddFindObject')
     o2 = await objects.get_child('2:AddFindObject')
     assert o == o2
-
+    await opc.opc.delete_nodes([o, o2])
 
 async def test_node_path(opc):
     objects = opc.opc.nodes.objects
@@ -485,7 +496,7 @@ async def test_node_path(opc):
     root = opc.opc.nodes.root
     o2 = await root.get_child(['0:Objects', '2:NodePathObject'])
     assert o == o2
-
+    await opc.opc.delete_nodes([o, o2])
 
 async def test_add_read_node(opc):
     objects = opc.opc.nodes.objects
@@ -494,33 +505,32 @@ async def test_add_read_node(opc):
     assert nid == o.nodeid
     qn = ua.QualifiedName('AddReadObject', 2)
     assert qn == await o.read_browse_name()
-
+    await opc.opc.delete_nodes([o])
 
 async def test_simple_value(opc):
     o = opc.opc.nodes.objects
     v = await o.add_variable(3, 'VariableTestValue', 4.32)
     val = await v.read_value()
     assert 4.32 == val
-
+    await opc.opc.delete_nodes([v])
 
 async def test_add_exception(opc):
     objects = opc.opc.nodes.objects
-    await objects.add_object('ns=2;i=103;', '2:AddReadObject')
+    v = await objects.add_object('ns=2;i=103;', '2:AddReadObject')
     with pytest.raises(ua.UaStatusCodeError):
         await objects.add_object('ns=2;i=103;', '2:AddReadObject')
-
+    await opc.opc.delete_nodes([v])
 
 async def test_negative_value(opc):
     o = opc.opc.nodes.objects
     v = await o.add_variable(3, 'VariableNegativeValue', 4)
     await v.write_value(-4.54)
     assert -4.54 == await v.read_value()
-
+    await opc.opc.delete_nodes([v])
 
 async def test_read_server_state(opc):
     statenode = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_State))
     assert 0 == await statenode.read_value()
-
 
 async def test_bad_node(opc):
     bad = opc.opc.get_node(ua.NodeId(999, 999))
@@ -532,7 +542,7 @@ async def test_bad_node(opc):
         await bad.add_object(0, "0:myobj")
     with pytest.raises(ua.UaStatusCodeError):
         await bad.get_child("0:myobj")
-
+    await opc.opc.delete_nodes([bad])
 
 async def test_value(opc):
     o = opc.opc.nodes.objects
@@ -544,7 +554,7 @@ async def test_value(opc):
     assert ua.DataValue == type(dv)
     assert dvar.Value == dv.Value
     assert dvar.Value == var
-
+    await opc.opc.delete_nodes([v])
 
 async def test_write_value(opc):
     o = opc.opc.nodes.objects
@@ -560,13 +570,13 @@ async def test_write_value(opc):
     await v.write_value(dvar)
     v3 = await v.read_data_value()
     assert v3.Value == dvar.Value
-
+    await opc.opc.delete_nodes([v])
 
 async def test_array_value(opc):
     o = opc.opc.nodes.objects
     v = await o.add_variable(3, 'VariableArrayValue', [1, 2, 3])
     assert [1, 2, 3] == await v.read_value()
-
+    await opc.opc.delete_nodes([v])
 
 async def test_bool_variable(opc):
     o = opc.opc.nodes.objects
@@ -578,14 +588,14 @@ async def test_bool_variable(opc):
     await v.write_value(False)
     val = await v.read_value()
     assert val is False
-
+    await opc.opc.delete_nodes([v])
 
 async def test_array_size_one_value(opc):
     o = opc.opc.nodes.objects
     v = await o.add_variable(3, 'VariableArrayValue2', [1, 2, 3])
     await v.write_value([1])
     assert [1] == await v.read_value()
-
+    await opc.opc.delete_nodes([v])
 
 async def test_use_namespace(opc):
     idx = await opc.opc.get_namespace_index("urn:freeopcua:python:server")
@@ -594,11 +604,11 @@ async def test_use_namespace(opc):
     myvar = await root.add_variable(idx, 'var_in_custom_namespace', [5])
     myid = myvar.nodeid
     assert idx == myid.NamespaceIndex
-
+    await opc.opc.delete_nodes([myvar])
 
 async def test_method(opc):
     o = opc.opc.nodes.objects
-    await o.get_child("2:ServerMethod")
+    v = await o.get_child("2:ServerMethod")
     result = await o.call_method("2:ServerMethod", 2.1)
     assert 4.2 == result
     with pytest.raises(ua.UaStatusCodeError):
@@ -620,7 +630,6 @@ async def test_method_array(opc):
         await o.call_method(m, "panic", ua.Variant(math.pi))
     assert ua.StatusCodes.BadOutOfMemory == exc_info.type.code
 
-
 async def test_method_array2(opc):
     o = opc.opc.nodes.objects
     m = await o.get_child("2:ServerMethodArray2")
@@ -629,7 +638,6 @@ async def test_method_array2(opc):
     result = await call_method_full(o, m, [1.1, 3.4, 9])
     assert [[2.2, 6.8, 18]] == result.OutputArguments
 
-
 async def test_method_tuple(opc):
     o = opc.opc.nodes.objects
     m = await o.get_child("2:ServerMethodTuple")
@@ -637,7 +645,6 @@ async def test_method_tuple(opc):
     assert [1, 2, 3] == result
     result = await call_method_full(o, m)
     assert [1, 2, 3] == result.OutputArguments
-
 
 async def test_method_none(opc):
     # this test calls the function linked to the type's method..
@@ -648,13 +655,11 @@ async def test_method_none(opc):
     result = await call_method_full(o, m)
     assert [] == result.OutputArguments
 
-
 async def test_method_async(opc):
     o = opc.opc.nodes.objects
     m = await o.get_child("2:ServerMethodAsync")
     await o.call_method(m)
     await call_method_full(o, m)
-
 
 async def test_add_nodes(opc):
     objects = opc.opc.nodes.objects
@@ -674,6 +679,7 @@ async def test_add_nodes(opc):
     assert o in childs
     assert v in childs
     assert p in childs
+    await opc.opc.delete_nodes([f, o, v, p, child])
 
 
 async def test_modelling_rules(opc):
@@ -695,7 +701,7 @@ async def test_modelling_rules(opc):
     await p.set_modelling_rule(None)
     refs = await p.get_referenced_nodes(refs=ua.ObjectIds.HasModellingRule)
     assert 0 == len(refs)
-
+    await opc.opc.delete_nodes([v, p])
 
 async def test_incl_subtypes(opc):
     base_type = await opc.opc.nodes.root.get_child(["0:Types", "0:ObjectTypes", "0:BaseObjectType"])
@@ -724,7 +730,7 @@ async def test_add_node_with_type(opc):
     references = await o.get_references(refs=ua.ObjectIds.HasTypeDefinition, direction=ua.BrowseDirection.Forward)
     assert 1 == len(references)
     assert custom_otype.nodeid == references[0].NodeId
-
+    await opc.opc.delete_nodes([f])
 
 async def test_references_for_added_nodes(opc):
     objects = opc.opc.nodes.objects
@@ -782,7 +788,6 @@ async def test_references_for_added_nodes(opc):
 
     m = await objects.get_child("2:ServerMethod")
     assert [] == await m.get_references(ua.ObjectIds.HasModellingRule)
-
 
 async def test_path_string(opc):
     o = await (await opc.opc.nodes.objects.add_folder(1, "titif")).add_object(3, "opath")
@@ -941,7 +946,6 @@ async def test_enum(opc):
     # tests
     assert myenum_type.nodeid == await myvar.read_data_type()
     await myvar.write_value(ua.LocalizedText("String2"))
-    await opc.opc.delete_nodes([enums])
 
 async def test_supertypes(opc):
     nint32 = opc.opc.get_node(ua.ObjectIds.Int32)
@@ -960,7 +964,7 @@ async def test_supertypes(opc):
     dtype2 = await dtype.add_data_type(0, "MyCustomDataType2")
     node = await ua_utils.get_node_supertype(dtype2)
     assert dtype == node
-    await opc.opc.delete_nodes([dtype])
+    await opc.opc.delete_nodes([dtype, dtype2])
 
 
 async def test_base_data_type(opc):
@@ -975,7 +979,7 @@ async def test_base_data_type(opc):
     d = opc.opc.get_node(d)
     assert opc.opc.get_node(ua.ObjectIds.Structure) == await ua_utils.get_base_data_type(d)
     assert ua.VariantType.ExtensionObject == await ua_utils.data_type_to_variant_type(d)
-    await opc.opc.delete_nodes([dtype])
+    await opc.opc.delete_nodes([ext])
 
 async def test_data_type_to_variant_type(opc):
     test_data = {
@@ -993,8 +997,8 @@ async def test_data_type_to_variant_type(opc):
         ua.ObjectIds.AxisScaleEnumeration: ua.VariantType.Int32  # enumeration
     }
     for dt, vdt in test_data.items():
-        assert vdt == await ua_utils.data_type_to_variant_type(opc.opc.get_node(ua.NodeId(dt)))
-
+        k = await ua_utils.data_type_to_variant_type(opc.opc.get_node(ua.NodeId(dt)))
+        assert vdt == k
 
 async def test_guid_node_id():
     """

@@ -27,7 +27,7 @@ def func(parent, value, string):
 
 
 async def test_xml_import(opc):
-    await opc.opc.import_xml(CUSTOM_NODES_XML_PATH)
+    nodes = await opc.opc.import_xml(CUSTOM_NODES_XML_PATH)
     o = opc.opc.nodes.objects
     v = await o.get_child(["1:MyXMLFolder", "1:MyXMLObject", "1:MyXMLVariable"])
     val = await v.read_value()
@@ -45,7 +45,7 @@ async def test_xml_import(opc):
     input_arg = (await o.read_data_value()).Value.Value[0]
     assert "Context" == input_arg.Name
     await opc.opc.delete_nodes([v])
-
+    await opc.opc.delete_nodes([nodes])
 
 async def test_xml_import_additional_ns(opc):
     # if not already shift the new namespaces
