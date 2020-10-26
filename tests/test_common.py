@@ -550,7 +550,7 @@ async def test_write_value(opc):
     o = opc.opc.nodes.objects
     var = ua.Variant(1.98, ua.VariantType.Double)
     dvar = ua.DataValue(var)
-    v = await o.add_variable(3, 'VariableValue', var)
+    v = await o.add_variable(3, 'VariableValue2', var)
     await v.write_value(var.Value)
     v1 = await v.read_value()
     assert v1 == var.Value
@@ -582,7 +582,7 @@ async def test_bool_variable(opc):
 
 async def test_array_size_one_value(opc):
     o = opc.opc.nodes.objects
-    v = await o.add_variable(3, 'VariableArrayValue', [1, 2, 3])
+    v = await o.add_variable(3, 'VariableArrayValue2', [1, 2, 3])
     await v.write_value([1])
     assert [1] == await v.read_value()
 
@@ -716,7 +716,7 @@ async def test_add_node_with_type(opc):
     assert ua.ObjectIds.BaseObjectType == (await o.get_type_definition()).Identifier
 
     base_otype = opc.opc.get_node(ua.ObjectIds.BaseObjectType)
-    custom_otype = await base_otype.add_object_type(2, 'MyFooObjectType')
+    custom_otype = await base_otype.add_object_type(2, 'MyFooObjectType2')
 
     o = await f.add_object(3, 'MyObject3', custom_otype.nodeid)
     assert custom_otype.nodeid.Identifier == (await o.get_type_definition()).Identifier
@@ -728,7 +728,7 @@ async def test_add_node_with_type(opc):
 
 async def test_references_for_added_nodes(opc):
     objects = opc.opc.nodes.objects
-    o = await objects.add_object(3, 'MyObject')
+    o = await objects.add_object(3, 'MyObject4')
     nodes = await objects.get_referenced_nodes(
         refs=ua.ObjectIds.Organizes, direction=ua.BrowseDirection.Forward, includesubtypes=False
     )
@@ -960,6 +960,7 @@ async def test_supertypes(opc):
     dtype2 = await dtype.add_data_type(0, "MyCustomDataType2")
     node = await ua_utils.get_node_supertype(dtype2)
     assert dtype == node
+    await opc.opc.delete_nodes([dtype])
 
 
 async def test_base_data_type(opc):
@@ -974,7 +975,7 @@ async def test_base_data_type(opc):
     d = opc.opc.get_node(d)
     assert opc.opc.get_node(ua.ObjectIds.Structure) == await ua_utils.get_base_data_type(d)
     assert ua.VariantType.ExtensionObject == await ua_utils.data_type_to_variant_type(d)
-
+    await opc.opc.delete_nodes([dtype])
 
 async def test_data_type_to_variant_type(opc):
     test_data = {

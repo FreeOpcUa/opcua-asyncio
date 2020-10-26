@@ -38,7 +38,7 @@ def event_loop(request):
     loop.close()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 async def running_server(request):
     """
     Spawn a server in a separate thread
@@ -72,7 +72,7 @@ async def running_server(request):
     request.addfinalizer(fin)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 async def server():
     # start our own server
     srv = Server()
@@ -99,7 +99,7 @@ async def discovery_server():
     await srv.stop()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 async def admin_client():
     # start admin client
     # long timeout since travis (automated testing) can be really slow
@@ -109,7 +109,7 @@ async def admin_client():
     await clt.disconnect()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 async def client():
     # start anonymous client
     ro_clt = Client(f'opc.tcp://127.0.0.1:{port_num}')
@@ -118,7 +118,7 @@ async def client():
     await ro_clt.disconnect()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 async def opc(request):
     """
     Fixture for tests that should run for both `Server` and `Client`
@@ -211,7 +211,7 @@ async def create_history_server(sqlite=False) -> HistoryServer:
     return history_server
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 async def history_server(request):
     if request.param == 'dict':
         srv = await create_history_server()

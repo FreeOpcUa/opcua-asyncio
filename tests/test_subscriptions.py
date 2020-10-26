@@ -114,6 +114,7 @@ async def test_subscription_overload(opc, handler_class):
         await s.delete()
     # assert myhandler.datachange_count == 1000
     # assert myhandler.event_count == 0
+    await opc.opc.delete_nodes(variables)
 
 
 @pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
@@ -130,6 +131,7 @@ async def test_subscription_count(opc, handler_class):
     await sleep(0.2)  # let last event arrive
     assert nb + 1 == myhandler.datachange_count
     await sub.delete()
+    await opc.opc.delete_nodes([var])
 
 
 @pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
@@ -137,7 +139,7 @@ async def test_subscription_count_list(opc, handler_class):
     myhandler = handler_class()
     sub = await opc.opc.create_subscription(1, myhandler)
     o = opc.opc.nodes.objects
-    var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2])
+    var = await o.add_variable(3, 'SubVarCounter1', [0.1, 0.2])
     await sub.subscribe_data_change(var)
     nb = 12
     for i in range(nb):
@@ -149,6 +151,7 @@ async def test_subscription_count_list(opc, handler_class):
     await sleep(0.2)  # let last event arrive
     assert nb + 1 == myhandler.datachange_count
     await sub.delete()
+    await opc.opc.delete_nodes([var])
 
 
 @pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
@@ -156,7 +159,7 @@ async def test_subscription_count_no_change(opc, handler_class):
     myhandler = handler_class()
     sub = await opc.opc.create_subscription(1, myhandler)
     o = opc.opc.nodes.objects
-    var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2])
+    var = await o.add_variable(3, 'SubVarCounter2', [0.1, 0.2])
     await sub.subscribe_data_change(var)
     nb = 12
     for i in range(nb):
@@ -165,6 +168,7 @@ async def test_subscription_count_no_change(opc, handler_class):
     await sleep(0.2)  # let last event arrive
     assert 1 == myhandler.datachange_count
     await sub.delete()
+    await opc.opc.delete_nodes([var])
 
 
 @pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
@@ -172,7 +176,7 @@ async def test_subscription_count_empty(opc, handler_class):
     myhandler = handler_class()
     sub = await opc.opc.create_subscription(1, myhandler)
     o = opc.opc.nodes.objects
-    var = await o.add_variable(3, 'SubVarCounter', [0.1, 0.2, 0.3])
+    var = await o.add_variable(3, 'SubVarCounter3', [0.1, 0.2, 0.3])
     await sub.subscribe_data_change(var)
     while True:
         val = await var.read_value()
@@ -185,6 +189,7 @@ async def test_subscription_count_empty(opc, handler_class):
     await sleep(0.2)  # let last event arrive
     assert 4 == myhandler.datachange_count
     await sub.delete()
+    await opc.opc.delete_nodes([var])
 
 
 async def test_subscription_overload_simple(opc):
@@ -393,6 +398,7 @@ async def test_create_delete_subscription(opc):
     await sleep(0.1)
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([v])
 
 
 async def test_unsubscribe_two_objects_simultaneously(opc):
@@ -473,6 +479,7 @@ async def test_get_event_from_type_node_CustomEvent(opc):
         assert child in properties
     assert await etype.get_child("2:PropertyNum") in properties
     assert await etype.get_child("2:PropertyString") in properties
+    await opc.opc.delete_nodes([etype])
 
 
 async def test_events_default(opc):
@@ -515,6 +522,7 @@ async def test_events_MyObject(opc):
     assert tid == ev.Time
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([o])
 
 
 async def test_events_wrong_source(opc):
@@ -531,6 +539,7 @@ async def test_events_wrong_source(opc):
         ev = await myhandler.result()
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([o])
 
 
 async def test_events_CustomEvent(opc):
@@ -562,6 +571,7 @@ async def test_events_CustomEvent(opc):
     assert propertystring == ev.PropertyString
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([etype])
 
 
 async def test_events_CustomEvent_MyObject(opc):
@@ -593,6 +603,7 @@ async def test_events_CustomEvent_MyObject(opc):
     assert propertystring == ev.PropertyString
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([etype])
 
 
 async def test_several_different_events(opc):
@@ -636,6 +647,7 @@ async def test_several_different_events(opc):
     assert 7 == len(ev1s)
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([etype1, etype2])
 
 
 async def test_several_different_events_2(opc):
@@ -691,6 +703,7 @@ async def test_several_different_events_2(opc):
     assert ev1s[0].PropertyNum3 is None
     await sub.unsubscribe(handle)
     await sub.delete()
+    await opc.opc.delete_nodes([etype1, etype2, etype3])
 
 
 async def test_internal_server_subscription(opc):
