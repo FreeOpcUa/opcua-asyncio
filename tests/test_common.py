@@ -1027,7 +1027,8 @@ async def test_import_xml_data_type_definition(opc):
 
     s2 = await var.read_value()
     assert s2.structs[1].toto == ss.structs[1].toto == 0.1
-    await opc.opc.delete_nodes([datatype, var, nodes])
+    await opc.opc.delete_nodes([datatype, var])
+    await opc.opc.delete_nodes(nodes)
 
 async def test_struct_data_type(opc):
     assert isinstance(ua.AddNodesItem.data_type, ua.NodeId)
@@ -1045,8 +1046,8 @@ async def test_import_xml_enum_data_type_definition(opc):
     var = await opc.opc.nodes.objects.add_variable(2, "MyEnumVar", e, datatype=ua.enums_datatypes[ua.MyEnum])
     e2 = await var.read_value()
     assert e2 == ua.MyEnum.val2
-    await opc.opc.delete_nodes([var, nodes])
-
+    await opc.opc.delete_nodes([var])
+    await opc.opc.delete_nodes(nodes)
 
 async def test_duplicated_browsenames_same_ns(opc):
     parentfolder = await opc.opc.nodes.objects.add_folder(2, "parent_folder")
