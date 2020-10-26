@@ -941,7 +941,7 @@ async def test_enum(opc):
     # tests
     assert myenum_type.nodeid == await myvar.read_data_type()
     await myvar.write_value(ua.LocalizedText("String2"))
-
+    await opc.opc.delete_nodes([enums])
 
 async def test_supertypes(opc):
     nint32 = opc.opc.get_node(ua.ObjectIds.Int32)
@@ -1027,7 +1027,7 @@ async def test_import_xml_data_type_definition(opc):
 
     s2 = await var.read_value()
     assert s2.structs[1].toto == ss.structs[1].toto == 0.1
-    await opc.opc.delete_nodes(nodes)
+    await opc.opc.delete_nodes([datatype, var, nodes])
 
 async def test_struct_data_type(opc):
     assert isinstance(ua.AddNodesItem.data_type, ua.NodeId)
@@ -1045,8 +1045,7 @@ async def test_import_xml_enum_data_type_definition(opc):
     var = await opc.opc.nodes.objects.add_variable(2, "MyEnumVar", e, datatype=ua.enums_datatypes[ua.MyEnum])
     e2 = await var.read_value()
     assert e2 == ua.MyEnum.val2
-    await opc.opc.delete_nodes([var])
-    await opc.opc.delete_nodes(nodes)
+    await opc.opc.delete_nodes([var, nodes])
 
 
 async def test_duplicated_browsenames_same_ns(opc):
@@ -1068,4 +1067,5 @@ async def test_duplicated_browsenames_different_ns(opc):
         await opc.opc.delete_nodes([parentfolder])
         pytest.fail("Childfolder2 should never be created!")
     except:
+        await opc.opc.delete_nodes([parentfolder])
         return
