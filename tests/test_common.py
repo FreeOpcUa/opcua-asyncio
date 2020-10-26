@@ -1004,7 +1004,6 @@ async def test_guid_node_id():
     binary_node_id = ua.ua_binary.nodeid_to_binary(node.nodeid)
     assert type(binary_node_id) is bytes
 
-
 async def test_import_xml_data_type_definition(opc):
     nodes = await opc.opc.import_xml("tests/substructs.xml")
     await opc.opc.load_data_type_definitions()
@@ -1028,14 +1027,14 @@ async def test_import_xml_data_type_definition(opc):
 
     s2 = await var.read_value()
     assert s2.structs[1].toto == ss.structs[1].toto == 0.1
-
+    await opc.opc.delete_nodes(nodes)
 
 async def test_struct_data_type(opc):
     assert isinstance(ua.AddNodesItem.data_type, ua.NodeId)
     node = opc.opc.get_node(ua.AddNodesItem.data_type)
     path = await node.get_path()
     assert opc.opc.nodes.base_structure_type in path
-
+    await opc.opc.delete_nodes([node])
 
 
 async def test_import_xml_enum_data_type_definition(opc):
@@ -1047,6 +1046,7 @@ async def test_import_xml_enum_data_type_definition(opc):
     e2 = await var.read_value()
     assert e2 == ua.MyEnum.val2
     await opc.opc.delete_nodes([var])
+    await opc.opc.delete_nodes(nodes)
 
 
 async def test_duplicated_browsenames_same_ns(opc):
