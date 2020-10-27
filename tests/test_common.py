@@ -951,6 +951,7 @@ async def test_enum(opc):
     assert myenum_type.nodeid == await myvar.read_data_type()
     await myvar.write_value(ua.LocalizedText("String2"))
     await opc.opc.delete_nodes([es, myvar])
+    await opc.opc.delete_nodes([myenum_type])
 
 async def test_supertypes(opc):
     nint32 = opc.opc.get_node(ua.ObjectIds.Int32)
@@ -1037,7 +1038,7 @@ async def test_import_xml_data_type_definition(opc):
     s2 = await var.read_value()
     assert s2.structs[1].toto == ss.structs[1].toto == 0.1
     await opc.opc.delete_nodes([datatype, var])
-    await opc.opc.delete_nodes(nodes)
+    await opc.opc.delete_nodes([nodes])
 
 async def test_struct_data_type(opc):
     assert isinstance(ua.AddNodesItem.data_type, ua.NodeId)
