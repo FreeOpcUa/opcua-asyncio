@@ -38,7 +38,7 @@ def event_loop(request):
     loop.close()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 async def running_server(request):
     """
     Spawn a server in a separate thread

@@ -37,7 +37,7 @@ def set_up_test_tree():
     return test_etree
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 async def _srv(server):
     class Srv:
         pass
