@@ -45,7 +45,9 @@ async def test_xml_import(opc):
     input_arg = (await o.read_data_value()).Value.Value[0]
     assert "Context" == input_arg.Name
     await opc.opc.delete_nodes([v])
-    await opc.opc.delete_nodes([nodes])
+    n = []
+    [n.append(opc.opc.get_node(node)) for node in nodes]
+    await opc.opc.delete_nodes(n)
 
 async def test_xml_import_additional_ns(opc):
     # if not already shift the new namespaces
