@@ -127,11 +127,6 @@ async def test_xml_ns(opc, tmpdir):
     """
     This test is far too complicated but catches a lot of things...
     """
-    # if not already shift the new namespaces
-    await opc.server.register_namespace("http://placeholder.toincrease.nsindex")
-    # "tests/custom_nodes.xml" isn't created with namespaces in mind, provide new test file
-    # the ns=1 in to file now should be mapped to ns=2
-    await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)
     ns_array = await opc.opc.get_namespace_array()
     if len(ns_array) < 3:
         await opc.opc.register_namespace("dummy_ns")
