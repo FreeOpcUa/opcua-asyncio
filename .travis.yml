@@ -2,19 +2,19 @@ language: python
 
 jobs:
   include:
-    - stage: "Python 3.7 with ubuntu 18.04 - Bionic"
+    - name: "Python 3.7 with ubuntu 18.04 - Bionic"
       os: linux
       dist: bionic
       python: 3.7
-    - stage: "Python 3.8 with ubuntu 18.04 - Bionic"
+    - name: "Python 3.8 with ubuntu 18.04 - Bionic"
       os: linux
       dist: bionic
       python: 3.8
-    - stage: "Python 3.9 with ubuntu 18.04 - Bionic"
+    - name: "Python 3.9 with ubuntu 18.04 - Bionic"
       os: linux
       dist: bionic
       python: 3.9-dev
-    - stage: "Python pypy3 with ubuntu 18.04 - Bionic"
+    - name: "Python pypy3 with ubuntu 18.04 - Bionic"
       os: linux
       dist: bionic
       python: pypy3

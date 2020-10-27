@@ -215,17 +215,12 @@ class UASocketProtocol(asyncio.Protocol):
         self.logger.info("open_secure_channel")
         request = ua.OpenSecureChannelRequest()
         request.Parameters = params
-        if self._open_secure_channel_exchange is not None:
-            raise RuntimeError('Two Open Secure Channel requests can not happen too close to each other. '
-                'The response must be processed and returned before the next request can be sent.')
-        self._open_secure_channel_exchange = params
-        await asyncio.wait_for(
-            self._send_request(request, message_type=ua.MessageType.SecureOpen),
-            self.timeout
-        )
-        _return = self._open_secure_channel_exchange.Parameters
-        self._open_secure_channel_exchange = None
-        return _return
+        result = await asyncio.wait_for(
+            self._send_request(request, message_type=ua.MessageType.SecureOpen), self.timeout)
+        response = struct_from_binary(ua.OpenSecureChannelResponse, result)
+        response.ResponseHeader.ServiceResult.check()
+        self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
+        return response.Parameters
 
     async def close_secure_channel(self):
         """
