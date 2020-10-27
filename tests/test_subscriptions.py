@@ -237,6 +237,7 @@ async def test_subscription_data_change(opc):
     await sub.delete()
     with pytest.raises(ua.UaStatusCodeError):
         await sub.unsubscribe(handle1)  # sub does not exist anymore
+    await opc.opc.delete_nodes([v1])
 
 
 @pytest.mark.parametrize("opc", ["client"], indirect=True)
@@ -317,6 +318,7 @@ async def test_subscription_data_change_bool(opc):
     assert v1 == node
     assert val is False
     await sub.delete()  # should delete our monitoreditem too
+    await opc.opc.delete_nodes([v1])
 
 
 async def test_subscription_data_change_many(opc):
@@ -352,6 +354,7 @@ async def test_subscription_data_change_many(opc):
         else:
             raise RuntimeError(f"Error node {node} is neither {v1} nor {v2}")
     await sub.delete()
+    await opc.opc.delete_nodes([v1, v2])
 
 
 async def test_subscribe_server_time(opc):
@@ -456,7 +459,7 @@ async def test_subscribe_events_to_wrong_node(opc):
     with pytest.raises(ua.UaStatusCodeError):
         handle = await sub.subscribe_events(v)
     await sub.delete()
-
+    await opc.opc.delete_nodes([v])
 
 async def test_get_event_from_type_node_BaseEvent(opc):
     etype = opc.opc.get_node(ua.ObjectIds.BaseEventType)
@@ -603,7 +606,7 @@ async def test_events_CustomEvent_MyObject(opc):
     assert propertystring == ev.PropertyString
     await sub.unsubscribe(handle)
     await sub.delete()
-    await opc.opc.delete_nodes([etype])
+    await opc.opc.delete_nodes([etype, o])
 
 
 async def test_several_different_events(opc):
@@ -648,7 +651,7 @@ async def test_several_different_events(opc):
     await sub.unsubscribe(handle)
     await sub.delete()
     await opc.opc.delete_nodes([etype1, etype2])
-
+    await opc.opc.delete_nodes([o])
 
 async def test_several_different_events_2(opc):
     objects = opc.server.nodes.objects
@@ -704,7 +707,7 @@ async def test_several_different_events_2(opc):
     await sub.unsubscribe(handle)
     await sub.delete()
     await opc.opc.delete_nodes([etype1, etype2, etype3])
-
+    await opc.opc.delete_nodes([o])
 
 async def test_internal_server_subscription(opc):
     """
@@ -728,3 +731,4 @@ async def test_internal_server_subscription(opc):
     internal_sub = opc.server.iserver.subscription_service.subscriptions[sub.subscription_id]
     # Check that the results are not left un-acknowledged on internal Server Subscriptions.
     assert len(internal_sub._not_acknowledged_results) == 0
+    await opc.opc.delete_nodes([sub_obj])

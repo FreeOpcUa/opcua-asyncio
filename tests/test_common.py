@@ -886,6 +886,8 @@ async def test_instantiate_1(opc):
     var1 = await mydevicederived.get_child(["0:childparam"])
     var_parent = await mydevicederived.get_child(["0:sensor"])
     prop_parent = await mydevicederived.get_child(["0:sensor_id"])
+    await opc.opc.delete_nodes([devd_t, dev_t])
+
 
 
 async def test_instantiate_string_nodeid(opc):
@@ -914,6 +916,7 @@ async def test_instantiate_string_nodeid(opc):
     assert ua.ObjectIds.PropertyType == (await prop.get_type_definition()).Identifier
     assert "Running" == await prop.read_value()
     assert prop.nodeid != prop_t.nodeid
+    await opc.opc.delete_nodes([dev_t])
 
 
 async def test_variable_with_datatype(opc):
@@ -928,6 +931,7 @@ async def test_variable_with_datatype(opc):
     )
     tp2 = await v2.read_data_type()
     assert tp2 == ua.NodeId(ua.ObjectIds.ApplicationType)
+    await opc.opc.delete_nodes([v1, v2])
 
 
 async def test_enum(opc):
@@ -946,6 +950,7 @@ async def test_enum(opc):
     # tests
     assert myenum_type.nodeid == await myvar.read_data_type()
     await myvar.write_value(ua.LocalizedText("String2"))
+    await opc.opc.delete_nodes([es, myvar])
 
 async def test_supertypes(opc):
     nint32 = opc.opc.get_node(ua.ObjectIds.Int32)

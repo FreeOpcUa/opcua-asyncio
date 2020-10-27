@@ -109,6 +109,7 @@ def test_sync_sub(client):
     n, v = myhandler.future.result()
     assert v == 0.123
     sub.delete()
+    await client.delete_nodes([var])
 
 
 def test_sync_meth(client, idx):
