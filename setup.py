@@ -15,7 +15,7 @@ setup(
     packages=find_packages(),
     provides=["asyncua"],
     license="GNU Lesser General Public License v3 or later",
-    install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", 'cryptography'],
+    install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", "lxml", "cryptography", "sortedcontainers"],
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
