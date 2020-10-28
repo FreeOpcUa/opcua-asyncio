@@ -266,7 +266,10 @@ class UaClient:
     async def connect_socket(self, host: str, port: int):
         """Connect to server socket."""
         self.logger.info("opening connection")
-        await self.loop.create_connection(self._make_protocol, host, port)
+        # Timeout the connection when the server isn't available
+        await asyncio.wait_for(
+            self.loop.create_connection(self._make_protocol, host, port), self._timeout
+        )
 
     def disconnect_socket(self):
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
@@ -695,4 +698,28 @@ class UaClient:
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
+    async def set_monitoring_mode(self, params) -> ua.uatypes.StatusCode:
+        """
+        Update the subscription monitoring mode
+        """
+        self.logger.info("set_monitoring_mode")
+        request = ua.SetMonitoringModeRequest()
+        request.Parameters = params
+        data = await self.protocol.send_request(request)
+        response = struct_from_binary(ua.SetMonitoringModeResponse, data)
+        self.logger.debug(response)
+        response.ResponseHeader.ServiceResult.check()
+        return response.Parameters.Results
 
+    async def set_publishing_mode(self, params) -> ua.uatypes.StatusCode:
+        """
+        Update the subscription publishing mode
+        """
+        self.logger.info("set_publishing_mode")
+        request = ua.SetPublishingModeRequest()
+        request.Parameters = params
+        data = await self.protocol.send_request(request)
+        response = struct_from_binary(ua.SetPublishingModeResponse, data)
+        self.logger.debug(response)
+        response.ResponseHeader.ServiceResult.check()
+        return response.Parameters.Results

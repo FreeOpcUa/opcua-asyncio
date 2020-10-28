@@ -159,7 +159,9 @@ class Subscription:
     async def subscribe_data_change(self,
                                     nodes: Union[Node, Iterable[Node]],
                                     attr=ua.AttributeIds.Value,
-                                    queuesize=0) -> Union[int, List[Union[int, ua.StatusCode]]]:
+                                    queuesize=0,
+                                    monitoring=ua.MonitoringMode.Reporting,
+                                   ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Subscribe to data change events of one or multiple nodes.
         The default attribute used for the subscription is `Value`.
@@ -176,7 +178,9 @@ class Subscription:
         :param queuesize: 0 or 1 for default queue size (shall be 1 - no queuing), n for FIFO queue
         :return: Handle for changing/cancelling of the subscription
         """
-        return await self._subscribe(nodes, attr, queuesize=queuesize)
+        return await self._subscribe(
+            nodes, attr, queuesize=queuesize, monitoring=monitoring
+        )
 
     async def subscribe_events(self,
                                sourcenode: Node = ua.ObjectIds.Server,
@@ -205,14 +209,20 @@ class Subscription:
             evfilter = await get_filter_from_event_type(evtypes)
         return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 
-    async def _subscribe(self, nodes: Union[Node, Iterable[Node]],
-                         attr, mfilter=None, queuesize=0) -> Union[int, List[Union[int, ua.StatusCode]]]:
+    async def _subscribe(self,
+                         nodes: Union[Node, Iterable[Node]],
+                         attr=ua.AttributeIds.Value,
+                         mfilter=None,
+                         queuesize=0,
+                         monitoring=ua.MonitoringMode.Reporting,
+                        ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Private low level method for subscribing.
         :param nodes: One Node or an Iterable og Nodes.
         :param attr: ua.AttributeId
         :param mfilter: MonitoringFilter
         :param queuesize: queue size
+        :param monitoring: ua.MonitoringMode
         :return: Integer handle or if multiple Nodes were given a List of Integer handles/ua.StatusCode
         """
         is_list = True
@@ -224,7 +234,9 @@ class Subscription:
         # Create List of MonitoredItemCreateRequest
         mirs = []
         for node in nodes:
-            mir = self._make_monitored_item_request(node, attr, mfilter, queuesize)
+            mir = self._make_monitored_item_request(
+                node, attr, mfilter, queuesize, monitoring
+            )
             mirs.append(mir)
         # Await MonitoredItemCreateResult
         mids = await self.create_monitored_items(mirs)
@@ -236,7 +248,12 @@ class Subscription:
             mids[0].check()
         return mids[0]
 
-    def _make_monitored_item_request(self, node: Node, attr, mfilter, queuesize) -> ua.MonitoredItemCreateRequest:
+    def _make_monitored_item_request(self,
+                                     node: Node,
+                                     attr,
+                                     mfilter,
+                                     queuesize,
+                                     monitoring) -> ua.MonitoredItemCreateRequest:
         rv = ua.ReadValueId()
         rv.NodeId = node.nodeid
         rv.AttributeId = attr
@@ -251,7 +268,7 @@ class Subscription:
             mparams.Filter = mfilter
         mir = ua.MonitoredItemCreateRequest()
         mir.ItemToMonitor = rv
-        mir.MonitoringMode = ua.MonitoringMode.Reporting
+        mir.MonitoringMode = monitoring
         mir.RequestedParameters = mparams
         return mir
 
@@ -370,3 +387,40 @@ class Subscription:
         # absolute float value or from 0 to 100 for percentage deadband
         deadband_filter.DeadbandValue = deadband_val
         return self._subscribe(var, attr, deadband_filter, queuesize)
+
+    async def set_monitoring_mode(self, monitoring: ua.MonitoringMode) -> ua.uatypes.StatusCode:
+        """
+        The monitoring mode parameter is used
+        to enable/disable the sampling of MonitoredItems
+        (Samples don't queue on the server side)
+
+        :param monitoring: The monitoring mode to apply
+        :return: Return a Set Monitoring Mode Result
+        """
+        node_handles = []
+        for mi in self._monitored_items.values():
+            node_handles.append(mi.server_handle)
+
+        params = ua.SetMonitoringModeParameters()
+        params.SubscriptionId = self.subscription_id
+        params.MonitoredItemIds = node_handles
+        params.MonitoringMode = monitoring
+        return await self.server.set_monitoring_mode(params)
+
+    async def set_publishing_mode(self, publishing: bool) -> ua.uatypes.StatusCode:
+        """
+        Disable publishing of NotificationMessages for the subscription,
+        but doesn't discontinue the sending of keep-alive Messages,
+        nor change the monitoring mode.
+
+        :param publishing: The publishing mode to apply
+        :return: Return a Set Publishing Mode Result
+        """
+        self.logger.info("set_publishing_mode")
+        params = ua.SetPublishingModeParameters()
+        params.SubscriptionIds = [self.subscription_id]
+        params.PublishingEnabled = publishing
+        result = await self.server.set_publishing_mode(params)
+        if result[0].is_good():
+            self.parameters.PublishingEnabled = publishing
+        return result
