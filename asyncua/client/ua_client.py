@@ -70,7 +70,7 @@ class UASocketProtocol(asyncio.Protocol):
                     self.logger.debug('Not enough data while parsing header from server, waiting for more')
                     return
                 if len(buffer_header) < header.body_size:
-                    self.logger.warning(
+                    self.logger.debug(
                         'We did not receive enough data from server. Need %s got %s', header.body_size, len(buffer_header)
                     )
                     return
@@ -705,5 +705,4 @@ class UaClient:
         response = struct_from_binary(ua.WriteResponse, data)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
-
 
