@@ -3,6 +3,7 @@ import pytest
 from copy import copy
 from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
+from asynctest import CoroutineMock
 
 import asyncua
 from asyncua import ua
@@ -232,6 +233,59 @@ async def test_subscription_data_change(opc):
     with pytest.raises(ua.UaStatusCodeError):
         await sub.unsubscribe(handle1)  # sub does not exist anymore
 
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_create_subscription_publishing(opc):
+    """
+    Test the publishing argument is set during subscription creation
+    """
+    myhandler = MySubHandler()
+    o = opc.opc.nodes.objects
+    v = await o.add_variable(3, 'SubscriptionVariable', 123)
+    # publishing default to True
+    sub = await opc.opc.create_subscription(100, myhandler)
+    assert sub.parameters.PublishingEnabled == True
+
+    sub = await opc.opc.create_subscription(100, myhandler, publishing=False)
+    assert sub.parameters.PublishingEnabled == False
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_set_monitoring_mode(opc, mocker):
+    """
+    test set_monitoring_mode parameter for all MIs of a subscription
+    """
+    myhandler = MySubHandler()
+    o = opc.opc.nodes.objects
+    monitoring_mode = ua.SetMonitoringModeParameters()
+    mock_set_monitoring = mocker.patch.object(ua, "SetMonitoringModeParameters", return_value=monitoring_mode)
+    mock_client_monitoring = mocker.patch("asyncua.client.ua_client.UaClient.set_monitoring_mode", new=CoroutineMock())
+    v = await o.add_variable(3, 'SubscriptionVariable', 123)
+    sub = await opc.opc.create_subscription(100, myhandler)
+
+    await sub.set_monitoring_mode(ua.MonitoringMode.Disabled)
+    assert monitoring_mode.MonitoringMode == ua.MonitoringMode.Disabled
+
+    await sub.set_monitoring_mode(ua.MonitoringMode.Reporting)
+    assert monitoring_mode.MonitoringMode == ua.MonitoringMode.Reporting
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_set_publishing_mode(opc, mocker):
+    """
+    test flipping the publishing parameter for an existing subscription
+    """
+    myhandler = MySubHandler()
+    o = opc.opc.nodes.objects
+    publishing_mode = ua.SetPublishingModeParameters()
+    mock_set_monitoring = mocker.patch.object(ua, "SetPublishingModeParameters", return_value=publishing_mode)
+    mock_client_monitoring = mocker.patch("asyncua.client.ua_client.UaClient.set_publishing_mode", new=CoroutineMock())
+    v = await o.add_variable(3, 'SubscriptionVariable', 123)
+    sub = await opc.opc.create_subscription(100, myhandler)
+
+    await sub.set_publishing_mode(False)
+    assert publishing_mode.PublishingEnabled == False
+
+    await sub.set_publishing_mode(True)
+    assert publishing_mode.PublishingEnabled == True
 
 async def test_subscription_data_change_bool(opc):
     """

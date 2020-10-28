@@ -28,6 +28,7 @@ install:
   - pip install pytest --upgrade
   - pip install pytest-asyncio
   - pip install pytest-mock
+  - pip install asynctest
   - pip install cryptography
   - pip install dataclasses
   - pip install --editable .
