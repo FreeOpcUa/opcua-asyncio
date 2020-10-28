@@ -29,7 +29,7 @@ class UASocketProtocol(asyncio.Protocol):
         self.logger = logging.getLogger(f"{__name__}.UASocketProtocol")
         self.loop = loop or asyncio.get_event_loop()
         self.transport = None
-        self.receive_buffer: Optional[bytes] = None
+        self.receive_buffer = bytes()
         self.is_receiving = False
         self.timeout = timeout
         self.authentication_token = ua.NodeId()
@@ -39,6 +39,7 @@ class UASocketProtocol(asyncio.Protocol):
         self._connection = SecureConnection(security_policy)
         self.state = self.INITIALIZED
         self.closed: bool = False
+        self.renewal_lock: asyncio.Lock = asyncio.Lock()
 
     def connection_made(self, transport: asyncio.Transport):
         self.state = self.OPEN
@@ -50,42 +51,50 @@ class UASocketProtocol(asyncio.Protocol):
         self.transport = None
 
     def data_received(self, data: bytes):
-        if self.receive_buffer:
-            data = self.receive_buffer + data
-            self.receive_buffer = None
-        self._process_received_data(data)
+        # buffer everything
+        self.receive_buffer += data
+        asyncio.create_task(self._async_data_received())
 
-    def _process_received_data(self, data: bytes):
+    async def _async_data_received(self):
         """
         Try to parse received data as asyncua message. Data may be chunked but will be in correct order.
         See: https://docs.python.org/3/library/asyncio-protocol.html#asyncio.Protocol.data_received
         Reassembly is done by filling up a buffer until it verifies as a valid message (or a MessageChunk).
         """
-        buf = ua.utils.Buffer(data)
-        while True:
-            try:
+        try:
+            buffer_header = ua.utils.Buffer(self.receive_buffer)
+            while buffer_header:
                 try:
-                    header = header_from_binary(buf)
+                    header = header_from_binary(buffer_header)
                 except ua.utils.NotEnoughData:
                     self.logger.debug('Not enough data while parsing header from server, waiting for more')
-                    self.receive_buffer = data
                     return
-                if len(buf) < header.body_size:
-                    self.logger.debug(
-                        'We did not receive enough data from server. Need %s got %s', header.body_size, len(buf)
+                if len(buffer_header) < header.body_size:
+                    self.logger.warning(
+                        'We did not receive enough data from server. Need %s got %s', header.body_size, len(buffer_header)
                     )
-                    self.receive_buffer = data
                     return
-                msg = self._connection.receive_from_header_and_body(header, buf)
+
+                # move whole telegram into other buffer
+                # otherwise the same header will be read by immediately following telegrams
+                header_length = buffer_header._cur_pos
+                telegram_length = header_length + header.body_size
+                telegram_body = self.receive_buffer[header_length:telegram_length]
+                self.receive_buffer = self.receive_buffer[telegram_length:]
+                buffer_header = ua.utils.Buffer(self.receive_buffer) # old buffer_header is invalid now because underlying data changed
+                buffer_telegram = ua.utils.Buffer(telegram_body)
+
+                # this way, every incoming packet has the chance to block the others, but if it doesn't need to, the other packets won't notice.
+                await self.renewal_lock.acquire() # wait here to be let in by the bouncer.
+                if header.MessageType != ua.MessageType.SecureOpen:
+                    self.renewal_lock.release() # don't need to keep others waiting, can unlock already.
+                msg = self._connection.receive_from_header_and_body(header, buffer_telegram)
                 self._process_received_message(msg)
-                if not buf:
-                    return
-                # Buffer still has bytes left, try to process again
-                data = bytes(buf)
-            except Exception:
-                self.logger.exception('Exception raised while parsing message from server')
-                self.disconnect_socket()
-                return
+        except:
+            self.logger.exception('Exception raised while parsing message from server')
+            self.disconnect_socket()
+            if self.renewal_lock.locked():
+                self.renewal_lock.release()
 
     def _process_received_message(self, msg):
         if msg is None:
@@ -214,6 +223,8 @@ class UASocketProtocol(asyncio.Protocol):
         response = struct_from_binary(ua.OpenSecureChannelResponse, result)
         response.ResponseHeader.ServiceResult.check()
         self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
+        if self.renewal_lock.locked():
+            self.renewal_lock.release()
         return response.Parameters
 
     async def close_secure_channel(self):

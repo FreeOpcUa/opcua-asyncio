@@ -303,7 +303,7 @@ class SecureConnection:
                 else:
                     # Condition for monotonically increase is not met
                     raise ua.UaError(f"Received chunk: {chunk} with wrong sequence expecting:"
-                                     f" {self._peer_sequence_number}, received: {seq_num},"
+                                     f" {self._peer_sequence_number + 1}, received: {seq_num},"
                                      f" spec says to close connection")
         self._peer_sequence_number = seq_num
 
