@@ -684,8 +684,8 @@ class Node:
     async def add_folder(self, nodeid, bname):
         return await create_folder(self, nodeid, bname)
 
-    async def add_object(self, nodeid, bname, objecttype=None):
-        return await create_object(self, nodeid, bname, objecttype)
+    async def add_object(self, nodeid, bname, objecttype=None, instantiate_optional=True):
+        return await create_object(self, nodeid, bname, objecttype, instantiate_optional)
 
     async def add_variable(self, nodeid, bname, val, varianttype=None, datatype=None):
         return await create_variable(self, nodeid, bname, val, varianttype, datatype)
