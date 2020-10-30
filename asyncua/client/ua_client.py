@@ -53,7 +53,7 @@ class UASocketProtocol(asyncio.Protocol):
     def data_received(self, data: bytes):
         # buffer everything
         self.receive_buffer += data
-        asyncio.create_task(self._async_data_received())
+        self.loop.create_task(self._async_data_received())
 
     async def _async_data_received(self):
         """
@@ -705,4 +705,3 @@ class UaClient:
         response = struct_from_binary(ua.WriteResponse, data)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
-
