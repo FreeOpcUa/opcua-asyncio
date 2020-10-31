@@ -39,6 +39,9 @@ class UASocketProtocol(asyncio.Protocol):
         self._connection = SecureConnection(security_policy)
         self.state = self.INITIALIZED
         self.closed: bool = False
+        # needed to pass params from asynchronous request to synchronous data receive callback, as well as
+        # passing back the processed response to the request so that it can return it.
+        self._open_secure_channel_exchange = None
 
     def connection_made(self, transport: asyncio.Transport):
         self.state = self.OPEN
@@ -78,6 +81,11 @@ class UASocketProtocol(asyncio.Protocol):
                     return
                 msg = self._connection.receive_from_header_and_body(header, buf)
                 self._process_received_message(msg)
+                if header.MessageType == ua.MessageType.SecureOpen:
+                    params = self._open_secure_channel_exchange
+                    self._open_secure_channel_exchange = struct_from_binary(ua.OpenSecureChannelResponse, msg.body())
+                    self._open_secure_channel_exchange.ResponseHeader.ServiceResult.check()
+                    self._connection.set_channel(self._open_secure_channel_exchange.Parameters, params.RequestType, params.ClientNonce)
                 if not buf:
                     return
                 # Buffer still has bytes left, try to process again
@@ -207,14 +215,17 @@ class UASocketProtocol(asyncio.Protocol):
         self.logger.info("open_secure_channel")
         request = ua.OpenSecureChannelRequest()
         request.Parameters = params
-        result = await asyncio.wait_for(
+        if self._open_secure_channel_exchange is not None:
+            raise RuntimeError('Two Open Secure Channel requests can not happen too close to each other. '
+                'The response must be processed and returned before the next request can be sent.')
+        self._open_secure_channel_exchange = params
+        await asyncio.wait_for(
             self._send_request(request, message_type=ua.MessageType.SecureOpen),
             self.timeout
         )
-        response = struct_from_binary(ua.OpenSecureChannelResponse, result)
-        response.ResponseHeader.ServiceResult.check()
-        self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
-        return response.Parameters
+        _return = self._open_secure_channel_exchange.Parameters
+        self._open_secure_channel_exchange = None
+        return _return
 
     async def close_secure_channel(self):
         """
