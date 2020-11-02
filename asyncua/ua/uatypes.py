@@ -750,10 +750,7 @@ class Variant(FrozenClass):
         if self.VariantType is None:
             self.VariantType = self._guess_type(self.Value)
         if self.Value is None and not self.is_array and self.VariantType not in (VariantType.Null, VariantType.String, VariantType.DateTime, VariantType.ExtensionObject):
-            if self.Value == None and self.VariantType == VariantType.NodeId:
-                self.Value = NodeId(0,0)
-            else:
-                raise UaError(f"Non array Variant of type {self.VariantType} cannot have value None")
+            raise UaError(f"Non array Variant of type {self.VariantType} cannot have value None")
         if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
             dims = get_shape(self.Value)
             if len(dims) > 1:
