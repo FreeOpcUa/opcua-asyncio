@@ -32,6 +32,22 @@ async def test_discovery(server, discovery_server):
         assert new_app_uri in [s.ApplicationUri for s in new_servers]
 
 
+async def test_unregister_discovery(server, discovery_server):
+    client = Client(discovery_server.endpoint.geturl())
+    async with client:
+        new_app_uri = 'urn:freeopcua:python:server:test_discovery2'
+        await server.set_application_uri(new_app_uri)
+        # register without automatic renewal
+        await server.register_to_discovery(discovery_server.endpoint.geturl(), period=0)
+        await asyncio.sleep(0.1)
+        # unregister, no automatic renewal to stop
+        await server.unregister_to_discovery(discovery_server.endpoint.geturl())
+        # reregister with automatic renewal
+        await server.register_to_discovery(discovery_server.endpoint.geturl(), period=60)
+        # unregister, cancel scheduled renewal
+        await server.unregister_to_discovery(discovery_server.endpoint.geturl())
+
+
 async def test_find_servers2(server, discovery_server):
     client = Client(discovery_server.endpoint.geturl())
     async with client:
