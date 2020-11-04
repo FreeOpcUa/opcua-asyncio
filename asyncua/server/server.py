@@ -236,7 +236,7 @@ class Server:
 
     def _schedule_renew_registration(self):
         self.loop.create_task(self._renew_registration())
-        self.loop.call_later(self._discovery_period, self._schedule_renew_registration)
+        self._discovery_handle = self.loop.call_later(self._discovery_period, self._schedule_renew_registration)
 
     async def _renew_registration(self):
         for client in self._discovery_clients.values():
