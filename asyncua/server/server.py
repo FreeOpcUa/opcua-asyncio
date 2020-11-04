@@ -222,7 +222,7 @@ class Server:
         await self._discovery_clients[url].register_server(self)
         self._discovery_period = period
         if period:
-            self._discovery_handle = self.loop.call_soon(self._schedule_renew_registration)
+            self.loop.call_soon(self._schedule_renew_registration)
 
     async def unregister_to_discovery(self, url: str = "opc.tcp://localhost:4840"):
         """
