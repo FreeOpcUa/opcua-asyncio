@@ -101,3 +101,17 @@ class SubscriptionService:
     async def trigger_event(self, event):
         for sub in self.subscriptions.values():
             await sub.monitored_item_srv.trigger_event(event)
+
+    def modify_subscription(self, params, callback):
+        # Requested params are ignored, result = params set during create_subscription.
+        self.logger.info("modify subscription with callback: %s", callback)
+        result = ua.ModifySubscriptionResult()
+        try:
+            sub = self.subscriptions[params.SubscriptionId]
+            result.RevisedPublishingInterval = sub.data.RevisedPublishingInterval
+            result.RevisedLifetimeCount = sub.data.RevisedLifetimeCount
+            result.RevisedMaxKeepAliveCount = sub.data.RevisedMaxKeepAliveCount
+
+            return result
+        except KeyError:
+            raise utils.ServiceError(ua.StatusCodes.BadSubscriptionIdInvalid)

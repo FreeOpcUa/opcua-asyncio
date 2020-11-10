@@ -190,3 +190,6 @@ class InternalSession:
 
     def publish(self, acks: Optional[Iterable[ua.SubscriptionAcknowledgement]] = None):
         return self.subscription_service.publish(acks or [])
+
+    def modify_subscription(self, params, callback):
+        return self.subscription_service.modify_subscription(params, callback)

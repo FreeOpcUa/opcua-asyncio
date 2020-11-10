@@ -459,6 +459,18 @@ class UaProcessor:
             _logger.info("sending set publishing mode response")
             self.send_response(requesthdr.RequestHandle, seqhdr, response)
 
+        elif typeid == ua.NodeId(ua.ObjectIds.ModifySubscriptionRequest_Encoding_DefaultBinary):
+            _logger.info("modify subscription request")
+            params = struct_from_binary(ua.ModifySubscriptionParameters, body)
+
+            result = self.session.modify_subscription(params, self.forward_publish_response)
+
+            response = ua.ModifySubscriptionResponse()
+            response.Parameters = result
+
+            #_logger.info("sending modify subscription response")
+            self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
         else:
             _logger.warning("Unknown message received %s (%s)", typeid, user)
             raise ServiceError(ua.StatusCodes.BadServiceUnsupported)
