@@ -22,7 +22,6 @@ jobs:
 install:
   - pip install python-dateutil
   - pip install pytz
-  - pip install lxml
   - pip install aiofiles
   - pip install aiosqlite
   - pip install pytest --upgrade

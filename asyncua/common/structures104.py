@@ -19,7 +19,7 @@ def clean_name(name):
     newname = re.sub(r'^[0-9]+', r'_\g<0>', newname)
 
     if name != newname:
-        logger.warning("renamed %s to %s due to Python syntax", name, newname)
+        logger.warning(f"renamed {name} to {newname} due to Python syntax")
     return newname
 
 

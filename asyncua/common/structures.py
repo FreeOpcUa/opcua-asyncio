@@ -9,7 +9,7 @@ import logging
 # The next two imports are for generated code
 from datetime import datetime
 from enum import Enum, IntEnum, EnumMeta
-from lxml import objectify
+from xml.etree import ElementTree as ET
 
 from asyncua import ua
 
@@ -119,11 +119,11 @@ class StructGenerator(object):
         self.model = []
 
     def make_model_from_string(self, xml):
-        obj = objectify.fromstring(xml)
+        obj = ET.fromstring(xml)
         self._make_model(obj)
 
     def make_model_from_file(self, path):
-        obj = objectify.parse(path)
+        obj = ET.parse(path)
         root = obj.getroot()
         self._make_model(root)
 
