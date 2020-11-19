@@ -32,17 +32,26 @@ class NodeData:
 
     def __init__(self):
         self.nodetype = None
-        self.nodeid = None
-        self.browsename = None
-        self.displayname = None
-        self.symname = None
         self.parent = None
         self.parentlink = None
-        self.desc = ""
         self.typedef = None
-        self.refs = []
         self.nodeclass = None
         self.eventnotifier = 0
+
+        # UANode - Part6 Table F.2
+        self.nodeid = None
+        self.browsename = None
+        self.symname = None
+        self.writemask = None
+        self.userwritemask = None
+        self.accessrestrictions = None
+        self.displayname = None
+        self.desc = ""
+        self.category = []
+        self.documentation = None
+        self.refs = []
+        self.rolepermissions = []
+        self.extensions = None
 
         # variable
         self.datatype = None
@@ -218,6 +227,8 @@ class XMLParser:
             obj.displayname = el.text
         elif tag == "Description":
             obj.desc = el.text
+        elif tag == "Documentation":
+            obj.documentation = el.text
         elif tag == "References":
             self._parse_refs(el, obj)
         elif tag == "Value":
