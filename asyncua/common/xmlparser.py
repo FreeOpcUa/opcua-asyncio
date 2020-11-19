@@ -35,7 +35,7 @@ class NodeData:
         self.nodeid = None
         self.browsename = None
         self.displayname = None
-        self.symname = None  # FIXME: this param is never used, why?
+        self.symname = None
         self.parent = None
         self.parentlink = None
         self.desc = ""
@@ -108,7 +108,7 @@ class XMLParser:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self._retag = re.compile(r"(\{.*\})(.*)")
+        self._retag = re.compile(r"({.*})(.*)")
         self.root = None
         self.ns = {
             'base': "http://opcfoundation.org/UA/2011/03/UANodeSet.xsd",
