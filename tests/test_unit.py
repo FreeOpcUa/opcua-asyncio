@@ -24,7 +24,7 @@ from asyncua.ua.uatypes import _MaskEnum
 from asyncua.common.structures import StructGenerator
 from asyncua.common.connection import MessageChunk
 
-EXAMPLE_BSD_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "example.bsd"))
+EXAMPLE_BSD_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "custom_nodes.xml"))
 
 
 def test_variant_array_none():
