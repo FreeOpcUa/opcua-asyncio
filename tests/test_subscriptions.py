@@ -265,7 +265,7 @@ async def test_set_monitoring_mode(opc, mocker):
     monitoring_mode = ua.SetMonitoringModeParameters()
     mock_set_monitoring = mocker.patch.object(ua, "SetMonitoringModeParameters", return_value=monitoring_mode)
     mock_client_monitoring = mocker.patch("asyncua.client.ua_client.UaClient.set_monitoring_mode", new=CoroutineMock())
-    v = await o.add_variable(3, 'SubscriptionVariable', 123)
+    v = await o.add_variable(3, 'SubscriptionVariable2', 123)
     sub = await opc.opc.create_subscription(100, myhandler)
 
     await sub.set_monitoring_mode(ua.MonitoringMode.Disabled)
@@ -284,7 +284,7 @@ async def test_set_publishing_mode(opc, mocker):
     publishing_mode = ua.SetPublishingModeParameters()
     mock_set_monitoring = mocker.patch.object(ua, "SetPublishingModeParameters", return_value=publishing_mode)
     mock_client_monitoring = mocker.patch("asyncua.client.ua_client.UaClient.set_publishing_mode", new=CoroutineMock())
-    v = await o.add_variable(3, 'SubscriptionVariable', 123)
+    v = await o.add_variable(3, 'SubscriptionVariable3', 123)
     sub = await opc.opc.create_subscription(100, myhandler)
 
     await sub.set_publishing_mode(False)
@@ -395,7 +395,7 @@ async def test_modify_monitored_item(opc):
 
 async def test_create_delete_subscription(opc):
     o = opc.opc.nodes.objects
-    v = await o.add_variable(3, 'SubscriptionVariable', [1, 2, 3])
+    v = await o.add_variable(3, 'SubscriptionVariable4', [1, 2, 3])
     sub = await opc.opc.create_subscription(100, MySubHandler())
     handle = await sub.subscribe_data_change(v)
     await sleep(0.1)
