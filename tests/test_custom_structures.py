@@ -87,7 +87,7 @@ async def test_opc_type_dict_append_struct_1(srv):
     assert result.attrib == case
 
 
-@pytest.mark.skip("support for theat currently removed")
+@pytest.mark.skip("Support for that feature currently removed")
 async def test_opc_type_dict_append_struct_2(srv):
     case = {'BaseType': 'ua:ExtensionObject',
             'Name': 'CustomizedStruct'}
@@ -318,7 +318,7 @@ async def test_get_ua_class_1(srv):
         pass
 
 
-@pytest.mark.skip("support for theat currently removed")
+@pytest.mark.skip("Support for that feature currently removed")
 async def test_get_ua_class_2(srv):
     struct_name = '*c*u_stom-ized&Stru#ct'
     struct_node = await srv.dict_builder.create_data_type(struct_name)
