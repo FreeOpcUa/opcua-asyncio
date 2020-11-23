@@ -578,7 +578,7 @@ async def test_write_value(opc):
     o = opc.opc.nodes.objects
     var = ua.Variant(1.98, ua.VariantType.Double)
     dvar = ua.DataValue(var)
-    v = await o.add_variable(3, 'VariableValue2', var)
+    v = await o.add_variable(3, 'VariableValue', var)
     await v.write_value(var.Value)
     v1 = await v.read_value()
     assert v1 == var.Value
@@ -759,7 +759,7 @@ async def test_add_node_with_type(opc):
     references = await o.get_references(refs=ua.ObjectIds.HasTypeDefinition, direction=ua.BrowseDirection.Forward)
     assert 1 == len(references)
     assert custom_otype.nodeid == references[0].NodeId
-    await opc.opc.delete_nodes([f])
+    await opc.opc.delete_nodes([f, o])
 
 
 async def test_references_for_added_nodes(opc):
