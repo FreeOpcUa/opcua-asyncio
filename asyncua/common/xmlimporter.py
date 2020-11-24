@@ -415,7 +415,7 @@ class XmlImporter:
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
         if not obj.definitions:
-            print("NOT DEFINITON", obj.parent, obj)
+            pass
         else:
             if obj.parent == self.server.nodes.enum_data_type.nodeid:
                 attrs.DataTypeDefinition = self._get_edef(node, obj)
