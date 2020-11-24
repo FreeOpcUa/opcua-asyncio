@@ -50,7 +50,7 @@ async def create_folder(parent, nodeid, bname):
     )
 
 
-async def create_object(parent, nodeid, bname, objecttype=None):
+async def create_object(parent, nodeid, bname, objecttype=None, instantiate_optional=True):
     """
     create a child node object
     arguments are nodeid, browsename, [objecttype]
@@ -61,7 +61,7 @@ async def create_object(parent, nodeid, bname, objecttype=None):
     if objecttype is not None:
         objecttype = make_node(parent.server, objecttype)
         dname = ua.LocalizedText(qname.Name)
-        nodes = await instantiate(parent, objecttype, nodeid, bname=qname, dname=dname)
+        nodes = await instantiate(parent, objecttype, nodeid, bname=qname, dname=dname, instantiate_optional=instantiate_optional)
         return nodes[0]
     else:
         return make_node(
