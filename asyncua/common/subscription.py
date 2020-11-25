@@ -103,8 +103,6 @@ class Subscription:
                     await self._call_status(notif)
                 else:
                     self.logger.warning("Notification type not supported yet for notification %s", notif)
-        else:
-            self.logger.warning("NotificationMessage is None.")
 
     async def delete(self):
         """
