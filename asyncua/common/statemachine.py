@@ -8,19 +8,22 @@ class StateMachineTypeClass(object):
     Implementation of an StateMachineType
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
-        #if idx = none log parend idx is used
+        if not server: raise ValueError #change to check instance type
+        if not parent: raise ValueError #change to check instance type
+        if idx == None:
+            idx = parent.nodeid.NamespaceIndex
+        if name == None:
+            name = "StateMachine"
         self._server = server
         self._parent = parent
         self._state_machine_node = None
         self._state_machine_type = ua.NodeId(2299, 0)
         self._name = name
         self._idx = idx
-
         self._current_state = ua.LocalizedText() #Variable LocalizedText
         self._current_state_id = None #Property NodeId        
         self._last_transition = ua.LocalizedText() #Variable LocalizedText
         self._last_transition_id = None #Property NodeId   
-
         self._optionals = False
 
     async def install(self, optionals=False):
@@ -45,6 +48,8 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
+        if name == None:
+            name = "FiniteStateMachine"
         self._state_machine_type = ua.NodeId(2771, 0)
         self._avalible_states = []
         self._avalible_transitions = []
@@ -63,14 +68,24 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
         self._avalible_transitions = transitions      
 
 class ExclusiveLimitStateMachineTypeClass(FiniteStateMachineTypeClass):
+    '''
+    NOT IMPLEMENTED "ExclusiveLimitStateMachineType"
+    '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent)
+        if name == None:
+            name = "ExclusiveLimitStateMachine"
         self._state_machine_type = ua.NodeId(9318, 0)
         raise NotImplementedError
 
 class FileTransferStateMachineTypeClass(FiniteStateMachineTypeClass):
+    '''
+    NOT IMPLEMENTED "FileTransferStateMachineType"
+    '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent)
+        if name == None:
+            name = "FileTransferStateMachine"
         self._state_machine_type = ua.NodeId(15803, 0)
         raise NotImplementedError
 
@@ -80,6 +95,8 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
+        if name == None:
+            name = "ProgramStateMachine"
         self._state_machine_type = ua.NodeId(2391, 0)
         self._ready_state = None #State node
         self._halted_state = None #State node
@@ -240,17 +257,18 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
 class ShelvedStateMachineTypeClass(FiniteStateMachineTypeClass):
+    '''
+    NOT IMPLEMENTED "ShelvedStateMachineType"
+    '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent)
+        if name == None:
+            name = "ShelvedStateMachine"
         self._state_machine_type = ua.NodeId(2929, 0)
         raise NotImplementedError
 
 
-
-
-
 #Devtests
-
 async def main():
     logging.basicConfig(level=logging.INFO)
     _logger = logging.getLogger('asyncua')
