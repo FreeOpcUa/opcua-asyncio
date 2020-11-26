@@ -16,9 +16,9 @@ class StateMachineTypeClass(object):
         self._name = name
         self._idx = idx
 
-        self._current_state = "None" #Variable
+        self._current_state = ua.LocalizedText() #Variable LocalizedText
         self._current_state_id = None #Property        
-        self._last_transition = "None" #Variable
+        self._last_transition = ua.LocalizedText() #Variable LocalizedText
         self._last_transition_id = None #Property
 
         self._optionals = False
@@ -49,12 +49,12 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
         self._avalible_states = []
         self._avalible_transitions = []
 
-    async def install(self, instantiate_optional=False):
+    async def install(self, optionals=False):
         '''
         setup adressspace and initialize 
         '''
-        self._optionals = instantiate_optional
-        self._state_machine_node = await self._parent.add_object(self._idx, self._name, objecttype=self._state_machine_type, instantiate_optional=instantiate_optional)
+        self._optionals = optionals
+        self._state_machine_node = await self._parent.add_object(self._idx, self._name, objecttype=self._state_machine_type, instantiate_optional=optionals)
 
     async def set_avalible_states(self, states):
         self._avalible_states = states
@@ -65,19 +65,22 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
 class ExclusiveLimitStateMachineTypeClass(FiniteStateMachineTypeClass):
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent)
-        self._state_machine_type = ua.ObjectIds.ExclusiveLimitStateMachineType
+        self._state_machine_type = ua.NodeId(9318, 0)
         raise NotImplementedError
 
 class FileTransferStateMachineTypeClass(FiniteStateMachineTypeClass):
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent)
-        self._state_machine_type = ua.ObjectIds.FileTransferStateMachineType
+        self._state_machine_type = ua.NodeId(15803, 0)
         raise NotImplementedError
 
 class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
+    '''
+    https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.3/
+    '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
-        super().__init__(server, parent)
-        self._state_machine_type = ua.ObjectIds.ProgramStateMachineType
+        super().__init__(server, parent, idx, name)
+        self._state_machine_type = ua.NodeId(2391, 0)
         self._ready_state = None #State node
         self._halted_state = None #State node
         self._running_state = None #State node
@@ -93,11 +96,18 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
         self._suspended_to_ready = None #Transition node
         self._ready_to_halted = None #Transition node
 
-    async def install(self):
-        #setup addressspace
-        # instantiate(parent=self._parent, node_type=self._state_machine_type, nodeid=, bname="StateMachine", dname=, idx= , instantiate_optionals=False)
-        #maybe better to use create_object()
-        self._state_machine_node = None
+        self._halt_method_node = None #uamethod node
+        self._reset_method_node = None #uamethod node
+        self._resume_method_node = None #uamethod node
+        self._start_method_node = None #uamethod node
+        self._suspend_method_node = None #uamethod node
+
+    async def install(self, optionals=False):
+        '''
+        setup adressspace and initialize 
+        '''
+        self._optionals = optionals
+        self._state_machine_node = await self._parent.add_object(self._idx, self._name, objecttype=self._state_machine_type, instantiate_optional=optionals)
         #get childnodes:
         self._ready_state = None #State node
         self._halted_state = None #State node
@@ -112,6 +122,11 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
         self._suspended_to_halted = None #Transition node
         self._suspended_to_ready = None #Transition node
         self._ready_to_halted = None #Transition node
+        self._halt_method_node = None #uamethod node
+        self._reset_method_node = None #uamethod node
+        self._resume_method_node = None #uamethod node
+        self._start_method_node = None #uamethod node
+        self._suspend_method_node = None #uamethod node
 
     #Transition
     async def HaltedToReady(self):
@@ -185,10 +200,49 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
         await self._last_transition_id.write_value(self._ready_to_halted.nodeid, varianttype=ua.VariantType.NodeId)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
+    #method to be linked to uamethod
+    async def Start(self):
+        if await self._current_state.read_value() == ua.LocalizedText("Ready", "en-US"):
+            return await ReadyToRunning()
+        else:
+            return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+
+    #method to be linked to uamethod
+    async def Suspend(self):
+        if await self._current_state.read_value() == ua.LocalizedText("Running", "en-US"):
+            return await RunningToSuspended()
+        else:
+            return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+
+    #method to be linked to uamethod
+    async def Resume(self):
+        if await self._current_state.read_value() == ua.LocalizedText("Suspended", "en-US"):
+            return await SuspendedToRunning()
+        else:
+            return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+
+    #method to be linked to uamethod
+    async def Halt(self):
+        if await self._current_state.read_value() == ua.LocalizedText("Ready", "en-US"):
+            return await ReadyToHalted()
+        elif await self._current_state.read_value() == ua.LocalizedText("Running", "en-US"):
+            return await RunningToHalted()
+        elif await self._current_state.read_value() == ua.LocalizedText("Suspended", "en-US"):
+            return await SuspendedToHalted()
+        else:
+            return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+
+    #method to be linked to uamethod
+    async def Reset(self):
+        if await self._current_state.read_value() == ua.LocalizedText("Halted", "en-US"):
+            return await HaltedToReady()
+        else:
+            return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+
 class ShelvedStateMachineTypeClass(FiniteStateMachineTypeClass):
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent)
-        self._state_machine_type = ua.ObjectIds.ShelvedStateMachineType
+        self._state_machine_type = ua.NodeId(2929, 0)
         raise NotImplementedError
 
 
@@ -202,12 +256,14 @@ async def main():
     _logger = logging.getLogger('asyncua')
 
     server = Server()
-
     await server.init()
-    sm = StateMachineTypeClass(server, server.get_objects_node(), 0, "Test1")
-    await sm.install()
-    fsm = FiniteStateMachineTypeClass(server, server.nodes.objects, 0, "Test2")
-    await fsm.install()
+
+    sm = StateMachineTypeClass(server, server.nodes.objects, 0, "StateMachine")
+    await sm.install(True)
+    fsm = FiniteStateMachineTypeClass(server, server.nodes.objects, 0, "FiniteStateMachine")
+    await fsm.install(True)
+    pfsm = ProgramStateMachineTypeClass(server, server.nodes.objects, 0, "ProgramStateMachine")
+    await pfsm.install(False)
 
     async with server:
         while 1:
