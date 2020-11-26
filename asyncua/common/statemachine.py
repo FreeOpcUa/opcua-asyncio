@@ -17,9 +17,9 @@ class StateMachineTypeClass(object):
         self._idx = idx
 
         self._current_state = ua.LocalizedText() #Variable LocalizedText
-        self._current_state_id = None #Property        
+        self._current_state_id = None #Property NodeId        
         self._last_transition = ua.LocalizedText() #Variable LocalizedText
-        self._last_transition_id = None #Property
+        self._last_transition_id = None #Property NodeId   
 
         self._optionals = False
 
@@ -32,11 +32,11 @@ class StateMachineTypeClass(object):
     
     async def change_state(self, state_name, state, transition_name, transition=None):
         #check types: names = string and others are nodetype
-        self._current_state = state #Variable
-        self._current_state_id = None #Property  
+        self._current_state = state #Variable LocalizedText
+        self._current_state_id = None #Property NodeId   
         if self._optionals:
-            self._last_transition = transition #Variable
-            self._last_transition_id = None #Property
+            self._last_transition = transition #Variable LocalizedText
+            self._last_transition_id = None #Property NodeId   
         #write
 
 class FiniteStateMachineTypeClass(StateMachineTypeClass):
@@ -263,7 +263,7 @@ async def main():
     fsm = FiniteStateMachineTypeClass(server, server.nodes.objects, 0, "FiniteStateMachine")
     await fsm.install(True)
     pfsm = ProgramStateMachineTypeClass(server, server.nodes.objects, 0, "ProgramStateMachine")
-    await pfsm.install(False)
+    await pfsm.install(True)
 
     async with server:
         while 1:
