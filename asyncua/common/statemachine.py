@@ -74,6 +74,24 @@ class StateMachineTypeClass(object):
         #FIXME check types/class
         await self._last_transition_node.write_value(transition_name)
         await self._last_transition_id_node.write_value(transition_node)
+    
+    async def add_state(self, name, state_type, optionals):
+        #FIXME check types/class
+        return await self._state_machine_node.add_object(
+            self._idx, 
+            name, 
+            objecttype=state_type, 
+            instantiate_optional=optionals
+            )
+
+    async def add_transition(self, name, transition_type, optionals):
+        #FIXME check types/class
+        return await self._state_machine_node.add_object(
+            self._idx, 
+            name, 
+            objecttype=transition_type, 
+            instantiate_optional=optionals
+            )
 
 class FiniteStateMachineTypeClass(StateMachineTypeClass):
     '''
@@ -84,10 +102,10 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
         if name == None:
             name = "FiniteStateMachine"
         self._state_machine_type = ua.NodeId(2771, 0)
-        self._avalible_states = []
-        self._avalible_transitions = []
+        self._avalible_states_node = None
+        self._avalible_transitions_node = None
 
-    async def install(self, optionals=False):
+    async def install(self, avalible_states, avalible_transitions, optionals=False):
         '''
         setup adressspace and initialize 
         '''
@@ -98,12 +116,17 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
             objecttype=self._state_machine_type, 
             instantiate_optional=optionals
             )
+        #FIXME get children
+        # map children
+        await self.set_avalible_states(avalible_states)
+        await self.set_avalible_transitions(avalible_transitions)
 
     async def set_avalible_states(self, states):
-        self._avalible_states = states
+        #check if its list
+        await self._avalible_states_node.write_value(states, varianttype=ua.VariantType.NodeId)
 
     async def set_avalible_transitions(self, transitions):
-        self._avalible_transitions = transitions      
+        await self._avalible_transitions_node.write_value(transitions, varianttype=ua.VariantType.NodeId)
 
 class ExclusiveLimitStateMachineTypeClass(FiniteStateMachineTypeClass):
     '''
