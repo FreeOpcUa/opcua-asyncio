@@ -110,7 +110,7 @@ class ExclusiveLimitStateMachineTypeClass(FiniteStateMachineTypeClass):
     NOT IMPLEMENTED "ExclusiveLimitStateMachineType"
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
-        super().__init__(server, parent)
+        super().__init__(server, parent, idx, name)
         if name == None:
             name = "ExclusiveLimitStateMachine"
         self._state_machine_type = ua.NodeId(9318, 0)
@@ -121,7 +121,7 @@ class FileTransferStateMachineTypeClass(FiniteStateMachineTypeClass):
     NOT IMPLEMENTED "FileTransferStateMachineType"
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
-        super().__init__(server, parent)
+        super().__init__(server, parent, idx, name)
         if name == None:
             name = "FileTransferStateMachine"
         self._state_machine_type = ua.NodeId(15803, 0)
@@ -136,20 +136,37 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
         if name == None:
             name = "ProgramStateMachine"
         self._state_machine_type = ua.NodeId(2391, 0)
-        self._ready_state = None #State node
-        self._halted_state = None #State node
-        self._running_state = None #State node
-        self._suspended_state = None #State node
+        self._ready_state_node = None #State node
+        self._halted_state_node = None #State node
+        self._running_state_node = None #State node
+        self._suspended_state_node = None #State node
 
-        self._halted_to_ready = None #Transition node
-        self._ready_to_running = None #Transition node
-        self._running_to_halted = None #Transition node
-        self._running_to_ready = None #Transition node
-        self._running_to_suspended = None #Transition node
-        self._suspended_to_running = None #Transition node
-        self._suspended_to_halted = None #Transition node
-        self._suspended_to_ready = None #Transition node
-        self._ready_to_halted = None #Transition node
+        self._halted_to_ready_node = None #Transition node
+        self._ready_to_running_node = None #Transition node
+        self._running_to_halted_node = None #Transition node
+        self._running_to_ready_node = None #Transition node
+        self._running_to_suspended_node = None #Transition node
+        self._suspended_to_running_node = None #Transition node
+        self._suspended_to_halted_node = None #Transition node
+        self._suspended_to_ready_node = None #Transition node
+        self._ready_to_halted_node = None #Transition node
+
+        # 5.2.3.2 ProgramStateMachineType states
+        self._halted_state_id_node = None #State property (StateNumber value 11)
+        self._ready_state_id_node = None #State property (StateNumber value 12)
+        self._running_state_id_node = None #State property (StateNumber value 13)
+        self._suspended_state_id_node = None #State property (StateNumber value 14)
+
+        # 5.2.3.3 ProgramStateMachineType transitions
+        self._halted_to_ready_id_node = None #Transition property (TransitionNumber value 1)
+        self._ready_to_running_id_node = None #Transition property (TransitionNumber value 2)
+        self._running_to_halted_id_node = None #Transition property (TransitionNumber value 3)
+        self._running_to_ready_id_node = None #Transition property (TransitionNumber value 4)
+        self._running_to_suspended_id_node = None #Transition property (TransitionNumber value 5)
+        self._suspended_to_running_id_node = None #Transition property (TransitionNumber value 6)
+        self._suspended_to_halted_id_node = None #Transition property (TransitionNumber value 7)
+        self._suspended_to_ready_id_node = None #Transition property (TransitionNumber value 8)
+        self._ready_to_halted_id_node = None #Transition property (TransitionNumber value 9)
 
         self._halt_method_node = None #uamethod node
         self._reset_method_node = None #uamethod node
@@ -157,19 +174,19 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
         self._start_method_node = None #uamethod node
         self._suspend_method_node = None #uamethod node
 
-        self.lt_ready = ua.LocalizedText("Ready", "en-US")
-        self.lt_running = ua.LocalizedText("Running", "en-US")
-        self.lt_halted = ua.LocalizedText("Halted", "en-US")
-        self.lt_suspended= ua.LocalizedText("Suspended", "en-US")
-        self.lt_halted_to_ready = ua.LocalizedText("HaltedToReady", "en-US")
-        self.lt_ready_to_running = ua.LocalizedText("ReadyToRunning", "en-US")
-        self.lt_running_to_halted = ua.LocalizedText("RunningToHalted", "en-US")
-        self.lt_running_to_ready = ua.LocalizedText("RunningToReady", "en-US")
-        self.lt_running_to_suspended = ua.LocalizedText("RunningToSuspended", "en-US")
-        self.lt_suspended_to_running = ua.LocalizedText("SuspendedToRunning", "en-US")
-        self.lt_suspended_to_halted = ua.LocalizedText("SuspendedToHalted", "en-US")
-        self.lt_suspended_to_ready = ua.LocalizedText("SuspendedToReady", "en-US")
-        self.lt_ready_to_halted = ua.LocalizedText("ReadyToHalted", "en-US")
+        self.localizedtext_ready = ua.LocalizedText("Ready", "en-US")
+        self.localizedtext_running = ua.LocalizedText("Running", "en-US")
+        self.localizedtext_halted = ua.LocalizedText("Halted", "en-US")
+        self.localizedtext_suspended= ua.LocalizedText("Suspended", "en-US")
+        self.localizedtext_halted_to_ready = ua.LocalizedText("HaltedToReady", "en-US")
+        self.localizedtext_ready_to_running = ua.LocalizedText("ReadyToRunning", "en-US")
+        self.localizedtext_running_to_halted = ua.LocalizedText("RunningToHalted", "en-US")
+        self.localizedtext_running_to_ready = ua.LocalizedText("RunningToReady", "en-US")
+        self.localizedtext_running_to_suspended = ua.LocalizedText("RunningToSuspended", "en-US")
+        self.localizedtext_suspended_to_running = ua.LocalizedText("SuspendedToRunning", "en-US")
+        self.localizedtext_suspended_to_halted = ua.LocalizedText("SuspendedToHalted", "en-US")
+        self.localizedtext_suspended_to_ready = ua.LocalizedText("SuspendedToReady", "en-US")
+        self.localizedtext_ready_to_halted = ua.LocalizedText("ReadyToHalted", "en-US")
 
     async def install(self, optionals=False):
         '''
@@ -183,29 +200,11 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             instantiate_optional=optionals
             )
         #FIXME get childnodes:
-        self._ready_state = None #State node
-        self._halted_state = None #State node
-        self._running_state = None #State node
-        self._suspended_state = None #State node
-        self._halted_to_ready = None #Transition node
-        self._ready_to_running = None #Transition node
-        self._running_to_halted = None #Transition node
-        self._running_to_ready = None #Transition node
-        self._running_to_suspended = None #Transition node
-        self._suspended_to_running = None #Transition node
-        self._suspended_to_halted = None #Transition node
-        self._suspended_to_ready = None #Transition node
-        self._ready_to_halted = None #Transition node
-        self._halt_method_node = None #uamethod node
-        self._reset_method_node = None #uamethod node
-        self._resume_method_node = None #uamethod node
-        self._start_method_node = None #uamethod node
-        self._suspend_method_node = None #uamethod node
 
     #Transition
     async def HaltedToReady(self):
         await self._current_state.write_value(
-            self.lt_ready,
+            self.localizedtext_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._current_state_id.write_value(
@@ -213,20 +212,22 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             varianttype=ua.VariantType.NodeId
             )
         await self._last_transition.write_value(
-            self.lt_halted_to_ready,
+            self.localizedtext_halted_to_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._last_transition_id.write_value(
             self._halted_to_ready.nodeid,
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+        #FIXME 
+        # trigger ProgramTransitionEventType and 
+        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
     async def ReadyToRunning(self):
         await self._current_state.write_value(
-            self.lt_running,
+            self.localizedtext_running,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._current_state_id.write_value(
@@ -234,20 +235,22 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             varianttype=ua.VariantType.NodeId
             )
         await self._last_transition.write_value(
-            self.lt_ready_to_running,
+            self.localizedtext_ready_to_running,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._last_transition_id.write_value(
             self._ready_to_running.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+        #FIXME 
+        # trigger ProgramTransitionEventType and 
+        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
     async def RunningToHalted(self):
         await self._current_state.write_value(
-            self.lt_halted,
+            self.localizedtext_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._current_state_id.write_value(
@@ -255,20 +258,22 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             varianttype=ua.VariantType.NodeId
             )
         await self._last_transition.write_value(
-            self.lt_running_to_halted,
+            self.localizedtext_running_to_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._last_transition_id.write_value(
             self._running_to_halted.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+        #FIXME 
+        # trigger ProgramTransitionEventType and 
+        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
     async def RunningToReady(self):
         await self._current_state.write_value(
-            self.lt_ready,
+            self.localizedtext_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._current_state_id.write_value(
@@ -276,20 +281,22 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             varianttype=ua.VariantType.NodeId
             )
         await self._last_transition.write_value(
-            self.lt_running_to_ready,
+            self.localizedtext_running_to_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._last_transition_id.write_value(
             self._running_to_ready.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+        #FIXME 
+        # trigger ProgramTransitionEventType and 
+        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
     async def RunningToSuspended(self):
         await self._current_state.write_value(
-            self.lt_suspended,
+            self.localizedtext_suspended,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._current_state_id.write_value(
@@ -297,20 +304,22 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             varianttype=ua.VariantType.NodeId
             )
         await self._last_transition.write_value(
-            self.lt_running_to_suspended,
+            self.localizedtext_running_to_suspended,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._last_transition_id.write_value(
             self._running_to_suspended.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+        #FIXME 
+        # trigger ProgramTransitionEventType and 
+        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition 
     async def SuspendedToRunning(self):
         await self._current_state.write_value(
-            self.lt_running,
+            self.localizedtext_running,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._current_state_id.write_value(
@@ -318,20 +327,22 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             varianttype=ua.VariantType.NodeId
             )
         await self._last_transition.write_value(
-            self.lt_suspended_to_running,
+            self.localizedtext_suspended_to_running,
             varianttype=ua.VariantType.LocalizedText
             )
         await self._last_transition_id.write_value(
             self._suspended_to_running.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+        #FIXME 
+        # trigger ProgramTransitionEventType and 
+        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
     async def SuspendedToHalted(self):
         await self._current_state.write_value(
-            self.lt_halted,
+            self.localizedtext_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._current_state_id.write_value(
@@ -339,20 +350,22 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             varianttype=ua.VariantType.NodeId
             )
         await self._last_transition.write_value(
-            self.lt_suspended_to_halted,
+            self.localizedtext_suspended_to_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._last_transition_id.write_value(
             self._suspended_to_halted.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+        #FIXME 
+        # trigger ProgramTransitionEventType and 
+        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
     async def SuspendedToReady(self):
         await self._current_state.write_value(
-            self.lt_ready,
+            self.localizedtext_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._current_state_id.write_value(
@@ -360,20 +373,22 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             varianttype=ua.VariantType.NodeId
             )
         await self._last_transition.write_value(
-            self.lt_suspended_to_ready,
+            self.localizedtext_suspended_to_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._last_transition_id.write_value(
             self._suspended_to_ready.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+        #FIXME 
+        # trigger ProgramTransitionEventType and 
+        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition 
     async def ReadyToHalted(self):
         await self._current_state.write_value(
-            self.lt_halted,
+            self.localizedtext_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._current_state_id.write_value(
@@ -381,51 +396,53 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             varianttype=ua.VariantType.NodeId
             )
         await self._last_transition.write_value(
-            self.lt_ready_to_halted,
+            self.localizedtext_ready_to_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
         await self._last_transition_id.write_value(
             self._ready_to_halted.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+        #FIXME 
+        # trigger ProgramTransitionEventType and 
+        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #method to be linked to uamethod
     async def Start(self):
-        if await self._current_state.read_value() == self.lt_ready:
+        if await self._current_state.read_value() == self.localizedtext_ready:
             return await ReadyToRunning()
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
     #method to be linked to uamethod
     async def Suspend(self):
-        if await self._current_state.read_value() == self.lt_running:
+        if await self._current_state.read_value() == self.localizedtext_running:
             return await RunningToSuspended()
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
     #method to be linked to uamethod
     async def Resume(self):
-        if await self._current_state.read_value() == self.lt_suspended:
+        if await self._current_state.read_value() == self.localizedtext_suspended:
             return await SuspendedToRunning()
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
     #method to be linked to uamethod
     async def Halt(self):
-        if await self._current_state.read_value() == self.lt_ready:
+        if await self._current_state.read_value() == self.localizedtext_ready:
             return await ReadyToHalted()
-        elif await self._current_state.read_value() == self.lt_running:
+        elif await self._current_state.read_value() == self.localizedtext_running:
             return await RunningToHalted()
-        elif await self._current_state.read_value() == self.lt_suspended:
+        elif await self._current_state.read_value() == self.localizedtext_suspended:
             return await SuspendedToHalted()
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
     #method to be linked to uamethod
     async def Reset(self):
-        if await self._current_state.read_value() == self.lt_halted:
+        if await self._current_state.read_value() == self.localizedtext_halted:
             return await HaltedToReady()
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
@@ -435,7 +452,7 @@ class ShelvedStateMachineTypeClass(FiniteStateMachineTypeClass):
     NOT IMPLEMENTED "ShelvedStateMachineType"
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
-        super().__init__(server, parent)
+        super().__init__(server, parent, idx, name)
         if name == None:
             name = "ShelvedStateMachine"
         self._state_machine_type = ua.NodeId(2929, 0)
