@@ -2,7 +2,7 @@
 https://reference.opcfoundation.org/v104/Core/docs/Part10/
 https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.1/
 
-Basic statemachines discribed in OPC UA Spec.:
+Basic statemachines described in OPC UA Spec.:
 StateMachineType
 FiniteStateMachineType
 ExclusiveLimitStateMachineType
@@ -45,7 +45,7 @@ class StateMachineTypeClass(object):
         self._current_state_node = None
         self._current_state_id_node = None
         self._last_transition_node = None
-        self._last_transition_node_id = None
+        self._last_transition_id_node = None
 
     async def install(self, optionals=False):
         '''
@@ -61,8 +61,8 @@ class StateMachineTypeClass(object):
         self._current_state_node = await self._state_machine_node.get_child(["CurrentState"])
         self._current_state_id_node = await self._state_machine_node.get_child(["CurrentState","Id"])
         if self._optionals:
-            self._current_transition_node = await self._state_machine_node.get_child(["LastTransition"])
-            self._current_transition_id_node = await self._state_machine_node.get_child(["LastTransition","Id"])
+            self._last_transition_node = await self._state_machine_node.get_child(["LastTransition"])
+            self._last_transition_id_node = await self._state_machine_node.get_child(["LastTransition","Id"])
 
         #FIXME initialise values
         '''
@@ -96,7 +96,11 @@ class StateMachineTypeClass(object):
         await self._last_transition_node.write_value(transition_name)
         await self._last_transition_id_node.write_value(transition_node)
     
-    async def add_state(self, name, state_type, optionals):
+    async def add_state(self, name, state_type=ua.NodeId(2307, 0), optionals=False):
+        '''
+        initial state -> ua.NodeId(2309, 0)
+        state -> ua.NodeId(2307, 0)
+        '''
         #FIXME check types/class
         return await self._state_machine_node.add_object(
             self._idx, 
@@ -105,7 +109,7 @@ class StateMachineTypeClass(object):
             instantiate_optional=optionals
             )
 
-    async def add_transition(self, name, transition_type, optionals):
+    async def add_transition(self, name, transition_type=ua.NodeId(2310, 0), optionals=False):
         #FIXME check types/class
         return await self._state_machine_node.add_object(
             self._idx, 
@@ -113,6 +117,18 @@ class StateMachineTypeClass(object):
             objecttype=transition_type, 
             instantiate_optional=optionals
             )
+
+    # async def remove(self):
+    #     #FIXME
+    #     raise NotImplementedError
+
+    # async def add_substate(self):
+    #     #FIXME
+    #     raise NotImplementedError
+
+    # async def add_subtransition(self):
+    #     #FIXME
+    #     raise NotImplementedError
 
 class FiniteStateMachineTypeClass(StateMachineTypeClass):
     '''
@@ -523,11 +539,27 @@ if __name__ == "__main__":
 
         sm = StateMachineTypeClass(server, server.nodes.objects, 0, "StateMachine")
         await sm.install(True)
-        await sm.change_state(ua.LocalizedText("Test", "en-US"), server.get_node("ns=0;i=2253").nodeid)
-        fsm = FiniteStateMachineTypeClass(server, server.nodes.objects, 0, "FiniteStateMachine")
-        await fsm.install(True)
-        pfsm = ProgramStateMachineTypeClass(server, server.nodes.objects, 0, "ProgramStateMachine")
-        await pfsm.install(True)
+        await sm.add_state("Initstate", ua.NodeId(2309, 0))
+        await sm.add_state("State1")
+        await sm.add_state("State2")
+        await sm.add_state("State3")
+        await sm.add_state("State4")
+        await sm.add_transition("Transition1")
+        await sm.add_transition("Transition2")
+        await sm.add_transition("Transition3")
+        await sm.add_transition("Transition4")
+        await sm.add_transition("Transition5")
+        await sm.change_state(
+            ua.LocalizedText("Test3", "en-US"), 
+            server.get_node("ns=0;i=2253").nodeid,
+            ua.LocalizedText("Test4", "en-US"), 
+            server.get_node("ns=0;i=2253").nodeid
+            )
+
+        # fsm = FiniteStateMachineTypeClass(server, server.nodes.objects, 0, "FiniteStateMachine")
+        # await fsm.install(True)
+        # pfsm = ProgramStateMachineTypeClass(server, server.nodes.objects, 0, "ProgramStateMachine")
+        # await pfsm.install(True)
 
         async with server:
             while 1:
