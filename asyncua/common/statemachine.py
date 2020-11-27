@@ -1,11 +1,32 @@
+'''
+https://reference.opcfoundation.org/v104/Core/docs/Part10/
+https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.1/
+
+Basic statemachines discribed in OPC UA Spec.:
+StateMachineType
+FiniteStateMachineType
+ExclusiveLimitStateMachineType
+FileTransferStateMachineType
+ProgramStateMachineType
+ShelvedStateMachineType
+
+Relevant information:
+Overview - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5.2.3.1
+States - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5.2.3.2
+Transitions - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5.2.3.3
+Events - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.5/
+'''
 import asyncio, logging
 
+#FIXME 
+# -change to relativ imports!
+# -remove unused imports
 from asyncua import Server, ua, Node
 from asyncua.common.instantiate_util import instantiate
 
 class StateMachineTypeClass(object):
     '''
-    Implementation of an StateMachineType
+    Implementation of an StateMachineType (most basic type)
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         if not server: raise ValueError #FIXME change to check instance type
@@ -95,7 +116,8 @@ class StateMachineTypeClass(object):
 
 class FiniteStateMachineTypeClass(StateMachineTypeClass):
     '''
-    Implementation of an FiniteStateMachineType
+    Implementation of an FiniteStateMachineType a little more advanced than the basic one
+    if you need to know the avalible states and transition from clientside
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
@@ -116,8 +138,7 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
             objecttype=self._state_machine_type, 
             instantiate_optional=optionals
             )
-        #FIXME get children
-        # map children
+        #FIXME get children and map children
         await self.set_avalible_states(avalible_states)
         await self.set_avalible_transitions(avalible_transitions)
 
@@ -153,17 +174,22 @@ class FileTransferStateMachineTypeClass(FiniteStateMachineTypeClass):
 class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
     '''
     https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.3/
+    Implementation of an ProgramStateMachine its quite a complex statemachine with the 
+    optional possibility to make the statchange from clientside via opcua-methods
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
         if name == None:
             name = "ProgramStateMachine"
         self._state_machine_type = ua.NodeId(2391, 0)
+
+        # 5.2.3.2 ProgramStateMachineType states
         self._ready_state_node = None #State node
         self._halted_state_node = None #State node
         self._running_state_node = None #State node
         self._suspended_state_node = None #State node
 
+        # 5.2.3.3 ProgramStateMachineType transitions
         self._halted_to_ready_node = None #Transition node
         self._ready_to_running_node = None #Transition node
         self._running_to_halted_node = None #Transition node
@@ -191,12 +217,14 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
         self._suspended_to_ready_id_node = None #Transition property (TransitionNumber value 8)
         self._ready_to_halted_id_node = None #Transition property (TransitionNumber value 9)
 
+        # 4.2.7 Program Control Methods (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.7/)
         self._halt_method_node = None #uamethod node
         self._reset_method_node = None #uamethod node
         self._resume_method_node = None #uamethod node
         self._start_method_node = None #uamethod node
         self._suspend_method_node = None #uamethod node
 
+        #can be overwritten if you want a different language
         self.localizedtext_ready = ua.LocalizedText("Ready", "en-US")
         self.localizedtext_running = ua.LocalizedText("Running", "en-US")
         self.localizedtext_halted = ua.LocalizedText("Halted", "en-US")
@@ -222,7 +250,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             objecttype=self._state_machine_type, 
             instantiate_optional=optionals
             )
-        #FIXME get childnodes:
+        #FIXME get children and map children
 
     #Transition
     async def HaltedToReady(self):
@@ -482,6 +510,8 @@ class ShelvedStateMachineTypeClass(FiniteStateMachineTypeClass):
         raise NotImplementedError
 
 
+
+#FIXME REMOVE BEFOR MERGE
 #Devtest / Workbench
 if __name__ == "__main__":
     async def main():
