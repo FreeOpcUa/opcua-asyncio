@@ -45,7 +45,7 @@ class StateMachineTypeClass(object):
 
         #FIXME initialise values
         '''
-        maybe its smart to check parents child for a initial state instance (InitialStateType) 
+        maybe its smart to check parents children for a initial state instance (InitialStateType) 
         and initialize it with its id but if no state instance is provided ... i will log a 
         warning
         '''
@@ -63,6 +63,7 @@ class StateMachineTypeClass(object):
         await self.write_state(state_name, state_node)
         if self._optionals and transition_name and transition_node:
             await self.write_transition(transition_name, transition_node)
+        #FIXME trigger TransitionEventType
 
     async def write_state(self, state_name, state_node):
         #FIXME check types/class
@@ -219,7 +220,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             self._halted_to_ready.nodeid,
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger event
+        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
@@ -240,7 +241,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             self._ready_to_running.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger event
+        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
@@ -261,7 +262,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             self._running_to_halted.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger event
+        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
@@ -282,7 +283,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             self._running_to_ready.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger event
+        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
@@ -303,7 +304,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             self._running_to_suspended.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger event
+        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition 
@@ -324,7 +325,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             self._suspended_to_running.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger event
+        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
@@ -345,7 +346,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             self._suspended_to_halted.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger event
+        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition
@@ -366,7 +367,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             self._suspended_to_ready.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger event
+        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #Transition 
@@ -387,7 +388,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
             self._ready_to_halted.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        #FIXME trigger event
+        #FIXME trigger ProgramTransitionEventType and AuditUpdateMethodEvents (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
     #method to be linked to uamethod
@@ -441,25 +442,25 @@ class ShelvedStateMachineTypeClass(FiniteStateMachineTypeClass):
         raise NotImplementedError
 
 
-#Devtests
-async def main():
-    logging.basicConfig(level=logging.INFO)
-    _logger = logging.getLogger('asyncua')
-
-    server = Server()
-    await server.init()
-
-    sm = StateMachineTypeClass(server, server.nodes.objects, 0, "StateMachine")
-    await sm.install(True)
-    await sm.change_state(ua.LocalizedText("Test", "en-US"), server.get_node("ns=0;i=2253").nodeid)
-    fsm = FiniteStateMachineTypeClass(server, server.nodes.objects, 0, "FiniteStateMachine")
-    await fsm.install(True)
-    pfsm = ProgramStateMachineTypeClass(server, server.nodes.objects, 0, "ProgramStateMachine")
-    await pfsm.install(True)
-
-    async with server:
-        while 1:
-            await asyncio.sleep(0)
-
+#Devtest / Workbench
 if __name__ == "__main__":
+    async def main():
+        logging.basicConfig(level=logging.INFO)
+        _logger = logging.getLogger('asyncua')
+
+        server = Server()
+        await server.init()
+
+        sm = StateMachineTypeClass(server, server.nodes.objects, 0, "StateMachine")
+        await sm.install(True)
+        await sm.change_state(ua.LocalizedText("Test", "en-US"), server.get_node("ns=0;i=2253").nodeid)
+        fsm = FiniteStateMachineTypeClass(server, server.nodes.objects, 0, "FiniteStateMachine")
+        await fsm.install(True)
+        pfsm = ProgramStateMachineTypeClass(server, server.nodes.objects, 0, "ProgramStateMachine")
+        await pfsm.install(True)
+
+        async with server:
+            while 1:
+                await asyncio.sleep(0)
+
     asyncio.run(main())
