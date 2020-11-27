@@ -20,11 +20,11 @@ class StateMachineTypeClass(object):
         self._state_machine_type = ua.NodeId(2299, 0)
         self._name = name
         self._idx = idx
-        self._current_state = ua.LocalizedText() #Variable LocalizedText
-        self._current_state_id = None #Property NodeId        
-        self._last_transition = ua.LocalizedText() #Variable LocalizedText
-        self._last_transition_id = None #Property NodeId   
         self._optionals = False
+        self._current_state_node = None
+        self._current_state_id_node = None
+        self._last_transition_node = None
+        self._last_transition_node_id = None
 
     async def install(self, optionals=False):
         '''
@@ -32,15 +32,38 @@ class StateMachineTypeClass(object):
         '''
         self._optionals = optionals
         self._state_machine_node = await self._parent.add_object(self._idx, self._name, objecttype=self._state_machine_type, instantiate_optional=optionals)
-    
-    async def change_state(self, state_name, state, transition_name, transition=None):
-        #check types: names = string and others are nodetype
-        self._current_state = state #Variable LocalizedText
-        self._current_state_id = None #Property NodeId   
+        self._current_state_node = await self._state_machine_node.get_child(["CurrentState"])
+        self._current_state_id_node = await self._state_machine_node.get_child(["CurrentState","Id"])
         if self._optionals:
-            self._last_transition = transition #Variable LocalizedText
-            self._last_transition_id = None #Property NodeId   
-        #write
+            self._current_transition_node = await self._state_machine_node.get_child(["LastTransition"])
+            self._current_transition_id_node = await self._state_machine_node.get_child(["LastTransition","Id"])
+        
+        #initialise values
+        #maybe its smart to check parents child for a initial state instance (InitialStateType) and initialize it with its id but if no state instance is brovided ...
+        
+    async def change_state(self, state_name, state_node, transition_name=None, transition_node=None):
+        '''
+        state_name: ua.LocalizedText()
+        state: ua.NodeId() <- StateType node
+        transition_name: ua.LocalizedText()
+        transition: ua.NodeId() <- TransitionType node
+        '''
+        #check types/class
+        #check StateType exist
+        #check TransitionTypeType exist
+        await self.write_state(state_name, state_node)
+        if self._optionals and transition_name and transition_node:
+            await self.write_transition(transition_name, transition_node)
+
+    async def write_state(self, state_name, state_node):
+        #check types/class
+        await self._current_state_node.write_value(state_name)
+        await self._current_state_id_node.write_value(state_node)
+
+    async def write_transition(self, transition_name, transition_node):
+        #check types/class
+        await self._last_transition_node.write_value(transition_name)
+        await self._last_transition_id_node.write_value(transition_node)
 
 class FiniteStateMachineTypeClass(StateMachineTypeClass):
     '''
@@ -278,6 +301,7 @@ async def main():
 
     sm = StateMachineTypeClass(server, server.nodes.objects, 0, "StateMachine")
     await sm.install(True)
+    await sm.change_state(ua.LocalizedText("Test", "en-US"), server.get_node("ns=0;i=2253").nodeid)
     fsm = FiniteStateMachineTypeClass(server, server.nodes.objects, 0, "FiniteStateMachine")
     await fsm.install(True)
     pfsm = ProgramStateMachineTypeClass(server, server.nodes.objects, 0, "ProgramStateMachine")
