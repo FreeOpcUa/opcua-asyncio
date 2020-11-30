@@ -49,7 +49,7 @@ class StateMachineTypeClass(object):
 
     async def install(self, optionals=False):
         '''
-        setup adressspace and initialize 
+        setup adressspace
         '''
         self._optionals = optionals
         self._state_machine_node = await self._parent.add_object(
@@ -58,11 +58,18 @@ class StateMachineTypeClass(object):
             objecttype=self._state_machine_type, 
             instantiate_optional=optionals
             )
-        self._current_state_node = await self._state_machine_node.get_child(["CurrentState"])
-        self._current_state_id_node = await self._state_machine_node.get_child(["CurrentState","Id"])
+        await self.init(self._state_machine_node)
+    
+    async def init(self, statemachine):
+        '''
+        initialize subnodes
+        '''
+        #check for childrens typdefinitions which matches statemachine
+        self._current_state_node = await statemachine.get_child(["CurrentState"])
+        self._current_state_id_node = await statemachine.get_child(["CurrentState","Id"])
         if self._optionals:
-            self._last_transition_node = await self._state_machine_node.get_child(["LastTransition"])
-            self._last_transition_id_node = await self._state_machine_node.get_child(["LastTransition","Id"])
+            self._last_transition_node = await statemachine.get_child(["LastTransition"])
+            self._last_transition_id_node = await statemachine.get_child(["LastTransition","Id"])
 
         #FIXME initialise values
         '''
