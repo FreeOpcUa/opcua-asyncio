@@ -33,7 +33,7 @@ def release():
         ans = input("upload to pip?(Y/n)")
         if ans in ("", "y", "yes"):
             os.system("rm -rf dist/*")
-            os.system("python setup.py sdist")
+            os.system("python3 setup.py sdist")
             os.system("twine upload dist/*")
 
 
