@@ -109,7 +109,7 @@ class Field(object):
         self.array = False
 
     def __str__(self):
-        return f"Field(name={self.name}, uatype={self.uatype}"
+        return f"Field(name={self.name}, uatype={self.uatype})"
 
     __repr__ = __str__
 
