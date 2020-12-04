@@ -295,7 +295,7 @@ class Server:
         # to be called just before starting server since it needs all parameters to be setup
         if ua.SecurityPolicyType.NoSecurity in self._security_policy:
             self._set_endpoints()
-            self._policies = [ua.SecurityPolicyFactory()]
+            self._policies = [ua.SecurityPolicyFactory(permission_ruleset=self._permission_ruleset)]
 
         if self._security_policy != [ua.SecurityPolicyType.NoSecurity]:
             if not (self.certificate and self.iserver.private_key):
