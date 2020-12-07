@@ -327,7 +327,7 @@ class InternalServer:
             except Exception:
                 self.logger.exception("Unable to decrypt password")
                 return False
-        else:
+        elif type(password) == bytes:  # TODO check
             password = password.decode('utf-8')
 
         return user_name, password
