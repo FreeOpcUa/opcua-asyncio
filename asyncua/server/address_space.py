@@ -246,13 +246,8 @@ class NodeManagementService:
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
             return result
 
-        if item.ParentNodeId not in self._aspace._nodes:
-            if item.ParentNodeId.Identifier == 0 and item.ParentNodeId.NamespaceIndex == 0:
-                self.logger.debug("NodeParent of %s seems to be Root Node", item.ParentNodeId)
-            else:
-                self.logger.debug("NodeParent of %s does not exist in Server", item.ParentNodeId)
-        else:
-            for ref in self._aspace._nodes[item.ParentNodeId].references:
+        if item.ParentNodeId in self._aspace:
+            for ref in self._aspace[item.ParentNodeId].references:
                 # Check if the Parent has a "HasChild" Reference (or subtype of it) with the Node
                 if ref.ReferenceTypeId.Identifier in [ua.ObjectIds.HasChild, ua.ObjectIds.HasComponent,
                                            ua.ObjectIds.HasProperty, ua.ObjectIds.HasSubtype,
