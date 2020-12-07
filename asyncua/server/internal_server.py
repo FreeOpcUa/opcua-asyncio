@@ -300,9 +300,17 @@ class InternalServer:
         user_name = token.UserName
         password = token.Password
 
+        # TODO Support all Token Types
+        # AnonimousIdentityToken
+        # UserIdentityToken
+        # UserNameIdentityToken
+        # X509IdentityToken
+        # IssuedIdentityToken
+
         # decrypt password if we can
         if str(token.EncryptionAlgorithm) != "None":
             if not uacrypto:
+                # raise  # Should I raise a significant exception?
                 return False
             try:
                 if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
@@ -311,12 +319,15 @@ class InternalServer:
                     raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, password)
                 else:
                     self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
-                    return False
+                    # raise  # Should I raise a significant exception?
+                    return user_name, password
                 length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
                 password = raw_pw[4:4 + length]
                 password = password.decode('utf-8')
             except Exception:
                 self.logger.exception("Unable to decrypt password")
                 return False
-        # call user_manager
-        return self.user_manager(self, isession, user_name, password)
+        elif type(password) == bytes:  # TODO check
+            password = password.decode('utf-8')
+
+        return user_name, password

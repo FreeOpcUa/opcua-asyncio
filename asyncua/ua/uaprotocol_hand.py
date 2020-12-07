@@ -234,14 +234,14 @@ class SecurityPolicy:
     signature_key_size = 0
     symmetric_key_size = 0
 
-    def __init__(self):
+    def __init__(self, permissions=None):
         self.asymmetric_cryptography = CryptographyNone()
         self.symmetric_cryptography = CryptographyNone()
         self.Mode = auto.MessageSecurityMode.None_
         self.peer_certificate = None
         self.host_certificate = None
         self.user = None
-        self.permissions = None
+        self.permissions = permissions
 
     def make_local_symmetric_key(self, secret, seed):
         pass
@@ -268,7 +268,7 @@ class SecurityPolicyFactory:
 
     def create(self, peer_certificate):
         if self.cls is SecurityPolicy:
-            return self.cls()
+            return self.cls(permissions=self.permission_ruleset)
         else:
             return self.cls(peer_certificate, self.certificate, self.private_key, self.mode, permission_ruleset=self.permission_ruleset)
 
