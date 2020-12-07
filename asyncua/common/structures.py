@@ -9,8 +9,7 @@ import logging
 # The next two imports are for generated code
 from datetime import datetime
 from enum import Enum, IntEnum, EnumMeta
-from lxml import objectify
-
+from xml.etree import ElementTree as ET
 from asyncua import ua
 
 from .structures104 import get_default_value, clean_name
@@ -119,46 +118,51 @@ class StructGenerator(object):
         self.model = []
 
     def make_model_from_string(self, xml):
-        obj = objectify.fromstring(xml)
+        obj = ET.fromstring(xml)
         self._make_model(obj)
 
     def make_model_from_file(self, path):
-        obj = objectify.parse(path)
+        obj = ET.parse(path)
         root = obj.getroot()
         self._make_model(root)
 
     def _make_model(self, root):
         enums = {}
-        for child in root.iter("{*}EnumeratedType"):
-            intenum = EnumType(child.get("Name"))
-            for xmlfield in child.iter("{*}EnumeratedValue"):
-                name = xmlfield.get("Name")
-                value = xmlfield.get("Value")
-                enumvalue = EnumeratedValue(name, value)
-                intenum.fields.append(enumvalue)
-                enums[child.get("Name")] = value
-            self.model.append(intenum)
+        for child in root:
+            if child.tag.endswith("EnumeratedType"):
+                intenum = EnumType(child.get("Name"))
+                for xmlfield in child:
+                    if xmlfield.tag.endswith("EnumeratedValue"):
+                        name = xmlfield.get("Name")
+                        value = xmlfield.get("Value")
+                        enumvalue = EnumeratedValue(name, value)
+                        intenum.fields.append(enumvalue)
+                        enums[child.get("Name")] = value
+                self.model.append(intenum)
 
-        for child in root.iter("{*}StructuredType"):
-            struct = Struct(child.get("Name"))
-            array = False
-            for xmlfield in child.iter("{*}Field"):
-                name = xmlfield.get("Name")
-                if name.startswith("NoOf"):
-                    array = True
-                    continue
-                field = Field(clean_name(name))
-                field.uatype = xmlfield.get("TypeName")
-                if ":" in field.uatype:
-                    field.uatype = field.uatype.split(":")[1]
-                field.uatype = clean_name(field.uatype)
-                field.value = get_default_value(field.uatype, enums)
-                if array:
-                    field.array = True
-                    field.value = []
-                    array = False
-                struct.fields.append(field)
-            self.model.append(struct)
+        for child in root:
+            if child.tag.endswith("StructuredType"):
+                struct = Struct(child.get("Name"))
+                array = False
+                # these lines can be reduced in >= Python3.8 with root.iterfind("{*}Field") and similar
+                for xmlfield in child:
+                    if xmlfield.tag.endswith("Field"):
+                        name = xmlfield.get("Name")
+                        if name.startswith("NoOf"):
+                            array = True
+                            continue
+                        field = Field(clean_name(name))
+                        field.uatype = xmlfield.get("TypeName")
+                        if ":" in field.uatype:
+                            field.uatype = field.uatype.split(":")[1]
+                        field.uatype = clean_name(field.uatype)
+                        field.value = get_default_value(field.uatype, enums)
+                        if array:
+                            field.array = True
+                            field.value = []
+                            array = False
+                        struct.fields.append(field)
+                self.model.append(struct)
 
     def save_to_file(self, path, register=False):
         _file = open(path, "w+")
