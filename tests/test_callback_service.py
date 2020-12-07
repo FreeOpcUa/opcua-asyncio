@@ -83,5 +83,6 @@ async def test_write_callback(mocker):
 
         await var.set_value(69.0)
         assert mocked_write_items.called
+    await server.delete_nodes([myobj, myvar])
 
 

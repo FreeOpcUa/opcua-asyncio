@@ -31,6 +31,7 @@ async def test_folder_anonymous(server, admin_client, client):
     assert f == f_ro
     with pytest.raises(ua.UaStatusCodeError):
         await f_ro.add_folder(3, 'MyFolder2')
+    await server.delete_nodes([f, f_ro])
 
 
 async def test_variable_anonymous(server, admin_client, client):

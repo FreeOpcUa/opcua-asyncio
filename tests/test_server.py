@@ -185,7 +185,7 @@ async def test_references_for_added_nodes_method(server):
                                          includesubtypes=False)
     assert o in nodes
     assert await m.get_parent() == o
-
+    await server.delete_nodes([o])
 
 async def test_get_event_from_type_node_BaseEvent(server):
     """
@@ -295,7 +295,7 @@ async def test_eventgenerator_sourceMyObject(server):
     evgen = await server.get_event_generator(emitting_node=o)
     await check_eventgenerator_base_event(evgen, server)
     await check_event_generator_object(evgen, o)
-
+    await server.delete_nodes([o])
 
 async def test_eventgenerator_source_collision(server):
     objects = server.nodes.objects
@@ -304,7 +304,7 @@ async def test_eventgenerator_source_collision(server):
     evgen = await server.get_event_generator(event, ua.ObjectIds.Server)
     await check_eventgenerator_base_event(evgen, server)
     await check_event_generator_object(evgen, o, emitting_node=asyncua.Node(server.iserver.isession, ua.ObjectIds.Server))
-
+    await server.delete_nodes([o])
 
 async def test_eventgenerator_inherited_event(server):
     evgen = await server.get_event_generator(ua.ObjectIds.AuditEventType)
@@ -358,6 +358,7 @@ async def test_create_custom_event_type_object_id(server):
                                                  [('PropertyNum', ua.VariantType.Int32),
                                                   ('PropertyString', ua.VariantType.String)])
     await check_custom_type(type, ua.ObjectIds.BaseEventType, server)
+    await server.delete_nodes([type])
 
 
 async def test_create_custom_object_type_object_id(server):
@@ -395,28 +396,31 @@ async def test_create_custom_event_type_node_id(server):
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
     await check_custom_type(etype, ua.ObjectIds.BaseEventType, server)
+    await server.delete_nodes([etype])
 
 
 async def test_create_custom_event_type_node(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent', asyncua.Node(server.iserver.isession,
+    etype = await server.create_custom_event_type(2, 'MyEvent1', asyncua.Node(server.iserver.isession,
                                                                            ua.NodeId(ua.ObjectIds.BaseEventType)),
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
     await check_custom_type(etype, ua.ObjectIds.BaseEventType, server)
+    await server.delete_nodes([etype])
 
 
 async def test_get_event_from_type_node_custom_event(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
+    etype = await server.create_custom_event_type(2, 'MyEvent2', ua.ObjectIds.BaseEventType,
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
     ev = await asyncua.common.events.get_event_obj_from_type_node(etype)
     check_custom_event(ev, etype)
     assert 0 == ev.PropertyNum
     assert ev.PropertyString is None
+    await server.delete_nodes([etype])
 
 
 async def test_eventgenerator_custom_event(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
+    etype = await server.create_custom_event_type(2, 'MyEvent3', ua.ObjectIds.BaseEventType,
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
     evgen = await server.get_event_generator(etype, ua.ObjectIds.Server)
@@ -424,13 +428,14 @@ async def test_eventgenerator_custom_event(server):
     await check_eventgenerator_source_server(evgen, server)
     assert 0 == evgen.event.PropertyNum
     assert evgen.event.PropertyString is None
+    await server.delete_nodes([etype])
 
 
 async def test_eventgenerator_double_custom_event(server):
-    event1 = await server.create_custom_event_type(3, 'MyEvent1', ua.ObjectIds.BaseEventType,
+    event1 = await server.create_custom_event_type(3, 'MyEvent4', ua.ObjectIds.BaseEventType,
                                                    [('PropertyNum', ua.VariantType.Int32),
                                                     ('PropertyString', ua.VariantType.String)])
-    event2 = await server.create_custom_event_type(4, 'MyEvent2', event1, [('PropertyBool', ua.VariantType.Boolean),
+    event2 = await server.create_custom_event_type(4, 'MyEvent5', event1, [('PropertyBool', ua.VariantType.Boolean),
                                                                            ('PropertyInt', ua.VariantType.Int32)])
     evgen = await server.get_event_generator(event2, ua.ObjectIds.Server)
     check_eventgenerator_custom_event(evgen, event2, server)
@@ -441,12 +446,13 @@ async def test_eventgenerator_double_custom_event(server):
     # Properties from MyEvent2
     assert not evgen.event.PropertyBool
     assert 0 == evgen.event.PropertyInt
+    await server.delete_nodes([event1, event2])
 
 
 async def test_eventgenerator_custom_event_my_object(server):
     objects = server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
-    etype = await server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
+    etype = await server.create_custom_event_type(2, 'MyEvent6', ua.ObjectIds.BaseEventType,
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
 
@@ -455,6 +461,7 @@ async def test_eventgenerator_custom_event_my_object(server):
     await check_event_generator_object(evgen, o)
     assert 0 == evgen.event.PropertyNum
     assert evgen.event.PropertyString is None
+    await server.delete_nodes([o, etype])
 
 
 async def test_context_manager():
