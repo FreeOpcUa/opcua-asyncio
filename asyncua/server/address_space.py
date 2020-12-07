@@ -246,6 +246,19 @@ class NodeManagementService:
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
             return result
 
+        if item.ParentNodeId in self._aspace:
+            for ref in self._aspace[item.ParentNodeId].references:
+                # Check if the Parent has a "HasChild" Reference (or subtype of it) with the Node
+                if ref.ReferenceTypeId.Identifier in [ua.ObjectIds.HasChild, ua.ObjectIds.HasComponent,
+                                           ua.ObjectIds.HasProperty, ua.ObjectIds.HasSubtype,
+                                           ua.ObjectIds.HasOrderedComponent] and ref.IsForward:
+                    if item.BrowseName.Name == ref.BrowseName.Name:
+                        self.logger.warning(f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
+                                            f" already exists in Parent Node. ParentID:{item.ParentNodeId} --- "
+                                            f"ItemId:{item.RequestedNewNodeId}")
+                        result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
+                        return result
+
         nodedata = NodeData(item.RequestedNewNodeId)
 
         self._add_node_attributes(nodedata, item, add_timestamps=check)

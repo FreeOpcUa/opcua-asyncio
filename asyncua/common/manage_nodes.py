@@ -311,7 +311,6 @@ async def create_data_type(parent, nodeid, bname, description=None):
     or namespace index, name
     """
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
-
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname

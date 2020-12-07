@@ -37,7 +37,7 @@ def set_up_test_tree():
     return test_etree
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 async def _srv(server):
     class Srv:
         pass
@@ -353,6 +353,7 @@ async def test_functional_basic(srv):
 
     basic_result = await basic_var.read_value()
     assert basic_result == basic_msg
+    await srv.srv.delete_nodes([basic_var])
 
 
 async def test_functional_advance(srv):
@@ -395,3 +396,4 @@ async def test_functional_advance(srv):
     assert basic_result == basic_msg
     nested_result = await nested_var.read_value()
     assert nested_result == nested_msg
+    await srv.srv.delete_nodes([basic_var, nested_var])

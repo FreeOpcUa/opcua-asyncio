@@ -73,8 +73,8 @@ async def srv_crypto_one_cert(request):
     await srv.start()
     yield srv
     # stop the server
+    await srv.delete_nodes([myobj, myvar])
     await srv.stop()
-
 
 async def test_permissions_admin(srv_crypto_one_cert):
     clt = Client(uri_crypto_cert)
