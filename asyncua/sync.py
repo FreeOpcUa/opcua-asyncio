@@ -129,6 +129,10 @@ class Client:
         pass
 
     @syncmethod
+    async def load_data_type_definitions(self, node=None):
+        pass
+
+    @syncmethod
     def set_security(self):
         pass
 
