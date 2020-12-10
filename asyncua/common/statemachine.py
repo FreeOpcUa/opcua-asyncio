@@ -23,17 +23,24 @@ import asyncio, logging
 # -remove unused imports
 from asyncua import Server, ua, Node
 from asyncua.common.instantiate_util import instantiate
+from asyncua.common.event_objects import TransitionEvent
+
+_logger = logging.getLogger(__name__)
 
 class StateMachineTypeClass(object):
     '''
     Implementation of an StateMachineType (most basic type)
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
-        if not server: raise ValueError #FIXME change to check instance type
-        if not parent: raise ValueError #FIXME change to check instance type
+        if not isinstance(server, Server): 
+            raise f"server={server} is not a instance of Server"
+        if not isinstance(parent, Node): 
+            raise f"parent={parent} is not a instance of Node"
         if idx == None:
+            _logger.warning("StateMachineTypeClass -> idx = None")
             idx = parent.nodeid.NamespaceIndex
         if name == None:
+            _logger.warning("StateMachineTypeClass -> Name = None")
             name = "StateMachine"
         self._server = server
         self._parent = parent
@@ -46,6 +53,7 @@ class StateMachineTypeClass(object):
         self._current_state_id_node = None
         self._last_transition_node = None
         self._last_transition_id_node = None
+        self._evgen = None
 
     async def install(self, optionals=False):
         '''
@@ -64,19 +72,12 @@ class StateMachineTypeClass(object):
         '''
         initialize subnodes
         '''
-        #check for childrens typdefinitions which matches statemachine
+        #FIXME check for childrens typdefinitions which matches statemachine
         self._current_state_node = await statemachine.get_child(["CurrentState"])
         self._current_state_id_node = await statemachine.get_child(["CurrentState","Id"])
         if self._optionals:
             self._last_transition_node = await statemachine.get_child(["LastTransition"])
             self._last_transition_id_node = await statemachine.get_child(["LastTransition","Id"])
-
-        #FIXME initialise values
-        '''
-        maybe its smart to check parents children for a initial state instance (InitialStateType) 
-        and initialize it with its id but if no state instance is provided ... i will log a 
-        warning
-        '''
 
     async def change_state(self, state_name, state_node, transition_name=None, transition_node=None):
         '''
@@ -91,7 +92,10 @@ class StateMachineTypeClass(object):
         await self.write_state(state_name, state_node)
         if self._optionals and transition_name and transition_node:
             await self.write_transition(transition_name, transition_node)
-        #FIXME trigger TransitionEventType
+        self._evgen = await self._server.get_event_generator(TransitionEvent(), self._state_machine_node)
+        self._evgen.event.Message = ua.LocalizedText(f"{self._name}: statechange to {state_name.Text}", "en-US")
+        self._evgen.event.Severity = 500
+        await self._evgen.trigger()
 
     async def write_state(self, state_name, state_node):
         #FIXME check types/class
@@ -105,8 +109,9 @@ class StateMachineTypeClass(object):
     
     async def add_state(self, name, state_type=ua.NodeId(2307, 0), optionals=False):
         '''
-        initial state -> ua.NodeId(2309, 0)
-        state -> ua.NodeId(2307, 0)
+        InitialStateType: ua.NodeId(2309, 0)
+        StateType: ua.NodeId(2307, 0)
+        ChoiceStateType: ua.NodeId(15109,0)
         '''
         #FIXME check types/class
         return await self._state_machine_node.add_object(
@@ -150,7 +155,7 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
         self._avalible_states_node = None
         self._avalible_transitions_node = None
 
-    async def install(self, avalible_states, avalible_transitions, optionals=False):
+    async def install(self, optionals=False):
         '''
         setup adressspace and initialize 
         '''
@@ -161,8 +166,12 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
             objecttype=self._state_machine_type, 
             instantiate_optional=optionals
             )
+
+    async def init(self, avalible_states, avalible_transitions, ):
         #FIXME get children and map children
+        #await self.find_all_states()
         await self.set_avalible_states(avalible_states)
+        #await self.find_all_transitions()
         await self.set_avalible_transitions(avalible_transitions)
 
     async def set_avalible_states(self, states):
@@ -170,7 +179,14 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
         await self._avalible_states_node.write_value(states, varianttype=ua.VariantType.NodeId)
 
     async def set_avalible_transitions(self, transitions):
+        #check if its list
         await self._avalible_transitions_node.write_value(transitions, varianttype=ua.VariantType.NodeId)
+
+    async def find_all_states(self):
+        return NotImplementedError
+    
+    async def find_all_transitions(self):
+        return NotImplementedError
 
 class ExclusiveLimitStateMachineTypeClass(FiniteStateMachineTypeClass):
     '''
@@ -546,21 +562,22 @@ if __name__ == "__main__":
 
         sm = StateMachineTypeClass(server, server.nodes.objects, 0, "StateMachine")
         await sm.install(True)
-        await sm.add_state("Initstate", ua.NodeId(2309, 0))
-        await sm.add_state("State1")
-        await sm.add_state("State2")
-        await sm.add_state("State3")
-        await sm.add_state("State4")
-        await sm.add_transition("Transition1")
-        await sm.add_transition("Transition2")
-        await sm.add_transition("Transition3")
-        await sm.add_transition("Transition4")
-        await sm.add_transition("Transition5")
+        init = await sm.add_state("Initstate", ua.NodeId(2309, 0))
+        st1 = await sm.add_state("State1")
+        st2 = await sm.add_state("State2")
+        st3 = await sm.add_state("State3")
+        st4 = await sm.add_state("State4")
+        tr1 = await sm.add_transition("Transition1")
+        tr2 = await sm.add_transition("Transition2")
+        tr3 = await sm.add_transition("Transition3")
+        tr4 = await sm.add_transition("Transition4")
+        tr5 = await sm.add_transition("Transition5")
+
         await sm.change_state(
-            ua.LocalizedText("Test3", "en-US"), 
-            server.get_node("ns=0;i=2253").nodeid,
-            ua.LocalizedText("Test4", "en-US"), 
-            server.get_node("ns=0;i=2253").nodeid
+            ua.LocalizedText("Initstate", "en-US"), 
+            init.nodeid,
+            ua.LocalizedText("Transition1", "en-US"), 
+            tr1.nodeid
             )
 
         # fsm = FiniteStateMachineTypeClass(server, server.nodes.objects, 0, "FiniteStateMachine")
@@ -570,6 +587,19 @@ if __name__ == "__main__":
 
         async with server:
             while 1:
-                await asyncio.sleep(0)
+                await asyncio.sleep(10)
+                await sm.change_state(
+                    ua.LocalizedText("State2", "en-US"), 
+                    st1.nodeid,
+                    ua.LocalizedText("Transition2", "en-US"), 
+                    tr2.nodeid
+                )
+                await asyncio.sleep(10)
+                await sm.change_state(
+                    ua.LocalizedText("State3", "en-US"), 
+                    st2.nodeid,
+                    ua.LocalizedText("Transition3", "en-US"), 
+                    tr3.nodeid
+                    )
 
     asyncio.run(main())
