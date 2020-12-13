@@ -22,10 +22,25 @@ import asyncio, logging
 # -change to relativ imports!
 # -remove unused imports
 from asyncua import Server, ua, Node
-from asyncua.common.instantiate_util import instantiate
 from asyncua.common.event_objects import TransitionEvent
 
 _logger = logging.getLogger(__name__)
+
+class StateTypeClass(object):
+    _count = 0
+    def __init__(self, name, node=None):
+        self.name = name
+        self.node = node
+        self._id = type(self)._count + 1 #according to the specs a unique number for each state
+        type(self)._count = self._id
+
+class TransitionTypeClass(object):
+    _count = 0
+    def __init__(self, name, node=None):
+        self.name = name
+        self.node = node
+        self._id = type(self)._count + 1  #according to the specs a unique number for each transition
+        type(self)._count = self._id
 
 class StateMachineTypeClass(object):
     '''
@@ -33,19 +48,18 @@ class StateMachineTypeClass(object):
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         if not isinstance(server, Server): 
-            raise f"server={server} is not a instance of Server"
+            raise ValueError
         if not isinstance(parent, Node): 
-            raise f"parent={parent} is not a instance of Node"
+            raise ValueError
         if idx == None:
-            _logger.warning("StateMachineTypeClass -> idx = None")
             idx = parent.nodeid.NamespaceIndex
         if name == None:
-            _logger.warning("StateMachineTypeClass -> Name = None")
             name = "StateMachine"
+        self.locale = "en-US"
         self._server = server
         self._parent = parent
         self._state_machine_node = None
-        self._state_machine_type = ua.NodeId(2299, 0)
+        self._state_machine_type = ua.NodeId(2299, 0) #StateMachineType
         self._name = name
         self._idx = idx
         self._optionals = False
@@ -78,69 +92,83 @@ class StateMachineTypeClass(object):
         if self._optionals:
             self._last_transition_node = await statemachine.get_child(["LastTransition"])
             self._last_transition_id_node = await statemachine.get_child(["LastTransition","Id"])
+        self._evgen = await self._server.get_event_generator(TransitionEvent(), self._state_machine_node)
 
-    async def change_state(self, state_name, state_node, transition_name=None, transition_node=None):
+    async def change_state(
+        self, 
+        state, 
+        transition=None, 
+        event_msg=None,
+        severity=500
+        ):
         '''
         method to change the state of the statemachine
-        state_name: ua.LocalizedText()
-        state: ua.NodeId() <- StateType node
-        transition_name: ua.LocalizedText()
-        transition: ua.NodeId() <- TransitionType node
+        state (type StateTypeClass mandatory)
+        transition (type TransitionTypeClass optional)
+        event_msg (type string optional)
+        severity (type Int optional)
         '''
         #FIXME check StateType exist
         #FIXME check TransitionTypeType exist
-        await self.write_state(state_name, state_node)
-        if self._optionals and transition_name and transition_node:
-            await self.write_transition(transition_name, transition_node)
-        self._evgen = await self._server.get_event_generator(TransitionEvent(), self._state_machine_node)
-        self._evgen.event.Message = ua.LocalizedText(f"{self._name}: statechange to {state_name.Text}", "en-US")
-        self._evgen.event.Severity = 500
-        await self._evgen.trigger()
+        await self._write_state(state)
+        if transition:
+            await self._write_transition(transition)
+        if event_msg:
+            if isinstance(event_msg, (type(""))):
+                event_msg = ua.LocalizedText(event_msg, self.locale)
+            self._evgen.event.Message = event_msg
+            self._evgen.event.Severity = severity
+            await self._evgen.trigger()
 
-    async def write_state(self, state_name, state_node):
-        #FIXME check types/class
-        await self._current_state_node.write_value(state_name)
-        await self._current_state_id_node.write_value(state_node)
+    async def _write_state(self, state):
+        await self._current_state_node.write_value(ua.LocalizedText(state.name, self.locale))
+        if state.node:
+            await self._current_state_id_node.write_value(state.node.nodeid)
 
-    async def write_transition(self, transition_name, transition_node):
-        #FIXME check types/class
-        await self._last_transition_node.write_value(transition_name)
-        await self._last_transition_id_node.write_value(transition_node)
+    async def _write_transition(self, transition):
+        await self._last_transition_node.write_value(ua.LocalizedText(transition.name, self.locale))
+        if transition.node:
+            await self._last_transition_id_node.write_value(transition.node.nodeid)
     
-    async def add_state(self, name, state_type=ua.NodeId(2307, 0), optionals=False):
+    async def add_state(self, state, state_type=ua.NodeId(2307, 0), optionals=False):
         '''
+        state: StateTypeClass
         InitialStateType: ua.NodeId(2309, 0)
         StateType: ua.NodeId(2307, 0)
         ChoiceStateType: ua.NodeId(15109,0)
         '''
-        #FIXME check types/class
-        return await self._state_machine_node.add_object(
+        if not isinstance(state, StateTypeClass):
+            raise ValueError
+        state.node = await self._state_machine_node.add_object(
             self._idx, 
-            name, 
+            state.name, 
             objecttype=state_type, 
             instantiate_optional=optionals
             )
+        state_number = await state.node.get_child(["StateNumber"])
+        await state_number.write_value(state._id, ua.VariantType.UInt32)
+        return state.node
 
-    async def add_transition(self, name, transition_type=ua.NodeId(2310, 0), optionals=False):
-        #FIXME check types/class
-        return await self._state_machine_node.add_object(
+    async def add_transition(self, transition, transition_type=ua.NodeId(2310, 0), optionals=False):
+        '''
+        transition: TransitionTypeClass
+        transition_type: ua.NodeId(2310, 0)
+        '''
+        if not isinstance(transition, TransitionTypeClass):
+            raise ValueError
+        transition.node = await self._state_machine_node.add_object(
             self._idx, 
-            name, 
+            transition.name, 
             objecttype=transition_type, 
             instantiate_optional=optionals
             )
+        transition_number = await transition.node.get_child(["TransitionNumber"])
+        await transition_number.write_value(transition._id, ua.VariantType.UInt32)
+        return transition.node
 
-    # async def remove(self):
-    #     #FIXME
-    #     raise NotImplementedError
-
-    # async def add_substate(self):
-    #     #FIXME
-    #     raise NotImplementedError
-
-    # async def add_subtransition(self):
-    #     #FIXME
-    #     raise NotImplementedError
+    async def remove(self, nodes):
+        #FIXME
+        raise NotImplementedError
 
 class FiniteStateMachineTypeClass(StateMachineTypeClass):
     '''
@@ -561,45 +589,44 @@ if __name__ == "__main__":
         await server.init()
 
         sm = StateMachineTypeClass(server, server.nodes.objects, 0, "StateMachine")
-        await sm.install(True)
-        init = await sm.add_state("Initstate", ua.NodeId(2309, 0))
-        st1 = await sm.add_state("State1")
-        st2 = await sm.add_state("State2")
-        st3 = await sm.add_state("State3")
-        st4 = await sm.add_state("State4")
-        tr1 = await sm.add_transition("Transition1")
-        tr2 = await sm.add_transition("Transition2")
-        tr3 = await sm.add_transition("Transition3")
-        tr4 = await sm.add_transition("Transition4")
-        tr5 = await sm.add_transition("Transition5")
+        await sm.install(optionals=True)
 
-        await sm.change_state(
-            ua.LocalizedText("Initstate", "en-US"), 
-            init.nodeid,
-            ua.LocalizedText("Transition1", "en-US"), 
-            tr1.nodeid
-            )
+        state1_class = StateTypeClass("State1")
+        state1_node = await sm.add_state(state1_class)
+        state2_class = StateTypeClass("State2")
+        state2_node = await sm.add_state(state2_class)
+        state3_class = StateTypeClass("State3")
+        state3_node = await sm.add_state(state3_class)
+        state4_class = StateTypeClass("State4")
+        state4_node = await sm.add_state(state4_class)
+        state5_class = StateTypeClass("State5")
+        state5_node = await sm.add_state(state5_class)
 
-        # fsm = FiniteStateMachineTypeClass(server, server.nodes.objects, 0, "FiniteStateMachine")
-        # await fsm.install(True)
-        # pfsm = ProgramStateMachineTypeClass(server, server.nodes.objects, 0, "ProgramStateMachine")
-        # await pfsm.install(True)
+        trans1_class = TransitionTypeClass("Trans1")
+        trans1_node = await sm.add_transition(trans1_class)
+        trans2_class = TransitionTypeClass("Trans2")
+        trans2_node = await sm.add_transition(trans2_class)
+        trans3_class = TransitionTypeClass("Trans3")
+        trans3_node = await sm.add_transition(trans3_class)
+        trans4_class = TransitionTypeClass("Trans4")
+        trans4_node = await sm.add_transition(trans4_class)
+        trans5_class = TransitionTypeClass("Trans5")
+        trans5_node = await sm.add_transition(trans5_class)
+
+        await sm.change_state(state1_class, trans1_class, f"{sm._name}: Idle", 800)
+
 
         async with server:
             while 1:
-                await asyncio.sleep(10)
-                await sm.change_state(
-                    ua.LocalizedText("State2", "en-US"), 
-                    st1.nodeid,
-                    ua.LocalizedText("Transition2", "en-US"), 
-                    tr2.nodeid
-                )
-                await asyncio.sleep(10)
-                await sm.change_state(
-                    ua.LocalizedText("State3", "en-US"), 
-                    st2.nodeid,
-                    ua.LocalizedText("Transition3", "en-US"), 
-                    tr3.nodeid
-                    )
+                await asyncio.sleep(2)
+                await sm.change_state(state2_class, trans2_class, f"{sm._name}: Loading", 800)
+                await asyncio.sleep(2)
+                await sm.change_state(state3_class, trans3_class, f"{sm._name}: Initializing", 800)
+                await asyncio.sleep(2)
+                await sm.change_state(state4_class, trans4_class, f"{sm._name}: Processing", 800)
+                await asyncio.sleep(2)
+                await sm.change_state(state5_class, trans5_class, f"{sm._name}: Finished", 800)
+                await asyncio.sleep(2)
+                await sm.change_state(state1_class, trans1_class, f"{sm._name}: Restarting", 800)
 
     asyncio.run(main())
