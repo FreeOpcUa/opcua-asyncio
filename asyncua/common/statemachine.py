@@ -22,25 +22,37 @@ import asyncio, logging
 # -change to relativ imports!
 # -remove unused imports
 from asyncua import Server, ua, Node
-from asyncua.common.event_objects import TransitionEvent
+from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
 
 _logger = logging.getLogger(__name__)
 
 class StateTypeClass(object):
     _count = 0
-    def __init__(self, name, node=None):
+    def __init__(self, name, node=None, auto_id=True):
         self.name = name
         self.node = node
-        self._id = type(self)._count + 1 #according to the specs a unique number for each state
-        type(self)._count = self._id
+        if auto_id:
+            self._id = type(self)._count + 1 #according to the specs a unique number for each state
+            type(self)._count = self._id
+            return
+        self._id = 0
+    
+    def set_id(self, id):
+        self._id = id
 
 class TransitionTypeClass(object):
     _count = 0
-    def __init__(self, name, node=None):
+    def __init__(self, name, node=None, auto_id=True):
         self.name = name
         self.node = node
-        self._id = type(self)._count + 1  #according to the specs a unique number for each transition
-        type(self)._count = self._id
+        if auto_id:
+            self._id = type(self)._count + 1  #according to the specs a unique number for each transition
+            type(self)._count = self._id
+            return
+        self._id = 0
+    
+    def set_id(self, id):
+        self._id = id
 
 class StateMachineTypeClass(object):
     '''
@@ -68,6 +80,7 @@ class StateMachineTypeClass(object):
         self._last_transition_node = None
         self._last_transition_id_node = None
         self._evgen = None
+        self.evtype = TransitionEvent()
 
     async def install(self, optionals=False):
         '''
@@ -92,7 +105,7 @@ class StateMachineTypeClass(object):
         if self._optionals:
             self._last_transition_node = await statemachine.get_child(["LastTransition"])
             self._last_transition_id_node = await statemachine.get_child(["LastTransition","Id"])
-        self._evgen = await self._server.get_event_generator(TransitionEvent(), self._state_machine_node)
+        self._evgen = await self._server.get_event_generator(self.evtype, self._state_machine_node)
 
     async def change_state(
         self, 
@@ -249,6 +262,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
         if name == None:
             name = "ProgramStateMachine"
         self._state_machine_type = ua.NodeId(2391, 0)
+        self.evtype = ProgramTransitionEvent()
 
         # 5.2.3.2 ProgramStateMachineType states
         self._ready_state_node = None #State node
@@ -588,45 +602,47 @@ if __name__ == "__main__":
         server = Server()
         await server.init()
 
-        sm = StateMachineTypeClass(server, server.nodes.objects, 0, "StateMachine")
-        await sm.install(optionals=True)
+        idx = await server.register_namespace("http://testnamespace.org/UA")
 
-        state1_class = StateTypeClass("State1")
-        state1_node = await sm.add_state(state1_class)
-        state2_class = StateTypeClass("State2")
-        state2_node = await sm.add_state(state2_class)
-        state3_class = StateTypeClass("State3")
-        state3_node = await sm.add_state(state3_class)
-        state4_class = StateTypeClass("State4")
-        state4_node = await sm.add_state(state4_class)
-        state5_class = StateTypeClass("State5")
-        state5_node = await sm.add_state(state5_class)
+        mystatemachine = StateMachineTypeClass(server, server.nodes.objects, idx, "StateMachine")
+        await mystatemachine.install(optionals=True)
 
-        trans1_class = TransitionTypeClass("Trans1")
-        trans1_node = await sm.add_transition(trans1_class)
-        trans2_class = TransitionTypeClass("Trans2")
-        trans2_node = await sm.add_transition(trans2_class)
-        trans3_class = TransitionTypeClass("Trans3")
-        trans3_node = await sm.add_transition(trans3_class)
-        trans4_class = TransitionTypeClass("Trans4")
-        trans4_node = await sm.add_transition(trans4_class)
-        trans5_class = TransitionTypeClass("Trans5")
-        trans5_node = await sm.add_transition(trans5_class)
+        state1 = StateTypeClass("Idle")
+        await mystatemachine.add_state(state1)
+        state2 = StateTypeClass("Loading")
+        await mystatemachine.add_state(state2)
+        state3 = StateTypeClass("Initializing")
+        await mystatemachine.add_state(state3)
+        state4 = StateTypeClass("Processing")
+        await mystatemachine.add_state(state4)
+        state5 = StateTypeClass("Finished")
+        await mystatemachine.add_state(state5)
 
-        await sm.change_state(state1_class, trans1_class, f"{sm._name}: Idle", 800)
+        trans1 = TransitionTypeClass("to Idle")
+        await mystatemachine.add_transition(trans1)
+        trans2 = TransitionTypeClass("to Loading")
+        await mystatemachine.add_transition(trans2)
+        trans3 = TransitionTypeClass("to Initializing")
+        await mystatemachine.add_transition(trans3)
+        trans4 = TransitionTypeClass("to Processing")
+        await mystatemachine.add_transition(trans4)
+        trans5 = TransitionTypeClass("to Finished")
+        await mystatemachine.add_transition(trans5)
+
+        await mystatemachine.change_state(state1, trans1, f"{mystatemachine._name}: Idle", 300)
 
 
         async with server:
             while 1:
                 await asyncio.sleep(2)
-                await sm.change_state(state2_class, trans2_class, f"{sm._name}: Loading", 800)
+                await mystatemachine.change_state(state2, trans2, f"{mystatemachine._name}: Loading", 350)
                 await asyncio.sleep(2)
-                await sm.change_state(state3_class, trans3_class, f"{sm._name}: Initializing", 800)
+                await mystatemachine.change_state(state3, trans3, f"{mystatemachine._name}: Initializing", 400)
                 await asyncio.sleep(2)
-                await sm.change_state(state4_class, trans4_class, f"{sm._name}: Processing", 800)
+                await mystatemachine.change_state(state4, trans4, f"{mystatemachine._name}: Processing", 600)
                 await asyncio.sleep(2)
-                await sm.change_state(state5_class, trans5_class, f"{sm._name}: Finished", 800)
+                await mystatemachine.change_state(state5, trans5, f"{mystatemachine._name}: Finished", 800)
                 await asyncio.sleep(2)
-                await sm.change_state(state1_class, trans1_class, f"{sm._name}: Restarting", 800)
+                await mystatemachine.change_state(state1, trans1, f"{mystatemachine._name}: Idle", 500)
 
     asyncio.run(main())
