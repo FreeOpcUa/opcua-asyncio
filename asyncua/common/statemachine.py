@@ -65,7 +65,8 @@ class StateMachineTypeClass(object):
         '''
         Helperclass for States (StateVariableType)
         https://reference.opcfoundation.org/v104/Core/docs/Part5/B.4.3/
-        name: Name is a QualifiedName which uniquely identifies the current state within the StateMachineType.
+        name: type string will be converted automatically to qualifiedname 
+            -> Name is a QualifiedName which uniquely identifies the current state within the StateMachineType.
         id: Id is a name which uniquely identifies the current state within the StateMachineType. A subtype may restrict the DataType.
         number: Number is an integer which uniquely identifies the current state within the StateMachineType.
         '''
@@ -79,9 +80,15 @@ class StateMachineTypeClass(object):
         '''
         Helperclass for Transitions (TransitionVariableType)
         https://reference.opcfoundation.org/v104/Core/docs/Part5/B.4.4/
-        name: Name is a QualifiedName which uniquely identifies the current state within the StateMachineType.
-        id: Id is a name which uniquely identifies the current state within the StateMachineType. A subtype may restrict the DataType.
+        name: type string will be converted automatically to qualifiedname 
+            -> Name is a QualifiedName which uniquely identifies a transition within the StateMachineType.
+        id: Id is a name which uniquely identifies a Transition within the StateMachineType. A subtype may restrict the DataType.
         number: Number is an integer which uniquely identifies the current state within the StateMachineType.
+        transitiontime: TransitionTime specifies when the transition occurred.
+        effectivetransitiontime: EffectiveTransitionTime specifies the time when the current state or one of its substates was entered. 
+        If, for example, a StateA is active and – while active – switches several times between its substates SubA and SubB, 
+        then the TransitionTime stays at the point in time where StateA became active whereas the EffectiveTransitionTime changes 
+        with each change of a substate.
         '''
         def __init__(self, name, id=0, node=None):
             self.name = name
@@ -166,32 +173,32 @@ class StateMachineTypeClass(object):
     async def _write_state(self, state):
         if not isinstance(state, self.State):
             raise ValueError
-        await self._current_state_node.write_value(ua.LocalizedText(state.name, self.locale))
+        await self._current_state_node.write_value(ua.LocalizedText(state.name, self.locale), ua.VariantType.LocalizedText)
         if state.node:
             if self._current_state_id_node:
-                await self._current_state_id_node.write_value(state.node.nodeid)
+                await self._current_state_id_node.write_value(state.node.nodeid, ua.VariantType.NodeId)
             if self._current_state_name_node:
-                await self._current_state_name_node.write_value(state.name)
+                await self._current_state_name_node.write_value(state.name, ua.VariantType.QualifiedName)
             if self._current_state_number_node:
-                await self._current_state_number_node.write_value(state.number)
+                await self._current_state_number_node.write_value(state.number, ua.VariantType.UInt32)
 
     async def _write_transition(self, transition):
         if not isinstance(transition, self.Transition):
             raise ValueError
         transition._transitiontime = datetime.datetime.utcnow()
         transition._effectivetransitiontime = datetime.datetime.utcnow()
-        await self._last_transition_node.write_value(ua.LocalizedText(transition.name, self.locale))
+        await self._last_transition_node.write_value(ua.LocalizedText(transition.name, self.locale), ua.VariantType.LocalizedText)
         if transition.node:
             if self._last_transition_id_node:
-                await self._last_transition_id_node.write_value(transition.node.nodeid)
+                await self._last_transition_id_node.write_value(transition.node.nodeid, ua.VariantType.NodeId)
             if self._last_transition_name_node:
-                await self._last_transition_name_node.write_value(transition.name)
+                await self._last_transition_name_node.write_value(ua.QualifiedName(transition.name, self._idx), ua.VariantType.QualifiedName)
             if self._last_transition_number_node:
-                await self._last_transition_number_node.write_value(transition.number)
+                await self._last_transition_number_node.write_value(transition.number, ua.VariantType.UInt32)
             if self._last_transition_transitiontime_node:
-                await self._last_transition_transitiontime_node.write_value(transition._transitiontime)
+                await self._last_transition_transitiontime_node.write_value(transition._transitiontime, ua.VariantType.DateTime)
             if self._last_transition_effectivetransitiontime_node:
-                await self._last_transition_effectivetransitiontime_node.write_value(transition._effectivetransitiontime)
+                await self._last_transition_effectivetransitiontime_node.write_value(transition._effectivetransitiontime, ua.VariantType.DateTime)
             
     async def add_state(self, state, state_type=ua.NodeId(2307, 0), optionals=False):
         '''
