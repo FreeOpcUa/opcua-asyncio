@@ -26,37 +26,12 @@ from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
 
 _logger = logging.getLogger(__name__)
 
-class StateTypeClass(object):
-    _count = 0
-    def __init__(self, name, node=None, auto_id=True):
-        self.name = name
-        self.node = node
-        if auto_id:
-            self._id = type(self)._count + 1 #according to the specs a unique number for each state
-            type(self)._count = self._id
-            return
-        self._id = 0
-    
-    def set_id(self, id):
-        self._id = id
-
-class TransitionTypeClass(object):
-    _count = 0
-    def __init__(self, name, node=None, auto_id=True):
-        self.name = name
-        self.node = node
-        if auto_id:
-            self._id = type(self)._count + 1  #according to the specs a unique number for each transition
-            type(self)._count = self._id
-            return
-        self._id = 0
-    
-    def set_id(self, id):
-        self._id = id
-
 class StateMachineTypeClass(object):
     '''
     Implementation of an StateMachineType (most basic type)
+    CurrentState: Mandatory
+    LastTransition: Optional
+    Generates TransitionEvent's
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         if not isinstance(server, Server): 
@@ -82,6 +57,48 @@ class StateMachineTypeClass(object):
         self._evgen = None
         self.evtype = TransitionEvent()
 
+    class StateTypeClass(object):
+        '''
+        Helperclass for States
+        '''
+        _count = 0
+        def __init__(self, name, node=None, auto_id=True):
+            self.name = name
+            self.node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
+            if auto_id:
+                self._id = type(self)._count + 1 #according to the specs a unique number for each state
+                type(self)._count = self._id
+                return
+            self._id = 0
+        
+        def set_id(self, id):
+            self._id = id
+            return
+            
+        def get_id(self):
+            return self._id
+
+    class TransitionTypeClass(object):
+        '''
+        Helperclass for Transitions
+        '''
+        _count = 0
+        def __init__(self, name, node=None, auto_id=True):
+            self.name = name
+            self.node = node #will be written from statemachine.add_transition() or you need to overwrite it if the transition is part of xml
+            if auto_id:
+                self._id = type(self)._count + 1  #according to the specs a unique number for each transition
+                type(self)._count = self._id
+                return
+            self._id = 0
+        
+        def set_id(self, id):
+            self._id = id
+            return
+
+        def get_id(self):
+            return self._id
+
     async def install(self, optionals=False):
         '''
         setup adressspace
@@ -97,9 +114,9 @@ class StateMachineTypeClass(object):
     
     async def init(self, statemachine):
         '''
-        initialize subnodes
+        initialize and get subnodes
         '''
-        #FIXME check for childrens typdefinitions which matches statemachine
+        #FIXME try to get children of statemachine with typdefinition initstate if no child -> no states (possible if the statemachine is not part of xml)
         self._current_state_node = await statemachine.get_child(["CurrentState"])
         self._current_state_id_node = await statemachine.get_child(["CurrentState","Id"])
         if self._optionals:
@@ -150,7 +167,7 @@ class StateMachineTypeClass(object):
         StateType: ua.NodeId(2307, 0)
         ChoiceStateType: ua.NodeId(15109,0)
         '''
-        if not isinstance(state, StateTypeClass):
+        if not isinstance(state, self.StateTypeClass):
             raise ValueError
         state.node = await self._state_machine_node.add_object(
             self._idx, 
@@ -167,7 +184,7 @@ class StateMachineTypeClass(object):
         transition: TransitionTypeClass
         transition_type: ua.NodeId(2310, 0)
         '''
-        if not isinstance(transition, TransitionTypeClass):
+        if not isinstance(transition, self.TransitionTypeClass):
             raise ValueError
         transition.node = await self._state_machine_node.add_object(
             self._idx, 
@@ -607,26 +624,26 @@ if __name__ == "__main__":
         mystatemachine = StateMachineTypeClass(server, server.nodes.objects, idx, "StateMachine")
         await mystatemachine.install(optionals=True)
 
-        state1 = StateTypeClass("Idle")
+        state1 = mystatemachine.StateTypeClass("Idle")
         await mystatemachine.add_state(state1)
-        state2 = StateTypeClass("Loading")
+        state2 = mystatemachine.StateTypeClass("Loading")
         await mystatemachine.add_state(state2)
-        state3 = StateTypeClass("Initializing")
+        state3 = mystatemachine.StateTypeClass("Initializing")
         await mystatemachine.add_state(state3)
-        state4 = StateTypeClass("Processing")
+        state4 = mystatemachine.StateTypeClass("Processing")
         await mystatemachine.add_state(state4)
-        state5 = StateTypeClass("Finished")
+        state5 = mystatemachine.StateTypeClass("Finished")
         await mystatemachine.add_state(state5)
 
-        trans1 = TransitionTypeClass("to Idle")
+        trans1 = mystatemachine.TransitionTypeClass("to Idle")
         await mystatemachine.add_transition(trans1)
-        trans2 = TransitionTypeClass("to Loading")
+        trans2 = mystatemachine.TransitionTypeClass("to Loading")
         await mystatemachine.add_transition(trans2)
-        trans3 = TransitionTypeClass("to Initializing")
+        trans3 = mystatemachine.TransitionTypeClass("to Initializing")
         await mystatemachine.add_transition(trans3)
-        trans4 = TransitionTypeClass("to Processing")
+        trans4 = mystatemachine.TransitionTypeClass("to Processing")
         await mystatemachine.add_transition(trans4)
-        trans5 = TransitionTypeClass("to Finished")
+        trans5 = mystatemachine.TransitionTypeClass("to Finished")
         await mystatemachine.add_transition(trans5)
 
         await mystatemachine.change_state(state1, trans1, f"{mystatemachine._name}: Idle", 300)
