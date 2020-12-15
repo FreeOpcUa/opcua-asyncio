@@ -144,7 +144,7 @@ class StateMachineTypeClass(object):
                     self._last_transition_name_node = await self._last_transition_node.get_child(["Name"])
                 elif dn.Text == "Number":
                     self._last_transition_number_node = await self._last_transition_node.get_child(["Number"])
-                elif dn.Text == "TransitionTime" and not self._last_transition_transitiontime_node:
+                elif dn.Text == "TransitionTime":
                     self._last_transition_transitiontime_node = await self._last_transition_node.get_child(["TransitionTime"])
                 elif dn.Text == "EffectiveTransitionTime":
                     self._last_transition_effectivetransitiontime_node = await self._last_transition_node.get_child(["EffectiveTransitionTime"])
