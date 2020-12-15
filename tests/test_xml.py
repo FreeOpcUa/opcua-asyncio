@@ -1,9 +1,8 @@
-import os
 import uuid
 import pytz
-import pytest
 import logging
 import datetime
+import pathlib
 
 import pytest
 
@@ -17,8 +16,11 @@ logger.setLevel(logging.DEBUG)
 
 pytestmark = pytest.mark.asyncio
 
-CUSTOM_NODES_XML_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "custom_nodes.xml"))
-CUSTOM_NODES_NS_XML_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "custom_nodesns.xml"))
+BASE_DIR = pathlib.Path(__file__).parent.absolute()
+CUSTOM_NODES_XML_PATH = BASE_DIR / "custom_nodes.xml"
+CUSTOM_NODES_NS_XML_PATH = BASE_DIR / "custom_nodesns.xml"
+CUSTOM_REQ_XML_PASS_PATH = BASE_DIR / "test_requirement_pass.xml"
+CUSTOM_REQ_XML_FAIL_PATH = BASE_DIR / "test_requirement_fail.xml"
 
 
 @uamethod
@@ -438,3 +440,11 @@ async def test_xml_byte(opc, tmpdir):
     assert dtype == await o2.read_data_type()
     assert dv.Value == (await o2.read_data_value()).Value
     await opc.opc.delete_nodes([o2])
+
+
+async def test_xml_required_models_fail(opc):
+    with pytest.raises(ValueError):
+        await opc.opc.import_xml(CUSTOM_REQ_XML_FAIL_PATH)
+
+async def test_xml_required_models_pass(opc):
+    await opc.opc.import_xml(CUSTOM_REQ_XML_PASS_PATH)
