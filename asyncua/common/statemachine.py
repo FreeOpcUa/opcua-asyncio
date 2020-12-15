@@ -111,6 +111,10 @@ class StateMachineTypeClass(object):
             objecttype=self._state_machine_type, 
             instantiate_optional=optionals
             )
+        if self._optionals:
+            #FIXME somehow propertys dont get added if i instantiate with oprionals
+            self._last_transition_node = await self._state_machine_node.get_child(["LastTransition"])
+            self._last_transition_transitiontime_node = await self._last_transition_node.add_property(0, "TransitionTime", ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime))
         await self.init(self._state_machine_node)
     
     async def init(self, statemachine):
@@ -122,30 +126,30 @@ class StateMachineTypeClass(object):
         for prop in current_state_props:
             dn = await prop.read_display_name()
             if dn.Text == "Id":
-                self._current_state_id_node = await statemachine.get_child(["CurrentState","Id"])
+                self._current_state_id_node = await self._current_state_node.get_child(["Id"])
             elif dn.Text == "Name":
-                self._current_state_name_node = await statemachine.get_child(["CurrentState","Name"])
+                self._current_state_name_node = await self._current_state_node.get_child(["Name"])
             elif dn.Text == "Number":
-                self._current_state_number_node = await statemachine.get_child(["CurrentState","Number"])
+                self._current_state_number_node = await self._current_state_node.get_child(["Number"])
             else:
-                _logger.warning(f"{statemachine._name} CurrentState Unknown propertie: {dn.Text}")
+                _logger.warning(f"{await statemachine.read_browse_name()} CurrentState Unknown propertie: {dn.Text}")
         if self._optionals:
             self._last_transition_node = await statemachine.get_child(["LastTransition"])
             last_transition_props = await self._last_transition_node.get_properties()
             for prop in last_transition_props:
                 dn = await prop.read_display_name()
                 if dn.Text == "Id":
-                    self._last_transition_id_node = await statemachine.get_child(["LastTransition", "Id"])
+                    self._last_transition_id_node = await self._last_transition_node.get_child(["Id"])
                 elif dn.Text == "Name":
-                    self._last_transition_name_node = await statemachine.get_child(["LastTransition", "Name"])
+                    self._last_transition_name_node = await self._last_transition_node.get_child(["Name"])
                 elif dn.Text == "Number":
-                    self._last_transition_number_node = await statemachine.get_child(["LastTransition", "Number"])
-                elif dn.Text == "TransitionTime":
-                    self._last_transition_transitiontime_node = await statemachine.get_child(["LastTransition", "TransitionTime"])
+                    self._last_transition_number_node = await self._last_transition_node.get_child(["Number"])
+                elif dn.Text == "TransitionTime" and not self._last_transition_transitiontime_node:
+                    self._last_transition_transitiontime_node = await self._last_transition_node.get_child(["TransitionTime"])
                 elif dn.Text == "EffectiveTransitionTime":
-                    self._last_transition_effectivetransitiontime_node = await statemachine.get_child(["LastTransition", "EffectiveTransitionTime"])
+                    self._last_transition_effectivetransitiontime_node = await self._last_transition_node.get_child(["EffectiveTransitionTime"])
                 else:
-                    _logger.warning(f"{statemachine._name} LastTransition Unknown propertie: {dn.Text}")
+                    _logger.warning(f"{await statemachine.read_browse_name()} LastTransition Unknown propertie: {dn.Text}")
         self._evgen = await self._server.get_event_generator(self.evtype, self._state_machine_node)
 
     async def change_state(self, state, transition=None, event_msg=None, severity=500):
