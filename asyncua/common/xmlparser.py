@@ -7,7 +7,6 @@ import base64
 import logging
 from pytz import utc
 
-
 import xml.etree.ElementTree as ET
 
 from .ua_utils import string_to_val
@@ -67,6 +66,7 @@ class NodeData:
 
     __repr__ = __str__
 
+
 class Field:
     def __init__(self, data):
         self.datatype = data.get("DataType", "")
@@ -74,9 +74,10 @@ class Field:
         self.dname = data.get("DisplayName", "")
         self.optional = bool(data.get("IsOptional", False))
         self.valuerank = int(data.get("ValueRank", -1))
-        self.arraydim = data.get("ArrayDimensions", None) #FIXME: check type
+        self.arraydim = data.get("ArrayDimensions", None)  # FIXME: check type
         self.value = int(data.get("Value", 0))
         self.desc = data.get("Description", "")
+
 
 class RefStruct:
 
@@ -87,6 +88,7 @@ class RefStruct:
 
     def __str__(self):
         return f"RefStruct({self.reftype, self.forward, self.target})"
+
     __repr__ = __str__
 
 
@@ -384,3 +386,21 @@ class XMLParser:
             obj.parent, obj.parentlink = parent, parentlink
         if not obj.parent:
             self.logger.info("Could not find parent for node '%s'", obj.nodeid)
+
+    @staticmethod
+    def list_required_models(xmlpath, xmlstring):
+        """
+        Try getting required XML Models, before parsing NodeSet
+        """
+        if xmlpath:
+            tree = ET.parse(xmlpath)
+        else:
+            tree = ET.fromstring(xmlstring)
+        required_models = []
+
+        for child in tree.iter():
+            if child.tag.endswith("RequiredModel"):
+                # check if ModelUri X, in Version Y from time Z was already imported
+                required_models.append(child.attrib)
+        return required_models
+
