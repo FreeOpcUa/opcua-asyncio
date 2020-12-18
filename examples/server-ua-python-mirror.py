@@ -29,7 +29,7 @@ class SubHandler(object):
     def datachange_notification(self, node, val, data):
         # print("Python: New data change event", node, val, data)
 
-        _node_name = node.get_browse_name()
+        _node_name = node.read_browse_name()
         setattr(self.obj, _node_name.Name, data.monitored_item.Value.Value.Value)
 
 
@@ -42,11 +42,11 @@ class UaObject(object):
     def __init__(self, asyncua_server, ua_node):
         self.asyncua_server = asyncua_server
         self.nodes = {}
-        self.b_name = ua_node.get_browse_name().Name
+        self.b_name = ua_node.read_browse_name().Name
 
         # keep track of the children of this object (in case python needs to write, or get more info from UA server)
         for _child in ua_node.get_children():
-            _child_name = _child.get_browse_name()
+            _child_name = _child.read_browse_name()
             self.nodes[_child_name.Name] = _child
 
         # find all children which can be subscribed to (python object is kept up to date via subscription)
@@ -58,16 +58,16 @@ class UaObject(object):
         sub = asyncua_server.create_subscription(500, handler)
         handle = sub.subscribe_data_change(sub_children)
 
-    def write(self, attr=None):
+    def write_value(self, attr=None):
         # if a specific attr isn't passed to write, write all OPC UA children
         if attr is None:
             for k, node in self.nodes.items():
-                node_class = node.get_node_class()
+                node_class = node.read_node_class()
                 if node_class == ua.NodeClass.Variable:
-                    node.set_value(getattr(self, k))
+                    node.write_value(getattr(self, k))
         # only update a specific attr
         else:
-            self.nodes[attr].set_value(getattr(self, attr))
+            self.nodes[attr].write_value(getattr(self, attr))
 
 
 class MyObj(UaObject):
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     idx = server.register_namespace(uri)
 
     # get Objects node, this is where we should put our nodes
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
 
     # populating our address space; in most real use cases this should be imported from UA spec XML
     myobj = objects.add_object(idx, "MyObject")
@@ -130,22 +130,22 @@ if __name__ == "__main__":
             # write a single attr to OPC UA
             my_python_obj.MyVariable = 12.3
             my_python_obj.MyProperty = 55  # this value will not be visible to clients because write is not called
-            my_python_obj.write('MyVariable')
+            my_python_obj.write_value('MyVariable')
 
             time.sleep(3)
 
             # write all attr of the object to OPC UA
             my_python_obj.MyVariable = 98.1
             my_python_obj.MyProperty = 99
-            my_python_obj.write()
+            my_python_obj.write_value()
 
             time.sleep(3)
 
             # write directly to the OPC UA node of the object
             dv = ua.DataValue(ua.Variant(5.5, ua.VariantType.Double))
-            my_python_obj.nodes['MyVariable'].set_value(dv)
+            my_python_obj.nodes['MyVariable'].write_value(dv)
             dv = ua.DataValue(ua.Variant(4, ua.VariantType.UInt64))
-            my_python_obj.nodes['MyVariable'].set_value(dv)
+            my_python_obj.nodes['MyVariable'].write_value(dv)
 
             time.sleep(3)
 

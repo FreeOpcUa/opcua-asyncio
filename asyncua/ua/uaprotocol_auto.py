@@ -1,5 +1,6 @@
 """
 Autogenerate code from xml spec
+Date:2020-08-09 20:26:35.196239
 """
 
 from datetime import datetime
@@ -128,8 +129,8 @@ class DataSetFieldContentMask(IntEnum):
     :vartype SourcePicoSeconds: 8
     :ivar ServerPicoSeconds:
     :vartype ServerPicoSeconds: 16
-    :ivar RawDataEncoding:
-    :vartype RawDataEncoding: 32
+    :ivar RawData:
+    :vartype RawData: 32
     """
     None_ = 0
     StatusCode = 1
@@ -137,20 +138,20 @@ class DataSetFieldContentMask(IntEnum):
     ServerTimestamp = 4
     SourcePicoSeconds = 8
     ServerPicoSeconds = 16
-    RawDataEncoding = 32
+    RawData = 32
 
 
 class OverrideValueHandling(IntEnum):
     """
     :ivar Disabled:
     :vartype Disabled: 0
-    :ivar LastUseableValue:
-    :vartype LastUseableValue: 1
+    :ivar LastUsableValue:
+    :vartype LastUsableValue: 1
     :ivar OverrideValue:
     :vartype OverrideValue: 2
     """
     Disabled = 0
-    LastUseableValue = 1
+    LastUsableValue = 1
     OverrideValue = 2
 
 
@@ -188,8 +189,8 @@ class UadpNetworkMessageContentMask(IntEnum):
     :vartype PayloadHeader: 64
     :ivar Timestamp:
     :vartype Timestamp: 128
-    :ivar Picoseconds:
-    :vartype Picoseconds: 256
+    :ivar PicoSeconds:
+    :vartype PicoSeconds: 256
     :ivar DataSetClassId:
     :vartype DataSetClassId: 512
     :ivar PromotedFields:
@@ -204,7 +205,7 @@ class UadpNetworkMessageContentMask(IntEnum):
     SequenceNumber = 32
     PayloadHeader = 64
     Timestamp = 128
-    Picoseconds = 256
+    PicoSeconds = 256
     DataSetClassId = 512
     PromotedFields = 1024
 
@@ -337,8 +338,6 @@ class PubSubDiagnosticsCounterClassification(IntEnum):
 
 class IdType(IntEnum):
     """
-    The type of identifier used in a node id.
-
     :ivar Numeric:
     :vartype Numeric: 0
     :ivar String:
@@ -356,8 +355,6 @@ class IdType(IntEnum):
 
 class NodeClass(IntEnum):
     """
-    A mask specifying the class of the node.
-
     :ivar Unspecified:
     :vartype Unspecified: 0
     :ivar Object:
@@ -458,7 +455,9 @@ class AccessLevelType(IntEnum):
     :ivar HistoryRead:
     :vartype HistoryRead: 4
     :ivar HistoryWrite:
-    :vartype HistoryWrite: 16
+    :vartype HistoryWrite: 8
+    :ivar SemanticChange:
+    :vartype SemanticChange: 16
     :ivar StatusWrite:
     :vartype StatusWrite: 32
     :ivar TimestampWrite:
@@ -468,7 +467,8 @@ class AccessLevelType(IntEnum):
     CurrentRead = 1
     CurrentWrite = 2
     HistoryRead = 4
-    HistoryWrite = 16
+    HistoryWrite = 8
+    SemanticChange = 16
     StatusWrite = 32
     TimestampWrite = 64
 
@@ -484,7 +484,9 @@ class AccessLevelExType(IntEnum):
     :ivar HistoryRead:
     :vartype HistoryRead: 4
     :ivar HistoryWrite:
-    :vartype HistoryWrite: 16
+    :vartype HistoryWrite: 8
+    :ivar SemanticChange:
+    :vartype SemanticChange: 16
     :ivar StatusWrite:
     :vartype StatusWrite: 32
     :ivar TimestampWrite:
@@ -500,7 +502,8 @@ class AccessLevelExType(IntEnum):
     CurrentRead = 1
     CurrentWrite = 2
     HistoryRead = 4
-    HistoryWrite = 16
+    HistoryWrite = 8
+    SemanticChange = 16
     StatusWrite = 32
     TimestampWrite = 64
     NonatomicRead = 256
@@ -525,6 +528,23 @@ class EventNotifierType(IntEnum):
     HistoryWrite = 8
 
 
+class AccessRestrictionType(IntEnum):
+    """
+    :ivar None_:
+    :vartype None_: 0
+    :ivar SigningRequired:
+    :vartype SigningRequired: 1
+    :ivar EncryptionRequired:
+    :vartype EncryptionRequired: 2
+    :ivar SessionRequired:
+    :vartype SessionRequired: 4
+    """
+    None_ = 0
+    SigningRequired = 1
+    EncryptionRequired = 2
+    SessionRequired = 4
+
+
 class StructureType(IntEnum):
     """
     :ivar Structure:
@@ -541,8 +561,6 @@ class StructureType(IntEnum):
 
 class ApplicationType(IntEnum):
     """
-    The types of applications.
-
     :ivar Server:
     :vartype Server: 0
     :ivar Client:
@@ -560,8 +578,6 @@ class ApplicationType(IntEnum):
 
 class MessageSecurityMode(IntEnum):
     """
-    The type of security to use on a message.
-
     :ivar Invalid:
     :vartype Invalid: 0
     :ivar None_:
@@ -579,8 +595,6 @@ class MessageSecurityMode(IntEnum):
 
 class UserTokenType(IntEnum):
     """
-    The possible user token types.
-
     :ivar Anonymous:
     :vartype Anonymous: 0
     :ivar UserName:
@@ -598,8 +612,6 @@ class UserTokenType(IntEnum):
 
 class SecurityTokenRequestType(IntEnum):
     """
-    Indicates whether a token if being created or renewed.
-
     :ivar Issue:
     :vartype Issue: 0
     :ivar Renew:
@@ -611,8 +623,6 @@ class SecurityTokenRequestType(IntEnum):
 
 class NodeAttributesMask(IntEnum):
     """
-    The bits used to specify default attributes for a new node.
-
     :ivar None_:
     :vartype None_: 0
     :ivar AccessLevel:
@@ -723,8 +733,6 @@ class NodeAttributesMask(IntEnum):
 
 class AttributeWriteMask(IntEnum):
     """
-    Define bits used to indicate which attributes are writable.
-
     :ivar None_:
     :vartype None_: 0
     :ivar AccessLevel:
@@ -811,8 +819,6 @@ class AttributeWriteMask(IntEnum):
 
 class BrowseDirection(IntEnum):
     """
-    The directions of the references to return.
-
     :ivar Forward:
     :vartype Forward: 0
     :ivar Inverse:
@@ -830,8 +836,6 @@ class BrowseDirection(IntEnum):
 
 class BrowseResultMask(IntEnum):
     """
-    A bit mask which specifies what should be returned in a browse response.
-
     :ivar None_:
     :vartype None_: 0
     :ivar ReferenceTypeId:
@@ -1130,6 +1134,8 @@ class DataTypeDefinition(FrozenClass):
     """
     """
 
+    data_type = NodeId(ObjectIds.DataTypeDefinition)
+
     ua_types = [
                ]
 
@@ -1164,11 +1170,13 @@ class DiagnosticInfo(FrozenClass):
     :vartype InnerDiagnosticInfo: DiagnosticInfo
     """
 
+    data_type = NodeId(ObjectIds.DiagnosticInfo)
+
     ua_switches = {
         'SymbolicId': ('Encoding', 0),
         'NamespaceURI': ('Encoding', 1),
-        'Locale': ('Encoding', 2),
-        'LocalizedText': ('Encoding', 3),
+        'Locale': ('Encoding', 3),
+        'LocalizedText': ('Encoding', 2),
         'AdditionalInfo': ('Encoding', 4),
         'InnerStatusCode': ('Encoding', 5),
         'InnerDiagnosticInfo': ('Encoding', 6),
@@ -1209,6 +1217,8 @@ class KeyValuePair(FrozenClass):
     :vartype Value: Variant
     """
 
+    data_type = NodeId(ObjectIds.KeyValuePair)
+
     ua_types = [
         ('Key', 'QualifiedName'),
         ('Value', 'Variant'),
@@ -1237,6 +1247,8 @@ class EndpointType(FrozenClass):
     :vartype TransportProfileUri: String
     """
 
+    data_type = NodeId(ObjectIds.EndpointType)
+
     ua_types = [
         ('EndpointUrl', 'String'),
         ('SecurityMode', 'MessageSecurityMode'),
@@ -1257,6 +1269,220 @@ class EndpointType(FrozenClass):
     __repr__ = __str__
 
 
+class RationalNumber(FrozenClass):
+    """
+    :ivar Numerator:
+    :vartype Numerator: Int32
+    :ivar Denominator:
+    :vartype Denominator: UInt32
+    """
+
+    data_type = NodeId(ObjectIds.RationalNumber)
+
+    ua_types = [
+        ('Numerator', 'Int32'),
+        ('Denominator', 'UInt32'),
+               ]
+
+    def __init__(self):
+        self.Numerator = 0
+        self.Denominator = 0
+        self._freeze = True
+
+    def __str__(self):
+        return f'RationalNumber(Numerator:{self.Numerator}, Denominator:{self.Denominator})'
+
+    __repr__ = __str__
+
+
+class Vector(FrozenClass):
+    """
+    """
+
+    data_type = NodeId(ObjectIds.Vector)
+
+    ua_types = [
+               ]
+
+    def __init__(self):
+        self._freeze = True
+
+    def __str__(self):
+        return 'Vector()'
+
+    __repr__ = __str__
+
+
+class ThreeDVector(FrozenClass):
+    """
+    :ivar X:
+    :vartype X: Double
+    :ivar Y:
+    :vartype Y: Double
+    :ivar Z:
+    :vartype Z: Double
+    """
+
+    data_type = NodeId(ObjectIds.ThreeDVector)
+
+    ua_types = [
+        ('X', 'Double'),
+        ('Y', 'Double'),
+        ('Z', 'Double'),
+               ]
+
+    def __init__(self):
+        self.X = 0
+        self.Y = 0
+        self.Z = 0
+        self._freeze = True
+
+    def __str__(self):
+        return f'ThreeDVector(X:{self.X}, Y:{self.Y}, Z:{self.Z})'
+
+    __repr__ = __str__
+
+
+class CartesianCoordinates(FrozenClass):
+    """
+    """
+
+    data_type = NodeId(ObjectIds.CartesianCoordinates)
+
+    ua_types = [
+               ]
+
+    def __init__(self):
+        self._freeze = True
+
+    def __str__(self):
+        return 'CartesianCoordinates()'
+
+    __repr__ = __str__
+
+
+class ThreeDCartesianCoordinates(FrozenClass):
+    """
+    :ivar X:
+    :vartype X: Double
+    :ivar Y:
+    :vartype Y: Double
+    :ivar Z:
+    :vartype Z: Double
+    """
+
+    data_type = NodeId(ObjectIds.ThreeDCartesianCoordinates)
+
+    ua_types = [
+        ('X', 'Double'),
+        ('Y', 'Double'),
+        ('Z', 'Double'),
+               ]
+
+    def __init__(self):
+        self.X = 0
+        self.Y = 0
+        self.Z = 0
+        self._freeze = True
+
+    def __str__(self):
+        return f'ThreeDCartesianCoordinates(X:{self.X}, Y:{self.Y}, Z:{self.Z})'
+
+    __repr__ = __str__
+
+
+class Orientation(FrozenClass):
+    """
+    """
+
+    data_type = NodeId(ObjectIds.Orientation)
+
+    ua_types = [
+               ]
+
+    def __init__(self):
+        self._freeze = True
+
+    def __str__(self):
+        return 'Orientation()'
+
+    __repr__ = __str__
+
+
+class ThreeDOrientation(FrozenClass):
+    """
+    :ivar A:
+    :vartype A: Double
+    :ivar B:
+    :vartype B: Double
+    :ivar C:
+    :vartype C: Double
+    """
+
+    data_type = NodeId(ObjectIds.ThreeDOrientation)
+
+    ua_types = [
+        ('A', 'Double'),
+        ('B', 'Double'),
+        ('C', 'Double'),
+               ]
+
+    def __init__(self):
+        self.A = 0
+        self.B = 0
+        self.C = 0
+        self._freeze = True
+
+    def __str__(self):
+        return f'ThreeDOrientation(A:{self.A}, B:{self.B}, C:{self.C})'
+
+    __repr__ = __str__
+
+
+class Frame(FrozenClass):
+    """
+    """
+
+    data_type = NodeId(ObjectIds.Frame)
+
+    ua_types = [
+               ]
+
+    def __init__(self):
+        self._freeze = True
+
+    def __str__(self):
+        return 'Frame()'
+
+    __repr__ = __str__
+
+
+class ThreeDFrame(FrozenClass):
+    """
+    :ivar CartesianCoordinates:
+    :vartype CartesianCoordinates: ThreeDCartesianCoordinates
+    :ivar Orientation:
+    :vartype Orientation: ThreeDOrientation
+    """
+
+    data_type = NodeId(ObjectIds.ThreeDFrame)
+
+    ua_types = [
+        ('CartesianCoordinates', 'ThreeDCartesianCoordinates'),
+        ('Orientation', 'ThreeDOrientation'),
+               ]
+
+    def __init__(self):
+        self.CartesianCoordinates = ThreeDCartesianCoordinates()
+        self.Orientation = ThreeDOrientation()
+        self._freeze = True
+
+    def __str__(self):
+        return f'ThreeDFrame(CartesianCoordinates:{self.CartesianCoordinates}, Orientation:{self.Orientation})'
+
+    __repr__ = __str__
+
+
 class IdentityMappingRuleType(FrozenClass):
     """
     :ivar CriteriaType:
@@ -1264,6 +1490,8 @@ class IdentityMappingRuleType(FrozenClass):
     :ivar Criteria:
     :vartype Criteria: String
     """
+
+    data_type = NodeId(ObjectIds.IdentityMappingRuleType)
 
     ua_types = [
         ('CriteriaType', 'IdentityCriteriaType'),
@@ -1281,6 +1509,40 @@ class IdentityMappingRuleType(FrozenClass):
     __repr__ = __str__
 
 
+class CurrencyUnitType(FrozenClass):
+    """
+    :ivar NumericCode:
+    :vartype NumericCode: Int16
+    :ivar Exponent:
+    :vartype Exponent: SByte
+    :ivar AlphabeticCode:
+    :vartype AlphabeticCode: String
+    :ivar Currency:
+    :vartype Currency: LocalizedText
+    """
+
+    data_type = NodeId(ObjectIds.CurrencyUnitType)
+
+    ua_types = [
+        ('NumericCode', 'Int16'),
+        ('Exponent', 'SByte'),
+        ('AlphabeticCode', 'String'),
+        ('Currency', 'LocalizedText'),
+               ]
+
+    def __init__(self):
+        self.NumericCode = 0
+        self.Exponent = SByte()
+        self.AlphabeticCode = None
+        self.Currency = LocalizedText()
+        self._freeze = True
+
+    def __str__(self):
+        return f'CurrencyUnitType(NumericCode:{self.NumericCode}, Exponent:{self.Exponent}, AlphabeticCode:{self.AlphabeticCode}, Currency:{self.Currency})'
+
+    __repr__ = __str__
+
+
 class TrustListDataType(FrozenClass):
     """
     :ivar SpecifiedLists:
@@ -1294,6 +1556,8 @@ class TrustListDataType(FrozenClass):
     :ivar IssuerCrls:
     :vartype IssuerCrls: ByteString
     """
+
+    data_type = NodeId(ObjectIds.TrustListDataType)
 
     ua_types = [
         ('SpecifiedLists', 'UInt32'),
@@ -1325,6 +1589,8 @@ class DecimalDataType(FrozenClass):
     :vartype Value: ByteString
     """
 
+    data_type = NodeId(ObjectIds.DecimalDataType)
+
     ua_types = [
         ('Scale', 'Int16'),
         ('Value', 'ByteString'),
@@ -1352,6 +1618,8 @@ class DataTypeSchemaHeader(FrozenClass):
     :ivar SimpleDataTypes:
     :vartype SimpleDataTypes: SimpleTypeDescription
     """
+
+    data_type = NodeId(ObjectIds.DataTypeSchemaHeader)
 
     ua_types = [
         ('Namespaces', 'ListOfString'),
@@ -1381,6 +1649,8 @@ class DataTypeDescription(FrozenClass):
     :vartype Name: QualifiedName
     """
 
+    data_type = NodeId(ObjectIds.DataTypeDescription)
+
     ua_types = [
         ('DataTypeId', 'NodeId'),
         ('Name', 'QualifiedName'),
@@ -1406,6 +1676,8 @@ class StructureDescription(FrozenClass):
     :ivar StructureDefinition:
     :vartype StructureDefinition: StructureDefinition
     """
+
+    data_type = NodeId(ObjectIds.StructureDescription)
 
     ua_types = [
         ('DataTypeId', 'NodeId'),
@@ -1436,6 +1708,8 @@ class EnumDescription(FrozenClass):
     :ivar BuiltInType:
     :vartype BuiltInType: Byte
     """
+
+    data_type = NodeId(ObjectIds.EnumDescription)
 
     ua_types = [
         ('DataTypeId', 'NodeId'),
@@ -1468,6 +1742,8 @@ class SimpleTypeDescription(FrozenClass):
     :ivar BuiltInType:
     :vartype BuiltInType: Byte
     """
+
+    data_type = NodeId(ObjectIds.SimpleTypeDescription)
 
     ua_types = [
         ('DataTypeId', 'NodeId'),
@@ -1506,6 +1782,8 @@ class UABinaryFileDataType(FrozenClass):
     :ivar Body:
     :vartype Body: Variant
     """
+
+    data_type = NodeId(ObjectIds.UABinaryFileDataType)
 
     ua_types = [
         ('Namespaces', 'ListOfString'),
@@ -1554,6 +1832,8 @@ class DataSetMetaDataType(FrozenClass):
     :ivar ConfigurationVersion:
     :vartype ConfigurationVersion: ConfigurationVersionDataType
     """
+
+    data_type = NodeId(ObjectIds.DataSetMetaDataType)
 
     ua_types = [
         ('Namespaces', 'ListOfString'),
@@ -1609,6 +1889,8 @@ class FieldMetaData(FrozenClass):
     :vartype Properties: KeyValuePair
     """
 
+    data_type = NodeId(ObjectIds.FieldMetaData)
+
     ua_types = [
         ('Name', 'String'),
         ('Description', 'LocalizedText'),
@@ -1649,6 +1931,8 @@ class ConfigurationVersionDataType(FrozenClass):
     :vartype MinorVersion: UInt32
     """
 
+    data_type = NodeId(ObjectIds.ConfigurationVersionDataType)
+
     ua_types = [
         ('MajorVersion', 'UInt32'),
         ('MinorVersion', 'UInt32'),
@@ -1679,6 +1963,8 @@ class PublishedDataSetDataType(FrozenClass):
     :vartype DataSetSource: ExtensionObject
     """
 
+    data_type = NodeId(ObjectIds.PublishedDataSetDataType)
+
     ua_types = [
         ('Name', 'String'),
         ('DataSetFolder', 'ListOfString'),
@@ -1704,6 +1990,8 @@ class PublishedDataSetDataType(FrozenClass):
 class PublishedDataSetSourceDataType(FrozenClass):
     """
     """
+
+    data_type = NodeId(ObjectIds.PublishedDataSetSourceDataType)
 
     ua_types = [
                ]
@@ -1736,6 +2024,8 @@ class PublishedVariableDataType(FrozenClass):
     :ivar MetaDataProperties:
     :vartype MetaDataProperties: QualifiedName
     """
+
+    data_type = NodeId(ObjectIds.PublishedVariableDataType)
 
     ua_types = [
         ('PublishedVariable', 'NodeId'),
@@ -1771,6 +2061,8 @@ class PublishedDataItemsDataType(FrozenClass):
     :vartype PublishedData: PublishedVariableDataType
     """
 
+    data_type = NodeId(ObjectIds.PublishedDataItemsDataType)
+
     ua_types = [
         ('PublishedData', 'ListOfPublishedVariableDataType'),
                ]
@@ -1794,6 +2086,8 @@ class PublishedEventsDataType(FrozenClass):
     :ivar Filter:
     :vartype Filter: ContentFilter
     """
+
+    data_type = NodeId(ObjectIds.PublishedEventsDataType)
 
     ua_types = [
         ('EventNotifier', 'NodeId'),
@@ -1835,6 +2129,8 @@ class DataSetWriterDataType(FrozenClass):
     :vartype MessageSettings: ExtensionObject
     """
 
+    data_type = NodeId(ObjectIds.DataSetWriterDataType)
+
     ua_types = [
         ('Name', 'String'),
         ('Enabled', 'Boolean'),
@@ -1869,6 +2165,8 @@ class DataSetWriterTransportDataType(FrozenClass):
     """
     """
 
+    data_type = NodeId(ObjectIds.DataSetWriterTransportDataType)
+
     ua_types = [
                ]
 
@@ -1884,6 +2182,8 @@ class DataSetWriterTransportDataType(FrozenClass):
 class DataSetWriterMessageDataType(FrozenClass):
     """
     """
+
+    data_type = NodeId(ObjectIds.DataSetWriterMessageDataType)
 
     ua_types = [
                ]
@@ -1914,6 +2214,8 @@ class PubSubGroupDataType(FrozenClass):
     :ivar GroupProperties:
     :vartype GroupProperties: KeyValuePair
     """
+
+    data_type = NodeId(ObjectIds.PubSubGroupDataType)
 
     ua_types = [
         ('Name', 'String'),
@@ -1967,6 +2269,8 @@ class WriterGroupDataType(FrozenClass):
     :vartype Priority: Byte
     :ivar LocaleIds:
     :vartype LocaleIds: String
+    :ivar HeaderLayoutUri:
+    :vartype HeaderLayoutUri: String
     :ivar TransportSettings:
     :vartype TransportSettings: ExtensionObject
     :ivar MessageSettings:
@@ -1974,6 +2278,8 @@ class WriterGroupDataType(FrozenClass):
     :ivar DataSetWriters:
     :vartype DataSetWriters: DataSetWriterDataType
     """
+
+    data_type = NodeId(ObjectIds.WriterGroupDataType)
 
     ua_types = [
         ('Name', 'String'),
@@ -1988,6 +2294,7 @@ class WriterGroupDataType(FrozenClass):
         ('KeepAliveTime', 'Double'),
         ('Priority', 'Byte'),
         ('LocaleIds', 'ListOfString'),
+        ('HeaderLayoutUri', 'String'),
         ('TransportSettings', 'ExtensionObject'),
         ('MessageSettings', 'ExtensionObject'),
         ('DataSetWriters', 'ListOfDataSetWriterDataType'),
@@ -2006,13 +2313,14 @@ class WriterGroupDataType(FrozenClass):
         self.KeepAliveTime = 0
         self.Priority = 0
         self.LocaleIds = []
+        self.HeaderLayoutUri = None
         self.TransportSettings = ExtensionObject()
         self.MessageSettings = ExtensionObject()
         self.DataSetWriters = []
         self._freeze = True
 
     def __str__(self):
-        return f'WriterGroupDataType(Name:{self.Name}, Enabled:{self.Enabled}, SecurityMode:{self.SecurityMode}, SecurityGroupId:{self.SecurityGroupId}, SecurityKeyServices:{self.SecurityKeyServices}, MaxNetworkMessageSize:{self.MaxNetworkMessageSize}, GroupProperties:{self.GroupProperties}, WriterGroupId:{self.WriterGroupId}, PublishingInterval:{self.PublishingInterval}, KeepAliveTime:{self.KeepAliveTime}, Priority:{self.Priority}, LocaleIds:{self.LocaleIds}, TransportSettings:{self.TransportSettings}, MessageSettings:{self.MessageSettings}, DataSetWriters:{self.DataSetWriters})'
+        return f'WriterGroupDataType(Name:{self.Name}, Enabled:{self.Enabled}, SecurityMode:{self.SecurityMode}, SecurityGroupId:{self.SecurityGroupId}, SecurityKeyServices:{self.SecurityKeyServices}, MaxNetworkMessageSize:{self.MaxNetworkMessageSize}, GroupProperties:{self.GroupProperties}, WriterGroupId:{self.WriterGroupId}, PublishingInterval:{self.PublishingInterval}, KeepAliveTime:{self.KeepAliveTime}, Priority:{self.Priority}, LocaleIds:{self.LocaleIds}, HeaderLayoutUri:{self.HeaderLayoutUri}, TransportSettings:{self.TransportSettings}, MessageSettings:{self.MessageSettings}, DataSetWriters:{self.DataSetWriters})'
 
     __repr__ = __str__
 
@@ -2020,6 +2328,8 @@ class WriterGroupDataType(FrozenClass):
 class WriterGroupTransportDataType(FrozenClass):
     """
     """
+
+    data_type = NodeId(ObjectIds.WriterGroupTransportDataType)
 
     ua_types = [
                ]
@@ -2036,6 +2346,8 @@ class WriterGroupTransportDataType(FrozenClass):
 class WriterGroupMessageDataType(FrozenClass):
     """
     """
+
+    data_type = NodeId(ObjectIds.WriterGroupMessageDataType)
 
     ua_types = [
                ]
@@ -2071,6 +2383,8 @@ class PubSubConnectionDataType(FrozenClass):
     :vartype ReaderGroups: ReaderGroupDataType
     """
 
+    data_type = NodeId(ObjectIds.PubSubConnectionDataType)
+
     ua_types = [
         ('Name', 'String'),
         ('Enabled', 'Boolean'),
@@ -2105,6 +2419,8 @@ class ConnectionTransportDataType(FrozenClass):
     """
     """
 
+    data_type = NodeId(ObjectIds.ConnectionTransportDataType)
+
     ua_types = [
                ]
 
@@ -2122,6 +2438,8 @@ class NetworkAddressDataType(FrozenClass):
     :ivar NetworkInterface:
     :vartype NetworkInterface: String
     """
+
+    data_type = NodeId(ObjectIds.NetworkAddressDataType)
 
     ua_types = [
         ('NetworkInterface', 'String'),
@@ -2144,6 +2462,8 @@ class NetworkAddressUrlDataType(FrozenClass):
     :ivar Url:
     :vartype Url: String
     """
+
+    data_type = NodeId(ObjectIds.NetworkAddressUrlDataType)
 
     ua_types = [
         ('NetworkInterface', 'String'),
@@ -2185,6 +2505,8 @@ class ReaderGroupDataType(FrozenClass):
     :vartype DataSetReaders: DataSetReaderDataType
     """
 
+    data_type = NodeId(ObjectIds.ReaderGroupDataType)
+
     ua_types = [
         ('Name', 'String'),
         ('Enabled', 'Boolean'),
@@ -2221,6 +2543,8 @@ class ReaderGroupTransportDataType(FrozenClass):
     """
     """
 
+    data_type = NodeId(ObjectIds.ReaderGroupTransportDataType)
+
     ua_types = [
                ]
 
@@ -2236,6 +2560,8 @@ class ReaderGroupTransportDataType(FrozenClass):
 class ReaderGroupMessageDataType(FrozenClass):
     """
     """
+
+    data_type = NodeId(ObjectIds.ReaderGroupMessageDataType)
 
     ua_types = [
                ]
@@ -2267,6 +2593,10 @@ class DataSetReaderDataType(FrozenClass):
     :vartype DataSetFieldContentMask: DataSetFieldContentMask
     :ivar MessageReceiveTimeout:
     :vartype MessageReceiveTimeout: Double
+    :ivar KeyFrameCount:
+    :vartype KeyFrameCount: UInt32
+    :ivar HeaderLayoutUri:
+    :vartype HeaderLayoutUri: String
     :ivar SecurityMode:
     :vartype SecurityMode: MessageSecurityMode
     :ivar SecurityGroupId:
@@ -2283,6 +2613,8 @@ class DataSetReaderDataType(FrozenClass):
     :vartype SubscribedDataSet: ExtensionObject
     """
 
+    data_type = NodeId(ObjectIds.DataSetReaderDataType)
+
     ua_types = [
         ('Name', 'String'),
         ('Enabled', 'Boolean'),
@@ -2292,6 +2624,8 @@ class DataSetReaderDataType(FrozenClass):
         ('DataSetMetaData', 'DataSetMetaDataType'),
         ('DataSetFieldContentMask', 'DataSetFieldContentMask'),
         ('MessageReceiveTimeout', 'Double'),
+        ('KeyFrameCount', 'UInt32'),
+        ('HeaderLayoutUri', 'String'),
         ('SecurityMode', 'MessageSecurityMode'),
         ('SecurityGroupId', 'String'),
         ('SecurityKeyServices', 'ListOfEndpointDescription'),
@@ -2310,6 +2644,8 @@ class DataSetReaderDataType(FrozenClass):
         self.DataSetMetaData = DataSetMetaDataType()
         self.DataSetFieldContentMask = DataSetFieldContentMask(0)
         self.MessageReceiveTimeout = 0
+        self.KeyFrameCount = 0
+        self.HeaderLayoutUri = None
         self.SecurityMode = MessageSecurityMode(0)
         self.SecurityGroupId = None
         self.SecurityKeyServices = []
@@ -2320,7 +2656,7 @@ class DataSetReaderDataType(FrozenClass):
         self._freeze = True
 
     def __str__(self):
-        return f'DataSetReaderDataType(Name:{self.Name}, Enabled:{self.Enabled}, PublisherId:{self.PublisherId}, WriterGroupId:{self.WriterGroupId}, DataSetWriterId:{self.DataSetWriterId}, DataSetMetaData:{self.DataSetMetaData}, DataSetFieldContentMask:{self.DataSetFieldContentMask}, MessageReceiveTimeout:{self.MessageReceiveTimeout}, SecurityMode:{self.SecurityMode}, SecurityGroupId:{self.SecurityGroupId}, SecurityKeyServices:{self.SecurityKeyServices}, DataSetReaderProperties:{self.DataSetReaderProperties}, TransportSettings:{self.TransportSettings}, MessageSettings:{self.MessageSettings}, SubscribedDataSet:{self.SubscribedDataSet})'
+        return f'DataSetReaderDataType(Name:{self.Name}, Enabled:{self.Enabled}, PublisherId:{self.PublisherId}, WriterGroupId:{self.WriterGroupId}, DataSetWriterId:{self.DataSetWriterId}, DataSetMetaData:{self.DataSetMetaData}, DataSetFieldContentMask:{self.DataSetFieldContentMask}, MessageReceiveTimeout:{self.MessageReceiveTimeout}, KeyFrameCount:{self.KeyFrameCount}, HeaderLayoutUri:{self.HeaderLayoutUri}, SecurityMode:{self.SecurityMode}, SecurityGroupId:{self.SecurityGroupId}, SecurityKeyServices:{self.SecurityKeyServices}, DataSetReaderProperties:{self.DataSetReaderProperties}, TransportSettings:{self.TransportSettings}, MessageSettings:{self.MessageSettings}, SubscribedDataSet:{self.SubscribedDataSet})'
 
     __repr__ = __str__
 
@@ -2328,6 +2664,8 @@ class DataSetReaderDataType(FrozenClass):
 class DataSetReaderTransportDataType(FrozenClass):
     """
     """
+
+    data_type = NodeId(ObjectIds.DataSetReaderTransportDataType)
 
     ua_types = [
                ]
@@ -2345,6 +2683,8 @@ class DataSetReaderMessageDataType(FrozenClass):
     """
     """
 
+    data_type = NodeId(ObjectIds.DataSetReaderMessageDataType)
+
     ua_types = [
                ]
 
@@ -2360,6 +2700,8 @@ class DataSetReaderMessageDataType(FrozenClass):
 class SubscribedDataSetDataType(FrozenClass):
     """
     """
+
+    data_type = NodeId(ObjectIds.SubscribedDataSetDataType)
 
     ua_types = [
                ]
@@ -2378,6 +2720,8 @@ class TargetVariablesDataType(FrozenClass):
     :ivar TargetVariables:
     :vartype TargetVariables: FieldTargetDataType
     """
+
+    data_type = NodeId(ObjectIds.TargetVariablesDataType)
 
     ua_types = [
         ('TargetVariables', 'ListOfFieldTargetDataType'),
@@ -2410,6 +2754,8 @@ class FieldTargetDataType(FrozenClass):
     :ivar OverrideValue:
     :vartype OverrideValue: Variant
     """
+
+    data_type = NodeId(ObjectIds.FieldTargetDataType)
 
     ua_types = [
         ('DataSetFieldId', 'Guid'),
@@ -2445,6 +2791,8 @@ class SubscribedDataSetMirrorDataType(FrozenClass):
     :vartype RolePermissions: RolePermissionType
     """
 
+    data_type = NodeId(ObjectIds.SubscribedDataSetMirrorDataType)
+
     ua_types = [
         ('ParentNodeName', 'String'),
         ('RolePermissions', 'ListOfRolePermissionType'),
@@ -2470,6 +2818,8 @@ class PubSubConfigurationDataType(FrozenClass):
     :ivar Enabled:
     :vartype Enabled: Boolean
     """
+
+    data_type = NodeId(ObjectIds.PubSubConfigurationDataType)
 
     ua_types = [
         ('PublishedDataSets', 'ListOfPublishedDataSetDataType'),
@@ -2502,6 +2852,8 @@ class UadpWriterGroupMessageDataType(FrozenClass):
     :ivar PublishingOffset:
     :vartype PublishingOffset: Double
     """
+
+    data_type = NodeId(ObjectIds.UadpWriterGroupMessageDataType)
 
     ua_types = [
         ('GroupVersion', 'UInt32'),
@@ -2536,6 +2888,8 @@ class UadpDataSetWriterMessageDataType(FrozenClass):
     :ivar DataSetOffset:
     :vartype DataSetOffset: UInt16
     """
+
+    data_type = NodeId(ObjectIds.UadpDataSetWriterMessageDataType)
 
     ua_types = [
         ('DataSetMessageContentMask', 'UadpDataSetMessageContentMask'),
@@ -2579,6 +2933,8 @@ class UadpDataSetReaderMessageDataType(FrozenClass):
     :vartype ProcessingOffset: Double
     """
 
+    data_type = NodeId(ObjectIds.UadpDataSetReaderMessageDataType)
+
     ua_types = [
         ('GroupVersion', 'UInt32'),
         ('NetworkMessageNumber', 'UInt16'),
@@ -2615,6 +2971,8 @@ class JsonWriterGroupMessageDataType(FrozenClass):
     :vartype NetworkMessageContentMask: JsonNetworkMessageContentMask
     """
 
+    data_type = NodeId(ObjectIds.JsonWriterGroupMessageDataType)
+
     ua_types = [
         ('NetworkMessageContentMask', 'JsonNetworkMessageContentMask'),
                ]
@@ -2634,6 +2992,8 @@ class JsonDataSetWriterMessageDataType(FrozenClass):
     :ivar DataSetMessageContentMask:
     :vartype DataSetMessageContentMask: JsonDataSetMessageContentMask
     """
+
+    data_type = NodeId(ObjectIds.JsonDataSetWriterMessageDataType)
 
     ua_types = [
         ('DataSetMessageContentMask', 'JsonDataSetMessageContentMask'),
@@ -2657,6 +3017,8 @@ class JsonDataSetReaderMessageDataType(FrozenClass):
     :vartype DataSetMessageContentMask: JsonDataSetMessageContentMask
     """
 
+    data_type = NodeId(ObjectIds.JsonDataSetReaderMessageDataType)
+
     ua_types = [
         ('NetworkMessageContentMask', 'JsonNetworkMessageContentMask'),
         ('DataSetMessageContentMask', 'JsonDataSetMessageContentMask'),
@@ -2679,6 +3041,8 @@ class DatagramConnectionTransportDataType(FrozenClass):
     :vartype DiscoveryAddress: ExtensionObject
     """
 
+    data_type = NodeId(ObjectIds.DatagramConnectionTransportDataType)
+
     ua_types = [
         ('DiscoveryAddress', 'ExtensionObject'),
                ]
@@ -2700,6 +3064,8 @@ class DatagramWriterGroupTransportDataType(FrozenClass):
     :ivar MessageRepeatDelay:
     :vartype MessageRepeatDelay: Double
     """
+
+    data_type = NodeId(ObjectIds.DatagramWriterGroupTransportDataType)
 
     ua_types = [
         ('MessageRepeatCount', 'Byte'),
@@ -2724,6 +3090,8 @@ class BrokerConnectionTransportDataType(FrozenClass):
     :ivar AuthenticationProfileUri:
     :vartype AuthenticationProfileUri: String
     """
+
+    data_type = NodeId(ObjectIds.BrokerConnectionTransportDataType)
 
     ua_types = [
         ('ResourceUri', 'String'),
@@ -2753,6 +3121,8 @@ class BrokerWriterGroupTransportDataType(FrozenClass):
     :vartype RequestedDeliveryGuarantee: BrokerTransportQualityOfService
     """
 
+    data_type = NodeId(ObjectIds.BrokerWriterGroupTransportDataType)
+
     ua_types = [
         ('QueueName', 'String'),
         ('ResourceUri', 'String'),
@@ -2781,16 +3151,21 @@ class BrokerDataSetWriterTransportDataType(FrozenClass):
     :vartype ResourceUri: String
     :ivar AuthenticationProfileUri:
     :vartype AuthenticationProfileUri: String
+    :ivar RequestedDeliveryGuarantee:
+    :vartype RequestedDeliveryGuarantee: BrokerTransportQualityOfService
     :ivar MetaDataQueueName:
     :vartype MetaDataQueueName: String
     :ivar MetaDataUpdateTime:
     :vartype MetaDataUpdateTime: Double
     """
 
+    data_type = NodeId(ObjectIds.BrokerDataSetWriterTransportDataType)
+
     ua_types = [
         ('QueueName', 'String'),
         ('ResourceUri', 'String'),
         ('AuthenticationProfileUri', 'String'),
+        ('RequestedDeliveryGuarantee', 'BrokerTransportQualityOfService'),
         ('MetaDataQueueName', 'String'),
         ('MetaDataUpdateTime', 'Double'),
                ]
@@ -2799,12 +3174,13 @@ class BrokerDataSetWriterTransportDataType(FrozenClass):
         self.QueueName = None
         self.ResourceUri = None
         self.AuthenticationProfileUri = None
+        self.RequestedDeliveryGuarantee = BrokerTransportQualityOfService(0)
         self.MetaDataQueueName = None
         self.MetaDataUpdateTime = 0
         self._freeze = True
 
     def __str__(self):
-        return f'BrokerDataSetWriterTransportDataType(QueueName:{self.QueueName}, ResourceUri:{self.ResourceUri}, AuthenticationProfileUri:{self.AuthenticationProfileUri}, MetaDataQueueName:{self.MetaDataQueueName}, MetaDataUpdateTime:{self.MetaDataUpdateTime})'
+        return f'BrokerDataSetWriterTransportDataType(QueueName:{self.QueueName}, ResourceUri:{self.ResourceUri}, AuthenticationProfileUri:{self.AuthenticationProfileUri}, RequestedDeliveryGuarantee:{self.RequestedDeliveryGuarantee}, MetaDataQueueName:{self.MetaDataQueueName}, MetaDataUpdateTime:{self.MetaDataUpdateTime})'
 
     __repr__ = __str__
 
@@ -2822,6 +3198,8 @@ class BrokerDataSetReaderTransportDataType(FrozenClass):
     :ivar MetaDataQueueName:
     :vartype MetaDataQueueName: String
     """
+
+    data_type = NodeId(ObjectIds.BrokerDataSetReaderTransportDataType)
 
     ua_types = [
         ('QueueName', 'String'),
@@ -2845,6 +3223,32 @@ class BrokerDataSetReaderTransportDataType(FrozenClass):
     __repr__ = __str__
 
 
+class AliasNameDataType(FrozenClass):
+    """
+    :ivar AliasName:
+    :vartype AliasName: QualifiedName
+    :ivar ReferencedNodes:
+    :vartype ReferencedNodes: ExpandedNodeId
+    """
+
+    data_type = NodeId(ObjectIds.AliasNameDataType)
+
+    ua_types = [
+        ('AliasName', 'QualifiedName'),
+        ('ReferencedNodes', 'ListOfExpandedNodeId'),
+               ]
+
+    def __init__(self):
+        self.AliasName = QualifiedName()
+        self.ReferencedNodes = []
+        self._freeze = True
+
+    def __str__(self):
+        return f'AliasNameDataType(AliasName:{self.AliasName}, ReferencedNodes:{self.ReferencedNodes})'
+
+    __repr__ = __str__
+
+
 class RolePermissionType(FrozenClass):
     """
     :ivar RoleId:
@@ -2852,6 +3256,8 @@ class RolePermissionType(FrozenClass):
     :ivar Permissions:
     :vartype Permissions: PermissionType
     """
+
+    data_type = NodeId(ObjectIds.RolePermissionType)
 
     ua_types = [
         ('RoleId', 'NodeId'),
@@ -2886,6 +3292,8 @@ class StructureField(FrozenClass):
     :ivar IsOptional:
     :vartype IsOptional: Boolean
     """
+
+    data_type = NodeId(ObjectIds.StructureField)
 
     ua_types = [
         ('Name', 'String'),
@@ -2925,6 +3333,8 @@ class StructureDefinition(FrozenClass):
     :vartype Fields: StructureField
     """
 
+    data_type = NodeId(ObjectIds.StructureDefinition)
+
     ua_types = [
         ('DefaultEncodingId', 'NodeId'),
         ('BaseDataType', 'NodeId'),
@@ -2951,6 +3361,8 @@ class EnumDefinition(FrozenClass):
     :vartype Fields: EnumField
     """
 
+    data_type = NodeId(ObjectIds.EnumDefinition)
+
     ua_types = [
         ('Fields', 'ListOfEnumField'),
                ]
@@ -2967,8 +3379,6 @@ class EnumDefinition(FrozenClass):
 
 class Argument(FrozenClass):
     """
-    An argument for a method.
-
     :ivar Name:
     :vartype Name: String
     :ivar DataType:
@@ -2980,6 +3390,8 @@ class Argument(FrozenClass):
     :ivar Description:
     :vartype Description: LocalizedText
     """
+
+    data_type = NodeId(ObjectIds.Argument)
 
     ua_types = [
         ('Name', 'String'),
@@ -3005,8 +3417,6 @@ class Argument(FrozenClass):
 
 class EnumValueType(FrozenClass):
     """
-    A mapping between a value of an enumerated type and a name and description.
-
     :ivar Value:
     :vartype Value: Int64
     :ivar DisplayName:
@@ -3014,6 +3424,8 @@ class EnumValueType(FrozenClass):
     :ivar Description:
     :vartype Description: LocalizedText
     """
+
+    data_type = NodeId(ObjectIds.EnumValueType)
 
     ua_types = [
         ('Value', 'Int64'),
@@ -3045,6 +3457,8 @@ class EnumField(FrozenClass):
     :vartype Name: String
     """
 
+    data_type = NodeId(ObjectIds.EnumField)
+
     ua_types = [
         ('Value', 'Int64'),
         ('DisplayName', 'LocalizedText'),
@@ -3067,13 +3481,13 @@ class EnumField(FrozenClass):
 
 class OptionSet(FrozenClass):
     """
-    This abstract Structured DataType is the base DataType for all DataTypes representing a bit mask.
-
     :ivar Value:
     :vartype Value: ByteString
     :ivar ValidBits:
     :vartype ValidBits: ByteString
     """
+
+    data_type = NodeId(ObjectIds.OptionSet)
 
     ua_types = [
         ('Value', 'ByteString'),
@@ -3093,9 +3507,9 @@ class OptionSet(FrozenClass):
 
 class Union(FrozenClass):
     """
-    This abstract DataType is the base DataType for all union DataTypes.
-
     """
+
+    data_type = NodeId(ObjectIds.Union)
 
     ua_types = [
                ]
@@ -3117,6 +3531,8 @@ class TimeZoneDataType(FrozenClass):
     :vartype DaylightSavingInOffset: Boolean
     """
 
+    data_type = NodeId(ObjectIds.TimeZoneDataType)
+
     ua_types = [
         ('Offset', 'Int16'),
         ('DaylightSavingInOffset', 'Boolean'),
@@ -3135,8 +3551,6 @@ class TimeZoneDataType(FrozenClass):
 
 class ApplicationDescription(FrozenClass):
     """
-    Describes an application and how to find it.
-
     :ivar ApplicationUri:
     :vartype ApplicationUri: String
     :ivar ProductUri:
@@ -3152,6 +3566,8 @@ class ApplicationDescription(FrozenClass):
     :ivar DiscoveryUrls:
     :vartype DiscoveryUrls: String
     """
+
+    data_type = NodeId(ObjectIds.ApplicationDescription)
 
     ua_types = [
         ('ApplicationUri', 'String'),
@@ -3181,8 +3597,6 @@ class ApplicationDescription(FrozenClass):
 
 class RequestHeader(FrozenClass):
     """
-    The header passed with every server request.
-
     :ivar AuthenticationToken:
     :vartype AuthenticationToken: NodeId
     :ivar Timestamp:
@@ -3198,6 +3612,8 @@ class RequestHeader(FrozenClass):
     :ivar AdditionalHeader:
     :vartype AdditionalHeader: ExtensionObject
     """
+
+    data_type = NodeId(ObjectIds.RequestHeader)
 
     ua_types = [
         ('AuthenticationToken', 'NodeId'),
@@ -3227,8 +3643,6 @@ class RequestHeader(FrozenClass):
 
 class ResponseHeader(FrozenClass):
     """
-    The header passed with every server response.
-
     :ivar Timestamp:
     :vartype Timestamp: DateTime
     :ivar RequestHandle:
@@ -3242,6 +3656,8 @@ class ResponseHeader(FrozenClass):
     :ivar AdditionalHeader:
     :vartype AdditionalHeader: ExtensionObject
     """
+
+    data_type = NodeId(ObjectIds.ResponseHeader)
 
     ua_types = [
         ('Timestamp', 'DateTime'),
@@ -3269,13 +3685,13 @@ class ResponseHeader(FrozenClass):
 
 class ServiceFault(FrozenClass):
     """
-    The response returned by all services when there is a service level error.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
     :vartype ResponseHeader: ResponseHeader
     """
+
+    data_type = NodeId(ObjectIds.ServiceFault)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3306,6 +3722,8 @@ class SessionlessInvokeRequestType(FrozenClass):
     :ivar ServiceId:
     :vartype ServiceId: UInt32
     """
+
+    data_type = NodeId(ObjectIds.SessionlessInvokeRequestType)
 
     ua_types = [
         ('UrisVersion', 'ListOfUInt32'),
@@ -3338,6 +3756,8 @@ class SessionlessInvokeResponseType(FrozenClass):
     :ivar ServiceId:
     :vartype ServiceId: UInt32
     """
+
+    data_type = NodeId(ObjectIds.SessionlessInvokeResponseType)
 
     ua_types = [
         ('NamespaceUris', 'ListOfString'),
@@ -3387,8 +3807,6 @@ class FindServersParameters(FrozenClass):
 
 class FindServersRequest(FrozenClass):
     """
-    Finds the servers known to the discovery server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -3396,6 +3814,8 @@ class FindServersRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: FindServersParameters
     """
+
+    data_type = NodeId(ObjectIds.FindServersRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3417,8 +3837,6 @@ class FindServersRequest(FrozenClass):
 
 class FindServersResponse(FrozenClass):
     """
-    Finds the servers known to the discovery server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -3426,6 +3844,8 @@ class FindServersResponse(FrozenClass):
     :ivar Servers:
     :vartype Servers: ApplicationDescription
     """
+
+    data_type = NodeId(ObjectIds.FindServersResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3456,6 +3876,8 @@ class ServerOnNetwork(FrozenClass):
     :ivar ServerCapabilities:
     :vartype ServerCapabilities: String
     """
+
+    data_type = NodeId(ObjectIds.ServerOnNetwork)
 
     ua_types = [
         ('RecordId', 'UInt32'),
@@ -3515,6 +3937,8 @@ class FindServersOnNetworkRequest(FrozenClass):
     :vartype Parameters: FindServersOnNetworkParameters
     """
 
+    data_type = NodeId(ObjectIds.FindServersOnNetworkRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -3567,6 +3991,8 @@ class FindServersOnNetworkResponse(FrozenClass):
     :vartype Parameters: FindServersOnNetworkResult
     """
 
+    data_type = NodeId(ObjectIds.FindServersOnNetworkResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -3587,8 +4013,6 @@ class FindServersOnNetworkResponse(FrozenClass):
 
 class UserTokenPolicy(FrozenClass):
     """
-    Describes a user token that can be used with a server.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     :ivar TokenType:
@@ -3600,6 +4024,8 @@ class UserTokenPolicy(FrozenClass):
     :ivar SecurityPolicyUri:
     :vartype SecurityPolicyUri: String
     """
+
+    data_type = NodeId(ObjectIds.UserTokenPolicy)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -3625,8 +4051,6 @@ class UserTokenPolicy(FrozenClass):
 
 class EndpointDescription(FrozenClass):
     """
-    The description of a endpoint that can be used to access a server.
-
     :ivar EndpointUrl:
     :vartype EndpointUrl: String
     :ivar Server:
@@ -3644,6 +4068,8 @@ class EndpointDescription(FrozenClass):
     :ivar SecurityLevel:
     :vartype SecurityLevel: Byte
     """
+
+    data_type = NodeId(ObjectIds.EndpointDescription)
 
     ua_types = [
         ('EndpointUrl', 'String'),
@@ -3703,8 +4129,6 @@ class GetEndpointsParameters(FrozenClass):
 
 class GetEndpointsRequest(FrozenClass):
     """
-    Gets the endpoints used by the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -3712,6 +4136,8 @@ class GetEndpointsRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: GetEndpointsParameters
     """
+
+    data_type = NodeId(ObjectIds.GetEndpointsRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3733,8 +4159,6 @@ class GetEndpointsRequest(FrozenClass):
 
 class GetEndpointsResponse(FrozenClass):
     """
-    Gets the endpoints used by the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -3742,6 +4166,8 @@ class GetEndpointsResponse(FrozenClass):
     :ivar Endpoints:
     :vartype Endpoints: EndpointDescription
     """
+
+    data_type = NodeId(ObjectIds.GetEndpointsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3763,8 +4189,6 @@ class GetEndpointsResponse(FrozenClass):
 
 class RegisteredServer(FrozenClass):
     """
-    The information required to register a server with a discovery server.
-
     :ivar ServerUri:
     :vartype ServerUri: String
     :ivar ProductUri:
@@ -3782,6 +4206,8 @@ class RegisteredServer(FrozenClass):
     :ivar IsOnline:
     :vartype IsOnline: Boolean
     """
+
+    data_type = NodeId(ObjectIds.RegisteredServer)
 
     ua_types = [
         ('ServerUri', 'String'),
@@ -3813,8 +4239,6 @@ class RegisteredServer(FrozenClass):
 
 class RegisterServerRequest(FrozenClass):
     """
-    Registers a server with the discovery server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -3822,6 +4246,8 @@ class RegisterServerRequest(FrozenClass):
     :ivar Server:
     :vartype Server: RegisteredServer
     """
+
+    data_type = NodeId(ObjectIds.RegisterServerRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3843,13 +4269,13 @@ class RegisterServerRequest(FrozenClass):
 
 class RegisterServerResponse(FrozenClass):
     """
-    Registers a server with the discovery server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
     :vartype ResponseHeader: ResponseHeader
     """
+
+    data_type = NodeId(ObjectIds.RegisterServerResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -3869,9 +4295,9 @@ class RegisterServerResponse(FrozenClass):
 
 class DiscoveryConfiguration(FrozenClass):
     """
-    A base type for discovery configuration information.
-
     """
+
+    data_type = NodeId(ObjectIds.DiscoveryConfiguration)
 
     ua_types = [
                ]
@@ -3887,13 +4313,13 @@ class DiscoveryConfiguration(FrozenClass):
 
 class MdnsDiscoveryConfiguration(FrozenClass):
     """
-    The discovery information needed for mDNS registration.
-
     :ivar MdnsServerName:
     :vartype MdnsServerName: String
     :ivar ServerCapabilities:
     :vartype ServerCapabilities: String
     """
+
+    data_type = NodeId(ObjectIds.MdnsDiscoveryConfiguration)
 
     ua_types = [
         ('MdnsServerName', 'String'),
@@ -3945,6 +4371,8 @@ class RegisterServer2Request(FrozenClass):
     :vartype Parameters: RegisterServer2Parameters
     """
 
+    data_type = NodeId(ObjectIds.RegisterServer2Request)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -3975,6 +4403,8 @@ class RegisterServer2Response(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
+    data_type = NodeId(ObjectIds.RegisterServer2Response)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -3997,8 +4427,6 @@ class RegisterServer2Response(FrozenClass):
 
 class ChannelSecurityToken(FrozenClass):
     """
-    The token that identifies a set of keys for an active secure channel.
-
     :ivar ChannelId:
     :vartype ChannelId: UInt32
     :ivar TokenId:
@@ -4008,6 +4436,8 @@ class ChannelSecurityToken(FrozenClass):
     :ivar RevisedLifetime:
     :vartype RevisedLifetime: UInt32
     """
+
+    data_type = NodeId(ObjectIds.ChannelSecurityToken)
 
     ua_types = [
         ('ChannelId', 'UInt32'),
@@ -4067,8 +4497,6 @@ class OpenSecureChannelParameters(FrozenClass):
 
 class OpenSecureChannelRequest(FrozenClass):
     """
-    Creates a secure channel with a server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4076,6 +4504,8 @@ class OpenSecureChannelRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: OpenSecureChannelParameters
     """
+
+    data_type = NodeId(ObjectIds.OpenSecureChannelRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4125,8 +4555,6 @@ class OpenSecureChannelResult(FrozenClass):
 
 class OpenSecureChannelResponse(FrozenClass):
     """
-    Creates a secure channel with a server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4134,6 +4562,8 @@ class OpenSecureChannelResponse(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: OpenSecureChannelResult
     """
+
+    data_type = NodeId(ObjectIds.OpenSecureChannelResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4155,13 +4585,13 @@ class OpenSecureChannelResponse(FrozenClass):
 
 class CloseSecureChannelRequest(FrozenClass):
     """
-    Closes a secure channel.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
     :vartype RequestHeader: RequestHeader
     """
+
+    data_type = NodeId(ObjectIds.CloseSecureChannelRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4181,13 +4611,13 @@ class CloseSecureChannelRequest(FrozenClass):
 
 class CloseSecureChannelResponse(FrozenClass):
     """
-    Closes a secure channel.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
     :vartype ResponseHeader: ResponseHeader
     """
+
+    data_type = NodeId(ObjectIds.CloseSecureChannelResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4207,13 +4637,13 @@ class CloseSecureChannelResponse(FrozenClass):
 
 class SignedSoftwareCertificate(FrozenClass):
     """
-    A software certificate with a digital signature.
-
     :ivar CertificateData:
     :vartype CertificateData: ByteString
     :ivar Signature:
     :vartype Signature: ByteString
     """
+
+    data_type = NodeId(ObjectIds.SignedSoftwareCertificate)
 
     ua_types = [
         ('CertificateData', 'ByteString'),
@@ -4233,13 +4663,13 @@ class SignedSoftwareCertificate(FrozenClass):
 
 class SignatureData(FrozenClass):
     """
-    A digital signature.
-
     :ivar Algorithm:
     :vartype Algorithm: String
     :ivar Signature:
     :vartype Signature: ByteString
     """
+
+    data_type = NodeId(ObjectIds.SignatureData)
 
     ua_types = [
         ('Algorithm', 'String'),
@@ -4307,8 +4737,6 @@ class CreateSessionParameters(FrozenClass):
 
 class CreateSessionRequest(FrozenClass):
     """
-    Creates a new session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4316,6 +4744,8 @@ class CreateSessionRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: CreateSessionParameters
     """
+
+    data_type = NodeId(ObjectIds.CreateSessionRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4389,8 +4819,6 @@ class CreateSessionResult(FrozenClass):
 
 class CreateSessionResponse(FrozenClass):
     """
-    Creates a new session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4398,6 +4826,8 @@ class CreateSessionResponse(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: CreateSessionResult
     """
+
+    data_type = NodeId(ObjectIds.CreateSessionResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4419,11 +4849,11 @@ class CreateSessionResponse(FrozenClass):
 
 class UserIdentityToken(FrozenClass):
     """
-    A base type for a user identity token.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     """
+
+    data_type = NodeId(ObjectIds.UserIdentityToken)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -4441,11 +4871,11 @@ class UserIdentityToken(FrozenClass):
 
 class AnonymousIdentityToken(FrozenClass):
     """
-    A token representing an anonymous user.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     """
+
+    data_type = NodeId(ObjectIds.AnonymousIdentityToken)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -4463,8 +4893,6 @@ class AnonymousIdentityToken(FrozenClass):
 
 class UserNameIdentityToken(FrozenClass):
     """
-    A token representing a user identified by a user name and password.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     :ivar UserName:
@@ -4474,6 +4902,8 @@ class UserNameIdentityToken(FrozenClass):
     :ivar EncryptionAlgorithm:
     :vartype EncryptionAlgorithm: String
     """
+
+    data_type = NodeId(ObjectIds.UserNameIdentityToken)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -4497,13 +4927,13 @@ class UserNameIdentityToken(FrozenClass):
 
 class X509IdentityToken(FrozenClass):
     """
-    A token representing a user identified by an X509 certificate.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     :ivar CertificateData:
     :vartype CertificateData: ByteString
     """
+
+    data_type = NodeId(ObjectIds.X509IdentityToken)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -4523,8 +4953,6 @@ class X509IdentityToken(FrozenClass):
 
 class IssuedIdentityToken(FrozenClass):
     """
-    A token representing a user identified by a WS-Security XML token.
-
     :ivar PolicyId:
     :vartype PolicyId: String
     :ivar TokenData:
@@ -4532,6 +4960,8 @@ class IssuedIdentityToken(FrozenClass):
     :ivar EncryptionAlgorithm:
     :vartype EncryptionAlgorithm: String
     """
+
+    data_type = NodeId(ObjectIds.IssuedIdentityToken)
 
     ua_types = [
         ('PolicyId', 'String'),
@@ -4589,8 +5019,6 @@ class ActivateSessionParameters(FrozenClass):
 
 class ActivateSessionRequest(FrozenClass):
     """
-    Activates a session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4598,6 +5026,8 @@ class ActivateSessionRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: ActivateSessionParameters
     """
+
+    data_type = NodeId(ObjectIds.ActivateSessionRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4647,8 +5077,6 @@ class ActivateSessionResult(FrozenClass):
 
 class ActivateSessionResponse(FrozenClass):
     """
-    Activates a session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4656,6 +5084,8 @@ class ActivateSessionResponse(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: ActivateSessionResult
     """
+
+    data_type = NodeId(ObjectIds.ActivateSessionResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4677,8 +5107,6 @@ class ActivateSessionResponse(FrozenClass):
 
 class CloseSessionRequest(FrozenClass):
     """
-    Closes a session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4686,6 +5114,8 @@ class CloseSessionRequest(FrozenClass):
     :ivar DeleteSubscriptions:
     :vartype DeleteSubscriptions: Boolean
     """
+
+    data_type = NodeId(ObjectIds.CloseSessionRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4707,13 +5137,13 @@ class CloseSessionRequest(FrozenClass):
 
 class CloseSessionResponse(FrozenClass):
     """
-    Closes a session with the server.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
     :vartype ResponseHeader: ResponseHeader
     """
+
+    data_type = NodeId(ObjectIds.CloseSessionResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4753,8 +5183,6 @@ class CancelParameters(FrozenClass):
 
 class CancelRequest(FrozenClass):
     """
-    Cancels an outstanding request.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4762,6 +5190,8 @@ class CancelRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: CancelParameters
     """
+
+    data_type = NodeId(ObjectIds.CancelRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4803,8 +5233,6 @@ class CancelResult(FrozenClass):
 
 class CancelResponse(FrozenClass):
     """
-    Cancels an outstanding request.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4812,6 +5240,8 @@ class CancelResponse(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: CancelResult
     """
+
+    data_type = NodeId(ObjectIds.CancelResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -4833,8 +5263,6 @@ class CancelResponse(FrozenClass):
 
 class NodeAttributes(FrozenClass):
     """
-    The base attributes for all nodes.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -4846,6 +5274,8 @@ class NodeAttributes(FrozenClass):
     :ivar UserWriteMask:
     :vartype UserWriteMask: UInt32
     """
+
+    data_type = NodeId(ObjectIds.NodeAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -4871,8 +5301,6 @@ class NodeAttributes(FrozenClass):
 
 class ObjectAttributes(FrozenClass):
     """
-    The attributes for an object node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -4886,6 +5314,8 @@ class ObjectAttributes(FrozenClass):
     :ivar EventNotifier:
     :vartype EventNotifier: Byte
     """
+
+    data_type = NodeId(ObjectIds.ObjectAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -4913,8 +5343,6 @@ class ObjectAttributes(FrozenClass):
 
 class VariableAttributes(FrozenClass):
     """
-    The attributes for a variable node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -4942,6 +5370,8 @@ class VariableAttributes(FrozenClass):
     :ivar Historizing:
     :vartype Historizing: Boolean
     """
+
+    data_type = NodeId(ObjectIds.VariableAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -4983,8 +5413,6 @@ class VariableAttributes(FrozenClass):
 
 class MethodAttributes(FrozenClass):
     """
-    The attributes for a method node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5000,6 +5428,8 @@ class MethodAttributes(FrozenClass):
     :ivar UserExecutable:
     :vartype UserExecutable: Boolean
     """
+
+    data_type = NodeId(ObjectIds.MethodAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5029,8 +5459,6 @@ class MethodAttributes(FrozenClass):
 
 class ObjectTypeAttributes(FrozenClass):
     """
-    The attributes for an object type node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5044,6 +5472,8 @@ class ObjectTypeAttributes(FrozenClass):
     :ivar IsAbstract:
     :vartype IsAbstract: Boolean
     """
+
+    data_type = NodeId(ObjectIds.ObjectTypeAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5071,8 +5501,6 @@ class ObjectTypeAttributes(FrozenClass):
 
 class VariableTypeAttributes(FrozenClass):
     """
-    The attributes for a variable type node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5094,6 +5522,8 @@ class VariableTypeAttributes(FrozenClass):
     :ivar IsAbstract:
     :vartype IsAbstract: Boolean
     """
+
+    data_type = NodeId(ObjectIds.VariableTypeAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5129,8 +5559,6 @@ class VariableTypeAttributes(FrozenClass):
 
 class ReferenceTypeAttributes(FrozenClass):
     """
-    The attributes for a reference type node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5148,6 +5576,8 @@ class ReferenceTypeAttributes(FrozenClass):
     :ivar InverseName:
     :vartype InverseName: LocalizedText
     """
+
+    data_type = NodeId(ObjectIds.ReferenceTypeAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5179,8 +5609,6 @@ class ReferenceTypeAttributes(FrozenClass):
 
 class DataTypeAttributes(FrozenClass):
     """
-    The attributes for a data type node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5194,6 +5622,8 @@ class DataTypeAttributes(FrozenClass):
     :ivar IsAbstract:
     :vartype IsAbstract: Boolean
     """
+
+    data_type = NodeId(ObjectIds.DataTypeAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5221,8 +5651,6 @@ class DataTypeAttributes(FrozenClass):
 
 class ViewAttributes(FrozenClass):
     """
-    The attributes for a view node.
-
     :ivar SpecifiedAttributes:
     :vartype SpecifiedAttributes: UInt32
     :ivar DisplayName:
@@ -5238,6 +5666,8 @@ class ViewAttributes(FrozenClass):
     :ivar EventNotifier:
     :vartype EventNotifier: Byte
     """
+
+    data_type = NodeId(ObjectIds.ViewAttributes)
 
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
@@ -5273,6 +5703,8 @@ class GenericAttributeValue(FrozenClass):
     :vartype Value: Variant
     """
 
+    data_type = NodeId(ObjectIds.GenericAttributeValue)
+
     ua_types = [
         ('AttributeId', 'UInt32'),
         ('Value', 'Variant'),
@@ -5305,6 +5737,8 @@ class GenericAttributes(FrozenClass):
     :vartype AttributeValues: GenericAttributeValue
     """
 
+    data_type = NodeId(ObjectIds.GenericAttributes)
+
     ua_types = [
         ('SpecifiedAttributes', 'UInt32'),
         ('DisplayName', 'LocalizedText'),
@@ -5331,8 +5765,6 @@ class GenericAttributes(FrozenClass):
 
 class AddNodesItem(FrozenClass):
     """
-    A request to add a node to the server address space.
-
     :ivar ParentNodeId:
     :vartype ParentNodeId: ExpandedNodeId
     :ivar ReferenceTypeId:
@@ -5348,6 +5780,8 @@ class AddNodesItem(FrozenClass):
     :ivar TypeDefinition:
     :vartype TypeDefinition: ExpandedNodeId
     """
+
+    data_type = NodeId(ObjectIds.AddNodesItem)
 
     ua_types = [
         ('ParentNodeId', 'ExpandedNodeId'),
@@ -5377,8 +5811,6 @@ class AddNodesItem(FrozenClass):
 
 class AddNodesResult(FrozenClass):
     """
-    A result of an add node operation.
-
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
     :ivar AddedNodeId:
@@ -5423,8 +5855,6 @@ class AddNodesParameters(FrozenClass):
 
 class AddNodesRequest(FrozenClass):
     """
-    Adds one or more nodes to the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -5432,6 +5862,8 @@ class AddNodesRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: AddNodesParameters
     """
+
+    data_type = NodeId(ObjectIds.AddNodesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5453,8 +5885,6 @@ class AddNodesRequest(FrozenClass):
 
 class AddNodesResponse(FrozenClass):
     """
-    Adds one or more nodes to the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -5464,6 +5894,8 @@ class AddNodesResponse(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.AddNodesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5487,8 +5919,6 @@ class AddNodesResponse(FrozenClass):
 
 class AddReferencesItem(FrozenClass):
     """
-    A request to add a reference to the server address space.
-
     :ivar SourceNodeId:
     :vartype SourceNodeId: NodeId
     :ivar ReferenceTypeId:
@@ -5502,6 +5932,8 @@ class AddReferencesItem(FrozenClass):
     :ivar TargetNodeClass:
     :vartype TargetNodeClass: NodeClass
     """
+
+    data_type = NodeId(ObjectIds.AddReferencesItem)
 
     ua_types = [
         ('SourceNodeId', 'NodeId'),
@@ -5549,8 +5981,6 @@ class AddReferencesParameters(FrozenClass):
 
 class AddReferencesRequest(FrozenClass):
     """
-    Adds one or more references to the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -5558,6 +5988,8 @@ class AddReferencesRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: AddReferencesParameters
     """
+
+    data_type = NodeId(ObjectIds.AddReferencesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5579,8 +6011,6 @@ class AddReferencesRequest(FrozenClass):
 
 class AddReferencesResponse(FrozenClass):
     """
-    Adds one or more references to the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -5590,6 +6020,8 @@ class AddReferencesResponse(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.AddReferencesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5613,13 +6045,13 @@ class AddReferencesResponse(FrozenClass):
 
 class DeleteNodesItem(FrozenClass):
     """
-    A request to delete a node to the server address space.
-
     :ivar NodeId:
     :vartype NodeId: NodeId
     :ivar DeleteTargetReferences:
     :vartype DeleteTargetReferences: Boolean
     """
+
+    data_type = NodeId(ObjectIds.DeleteNodesItem)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -5659,8 +6091,6 @@ class DeleteNodesParameters(FrozenClass):
 
 class DeleteNodesRequest(FrozenClass):
     """
-    Delete one or more nodes from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -5668,6 +6098,8 @@ class DeleteNodesRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: DeleteNodesParameters
     """
+
+    data_type = NodeId(ObjectIds.DeleteNodesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5689,8 +6121,6 @@ class DeleteNodesRequest(FrozenClass):
 
 class DeleteNodesResponse(FrozenClass):
     """
-    Delete one or more nodes from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -5700,6 +6130,8 @@ class DeleteNodesResponse(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.DeleteNodesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5723,8 +6155,6 @@ class DeleteNodesResponse(FrozenClass):
 
 class DeleteReferencesItem(FrozenClass):
     """
-    A request to delete a node from the server address space.
-
     :ivar SourceNodeId:
     :vartype SourceNodeId: NodeId
     :ivar ReferenceTypeId:
@@ -5736,6 +6166,8 @@ class DeleteReferencesItem(FrozenClass):
     :ivar DeleteBidirectional:
     :vartype DeleteBidirectional: Boolean
     """
+
+    data_type = NodeId(ObjectIds.DeleteReferencesItem)
 
     ua_types = [
         ('SourceNodeId', 'NodeId'),
@@ -5781,8 +6213,6 @@ class DeleteReferencesParameters(FrozenClass):
 
 class DeleteReferencesRequest(FrozenClass):
     """
-    Delete one or more references from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -5790,6 +6220,8 @@ class DeleteReferencesRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: DeleteReferencesParameters
     """
+
+    data_type = NodeId(ObjectIds.DeleteReferencesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5835,8 +6267,6 @@ class DeleteReferencesResult(FrozenClass):
 
 class DeleteReferencesResponse(FrozenClass):
     """
-    Delete one or more references from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -5844,6 +6274,8 @@ class DeleteReferencesResponse(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: DeleteReferencesResult
     """
+
+    data_type = NodeId(ObjectIds.DeleteReferencesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -5865,8 +6297,6 @@ class DeleteReferencesResponse(FrozenClass):
 
 class ViewDescription(FrozenClass):
     """
-    The view to browse.
-
     :ivar ViewId:
     :vartype ViewId: NodeId
     :ivar Timestamp:
@@ -5874,6 +6304,8 @@ class ViewDescription(FrozenClass):
     :ivar ViewVersion:
     :vartype ViewVersion: UInt32
     """
+
+    data_type = NodeId(ObjectIds.ViewDescription)
 
     ua_types = [
         ('ViewId', 'NodeId'),
@@ -5895,8 +6327,6 @@ class ViewDescription(FrozenClass):
 
 class BrowseDescription(FrozenClass):
     """
-    A request to browse the the references from a node.
-
     :ivar NodeId:
     :vartype NodeId: NodeId
     :ivar BrowseDirection:
@@ -5910,6 +6340,8 @@ class BrowseDescription(FrozenClass):
     :ivar ResultMask:
     :vartype ResultMask: UInt32
     """
+
+    data_type = NodeId(ObjectIds.BrowseDescription)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -5937,8 +6369,6 @@ class BrowseDescription(FrozenClass):
 
 class ReferenceDescription(FrozenClass):
     """
-    The description of a reference.
-
     :ivar ReferenceTypeId:
     :vartype ReferenceTypeId: NodeId
     :ivar IsForward:
@@ -5954,6 +6384,8 @@ class ReferenceDescription(FrozenClass):
     :ivar TypeDefinition:
     :vartype TypeDefinition: ExpandedNodeId
     """
+
+    data_type = NodeId(ObjectIds.ReferenceDescription)
 
     ua_types = [
         ('ReferenceTypeId', 'NodeId'),
@@ -5983,8 +6415,6 @@ class ReferenceDescription(FrozenClass):
 
 class BrowseResult(FrozenClass):
     """
-    The result of a browse operation.
-
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
     :ivar ContinuationPoint:
@@ -6041,8 +6471,6 @@ class BrowseParameters(FrozenClass):
 
 class BrowseRequest(FrozenClass):
     """
-    Browse the references for one or more nodes from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -6050,6 +6478,8 @@ class BrowseRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: BrowseParameters
     """
+
+    data_type = NodeId(ObjectIds.BrowseRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6071,8 +6501,6 @@ class BrowseRequest(FrozenClass):
 
 class BrowseResponse(FrozenClass):
     """
-    Browse the references for one or more nodes from the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -6082,6 +6510,8 @@ class BrowseResponse(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.BrowseResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6129,8 +6559,6 @@ class BrowseNextParameters(FrozenClass):
 
 class BrowseNextRequest(FrozenClass):
     """
-    Continues one or more browse operations.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -6138,6 +6566,8 @@ class BrowseNextRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: BrowseNextParameters
     """
+
+    data_type = NodeId(ObjectIds.BrowseNextRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6183,8 +6613,6 @@ class BrowseNextResult(FrozenClass):
 
 class BrowseNextResponse(FrozenClass):
     """
-    Continues one or more browse operations.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -6192,6 +6620,8 @@ class BrowseNextResponse(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: BrowseNextResult
     """
+
+    data_type = NodeId(ObjectIds.BrowseNextResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6213,8 +6643,6 @@ class BrowseNextResponse(FrozenClass):
 
 class RelativePathElement(FrozenClass):
     """
-    An element in a relative path.
-
     :ivar ReferenceTypeId:
     :vartype ReferenceTypeId: NodeId
     :ivar IsInverse:
@@ -6224,6 +6652,8 @@ class RelativePathElement(FrozenClass):
     :ivar TargetName:
     :vartype TargetName: QualifiedName
     """
+
+    data_type = NodeId(ObjectIds.RelativePathElement)
 
     ua_types = [
         ('ReferenceTypeId', 'NodeId'),
@@ -6247,11 +6677,11 @@ class RelativePathElement(FrozenClass):
 
 class RelativePath(FrozenClass):
     """
-    A relative path constructed from reference types and browse names.
-
     :ivar Elements:
     :vartype Elements: RelativePathElement
     """
+
+    data_type = NodeId(ObjectIds.RelativePath)
 
     ua_types = [
         ('Elements', 'ListOfRelativePathElement'),
@@ -6269,13 +6699,13 @@ class RelativePath(FrozenClass):
 
 class BrowsePath(FrozenClass):
     """
-    A request to translate a path into a node id.
-
     :ivar StartingNode:
     :vartype StartingNode: NodeId
     :ivar RelativePath:
     :vartype RelativePath: RelativePath
     """
+
+    data_type = NodeId(ObjectIds.BrowsePath)
 
     ua_types = [
         ('StartingNode', 'NodeId'),
@@ -6295,13 +6725,13 @@ class BrowsePath(FrozenClass):
 
 class BrowsePathTarget(FrozenClass):
     """
-    The target of the translated path.
-
     :ivar TargetId:
     :vartype TargetId: ExpandedNodeId
     :ivar RemainingPathIndex:
     :vartype RemainingPathIndex: UInt32
     """
+
+    data_type = NodeId(ObjectIds.BrowsePathTarget)
 
     ua_types = [
         ('TargetId', 'ExpandedNodeId'),
@@ -6321,8 +6751,6 @@ class BrowsePathTarget(FrozenClass):
 
 class BrowsePathResult(FrozenClass):
     """
-    The result of a translate opearation.
-
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
     :ivar Targets:
@@ -6367,8 +6795,6 @@ class TranslateBrowsePathsToNodeIdsParameters(FrozenClass):
 
 class TranslateBrowsePathsToNodeIdsRequest(FrozenClass):
     """
-    Translates one or more paths in the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -6376,6 +6802,8 @@ class TranslateBrowsePathsToNodeIdsRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: TranslateBrowsePathsToNodeIdsParameters
     """
+
+    data_type = NodeId(ObjectIds.TranslateBrowsePathsToNodeIdsRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6397,8 +6825,6 @@ class TranslateBrowsePathsToNodeIdsRequest(FrozenClass):
 
 class TranslateBrowsePathsToNodeIdsResponse(FrozenClass):
     """
-    Translates one or more paths in the server address space.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -6408,6 +6834,8 @@ class TranslateBrowsePathsToNodeIdsResponse(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.TranslateBrowsePathsToNodeIdsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6451,8 +6879,6 @@ class RegisterNodesParameters(FrozenClass):
 
 class RegisterNodesRequest(FrozenClass):
     """
-    Registers one or more nodes for repeated use within a session.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -6460,6 +6886,8 @@ class RegisterNodesRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: RegisterNodesParameters
     """
+
+    data_type = NodeId(ObjectIds.RegisterNodesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6501,8 +6929,6 @@ class RegisterNodesResult(FrozenClass):
 
 class RegisterNodesResponse(FrozenClass):
     """
-    Registers one or more nodes for repeated use within a session.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -6510,6 +6936,8 @@ class RegisterNodesResponse(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: RegisterNodesResult
     """
+
+    data_type = NodeId(ObjectIds.RegisterNodesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6551,8 +6979,6 @@ class UnregisterNodesParameters(FrozenClass):
 
 class UnregisterNodesRequest(FrozenClass):
     """
-    Unregisters one or more previously registered nodes.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -6560,6 +6986,8 @@ class UnregisterNodesRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: UnregisterNodesParameters
     """
+
+    data_type = NodeId(ObjectIds.UnregisterNodesRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6581,13 +7009,13 @@ class UnregisterNodesRequest(FrozenClass):
 
 class UnregisterNodesResponse(FrozenClass):
     """
-    Unregisters one or more previously registered nodes.
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
     :vartype ResponseHeader: ResponseHeader
     """
+
+    data_type = NodeId(ObjectIds.UnregisterNodesResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -6626,6 +7054,8 @@ class EndpointConfiguration(FrozenClass):
     :ivar SecurityTokenLifetime:
     :vartype SecurityTokenLifetime: Int32
     """
+
+    data_type = NodeId(ObjectIds.EndpointConfiguration)
 
     ua_types = [
         ('OperationTimeout', 'Int32'),
@@ -6667,6 +7097,8 @@ class QueryDataDescription(FrozenClass):
     :vartype IndexRange: String
     """
 
+    data_type = NodeId(ObjectIds.QueryDataDescription)
+
     ua_types = [
         ('RelativePath', 'RelativePath'),
         ('AttributeId', 'UInt32'),
@@ -6695,6 +7127,8 @@ class NodeTypeDescription(FrozenClass):
     :vartype DataToReturn: QueryDataDescription
     """
 
+    data_type = NodeId(ObjectIds.NodeTypeDescription)
+
     ua_types = [
         ('TypeDefinitionNode', 'ExpandedNodeId'),
         ('IncludeSubTypes', 'Boolean'),
@@ -6722,6 +7156,8 @@ class QueryDataSet(FrozenClass):
     :ivar Values:
     :vartype Values: Variant
     """
+
+    data_type = NodeId(ObjectIds.QueryDataSet)
 
     ua_types = [
         ('NodeId', 'ExpandedNodeId'),
@@ -6753,6 +7189,8 @@ class NodeReference(FrozenClass):
     :vartype ReferencedNodeIds: NodeId
     """
 
+    data_type = NodeId(ObjectIds.NodeReference)
+
     ua_types = [
         ('NodeId', 'NodeId'),
         ('ReferenceTypeId', 'NodeId'),
@@ -6781,6 +7219,8 @@ class ContentFilterElement(FrozenClass):
     :vartype FilterOperands: ExtensionObject
     """
 
+    data_type = NodeId(ObjectIds.ContentFilterElement)
+
     ua_types = [
         ('FilterOperator', 'FilterOperator'),
         ('FilterOperands', 'ListOfExtensionObject'),
@@ -6803,6 +7243,8 @@ class ContentFilter(FrozenClass):
     :vartype Elements: ContentFilterElement
     """
 
+    data_type = NodeId(ObjectIds.ContentFilter)
+
     ua_types = [
         ('Elements', 'ListOfContentFilterElement'),
                ]
@@ -6823,6 +7265,8 @@ class ElementOperand(FrozenClass):
     :vartype Index: UInt32
     """
 
+    data_type = NodeId(ObjectIds.ElementOperand)
+
     ua_types = [
         ('Index', 'UInt32'),
                ]
@@ -6842,6 +7286,8 @@ class LiteralOperand(FrozenClass):
     :ivar Value:
     :vartype Value: Variant
     """
+
+    data_type = NodeId(ObjectIds.LiteralOperand)
 
     ua_types = [
         ('Value', 'Variant'),
@@ -6870,6 +7316,8 @@ class AttributeOperand(FrozenClass):
     :ivar IndexRange:
     :vartype IndexRange: String
     """
+
+    data_type = NodeId(ObjectIds.AttributeOperand)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -6904,6 +7352,8 @@ class SimpleAttributeOperand(FrozenClass):
     :ivar IndexRange:
     :vartype IndexRange: String
     """
+
+    data_type = NodeId(ObjectIds.SimpleAttributeOperand)
 
     ua_types = [
         ('TypeDefinitionId', 'NodeId'),
@@ -7051,6 +7501,8 @@ class QueryFirstRequest(FrozenClass):
     :vartype Parameters: QueryFirstParameters
     """
 
+    data_type = NodeId(ObjectIds.QueryFirstRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -7115,6 +7567,8 @@ class QueryFirstResponse(FrozenClass):
     :vartype Parameters: QueryFirstResult
     """
 
+    data_type = NodeId(ObjectIds.QueryFirstResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -7166,6 +7620,8 @@ class QueryNextRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: QueryNextParameters
     """
+
+    data_type = NodeId(ObjectIds.QueryNextRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7219,6 +7675,8 @@ class QueryNextResponse(FrozenClass):
     :vartype Parameters: QueryNextResult
     """
 
+    data_type = NodeId(ObjectIds.QueryNextResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -7248,6 +7706,8 @@ class ReadValueId(FrozenClass):
     :ivar DataEncoding:
     :vartype DataEncoding: QualifiedName
     """
+
+    data_type = NodeId(ObjectIds.ReadValueId)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -7307,6 +7767,8 @@ class ReadRequest(FrozenClass):
     :vartype Parameters: ReadParameters
     """
 
+    data_type = NodeId(ObjectIds.ReadRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -7336,6 +7798,8 @@ class ReadResponse(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.ReadResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7368,6 +7832,8 @@ class HistoryReadValueId(FrozenClass):
     :ivar ContinuationPoint:
     :vartype ContinuationPoint: ByteString
     """
+
+    data_type = NodeId(ObjectIds.HistoryReadValueId)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -7421,6 +7887,8 @@ class HistoryReadDetails(FrozenClass):
     """
     """
 
+    data_type = NodeId(ObjectIds.HistoryReadDetails)
+
     ua_types = [
                ]
 
@@ -7444,6 +7912,8 @@ class ReadEventDetails(FrozenClass):
     :ivar Filter:
     :vartype Filter: EventFilter
     """
+
+    data_type = NodeId(ObjectIds.ReadEventDetails)
 
     ua_types = [
         ('NumValuesPerNode', 'UInt32'),
@@ -7478,6 +7948,8 @@ class ReadRawModifiedDetails(FrozenClass):
     :ivar ReturnBounds:
     :vartype ReturnBounds: Boolean
     """
+
+    data_type = NodeId(ObjectIds.ReadRawModifiedDetails)
 
     ua_types = [
         ('IsReadModified', 'Boolean'),
@@ -7515,6 +7987,8 @@ class ReadProcessedDetails(FrozenClass):
     :vartype AggregateConfiguration: AggregateConfiguration
     """
 
+    data_type = NodeId(ObjectIds.ReadProcessedDetails)
+
     ua_types = [
         ('StartTime', 'DateTime'),
         ('EndTime', 'DateTime'),
@@ -7545,6 +8019,8 @@ class ReadAtTimeDetails(FrozenClass):
     :vartype UseSimpleBounds: Boolean
     """
 
+    data_type = NodeId(ObjectIds.ReadAtTimeDetails)
+
     ua_types = [
         ('ReqTimes', 'ListOfDateTime'),
         ('UseSimpleBounds', 'Boolean'),
@@ -7561,11 +8037,35 @@ class ReadAtTimeDetails(FrozenClass):
     __repr__ = __str__
 
 
+class ReadAnnotationDataDetails(FrozenClass):
+    """
+    :ivar ReqTimes:
+    :vartype ReqTimes: DateTime
+    """
+
+    data_type = NodeId(ObjectIds.ReadAnnotationDataDetails)
+
+    ua_types = [
+        ('ReqTimes', 'ListOfDateTime'),
+               ]
+
+    def __init__(self):
+        self.ReqTimes = []
+        self._freeze = True
+
+    def __str__(self):
+        return f'ReadAnnotationDataDetails(ReqTimes:{self.ReqTimes})'
+
+    __repr__ = __str__
+
+
 class HistoryData(FrozenClass):
     """
     :ivar DataValues:
     :vartype DataValues: DataValue
     """
+
+    data_type = NodeId(ObjectIds.HistoryData)
 
     ua_types = [
         ('DataValues', 'ListOfDataValue'),
@@ -7590,6 +8090,8 @@ class ModificationInfo(FrozenClass):
     :ivar UserName:
     :vartype UserName: String
     """
+
+    data_type = NodeId(ObjectIds.ModificationInfo)
 
     ua_types = [
         ('ModificationTime', 'DateTime'),
@@ -7617,6 +8119,8 @@ class HistoryModifiedData(FrozenClass):
     :vartype ModificationInfos: ModificationInfo
     """
 
+    data_type = NodeId(ObjectIds.HistoryModifiedData)
+
     ua_types = [
         ('DataValues', 'ListOfDataValue'),
         ('ModificationInfos', 'ListOfModificationInfo'),
@@ -7638,6 +8142,8 @@ class HistoryEvent(FrozenClass):
     :ivar Events:
     :vartype Events: HistoryEventFieldList
     """
+
+    data_type = NodeId(ObjectIds.HistoryEvent)
 
     ua_types = [
         ('Events', 'ListOfHistoryEventFieldList'),
@@ -7695,6 +8201,8 @@ class HistoryReadRequest(FrozenClass):
     :vartype Parameters: HistoryReadParameters
     """
 
+    data_type = NodeId(ObjectIds.HistoryReadRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -7724,6 +8232,8 @@ class HistoryReadResponse(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.HistoryReadResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -7756,6 +8266,8 @@ class WriteValue(FrozenClass):
     :ivar Value:
     :vartype Value: DataValue
     """
+
+    data_type = NodeId(ObjectIds.WriteValue)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -7807,6 +8319,8 @@ class WriteRequest(FrozenClass):
     :vartype Parameters: WriteParameters
     """
 
+    data_type = NodeId(ObjectIds.WriteRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -7837,6 +8351,8 @@ class WriteResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
+    data_type = NodeId(ObjectIds.WriteResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -7863,6 +8379,8 @@ class HistoryUpdateDetails(FrozenClass):
     :vartype NodeId: NodeId
     """
 
+    data_type = NodeId(ObjectIds.HistoryUpdateDetails)
+
     ua_types = [
         ('NodeId', 'NodeId'),
                ]
@@ -7886,6 +8404,8 @@ class UpdateDataDetails(FrozenClass):
     :ivar UpdateValues:
     :vartype UpdateValues: DataValue
     """
+
+    data_type = NodeId(ObjectIds.UpdateDataDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -7914,6 +8434,8 @@ class UpdateStructureDataDetails(FrozenClass):
     :ivar UpdateValues:
     :vartype UpdateValues: DataValue
     """
+
+    data_type = NodeId(ObjectIds.UpdateStructureDataDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -7944,6 +8466,8 @@ class UpdateEventDetails(FrozenClass):
     :ivar EventData:
     :vartype EventData: HistoryEventFieldList
     """
+
+    data_type = NodeId(ObjectIds.UpdateEventDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -7977,6 +8501,8 @@ class DeleteRawModifiedDetails(FrozenClass):
     :vartype EndTime: DateTime
     """
 
+    data_type = NodeId(ObjectIds.DeleteRawModifiedDetails)
+
     ua_types = [
         ('NodeId', 'NodeId'),
         ('IsDeleteModified', 'Boolean'),
@@ -8005,6 +8531,8 @@ class DeleteAtTimeDetails(FrozenClass):
     :vartype ReqTimes: DateTime
     """
 
+    data_type = NodeId(ObjectIds.DeleteAtTimeDetails)
+
     ua_types = [
         ('NodeId', 'NodeId'),
         ('ReqTimes', 'ListOfDateTime'),
@@ -8028,6 +8556,8 @@ class DeleteEventDetails(FrozenClass):
     :ivar EventIds:
     :vartype EventIds: ByteString
     """
+
+    data_type = NodeId(ObjectIds.DeleteEventDetails)
 
     ua_types = [
         ('NodeId', 'NodeId'),
@@ -8103,6 +8633,8 @@ class HistoryUpdateRequest(FrozenClass):
     :vartype Parameters: HistoryUpdateParameters
     """
 
+    data_type = NodeId(ObjectIds.HistoryUpdateRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -8133,6 +8665,8 @@ class HistoryUpdateResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
+    data_type = NodeId(ObjectIds.HistoryUpdateResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -8162,6 +8696,8 @@ class CallMethodRequest(FrozenClass):
     :ivar InputArguments:
     :vartype InputArguments: Variant
     """
+
+    data_type = NodeId(ObjectIds.CallMethodRequest)
 
     ua_types = [
         ('ObjectId', 'NodeId'),
@@ -8243,6 +8779,8 @@ class CallRequest(FrozenClass):
     :vartype Parameters: CallParameters
     """
 
+    data_type = NodeId(ObjectIds.CallRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -8273,6 +8811,8 @@ class CallResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
+    data_type = NodeId(ObjectIds.CallResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -8297,6 +8837,8 @@ class MonitoringFilter(FrozenClass):
     """
     """
 
+    data_type = NodeId(ObjectIds.MonitoringFilter)
+
     ua_types = [
                ]
 
@@ -8318,6 +8860,8 @@ class DataChangeFilter(FrozenClass):
     :ivar DeadbandValue:
     :vartype DeadbandValue: Double
     """
+
+    data_type = NodeId(ObjectIds.DataChangeFilter)
 
     ua_types = [
         ('Trigger', 'DataChangeTrigger'),
@@ -8344,6 +8888,8 @@ class EventFilter(FrozenClass):
     :ivar WhereClause:
     :vartype WhereClause: ContentFilter
     """
+
+    data_type = NodeId(ObjectIds.EventFilter)
 
     ua_types = [
         ('SelectClauses', 'ListOfSimpleAttributeOperand'),
@@ -8374,6 +8920,8 @@ class AggregateConfiguration(FrozenClass):
     :ivar UseSlopedExtrapolation:
     :vartype UseSlopedExtrapolation: Boolean
     """
+
+    data_type = NodeId(ObjectIds.AggregateConfiguration)
 
     ua_types = [
         ('UseServerCapabilitiesDefaults', 'Boolean'),
@@ -8408,6 +8956,8 @@ class AggregateFilter(FrozenClass):
     :ivar AggregateConfiguration:
     :vartype AggregateConfiguration: AggregateConfiguration
     """
+
+    data_type = NodeId(ObjectIds.AggregateFilter)
 
     ua_types = [
         ('StartTime', 'DateTime'),
@@ -8547,6 +9097,8 @@ class MonitoredItemCreateRequest(FrozenClass):
     :vartype RequestedParameters: MonitoringParameters
     """
 
+    data_type = NodeId(ObjectIds.MonitoredItemCreateRequest)
+
     ua_types = [
         ('ItemToMonitor', 'ReadValueId'),
         ('MonitoringMode', 'MonitoringMode'),
@@ -8639,6 +9191,8 @@ class CreateMonitoredItemsRequest(FrozenClass):
     :vartype Parameters: CreateMonitoredItemsParameters
     """
 
+    data_type = NodeId(ObjectIds.CreateMonitoredItemsRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -8669,6 +9223,8 @@ class CreateMonitoredItemsResponse(FrozenClass):
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
+    data_type = NodeId(ObjectIds.CreateMonitoredItemsResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -8696,6 +9252,8 @@ class MonitoredItemModifyRequest(FrozenClass):
     :ivar RequestedParameters:
     :vartype RequestedParameters: MonitoringParameters
     """
+
+    data_type = NodeId(ObjectIds.MonitoredItemModifyRequest)
 
     ua_types = [
         ('MonitoredItemId', 'UInt32'),
@@ -8783,6 +9341,8 @@ class ModifyMonitoredItemsRequest(FrozenClass):
     :vartype Parameters: ModifyMonitoredItemsParameters
     """
 
+    data_type = NodeId(ObjectIds.ModifyMonitoredItemsRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -8812,6 +9372,8 @@ class ModifyMonitoredItemsResponse(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.ModifyMonitoredItemsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -8871,6 +9433,8 @@ class SetMonitoringModeRequest(FrozenClass):
     :vartype Parameters: SetMonitoringModeParameters
     """
 
+    data_type = NodeId(ObjectIds.SetMonitoringModeRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -8922,6 +9486,8 @@ class SetMonitoringModeResponse(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: SetMonitoringModeResult
     """
+
+    data_type = NodeId(ObjectIds.SetMonitoringModeResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -8983,6 +9549,8 @@ class SetTriggeringRequest(FrozenClass):
     :vartype Parameters: SetTriggeringParameters
     """
 
+    data_type = NodeId(ObjectIds.SetTriggeringRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -9043,6 +9611,8 @@ class SetTriggeringResponse(FrozenClass):
     :vartype Parameters: SetTriggeringResult
     """
 
+    data_type = NodeId(ObjectIds.SetTriggeringResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -9095,6 +9665,8 @@ class DeleteMonitoredItemsRequest(FrozenClass):
     :vartype Parameters: DeleteMonitoredItemsParameters
     """
 
+    data_type = NodeId(ObjectIds.DeleteMonitoredItemsRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -9124,6 +9696,8 @@ class DeleteMonitoredItemsResponse(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.DeleteMonitoredItemsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9195,6 +9769,8 @@ class CreateSubscriptionRequest(FrozenClass):
     :vartype Parameters: CreateSubscriptionParameters
     """
 
+    data_type = NodeId(ObjectIds.CreateSubscriptionRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -9254,6 +9830,8 @@ class CreateSubscriptionResponse(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: CreateSubscriptionResult
     """
+
+    data_type = NodeId(ObjectIds.CreateSubscriptionResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9323,6 +9901,8 @@ class ModifySubscriptionRequest(FrozenClass):
     :vartype Parameters: ModifySubscriptionParameters
     """
 
+    data_type = NodeId(ObjectIds.ModifySubscriptionRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -9379,6 +9959,8 @@ class ModifySubscriptionResponse(FrozenClass):
     :vartype Parameters: ModifySubscriptionResult
     """
 
+    data_type = NodeId(ObjectIds.ModifySubscriptionResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -9430,6 +10012,8 @@ class SetPublishingModeRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: SetPublishingModeParameters
     """
+
+    data_type = NodeId(ObjectIds.SetPublishingModeRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9483,6 +10067,8 @@ class SetPublishingModeResponse(FrozenClass):
     :vartype Parameters: SetPublishingModeResult
     """
 
+    data_type = NodeId(ObjectIds.SetPublishingModeResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -9511,6 +10097,8 @@ class NotificationMessage(FrozenClass):
     :vartype NotificationData: ExtensionObject
     """
 
+    data_type = NodeId(ObjectIds.NotificationMessage)
+
     ua_types = [
         ('SequenceNumber', 'UInt32'),
         ('PublishTime', 'DateTime'),
@@ -9533,6 +10121,8 @@ class NotificationData(FrozenClass):
     """
     """
 
+    data_type = NodeId(ObjectIds.NotificationData)
+
     ua_types = [
                ]
 
@@ -9552,6 +10142,8 @@ class DataChangeNotification(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.DataChangeNotification)
 
     ua_types = [
         ('MonitoredItems', 'ListOfMonitoredItemNotification'),
@@ -9577,6 +10169,8 @@ class MonitoredItemNotification(FrozenClass):
     :vartype Value: DataValue
     """
 
+    data_type = NodeId(ObjectIds.MonitoredItemNotification)
+
     ua_types = [
         ('ClientHandle', 'UInt32'),
         ('Value', 'DataValue'),
@@ -9598,6 +10192,8 @@ class EventNotificationList(FrozenClass):
     :ivar Events:
     :vartype Events: EventFieldList
     """
+
+    data_type = NodeId(ObjectIds.EventNotificationList)
 
     ua_types = [
         ('Events', 'ListOfEventFieldList'),
@@ -9621,6 +10217,8 @@ class EventFieldList(FrozenClass):
     :vartype EventFields: Variant
     """
 
+    data_type = NodeId(ObjectIds.EventFieldList)
+
     ua_types = [
         ('ClientHandle', 'UInt32'),
         ('EventFields', 'ListOfVariant'),
@@ -9643,6 +10241,8 @@ class HistoryEventFieldList(FrozenClass):
     :vartype EventFields: Variant
     """
 
+    data_type = NodeId(ObjectIds.HistoryEventFieldList)
+
     ua_types = [
         ('EventFields', 'ListOfVariant'),
                ]
@@ -9664,6 +10264,8 @@ class StatusChangeNotification(FrozenClass):
     :ivar DiagnosticInfo:
     :vartype DiagnosticInfo: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.StatusChangeNotification)
 
     ua_types = [
         ('Status', 'StatusCode'),
@@ -9688,6 +10290,8 @@ class SubscriptionAcknowledgement(FrozenClass):
     :ivar SequenceNumber:
     :vartype SequenceNumber: UInt32
     """
+
+    data_type = NodeId(ObjectIds.SubscriptionAcknowledgement)
 
     ua_types = [
         ('SubscriptionId', 'UInt32'),
@@ -9734,6 +10338,8 @@ class PublishRequest(FrozenClass):
     :ivar Parameters:
     :vartype Parameters: PublishParameters
     """
+
+    data_type = NodeId(ObjectIds.PublishRequest)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9803,6 +10409,8 @@ class PublishResponse(FrozenClass):
     :vartype Parameters: PublishResult
     """
 
+    data_type = NodeId(ObjectIds.PublishResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -9855,6 +10463,8 @@ class RepublishRequest(FrozenClass):
     :vartype Parameters: RepublishParameters
     """
 
+    data_type = NodeId(ObjectIds.RepublishRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -9882,6 +10492,8 @@ class RepublishResponse(FrozenClass):
     :ivar NotificationMessage:
     :vartype NotificationMessage: NotificationMessage
     """
+
+    data_type = NodeId(ObjectIds.RepublishResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -9959,6 +10571,8 @@ class TransferSubscriptionsRequest(FrozenClass):
     :vartype Parameters: TransferSubscriptionsParameters
     """
 
+    data_type = NodeId(ObjectIds.TransferSubscriptionsRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -10011,6 +10625,8 @@ class TransferSubscriptionsResponse(FrozenClass):
     :vartype Parameters: TransferSubscriptionsResult
     """
 
+    data_type = NodeId(ObjectIds.TransferSubscriptionsResponse)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('ResponseHeader', 'ResponseHeader'),
@@ -10059,6 +10675,8 @@ class DeleteSubscriptionsRequest(FrozenClass):
     :vartype Parameters: DeleteSubscriptionsParameters
     """
 
+    data_type = NodeId(ObjectIds.DeleteSubscriptionsRequest)
+
     ua_types = [
         ('TypeId', 'NodeId'),
         ('RequestHeader', 'RequestHeader'),
@@ -10088,6 +10706,8 @@ class DeleteSubscriptionsResponse(FrozenClass):
     :ivar DiagnosticInfos:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
+
+    data_type = NodeId(ObjectIds.DeleteSubscriptionsResponse)
 
     ua_types = [
         ('TypeId', 'NodeId'),
@@ -10125,6 +10745,8 @@ class BuildInfo(FrozenClass):
     :vartype BuildDate: DateTime
     """
 
+    data_type = NodeId(ObjectIds.BuildInfo)
+
     ua_types = [
         ('ProductUri', 'String'),
         ('ManufacturerName', 'String'),
@@ -10159,6 +10781,8 @@ class RedundantServerDataType(FrozenClass):
     :vartype ServerState: ServerState
     """
 
+    data_type = NodeId(ObjectIds.RedundantServerDataType)
+
     ua_types = [
         ('ServerId', 'String'),
         ('ServiceLevel', 'Byte'),
@@ -10183,6 +10807,8 @@ class EndpointUrlListDataType(FrozenClass):
     :vartype EndpointUrlList: String
     """
 
+    data_type = NodeId(ObjectIds.EndpointUrlListDataType)
+
     ua_types = [
         ('EndpointUrlList', 'ListOfString'),
                ]
@@ -10204,6 +10830,8 @@ class NetworkGroupDataType(FrozenClass):
     :ivar NetworkPaths:
     :vartype NetworkPaths: EndpointUrlListDataType
     """
+
+    data_type = NodeId(ObjectIds.NetworkGroupDataType)
 
     ua_types = [
         ('ServerUri', 'String'),
@@ -10232,6 +10860,8 @@ class SamplingIntervalDiagnosticsDataType(FrozenClass):
     :ivar DisabledMonitoredItemCount:
     :vartype DisabledMonitoredItemCount: UInt32
     """
+
+    data_type = NodeId(ObjectIds.SamplingIntervalDiagnosticsDataType)
 
     ua_types = [
         ('SamplingInterval', 'Double'),
@@ -10280,6 +10910,8 @@ class ServerDiagnosticsSummaryDataType(FrozenClass):
     :ivar RejectedRequestsCount:
     :vartype RejectedRequestsCount: UInt32
     """
+
+    data_type = NodeId(ObjectIds.ServerDiagnosticsSummaryDataType)
 
     ua_types = [
         ('ServerViewCount', 'UInt32'),
@@ -10332,6 +10964,8 @@ class ServerStatusDataType(FrozenClass):
     :ivar ShutdownReason:
     :vartype ShutdownReason: LocalizedText
     """
+
+    data_type = NodeId(ObjectIds.ServerStatusDataType)
 
     ua_types = [
         ('StartTime', 'DateTime'),
@@ -10446,6 +11080,8 @@ class SessionDiagnosticsDataType(FrozenClass):
     :ivar UnregisterNodesCount:
     :vartype UnregisterNodesCount: ServiceCounterDataType
     """
+
+    data_type = NodeId(ObjectIds.SessionDiagnosticsDataType)
 
     ua_types = [
         ('SessionId', 'NodeId'),
@@ -10567,6 +11203,8 @@ class SessionSecurityDiagnosticsDataType(FrozenClass):
     :vartype ClientCertificate: ByteString
     """
 
+    data_type = NodeId(ObjectIds.SessionSecurityDiagnosticsDataType)
+
     ua_types = [
         ('SessionId', 'NodeId'),
         ('ClientUserIdOfSession', 'String'),
@@ -10604,6 +11242,8 @@ class ServiceCounterDataType(FrozenClass):
     :ivar ErrorCount:
     :vartype ErrorCount: UInt32
     """
+
+    data_type = NodeId(ObjectIds.ServiceCounterDataType)
 
     ua_types = [
         ('TotalCount', 'UInt32'),
@@ -10711,6 +11351,8 @@ class SubscriptionDiagnosticsDataType(FrozenClass):
     :vartype EventQueueOverFlowCount: UInt32
     """
 
+    data_type = NodeId(ObjectIds.SubscriptionDiagnosticsDataType)
+
     ua_types = [
         ('SessionId', 'NodeId'),
         ('SubscriptionId', 'UInt32'),
@@ -10795,6 +11437,8 @@ class ModelChangeStructureDataType(FrozenClass):
     :vartype Verb: Byte
     """
 
+    data_type = NodeId(ObjectIds.ModelChangeStructureDataType)
+
     ua_types = [
         ('Affected', 'NodeId'),
         ('AffectedType', 'NodeId'),
@@ -10821,6 +11465,8 @@ class SemanticChangeStructureDataType(FrozenClass):
     :vartype AffectedType: NodeId
     """
 
+    data_type = NodeId(ObjectIds.SemanticChangeStructureDataType)
+
     ua_types = [
         ('Affected', 'NodeId'),
         ('AffectedType', 'NodeId'),
@@ -10844,6 +11490,8 @@ class Range(FrozenClass):
     :ivar High:
     :vartype High: Double
     """
+
+    data_type = NodeId(ObjectIds.Range)
 
     ua_types = [
         ('Low', 'Double'),
@@ -10873,6 +11521,8 @@ class EUInformation(FrozenClass):
     :vartype Description: LocalizedText
     """
 
+    data_type = NodeId(ObjectIds.EUInformation)
+
     ua_types = [
         ('NamespaceUri', 'String'),
         ('UnitId', 'Int32'),
@@ -10901,6 +11551,8 @@ class ComplexNumberType(FrozenClass):
     :vartype Imaginary: Float
     """
 
+    data_type = NodeId(ObjectIds.ComplexNumberType)
+
     ua_types = [
         ('Real', 'Float'),
         ('Imaginary', 'Float'),
@@ -10924,6 +11576,8 @@ class DoubleComplexNumberType(FrozenClass):
     :ivar Imaginary:
     :vartype Imaginary: Double
     """
+
+    data_type = NodeId(ObjectIds.DoubleComplexNumberType)
 
     ua_types = [
         ('Real', 'Double'),
@@ -10955,6 +11609,8 @@ class AxisInformation(FrozenClass):
     :vartype AxisSteps: Double
     """
 
+    data_type = NodeId(ObjectIds.AxisInformation)
+
     ua_types = [
         ('EngineeringUnits', 'EUInformation'),
         ('EURange', 'Range'),
@@ -10984,6 +11640,8 @@ class XVType(FrozenClass):
     :ivar Value:
     :vartype Value: Float
     """
+
+    data_type = NodeId(ObjectIds.XVType)
 
     ua_types = [
         ('X', 'Double'),
@@ -11024,6 +11682,8 @@ class ProgramDiagnosticDataType(FrozenClass):
     :ivar LastMethodReturnStatus:
     :vartype LastMethodReturnStatus: StatusResult
     """
+
+    data_type = NodeId(ObjectIds.ProgramDiagnosticDataType)
 
     ua_types = [
         ('CreateSessionId', 'NodeId'),
@@ -11085,6 +11745,8 @@ class ProgramDiagnostic2DataType(FrozenClass):
     :vartype LastMethodReturnStatus: StatusResult
     """
 
+    data_type = NodeId(ObjectIds.ProgramDiagnostic2DataType)
+
     ua_types = [
         ('CreateSessionId', 'NodeId'),
         ('CreateClientName', 'String'),
@@ -11131,6 +11793,8 @@ class Annotation(FrozenClass):
     :vartype AnnotationTime: DateTime
     """
 
+    data_type = NodeId(ObjectIds.Annotation)
+
     ua_types = [
         ('Message', 'String'),
         ('UserName', 'String'),
@@ -11150,803 +11814,845 @@ class Annotation(FrozenClass):
 
 
 nid = FourByteNodeId(ObjectIds.KeyValuePair_Encoding_DefaultBinary)
-extension_object_classes[nid] = KeyValuePair
-extension_object_ids['KeyValuePair'] = nid
+extension_objects_by_typeid[nid] = KeyValuePair
+extension_object_typeids['KeyValuePair'] = nid
 nid = FourByteNodeId(ObjectIds.EndpointType_Encoding_DefaultBinary)
-extension_object_classes[nid] = EndpointType
-extension_object_ids['EndpointType'] = nid
+extension_objects_by_typeid[nid] = EndpointType
+extension_object_typeids['EndpointType'] = nid
+nid = FourByteNodeId(ObjectIds.RationalNumber_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = RationalNumber
+extension_object_typeids['RationalNumber'] = nid
+nid = FourByteNodeId(ObjectIds.Vector_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = Vector
+extension_object_typeids['Vector'] = nid
+nid = FourByteNodeId(ObjectIds.ThreeDVector_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ThreeDVector
+extension_object_typeids['ThreeDVector'] = nid
+nid = FourByteNodeId(ObjectIds.CartesianCoordinates_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = CartesianCoordinates
+extension_object_typeids['CartesianCoordinates'] = nid
+nid = FourByteNodeId(ObjectIds.ThreeDCartesianCoordinates_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ThreeDCartesianCoordinates
+extension_object_typeids['ThreeDCartesianCoordinates'] = nid
+nid = FourByteNodeId(ObjectIds.Orientation_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = Orientation
+extension_object_typeids['Orientation'] = nid
+nid = FourByteNodeId(ObjectIds.ThreeDOrientation_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ThreeDOrientation
+extension_object_typeids['ThreeDOrientation'] = nid
+nid = FourByteNodeId(ObjectIds.Frame_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = Frame
+extension_object_typeids['Frame'] = nid
+nid = FourByteNodeId(ObjectIds.ThreeDFrame_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ThreeDFrame
+extension_object_typeids['ThreeDFrame'] = nid
 nid = FourByteNodeId(ObjectIds.IdentityMappingRuleType_Encoding_DefaultBinary)
-extension_object_classes[nid] = IdentityMappingRuleType
-extension_object_ids['IdentityMappingRuleType'] = nid
+extension_objects_by_typeid[nid] = IdentityMappingRuleType
+extension_object_typeids['IdentityMappingRuleType'] = nid
+nid = FourByteNodeId(ObjectIds.CurrencyUnitType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = CurrencyUnitType
+extension_object_typeids['CurrencyUnitType'] = nid
 nid = FourByteNodeId(ObjectIds.TrustListDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = TrustListDataType
-extension_object_ids['TrustListDataType'] = nid
+extension_objects_by_typeid[nid] = TrustListDataType
+extension_object_typeids['TrustListDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DecimalDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DecimalDataType
-extension_object_ids['DecimalDataType'] = nid
+extension_objects_by_typeid[nid] = DecimalDataType
+extension_object_typeids['DecimalDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DataTypeSchemaHeader_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataTypeSchemaHeader
-extension_object_ids['DataTypeSchemaHeader'] = nid
+extension_objects_by_typeid[nid] = DataTypeSchemaHeader
+extension_object_typeids['DataTypeSchemaHeader'] = nid
 nid = FourByteNodeId(ObjectIds.DataTypeDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataTypeDescription
-extension_object_ids['DataTypeDescription'] = nid
+extension_objects_by_typeid[nid] = DataTypeDescription
+extension_object_typeids['DataTypeDescription'] = nid
 nid = FourByteNodeId(ObjectIds.StructureDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = StructureDescription
-extension_object_ids['StructureDescription'] = nid
+extension_objects_by_typeid[nid] = StructureDescription
+extension_object_typeids['StructureDescription'] = nid
 nid = FourByteNodeId(ObjectIds.EnumDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = EnumDescription
-extension_object_ids['EnumDescription'] = nid
+extension_objects_by_typeid[nid] = EnumDescription
+extension_object_typeids['EnumDescription'] = nid
 nid = FourByteNodeId(ObjectIds.SimpleTypeDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = SimpleTypeDescription
-extension_object_ids['SimpleTypeDescription'] = nid
+extension_objects_by_typeid[nid] = SimpleTypeDescription
+extension_object_typeids['SimpleTypeDescription'] = nid
 nid = FourByteNodeId(ObjectIds.UABinaryFileDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = UABinaryFileDataType
-extension_object_ids['UABinaryFileDataType'] = nid
+extension_objects_by_typeid[nid] = UABinaryFileDataType
+extension_object_typeids['UABinaryFileDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DataSetMetaDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataSetMetaDataType
-extension_object_ids['DataSetMetaDataType'] = nid
+extension_objects_by_typeid[nid] = DataSetMetaDataType
+extension_object_typeids['DataSetMetaDataType'] = nid
 nid = FourByteNodeId(ObjectIds.FieldMetaData_Encoding_DefaultBinary)
-extension_object_classes[nid] = FieldMetaData
-extension_object_ids['FieldMetaData'] = nid
+extension_objects_by_typeid[nid] = FieldMetaData
+extension_object_typeids['FieldMetaData'] = nid
 nid = FourByteNodeId(ObjectIds.ConfigurationVersionDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ConfigurationVersionDataType
-extension_object_ids['ConfigurationVersionDataType'] = nid
+extension_objects_by_typeid[nid] = ConfigurationVersionDataType
+extension_object_typeids['ConfigurationVersionDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PublishedDataSetDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = PublishedDataSetDataType
-extension_object_ids['PublishedDataSetDataType'] = nid
+extension_objects_by_typeid[nid] = PublishedDataSetDataType
+extension_object_typeids['PublishedDataSetDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PublishedDataSetSourceDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = PublishedDataSetSourceDataType
-extension_object_ids['PublishedDataSetSourceDataType'] = nid
+extension_objects_by_typeid[nid] = PublishedDataSetSourceDataType
+extension_object_typeids['PublishedDataSetSourceDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PublishedVariableDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = PublishedVariableDataType
-extension_object_ids['PublishedVariableDataType'] = nid
+extension_objects_by_typeid[nid] = PublishedVariableDataType
+extension_object_typeids['PublishedVariableDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PublishedDataItemsDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = PublishedDataItemsDataType
-extension_object_ids['PublishedDataItemsDataType'] = nid
+extension_objects_by_typeid[nid] = PublishedDataItemsDataType
+extension_object_typeids['PublishedDataItemsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PublishedEventsDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = PublishedEventsDataType
-extension_object_ids['PublishedEventsDataType'] = nid
+extension_objects_by_typeid[nid] = PublishedEventsDataType
+extension_object_typeids['PublishedEventsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DataSetWriterDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataSetWriterDataType
-extension_object_ids['DataSetWriterDataType'] = nid
+extension_objects_by_typeid[nid] = DataSetWriterDataType
+extension_object_typeids['DataSetWriterDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DataSetWriterTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataSetWriterTransportDataType
-extension_object_ids['DataSetWriterTransportDataType'] = nid
+extension_objects_by_typeid[nid] = DataSetWriterTransportDataType
+extension_object_typeids['DataSetWriterTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DataSetWriterMessageDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataSetWriterMessageDataType
-extension_object_ids['DataSetWriterMessageDataType'] = nid
+extension_objects_by_typeid[nid] = DataSetWriterMessageDataType
+extension_object_typeids['DataSetWriterMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PubSubGroupDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = PubSubGroupDataType
-extension_object_ids['PubSubGroupDataType'] = nid
+extension_objects_by_typeid[nid] = PubSubGroupDataType
+extension_object_typeids['PubSubGroupDataType'] = nid
 nid = FourByteNodeId(ObjectIds.WriterGroupDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = WriterGroupDataType
-extension_object_ids['WriterGroupDataType'] = nid
+extension_objects_by_typeid[nid] = WriterGroupDataType
+extension_object_typeids['WriterGroupDataType'] = nid
 nid = FourByteNodeId(ObjectIds.WriterGroupTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = WriterGroupTransportDataType
-extension_object_ids['WriterGroupTransportDataType'] = nid
+extension_objects_by_typeid[nid] = WriterGroupTransportDataType
+extension_object_typeids['WriterGroupTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.WriterGroupMessageDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = WriterGroupMessageDataType
-extension_object_ids['WriterGroupMessageDataType'] = nid
+extension_objects_by_typeid[nid] = WriterGroupMessageDataType
+extension_object_typeids['WriterGroupMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PubSubConnectionDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = PubSubConnectionDataType
-extension_object_ids['PubSubConnectionDataType'] = nid
+extension_objects_by_typeid[nid] = PubSubConnectionDataType
+extension_object_typeids['PubSubConnectionDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ConnectionTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ConnectionTransportDataType
-extension_object_ids['ConnectionTransportDataType'] = nid
+extension_objects_by_typeid[nid] = ConnectionTransportDataType
+extension_object_typeids['ConnectionTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.NetworkAddressDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = NetworkAddressDataType
-extension_object_ids['NetworkAddressDataType'] = nid
+extension_objects_by_typeid[nid] = NetworkAddressDataType
+extension_object_typeids['NetworkAddressDataType'] = nid
 nid = FourByteNodeId(ObjectIds.NetworkAddressUrlDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = NetworkAddressUrlDataType
-extension_object_ids['NetworkAddressUrlDataType'] = nid
+extension_objects_by_typeid[nid] = NetworkAddressUrlDataType
+extension_object_typeids['NetworkAddressUrlDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ReaderGroupDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReaderGroupDataType
-extension_object_ids['ReaderGroupDataType'] = nid
+extension_objects_by_typeid[nid] = ReaderGroupDataType
+extension_object_typeids['ReaderGroupDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ReaderGroupTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReaderGroupTransportDataType
-extension_object_ids['ReaderGroupTransportDataType'] = nid
+extension_objects_by_typeid[nid] = ReaderGroupTransportDataType
+extension_object_typeids['ReaderGroupTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ReaderGroupMessageDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReaderGroupMessageDataType
-extension_object_ids['ReaderGroupMessageDataType'] = nid
+extension_objects_by_typeid[nid] = ReaderGroupMessageDataType
+extension_object_typeids['ReaderGroupMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DataSetReaderDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataSetReaderDataType
-extension_object_ids['DataSetReaderDataType'] = nid
+extension_objects_by_typeid[nid] = DataSetReaderDataType
+extension_object_typeids['DataSetReaderDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DataSetReaderTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataSetReaderTransportDataType
-extension_object_ids['DataSetReaderTransportDataType'] = nid
+extension_objects_by_typeid[nid] = DataSetReaderTransportDataType
+extension_object_typeids['DataSetReaderTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DataSetReaderMessageDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataSetReaderMessageDataType
-extension_object_ids['DataSetReaderMessageDataType'] = nid
+extension_objects_by_typeid[nid] = DataSetReaderMessageDataType
+extension_object_typeids['DataSetReaderMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.SubscribedDataSetDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = SubscribedDataSetDataType
-extension_object_ids['SubscribedDataSetDataType'] = nid
+extension_objects_by_typeid[nid] = SubscribedDataSetDataType
+extension_object_typeids['SubscribedDataSetDataType'] = nid
 nid = FourByteNodeId(ObjectIds.TargetVariablesDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = TargetVariablesDataType
-extension_object_ids['TargetVariablesDataType'] = nid
+extension_objects_by_typeid[nid] = TargetVariablesDataType
+extension_object_typeids['TargetVariablesDataType'] = nid
 nid = FourByteNodeId(ObjectIds.FieldTargetDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = FieldTargetDataType
-extension_object_ids['FieldTargetDataType'] = nid
+extension_objects_by_typeid[nid] = FieldTargetDataType
+extension_object_typeids['FieldTargetDataType'] = nid
 nid = FourByteNodeId(ObjectIds.SubscribedDataSetMirrorDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = SubscribedDataSetMirrorDataType
-extension_object_ids['SubscribedDataSetMirrorDataType'] = nid
+extension_objects_by_typeid[nid] = SubscribedDataSetMirrorDataType
+extension_object_typeids['SubscribedDataSetMirrorDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PubSubConfigurationDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = PubSubConfigurationDataType
-extension_object_ids['PubSubConfigurationDataType'] = nid
+extension_objects_by_typeid[nid] = PubSubConfigurationDataType
+extension_object_typeids['PubSubConfigurationDataType'] = nid
 nid = FourByteNodeId(ObjectIds.UadpWriterGroupMessageDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = UadpWriterGroupMessageDataType
-extension_object_ids['UadpWriterGroupMessageDataType'] = nid
+extension_objects_by_typeid[nid] = UadpWriterGroupMessageDataType
+extension_object_typeids['UadpWriterGroupMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.UadpDataSetWriterMessageDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = UadpDataSetWriterMessageDataType
-extension_object_ids['UadpDataSetWriterMessageDataType'] = nid
+extension_objects_by_typeid[nid] = UadpDataSetWriterMessageDataType
+extension_object_typeids['UadpDataSetWriterMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.UadpDataSetReaderMessageDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = UadpDataSetReaderMessageDataType
-extension_object_ids['UadpDataSetReaderMessageDataType'] = nid
+extension_objects_by_typeid[nid] = UadpDataSetReaderMessageDataType
+extension_object_typeids['UadpDataSetReaderMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.JsonWriterGroupMessageDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = JsonWriterGroupMessageDataType
-extension_object_ids['JsonWriterGroupMessageDataType'] = nid
+extension_objects_by_typeid[nid] = JsonWriterGroupMessageDataType
+extension_object_typeids['JsonWriterGroupMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.JsonDataSetWriterMessageDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = JsonDataSetWriterMessageDataType
-extension_object_ids['JsonDataSetWriterMessageDataType'] = nid
+extension_objects_by_typeid[nid] = JsonDataSetWriterMessageDataType
+extension_object_typeids['JsonDataSetWriterMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.JsonDataSetReaderMessageDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = JsonDataSetReaderMessageDataType
-extension_object_ids['JsonDataSetReaderMessageDataType'] = nid
+extension_objects_by_typeid[nid] = JsonDataSetReaderMessageDataType
+extension_object_typeids['JsonDataSetReaderMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DatagramConnectionTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DatagramConnectionTransportDataType
-extension_object_ids['DatagramConnectionTransportDataType'] = nid
+extension_objects_by_typeid[nid] = DatagramConnectionTransportDataType
+extension_object_typeids['DatagramConnectionTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DatagramWriterGroupTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DatagramWriterGroupTransportDataType
-extension_object_ids['DatagramWriterGroupTransportDataType'] = nid
+extension_objects_by_typeid[nid] = DatagramWriterGroupTransportDataType
+extension_object_typeids['DatagramWriterGroupTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.BrokerConnectionTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrokerConnectionTransportDataType
-extension_object_ids['BrokerConnectionTransportDataType'] = nid
+extension_objects_by_typeid[nid] = BrokerConnectionTransportDataType
+extension_object_typeids['BrokerConnectionTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.BrokerWriterGroupTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrokerWriterGroupTransportDataType
-extension_object_ids['BrokerWriterGroupTransportDataType'] = nid
+extension_objects_by_typeid[nid] = BrokerWriterGroupTransportDataType
+extension_object_typeids['BrokerWriterGroupTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.BrokerDataSetWriterTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrokerDataSetWriterTransportDataType
-extension_object_ids['BrokerDataSetWriterTransportDataType'] = nid
+extension_objects_by_typeid[nid] = BrokerDataSetWriterTransportDataType
+extension_object_typeids['BrokerDataSetWriterTransportDataType'] = nid
 nid = FourByteNodeId(ObjectIds.BrokerDataSetReaderTransportDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrokerDataSetReaderTransportDataType
-extension_object_ids['BrokerDataSetReaderTransportDataType'] = nid
+extension_objects_by_typeid[nid] = BrokerDataSetReaderTransportDataType
+extension_object_typeids['BrokerDataSetReaderTransportDataType'] = nid
+nid = FourByteNodeId(ObjectIds.AliasNameDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = AliasNameDataType
+extension_object_typeids['AliasNameDataType'] = nid
 nid = FourByteNodeId(ObjectIds.RolePermissionType_Encoding_DefaultBinary)
-extension_object_classes[nid] = RolePermissionType
-extension_object_ids['RolePermissionType'] = nid
+extension_objects_by_typeid[nid] = RolePermissionType
+extension_object_typeids['RolePermissionType'] = nid
 nid = FourByteNodeId(ObjectIds.StructureField_Encoding_DefaultBinary)
-extension_object_classes[nid] = StructureField
-extension_object_ids['StructureField'] = nid
+extension_objects_by_typeid[nid] = StructureField
+extension_object_typeids['StructureField'] = nid
+nid = FourByteNodeId(ObjectIds.StructureDefinition_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = StructureDefinition
+extension_object_typeids['StructureDefinition'] = nid
+nid = FourByteNodeId(ObjectIds.EnumDefinition_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = EnumDefinition
+extension_object_typeids['EnumDefinition'] = nid
 nid = FourByteNodeId(ObjectIds.Argument_Encoding_DefaultBinary)
-extension_object_classes[nid] = Argument
-extension_object_ids['Argument'] = nid
+extension_objects_by_typeid[nid] = Argument
+extension_object_typeids['Argument'] = nid
 nid = FourByteNodeId(ObjectIds.EnumValueType_Encoding_DefaultBinary)
-extension_object_classes[nid] = EnumValueType
-extension_object_ids['EnumValueType'] = nid
+extension_objects_by_typeid[nid] = EnumValueType
+extension_object_typeids['EnumValueType'] = nid
 nid = FourByteNodeId(ObjectIds.EnumField_Encoding_DefaultBinary)
-extension_object_classes[nid] = EnumField
-extension_object_ids['EnumField'] = nid
+extension_objects_by_typeid[nid] = EnumField
+extension_object_typeids['EnumField'] = nid
 nid = FourByteNodeId(ObjectIds.OptionSet_Encoding_DefaultBinary)
-extension_object_classes[nid] = OptionSet
-extension_object_ids['OptionSet'] = nid
+extension_objects_by_typeid[nid] = OptionSet
+extension_object_typeids['OptionSet'] = nid
 nid = FourByteNodeId(ObjectIds.Union_Encoding_DefaultBinary)
-extension_object_classes[nid] = Union
-extension_object_ids['Union'] = nid
+extension_objects_by_typeid[nid] = Union
+extension_object_typeids['Union'] = nid
 nid = FourByteNodeId(ObjectIds.TimeZoneDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = TimeZoneDataType
-extension_object_ids['TimeZoneDataType'] = nid
+extension_objects_by_typeid[nid] = TimeZoneDataType
+extension_object_typeids['TimeZoneDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ApplicationDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = ApplicationDescription
-extension_object_ids['ApplicationDescription'] = nid
+extension_objects_by_typeid[nid] = ApplicationDescription
+extension_object_typeids['ApplicationDescription'] = nid
 nid = FourByteNodeId(ObjectIds.RequestHeader_Encoding_DefaultBinary)
-extension_object_classes[nid] = RequestHeader
-extension_object_ids['RequestHeader'] = nid
+extension_objects_by_typeid[nid] = RequestHeader
+extension_object_typeids['RequestHeader'] = nid
 nid = FourByteNodeId(ObjectIds.ResponseHeader_Encoding_DefaultBinary)
-extension_object_classes[nid] = ResponseHeader
-extension_object_ids['ResponseHeader'] = nid
+extension_objects_by_typeid[nid] = ResponseHeader
+extension_object_typeids['ResponseHeader'] = nid
 nid = FourByteNodeId(ObjectIds.ServiceFault_Encoding_DefaultBinary)
-extension_object_classes[nid] = ServiceFault
-extension_object_ids['ServiceFault'] = nid
+extension_objects_by_typeid[nid] = ServiceFault
+extension_object_typeids['ServiceFault'] = nid
 nid = FourByteNodeId(ObjectIds.SessionlessInvokeRequestType_Encoding_DefaultBinary)
-extension_object_classes[nid] = SessionlessInvokeRequestType
-extension_object_ids['SessionlessInvokeRequestType'] = nid
+extension_objects_by_typeid[nid] = SessionlessInvokeRequestType
+extension_object_typeids['SessionlessInvokeRequestType'] = nid
 nid = FourByteNodeId(ObjectIds.SessionlessInvokeResponseType_Encoding_DefaultBinary)
-extension_object_classes[nid] = SessionlessInvokeResponseType
-extension_object_ids['SessionlessInvokeResponseType'] = nid
+extension_objects_by_typeid[nid] = SessionlessInvokeResponseType
+extension_object_typeids['SessionlessInvokeResponseType'] = nid
 nid = FourByteNodeId(ObjectIds.FindServersRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = FindServersRequest
-extension_object_ids['FindServersRequest'] = nid
+extension_objects_by_typeid[nid] = FindServersRequest
+extension_object_typeids['FindServersRequest'] = nid
 nid = FourByteNodeId(ObjectIds.FindServersResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = FindServersResponse
-extension_object_ids['FindServersResponse'] = nid
+extension_objects_by_typeid[nid] = FindServersResponse
+extension_object_typeids['FindServersResponse'] = nid
 nid = FourByteNodeId(ObjectIds.ServerOnNetwork_Encoding_DefaultBinary)
-extension_object_classes[nid] = ServerOnNetwork
-extension_object_ids['ServerOnNetwork'] = nid
+extension_objects_by_typeid[nid] = ServerOnNetwork
+extension_object_typeids['ServerOnNetwork'] = nid
 nid = FourByteNodeId(ObjectIds.FindServersOnNetworkRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = FindServersOnNetworkRequest
-extension_object_ids['FindServersOnNetworkRequest'] = nid
+extension_objects_by_typeid[nid] = FindServersOnNetworkRequest
+extension_object_typeids['FindServersOnNetworkRequest'] = nid
 nid = FourByteNodeId(ObjectIds.FindServersOnNetworkResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = FindServersOnNetworkResponse
-extension_object_ids['FindServersOnNetworkResponse'] = nid
+extension_objects_by_typeid[nid] = FindServersOnNetworkResponse
+extension_object_typeids['FindServersOnNetworkResponse'] = nid
 nid = FourByteNodeId(ObjectIds.UserTokenPolicy_Encoding_DefaultBinary)
-extension_object_classes[nid] = UserTokenPolicy
-extension_object_ids['UserTokenPolicy'] = nid
+extension_objects_by_typeid[nid] = UserTokenPolicy
+extension_object_typeids['UserTokenPolicy'] = nid
 nid = FourByteNodeId(ObjectIds.EndpointDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = EndpointDescription
-extension_object_ids['EndpointDescription'] = nid
+extension_objects_by_typeid[nid] = EndpointDescription
+extension_object_typeids['EndpointDescription'] = nid
 nid = FourByteNodeId(ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = GetEndpointsRequest
-extension_object_ids['GetEndpointsRequest'] = nid
+extension_objects_by_typeid[nid] = GetEndpointsRequest
+extension_object_typeids['GetEndpointsRequest'] = nid
 nid = FourByteNodeId(ObjectIds.GetEndpointsResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = GetEndpointsResponse
-extension_object_ids['GetEndpointsResponse'] = nid
+extension_objects_by_typeid[nid] = GetEndpointsResponse
+extension_object_typeids['GetEndpointsResponse'] = nid
 nid = FourByteNodeId(ObjectIds.RegisteredServer_Encoding_DefaultBinary)
-extension_object_classes[nid] = RegisteredServer
-extension_object_ids['RegisteredServer'] = nid
+extension_objects_by_typeid[nid] = RegisteredServer
+extension_object_typeids['RegisteredServer'] = nid
 nid = FourByteNodeId(ObjectIds.RegisterServerRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = RegisterServerRequest
-extension_object_ids['RegisterServerRequest'] = nid
+extension_objects_by_typeid[nid] = RegisterServerRequest
+extension_object_typeids['RegisterServerRequest'] = nid
 nid = FourByteNodeId(ObjectIds.RegisterServerResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = RegisterServerResponse
-extension_object_ids['RegisterServerResponse'] = nid
+extension_objects_by_typeid[nid] = RegisterServerResponse
+extension_object_typeids['RegisterServerResponse'] = nid
 nid = FourByteNodeId(ObjectIds.DiscoveryConfiguration_Encoding_DefaultBinary)
-extension_object_classes[nid] = DiscoveryConfiguration
-extension_object_ids['DiscoveryConfiguration'] = nid
+extension_objects_by_typeid[nid] = DiscoveryConfiguration
+extension_object_typeids['DiscoveryConfiguration'] = nid
 nid = FourByteNodeId(ObjectIds.MdnsDiscoveryConfiguration_Encoding_DefaultBinary)
-extension_object_classes[nid] = MdnsDiscoveryConfiguration
-extension_object_ids['MdnsDiscoveryConfiguration'] = nid
+extension_objects_by_typeid[nid] = MdnsDiscoveryConfiguration
+extension_object_typeids['MdnsDiscoveryConfiguration'] = nid
 nid = FourByteNodeId(ObjectIds.RegisterServer2Request_Encoding_DefaultBinary)
-extension_object_classes[nid] = RegisterServer2Request
-extension_object_ids['RegisterServer2Request'] = nid
+extension_objects_by_typeid[nid] = RegisterServer2Request
+extension_object_typeids['RegisterServer2Request'] = nid
 nid = FourByteNodeId(ObjectIds.RegisterServer2Response_Encoding_DefaultBinary)
-extension_object_classes[nid] = RegisterServer2Response
-extension_object_ids['RegisterServer2Response'] = nid
+extension_objects_by_typeid[nid] = RegisterServer2Response
+extension_object_typeids['RegisterServer2Response'] = nid
 nid = FourByteNodeId(ObjectIds.ChannelSecurityToken_Encoding_DefaultBinary)
-extension_object_classes[nid] = ChannelSecurityToken
-extension_object_ids['ChannelSecurityToken'] = nid
+extension_objects_by_typeid[nid] = ChannelSecurityToken
+extension_object_typeids['ChannelSecurityToken'] = nid
 nid = FourByteNodeId(ObjectIds.OpenSecureChannelRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = OpenSecureChannelRequest
-extension_object_ids['OpenSecureChannelRequest'] = nid
+extension_objects_by_typeid[nid] = OpenSecureChannelRequest
+extension_object_typeids['OpenSecureChannelRequest'] = nid
 nid = FourByteNodeId(ObjectIds.OpenSecureChannelResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = OpenSecureChannelResponse
-extension_object_ids['OpenSecureChannelResponse'] = nid
+extension_objects_by_typeid[nid] = OpenSecureChannelResponse
+extension_object_typeids['OpenSecureChannelResponse'] = nid
 nid = FourByteNodeId(ObjectIds.CloseSecureChannelRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = CloseSecureChannelRequest
-extension_object_ids['CloseSecureChannelRequest'] = nid
+extension_objects_by_typeid[nid] = CloseSecureChannelRequest
+extension_object_typeids['CloseSecureChannelRequest'] = nid
 nid = FourByteNodeId(ObjectIds.CloseSecureChannelResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = CloseSecureChannelResponse
-extension_object_ids['CloseSecureChannelResponse'] = nid
+extension_objects_by_typeid[nid] = CloseSecureChannelResponse
+extension_object_typeids['CloseSecureChannelResponse'] = nid
 nid = FourByteNodeId(ObjectIds.SignedSoftwareCertificate_Encoding_DefaultBinary)
-extension_object_classes[nid] = SignedSoftwareCertificate
-extension_object_ids['SignedSoftwareCertificate'] = nid
+extension_objects_by_typeid[nid] = SignedSoftwareCertificate
+extension_object_typeids['SignedSoftwareCertificate'] = nid
 nid = FourByteNodeId(ObjectIds.SignatureData_Encoding_DefaultBinary)
-extension_object_classes[nid] = SignatureData
-extension_object_ids['SignatureData'] = nid
+extension_objects_by_typeid[nid] = SignatureData
+extension_object_typeids['SignatureData'] = nid
 nid = FourByteNodeId(ObjectIds.CreateSessionRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = CreateSessionRequest
-extension_object_ids['CreateSessionRequest'] = nid
+extension_objects_by_typeid[nid] = CreateSessionRequest
+extension_object_typeids['CreateSessionRequest'] = nid
 nid = FourByteNodeId(ObjectIds.CreateSessionResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = CreateSessionResponse
-extension_object_ids['CreateSessionResponse'] = nid
+extension_objects_by_typeid[nid] = CreateSessionResponse
+extension_object_typeids['CreateSessionResponse'] = nid
 nid = FourByteNodeId(ObjectIds.UserIdentityToken_Encoding_DefaultBinary)
-extension_object_classes[nid] = UserIdentityToken
-extension_object_ids['UserIdentityToken'] = nid
+extension_objects_by_typeid[nid] = UserIdentityToken
+extension_object_typeids['UserIdentityToken'] = nid
 nid = FourByteNodeId(ObjectIds.AnonymousIdentityToken_Encoding_DefaultBinary)
-extension_object_classes[nid] = AnonymousIdentityToken
-extension_object_ids['AnonymousIdentityToken'] = nid
+extension_objects_by_typeid[nid] = AnonymousIdentityToken
+extension_object_typeids['AnonymousIdentityToken'] = nid
 nid = FourByteNodeId(ObjectIds.UserNameIdentityToken_Encoding_DefaultBinary)
-extension_object_classes[nid] = UserNameIdentityToken
-extension_object_ids['UserNameIdentityToken'] = nid
+extension_objects_by_typeid[nid] = UserNameIdentityToken
+extension_object_typeids['UserNameIdentityToken'] = nid
 nid = FourByteNodeId(ObjectIds.X509IdentityToken_Encoding_DefaultBinary)
-extension_object_classes[nid] = X509IdentityToken
-extension_object_ids['X509IdentityToken'] = nid
+extension_objects_by_typeid[nid] = X509IdentityToken
+extension_object_typeids['X509IdentityToken'] = nid
 nid = FourByteNodeId(ObjectIds.IssuedIdentityToken_Encoding_DefaultBinary)
-extension_object_classes[nid] = IssuedIdentityToken
-extension_object_ids['IssuedIdentityToken'] = nid
+extension_objects_by_typeid[nid] = IssuedIdentityToken
+extension_object_typeids['IssuedIdentityToken'] = nid
 nid = FourByteNodeId(ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = ActivateSessionRequest
-extension_object_ids['ActivateSessionRequest'] = nid
+extension_objects_by_typeid[nid] = ActivateSessionRequest
+extension_object_typeids['ActivateSessionRequest'] = nid
 nid = FourByteNodeId(ObjectIds.ActivateSessionResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = ActivateSessionResponse
-extension_object_ids['ActivateSessionResponse'] = nid
+extension_objects_by_typeid[nid] = ActivateSessionResponse
+extension_object_typeids['ActivateSessionResponse'] = nid
 nid = FourByteNodeId(ObjectIds.CloseSessionRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = CloseSessionRequest
-extension_object_ids['CloseSessionRequest'] = nid
+extension_objects_by_typeid[nid] = CloseSessionRequest
+extension_object_typeids['CloseSessionRequest'] = nid
 nid = FourByteNodeId(ObjectIds.CloseSessionResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = CloseSessionResponse
-extension_object_ids['CloseSessionResponse'] = nid
+extension_objects_by_typeid[nid] = CloseSessionResponse
+extension_object_typeids['CloseSessionResponse'] = nid
 nid = FourByteNodeId(ObjectIds.CancelRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = CancelRequest
-extension_object_ids['CancelRequest'] = nid
+extension_objects_by_typeid[nid] = CancelRequest
+extension_object_typeids['CancelRequest'] = nid
 nid = FourByteNodeId(ObjectIds.CancelResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = CancelResponse
-extension_object_ids['CancelResponse'] = nid
+extension_objects_by_typeid[nid] = CancelResponse
+extension_object_typeids['CancelResponse'] = nid
 nid = FourByteNodeId(ObjectIds.NodeAttributes_Encoding_DefaultBinary)
-extension_object_classes[nid] = NodeAttributes
-extension_object_ids['NodeAttributes'] = nid
+extension_objects_by_typeid[nid] = NodeAttributes
+extension_object_typeids['NodeAttributes'] = nid
 nid = FourByteNodeId(ObjectIds.ObjectAttributes_Encoding_DefaultBinary)
-extension_object_classes[nid] = ObjectAttributes
-extension_object_ids['ObjectAttributes'] = nid
+extension_objects_by_typeid[nid] = ObjectAttributes
+extension_object_typeids['ObjectAttributes'] = nid
 nid = FourByteNodeId(ObjectIds.VariableAttributes_Encoding_DefaultBinary)
-extension_object_classes[nid] = VariableAttributes
-extension_object_ids['VariableAttributes'] = nid
+extension_objects_by_typeid[nid] = VariableAttributes
+extension_object_typeids['VariableAttributes'] = nid
 nid = FourByteNodeId(ObjectIds.MethodAttributes_Encoding_DefaultBinary)
-extension_object_classes[nid] = MethodAttributes
-extension_object_ids['MethodAttributes'] = nid
+extension_objects_by_typeid[nid] = MethodAttributes
+extension_object_typeids['MethodAttributes'] = nid
 nid = FourByteNodeId(ObjectIds.ObjectTypeAttributes_Encoding_DefaultBinary)
-extension_object_classes[nid] = ObjectTypeAttributes
-extension_object_ids['ObjectTypeAttributes'] = nid
+extension_objects_by_typeid[nid] = ObjectTypeAttributes
+extension_object_typeids['ObjectTypeAttributes'] = nid
 nid = FourByteNodeId(ObjectIds.VariableTypeAttributes_Encoding_DefaultBinary)
-extension_object_classes[nid] = VariableTypeAttributes
-extension_object_ids['VariableTypeAttributes'] = nid
+extension_objects_by_typeid[nid] = VariableTypeAttributes
+extension_object_typeids['VariableTypeAttributes'] = nid
 nid = FourByteNodeId(ObjectIds.ReferenceTypeAttributes_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReferenceTypeAttributes
-extension_object_ids['ReferenceTypeAttributes'] = nid
+extension_objects_by_typeid[nid] = ReferenceTypeAttributes
+extension_object_typeids['ReferenceTypeAttributes'] = nid
 nid = FourByteNodeId(ObjectIds.DataTypeAttributes_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataTypeAttributes
-extension_object_ids['DataTypeAttributes'] = nid
+extension_objects_by_typeid[nid] = DataTypeAttributes
+extension_object_typeids['DataTypeAttributes'] = nid
 nid = FourByteNodeId(ObjectIds.ViewAttributes_Encoding_DefaultBinary)
-extension_object_classes[nid] = ViewAttributes
-extension_object_ids['ViewAttributes'] = nid
+extension_objects_by_typeid[nid] = ViewAttributes
+extension_object_typeids['ViewAttributes'] = nid
 nid = FourByteNodeId(ObjectIds.GenericAttributeValue_Encoding_DefaultBinary)
-extension_object_classes[nid] = GenericAttributeValue
-extension_object_ids['GenericAttributeValue'] = nid
+extension_objects_by_typeid[nid] = GenericAttributeValue
+extension_object_typeids['GenericAttributeValue'] = nid
 nid = FourByteNodeId(ObjectIds.GenericAttributes_Encoding_DefaultBinary)
-extension_object_classes[nid] = GenericAttributes
-extension_object_ids['GenericAttributes'] = nid
+extension_objects_by_typeid[nid] = GenericAttributes
+extension_object_typeids['GenericAttributes'] = nid
 nid = FourByteNodeId(ObjectIds.AddNodesItem_Encoding_DefaultBinary)
-extension_object_classes[nid] = AddNodesItem
-extension_object_ids['AddNodesItem'] = nid
+extension_objects_by_typeid[nid] = AddNodesItem
+extension_object_typeids['AddNodesItem'] = nid
 nid = FourByteNodeId(ObjectIds.AddNodesResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = AddNodesResult
-extension_object_ids['AddNodesResult'] = nid
+extension_objects_by_typeid[nid] = AddNodesResult
+extension_object_typeids['AddNodesResult'] = nid
 nid = FourByteNodeId(ObjectIds.AddNodesRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = AddNodesRequest
-extension_object_ids['AddNodesRequest'] = nid
+extension_objects_by_typeid[nid] = AddNodesRequest
+extension_object_typeids['AddNodesRequest'] = nid
 nid = FourByteNodeId(ObjectIds.AddNodesResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = AddNodesResponse
-extension_object_ids['AddNodesResponse'] = nid
+extension_objects_by_typeid[nid] = AddNodesResponse
+extension_object_typeids['AddNodesResponse'] = nid
 nid = FourByteNodeId(ObjectIds.AddReferencesItem_Encoding_DefaultBinary)
-extension_object_classes[nid] = AddReferencesItem
-extension_object_ids['AddReferencesItem'] = nid
+extension_objects_by_typeid[nid] = AddReferencesItem
+extension_object_typeids['AddReferencesItem'] = nid
 nid = FourByteNodeId(ObjectIds.AddReferencesRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = AddReferencesRequest
-extension_object_ids['AddReferencesRequest'] = nid
+extension_objects_by_typeid[nid] = AddReferencesRequest
+extension_object_typeids['AddReferencesRequest'] = nid
 nid = FourByteNodeId(ObjectIds.AddReferencesResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = AddReferencesResponse
-extension_object_ids['AddReferencesResponse'] = nid
+extension_objects_by_typeid[nid] = AddReferencesResponse
+extension_object_typeids['AddReferencesResponse'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteNodesItem_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteNodesItem
-extension_object_ids['DeleteNodesItem'] = nid
+extension_objects_by_typeid[nid] = DeleteNodesItem
+extension_object_typeids['DeleteNodesItem'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteNodesRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteNodesRequest
-extension_object_ids['DeleteNodesRequest'] = nid
+extension_objects_by_typeid[nid] = DeleteNodesRequest
+extension_object_typeids['DeleteNodesRequest'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteNodesResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteNodesResponse
-extension_object_ids['DeleteNodesResponse'] = nid
+extension_objects_by_typeid[nid] = DeleteNodesResponse
+extension_object_typeids['DeleteNodesResponse'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteReferencesItem_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteReferencesItem
-extension_object_ids['DeleteReferencesItem'] = nid
+extension_objects_by_typeid[nid] = DeleteReferencesItem
+extension_object_typeids['DeleteReferencesItem'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteReferencesRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteReferencesRequest
-extension_object_ids['DeleteReferencesRequest'] = nid
+extension_objects_by_typeid[nid] = DeleteReferencesRequest
+extension_object_typeids['DeleteReferencesRequest'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteReferencesResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteReferencesResponse
-extension_object_ids['DeleteReferencesResponse'] = nid
+extension_objects_by_typeid[nid] = DeleteReferencesResponse
+extension_object_typeids['DeleteReferencesResponse'] = nid
 nid = FourByteNodeId(ObjectIds.ViewDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = ViewDescription
-extension_object_ids['ViewDescription'] = nid
+extension_objects_by_typeid[nid] = ViewDescription
+extension_object_typeids['ViewDescription'] = nid
 nid = FourByteNodeId(ObjectIds.BrowseDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrowseDescription
-extension_object_ids['BrowseDescription'] = nid
+extension_objects_by_typeid[nid] = BrowseDescription
+extension_object_typeids['BrowseDescription'] = nid
 nid = FourByteNodeId(ObjectIds.ReferenceDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReferenceDescription
-extension_object_ids['ReferenceDescription'] = nid
+extension_objects_by_typeid[nid] = ReferenceDescription
+extension_object_typeids['ReferenceDescription'] = nid
 nid = FourByteNodeId(ObjectIds.BrowseResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrowseResult
-extension_object_ids['BrowseResult'] = nid
+extension_objects_by_typeid[nid] = BrowseResult
+extension_object_typeids['BrowseResult'] = nid
 nid = FourByteNodeId(ObjectIds.BrowseRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrowseRequest
-extension_object_ids['BrowseRequest'] = nid
+extension_objects_by_typeid[nid] = BrowseRequest
+extension_object_typeids['BrowseRequest'] = nid
 nid = FourByteNodeId(ObjectIds.BrowseResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrowseResponse
-extension_object_ids['BrowseResponse'] = nid
+extension_objects_by_typeid[nid] = BrowseResponse
+extension_object_typeids['BrowseResponse'] = nid
 nid = FourByteNodeId(ObjectIds.BrowseNextRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrowseNextRequest
-extension_object_ids['BrowseNextRequest'] = nid
+extension_objects_by_typeid[nid] = BrowseNextRequest
+extension_object_typeids['BrowseNextRequest'] = nid
 nid = FourByteNodeId(ObjectIds.BrowseNextResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrowseNextResponse
-extension_object_ids['BrowseNextResponse'] = nid
+extension_objects_by_typeid[nid] = BrowseNextResponse
+extension_object_typeids['BrowseNextResponse'] = nid
 nid = FourByteNodeId(ObjectIds.RelativePathElement_Encoding_DefaultBinary)
-extension_object_classes[nid] = RelativePathElement
-extension_object_ids['RelativePathElement'] = nid
+extension_objects_by_typeid[nid] = RelativePathElement
+extension_object_typeids['RelativePathElement'] = nid
 nid = FourByteNodeId(ObjectIds.RelativePath_Encoding_DefaultBinary)
-extension_object_classes[nid] = RelativePath
-extension_object_ids['RelativePath'] = nid
+extension_objects_by_typeid[nid] = RelativePath
+extension_object_typeids['RelativePath'] = nid
 nid = FourByteNodeId(ObjectIds.BrowsePath_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrowsePath
-extension_object_ids['BrowsePath'] = nid
+extension_objects_by_typeid[nid] = BrowsePath
+extension_object_typeids['BrowsePath'] = nid
 nid = FourByteNodeId(ObjectIds.BrowsePathTarget_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrowsePathTarget
-extension_object_ids['BrowsePathTarget'] = nid
+extension_objects_by_typeid[nid] = BrowsePathTarget
+extension_object_typeids['BrowsePathTarget'] = nid
 nid = FourByteNodeId(ObjectIds.BrowsePathResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = BrowsePathResult
-extension_object_ids['BrowsePathResult'] = nid
+extension_objects_by_typeid[nid] = BrowsePathResult
+extension_object_typeids['BrowsePathResult'] = nid
 nid = FourByteNodeId(ObjectIds.TranslateBrowsePathsToNodeIdsRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = TranslateBrowsePathsToNodeIdsRequest
-extension_object_ids['TranslateBrowsePathsToNodeIdsRequest'] = nid
+extension_objects_by_typeid[nid] = TranslateBrowsePathsToNodeIdsRequest
+extension_object_typeids['TranslateBrowsePathsToNodeIdsRequest'] = nid
 nid = FourByteNodeId(ObjectIds.TranslateBrowsePathsToNodeIdsResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = TranslateBrowsePathsToNodeIdsResponse
-extension_object_ids['TranslateBrowsePathsToNodeIdsResponse'] = nid
+extension_objects_by_typeid[nid] = TranslateBrowsePathsToNodeIdsResponse
+extension_object_typeids['TranslateBrowsePathsToNodeIdsResponse'] = nid
 nid = FourByteNodeId(ObjectIds.RegisterNodesRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = RegisterNodesRequest
-extension_object_ids['RegisterNodesRequest'] = nid
+extension_objects_by_typeid[nid] = RegisterNodesRequest
+extension_object_typeids['RegisterNodesRequest'] = nid
 nid = FourByteNodeId(ObjectIds.RegisterNodesResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = RegisterNodesResponse
-extension_object_ids['RegisterNodesResponse'] = nid
+extension_objects_by_typeid[nid] = RegisterNodesResponse
+extension_object_typeids['RegisterNodesResponse'] = nid
 nid = FourByteNodeId(ObjectIds.UnregisterNodesRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = UnregisterNodesRequest
-extension_object_ids['UnregisterNodesRequest'] = nid
+extension_objects_by_typeid[nid] = UnregisterNodesRequest
+extension_object_typeids['UnregisterNodesRequest'] = nid
 nid = FourByteNodeId(ObjectIds.UnregisterNodesResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = UnregisterNodesResponse
-extension_object_ids['UnregisterNodesResponse'] = nid
+extension_objects_by_typeid[nid] = UnregisterNodesResponse
+extension_object_typeids['UnregisterNodesResponse'] = nid
 nid = FourByteNodeId(ObjectIds.EndpointConfiguration_Encoding_DefaultBinary)
-extension_object_classes[nid] = EndpointConfiguration
-extension_object_ids['EndpointConfiguration'] = nid
+extension_objects_by_typeid[nid] = EndpointConfiguration
+extension_object_typeids['EndpointConfiguration'] = nid
 nid = FourByteNodeId(ObjectIds.QueryDataDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = QueryDataDescription
-extension_object_ids['QueryDataDescription'] = nid
+extension_objects_by_typeid[nid] = QueryDataDescription
+extension_object_typeids['QueryDataDescription'] = nid
 nid = FourByteNodeId(ObjectIds.NodeTypeDescription_Encoding_DefaultBinary)
-extension_object_classes[nid] = NodeTypeDescription
-extension_object_ids['NodeTypeDescription'] = nid
+extension_objects_by_typeid[nid] = NodeTypeDescription
+extension_object_typeids['NodeTypeDescription'] = nid
 nid = FourByteNodeId(ObjectIds.QueryDataSet_Encoding_DefaultBinary)
-extension_object_classes[nid] = QueryDataSet
-extension_object_ids['QueryDataSet'] = nid
+extension_objects_by_typeid[nid] = QueryDataSet
+extension_object_typeids['QueryDataSet'] = nid
 nid = FourByteNodeId(ObjectIds.NodeReference_Encoding_DefaultBinary)
-extension_object_classes[nid] = NodeReference
-extension_object_ids['NodeReference'] = nid
+extension_objects_by_typeid[nid] = NodeReference
+extension_object_typeids['NodeReference'] = nid
 nid = FourByteNodeId(ObjectIds.ContentFilterElement_Encoding_DefaultBinary)
-extension_object_classes[nid] = ContentFilterElement
-extension_object_ids['ContentFilterElement'] = nid
+extension_objects_by_typeid[nid] = ContentFilterElement
+extension_object_typeids['ContentFilterElement'] = nid
 nid = FourByteNodeId(ObjectIds.ContentFilter_Encoding_DefaultBinary)
-extension_object_classes[nid] = ContentFilter
-extension_object_ids['ContentFilter'] = nid
+extension_objects_by_typeid[nid] = ContentFilter
+extension_object_typeids['ContentFilter'] = nid
 nid = FourByteNodeId(ObjectIds.ElementOperand_Encoding_DefaultBinary)
-extension_object_classes[nid] = ElementOperand
-extension_object_ids['ElementOperand'] = nid
+extension_objects_by_typeid[nid] = ElementOperand
+extension_object_typeids['ElementOperand'] = nid
 nid = FourByteNodeId(ObjectIds.LiteralOperand_Encoding_DefaultBinary)
-extension_object_classes[nid] = LiteralOperand
-extension_object_ids['LiteralOperand'] = nid
+extension_objects_by_typeid[nid] = LiteralOperand
+extension_object_typeids['LiteralOperand'] = nid
 nid = FourByteNodeId(ObjectIds.AttributeOperand_Encoding_DefaultBinary)
-extension_object_classes[nid] = AttributeOperand
-extension_object_ids['AttributeOperand'] = nid
+extension_objects_by_typeid[nid] = AttributeOperand
+extension_object_typeids['AttributeOperand'] = nid
 nid = FourByteNodeId(ObjectIds.SimpleAttributeOperand_Encoding_DefaultBinary)
-extension_object_classes[nid] = SimpleAttributeOperand
-extension_object_ids['SimpleAttributeOperand'] = nid
+extension_objects_by_typeid[nid] = SimpleAttributeOperand
+extension_object_typeids['SimpleAttributeOperand'] = nid
 nid = FourByteNodeId(ObjectIds.ContentFilterElementResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = ContentFilterElementResult
-extension_object_ids['ContentFilterElementResult'] = nid
+extension_objects_by_typeid[nid] = ContentFilterElementResult
+extension_object_typeids['ContentFilterElementResult'] = nid
 nid = FourByteNodeId(ObjectIds.ContentFilterResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = ContentFilterResult
-extension_object_ids['ContentFilterResult'] = nid
+extension_objects_by_typeid[nid] = ContentFilterResult
+extension_object_typeids['ContentFilterResult'] = nid
 nid = FourByteNodeId(ObjectIds.ParsingResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = ParsingResult
-extension_object_ids['ParsingResult'] = nid
+extension_objects_by_typeid[nid] = ParsingResult
+extension_object_typeids['ParsingResult'] = nid
 nid = FourByteNodeId(ObjectIds.QueryFirstRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = QueryFirstRequest
-extension_object_ids['QueryFirstRequest'] = nid
+extension_objects_by_typeid[nid] = QueryFirstRequest
+extension_object_typeids['QueryFirstRequest'] = nid
 nid = FourByteNodeId(ObjectIds.QueryFirstResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = QueryFirstResponse
-extension_object_ids['QueryFirstResponse'] = nid
+extension_objects_by_typeid[nid] = QueryFirstResponse
+extension_object_typeids['QueryFirstResponse'] = nid
 nid = FourByteNodeId(ObjectIds.QueryNextRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = QueryNextRequest
-extension_object_ids['QueryNextRequest'] = nid
+extension_objects_by_typeid[nid] = QueryNextRequest
+extension_object_typeids['QueryNextRequest'] = nid
 nid = FourByteNodeId(ObjectIds.QueryNextResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = QueryNextResponse
-extension_object_ids['QueryNextResponse'] = nid
+extension_objects_by_typeid[nid] = QueryNextResponse
+extension_object_typeids['QueryNextResponse'] = nid
 nid = FourByteNodeId(ObjectIds.ReadValueId_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReadValueId
-extension_object_ids['ReadValueId'] = nid
+extension_objects_by_typeid[nid] = ReadValueId
+extension_object_typeids['ReadValueId'] = nid
 nid = FourByteNodeId(ObjectIds.ReadRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReadRequest
-extension_object_ids['ReadRequest'] = nid
+extension_objects_by_typeid[nid] = ReadRequest
+extension_object_typeids['ReadRequest'] = nid
 nid = FourByteNodeId(ObjectIds.ReadResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReadResponse
-extension_object_ids['ReadResponse'] = nid
+extension_objects_by_typeid[nid] = ReadResponse
+extension_object_typeids['ReadResponse'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryReadValueId_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryReadValueId
-extension_object_ids['HistoryReadValueId'] = nid
+extension_objects_by_typeid[nid] = HistoryReadValueId
+extension_object_typeids['HistoryReadValueId'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryReadResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryReadResult
-extension_object_ids['HistoryReadResult'] = nid
+extension_objects_by_typeid[nid] = HistoryReadResult
+extension_object_typeids['HistoryReadResult'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryReadDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryReadDetails
-extension_object_ids['HistoryReadDetails'] = nid
+extension_objects_by_typeid[nid] = HistoryReadDetails
+extension_object_typeids['HistoryReadDetails'] = nid
 nid = FourByteNodeId(ObjectIds.ReadEventDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReadEventDetails
-extension_object_ids['ReadEventDetails'] = nid
+extension_objects_by_typeid[nid] = ReadEventDetails
+extension_object_typeids['ReadEventDetails'] = nid
 nid = FourByteNodeId(ObjectIds.ReadRawModifiedDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReadRawModifiedDetails
-extension_object_ids['ReadRawModifiedDetails'] = nid
+extension_objects_by_typeid[nid] = ReadRawModifiedDetails
+extension_object_typeids['ReadRawModifiedDetails'] = nid
 nid = FourByteNodeId(ObjectIds.ReadProcessedDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReadProcessedDetails
-extension_object_ids['ReadProcessedDetails'] = nid
+extension_objects_by_typeid[nid] = ReadProcessedDetails
+extension_object_typeids['ReadProcessedDetails'] = nid
 nid = FourByteNodeId(ObjectIds.ReadAtTimeDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = ReadAtTimeDetails
-extension_object_ids['ReadAtTimeDetails'] = nid
+extension_objects_by_typeid[nid] = ReadAtTimeDetails
+extension_object_typeids['ReadAtTimeDetails'] = nid
+nid = FourByteNodeId(ObjectIds.ReadAnnotationDataDetails_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ReadAnnotationDataDetails
+extension_object_typeids['ReadAnnotationDataDetails'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryData_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryData
-extension_object_ids['HistoryData'] = nid
+extension_objects_by_typeid[nid] = HistoryData
+extension_object_typeids['HistoryData'] = nid
 nid = FourByteNodeId(ObjectIds.ModificationInfo_Encoding_DefaultBinary)
-extension_object_classes[nid] = ModificationInfo
-extension_object_ids['ModificationInfo'] = nid
+extension_objects_by_typeid[nid] = ModificationInfo
+extension_object_typeids['ModificationInfo'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryModifiedData_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryModifiedData
-extension_object_ids['HistoryModifiedData'] = nid
+extension_objects_by_typeid[nid] = HistoryModifiedData
+extension_object_typeids['HistoryModifiedData'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryEvent_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryEvent
-extension_object_ids['HistoryEvent'] = nid
+extension_objects_by_typeid[nid] = HistoryEvent
+extension_object_typeids['HistoryEvent'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryReadRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryReadRequest
-extension_object_ids['HistoryReadRequest'] = nid
+extension_objects_by_typeid[nid] = HistoryReadRequest
+extension_object_typeids['HistoryReadRequest'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryReadResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryReadResponse
-extension_object_ids['HistoryReadResponse'] = nid
+extension_objects_by_typeid[nid] = HistoryReadResponse
+extension_object_typeids['HistoryReadResponse'] = nid
 nid = FourByteNodeId(ObjectIds.WriteValue_Encoding_DefaultBinary)
-extension_object_classes[nid] = WriteValue
-extension_object_ids['WriteValue'] = nid
+extension_objects_by_typeid[nid] = WriteValue
+extension_object_typeids['WriteValue'] = nid
 nid = FourByteNodeId(ObjectIds.WriteRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = WriteRequest
-extension_object_ids['WriteRequest'] = nid
+extension_objects_by_typeid[nid] = WriteRequest
+extension_object_typeids['WriteRequest'] = nid
 nid = FourByteNodeId(ObjectIds.WriteResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = WriteResponse
-extension_object_ids['WriteResponse'] = nid
+extension_objects_by_typeid[nid] = WriteResponse
+extension_object_typeids['WriteResponse'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryUpdateDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryUpdateDetails
-extension_object_ids['HistoryUpdateDetails'] = nid
+extension_objects_by_typeid[nid] = HistoryUpdateDetails
+extension_object_typeids['HistoryUpdateDetails'] = nid
 nid = FourByteNodeId(ObjectIds.UpdateDataDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = UpdateDataDetails
-extension_object_ids['UpdateDataDetails'] = nid
+extension_objects_by_typeid[nid] = UpdateDataDetails
+extension_object_typeids['UpdateDataDetails'] = nid
 nid = FourByteNodeId(ObjectIds.UpdateStructureDataDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = UpdateStructureDataDetails
-extension_object_ids['UpdateStructureDataDetails'] = nid
+extension_objects_by_typeid[nid] = UpdateStructureDataDetails
+extension_object_typeids['UpdateStructureDataDetails'] = nid
 nid = FourByteNodeId(ObjectIds.UpdateEventDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = UpdateEventDetails
-extension_object_ids['UpdateEventDetails'] = nid
+extension_objects_by_typeid[nid] = UpdateEventDetails
+extension_object_typeids['UpdateEventDetails'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteRawModifiedDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteRawModifiedDetails
-extension_object_ids['DeleteRawModifiedDetails'] = nid
+extension_objects_by_typeid[nid] = DeleteRawModifiedDetails
+extension_object_typeids['DeleteRawModifiedDetails'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteAtTimeDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteAtTimeDetails
-extension_object_ids['DeleteAtTimeDetails'] = nid
+extension_objects_by_typeid[nid] = DeleteAtTimeDetails
+extension_object_typeids['DeleteAtTimeDetails'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteEventDetails_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteEventDetails
-extension_object_ids['DeleteEventDetails'] = nid
+extension_objects_by_typeid[nid] = DeleteEventDetails
+extension_object_typeids['DeleteEventDetails'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryUpdateResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryUpdateResult
-extension_object_ids['HistoryUpdateResult'] = nid
+extension_objects_by_typeid[nid] = HistoryUpdateResult
+extension_object_typeids['HistoryUpdateResult'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryUpdateRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryUpdateRequest
-extension_object_ids['HistoryUpdateRequest'] = nid
+extension_objects_by_typeid[nid] = HistoryUpdateRequest
+extension_object_typeids['HistoryUpdateRequest'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryUpdateResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryUpdateResponse
-extension_object_ids['HistoryUpdateResponse'] = nid
+extension_objects_by_typeid[nid] = HistoryUpdateResponse
+extension_object_typeids['HistoryUpdateResponse'] = nid
 nid = FourByteNodeId(ObjectIds.CallMethodRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = CallMethodRequest
-extension_object_ids['CallMethodRequest'] = nid
+extension_objects_by_typeid[nid] = CallMethodRequest
+extension_object_typeids['CallMethodRequest'] = nid
 nid = FourByteNodeId(ObjectIds.CallMethodResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = CallMethodResult
-extension_object_ids['CallMethodResult'] = nid
+extension_objects_by_typeid[nid] = CallMethodResult
+extension_object_typeids['CallMethodResult'] = nid
 nid = FourByteNodeId(ObjectIds.CallRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = CallRequest
-extension_object_ids['CallRequest'] = nid
+extension_objects_by_typeid[nid] = CallRequest
+extension_object_typeids['CallRequest'] = nid
 nid = FourByteNodeId(ObjectIds.CallResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = CallResponse
-extension_object_ids['CallResponse'] = nid
+extension_objects_by_typeid[nid] = CallResponse
+extension_object_typeids['CallResponse'] = nid
 nid = FourByteNodeId(ObjectIds.MonitoringFilter_Encoding_DefaultBinary)
-extension_object_classes[nid] = MonitoringFilter
-extension_object_ids['MonitoringFilter'] = nid
+extension_objects_by_typeid[nid] = MonitoringFilter
+extension_object_typeids['MonitoringFilter'] = nid
 nid = FourByteNodeId(ObjectIds.DataChangeFilter_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataChangeFilter
-extension_object_ids['DataChangeFilter'] = nid
+extension_objects_by_typeid[nid] = DataChangeFilter
+extension_object_typeids['DataChangeFilter'] = nid
 nid = FourByteNodeId(ObjectIds.EventFilter_Encoding_DefaultBinary)
-extension_object_classes[nid] = EventFilter
-extension_object_ids['EventFilter'] = nid
+extension_objects_by_typeid[nid] = EventFilter
+extension_object_typeids['EventFilter'] = nid
 nid = FourByteNodeId(ObjectIds.AggregateConfiguration_Encoding_DefaultBinary)
-extension_object_classes[nid] = AggregateConfiguration
-extension_object_ids['AggregateConfiguration'] = nid
+extension_objects_by_typeid[nid] = AggregateConfiguration
+extension_object_typeids['AggregateConfiguration'] = nid
 nid = FourByteNodeId(ObjectIds.AggregateFilter_Encoding_DefaultBinary)
-extension_object_classes[nid] = AggregateFilter
-extension_object_ids['AggregateFilter'] = nid
+extension_objects_by_typeid[nid] = AggregateFilter
+extension_object_typeids['AggregateFilter'] = nid
 nid = FourByteNodeId(ObjectIds.MonitoringFilterResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = MonitoringFilterResult
-extension_object_ids['MonitoringFilterResult'] = nid
+extension_objects_by_typeid[nid] = MonitoringFilterResult
+extension_object_typeids['MonitoringFilterResult'] = nid
 nid = FourByteNodeId(ObjectIds.EventFilterResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = EventFilterResult
-extension_object_ids['EventFilterResult'] = nid
+extension_objects_by_typeid[nid] = EventFilterResult
+extension_object_typeids['EventFilterResult'] = nid
 nid = FourByteNodeId(ObjectIds.AggregateFilterResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = AggregateFilterResult
-extension_object_ids['AggregateFilterResult'] = nid
+extension_objects_by_typeid[nid] = AggregateFilterResult
+extension_object_typeids['AggregateFilterResult'] = nid
 nid = FourByteNodeId(ObjectIds.MonitoringParameters_Encoding_DefaultBinary)
-extension_object_classes[nid] = MonitoringParameters
-extension_object_ids['MonitoringParameters'] = nid
+extension_objects_by_typeid[nid] = MonitoringParameters
+extension_object_typeids['MonitoringParameters'] = nid
 nid = FourByteNodeId(ObjectIds.MonitoredItemCreateRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = MonitoredItemCreateRequest
-extension_object_ids['MonitoredItemCreateRequest'] = nid
+extension_objects_by_typeid[nid] = MonitoredItemCreateRequest
+extension_object_typeids['MonitoredItemCreateRequest'] = nid
 nid = FourByteNodeId(ObjectIds.MonitoredItemCreateResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = MonitoredItemCreateResult
-extension_object_ids['MonitoredItemCreateResult'] = nid
+extension_objects_by_typeid[nid] = MonitoredItemCreateResult
+extension_object_typeids['MonitoredItemCreateResult'] = nid
 nid = FourByteNodeId(ObjectIds.CreateMonitoredItemsRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = CreateMonitoredItemsRequest
-extension_object_ids['CreateMonitoredItemsRequest'] = nid
+extension_objects_by_typeid[nid] = CreateMonitoredItemsRequest
+extension_object_typeids['CreateMonitoredItemsRequest'] = nid
 nid = FourByteNodeId(ObjectIds.CreateMonitoredItemsResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = CreateMonitoredItemsResponse
-extension_object_ids['CreateMonitoredItemsResponse'] = nid
+extension_objects_by_typeid[nid] = CreateMonitoredItemsResponse
+extension_object_typeids['CreateMonitoredItemsResponse'] = nid
 nid = FourByteNodeId(ObjectIds.MonitoredItemModifyRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = MonitoredItemModifyRequest
-extension_object_ids['MonitoredItemModifyRequest'] = nid
+extension_objects_by_typeid[nid] = MonitoredItemModifyRequest
+extension_object_typeids['MonitoredItemModifyRequest'] = nid
 nid = FourByteNodeId(ObjectIds.MonitoredItemModifyResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = MonitoredItemModifyResult
-extension_object_ids['MonitoredItemModifyResult'] = nid
+extension_objects_by_typeid[nid] = MonitoredItemModifyResult
+extension_object_typeids['MonitoredItemModifyResult'] = nid
 nid = FourByteNodeId(ObjectIds.ModifyMonitoredItemsRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = ModifyMonitoredItemsRequest
-extension_object_ids['ModifyMonitoredItemsRequest'] = nid
+extension_objects_by_typeid[nid] = ModifyMonitoredItemsRequest
+extension_object_typeids['ModifyMonitoredItemsRequest'] = nid
 nid = FourByteNodeId(ObjectIds.ModifyMonitoredItemsResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = ModifyMonitoredItemsResponse
-extension_object_ids['ModifyMonitoredItemsResponse'] = nid
+extension_objects_by_typeid[nid] = ModifyMonitoredItemsResponse
+extension_object_typeids['ModifyMonitoredItemsResponse'] = nid
 nid = FourByteNodeId(ObjectIds.SetMonitoringModeRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = SetMonitoringModeRequest
-extension_object_ids['SetMonitoringModeRequest'] = nid
+extension_objects_by_typeid[nid] = SetMonitoringModeRequest
+extension_object_typeids['SetMonitoringModeRequest'] = nid
 nid = FourByteNodeId(ObjectIds.SetMonitoringModeResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = SetMonitoringModeResponse
-extension_object_ids['SetMonitoringModeResponse'] = nid
+extension_objects_by_typeid[nid] = SetMonitoringModeResponse
+extension_object_typeids['SetMonitoringModeResponse'] = nid
 nid = FourByteNodeId(ObjectIds.SetTriggeringRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = SetTriggeringRequest
-extension_object_ids['SetTriggeringRequest'] = nid
+extension_objects_by_typeid[nid] = SetTriggeringRequest
+extension_object_typeids['SetTriggeringRequest'] = nid
 nid = FourByteNodeId(ObjectIds.SetTriggeringResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = SetTriggeringResponse
-extension_object_ids['SetTriggeringResponse'] = nid
+extension_objects_by_typeid[nid] = SetTriggeringResponse
+extension_object_typeids['SetTriggeringResponse'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteMonitoredItemsRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteMonitoredItemsRequest
-extension_object_ids['DeleteMonitoredItemsRequest'] = nid
+extension_objects_by_typeid[nid] = DeleteMonitoredItemsRequest
+extension_object_typeids['DeleteMonitoredItemsRequest'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteMonitoredItemsResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteMonitoredItemsResponse
-extension_object_ids['DeleteMonitoredItemsResponse'] = nid
+extension_objects_by_typeid[nid] = DeleteMonitoredItemsResponse
+extension_object_typeids['DeleteMonitoredItemsResponse'] = nid
 nid = FourByteNodeId(ObjectIds.CreateSubscriptionRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = CreateSubscriptionRequest
-extension_object_ids['CreateSubscriptionRequest'] = nid
+extension_objects_by_typeid[nid] = CreateSubscriptionRequest
+extension_object_typeids['CreateSubscriptionRequest'] = nid
 nid = FourByteNodeId(ObjectIds.CreateSubscriptionResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = CreateSubscriptionResponse
-extension_object_ids['CreateSubscriptionResponse'] = nid
+extension_objects_by_typeid[nid] = CreateSubscriptionResponse
+extension_object_typeids['CreateSubscriptionResponse'] = nid
 nid = FourByteNodeId(ObjectIds.ModifySubscriptionRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = ModifySubscriptionRequest
-extension_object_ids['ModifySubscriptionRequest'] = nid
+extension_objects_by_typeid[nid] = ModifySubscriptionRequest
+extension_object_typeids['ModifySubscriptionRequest'] = nid
 nid = FourByteNodeId(ObjectIds.ModifySubscriptionResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = ModifySubscriptionResponse
-extension_object_ids['ModifySubscriptionResponse'] = nid
+extension_objects_by_typeid[nid] = ModifySubscriptionResponse
+extension_object_typeids['ModifySubscriptionResponse'] = nid
 nid = FourByteNodeId(ObjectIds.SetPublishingModeRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = SetPublishingModeRequest
-extension_object_ids['SetPublishingModeRequest'] = nid
+extension_objects_by_typeid[nid] = SetPublishingModeRequest
+extension_object_typeids['SetPublishingModeRequest'] = nid
 nid = FourByteNodeId(ObjectIds.SetPublishingModeResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = SetPublishingModeResponse
-extension_object_ids['SetPublishingModeResponse'] = nid
+extension_objects_by_typeid[nid] = SetPublishingModeResponse
+extension_object_typeids['SetPublishingModeResponse'] = nid
 nid = FourByteNodeId(ObjectIds.NotificationMessage_Encoding_DefaultBinary)
-extension_object_classes[nid] = NotificationMessage
-extension_object_ids['NotificationMessage'] = nid
+extension_objects_by_typeid[nid] = NotificationMessage
+extension_object_typeids['NotificationMessage'] = nid
 nid = FourByteNodeId(ObjectIds.NotificationData_Encoding_DefaultBinary)
-extension_object_classes[nid] = NotificationData
-extension_object_ids['NotificationData'] = nid
+extension_objects_by_typeid[nid] = NotificationData
+extension_object_typeids['NotificationData'] = nid
 nid = FourByteNodeId(ObjectIds.DataChangeNotification_Encoding_DefaultBinary)
-extension_object_classes[nid] = DataChangeNotification
-extension_object_ids['DataChangeNotification'] = nid
+extension_objects_by_typeid[nid] = DataChangeNotification
+extension_object_typeids['DataChangeNotification'] = nid
 nid = FourByteNodeId(ObjectIds.MonitoredItemNotification_Encoding_DefaultBinary)
-extension_object_classes[nid] = MonitoredItemNotification
-extension_object_ids['MonitoredItemNotification'] = nid
+extension_objects_by_typeid[nid] = MonitoredItemNotification
+extension_object_typeids['MonitoredItemNotification'] = nid
 nid = FourByteNodeId(ObjectIds.EventNotificationList_Encoding_DefaultBinary)
-extension_object_classes[nid] = EventNotificationList
-extension_object_ids['EventNotificationList'] = nid
+extension_objects_by_typeid[nid] = EventNotificationList
+extension_object_typeids['EventNotificationList'] = nid
 nid = FourByteNodeId(ObjectIds.EventFieldList_Encoding_DefaultBinary)
-extension_object_classes[nid] = EventFieldList
-extension_object_ids['EventFieldList'] = nid
+extension_objects_by_typeid[nid] = EventFieldList
+extension_object_typeids['EventFieldList'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryEventFieldList_Encoding_DefaultBinary)
-extension_object_classes[nid] = HistoryEventFieldList
-extension_object_ids['HistoryEventFieldList'] = nid
+extension_objects_by_typeid[nid] = HistoryEventFieldList
+extension_object_typeids['HistoryEventFieldList'] = nid
 nid = FourByteNodeId(ObjectIds.StatusChangeNotification_Encoding_DefaultBinary)
-extension_object_classes[nid] = StatusChangeNotification
-extension_object_ids['StatusChangeNotification'] = nid
+extension_objects_by_typeid[nid] = StatusChangeNotification
+extension_object_typeids['StatusChangeNotification'] = nid
 nid = FourByteNodeId(ObjectIds.SubscriptionAcknowledgement_Encoding_DefaultBinary)
-extension_object_classes[nid] = SubscriptionAcknowledgement
-extension_object_ids['SubscriptionAcknowledgement'] = nid
+extension_objects_by_typeid[nid] = SubscriptionAcknowledgement
+extension_object_typeids['SubscriptionAcknowledgement'] = nid
 nid = FourByteNodeId(ObjectIds.PublishRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = PublishRequest
-extension_object_ids['PublishRequest'] = nid
+extension_objects_by_typeid[nid] = PublishRequest
+extension_object_typeids['PublishRequest'] = nid
 nid = FourByteNodeId(ObjectIds.PublishResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = PublishResponse
-extension_object_ids['PublishResponse'] = nid
+extension_objects_by_typeid[nid] = PublishResponse
+extension_object_typeids['PublishResponse'] = nid
 nid = FourByteNodeId(ObjectIds.RepublishRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = RepublishRequest
-extension_object_ids['RepublishRequest'] = nid
+extension_objects_by_typeid[nid] = RepublishRequest
+extension_object_typeids['RepublishRequest'] = nid
 nid = FourByteNodeId(ObjectIds.RepublishResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = RepublishResponse
-extension_object_ids['RepublishResponse'] = nid
+extension_objects_by_typeid[nid] = RepublishResponse
+extension_object_typeids['RepublishResponse'] = nid
 nid = FourByteNodeId(ObjectIds.TransferResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = TransferResult
-extension_object_ids['TransferResult'] = nid
+extension_objects_by_typeid[nid] = TransferResult
+extension_object_typeids['TransferResult'] = nid
 nid = FourByteNodeId(ObjectIds.TransferSubscriptionsRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = TransferSubscriptionsRequest
-extension_object_ids['TransferSubscriptionsRequest'] = nid
+extension_objects_by_typeid[nid] = TransferSubscriptionsRequest
+extension_object_typeids['TransferSubscriptionsRequest'] = nid
 nid = FourByteNodeId(ObjectIds.TransferSubscriptionsResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = TransferSubscriptionsResponse
-extension_object_ids['TransferSubscriptionsResponse'] = nid
+extension_objects_by_typeid[nid] = TransferSubscriptionsResponse
+extension_object_typeids['TransferSubscriptionsResponse'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteSubscriptionsRequest_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteSubscriptionsRequest
-extension_object_ids['DeleteSubscriptionsRequest'] = nid
+extension_objects_by_typeid[nid] = DeleteSubscriptionsRequest
+extension_object_typeids['DeleteSubscriptionsRequest'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteSubscriptionsResponse_Encoding_DefaultBinary)
-extension_object_classes[nid] = DeleteSubscriptionsResponse
-extension_object_ids['DeleteSubscriptionsResponse'] = nid
+extension_objects_by_typeid[nid] = DeleteSubscriptionsResponse
+extension_object_typeids['DeleteSubscriptionsResponse'] = nid
 nid = FourByteNodeId(ObjectIds.BuildInfo_Encoding_DefaultBinary)
-extension_object_classes[nid] = BuildInfo
-extension_object_ids['BuildInfo'] = nid
+extension_objects_by_typeid[nid] = BuildInfo
+extension_object_typeids['BuildInfo'] = nid
 nid = FourByteNodeId(ObjectIds.RedundantServerDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = RedundantServerDataType
-extension_object_ids['RedundantServerDataType'] = nid
+extension_objects_by_typeid[nid] = RedundantServerDataType
+extension_object_typeids['RedundantServerDataType'] = nid
 nid = FourByteNodeId(ObjectIds.EndpointUrlListDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = EndpointUrlListDataType
-extension_object_ids['EndpointUrlListDataType'] = nid
+extension_objects_by_typeid[nid] = EndpointUrlListDataType
+extension_object_typeids['EndpointUrlListDataType'] = nid
 nid = FourByteNodeId(ObjectIds.NetworkGroupDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = NetworkGroupDataType
-extension_object_ids['NetworkGroupDataType'] = nid
+extension_objects_by_typeid[nid] = NetworkGroupDataType
+extension_object_typeids['NetworkGroupDataType'] = nid
 nid = FourByteNodeId(ObjectIds.SamplingIntervalDiagnosticsDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = SamplingIntervalDiagnosticsDataType
-extension_object_ids['SamplingIntervalDiagnosticsDataType'] = nid
+extension_objects_by_typeid[nid] = SamplingIntervalDiagnosticsDataType
+extension_object_typeids['SamplingIntervalDiagnosticsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ServerDiagnosticsSummaryDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ServerDiagnosticsSummaryDataType
-extension_object_ids['ServerDiagnosticsSummaryDataType'] = nid
+extension_objects_by_typeid[nid] = ServerDiagnosticsSummaryDataType
+extension_object_typeids['ServerDiagnosticsSummaryDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ServerStatusDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ServerStatusDataType
-extension_object_ids['ServerStatusDataType'] = nid
+extension_objects_by_typeid[nid] = ServerStatusDataType
+extension_object_typeids['ServerStatusDataType'] = nid
 nid = FourByteNodeId(ObjectIds.SessionDiagnosticsDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = SessionDiagnosticsDataType
-extension_object_ids['SessionDiagnosticsDataType'] = nid
+extension_objects_by_typeid[nid] = SessionDiagnosticsDataType
+extension_object_typeids['SessionDiagnosticsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.SessionSecurityDiagnosticsDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = SessionSecurityDiagnosticsDataType
-extension_object_ids['SessionSecurityDiagnosticsDataType'] = nid
+extension_objects_by_typeid[nid] = SessionSecurityDiagnosticsDataType
+extension_object_typeids['SessionSecurityDiagnosticsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ServiceCounterDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ServiceCounterDataType
-extension_object_ids['ServiceCounterDataType'] = nid
+extension_objects_by_typeid[nid] = ServiceCounterDataType
+extension_object_typeids['ServiceCounterDataType'] = nid
 nid = FourByteNodeId(ObjectIds.StatusResult_Encoding_DefaultBinary)
-extension_object_classes[nid] = StatusResult
-extension_object_ids['StatusResult'] = nid
+extension_objects_by_typeid[nid] = StatusResult
+extension_object_typeids['StatusResult'] = nid
 nid = FourByteNodeId(ObjectIds.SubscriptionDiagnosticsDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = SubscriptionDiagnosticsDataType
-extension_object_ids['SubscriptionDiagnosticsDataType'] = nid
+extension_objects_by_typeid[nid] = SubscriptionDiagnosticsDataType
+extension_object_typeids['SubscriptionDiagnosticsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ModelChangeStructureDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ModelChangeStructureDataType
-extension_object_ids['ModelChangeStructureDataType'] = nid
+extension_objects_by_typeid[nid] = ModelChangeStructureDataType
+extension_object_typeids['ModelChangeStructureDataType'] = nid
 nid = FourByteNodeId(ObjectIds.SemanticChangeStructureDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = SemanticChangeStructureDataType
-extension_object_ids['SemanticChangeStructureDataType'] = nid
+extension_objects_by_typeid[nid] = SemanticChangeStructureDataType
+extension_object_typeids['SemanticChangeStructureDataType'] = nid
 nid = FourByteNodeId(ObjectIds.Range_Encoding_DefaultBinary)
-extension_object_classes[nid] = Range
-extension_object_ids['Range'] = nid
+extension_objects_by_typeid[nid] = Range
+extension_object_typeids['Range'] = nid
 nid = FourByteNodeId(ObjectIds.EUInformation_Encoding_DefaultBinary)
-extension_object_classes[nid] = EUInformation
-extension_object_ids['EUInformation'] = nid
+extension_objects_by_typeid[nid] = EUInformation
+extension_object_typeids['EUInformation'] = nid
 nid = FourByteNodeId(ObjectIds.ComplexNumberType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ComplexNumberType
-extension_object_ids['ComplexNumberType'] = nid
+extension_objects_by_typeid[nid] = ComplexNumberType
+extension_object_typeids['ComplexNumberType'] = nid
 nid = FourByteNodeId(ObjectIds.DoubleComplexNumberType_Encoding_DefaultBinary)
-extension_object_classes[nid] = DoubleComplexNumberType
-extension_object_ids['DoubleComplexNumberType'] = nid
+extension_objects_by_typeid[nid] = DoubleComplexNumberType
+extension_object_typeids['DoubleComplexNumberType'] = nid
 nid = FourByteNodeId(ObjectIds.AxisInformation_Encoding_DefaultBinary)
-extension_object_classes[nid] = AxisInformation
-extension_object_ids['AxisInformation'] = nid
+extension_objects_by_typeid[nid] = AxisInformation
+extension_object_typeids['AxisInformation'] = nid
 nid = FourByteNodeId(ObjectIds.XVType_Encoding_DefaultBinary)
-extension_object_classes[nid] = XVType
-extension_object_ids['XVType'] = nid
+extension_objects_by_typeid[nid] = XVType
+extension_object_typeids['XVType'] = nid
 nid = FourByteNodeId(ObjectIds.ProgramDiagnosticDataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ProgramDiagnosticDataType
-extension_object_ids['ProgramDiagnosticDataType'] = nid
+extension_objects_by_typeid[nid] = ProgramDiagnosticDataType
+extension_object_typeids['ProgramDiagnosticDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ProgramDiagnostic2DataType_Encoding_DefaultBinary)
-extension_object_classes[nid] = ProgramDiagnostic2DataType
-extension_object_ids['ProgramDiagnostic2DataType'] = nid
+extension_objects_by_typeid[nid] = ProgramDiagnostic2DataType
+extension_object_typeids['ProgramDiagnostic2DataType'] = nid
 nid = FourByteNodeId(ObjectIds.Annotation_Encoding_DefaultBinary)
-extension_object_classes[nid] = Annotation
-extension_object_ids['Annotation'] = nid
+extension_objects_by_typeid[nid] = Annotation
+extension_object_typeids['Annotation'] = nid

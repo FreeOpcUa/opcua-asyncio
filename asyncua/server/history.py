@@ -4,7 +4,7 @@ from datetime import timedelta
 from datetime import datetime
 
 from asyncua import ua
-from ..common.subscription import Subscription
+from ..common.subscription import Subscription, SubHandler
 from ..common.utils import Buffer
 
 
@@ -149,7 +149,7 @@ class HistoryDict(HistoryStorageInterface):
         period, count = self._events_periods[event.emitting_node]
         now = datetime.utcnow()
         if period:
-            while len(evts) and now - evts[0].SourceTimestamp > period:
+            while len(evts) and now - evts[0].Time > period:
                 evts.pop(0)
         if count and len(evts) > count:
             evts.pop(0)
@@ -182,7 +182,7 @@ class HistoryDict(HistoryStorageInterface):
         pass
 
 
-class SubHandler:
+class SubHandler(SubHandler):
     def __init__(self, storage, loop):
         self.storage = storage
         self.loop = loop
@@ -234,7 +234,7 @@ class HistoryManager:
         if not self._sub:
             self._sub = await self._create_subscription(SubHandler(self.storage, self.iserver.loop))
         if node in self._handlers:
-            raise ua.UaError("Node {0} is already historized".format(node))
+            raise ua.UaError(f"Node {node} is already historized")
         await self.storage.new_historized_node(node.nodeid, period, count)
         handler = await self._sub.subscribe_data_change(node)
         self._handlers[node] = handler
@@ -255,7 +255,7 @@ class HistoryManager:
         if not self._sub:
             self._sub = await self._create_subscription(SubHandler(self.storage, self.iserver.loop))
         if source in self._handlers:
-            raise ua.UaError("Events from {0} are already historized".format(source))
+            raise ua.UaError(f"Events from {source} are already historized")
 
         # get list of all event types that the source node generates; change this to only historize specific events
         event_types = await source.get_referenced_nodes(ua.ObjectIds.GeneratesEvent)
@@ -375,8 +375,8 @@ class HistoryManager:
             results.append(results)
         return results
 
-    def stop(self) -> Coroutine:
+    async def stop(self) -> Coroutine:
         """
         call stop methods of active storage interface whenever the server is stopped
         """
-        return self.storage.stop()
+        return await self.storage.stop()

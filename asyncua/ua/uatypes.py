@@ -25,7 +25,6 @@ class UTC(tzinfo):
     """
     UTC
     """
-
     def utcoffset(self, dt):
         return timedelta(0)
 
@@ -67,9 +66,7 @@ class _FrozenClass(object):
 
     def __setattr__(self, key, value):
         if self._freeze and not hasattr(self, key):
-            raise TypeError(
-                f"Error adding member '{key}' to class '{self.__class__.__name__}', class is frozen, members are {self.__dict__.keys()}"
-            )
+            raise TypeError(f"Error adding member '{key}' to class '{self.__class__.__name__}'," f" class is frozen, members are {self.__dict__.keys()}")
         object.__setattr__(self, key, value)
 
 
@@ -270,7 +267,8 @@ class NodeId(object):
     Args:
         identifier: The identifier might be an int, a string, bytes or a Guid
         namespaceidx(int): The index of the namespace
-        nodeidtype(NodeIdType): The type of the nodeid if it cannor be guess or you want something special like twobyte nodeid or fourbytenodeid
+        nodeidtype(NodeIdType): The type of the nodeid if it cannot be guess or you want something
+        special like twobyte nodeid or fourbytenodeid
 
 
     :ivar Identifier:
@@ -282,7 +280,6 @@ class NodeId(object):
     :ivar ServerIndex:
     :vartype ServerIndex: Int
     """
-
     def __init__(self, identifier=None, namespaceidx=0, nodeidtype=None):
 
         self.Identifier = identifier
@@ -293,7 +290,10 @@ class NodeId(object):
         self._freeze = True
         if self.Identifier is None:
             self.Identifier = 0
-            self.NodeIdType = NodeIdType.TwoByte
+            if namespaceidx == 0:
+                self.NodeIdType = NodeIdType.TwoByte
+            else:  # TwoByte NodeId does not encode namespace.
+                self.NodeIdType = NodeIdType.Numeric
             return
         if self.NodeIdType is None:
             if isinstance(self.Identifier, int):
@@ -306,10 +306,26 @@ class NodeId(object):
                 self.NodeIdType = NodeIdType.Guid
             else:
                 raise UaError("NodeId: Could not guess type of NodeId, set NodeIdType")
+        else:
+            self.check_identifier_type_compatibility()
+
+    def check_identifier_type_compatibility(self):
+        '''
+        Check whether the given identifier can be interpreted as the given node identifier type.
+        '''
+        valid_type_combinations = [
+            (int, [NodeIdType.Numeric, NodeIdType.TwoByte, NodeIdType.FourByte]),
+            (str, [NodeIdType.String, NodeIdType.ByteString]),
+            (bytes, [NodeIdType.ByteString, NodeIdType.TwoByte, NodeIdType.FourByte]),
+            (uuid.UUID, [NodeIdType.Guid])
+        ]
+        for identifier, valid_node_types in valid_type_combinations:
+            if isinstance(self.Identifier, identifier) and self.NodeIdType in valid_node_types:
+                return
+        raise UaError(f"NodeId of type {self.NodeIdType} has an incompatible identifier {self.Identifier} of type {type(self.Identifier)}")
 
     def __eq__(self, node):
-        return isinstance(node,
-                          NodeId) and self.NamespaceIndex == node.NamespaceIndex and self.Identifier == node.Identifier
+        return isinstance(node, NodeId) and self.NamespaceIndex == node.NamespaceIndex and self.Identifier == node.Identifier
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -320,8 +336,7 @@ class NodeId(object):
     def __lt__(self, other):
         if not isinstance(other, NodeId):
             raise AttributeError("Can only compare to NodeId")
-        return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (other.NodeIdType, other.NamespaceIndex,
-                                                                          other.Identifier)
+        return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (other.NodeIdType, other.NamespaceIndex, other.Identifier)
 
     def is_null(self):
         if self.NamespaceIndex != 0:
@@ -331,7 +346,7 @@ class NodeId(object):
     def has_null_identifier(self):
         if not self.Identifier:
             return True
-        if self.NodeIdType == NodeIdType.Guid and re.match(b'0.', self.Identifier):
+        if self.NodeIdType is NodeIdType.Guid and self.Identifier.int == 0:
             return True
         return False
 
@@ -384,7 +399,7 @@ class NodeId(object):
     def to_string(self):
         string = []
         if self.NamespaceIndex != 0:
-            string.append("ns={0}".format(self.NamespaceIndex))
+            string.append(f"ns={self.NamespaceIndex}")
         ntype = None
         if self.NodeIdType == NodeIdType.Numeric:
             ntype = "i"
@@ -398,17 +413,18 @@ class NodeId(object):
             ntype = "g"
         elif self.NodeIdType == NodeIdType.ByteString:
             ntype = "b"
-        string.append("{0}={1}".format(ntype, self.Identifier))
+        string.append(f"{ntype}={self.Identifier}")
         if self.ServerIndex:
-            string.append("srv={}".format(self.ServerIndex))
+            string.append(f"srv={self.ServerIndex}")
         if self.NamespaceUri:
-            string.append("nsu={0}".format(self.NamespaceUri))
+            string.append(f"nsu={self.NamespaceUri}")
         return ";".join(string)
 
     def __str__(self):
-        return f"{self.NodeIdType.name}NodeId({self.to_string()})"
+        return self.to_string()
 
-    __repr__ = __str__
+    def __repr__(self):
+        return f"{self.NodeIdType.name}NodeId({self.to_string()})"
 
     def to_binary(self):
         import asyncua
@@ -466,7 +482,7 @@ class QualifiedName(FrozenClass):
         self._freeze = True
 
     def to_string(self):
-        return "{0}:{1}".format(self.NamespaceIndex, self.Name)
+        return f"{self.NamespaceIndex}:{self.Name}"
 
     @staticmethod
     def from_string(string):
@@ -482,8 +498,7 @@ class QualifiedName(FrozenClass):
         return QualifiedName(name, idx)
 
     def __eq__(self, bname):
-        return isinstance(bname,
-                          QualifiedName) and self.Name == bname.Name and self.NamespaceIndex == bname.NamespaceIndex
+        return isinstance(bname, QualifiedName) and self.Name == bname.Name and self.NamespaceIndex == bname.NamespaceIndex
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -539,7 +554,7 @@ class LocalizedText(FrozenClass):
     @Text.setter
     def Text(self, text):
         if not isinstance(text, str):
-            raise ValueError("A LocalizedText object takes a string as argument \"text\", not a {}, {}".format(type(text), text))
+            raise ValueError(f"A LocalizedText object takes a string as argument \"text\", not a {type(text)}, {text}")
         self._text = text
         if self._text:
             self.Encoding |= (1 << 1)
@@ -547,7 +562,7 @@ class LocalizedText(FrozenClass):
     @Locale.setter
     def Locale(self, locale):
         if not isinstance(locale, str):
-            raise ValueError("A LocalizedText object takes a string as argument \"locale\", not a {}, {}".format(type(locale), locale))
+            raise ValueError(f"A LocalizedText object takes a string as argument \"locale\"," f" not a {type(locale)}, {locale}")
         self._locale = locale
         if self._locale:
             self.Encoding |= (1)
@@ -561,11 +576,11 @@ class LocalizedText(FrozenClass):
 
     @staticmethod
     def from_string(string):
-        m = re.match("^LocalizedText\(Encoding:(.*), Locale:(.*), Text:(.*)\)$", string)
+        m = re.match(r"^LocalizedText\(Encoding:(.*), Locale:(.*), Text:(.*)\)$", string)
         if m:
-            text = m.group(3) if m.group(3)!=str(None) else None
-            locale = m.group(2) if m.group(2)!=str(None) else None
-            return LocalizedText(text=text,locale=locale)            
+            text = m.group(3) if m.group(3) != str(None) else None
+            locale = m.group(2) if m.group(2) != str(None) else None
+            return LocalizedText(text=text, locale=locale)
         else:
             return LocalizedText(string)
 
@@ -687,7 +702,6 @@ class VariantTypeCustom(object):
     FIXME: We should not need this class, as far as I iunderstand the spec
     variants can only be of VariantType
     """
-
     def __init__(self, val):
         self.name = "Custom"
         self.value = val
@@ -719,7 +733,6 @@ class Variant(FrozenClass):
     :ivar is_array:
     :vartype is_array: If the variant is an array. Usually guessed from value.
     """
-
     def __init__(self, value=None, varianttype=None, dimensions=None, is_array=None):
         self.Value = value
         self.VariantType = varianttype
@@ -736,9 +749,11 @@ class Variant(FrozenClass):
             self.VariantType = value.VariantType
         if self.VariantType is None:
             self.VariantType = self._guess_type(self.Value)
-        if self.Value is None and not self.is_array and self.VariantType not in (VariantType.Null, VariantType.String,
-                                                                                 VariantType.DateTime):
-            raise UaError(f"Non array Variant of type {self.VariantType} cannot have value None")
+        if self.Value is None and not self.is_array and self.VariantType not in (VariantType.Null, VariantType.String, VariantType.DateTime, VariantType.ExtensionObject):
+            if self.Value == None and self.VariantType == VariantType.NodeId:
+                self.Value = NodeId(0,0)
+            else:
+                raise UaError(f"Non array Variant of type {self.VariantType} cannot have value None")
         if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
             dims = get_shape(self.Value)
             if len(dims) > 1:
@@ -753,6 +768,7 @@ class Variant(FrozenClass):
         return not self.__eq__(other)
 
     def _guess_type(self, val):
+        error_val = None
         if isinstance(val, (list, tuple)):
             error_val = val
         while isinstance(val, (list, tuple)):
@@ -798,8 +814,7 @@ def _split_list(l, n):
 
 
 def flatten_and_get_shape(mylist):
-    dims = []
-    dims.append(len(mylist))
+    dims = [len(mylist)]
     while isinstance(mylist[0], (list, tuple)):
         dims.append(len(mylist[0]))
         mylist = [item for sublist in mylist for item in sublist]
@@ -868,7 +883,7 @@ class DataValue(FrozenClass):
         ('ServerPicoseconds', 'UInt16'),
     )
 
-    def __init__(self, variant=None, status=None):
+    def __init__(self, variant=None, status=None, sourceTimestamp=None, sourcePicoseconds=None, serverTimestamp=None, serverPicoseconds=None):
         self.Encoding = 0
         if not isinstance(variant, Variant):
             variant = Variant(variant)
@@ -877,10 +892,10 @@ class DataValue(FrozenClass):
             self.StatusCode = StatusCode()
         else:
             self.StatusCode = status
-        self.SourceTimestamp = None  # DateTime()
-        self.SourcePicoseconds = None
-        self.ServerTimestamp = None  # DateTime()
-        self.ServerPicoseconds = None
+        self.SourceTimestamp = sourceTimestamp
+        self.SourcePicoseconds = sourcePicoseconds
+        self.ServerTimestamp = serverTimestamp
+        self.ServerPicoseconds = serverPicoseconds
         self._freeze = True
 
     def __str__(self):
@@ -939,7 +954,7 @@ def get_default_value(vtype):
     elif vtype == VariantType.Guid:
         return uuid.uuid4()
     elif vtype == VariantType.XmlElement:
-        return None  #Not sure this is correct
+        return None  # Not sure this is correct
     elif vtype == VariantType.NodeId:
         return NodeId()
     elif vtype == VariantType.ExpandedNodeId:
@@ -960,19 +975,40 @@ def get_default_value(vtype):
         raise RuntimeError(f"function take a uatype as argument, got: {vtype}")
 
 
+# register of custom enums (Those loaded with load_enums())
+enums_by_datatype = {}
+enums_datatypes = {}
+
+
+def register_enum(name, nodeid, class_type):
+    """
+    Register a new enum for automatic decoding and make them available in ua module
+    """
+    logger.info("registring new enum: %s %s %s", name, nodeid, class_type)
+    enums_by_datatype[nodeid] = class_type
+    enums_datatypes[class_type] = nodeid
+    import asyncua.ua
+    setattr(asyncua.ua, name, class_type)
+
+
 # These dictionnaries are used to register extensions classes for automatic
 # decoding and encoding
-extension_object_classes = {}
-extension_object_ids = {}
+extension_objects_by_datatype = {}  #Dict[Datatype, type]
+extension_objects_by_typeid = {}  #Dict[EncodingId, type]
+extension_object_typeids = {}
+datatype_by_extension_object = {}
 
 
-def register_extension_object(name, nodeid, class_type):
+def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid=None):
     """
     Register a new extension object for automatic decoding and make them available in ua module
     """
-    logger.info("registring new extension object: %s %s %s", name, nodeid, class_type)
-    extension_object_classes[nodeid] = class_type
-    extension_object_ids[name] = nodeid
+    logger.info("registring new extension object: %s %s %s %s", name, encoding_nodeid, class_type, datatype_nodeid)
+    if datatype_nodeid:
+        extension_objects_by_datatype[datatype_nodeid] = class_type
+        datatype_by_extension_object[class_type] = datatype_nodeid
+    extension_objects_by_typeid[encoding_nodeid] = class_type
+    extension_object_typeids[name] = encoding_nodeid
     # FIXME: Next line is not exactly a Python best practices, so feel free to propose something else
     # add new extensions objects to ua modules to automate decoding
     import asyncua.ua
@@ -983,8 +1019,8 @@ def get_extensionobject_class_type(typeid):
     """
     Returns the registered class type for typid of an extension object
     """
-    if typeid in extension_object_classes:
-        return extension_object_classes[typeid]
+    if typeid in extension_objects_by_typeid:
+        return extension_objects_by_typeid[typeid]
     else:
         return None
 

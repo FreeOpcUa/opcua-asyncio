@@ -32,8 +32,8 @@ def _parse_nodeid_qname(*args):
         raise
     except Exception as ex:
         raise TypeError(
-            "This method takes either a namespace index and a string as argument or a nodeid and a qualifiedname. Received arguments {0} and got exception {1}".format(
-                args, ex)
+            f"This method takes either a namespace index and a string as argument or a nodeid and a qualifiedname."
+            f" Received arguments {args} and got exception {ex}"
         )
 
 
@@ -50,7 +50,7 @@ async def create_folder(parent, nodeid, bname):
     )
 
 
-async def create_object(parent, nodeid, bname, objecttype=None):
+async def create_object(parent, nodeid, bname, objecttype=None, instantiate_optional=True):
     """
     create a child node object
     arguments are nodeid, browsename, [objecttype]
@@ -61,7 +61,7 @@ async def create_object(parent, nodeid, bname, objecttype=None):
     if objecttype is not None:
         objecttype = make_node(parent.server, objecttype)
         dname = ua.LocalizedText(qname.Name)
-        nodes = await instantiate(parent, objecttype, nodeid, bname=qname, dname=dname)
+        nodes = await instantiate(parent, objecttype, nodeid, bname=qname, dname=dname, instantiate_optional=instantiate_optional)
         return nodes[0]
     else:
         return make_node(
@@ -118,7 +118,7 @@ async def create_variable_type(parent, nodeid, bname, datatype):
         datatype = ua.NodeId(datatype, 0)
     if datatype and not isinstance(datatype, ua.NodeId):
         raise RuntimeError(
-            "Data type argument must be a nodeid or an int refering to a nodeid, received: {}".format(datatype))
+            f"Data type argument must be a nodeid or an int refering to a nodeid, received: {datatype}")
     return make_node(
         parent.server,
         await _create_variable_type(parent.server, parent.nodeid, nodeid, qname, datatype)
@@ -155,7 +155,8 @@ async def create_method(parent, *args):
     args are nodeid, browsename, method_to_be_called, [input argument types], [output argument types]
     or idx, name, method_to_be_called, [input argument types], [output argument types]
     if argument types is specified, child nodes advertising what arguments the method uses and returns will be created
-    a callback is a method accepting the nodeid of the parent as first argument and variants after. returns a list of variants
+    a callback is a method accepting the nodeid of the parent as first argument and variants after.
+    returns a list of variants
     """
     _logger.info('create_method %r', parent)
     nodeid, qname = _parse_nodeid_qname(*args[:2])
@@ -176,7 +177,7 @@ async def _create_object(server, parentnodeid, nodeid, qname, objecttype):
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
     addnode.ParentNodeId = parentnodeid
-    if await make_node(server, parentnodeid).get_type_definition() == ua.NodeId(ua.ObjectIds.FolderType):
+    if await make_node(server, parentnodeid).read_type_definition() == ua.NodeId(ua.ObjectIds.FolderType):
         addnode.ReferenceTypeId = ua.NodeId(ua.ObjectIds.Organizes)
     else:
         addnode.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasComponent)
@@ -266,7 +267,7 @@ async def _create_variable(server, parentnodeid, nodeid, qname, var, datatype=No
             attrs.ArrayDimensions = var.Dimensions
     attrs.WriteMask = 0
     attrs.UserWriteMask = 0
-    attrs.Historizing = 0
+    attrs.Historizing = False
     attrs.AccessLevel = ua.AccessLevel.CurrentRead.mask
     attrs.UserAccessLevel = ua.AccessLevel.CurrentRead.mask
     addnode.NodeAttributes = attrs
@@ -310,7 +311,6 @@ async def create_data_type(parent, nodeid, bname, description=None):
     or namespace index, name
     """
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
-
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
@@ -331,6 +331,35 @@ async def create_data_type(parent, nodeid, bname, description=None):
     results = await parent.server.add_nodes([addnode])
     results[0].StatusCode.check()
     return make_node(parent.server, results[0].AddedNodeId)
+
+
+async def create_encoding(parent, nodeid, bname):
+    """
+    Create a new encoding object to be instanciated in address space.
+    arguments are nodeid, browsename
+    or namespace index, name
+    """
+    nodeid, qname = _parse_nodeid_qname(nodeid, bname)
+    return make_node(parent.server, await _create_encoding(parent.server, parent.nodeid, nodeid, qname))
+
+
+async def _create_encoding(server, parentnodeid, nodeid, qname):
+    addnode = ua.AddNodesItem()
+    addnode.RequestedNewNodeId = nodeid
+    addnode.BrowseName = qname
+    addnode.ParentNodeId = parentnodeid
+    addnode.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasEncoding)
+    addnode.NodeClass = ua.NodeClass.ObjectType
+    attrs = ua.ObjectTypeAttributes()
+    attrs.IsAbstract = False
+    attrs.Description = ua.LocalizedText(qname.Name)
+    attrs.DisplayName = ua.LocalizedText(qname.Name)
+    attrs.WriteMask = 0
+    attrs.UserWriteMask = 0
+    addnode.NodeAttributes = attrs
+    results = await server.add_nodes([addnode])
+    results[0].StatusCode.check()
+    return results[0].AddedNodeId
 
 
 async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
@@ -397,7 +426,11 @@ def _guess_datatype(variant):
         else:
             extobj = variant.Value
         classname = extobj.__class__.__name__
-        return ua.NodeId(getattr(ua.ObjectIds, classname))
+        if hasattr(ua.ObjectIds, classname):
+            return ua.NodeId(getattr(ua.ObjectIds, classname))
+        if extobj.__class__ in ua.datatype_by_extension_object:
+            return ua.datatype_by_extension_object[extobj.__class__]
+        raise ua.UaError(f"Cannot guess DataType of {variant} of python type {type(variant)}")
     else:
         return ua.NodeId(getattr(ua.ObjectIds, variant.VariantType.name))
 
@@ -410,7 +443,7 @@ async def delete_nodes(server, nodes, recursive=False, delete_target_references=
     """
     nodestodelete = []
     if recursive:
-        nodes += await _add_childs(nodes)
+        nodes = await _add_childs(nodes)
     for mynode in nodes:
         it = ua.DeleteNodesItem()
         it.NodeId = mynode.nodeid

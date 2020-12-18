@@ -51,19 +51,20 @@ class InternalSubscription:
             self._task = self.loop.create_task(self._subscription_loop())
 
     async def stop(self):
-        self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
-        self._task.cancel()
-        await self._task
-        self._task = None
+        if self._task:
+            self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
+            self._task.cancel()
+            await self._task
+            self._task = None
         self.monitored_item_srv.delete_all_monitored_items()
 
-    def _trigger_publish(self):
+    async def _trigger_publish(self):
         """
         Trigger immediate publication (if requested by the PublishingInterval).
         """
         if not self._task and self.data.RevisedPublishingInterval <= 0.0:
             # Publish immediately (as fast as possible)
-            self.publish_results()
+            await self.publish_results()
 
     async def _subscription_loop(self):
         """
@@ -72,7 +73,7 @@ class InternalSubscription:
         try:
             while True:
                 await asyncio.sleep(self.data.RevisedPublishingInterval / 1000.0)
-                self.publish_results()
+                await self.publish_results()
         except asyncio.CancelledError:
             self.logger.info('exiting _subscription_loop for %s', self.data.SubscriptionId)
             pass
@@ -85,31 +86,31 @@ class InternalSubscription:
             return True
         if self._keep_alive_count > self.data.RevisedMaxKeepAliveCount:
             self.logger.debug("keep alive count %s is > than max keep alive count %s, sending publish event",
-                self._keep_alive_count, self.data.RevisedMaxKeepAliveCount)
+                              self._keep_alive_count, self.data.RevisedMaxKeepAliveCount)
             return True
         self._keep_alive_count += 1
         return False
 
-    def publish_results(self):
+    async def publish_results(self):
         """
         Publish all enqueued data changes, events and status changes though the callback.
         """
         if self._publish_cycles_count > self.data.RevisedLifetimeCount:
             self.logger.warning("Subscription %s has expired, publish cycle count(%s) > lifetime count (%s)", self,
-                self._publish_cycles_count, self.data.RevisedLifetimeCount)
+                                self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
-            self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
+            await self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
         result = None
         if self.has_published_results():
             if not self.no_acks:
                 self._publish_cycles_count += 1
             result = self._pop_publish_result()
         if result is not None:
-            #self.logger.info('publish_results for %s', self.data.SubscriptionId)
+            # self.logger.info('publish_results for %s', self.data.SubscriptionId)
             # The callback can be:
             #    Subscription.publish_callback -> server internal subscription
             #    UaProcessor.forward_publish_response -> client subscription
-            self.pub_result_callback(result)
+            await self.pub_result_callback(result)
 
     def _pop_publish_result(self) -> ua.PublishResult:
         """
@@ -138,7 +139,7 @@ class InternalSubscription:
             notif = ua.DataChangeNotification()
             notif.MonitoredItems = [item for sublist in self._triggered_datachanges.values() for item in sublist]
             self._triggered_datachanges = {}
-            #self.logger.debug("sending datachanges notification with %s events", len(notif.MonitoredItems))
+            # self.logger.debug("sending datachanges notification with %s events", len(notif.MonitoredItems))
             result.NotificationMessage.NotificationData.append(notif)
 
     def _pop_triggered_events(self, result: ua.PublishResult):
@@ -148,7 +149,7 @@ class InternalSubscription:
             notif.Events = [item for sublist in self._triggered_events.values() for item in sublist]
             self._triggered_events = {}
             result.NotificationMessage.NotificationData.append(notif)
-            #self.logger.debug("sending event notification with %s events", len(notif.Events))
+            # self.logger.debug("sending event notification with %s events", len(notif.Events))
 
     def _pop_triggered_statuschanges(self, result: ua.PublishResult):
         """Append all enqueued status changes to the given `PublishResult` and clear the queue."""
@@ -156,59 +157,59 @@ class InternalSubscription:
             notif = ua.StatusChangeNotification()
             notif.Status = self._triggered_statuschanges.pop(0)
             result.NotificationMessage.NotificationData.append(notif)
-            #self.logger.debug("sending event notification %s", notif.Status)
+            # self.logger.debug("sending event notification %s", notif.Status)
 
     def publish(self, acks: Iterable[int]):
         """
         Reset publish cycle count, acknowledge PublishResults.
         :param acks: Sequence number of the PublishResults to acknowledge
         """
-        #self.logger.info("publish request with acks %s", acks)
+        # self.logger.info("publish request with acks %s", acks)
         self._publish_cycles_count = 0
         for nb in acks:
             self._not_acknowledged_results.pop(nb, None)
 
     def republish(self, nb):
-        #self.logger.info("re-publish request for ack %s in subscription %s", nb, self)
-        notification_message = self._not_acknowledged_results.pop(nb, None)
-        if notification_message:
+        # self.logger.info("re-publish request for ack %s in subscription %s", nb, self)
+        result = self._not_acknowledged_results.pop(nb, None)
+        if result:
             self.logger.info("re-publishing ack %s in subscription %s", nb, self)
-            return notification_message
+            return result.NotificationMessage
         self.logger.info("Error request to re-published non existing ack %s in subscription %s", nb, self)
         return ua.NotificationMessage()
 
-    def enqueue_datachange_event(self, mid: int, eventdata: ua.MonitoredItemNotification, maxsize: int):
+    async def enqueue_datachange_event(self, mid: int, eventdata: ua.MonitoredItemNotification, maxsize: int):
         """
         Enqueue a monitored item data change.
         :param mid: Monitored Item Id
         :param eventdata: Monitored Item Notification
         :param maxsize: Max queue size (0: No limit)
         """
-        self._enqueue_event(mid, eventdata, maxsize, self._triggered_datachanges)
+        await self._enqueue_event(mid, eventdata, maxsize, self._triggered_datachanges)
 
-    def enqueue_event(self, mid: int, eventdata: ua.EventFieldList, maxsize: int):
+    async def enqueue_event(self, mid: int, eventdata: ua.EventFieldList, maxsize: int):
         """
         Enqueue a event.
         :param mid: Monitored Item Id
         :param eventdata: Event Field List
         :param maxsize: Max queue size (0: No limit)
         """
-        self._enqueue_event(mid, eventdata, maxsize, self._triggered_events)
+        await self._enqueue_event(mid, eventdata, maxsize, self._triggered_events)
 
-    def enqueue_statuschange(self, code):
+    async def enqueue_statuschange(self, code):
         """
         Enqueue a status change.
         :param code:
         """
         self._triggered_statuschanges.append(code)
-        self._trigger_publish()
+        await self._trigger_publish()
 
-    def _enqueue_event(self, mid: int, eventdata: Union[ua.MonitoredItemNotification, ua.EventFieldList], size: int,
-                       queue: dict):
+    async def _enqueue_event(self, mid: int,
+                             eventdata: Union[ua.MonitoredItemNotification, ua.EventFieldList], size: int, queue: dict):
         if mid not in queue:
             # New Monitored Item Id
             queue[mid] = [eventdata]
-            self._trigger_publish()
+            await self._trigger_publish()
             return
         if size != 0:
             # Limit queue size

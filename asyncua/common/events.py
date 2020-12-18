@@ -144,8 +144,10 @@ async def select_clauses_from_evtype(evtypes):
     clauses = []
     selected_paths = []
     for evtype in evtypes:
-        for prop in await get_event_properties_from_type_node(evtype):
-            browse_name = await prop.get_browse_name()
+        event_props_and_vars = await get_event_properties_from_type_node(evtype)
+        event_props_and_vars.extend(await get_event_variables_from_type_node(evtype))
+        for node in event_props_and_vars:
+            browse_name = await node.read_browse_name()
             if browse_name not in selected_paths:
                 op = ua.SimpleAttributeOperand()
                 op.AttributeId = ua.AttributeIds.Value
@@ -228,6 +230,22 @@ async def get_event_properties_from_type_node(node):
             return None
         curr_node = parents[0]
     return properties
+
+
+async def get_event_variables_from_type_node(node):
+    variables = []
+    curr_node = node
+    while True:
+        variables.extend(await curr_node.get_variables())
+        if curr_node.nodeid.Identifier == ua.ObjectIds.BaseEventType:
+            break
+        parents = await curr_node.get_referenced_nodes(
+            refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True
+        )
+        if len(parents) != 1:  # Something went wrong
+            return None
+        curr_node = parents[0]
+    return variables
 
 
 async def get_event_obj_from_type_node(node):

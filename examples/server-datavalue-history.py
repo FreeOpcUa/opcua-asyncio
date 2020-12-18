@@ -26,7 +26,7 @@ async def main():
     idx = await server.register_namespace(uri)
 
     # get Objects node, this is where we should put our custom stuff
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
 
     # populating our address space
     myobj = await objects.add_object(idx, "MyObject")
@@ -45,7 +45,7 @@ async def main():
         while True:
             await asyncio.sleep(1)
             count += 0.1
-            await myvar.set_value(math.sin(count))
+            await myvar.write_value(math.sin(count))
 
     finally:
         # close connection, remove subscriptions, etc

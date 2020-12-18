@@ -34,14 +34,15 @@ async def _copy_node(server, parent_nodeid, rdesc, nodeid, recursive):
     if recursive:
         descs = await node_to_copy.get_children_descriptions()
         for desc in descs:
-            nodes = await _copy_node(server, res.AddedNodeId, desc, nodeid=ua.NodeId(namespaceidx=desc.NodeId.NamespaceIndex), recursive=True)
+            nodes = await _copy_node(server, res.AddedNodeId, desc,
+                                     nodeid=ua.NodeId(namespaceidx=desc.NodeId.NamespaceIndex), recursive=True)
             added_nodes.extend(nodes)
 
     return added_nodes
 
 
 async def _rdesc_from_node(parent, node):
-    results = await node.get_attributes([
+    results = await node.read_attributes([
         ua.AttributeIds.NodeClass, ua.AttributeIds.BrowseName, ua.AttributeIds.DisplayName,
     ])
     nclass, qname, dname = [res.Value.Value for res in results]
@@ -50,11 +51,11 @@ async def _rdesc_from_node(parent, node):
     rdesc.BrowseName = qname
     rdesc.DisplayName = dname
     rdesc.NodeClass = nclass
-    if await parent.get_type_definition() == ua.NodeId(ua.ObjectIds.FolderType):
+    if await parent.read_type_definition() == ua.NodeId(ua.ObjectIds.FolderType):
         rdesc.ReferenceTypeId = ua.NodeId(ua.ObjectIds.Organizes)
     else:
         rdesc.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasComponent)
-    typedef = await node.get_type_definition()
+    typedef = await node.read_type_definition()
     if typedef:
         rdesc.TypeDefinition = typedef
     return rdesc
@@ -65,7 +66,7 @@ async def _read_and_copy_attrs(node_type, struct, addnode):
         "BodyLength", "TypeId", "SpecifiedAttributes", "Encoding", "IsAbstract", "EventNotifier",
     )]
     attrs = [getattr(ua.AttributeIds, name) for name in names]
-    results = await node_type.get_attributes(attrs)
+    results = await node_type.read_attributes(attrs)
     for idx, name in enumerate(names):
         if results[idx].StatusCode.is_good():
             if name == "Value":
@@ -73,5 +74,6 @@ async def _read_and_copy_attrs(node_type, struct, addnode):
             else:
                 setattr(struct, name, results[idx].Value.Value)
         else:
-            logger.warning("Instantiate: while copying attributes from node type {0!s}, attribute {1!s}, statuscode is {2!s}".format(node_type, name, results[idx].StatusCode))
+            logger.warning(f"Instantiate: while copying attributes from node type {str(node_type)},"
+                           f" attribute {str(name)}, statuscode is {str(results[idx].StatusCode)}")
     addnode.NodeAttributes = struct

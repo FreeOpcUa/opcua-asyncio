@@ -1,6 +1,7 @@
 import os
 
 import aiofiles
+from typing import Optional, Union
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -10,12 +11,21 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher
 from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
+from cryptography.exceptions import InvalidSignature
+from dataclasses import dataclass
 
 
-async def load_certificate(path):
+@dataclass
+class CertProperties:
+    path: str
+    extension: Optional[str] = None
+    password: Optional[Union[str, bytes]] = None
+
+
+async def load_certificate(path: str, extension: Optional[str] = None):
     _, ext = os.path.splitext(path)
     async with aiofiles.open(path, mode='rb') as f:
-        if ext == ".pem":
+        if ext == ".pem" or extension == 'pem' or extension == 'PEM':
             return x509.load_pem_x509_certificate(await f.read(), default_backend())
         else:
             return x509.load_der_x509_certificate(await f.read(), default_backend())
@@ -27,13 +37,17 @@ def x509_from_der(data):
     return x509.load_der_x509_certificate(data, default_backend())
 
 
-async def load_private_key(path):
+async def load_private_key(path: str,
+                           password: Optional[Union[str, bytes]] = None,
+                           extension: Optional[str] = None):
     _, ext = os.path.splitext(path)
+    if isinstance(password, str):
+        password = password.encode('utf-8')
     async with aiofiles.open(path, mode='rb') as f:
-        if ext == ".pem":
-            return serialization.load_pem_private_key(await f.read(), password=None, backend=default_backend())
+        if ext == ".pem" or extension == 'pem' or extension == 'PEM':
+            return serialization.load_pem_private_key(await f.read(), password=password, backend=default_backend())
         else:
-            return serialization.load_der_private_key(await f.read(), password=None, backend=default_backend())
+            return serialization.load_der_private_key(await f.read(), password=password, backend=default_backend())
 
 
 def der_from_x509(certificate):
@@ -49,12 +63,14 @@ def sign_sha1(private_key, data):
         hashes.SHA1()
     )
 
+
 def sign_sha256(private_key, data):
     return private_key.sign(
         data,
         padding.PKCS1v15(),
         hashes.SHA256()
     )
+
 
 def verify_sha1(certificate, data, signature):
     certificate.public_key().verify(
@@ -71,6 +87,7 @@ def verify_sha256(certificate, data, signature):
         data,
         padding.PKCS1v15(),
         hashes.SHA256())
+
 
 def encrypt_basic256(public_key, data):
     ciphertext = public_key.encrypt(
@@ -140,16 +157,20 @@ def hmac_sha1(key, message):
     hasher.update(message)
     return hasher.finalize()
 
+
 def hmac_sha256(key, message):
     hasher = hmac.HMAC(key, hashes.SHA256(), backend=default_backend())
     hasher.update(message)
     return hasher.finalize()
 
+
 def sha1_size():
     return hashes.SHA1.digest_size
 
+
 def sha256_size():
     return hashes.SHA256.digest_size
+
 
 def p_sha1(secret, seed, sizes=()):
     """
@@ -173,6 +194,7 @@ def p_sha1(secret, seed, sizes=()):
         result = result[size:]
     return tuple(parts)
 
+
 def p_sha256(secret, seed, sizes=()):
     """
     Derive one or more keys from secret and seed.
@@ -195,8 +217,9 @@ def p_sha256(secret, seed, sizes=()):
         result = result[size:]
     return tuple(parts)
 
+
 def x509_name_to_string(name):
-    parts = ["{0}={1}".format(attr.oid._name, attr.value) for attr in name]
+    parts = [f"{attr.oid._name}={attr.value}" for attr in name]
     return ', '.join(parts)
 
 
@@ -207,6 +230,6 @@ def x509_to_string(cert):
     if cert.subject == cert.issuer:
         issuer = ' (self-signed)'
     else:
-        issuer = ', issuer: {0}'.format(x509_name_to_string(cert.issuer))
+        issuer = f', issuer: {x509_name_to_string(cert.issuer)}'
     # TODO: show more information
-    return "{0}{1}, {2} - {3}".format(x509_name_to_string(cert.subject), issuer, cert.not_valid_before, cert.not_valid_after)
+    return f"{x509_name_to_string(cert.subject)}{issuer}, {cert.not_valid_before} - {cert.not_valid_after}"

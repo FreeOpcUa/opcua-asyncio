@@ -2,6 +2,7 @@ import sys
 sys.path.insert(0, "..")
 import logging
 from datetime import datetime
+import asyncio
 
 try:
     from IPython import embed
@@ -26,7 +27,7 @@ def create_monitored_items(event, dispatcher):
     for idx in range(len(event.response_params)) :
         if (event.response_params[idx].StatusCode.is_good()) :
             nodeId = event.request_params.ItemsToCreate[idx].ItemToMonitor.NodeId
-            print("Node {0} was created".format(nodeId))     
+            print(f"Node {nodeId} was created")
          
     
 def modify_monitored_items(event, dispatcher):
@@ -37,7 +38,7 @@ def delete_monitored_items(event, dispatcher):
     print('delete_monitored_items')
 
 
-if __name__ == "__main__":
+async def main():
     # optional: setup logging
     logging.basicConfig(level=logging.WARN)
     #logger = logging.getLogger("asyncua.address_space")
@@ -53,37 +54,37 @@ if __name__ == "__main__":
 
     # now setup our server
     server = Server()
-    #server.disable_clock()
+    await server.init()
+    #await server.disable_clock()
     #server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
     server.set_server_name("FreeOpcUa Example Server")
 
     # setup our own namespace
     uri = "http://examples.freeopcua.github.io"
-    idx = server.register_namespace(uri)
+    idx = await server.register_namespace(uri)
 
     # get Objects node, this is where we should put our custom stuff
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
 
     # populating our address space
-    myfolder = objects.add_folder(idx, "myEmptyFolder")
-    myobj = objects.add_object(idx, "MyObject")
-    myvar = myobj.add_variable(idx, "MyVariable", 6.7)
-    myvar.set_writable()    # Set MyVariable to be writable by clients
+    myfolder = await objects.add_folder(idx, "myEmptyFolder")
+    myobj = await objects.add_object(idx, "MyObject")
+    myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
+    await myvar.set_writable()    # Set MyVariable to be writable by clients
    
 
     # starting!
-    server.start()
+    await server.start()
     
     # Create Callback for item event 
     server.subscribe_server_callback(CallbackType.ItemSubscriptionCreated, create_monitored_items)
     server.subscribe_server_callback(CallbackType.ItemSubscriptionModified, modify_monitored_items)
     server.subscribe_server_callback(CallbackType.ItemSubscriptionDeleted, delete_monitored_items)
     
-    
-    print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
-    try:
-        # enable following if you want to subscribe to nodes on server side
-        embed()
-    finally:
-        server.stop()
+    while True:
+        await asyncio.sleep(1)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

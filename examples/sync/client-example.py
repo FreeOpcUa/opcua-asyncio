@@ -54,18 +54,18 @@ if __name__ == "__main__":
             #var = client.get_node(ua.NodeId(1002, 2))
             #var = client.get_node("ns=3;i=2002")
             #print(var)
-            #var.get_data_value() # get value of node as a DataValue object
-            #var.get_value() # get value of node as a python builtin
-            #var.set_value(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
-            #var.set_value(3.9) # set node value using implicit data type
+            #var.read_data_value() # get value of node as a DataValue object
+            #var.read_value() # get value of node as a python builtin
+            #var.write_value(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
+            #var.write_value(3.9) # set node value using implicit data type
 
             # gettting our namespace idx
             uri = "http://examples.freeopcua.github.io"
             idx = client.get_namespace_index(uri)
 
             # Now getting a variable node using its browse path
-            myvar = client.nodes.root.get_child(["0:Objects", "{}:MyObject".format(idx), "{}:MyVariable".format(idx)])
-            obj = client.nodes.root.get_child(["0:Objects", "{}:MyObject".format(idx)])
+            myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
+            obj = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject"])
             print("myvar is: ", myvar)
 
             # subscribing to a variable node
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             # sub.delete()
 
             # calling a method on server
-            res = obj.call_method("{}:multiply".format(idx), 3, "klk")
+            res = obj.call_method(f"{idx}:multiply", 3, "klk")
             print("method result is: ", res)
 
             embed()

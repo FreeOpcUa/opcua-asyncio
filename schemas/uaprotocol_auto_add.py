@@ -25,7 +25,7 @@ def extensionobject_from_binary(data):
         return e
     klass = ExtensionClasses[TypeId.Identifier]
     if body is None:
-        raise UaError("parsing ExtensionObject {0} without data".format(klass.__name__))
+        raise UaError(f"parsing ExtensionObject {klass.__name__} without data")
     return klass.from_binary(body)
 
 
@@ -41,7 +41,7 @@ def extensionobject_to_binary(obj):
     Encoding = 0
     Body = None
     if obj is not None:
-        TypeId = FourByteNodeId(getattr(ObjectIds, "{0}_Encoding_DefaultBinary".format(obj.__class__.__name__)))
+        TypeId = FourByteNodeId(getattr(ObjectIds, f"{obj.__class__.__name__}_Encoding_DefaultBinary"))
         Encoding |= (1 << 0)
         Body = obj.to_binary()
     packet = []
