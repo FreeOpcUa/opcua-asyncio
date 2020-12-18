@@ -6,7 +6,7 @@ import logging
 import asyncio
 
 from asyncua import Server, ua
-
+logging.basicConfig(level=logging.INFO)
 
 class OpcUaServer(object):
 
@@ -46,7 +46,7 @@ class OpcUaServer(object):
         self.alarm_gen = await self.server.get_event_generator(alarm, alarm_obj,
                                                                notifier_path=[ua.ObjectIds.Server, noti_node, alarm_obj])
 
-    def generate_condition(self, retain):
+    async def generate_condition(self, retain):
         self.con_gen.event.ConditionName = 'Example Condition'
         self.con_gen.event.Message = ua.LocalizedText("Some Message")
         self.con_gen.event.Severity = 500
@@ -55,9 +55,9 @@ class OpcUaServer(object):
             self.con_gen.event.Retain = True
         else:
             self.con_gen.event.Retain = False
-        self.con_gen.trigger()
+        await self.con_gen.trigger()
 
-    def generate_alarm(self, active):
+    async def generate_alarm(self, active):
         self.alarm_gen.event.ConditionName = 'Example Alarm1'
         self.alarm_gen.event.Message = ua.LocalizedText("hello from python")
         self.alarm_gen.event.Severity = 500
@@ -72,13 +72,13 @@ class OpcUaServer(object):
             self.alarm_gen.event.Retain = False
             self.alarm_gen.event.ActiveState = ua.LocalizedText('Inactive', 'en')
             setattr(self.alarm_gen.event, 'ActiveState/Id', False)
-        self.alarm_gen.trigger()
+        await self.alarm_gen.trigger()
 
 
 async def interactive(server):
     while True:
-        # server.generate_condition(1)
-        server.generate_alarm(1)
+        # await server.generate_condition(1)
+        await server.generate_alarm(1)
         logging.warning('sent alarm')
         await asyncio.sleep(5)
         # # line = await ainput(">>> ")

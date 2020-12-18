@@ -73,9 +73,9 @@ async def interactive(client):
 
 
 async def start():
-    async with OpcUaClient("opc.tcp://localhost:4840") as client:
+    async with OpcUaClient("opc.tcp://localhost:4839") as client:
         await client.init()
-        await interactive(client)
+        # await interactive(client)
 
 
 if __name__ == '__main__':
