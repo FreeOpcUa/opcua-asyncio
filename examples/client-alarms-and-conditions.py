@@ -47,14 +47,14 @@ class OpcUaClient(object):
         handler = SubHandler()
         sub = await self.client.create_subscription(500, handler)
         self.subscriptions[sub] = []
-        con_handle = await sub.subscribe_events(con_obj, condition)
+        con_handle = await sub.subscribe_events(self.client.nodes.server, condition)
         self.subscriptions[sub].append(con_handle)
 
         path = ['%s:AlarmObject' % idx]
         alarm_obj = await noti_obj.get_child(path)
         alarm = self.client.get_node(ua.NodeId(10637))
 
-        alarm_handle = await sub.subscribe_events(alarm_obj, alarm)
+        alarm_handle = await sub.subscribe_events(self.client.nodes.server, alarm)
         self.subscriptions[sub].append(alarm_handle)
 
 
@@ -73,8 +73,10 @@ async def interactive(client):
 
 
 async def start():
-    async with OpcUaClient("opc.tcp://localhost:4839") as client:
+    async with OpcUaClient("opc.tcp://localhost:4840") as client:
         await client.init()
+        while True:
+            await asyncio.sleep(10)
         # await interactive(client)
 
 

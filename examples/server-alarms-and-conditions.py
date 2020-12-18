@@ -6,7 +6,7 @@ import logging
 import asyncio
 
 from asyncua import Server, ua
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 class OpcUaServer(object):
 
@@ -37,14 +37,14 @@ class OpcUaServer(object):
 
         con_obj = await noti_node.add_object(idx, "ConditionObject")
         condition = self.server.get_node(ua.NodeId(2830))
-        self.con_gen = await self.server.get_event_generator(condition, con_obj,
-                                                             notifier_path=[ua.ObjectIds.Server, noti_node, con_obj])
+        self.con_gen = await self.server.get_event_generator(condition, self.server.nodes.server,
+                                                             notifier_path=[ua.ObjectIds.Server])
         self.con_gen.event.add_property('NodeId', con_obj.nodeid, ua.VariantType.NodeId)
 
         alarm_obj = await noti_node.add_object(idx, "AlarmObject")
         alarm = self.server.get_node(ua.NodeId(10637))
-        self.alarm_gen = await self.server.get_event_generator(alarm, alarm_obj,
-                                                               notifier_path=[ua.ObjectIds.Server, noti_node, alarm_obj])
+        self.alarm_gen = await self.server.get_event_generator(alarm, self.server.nodes.server,
+                                                               notifier_path=[ua.ObjectIds.Server])
 
     async def generate_condition(self, retain):
         self.con_gen.event.ConditionName = 'Example Condition'
@@ -77,7 +77,7 @@ class OpcUaServer(object):
 
 async def interactive(server):
     while True:
-        # await server.generate_condition(1)
+        await server.generate_condition(1)
         await server.generate_alarm(1)
         logging.warning('sent alarm')
         await asyncio.sleep(5)
@@ -93,7 +93,7 @@ async def interactive(server):
 
 
 async def main():
-    async with OpcUaServer("opc.tcp://0.0.0.0:4839") as server:
+    async with OpcUaServer("opc.tcp://0.0.0.0:4840") as server:
         await interactive(server)
 
 

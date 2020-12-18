@@ -137,11 +137,9 @@ class MonitoredItemService:
                     find_events(ref.NodeId)
 
         find_events(params.ItemToMonitor.NodeId)
-
         if params.ItemToMonitor.NodeId not in self._monitored_events:
             self._monitored_events[params.ItemToMonitor.NodeId] = []
         self._monitored_events[params.ItemToMonitor.NodeId].append(result.MonitoredItemId)
-
         return result
 
     async def _create_data_change_monitored_item(self, params: ua.MonitoredItemCreateRequest):
@@ -228,8 +226,10 @@ class MonitoredItemService:
         if event.emitting_node not in self._monitored_events:
             self.logger.debug("%s has NO subscription for events %s from node: %s", self, event, event.emitting_node)
             return False
+
         self.logger.debug("%s has subscription for events %s from node: %s", self, event, event.emitting_node)
         mids = self._monitored_events[event.emitting_node]
+
         for mid in mids:
             await self._trigger_event(event, mid)
         return True
@@ -257,6 +257,7 @@ class MonitoredItemService:
         fieldlist = ua.EventFieldList()
         fieldlist.ClientHandle = mdata.client_handle
         fieldlist.EventFields = event.to_event_fields(mdata.filter.SelectClauses)
+
         await self.isub.enqueue_event(mid, fieldlist, mdata.queue_size)
 
     async def trigger_statuschange(self, code):

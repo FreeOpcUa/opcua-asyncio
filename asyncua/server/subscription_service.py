@@ -118,6 +118,7 @@ class SubscriptionService:
         for sub in self.subscriptions.values():
             await sub.monitored_item_srv.trigger_event(event)
 
+
     @uamethod
     async def condition_refresh(self, parent, sub_id):
         if sub_id not in self.subscriptions:
