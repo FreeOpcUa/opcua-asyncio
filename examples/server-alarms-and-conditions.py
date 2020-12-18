@@ -1,6 +1,7 @@
 # coding: utf-8
 
 from aioconsole import ainput
+import logging
 
 import asyncio
 
@@ -58,7 +59,7 @@ class OpcUaServer(object):
 
     def generate_alarm(self, active):
         self.alarm_gen.event.ConditionName = 'Example Alarm1'
-        self.alarm_gen.event.Message = ua.LocalizedText("error in module1")
+        self.alarm_gen.event.Message = ua.LocalizedText("hello from python")
         self.alarm_gen.event.Severity = 500
         self.alarm_gen.event.BranchId = ua.NodeId(0)
         self.alarm_gen.event.AckedState = ua.LocalizedText('Unacknowledged', 'en')
@@ -77,20 +78,22 @@ class OpcUaServer(object):
 async def interactive(server):
     while True:
         # server.generate_condition(1)
-        # server.generate_alarm(1)
-        line = await ainput(">>> ")
-        print('execute:', line)
-        if line == 'exit':
-            break
-        try:
-            eval(line)
-        except Exception as msg:
-            print('Exception:', msg)
-            raise Exception
+        server.generate_alarm(1)
+        logging.warning('sent alarm')
+        await asyncio.sleep(5)
+        # # line = await ainput(">>> ")
+        # # print('execute:', line)
+        # # if line == 'exit':
+        # #     break
+        # # try:
+        # #     eval(line)
+        # except Exception as msg:
+        #     print('Exception:', msg)
+        #     raise Exception
 
 
 async def main():
-    async with OpcUaServer("opc.tcp://0.0.0.0:4840") as server:
+    async with OpcUaServer("opc.tcp://0.0.0.0:4839") as server:
         await interactive(server)
 
 

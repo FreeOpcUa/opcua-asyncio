@@ -7,6 +7,7 @@ import logging
 from typing import Dict, Iterable
 
 from asyncua import ua, uamethod
+from asyncua.common import utils
 from .address_space import AddressSpace
 from .internal_subscription import InternalSubscription
 
@@ -41,6 +42,20 @@ class SubscriptionService:
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub
         return result
+
+    def modify_subscription(self, params, callback):
+        # Requested params are ignored, result = params set during create_subscription.
+        self.logger.info("modify subscription with callback: %s", callback)
+        result = ua.ModifySubscriptionResult()
+        try:
+            sub = self.subscriptions[params.SubscriptionId]
+            result.RevisedPublishingInterval = sub.data.RevisedPublishingInterval
+            result.RevisedLifetimeCount = sub.data.RevisedLifetimeCount
+            result.RevisedMaxKeepAliveCount = sub.data.RevisedMaxKeepAliveCount
+
+            return result
+        except KeyError:
+            raise utils.ServiceError(ua.StatusCodes.BadSubscriptionIdInvalid)
 
     async def delete_subscriptions(self, ids):
         self.logger.info("delete subscriptions: %s", ids)
@@ -99,17 +114,17 @@ class SubscriptionService:
             return ua.NotificationMessage()
         return self.subscriptions[params.SubscriptionId].republish(params.RetransmitSequenceNumber)
 
-    def trigger_event(self, event):
+    async def trigger_event(self, event):
         for sub in self.subscriptions.values():
-            sub.monitored_item_srv.trigger_event(event)
+            await sub.monitored_item_srv.trigger_event(event)
 
     @uamethod
-    def condition_refresh(self, parent, sub_id):
+    async def condition_refresh(self, parent, sub_id):
         if sub_id not in self.subscriptions:
             return ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
         if ua.ObjectIds.RefreshStartEventType in self.standard_events:
             self.standard_events[ua.ObjectIds.RefreshStartEventType].trigger()
-        self.subscriptions[sub_id].monitored_item_srv.condition_refresh()
+        await self.subscriptions[sub_id].monitored_item_srv.condition_refresh()
         if ua.ObjectIds.RefreshEndEventType in self.standard_events:
             self.standard_events[ua.ObjectIds.RefreshEndEventType].trigger()
 

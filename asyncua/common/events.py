@@ -14,7 +14,7 @@ class Event:
     Events are used to trigger events on server side and are
     sent to clients for every events from server
 
-    Developper Warning:
+    Developer Warning:
     On server side the data type of attributes should be known, thus
     add properties using the add_property method!!!
     """
@@ -144,8 +144,10 @@ async def select_clauses_from_evtype(evtypes):
     clauses = []
     selected_paths = []
     for evtype in evtypes:
-        for prop in await get_event_properties_from_type_node(evtype):
-            browse_name = await prop.get_browse_name()
+        event_props_and_vars = await get_event_properties_from_type_node(evtype)
+        event_props_and_vars.extend(await get_event_variables_from_type_node(evtype))
+        for node in event_props_and_vars:
+            browse_name = await node.read_browse_name()
             if browse_name not in selected_paths:
                 op = ua.SimpleAttributeOperand()
                 op.AttributeId = ua.AttributeIds.Value
@@ -230,50 +232,65 @@ async def get_event_properties_from_type_node(node):
     return properties
 
 
+async def get_event_variables_from_type_node(node):
+    variables = []
+    curr_node = node
+    while True:
+        variables.extend(await curr_node.get_variables())
+        if curr_node.nodeid.Identifier == ua.ObjectIds.BaseEventType:
+            break
+        parents = await curr_node.get_referenced_nodes(
+            refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True
+        )
+        if len(parents) != 1:  # Something went wrong
+            return None
+        curr_node = parents[0]
+    return variables
+
+
 async def get_event_obj_from_type_node(node):
     """
     return an Event object from an event type node
     """
-    if node.nodeid.NamespaceIndex == 0:
-        if node.nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
+    if node.nodeid.NamespaceIndex == 0 and \
+            node.nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
             return asyncua.common.event_objects.IMPLEMENTED_EVENTS[node.nodeid.Identifier]()
+    else:
+        parent_identifier, parent_eventtype = await _find_parent_eventtype(node)
 
-    parent_identifier, parent_eventtype = await _find_parent_eventtype(node)
+        class CustomEvent(parent_eventtype):
 
-    class CustomEvent(parent_eventtype):
+            def __init__(self):
+                parent_eventtype.__init__(self)
+                self.EventType = node.nodeid
 
-        def __init__(self):
-            parent_eventtype.__init__(self)
-            self.EventType = node.nodeid
-
-        async def init(self):
-            curr_node = node
-            while curr_node.nodeid.Identifier != parent_identifier:
-                for prop in await curr_node.get_properties():
-                    name = (await prop.get_browse_name()).Name
-                    val = await prop.get_data_value()
-                    self.add_property(name, val.Value.Value, val.Value.VariantType)
-                for var in await curr_node.get_variables():
-                    name = (await var.get_browse_name()).Name
-                    val = await var.get_data_value()
-                    self.add_variable(name, val.Value.Value, await var.get_data_type_as_variant_type())
-                    for prop in await var.get_properties():
-                        prop_name = (await prop.get_browse_name()).Name
-                        name = '%s/%s' % (name, prop_name)
-                        val = await prop.get_data_value()
+            async def init(self):
+                curr_node = node
+                while curr_node.nodeid.Identifier != parent_identifier:
+                    for prop in await curr_node.get_properties():
+                        name = (await prop.read_browse_name()).Name
+                        val = await prop.read_data_value()
                         self.add_property(name, val.Value.Value, val.Value.VariantType)
-                parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype,
-                                                               direction=ua.BrowseDirection.Inverse,
-                                                               includesubtypes=True)
-                if len(parents) != 1:  # Something went wrong
-                    raise UaError("Parent of event type could not be found")
-                curr_node = parents[0]
+                    for var in await curr_node.get_variables():
+                        name = (await var.read_browse_name()).Name
+                        val = await var.read_data_value()
+                        self.add_variable(name, val.Value.Value, await var.read_data_type_as_variant_type())
+                        for prop in await var.get_properties():
+                            prop_name = (await prop.read_browse_name()).Name
+                            name = '%s/%s' % (name, prop_name)
+                            val = await prop.read_data_value()
+                            self.add_property(name, val.Value.Value, val.Value.VariantType)
+                    parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype,
+                                                                   direction=ua.BrowseDirection.Inverse,
+                                                                   includesubtypes=True)
+                    if len(parents) != 1:  # Something went wrong
+                        raise UaError("Parent of event type could not be found")
+                    curr_node = parents[0]
+                self._freeze = True
 
-            self._freeze = True
-
-    ce = CustomEvent()
-    await ce.init()
-    return ce
+        ce = CustomEvent()
+        await ce.init()
+        return ce
 
 
 async def _find_parent_eventtype(node):
@@ -286,5 +303,6 @@ async def _find_parent_eventtype(node):
         raise UaError("Parent of event type could not be found")
     if parents[0].nodeid.NamespaceIndex == 0:
         if parents[0].nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
-            return parents[0].nodeid.Identifier, asyncua.common.event_objects.IMPLEMENTED_EVENTS[parents[0].nodeid.Identifier]
+            return parents[0].nodeid.Identifier, \
+                   asyncua.common.event_objects.IMPLEMENTED_EVENTS[parents[0].nodeid.Identifier]
     return await _find_parent_eventtype(parents[0])

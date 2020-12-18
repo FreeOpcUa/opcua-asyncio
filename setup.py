@@ -7,7 +7,7 @@ pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 setup(
     name="asyncua",
-    version="0.6.1",
+    version="0.9.3",
     description="Pure Python OPC-UA client and server library",
     author="Olivier Roulet-Dubonnet",
     author_email="olivier.roulet@gmail.com",
@@ -15,7 +15,7 @@ setup(
     packages=find_packages(),
     provides=["asyncua"],
     license="GNU Lesser General Public License v3 or later",
-    install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", "lxml", 'cryptography'],
+    install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", 'cryptography'],
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
@@ -41,5 +41,5 @@ setup(
         ]
     },
     setup_requires=[] + pytest_runner,
-    tests_require=['pytest'],
+    tests_require=['pytest', 'pytest-mock', 'asynctest'],
 )

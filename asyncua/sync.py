@@ -41,6 +41,8 @@ class ThreadLoop(Thread):
 
     def stop(self):
         self.loop.call_soon_threadsafe(self.loop.stop)
+        self.join()
+        self.loop.close()
 
     def post(self, coro):
         if not self.loop or not self.loop.is_running():
@@ -54,12 +56,11 @@ class ThreadLoop(Thread):
 
     def __exit__(self, exc_t, exc_v, trace):
         self.stop()
-        self.join()
 
 
 def syncmethod(func):
     def wrapper(self, *args, **kwargs):
-        args = list(args)  #FIXME: might be very inefficient...
+        args = list(args)  # FIXME: might be very inefficient...
         for idx, arg in enumerate(args):
             if isinstance(arg, Node):
                 args[idx] = arg.aio_obj
@@ -73,7 +74,7 @@ def syncmethod(func):
         if isinstance(result, list) and len(result) > 0 and isinstance(result[0], node.Node):
             return [Node(self.tloop, i) for i in result]
         if isinstance(result, server.event_generator.EventGenerator):
-            return EventGenerator(result)
+            return EventGenerator(self.tloop, result)
         if isinstance(result, subscription.Subscription):
             return Subscription(self.tloop, result)
         return result
@@ -117,8 +118,22 @@ class Client:
         if self.close_tloop:
             self.tloop.stop()
 
+    def set_user(self, username: str):
+        self.aio_obj.set_user(username)
+
+    def set_password(self, pwd: str):
+        self.aio_obj.set_password(pwd)
+
     @syncmethod
     def load_type_definitions(self, nodes=None):
+        pass
+
+    @syncmethod
+    async def load_data_type_definitions(self, node=None):
+        pass
+
+    @syncmethod
+    def set_security(self):
         pass
 
     @syncmethod
@@ -136,6 +151,10 @@ class Client:
 
     def get_node(self, nodeid):
         return Node(self.tloop, self.aio_obj.get_node(nodeid))
+
+    @syncmethod
+    def connect_and_get_server_endpoints(self):
+        pass
 
     def __enter__(self):
         self.connect()
@@ -190,7 +209,7 @@ class Server:
 
     @syncmethod
     def register_namespace(self, url):
-        return self.aio_obj.register_namespace(url)
+        pass
 
     @syncmethod
     def start(self):
@@ -227,20 +246,22 @@ class Server:
     def load_type_definitions(self):
         pass
 
-    def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
-        return self.aio_obj.set_attribute_value(nodeid, datavalue, attr)
+    @syncmethod
+    def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+        pass
 
 
 class EventGenerator:
-    def __init__(self, aio_evgen):
+    def __init__(self, tloop, aio_evgen):
         self.aio_obj = aio_evgen
+        self.tloop = tloop
 
     @property
     def event(self):
         return self.aio_obj.event
 
     def trigger(self, time=None, message=None):
-        return self.aio_obj.trigger(time, message)
+        return self.tloop.post(self.aio_obj.trigger(time, message))
 
 
 class Node:
@@ -248,30 +269,60 @@ class Node:
         self.aio_obj = aio_node
         self.tloop = tloop
 
+    def __eq__(self, other):
+        return other != None and self.aio_obj == other.aio_obj
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return self.aio_obj.__str__()
+
+    def __repr__(self):
+        return "Sync" + self.aio_obj.__repr__()
+
     def __hash__(self):
         return self.aio_obj.__hash__()
 
-    def __str__(self):
-        return "Sync" + self.aio_obj.__str__()
-    __repr__ = __str__
-
-    @property
-    def nodeid(self):
+    def __get_nodeid(self):
         return self.aio_obj.nodeid
 
+    def __set_nodeid(self, value):
+        self.aio_obj.nodeid = value
+
+    nodeid = property(__get_nodeid, __set_nodeid)
+
     @syncmethod
-    def get_browse_name(self):
+    def read_browse_name(self):
         pass
 
     @syncmethod
-    def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
+    def read_display_name(self):
+        pass
+
+    get_display_name = read_display_name  # legacy
+
+    @syncmethod
+    def get_children(
+        self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified
+    ):
         pass
 
     @syncmethod
-    def get_children_descriptions(self,
-                                  refs=ua.ObjectIds.HierarchicalReferences,
-                                  nodeclassmask=ua.NodeClass.Unspecified,
-                                  includesubtypes=True):
+    def get_properties(self):
+        pass
+
+    @syncmethod
+    def get_children_descriptions(
+        self,
+        refs=ua.ObjectIds.HierarchicalReferences,
+        nodeclassmask=ua.NodeClass.Unspecified,
+        includesubtypes=True,
+    ):
+        pass
+
+    @syncmethod
+    def get_user_access_level(self):
         pass
 
     @syncmethod
@@ -311,19 +362,64 @@ class Node:
         pass
 
     @syncmethod
-    def set_value(self, val):
+    def write_value(self, val):
+        pass
+
+    set_value = write_value  # legacy
+
+    @syncmethod
+    def write_params(self, params):
         pass
 
     @syncmethod
-    def get_value(self, val):
+    def read_params(self, params):
         pass
+
+    @syncmethod
+    def read_value(self):
+        pass
+
+    get_value = read_value  # legacy
+
+    @syncmethod
+    def read_data_type_as_variant_type(self):
+        pass
+
+    get_data_type_as_variant_type = read_data_type_as_variant_type #legacy
 
     @syncmethod
     def call_method(self, methodid, *args):
         pass
 
-    def __eq__(self, other):
-        return self.aio_obj == other.aio_obj
+    @syncmethod
+    def get_references(
+        self,
+        refs=ua.ObjectIds.References,
+        direction=ua.BrowseDirection.Both,
+        nodeclassmask=ua.NodeClass.Unspecified,
+        includesubtypes=True,
+    ):
+        pass
+
+    @syncmethod
+    def read_description(self):
+        pass
+
+    @syncmethod
+    def get_variables(self):
+        pass
+
+    @syncmethod
+    def get_path(self):
+        pass
+
+    @syncmethod
+    def read_node_class(self):
+        pass
+
+    @syncmethod
+    def read_attributes(self):
+        pass
 
 
 class Subscription:
@@ -336,12 +432,17 @@ class Subscription:
         pass
 
     @syncmethod
-    def subscribe_events(self,
-                         sourcenode=ua.ObjectIds.Server,
-                         evtypes=ua.ObjectIds.BaseEventType,
-                         evfilter=None,
-                         queuesize=0):
+    def subscribe_events(
+        self,
+        sourcenode=ua.ObjectIds.Server,
+        evtypes=ua.ObjectIds.BaseEventType,
+        evfilter=None,
+        queuesize=0,
+    ):
         pass
+
+    def _make_monitored_item_request(self, node: Node, attr, mfilter, queuesize) -> ua.MonitoredItemCreateRequest:
+        return self.aio_obj._make_monitored_item_request(node, attr, mfilter, queuesize)
 
     @syncmethod
     def unsubscribe(self, handle):

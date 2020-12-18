@@ -13,13 +13,14 @@ from urllib.parse import urlparse
 from typing import Coroutine
 
 from asyncua import ua
-from ..common.callback import CallbackDispatcher
+from .user_managers import PermissiveUserManager, UserManager
+from ..common.callback import CallbackService
 from ..common.node import Node
 from .history import HistoryManager
 from .address_space import AddressSpace, AttributeService, ViewService, NodeManagementService, MethodService
 from .subscription_service import SubscriptionService
 from .standard_address_space import standard_address_space
-from .users import User
+from .users import User, UserRole
 from .internal_session import InternalSession
 from .event_generator import EventGenerator
 
@@ -29,6 +30,8 @@ except ImportError:
     logging.getLogger(__name__).warning("cryptography is not installed, use of crypto disabled")
     uacrypto = False
 
+logger = logging.getLogger()
+
 
 class ServerDesc:
     def __init__(self, serv, cap=None):
@@ -36,24 +39,15 @@ class ServerDesc:
         self.Capabilities = cap
 
 
-def default_user_manager(iserver, isession, username, password):
-    """
-    Default user_manager, does nothing much but check for admin
-    """
-    if iserver.allow_remote_admin and username in ("admin", "Admin"):
-        isession.user = User.Admin
-    return True
-
-
 class InternalServer:
     """
     There is one `InternalServer` for every `Server`.
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop):
+    def __init__(self, loop: asyncio.AbstractEventLoop, user_manager: UserManager = None):
         self.loop: asyncio.AbstractEventLoop = loop
         self.logger = logging.getLogger(__name__)
-        self.server_callback_dispatcher = CallbackDispatcher()
+        self.callback_service = CallbackService()
         self.endpoints = []
         self._channel_id_counter = 5
         self.allow_remote_admin = True
@@ -70,9 +64,13 @@ class InternalServer:
         self.asyncio_transports = []
         self.subscription_service: SubscriptionService = SubscriptionService(self.loop, self.aspace)
         self.history_manager = HistoryManager(self)
-        self.user_manager = default_user_manager  # defined at the end of this file
+        if user_manager is None:
+            logger.warning("No user manager specified. Using default permissive manager instead.")
+            user_manager = PermissiveUserManager()
+        self.user_manager = user_manager
         # create a session to use on server side
-        self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal", user=User.Admin)
+        self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal",
+                                        user=User(role=UserRole.Admin))
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
 
     async def init(self, shelffile=None):
@@ -106,7 +104,7 @@ class InternalServer:
         """
         uries = ['http://opcfoundation.org/UA/']
         ns_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
-        await ns_node.set_value(uries)
+        await ns_node.write_value(uries)
 
         params = ua.WriteParameters()
         for nodeid in (ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
@@ -185,8 +183,9 @@ class InternalServer:
         self.logger.info('starting internal server')
         for edp in self.endpoints:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).set_value(0, ua.VariantType.Int32)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).set_value(datetime.utcnow())
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(ua.ServerState.Running,
+                                                                                                 ua.VariantType.Int32)
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.utcnow())
         if not self.disabled_clock:
             self._set_current_time()
 
@@ -197,7 +196,7 @@ class InternalServer:
         await self.history_manager.stop()
 
     def _set_current_time(self):
-        self.loop.create_task(self.current_time_node.set_value(datetime.utcnow()))
+        self.loop.create_task(self.current_time_node.write_value(datetime.utcnow()))
         self.loop.call_later(1, self._set_current_time)
 
     def get_new_channel_id(self):
@@ -249,14 +248,14 @@ class InternalServer:
     def register_server2(self, params):
         return self.register_server(params.Server, params.DiscoveryConfiguration)
 
-    def create_session(self, name, user=User.Anonymous, external=False):
+    def create_session(self, name, user=User(role=UserRole.Anonymous), external=False):
         return InternalSession(self, self.aspace, self.subscription_service, name, user=user, external=external)
 
     async def enable_history_data_change(self, node, period=timedelta(days=7), count=0):
         """
         Set attribute Historizing of node to True and start storing data for history
         """
-        await node.set_attribute(ua.AttributeIds.Historizing, ua.DataValue(True))
+        await node.write_attribute(ua.AttributeIds.Historizing, ua.DataValue(True))
         await node.set_attr_bit(ua.AttributeIds.AccessLevel, ua.AccessLevel.HistoryRead)
         await node.set_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.HistoryRead)
         await self.history_manager.historize_data_change(node, period, count)
@@ -265,7 +264,7 @@ class InternalServer:
         """
         Set attribute Historizing of node to False and stop storing data for history
         """
-        await node.set_attribute(ua.AttributeIds.Historizing, ua.DataValue(False))
+        await node.write_attribute(ua.AttributeIds.Historizing, ua.DataValue(False))
         await node.unset_attr_bit(ua.AttributeIds.AccessLevel, ua.AccessLevel.HistoryRead)
         await node.unset_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.HistoryRead)
         await self.history_manager.dehistorize(node)
@@ -274,7 +273,7 @@ class InternalServer:
         """
         Set attribute History Read of object events to True and start storing data for history
         """
-        event_notifier = await source.get_event_notifier()
+        event_notifier = await source.read_event_notifier()
         if ua.EventNotifier.SubscribeToEvents not in event_notifier:
             raise ua.UaError('Node does not generate events', event_notifier)
         if ua.EventNotifier.HistoryRead not in event_notifier:
@@ -293,20 +292,20 @@ class InternalServer:
         """
         Create a subscription from event to handle
         """
-        self.server_callback_dispatcher.addListener(event, handle)
+        self.callback_service.addListener(event, handle)
 
     def unsubscribe_server_callback(self, event, handle):
         """
         Remove a subscription from event to handle
         """
-        self.server_callback_dispatcher.removeListener(event, handle)
+        self.callback_service.removeListener(event, handle)
 
-    def set_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+    async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
         directly write datavalue to the Attribute, bypassing some checks and structure creation
         so it is a little faster
         """
-        self.aspace.set_attribute_value(nodeid, attr, datavalue)
+        await self.aspace.write_attribute_value(nodeid, attr, datavalue)
 
     def set_user_manager(self, user_manager):
         """
@@ -321,9 +320,18 @@ class InternalServer:
         """
         user_name = token.UserName
         password = token.Password
+
+        # TODO Support all Token Types
+        # AnonimousIdentityToken
+        # UserIdentityToken
+        # UserNameIdentityToken
+        # X509IdentityToken
+        # IssuedIdentityToken
+
         # decrypt password if we can
         if str(token.EncryptionAlgorithm) != "None":
             if not uacrypto:
+                # raise  # Should I raise a significant exception?
                 return False
             try:
                 if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
@@ -332,12 +340,15 @@ class InternalServer:
                     raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, password)
                 else:
                     self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
-                    return False
+                    # raise  # Should I raise a significant exception?
+                    return user_name, password
                 length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
                 password = raw_pw[4:4 + length]
                 password = password.decode('utf-8')
             except Exception:
                 self.logger.exception("Unable to decrypt password")
                 return False
-        # call user_manager
-        return self.user_manager(self, isession, user_name, password)
+        elif type(password) == bytes:  # TODO check
+            password = password.decode('utf-8')
+
+        return user_name, password

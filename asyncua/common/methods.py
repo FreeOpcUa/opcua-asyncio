@@ -41,6 +41,8 @@ async def call_method_full(parent, methodid, *args):
         methodid = methodid.nodeid
 
     result = await _call_method(parent.server, parent.nodeid, methodid, to_variant(*args))
+    if result.OutputArguments is None:
+        result.OutputArguments = []
     result.OutputArguments = [var.Value for var in result.OutputArguments]
     return result
 
@@ -85,27 +87,27 @@ def uamethod(func):
 
 
 def _format_call_inputs(parent, *args):
-        if isinstance(parent, ua.NodeId):
-            return (parent, *[arg.Value for arg in args])
-        else:
-            self = parent
-            parent = args[0]
-            args = args[1:]
-        return (self, parent, *[arg.Value for arg in args])
+    if isinstance(parent, ua.NodeId):
+        return (parent, *[arg.Value for arg in args])
+    else:
+        self = parent
+        parent = args[0]
+        args = args[1:]
+    return (self, parent, *[arg.Value for arg in args])
 
 
 def _format_call_outputs(result):
-        if result is None:
-            return []
-        elif isinstance(result, ua.CallMethodResult):
-            result.OutputArguments = to_variant(*result.OutputArguments)
-            return result
-        elif isinstance(result, ua.StatusCode):
-            return result
-        elif isinstance(result, tuple):
-            return to_variant(*result)
-        else:
-            return to_variant(result)
+    if result is None:
+        return []
+    elif isinstance(result, ua.CallMethodResult):
+        result.OutputArguments = to_variant(*result.OutputArguments)
+        return result
+    elif isinstance(result, ua.StatusCode):
+        return result
+    elif isinstance(result, tuple):
+        return to_variant(*result)
+    else:
+        return to_variant(result)
 
 
 def to_variant(*args):

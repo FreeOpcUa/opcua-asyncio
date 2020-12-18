@@ -32,7 +32,7 @@ if __name__ == "__main__":
         root = client.nodes.root
         print("Root is", root)
         print("childs of root are: ", root.get_children())
-        print("name of root is", root.get_browse_name())
+        print("name of root is", root.read_browse_name())
         objects = client.nodes.objects
         print("childs og objects are: ", objects.get_children())
         myfloat = client.get_node("ns=4;s=Float")
@@ -44,11 +44,11 @@ if __name__ == "__main__":
 
         var = client.get_node(ua.NodeId("Random1", 5))
         print("var is: ", var)
-        print("value of var is: ", var.get_value())
-        var.set_value(ua.Variant([23], ua.VariantType.Double))
+        print("value of var is: ", var.read_value())
+        var.write_value(ua.Variant([23], ua.VariantType.Double))
         print("setting float value")
-        myfloat.set_value(ua.Variant(1.234, ua.VariantType.Float))
-        print("reading float value: ", myfloat.get_value())
+        myfloat.write_value(ua.Variant(1.234, ua.VariantType.Float))
+        print("reading float value: ", myfloat.read_value())
 
         handler = SubHandler()
         sub = client.create_subscription(500, handler)

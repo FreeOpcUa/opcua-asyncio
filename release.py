@@ -9,7 +9,7 @@ def bump_version():
     v1, v2, v3 = m.groups()
     oldv = "{0}.{1}.{2}".format(v1, v2, v3)
     newv = "{0}.{1}.{2}".format(v1, v2, str(int(v3) + 1))
-    print("Current version is: {0}, write new version, ctrl-c to exit".format(oldv))
+    print(f"Current version is: {oldv}, write new version, ctrl-c to exit")
     ans = input(newv)
     if ans:
         newv = ans
@@ -25,7 +25,7 @@ def release():
     if ans in ("", "y", "yes"):
         os.system("git add setup.py")
         os.system("git commit -m 'new release'")
-        os.system("git tag {0}".format(v))
+        os.system(f"git tag {v}")
         ans = input("change committed, push to server?(Y/n)")
         if ans in ("", "y", "yes"):
             os.system("git push")
@@ -33,7 +33,7 @@ def release():
         ans = input("upload to pip?(Y/n)")
         if ans in ("", "y", "yes"):
             os.system("rm -rf dist/*")
-            os.system("python setup.py sdist")
+            os.system("python3 setup.py sdist")
             os.system("twine upload dist/*")
 
 

@@ -15,9 +15,9 @@ class HelloClient:
 
 if __name__ == '__main__':
     with HelloClient("opc.tcp://localhost:40840/freeopcua/server/") as client:
-        root = client.get_root_node()
+        root = client.nodes.root
         print("Root node is: ", root)
-        objects = client.get_objects_node()
+        objects = client.nodes.objects
         print("Objects node is: ", objects)
 
         hellower = objects.get_child("0:Hellower")

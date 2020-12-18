@@ -37,7 +37,7 @@ def set_up_test_tree():
     return test_etree
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 async def _srv(server):
     class Srv:
         pass
@@ -87,7 +87,7 @@ async def test_opc_type_dict_append_struct_1(srv):
     assert result.attrib == case
 
 
-@pytest.mark.skip("support for theat currently removed")
+@pytest.mark.skip("Support for that feature currently removed")
 async def test_opc_type_dict_append_struct_2(srv):
     case = {'BaseType': 'ua:ExtensionObject',
             'Name': 'CustomizedStruct'}
@@ -182,14 +182,14 @@ async def test_data_type_dict_add_dictionary(srv):
     add_dictionary = getattr(srv.dict_builder, '_add_dictionary')
     dict_name = 'TestDict'
     dict_node = srv.srv.get_node(await add_dictionary(dict_name))
-    assert await dict_node.get_browse_name() == ua.QualifiedName(dict_name, srv.idx)
-    assert await dict_node.get_node_class() == ua.NodeClass.Variable
+    assert await dict_node.read_browse_name() == ua.QualifiedName(dict_name, srv.idx)
+    assert await dict_node.read_node_class() == ua.NodeClass.Variable
     assert (await dict_node.get_parent()).nodeid == ua.NodeId(ua.ObjectIds.OPCBinarySchema_TypeSystem, 0)
     assert ua.NodeId(ua.ObjectIds.HasComponent, 0) == (await dict_node.get_references(refs=ua.ObjectIds.HasComponent))[0].ReferenceTypeId
     assert await dict_node.get_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeDictionaryType, 0)
-    assert await dict_node.get_display_name() == ua.LocalizedText(dict_name)
-    assert await dict_node.get_data_type() == ua.NodeId(ua.ObjectIds.ByteString)
-    assert await dict_node.get_value_rank() == -1
+    assert await dict_node.read_display_name() == ua.LocalizedText(dict_name)
+    assert await dict_node.read_data_type() == ua.NodeId(ua.ObjectIds.ByteString)
+    assert await dict_node.read_value_rank() == -1
 
 
 async def test_data_type_dict_create_data_type(srv):
@@ -198,35 +198,35 @@ async def test_data_type_dict_create_data_type(srv):
     assert isinstance(created_type, StructNode)
     # Test data type node
     type_node = srv.srv.get_node(created_type.data_type)
-    assert await type_node.get_browse_name() == ua.QualifiedName(type_name, srv.idx)
-    assert await type_node.get_node_class() == ua.NodeClass.DataType
+    assert await type_node.read_browse_name() == ua.QualifiedName(type_name, srv.idx)
+    assert await type_node.read_node_class() == ua.NodeClass.DataType
     assert (await type_node.get_parent()).nodeid == ua.NodeId(ua.ObjectIds.Structure, 0)
     assert ua.NodeId(ua.ObjectIds.HasSubtype, 0) == (await type_node.get_references(refs=ua.ObjectIds.HasSubtype))[0].ReferenceTypeId
-    assert await type_node.get_display_name() == ua.LocalizedText(type_name)
+    assert await type_node.read_display_name() == ua.LocalizedText(type_name)
 
     # Test description node
     n = srv.srv.get_node(srv.dict_builder.dict_id)
     desc_node = await n.get_child(f"{srv.dict_builder._idx}:{type_name}")
-    assert await desc_node.get_browse_name() == ua.QualifiedName(type_name, srv.idx)
-    assert await desc_node.get_node_class() == ua.NodeClass.Variable
+    assert await desc_node.read_browse_name() == ua.QualifiedName(type_name, srv.idx)
+    assert await desc_node.read_node_class() == ua.NodeClass.Variable
     assert (await desc_node.get_parent()).nodeid == srv.dict_builder.dict_id
     assert ua.NodeId(ua.ObjectIds.HasComponent, 0) == (await desc_node.get_references(refs=ua.ObjectIds.HasComponent))[0].ReferenceTypeId
     assert await desc_node.get_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeDescriptionType, 0)
 
-    assert await desc_node.get_display_name() == ua.LocalizedText(type_name)
-    assert await desc_node.get_data_type() == ua.NodeId(ua.ObjectIds.String)
-    assert await desc_node.get_value() == type_name
-    assert await desc_node.get_value_rank() == -1
+    assert await desc_node.read_display_name() == ua.LocalizedText(type_name)
+    assert await desc_node.read_data_type() == ua.NodeId(ua.ObjectIds.String)
+    assert await desc_node.read_value() == type_name
+    assert await desc_node.read_value_rank() == -1
 
     # Test object node
     obj_node = (await type_node.get_children(refs=ua.ObjectIds.HasEncoding))[0]
-    assert await obj_node.get_browse_name() == ua.QualifiedName('Default Binary', 0)
-    assert await obj_node.get_node_class() == ua.NodeClass.Object
+    assert await obj_node.read_browse_name() == ua.QualifiedName('Default Binary', 0)
+    assert await obj_node.read_node_class() == ua.NodeClass.Object
     assert (await obj_node.get_references(refs=ua.ObjectIds.HasEncoding))[0].NodeId == type_node.nodeid
     assert ua.NodeId(ua.ObjectIds.HasEncoding, 0) == (await obj_node.get_references(refs=ua.ObjectIds.HasEncoding))[0].ReferenceTypeId
     assert await obj_node.get_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeEncodingType, 0)
-    assert await obj_node.get_display_name() == ua.LocalizedText('Default Binary')
-    assert len(await obj_node.get_event_notifier()) == 0
+    assert await obj_node.read_display_name() == ua.LocalizedText('Default Binary')
+    assert len(await obj_node.read_event_notifier()) == 0
 
     # Test links, three were tested above
     struct_node = srv.srv.get_node(ua.NodeId(ua.ObjectIds.Structure, 0))
@@ -255,7 +255,7 @@ async def test_data_type_dict_set_dict_byte_string(srv):
     field.attrib['Name'] = 'id'
     field.attrib['TypeName'] = 'opc:Int32'
     case = Et.tostring(srv.test_etree.getroot(), encoding='utf-8').decode("utf-8").replace(' ', '')
-    result = (await srv.srv.get_node(srv.dict_builder.dict_id).get_value()).decode("utf-8").replace(' ', '').replace('\n', '')
+    result = (await srv.srv.get_node(srv.dict_builder.dict_id).read_value()).decode("utf-8").replace(' ', '').replace('\n', '')
     assert result == case
 
 
@@ -318,7 +318,7 @@ async def test_get_ua_class_1(srv):
         pass
 
 
-@pytest.mark.skip("support for theat currently removed")
+@pytest.mark.skip("Support for that feature currently removed")
 async def test_get_ua_class_2(srv):
     struct_name = '*c*u_stom-ized&Stru#ct'
     struct_node = await srv.dict_builder.create_data_type(struct_name)
@@ -349,10 +349,11 @@ async def test_functional_basic(srv):
     basic_msg.ID = 3
     basic_msg.Gender = True
     basic_msg.Comments = 'Test string'
-    await basic_var.set_value(basic_msg)
+    await basic_var.write_value(basic_msg)
 
-    basic_result = await basic_var.get_value()
+    basic_result = await basic_var.read_value()
     assert basic_result == basic_msg
+    await srv.srv.delete_nodes([basic_var])
 
 
 async def test_functional_advance(srv):
@@ -379,7 +380,7 @@ async def test_functional_advance(srv):
     basic_msg.ID = 3
     basic_msg.Gender = True
     basic_msg.Comments = 'Test string'
-    await basic_var.set_value(basic_msg)
+    await basic_var.write_value(basic_msg)
 
     nested_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(namespaceidx=srv.idx), 'NestedStruct',
                                                      ua.Variant(None, ua.VariantType.Null),
@@ -389,9 +390,10 @@ async def test_functional_advance(srv):
     nested_msg.Stuff = basic_msg
     nested_msg.Name = 'Max'
     nested_msg.Surname = 'Karl'
-    await nested_var.set_value(nested_msg)
+    await nested_var.write_value(nested_msg)
 
-    basic_result = await basic_var.get_value()
+    basic_result = await basic_var.read_value()
     assert basic_result == basic_msg
-    nested_result = await nested_var.get_value()
+    nested_result = await nested_var.read_value()
     assert nested_result == nested_msg
+    await srv.srv.delete_nodes([basic_var, nested_var])

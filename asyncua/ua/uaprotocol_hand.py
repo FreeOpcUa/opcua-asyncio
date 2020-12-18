@@ -10,16 +10,24 @@ OPC_TCP_SCHEME = 'opc.tcp'
 
 class Hello(uatypes.FrozenClass):
     ua_types = (
-        ('ProtocolVersion', 'UInt32'), ('ReceiveBufferSize', 'UInt32'), ('SendBufferSize', 'UInt32'),
-        ('MaxMessageSize', 'UInt32'), ('MaxChunkCount', 'UInt32'), ('EndpointUrl', 'String'),
+        ('ProtocolVersion', 'UInt32'),
+        ('ReceiveBufferSize', 'UInt32'),
+        ('SendBufferSize', 'UInt32'),
+        ('MaxMessageSize', 'UInt32'),
+        ('MaxChunkCount', 'UInt32'),
+        ('EndpointUrl', 'String'),
     )
 
     def __init__(self):
         self.ProtocolVersion = 0
-        self.ReceiveBufferSize = 65536
-        self.SendBufferSize = 65536
-        self.MaxMessageSize = 0  # No limits
-        self.MaxChunkCount = 0  # No limits
+        # the following values couldbe set to 0 (meaning no limits)
+        # unfortunaltely many servers do not support it
+        # even newer version of prosys are broken
+        # so we set then to a high value known to work most places
+        self.ReceiveBufferSize = 2**31 - 1
+        self.SendBufferSize = 2**31 - 1
+        self.MaxMessageSize = 2**31 - 1
+        self.MaxChunkCount = 2**31 - 1
         self.EndpointUrl = ""
         self._freeze = True
 
@@ -59,13 +67,17 @@ class Header(uatypes.FrozenClass):
         return struct.calcsize("<3scII")
 
     def __str__(self):
-        return f'Header(type:{self.MessageType}, chunk_type:{self.ChunkType}, body_size:{self.body_size}, channel:{self.ChannelId})'
+        return f'Header(type:{self.MessageType}, chunk_type:{self.ChunkType}, body_size:{self.body_size},' \
+               f' channel:{self.ChannelId})'
 
     __repr__ = __str__
 
 
 class ErrorMessage(uatypes.FrozenClass):
-    ua_types = (('Error', 'StatusCode'), ('Reason', 'String'),)
+    ua_types = (
+        ('Error', 'StatusCode'),
+        ('Reason', 'String'),
+    )
 
     def __init__(self):
         self.Error = uatypes.StatusCode()
@@ -112,7 +124,8 @@ class AsymmetricAlgorithmHeader(uatypes.FrozenClass):
     def __str__(self):
         size1 = len(self.SenderCertificate) if self.SenderCertificate is not None else None
         size2 = len(self.ReceiverCertificateThumbPrint) if self.ReceiverCertificateThumbPrint is not None else None
-        return f'{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI}, certificatesize:{size2}, receiverCertificatesize:{size2} )'
+        return f'{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI},' \
+               f' certificatesize:{size2}, receiverCertificatesize:{size2} )'
 
     __repr__ = __str__
 
@@ -161,7 +174,6 @@ class CryptographyNone:
     """
     Base class for symmetric/asymmetric cryprography
     """
-
     def __init__(self):
         pass
 
@@ -222,14 +234,19 @@ class SecurityPolicy:
     signature_key_size = 0
     symmetric_key_size = 0
 
-    def __init__(self):
+    def __init__(self, permissions=None):
         self.asymmetric_cryptography = CryptographyNone()
         self.symmetric_cryptography = CryptographyNone()
         self.Mode = auto.MessageSecurityMode.None_
-        self.server_certificate = None
-        self.client_certificate = None
+        self.peer_certificate = None
+        self.host_certificate = None
+        self.user = None
+        self.permissions = permissions
 
-    def make_symmetric_key(self, a, b):
+    def make_local_symmetric_key(self, secret, seed):
+        pass
+
+    def make_remote_symmetric_key(self, secret, seed):
         pass
 
 
@@ -239,21 +256,21 @@ class SecurityPolicyFactory:
     Server has one certificate and private key, but needs a separate
     SecurityPolicy for every client and client's certificate
     """
-
-    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None):
+    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None, permission_ruleset=None):
         self.cls = cls
         self.mode = mode
         self.certificate = certificate
         self.private_key = private_key
+        self.permission_ruleset = permission_ruleset
 
     def matches(self, uri, mode=None):
         return self.cls.URI == uri and (mode is None or self.mode == mode)
 
     def create(self, peer_certificate):
         if self.cls is SecurityPolicy:
-            return self.cls()
+            return self.cls(permissions=self.permission_ruleset)
         else:
-            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode)
+            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode, permission_ruleset=self.permission_ruleset)
 
 
 class Message:
@@ -317,10 +334,23 @@ class ReferenceTypeAttributes(auto.ReferenceTypeAttributes):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract | ana.Symmetric | ana.InverseName
 
 
+# FIXME: changes in that class donnot seem to be part of spec as of 1.04
+#not sure what the spec expect, maybe DataTypeDefinition must be set using an extra call...
+# maybe it will be part of spec in 1.05??? no ideas
 class DataTypeAttributes(auto.DataTypeAttributes):
+    auto.DataTypeAttributes.ua_types.append(('DataTypeDefinition', 'ExtensionObject'))
+
     def __init__(self):
         auto.DataTypeAttributes.__init__(self)
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract
+        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract | ana.DataTypeDefinition
+        self._freeze = False
+        self.DataTypeDefinition = auto.ExtensionObject()
+        self._freeze = True
+
+# we now need to register DataTypeAttributes since we added a new attritbute
+nid = uatypes.FourByteNodeId(auto.ObjectIds.DataTypeAttributes_Encoding_DefaultBinary)
+uatypes.extension_objects_by_typeid[nid] = DataTypeAttributes
+uatypes.extension_object_typeids['DataTypeAttributes'] = nid
 
 
 class ViewAttributes(auto.ViewAttributes):
@@ -336,11 +366,11 @@ class Argument(auto.Argument):
 
 
 class XmlElement(FrozenClass):
-    '''
+    """
     An XML element encoded as a UTF-8 string.
     :ivar Value:
     :vartype Value: String
-    '''
+    """
 
     ua_types = [
         ('Value', 'String'),

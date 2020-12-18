@@ -65,7 +65,7 @@ async def main():
     idx = await server.register_namespace(uri)
 
     # get Objects node, this is where we should put our custom stuff
-    objects = server.get_objects_node()
+    objects = server.nodes.objects
 
     # populating our address space
     await objects.add_folder(idx, "myEmptyFolder")
@@ -108,7 +108,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    # loop.set_debug(True)
-    loop.run_until_complete(main())
-    loop.close()
+    asyncio.run(main())

@@ -28,24 +28,25 @@ async def main():
         print("Root children are", await client.nodes.root.get_children())
 
 
-        myfloat = client.get_node("ns=4;s=Float")
-        mydouble = client.get_node("ns=4;s=Double")
-        myint64 = client.get_node("ns=4;s=Int64")
-        myuint64 = client.get_node("ns=4;s=UInt64")
-        myint32 = client.get_node("ns=4;s=Int32")
-        myuint32 = client.get_node("ns=4;s=UInt32")
+        static_idx = await client.get_namespace_index("http://www.prosysopc.com/OPCUA/StaticNodes")
+        myfloat = client.get_node(f"ns={static_idx};s=Float")
+        mydouble = client.get_node(f"ns={static_idx};s=Double")
+        myint64 = client.get_node(f"ns={static_idx};s=Int64")
+        myuint64 = client.get_node(f"ns={static_idx};s=UInt64")
+        myint32 = client.get_node(f"ns={static_idx};s=Int32")
+        myuint32 = client.get_node(f"ns={static_idx};s=UInt32")
 
-        var = client.get_node(ua.NodeId("Random1", 5))
+        var = await client.nodes.objects.get_child(["3:Simulation", "3:Random"])
         print("var is: ", var)
-        print("value of var is: ", await var.get_value())
-        await var.set_value(ua.Variant([23], ua.VariantType.Double))
+        print("value of var is: ", await var.read_value())
+        #await var.write_value(ua.Variant([23], ua.VariantType.Double))
         print("setting float value")
-        await myfloat.set_value(ua.Variant(1.234, ua.VariantType.Float))
-        print("reading float value: ", await myfloat.get_value())
+        await myfloat.write_value(ua.Variant(1.234, ua.VariantType.Float))
+        print("reading float value: ", await myfloat.read_value())
 
 
-        device = await client.nodes.objects.get_child(["2:MyObjects", "2:MyDevice"])
-        method = await device.get_child("2:MyMethod")
+        device = await client.nodes.objects.get_child(["6:MyObjects", "6:MyDevice"])
+        method = await device.get_child("6:MyMethod")
         result = await device.call_method(method, ua.Variant("sin"), ua.Variant(180, ua.VariantType.Double))
         print("Mehtod result is: ", result)
 
@@ -68,7 +69,4 @@ async def main():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.WARN)
-    loop = asyncio.get_event_loop()
-    loop.set_debug(True)
-    loop.run_until_complete(main())
-    loop.close()
+    asyncio.run(main())

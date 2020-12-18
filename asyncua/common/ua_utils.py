@@ -17,7 +17,6 @@ def value_to_datavalue(val, varianttype=None):
     """
     convert anyting to a DataValue using varianttype
     """
-    datavalue = None
     if isinstance(val, ua.DataValue):
         datavalue = val
     elif isinstance(val, ua.Variant):
@@ -256,7 +255,7 @@ async def get_base_data_type(datatype):
         if base.nodeid.NamespaceIndex == 0 and isinstance(base.nodeid.Identifier, int) and base.nodeid.Identifier <= 30:
             return base
         base = await get_node_supertype(base)
-    raise ua.UaError("Datatype must be a subtype of builtin types {0!s}".format(datatype))
+    raise ua.UaError(f"Datatype must be a subtype of builtin types {str(datatype)}")
 
 
 async def get_nodes_of_namespace(server, namespaces=None):
