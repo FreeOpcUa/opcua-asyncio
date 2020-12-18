@@ -137,6 +137,11 @@ class MonitoredItemService:
                     find_events(ref.NodeId)
 
         find_events(params.ItemToMonitor.NodeId)
+
+        if params.ItemToMonitor.NodeId not in self._monitored_events:
+            self._monitored_events[params.ItemToMonitor.NodeId] = []
+        self._monitored_events[params.ItemToMonitor.NodeId].append(result.MonitoredItemId)
+
         return result
 
     async def _create_data_change_monitored_item(self, params: ua.MonitoredItemCreateRequest):
@@ -217,14 +222,14 @@ class MonitoredItemService:
     async def trigger_event(self, event):
         if hasattr(event, 'Retain'):
             if event.Retain:
-                self._events_with_retain[event.EventType] = event
+                self._events_with_retain[event.emitting_node] = event
             else:
-                del self._events_with_retain[event.EventType]
+                del self._events_with_retain[event.emitting_node]
         if event.emitting_node not in self._monitored_events:
             self.logger.debug("%s has NO subscription for events %s from node: %s", self, event, event.emitting_node)
             return False
         self.logger.debug("%s has subscription for events %s from node: %s", self, event, event.emitting_node)
-        mids = self._monitored_events[event.EventType]
+        mids = self._monitored_events[event.emitting_node]
         for mid in mids:
             await self._trigger_event(event, mid)
         return True
