@@ -1,10 +1,7 @@
-from __future__ import annotations
-
 import asyncio
 import inspect
 import logging
 
-from concurrent.futures import CancelledError, TimeoutError
 from dataclasses import dataclass, field
 from enum import IntEnum
 from functools import partial
@@ -195,7 +192,7 @@ class HaClient:
         for task in tasks:
             try:
                 await task
-            except CancelledError:
+            except asyncio.CancelledError:
                 pass
         self.is_running = False
 
@@ -465,7 +462,7 @@ class KeepAlive:
             except BadSessionClosed:
                 _logger.warning("Session is closed.")
                 server_info.status = ConnectionStates.NO_DATA
-            except (TimeoutError, CancelledError):
+            except (asyncio.TimeoutError, asyncio.CancelledError):
                 _logger.warning("Timeout when fetching state")
                 server_info.status = ConnectionStates.NO_DATA
             except Exception:
@@ -567,4 +564,3 @@ class HaManager:
             task.add_done_callback(partial(log_exception, client))
             tasks.append(task)
         await asyncio.gather(*tasks, return_exceptions=True)
-

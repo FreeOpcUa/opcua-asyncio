@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 import inspect
 import logging
@@ -12,6 +10,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Dict, Set, Union
 from sortedcontainers import SortedDict
 from asyncua import ua
+from pickle import PicklingError
 
 from .utils import batch, event_wait, get_digest
 from .virtual_subscription import VirtualSubscription
@@ -49,7 +48,7 @@ class Reconciliator:
 
     BATCH_MI_SIZE = 1000
 
-    def __init__(self, timer: int, ha_client: HaClient) -> None:
+    def __init__(self, timer: int, ha_client: "HaClient") -> None:
         self.timer = timer
         self.ha_client = ha_client
         self.loop = ha_client.loop
@@ -155,7 +154,7 @@ class Reconciliator:
             _logger.info(
                 f"[WORK] Configuration difference found for healthy targets: {targets}"
             )
-        except (AttributeError, TypeError) as e:
+        except (AttributeError, TypeError, PicklingError) as e:
             _logger.warning(f"[WORK] Reconciliator performance impacted: {e}")
             targets = set(valid_urls)
         # add missing and delete unsubscribed subs

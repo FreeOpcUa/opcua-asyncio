@@ -23,7 +23,7 @@ from asyncua import Server, ua
 
 
 RETRY = 20
-SLEEP = 0.2
+SLEEP = 0.4
 PORTS_USED = set()
 Opc = namedtuple('opc', ['opc', 'server'])
 
@@ -56,7 +56,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('history_server', ['dict', 'sqlite'], indirect=True)
 
 
-@pytest.yield_fixture(scope='module')
+@pytest.fixture(scope='module')
 def event_loop(request):
     """Create an instance of the default event loop for each test case."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -289,7 +289,7 @@ def ha_config():
     return _ha_config
 
 
-@pytest.yield_fixture(scope="module")
+@pytest.fixture(scope="module")
 async def ha_servers(server_key_and_cert):
     # start our own server
     srvs = []
@@ -352,7 +352,7 @@ async def srv_variables(ha_servers):
         await c.disconnect()
 
 
-@pytest.yield_fixture(scope="function")
+@pytest.fixture(scope="function")
 async def ha_client(ha_config, ha_servers):
     """
     This fixture returns everytime a new
