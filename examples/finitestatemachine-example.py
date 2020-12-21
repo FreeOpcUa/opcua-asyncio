@@ -12,7 +12,7 @@ if __name__ == "__main__":
         server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         idx = await server.register_namespace("http://examples.freeopcua.github.io")
         
-        # get a instance of the FiniteStateMachine-Class def "__init__(self, server=None, parent=None, idx=None, name=None):""
+        # get a instance of the FiniteStateMachine-Class def "__init__(self, server=None, parent=None, idx=None, name=None):"
         mystatemachine = FiniteStateMachine(server, server.nodes.objects, idx, "FiniteStateMachine")
         # call statemachine.install() to instantiate the statemachinetype (with or without optional nodes)
         await mystatemachine.install(optionals=True)
