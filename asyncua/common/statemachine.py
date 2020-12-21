@@ -24,7 +24,7 @@ from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
 
 _logger = logging.getLogger(__name__)
 
-class StateMachineTypeClass(object):
+class StateMachine(object):
     '''
     Implementation of an StateMachineType (most basic type)
     CurrentState: Mandatory "StateVariableType"
@@ -112,9 +112,18 @@ class StateMachineTypeClass(object):
             instantiate_optional=optionals
             )
         if self._optionals:
-            #FIXME somehow propertys dont get added if i instantiate with oprionals
+            #FIXME somehow propertys dont get added if i instantiate with optionals
             self._last_transition_node = await self._state_machine_node.get_child(["LastTransition"])
-            self._last_transition_transitiontime_node = await self._last_transition_node.add_property(0, "TransitionTime", ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime))
+            self._last_transition_transitiontime_node = await self._last_transition_node.add_property(
+                0, 
+                "TransitionTime", 
+                ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
+                )
+            self._last_transition_effectivetransitiontime_node = await self._last_transition_node.add_property(
+                0, 
+                "EffectiveTransitionTime", 
+                ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
+                )
         await self.init(self._state_machine_node)
     
     async def init(self, statemachine):
@@ -160,13 +169,11 @@ class StateMachineTypeClass(object):
         event_msg: "string/LocalizedText" optional
         severity: "Int" optional
         '''
-        #FIXME check StateType exist
-        #FIXME check TransitionTypeType exist
         await self._write_state(state)
         if transition:
             await self._write_transition(transition)
         if event_msg:
-            if isinstance(event_msg, (type(""))):
+            if isinstance(event_msg, str):
                 event_msg = ua.LocalizedText(event_msg, self.locale)
             self._evgen.event.Message = event_msg
             self._evgen.event.Severity = severity
@@ -195,7 +202,7 @@ class StateMachineTypeClass(object):
             transition._transitiontime = datetime.datetime.utcnow()
         transition._effectivetransitiontime = datetime.datetime.utcnow()
         await self._last_transition_node.write_value(ua.LocalizedText(transition.name, self.locale), ua.VariantType.LocalizedText)
-        if transition.node:
+        if self._optionals:
             if self._last_transition_id_node:
                 await self._last_transition_id_node.write_value(transition.node.nodeid, ua.VariantType.NodeId)
             if self._last_transition_name_node:
@@ -246,48 +253,36 @@ class StateMachineTypeClass(object):
         return transition.node
 
     async def remove(self, nodes):
-        #FIXME
+        #FIXME Is it wise to remove a part of a program/statemachine dynamically? at this point i am not sure
         raise NotImplementedError
 
-class FiniteStateMachineTypeClass(StateMachineTypeClass):
+class FiniteStateMachine(StateMachine):
     '''
     Implementation of an FiniteStateMachineType a little more advanced than the basic one
-    if you need to know the avalible states and transition from clientside
+    if you need to know the available states and transition from clientside
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
         if name == None:
             name = "FiniteStateMachine"
         self._state_machine_type = ua.NodeId(2771, 0)
-        self._avalible_states_node = None
-        self._avalible_transitions_node = None
+        self._available_states_node = None
+        self._available_transitions_node = None
 
-    async def install(self, optionals=False):
-        '''
-        setup adressspace and initialize 
-        '''
-        self._optionals = optionals
-        self._state_machine_node = await self._parent.add_object(
-            self._idx, 
-            self._name, 
-            objecttype=self._state_machine_type, 
-            instantiate_optional=optionals
-            )
+    async def set_available_states(self, states):
+        if not self._available_states_node:
+            self._available_states_node = await self._state_machine_node.get_child(["AvailableStates"])
+        if isinstance(states, list):
+            return await self._available_states_node.write_value(states, varianttype=ua.VariantType.NodeId)
+        return ValueError
 
-    async def init(self, avalible_states, avalible_transitions, ):
-        #FIXME get children and map children
-        #await self.find_all_states()
-        await self.set_avalible_states(avalible_states)
-        #await self.find_all_transitions()
-        await self.set_avalible_transitions(avalible_transitions)
-
-    async def set_avalible_states(self, states):
-        #check if its list
-        await self._avalible_states_node.write_value(states, varianttype=ua.VariantType.NodeId)
-
-    async def set_avalible_transitions(self, transitions):
-        #check if its list
-        await self._avalible_transitions_node.write_value(transitions, varianttype=ua.VariantType.NodeId)
+    async def set_available_transitions(self, transitions):
+        if self._optionals:
+            if not self._available_transitions_node:
+                self._available_transitions_node = await self._state_machine_node.get_child(["AvailableTransitions"])
+            if isinstance(transitions, list):
+                await self._available_transitions_node.write_value(transitions, varianttype=ua.VariantType.NodeId)
+            return ValueError
 
     async def find_all_states(self):
         return NotImplementedError
@@ -295,7 +290,7 @@ class FiniteStateMachineTypeClass(StateMachineTypeClass):
     async def find_all_transitions(self):
         return NotImplementedError
 
-class ExclusiveLimitStateMachineTypeClass(FiniteStateMachineTypeClass):
+class ExclusiveLimitStateMachine(FiniteStateMachine):
     '''
     NOT IMPLEMENTED "ExclusiveLimitStateMachineType"
     '''
@@ -306,7 +301,7 @@ class ExclusiveLimitStateMachineTypeClass(FiniteStateMachineTypeClass):
         self._state_machine_type = ua.NodeId(9318, 0)
         raise NotImplementedError
 
-class FileTransferStateMachineTypeClass(FiniteStateMachineTypeClass):
+class FileTransferStateMachine(FiniteStateMachine):
     '''
     NOT IMPLEMENTED "FileTransferStateMachineType"
     '''
@@ -317,7 +312,7 @@ class FileTransferStateMachineTypeClass(FiniteStateMachineTypeClass):
         self._state_machine_type = ua.NodeId(15803, 0)
         raise NotImplementedError
 
-class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
+class ProgramStateMachine(FiniteStateMachine):
     '''
     https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.3/
     Implementation of an ProgramStateMachine its quite a complex statemachine with the 
@@ -645,7 +640,7 @@ class ProgramStateMachineTypeClass(FiniteStateMachineTypeClass):
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
-class ShelvedStateMachineTypeClass(FiniteStateMachineTypeClass):
+class ShelvedStateMachine(FiniteStateMachine):
     '''
     NOT IMPLEMENTED "ShelvedStateMachineType"
     '''
@@ -655,65 +650,3 @@ class ShelvedStateMachineTypeClass(FiniteStateMachineTypeClass):
             name = "ShelvedStateMachine"
         self._state_machine_type = ua.NodeId(2929, 0)
         raise NotImplementedError
-
-
-
-#FIXME REMOVE BEFOR MERGE
-#Devtest / Workbench
-if __name__ == "__main__":
-    async def main():
-        logging.basicConfig(level=logging.INFO)
-        _logger = logging.getLogger('asyncua')
-
-        server = Server()
-        await server.init()
-
-        idx = await server.register_namespace("http://testnamespace.org/UA")
-
-        mystatemachine = StateMachineTypeClass(server, server.nodes.objects, idx, "StateMachine")
-        await mystatemachine.install(optionals=True)
-
-        state1 = mystatemachine.State("Idle", 1)
-        await mystatemachine.add_state(state1)
-        state2 = mystatemachine.State("Loading", 2)
-        await mystatemachine.add_state(state2)
-        state3 = mystatemachine.State("Initializing", 3)
-        await mystatemachine.add_state(state3)
-        state4 = mystatemachine.State("Processing", 4)
-        await mystatemachine.add_state(state4)
-        state5 = mystatemachine.State("Finished", 5)
-        await mystatemachine.add_state(state5)
-
-        trans1 = mystatemachine.Transition("to Idle", 1)
-        await mystatemachine.add_transition(trans1)
-        trans2 = mystatemachine.Transition("to Loading", 2)
-        await mystatemachine.add_transition(trans2)
-        trans3 = mystatemachine.Transition("to Initializing", 3)
-        await mystatemachine.add_transition(trans3)
-        trans4 = mystatemachine.Transition("to Processing", 4)
-        await mystatemachine.add_transition(trans4)
-        trans5 = mystatemachine.Transition("to Finished", 5)
-        await mystatemachine.add_transition(trans5)
-
-        await mystatemachine.change_state(state1, trans1, f"{mystatemachine._name}: Idle", 300)
-
-        mystatemachine2 = StateMachineTypeClass(server, server.nodes.objects, idx, "StateMachine2")
-        await mystatemachine2.install(optionals=False)
-        sm2state1 = mystatemachine2.State("Idle", 1)
-        await mystatemachine2.add_state(sm2state1)
-        await mystatemachine2.change_state(sm2state1)
-
-        async with server:
-            while 1:
-                await asyncio.sleep(2)
-                await mystatemachine.change_state(state2, trans2, f"{mystatemachine._name}: Loading", 350)
-                await asyncio.sleep(2)
-                await mystatemachine.change_state(state3, trans3, f"{mystatemachine._name}: Initializing", 400)
-                await asyncio.sleep(2)
-                await mystatemachine.change_state(state4, trans4, f"{mystatemachine._name}: Processing", 600)
-                await asyncio.sleep(2)
-                await mystatemachine.change_state(state5, trans5, f"{mystatemachine._name}: Finished", 800)
-                await asyncio.sleep(2)
-                await mystatemachine.change_state(state1, trans1, f"{mystatemachine._name}: Idle", 500)
-
-    asyncio.run(main())
