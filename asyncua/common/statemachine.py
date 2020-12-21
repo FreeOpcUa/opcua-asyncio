@@ -98,7 +98,6 @@ class StateMachine(object):
             self._transitiontime = datetime.datetime.utcnow() #will be overwritten from _write_transition()
             self._effectivetransitiontime = datetime.datetime.utcnow() #will be overwritten from _write_transition()
             self.node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
-            self.issub = issub #true if it is a transition between substates
 
     async def install(self, optionals=False):
         '''
@@ -171,7 +170,7 @@ class StateMachine(object):
         '''
         await self._write_state(state)
         if transition:
-            await self._write_transition(transition)
+            await self._write_transition(transition, state.issub)
         if event_msg:
             if isinstance(event_msg, str):
                 event_msg = ua.LocalizedText(event_msg, self.locale)
@@ -191,14 +190,14 @@ class StateMachine(object):
             if self._current_state_number_node:
                 await self._current_state_number_node.write_value(state.number, ua.VariantType.UInt32)
 
-    async def _write_transition(self, transition):
+    async def _write_transition(self, transition, issub=False):
         '''
         transition: self.Transition
         issub: boolean (true if it is a transition between substates)
         '''
         if not isinstance(transition, self.Transition):
             raise ValueError
-        if transition.issub == False:
+        if issub == False:
             transition._transitiontime = datetime.datetime.utcnow()
         transition._effectivetransitiontime = datetime.datetime.utcnow()
         await self._last_transition_node.write_value(ua.LocalizedText(transition.name, self.locale), ua.VariantType.LocalizedText)
