@@ -67,6 +67,8 @@ if __name__ == "__main__":
         ])
 
         # initialise the FiniteStateMachine by call change_state() with the InitialState
+        # if the statechange should trigger an TransitionEvent the Message can be assigned here 
+        # if event_msg is None no event will be triggered
         await mystatemachine.change_state(state1, trans1, f"{mystatemachine._name}: Idle", 300)
 
         async with server:
