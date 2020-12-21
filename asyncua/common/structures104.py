@@ -53,7 +53,7 @@ def make_structure_code(data_type, name, sdef):
     given a StructureDefinition object, generate Python code
     """
     if sdef.StructureType not in (ua.StructureType.Structure, ua.StructureType.StructureWithOptionalFields):
-        #if sdef.StructureType != ua.StructureType.Structure:
+        # if sdef.StructureType != ua.StructureType.Structure:
         raise NotImplementedError(f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {name} with DataTypdeDefinition {sdef}")
 
     code = f"""
@@ -81,7 +81,7 @@ class {name}:
 
     code += '    ua_types = [\n'
     if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-        code += f"        ('Encoding', 'Byte'),\n"
+        code += "        ('Encoding', 'Byte'),\n"
     uatypes = []
     for field in sdef.Fields:
         prefix = 'ListOf' if field.ValueRank >= 1 else ''
@@ -92,8 +92,8 @@ class {name}:
         elif field.DataType in ua.enums_by_datatype:
             uatype = ua.enums_by_datatype[field.DataType].__name__
         else:
-            #FIXME: we are probably missing many custom tyes here based on builtin types
-            #maybe we can use ua_utils.get_base_data_type()
+            # FIXME: we are probably missing many custom tyes here based on builtin types
+            # maybe we can use ua_utils.get_base_data_type()
             raise RuntimeError(f"Unknown datatype for field: {field} in structure:{name}, please report")
         if field.ValueRank >= 1 and uatype == 'Char':
             uatype = 'String'
@@ -112,7 +112,7 @@ class {name}:
     if not sdef.Fields:
         code += "      pass"
     if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-        code += f"        self.Encoding = 0\n"
+        code += "        self.Encoding = 0\n"
     for field, uatype in uatypes:
         if field.ValueRank >= 1:
             default_value = "[]"
