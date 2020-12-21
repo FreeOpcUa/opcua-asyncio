@@ -8,7 +8,7 @@ import uuid
 import logging
 # The next two imports are for generated code
 from datetime import datetime
-from enum import Enum, IntEnum, EnumMeta
+from enum import IntEnum, EnumMeta
 from xml.etree import ElementTree as ET
 from asyncua import ua
 
@@ -25,6 +25,7 @@ class EnumType(object):
 
     def __str__(self):
         return f"EnumType({self.name, self.fields})"
+
     __repr__ = __str__
 
     def get_code(self):

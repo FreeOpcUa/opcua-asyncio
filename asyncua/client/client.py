@@ -87,8 +87,7 @@ class Client:
         """
         _logger.info("find_endpoint %r %r %r", endpoints, security_mode, policy_uri)
         for ep in endpoints:
-            if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and
-                    ep.SecurityPolicyUri == policy_uri):
+            if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and ep.SecurityPolicyUri == policy_uri):
                 return ep
         raise ua.UaError(f"No matching endpoints: {security_mode}, {policy_uri}")
 
@@ -137,16 +136,17 @@ class Client:
 
         policy_class = getattr(security_policies, f"SecurityPolicy{parts[0]}")
         mode = getattr(ua.MessageSecurityMode, parts[1])
-        return await self.set_security(policy_class, parts[2], parts[3], client_key_password,
-                                       parts[4] if len(parts) >= 5 else None, mode)
+        return await self.set_security(policy_class, parts[2], parts[3], client_key_password, parts[4] if len(parts) >= 5 else None, mode)
 
-    async def set_security(self,
-                           policy: ua.SecurityPolicy,
-                           certificate: Union[str, uacrypto.CertProperties],
-                           private_key: Union[str, uacrypto.CertProperties],
-                           private_key_password: Optional[Union[str, bytes]] = None,
-                           server_certificate: Optional[Union[str, uacrypto.CertProperties]] = None,
-                           mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
+    async def set_security(
+        self,
+        policy: ua.SecurityPolicy,
+        certificate: Union[str, uacrypto.CertProperties],
+        private_key: Union[str, uacrypto.CertProperties],
+        private_key_password: Optional[Union[str, bytes]] = None,
+        server_certificate: Optional[Union[str, uacrypto.CertProperties]] = None,
+        mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
+    ):
         """
         Set SecureConnection mode.
         Call this before connect()
@@ -164,17 +164,23 @@ class Client:
             private_key = uacrypto.CertProperties(private_key, password=private_key_password)
         return await self._set_security(policy, certificate, private_key, server_certificate, mode)
 
-    async def _set_security(self,
-                            policy: ua.SecurityPolicy,
-                            certificate: uacrypto.CertProperties,
-                            private_key: uacrypto.CertProperties,
-                            server_cert: uacrypto.CertProperties,
-                            mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
+    async def _set_security(
+        self,
+        policy: ua.SecurityPolicy,
+        certificate: uacrypto.CertProperties,
+        private_key: uacrypto.CertProperties,
+        server_cert: uacrypto.CertProperties,
+        mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
+    ):
 
         if isinstance(server_cert, uacrypto.CertProperties):
             server_cert = await uacrypto.load_certificate(server_cert.path, server_cert.extension)
         cert = await uacrypto.load_certificate(certificate.path, certificate.extension)
-        pk = await uacrypto.load_private_key(private_key.path, private_key.password, private_key.extension)
+        pk = await uacrypto.load_private_key(
+            private_key.path,
+            private_key.password,
+            private_key.extension,
+        )
         self.security_policy = policy(server_cert, cert, pk, mode)
         self.uaclient.set_security(self.security_policy)
 
@@ -184,10 +190,7 @@ class Client:
         """
         self.user_certificate = await uacrypto.load_certificate(path, extension)
 
-    async def load_private_key(self,
-                               path: str,
-                               password: Optional[Union[str, bytes]] = None,
-                               extension: Optional[str] = None):
+    async def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
         """
         Load user private key. This is used for authenticating using certificate
         """
@@ -296,8 +299,7 @@ class Client:
         params.ClientNonce = create_nonce(self.security_policy.symmetric_key_size)
         result = await self.uaclient.open_secure_channel(params)
         if self.secure_channel_timeout != result.SecurityToken.RevisedLifetime:
-            _logger.info("Requested secure channel timeout to be %dms, got %dms instead",
-                         self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
+            _logger.info("Requested secure channel timeout to be %dms, got %dms instead", self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
             self.secure_channel_timeout = result.SecurityToken.RevisedLifetime
 
     async def close_secure_channel(self):
@@ -384,8 +386,7 @@ class Client:
         self._policy_ids = ep.UserIdentityTokens
         #  Actual maximum number of milliseconds that a Session shall remain open without activity
         if self.session_timeout != response.RevisedSessionTimeout:
-            _logger.warning("Requested session timeout to be %dms, got %dms instead",
-                            self.secure_channel_timeout, response.RevisedSessionTimeout)
+            _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
             self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = self.loop.create_task(self._renew_channel_loop())
         return response
@@ -407,7 +408,7 @@ class Client:
                 _logger.debug("server state is: %s ", val)
         except asyncio.CancelledError:
             pass
-        except:
+        except Exception:
             _logger.exception("Error while renewing session")
             raise
 
@@ -448,9 +449,7 @@ class Client:
         if self.security_policy.AsymmetricSignatureURI:
             params.ClientSignature.Algorithm = self.security_policy.AsymmetricSignatureURI
         else:
-            params.ClientSignature.Algorithm = (
-                security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI
-            )
+            params.ClientSignature.Algorithm = (security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI)
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
         params.LocaleIds.append("en")
         if not username and not certificate:
