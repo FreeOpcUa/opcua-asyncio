@@ -363,7 +363,7 @@ async def test_create_custom_event_type_object_id(server):
 
 async def test_create_custom_object_type_object_id(server):
     def func(parent, variant):
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(True, ua.VariantType.Boolean)]
 
     properties = [('PropertyNum', ua.VariantType.Int32),
                   ('PropertyString', ua.VariantType.String)]

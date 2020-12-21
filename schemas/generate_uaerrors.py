@@ -27,5 +27,6 @@ if __name__ == "__main__":
             template = Template(dedent("""\
             class $name(UaStatusCodeError):
                 code = $code
+
             """))
             print(template.safe_substitute(name=name, code=code), file=f)
