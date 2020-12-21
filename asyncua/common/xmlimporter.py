@@ -4,7 +4,7 @@ format is the one from opc-ua specification
 """
 import logging
 import uuid
-from typing import Coroutine, Union, Dict
+from typing import Union, Dict
 from copy import copy
 
 from asyncua import ua
@@ -94,7 +94,7 @@ class XmlImporter:
                 from IPython import embed
                 embed()
 
-    async def _add_node_data(self, nodedata) -> "Node":
+    async def _add_node_data(self, nodedata) -> ua.NodeId:
         if nodedata.nodetype == "UAObject":
             node = await self.add_object(nodedata)
         elif nodedata.nodetype == "UAObjectType":
