@@ -91,7 +91,7 @@ class StateMachine(object):
         then the TransitionTime stays at the point in time where StateA became active whereas the EffectiveTransitionTime changes 
         with each change of a substate.
         '''
-        def __init__(self, name, id=0, node=None, issub=False):
+        def __init__(self, name, id=0, node=None):
             self.name = name
             self.id = str(id)
             self.number = id
@@ -223,6 +223,9 @@ class StateMachine(object):
         ChoiceStateType: ua.NodeId(15109,0),
         '''
         if not isinstance(state, self.State):
+            raise ValueError
+        if not state_type in [ua.NodeId(2309, 0),ua.NodeId(2307, 0),ua.NodeId(15109,0)]:
+            # unknown state type!
             raise ValueError
         state.node = await self._state_machine_node.add_object(
             self._idx, 
@@ -396,19 +399,19 @@ class ProgramStateMachine(FiniteStateMachine):
 
     #Transition
     async def HaltedToReady(self):
-        await self._current_state.write_value(
+        await self._current_state_node.write_value(
             self.localizedtext_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._current_state_id.write_value(
+        await self._current_state_id_node.write_value(
             self._ready_state.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        await self._last_transition.write_value(
+        await self._last_transition_node.write_value(
             self.localizedtext_halted_to_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._last_transition_id.write_value(
+        await self._last_transition_id_node.write_value(
             self._halted_to_ready.nodeid,
             varianttype=ua.VariantType.NodeId
             )
@@ -419,19 +422,19 @@ class ProgramStateMachine(FiniteStateMachine):
 
     #Transition
     async def ReadyToRunning(self):
-        await self._current_state.write_value(
+        await self._current_state_node.write_value(
             self.localizedtext_running,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._current_state_id.write_value(
+        await self._current_state_id_node.write_value(
             self._running_state.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        await self._last_transition.write_value(
+        await self._last_transition_node.write_value(
             self.localizedtext_ready_to_running,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._last_transition_id.write_value(
+        await self._last_transition_id_node.write_value(
             self._ready_to_running.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
@@ -442,19 +445,19 @@ class ProgramStateMachine(FiniteStateMachine):
 
     #Transition
     async def RunningToHalted(self):
-        await self._current_state.write_value(
+        await self._current_state_node.write_value(
             self.localizedtext_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._current_state_id.write_value(
+        await self._current_state_id_node.write_value(
             self._halted_state.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        await self._last_transition.write_value(
+        await self._last_transition_node.write_value(
             self.localizedtext_running_to_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._last_transition_id.write_value(
+        await self._last_transition_id_node.write_value(
             self._running_to_halted.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
@@ -465,19 +468,19 @@ class ProgramStateMachine(FiniteStateMachine):
 
     #Transition
     async def RunningToReady(self):
-        await self._current_state.write_value(
+        await self._current_state_node.write_value(
             self.localizedtext_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._current_state_id.write_value(
+        await self._current_state_id_node.write_value(
             self._ready_state.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        await self._last_transition.write_value(
+        await self._last_transition_node.write_value(
             self.localizedtext_running_to_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._last_transition_id.write_value(
+        await self._last_transition_id_node.write_value(
             self._running_to_ready.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
@@ -488,19 +491,19 @@ class ProgramStateMachine(FiniteStateMachine):
 
     #Transition
     async def RunningToSuspended(self):
-        await self._current_state.write_value(
+        await self._current_state_node.write_value(
             self.localizedtext_suspended,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._current_state_id.write_value(
+        await self._current_state_id_node.write_value(
             self._suspended_state.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        await self._last_transition.write_value(
+        await self._last_transition_node.write_value(
             self.localizedtext_running_to_suspended,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._last_transition_id.write_value(
+        await self._last_transition_id_node.write_value(
             self._running_to_suspended.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
@@ -511,19 +514,19 @@ class ProgramStateMachine(FiniteStateMachine):
 
     #Transition 
     async def SuspendedToRunning(self):
-        await self._current_state.write_value(
+        await self._current_state_node.write_value(
             self.localizedtext_running,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._current_state_id.write_value(
+        await self._current_state_id_node.write_value(
             self._running_state.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        await self._last_transition.write_value(
+        await self._last_transition_node.write_value(
             self.localizedtext_suspended_to_running,
             varianttype=ua.VariantType.LocalizedText
             )
-        await self._last_transition_id.write_value(
+        await self._last_transition_id_node.write_value(
             self._suspended_to_running.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
@@ -534,19 +537,19 @@ class ProgramStateMachine(FiniteStateMachine):
 
     #Transition
     async def SuspendedToHalted(self):
-        await self._current_state.write_value(
+        await self._current_state_node.write_value(
             self.localizedtext_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._current_state_id.write_value(
+        await self._current_state_id_node.write_value(
             self._halted_state.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        await self._last_transition.write_value(
+        await self._last_transition_node.write_value(
             self.localizedtext_suspended_to_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._last_transition_id.write_value(
+        await self._last_transition_id_node.write_value(
             self._suspended_to_halted.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
@@ -557,19 +560,19 @@ class ProgramStateMachine(FiniteStateMachine):
 
     #Transition
     async def SuspendedToReady(self):
-        await self._current_state.write_value(
+        await self._current_state_node.write_value(
             self.localizedtext_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._current_state_id.write_value(
+        await self._current_state_id_node.write_value(
             self._ready_state.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        await self._last_transition.write_value(
+        await self._last_transition_node.write_value(
             self.localizedtext_suspended_to_ready,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._last_transition_id.write_value(
+        await self._last_transition_id_node.write_value(
             self._suspended_to_ready.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
@@ -580,19 +583,19 @@ class ProgramStateMachine(FiniteStateMachine):
 
     #Transition 
     async def ReadyToHalted(self):
-        await self._current_state.write_value(
+        await self._current_state_node.write_value(
             self.localizedtext_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._current_state_id.write_value(
+        await self._current_state_id_node.write_value(
             self._halted_state.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
-        await self._last_transition.write_value(
+        await self._last_transition_node.write_value(
             self.localizedtext_ready_to_halted,
             varianttype=ua.VariantType.LocalizedText
             ) 
-        await self._last_transition_id.write_value(
+        await self._last_transition_id_node.write_value(
             self._ready_to_halted.nodeid, 
             varianttype=ua.VariantType.NodeId
             )
@@ -603,39 +606,40 @@ class ProgramStateMachine(FiniteStateMachine):
 
     #method to be linked to uamethod
     async def Start(self):
-        if await self._current_state.read_value() == self.localizedtext_ready:
+        if await self._current_state_node.read_value() == self.localizedtext_ready:
             return await ReadyToRunning()
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
     #method to be linked to uamethod
     async def Suspend(self):
-        if await self._current_state.read_value() == self.localizedtext_running:
+        if await self._current_state_node.read_value() == self.localizedtext_running:
             return await RunningToSuspended()
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
     #method to be linked to uamethod
     async def Resume(self):
-        if await self._current_state.read_value() == self.localizedtext_suspended:
+        if await self._current_state_node.read_value() == self.localizedtext_suspended:
             return await SuspendedToRunning()
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
     #method to be linked to uamethod
     async def Halt(self):
-        if await self._current_state.read_value() == self.localizedtext_ready:
+        val = await self._current_state_node.read_value()
+        if val == self.localizedtext_ready:
             return await ReadyToHalted()
-        elif await self._current_state.read_value() == self.localizedtext_running:
+        elif val == self.localizedtext_running:
             return await RunningToHalted()
-        elif await self._current_state.read_value() == self.localizedtext_suspended:
+        elif val == self.localizedtext_suspended:
             return await SuspendedToHalted()
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
     #method to be linked to uamethod
     async def Reset(self):
-        if await self._current_state.read_value() == self.localizedtext_halted:
+        if await self._current_state_node.read_value() == self.localizedtext_halted:
             return await HaltedToReady()
         else:
             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
