@@ -49,6 +49,8 @@ class EventGenerator:
                     condition_id = ua.NodeId(emitting_node.nodeid.Identifier, emitting_node.nodeid.NamespaceIndex)
                 elif isinstance(emitting_node, ua.NodeId):
                     condition_id = emitting_node
+                elif isinstance(emitting_node, int):
+                    condition_id = ua.NodeId(emitting_node)
                 else:
                     condition_id = ua.NodeId(emitting_node.Identifier, emitting_node.NamespaceIndex)
                 self.event.add_property('NodeId', condition_id, ua.VariantType.NodeId)
