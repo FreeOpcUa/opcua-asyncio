@@ -118,24 +118,25 @@ class SubscriptionService:
         for sub in self.subscriptions.values():
             await sub.monitored_item_srv.trigger_event(event)
 
+
     @uamethod
-    def condition_refresh(self, parent, sub_id):
+    async def condition_refresh(self, parent, sub_id):
         if sub_id not in self.subscriptions:
             return ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
         if ua.ObjectIds.RefreshStartEventType in self.standard_events:
-            self.standard_events[ua.ObjectIds.RefreshStartEventType].trigger()
-        self.subscriptions[sub_id].monitored_item_srv.condition_refresh()
+            await self.standard_events[ua.ObjectIds.RefreshStartEventType].trigger()
+        await self.subscriptions[sub_id].monitored_item_srv.condition_refresh()
         if ua.ObjectIds.RefreshEndEventType in self.standard_events:
-            self.standard_events[ua.ObjectIds.RefreshEndEventType].trigger()
+            await self.standard_events[ua.ObjectIds.RefreshEndEventType].trigger()
 
     @uamethod
-    def condition_refresh2(self, parent, sub_id, mid):
+    async def condition_refresh2(self, parent, sub_id, mid):
         if sub_id not in self.subscriptions:
             return ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
         if mid not in self.subscriptions[sub_id].monitored_item_srv._monitored_items:
             return ua.StatusCode(ua.StatusCodes.BadMonitoredItemIdInvalid)
         if ua.ObjectIds.RefreshStartEventType in self.standard_events:
-            self.standard_events[ua.ObjectIds.RefreshStartEventType].trigger()
+            await self.standard_events[ua.ObjectIds.RefreshStartEventType].trigger()
         self.subscriptions[sub_id].monitored_item_srv.condition_refresh2(mid)
         if ua.ObjectIds.RefreshEndEventType in self.standard_events:
-            self.standard_events[ua.ObjectIds.RefreshEndEventType].trigger()
+            await self.standard_events[ua.ObjectIds.RefreshEndEventType].trigger()

@@ -5,7 +5,7 @@ from aioconsole import ainput
 import asyncio
 
 from asyncua import Server, ua
-
+logging.basicConfig(level=logging.WARNING)
 
 class OpcUaServer(object):
 
@@ -36,16 +36,16 @@ class OpcUaServer(object):
 
         con_obj = await noti_node.add_object(idx, "ConditionObject")
         condition = self.server.get_node(ua.NodeId(2830))
-        self.con_gen = await self.server.get_event_generator(condition, con_obj,
-                                                             notifier_path=[ua.ObjectIds.Server, noti_node, con_obj])
+        self.con_gen = await self.server.get_event_generator(condition, self.server.nodes.server,
+                                                             notifier_path=[ua.ObjectIds.Server])
         self.con_gen.event.add_property('NodeId', con_obj.nodeid, ua.VariantType.NodeId)
 
         alarm_obj = await noti_node.add_object(idx, "AlarmObject")
         alarm = self.server.get_node(ua.NodeId(10637))
-        self.alarm_gen = await self.server.get_event_generator(alarm, alarm_obj,
-                                                               notifier_path=[ua.ObjectIds.Server, noti_node, alarm_obj])
+        self.alarm_gen = await self.server.get_event_generator(alarm, self.server.nodes.server,
+                                                               notifier_path=[ua.ObjectIds.Server])
 
-    def generate_condition(self, retain):
+    async def generate_condition(self, retain):
         self.con_gen.event.ConditionName = 'Example Condition'
         self.con_gen.event.Message = ua.LocalizedText("Some Message")
         self.con_gen.event.Severity = 500
@@ -54,9 +54,9 @@ class OpcUaServer(object):
             self.con_gen.event.Retain = True
         else:
             self.con_gen.event.Retain = False
-        self.con_gen.trigger()
+        await self.con_gen.trigger()
 
-    def generate_alarm(self, active):
+    async def generate_alarm(self, active):
         self.alarm_gen.event.ConditionName = 'Example Alarm1'
         self.alarm_gen.event.Message = ua.LocalizedText("error in module1")
         self.alarm_gen.event.Severity = 500
@@ -71,22 +71,24 @@ class OpcUaServer(object):
             self.alarm_gen.event.Retain = False
             self.alarm_gen.event.ActiveState = ua.LocalizedText('Inactive', 'en')
             setattr(self.alarm_gen.event, 'ActiveState/Id', False)
-        self.alarm_gen.trigger()
+        await self.alarm_gen.trigger()
 
 
 async def interactive(server):
     while True:
-        # server.generate_condition(1)
-        # server.generate_alarm(1)
-        line = await ainput(">>> ")
-        print('execute:', line)
-        if line == 'exit':
-            break
-        try:
-            eval(line)
-        except Exception as msg:
-            print('Exception:', msg)
-            raise Exception
+        await server.generate_condition(1)
+        await server.generate_alarm(1)
+        logging.warning('sent alarm')
+        await asyncio.sleep(5)
+        # # line = await ainput(">>> ")
+        # # print('execute:', line)
+        # # if line == 'exit':
+        # #     break
+        # # try:
+        # #     eval(line)
+        # except Exception as msg:
+        #     print('Exception:', msg)
+        #     raise Exception
 
 
 async def main():

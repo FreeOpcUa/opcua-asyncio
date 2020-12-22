@@ -155,7 +155,7 @@ async def select_clauses_from_evtype(evtypes):
                 clauses.append(op)
                 selected_paths.append(browse_name)
         for var in await get_event_variables_from_type_node(evtype):
-            browse_name = await var.get_browse_name()
+            browse_name = await var.read_browse_name()
             if browse_name not in selected_paths:
                 op = ua.SimpleAttributeOperand()
                 op.AttributeId = ua.AttributeIds.Value
@@ -163,7 +163,7 @@ async def select_clauses_from_evtype(evtypes):
                 clauses.append(op)
                 selected_paths.append(browse_name)
             for prop in await var.get_properties():
-                browse_path = [browse_name, await prop.get_browse_name()]
+                browse_path = [browse_name, await prop.read_browse_name()]
                 if browse_path not in selected_paths:
                     op = ua.SimpleAttributeOperand()
                     op.AttributeId = ua.AttributeIds.Value
