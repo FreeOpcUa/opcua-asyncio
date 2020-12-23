@@ -672,5 +672,50 @@ class Client:
         for result in results:
             result.check()
 
+    async def _open_file(self, file_node, open_mode):
+        """ open file method """
+        open_node = await file_node.get_child("Open")
+        arg = ua.Variant(open_mode, ua.VariantType.Byte)
+        return await file_node.call_method(open_node, arg)
+
+    async def _get_file_size(self, file_node):
+        """ gets size of file """
+        size_node = await file_node.get_child("Size")
+        size = self.get_node(size_node)
+        return await size.read_value()
+
+    async def _close_file(self, file_node, handle):
+        """ close file method """
+        read_node = await file_node.get_child("Close")
+        arg1 = ua.Variant(handle, ua.VariantType.UInt32)
+        return await file_node.call_method(read_node, arg1)
+
+    async def read_file(self, node=None, index=None, name_of_node=None):
+        """
+        :param node: node of file object (e.g. node = client.get_node("ns=2;s=nameOfNode")
+        :param index: namespace, integer (ns=2)
+        :param name_of_node: string, name of the node
+        """
+        # set file node
+        file_node = node
+        if index is not None and name_of_node is not None:
+            file_node = self.get_node("ns=" + str(index) + ";s=" + name_of_node)
+        if file_node is None:
+            raise Exception("Not enough parameters for file node")
+
+        return await self._read_file(file_node)
+
+    async def _read_file(self, file_node):
+        """ read file method, returns contents as file """
+        handle = await self._open_file(file_node, ua.OpenFileMode.Read.value)
+        size = await self._get_file_size(file_node)
+
+        read_node = await file_node.get_child("Read")
+        arg1 = ua.Variant(handle, ua.VariantType.UInt32)
+        arg2 = ua.Variant(size, ua.VariantType.Int32)
+        contents = await file_node.call_method(read_node, arg1, arg2)
+        await self._close_file(file_node, handle)
+        return contents
+
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
