@@ -690,23 +690,10 @@ class Client:
         arg1 = ua.Variant(handle, ua.VariantType.UInt32)
         return await file_node.call_method(read_node, arg1)
 
-    async def read_file(self, node=None, index=None, name_of_node=None):
+    async def read_file(self, file_node):
         """
-        :param node: node of file object (e.g. node = client.get_node("ns=2;s=nameOfNode")
-        :param index: namespace, integer (ns=2)
-        :param name_of_node: string, name of the node
+        :param file_node: node of file object (e.g. node = client.get_node("ns=2;s=nameOfNode")
         """
-        # set file node
-        file_node = node
-        if index is not None and name_of_node is not None:
-            file_node = self.get_node("ns=" + str(index) + ";s=" + name_of_node)
-        if file_node is None:
-            raise Exception("Not enough parameters for file node")
-
-        return await self._read_file(file_node)
-
-    async def _read_file(self, file_node):
-        """ read file method, returns contents as file """
         handle = await self._open_file(file_node, ua.OpenFileMode.Read.value)
         size = await self._get_file_size(file_node)
 
