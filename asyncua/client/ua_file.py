@@ -1,8 +1,16 @@
 from asyncua import ua
 
+
 class UaFile:
+
     def __init__(self, file_node):
         self._file_node = file_node
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        return exc_type is None
 
     async def open(self, open_mode):
         """ open file method """
