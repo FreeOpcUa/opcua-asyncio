@@ -3,9 +3,20 @@ from asyncua import ua
 
 class UaFile:
 
-    def __init__(self, file_node):
+    def __init__(self, file_node, open_mode):
         self._file_node = file_node
         self._handle = None
+        if open_mode == 'r':
+            self._init_open = ua.OpenFileMode.Read.value
+        else:
+            raise ValueError("file mode is not supported")
+
+    async def __aenter__(self):
+        self._handle = await self.open(self._init_open)
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        return await self.close()
 
     async def open(self, open_mode):
         """ open file method """
@@ -18,18 +29,6 @@ class UaFile:
         read_node = await self._file_node.get_child("Close")
         arg1 = ua.Variant(self._handle, ua.VariantType.UInt32)
         return await self._file_node.call_method(read_node, arg1)
-
-
-class UaFileRead(UaFile):
-    def __init__(self, file_node):
-        super().__init__(file_node)
-
-    async def __aenter__(self):
-        self._handle = await self.open(ua.OpenFileMode.Read.value)
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        return await self.close()
 
     async def read(self):
         """ reads file contents """
