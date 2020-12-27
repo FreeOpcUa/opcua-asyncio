@@ -2,7 +2,6 @@ import asyncio
 import time
 import sys
 import logging
-import uvloop
 import cProfile
 
 sys.path.insert(0, "..")
@@ -30,16 +29,16 @@ async def mymain():
     async with server:
         while True:
             await asyncio.sleep(10)
-        #nb = 100000
-        #start = time.time()
-        #for i in range(nb):
-            #await server.write_attribute_value(myvar.nodeid, ua.DataValue(i))
-            #await myvar.write_value(i)
+        nb = 100000
+        start = time.time()
+        for i in range(nb):
+            await server.write_attribute_value(myvar.nodeid, ua.DataValue(i))
+            await myvar.write_value(i)
     print("\n Write frequency: \n", nb / (time.time() - start))
 
 
 if __name__ == "__main__":
     #uvloop.install()
     logging.basicConfig(level=logging.WARNING)
-    #cProfile.run('asyncio.run(mymain(), debug=True)', filename="perf.cprof")
-    asyncio.run(mymain())
+    cProfile.run('asyncio.run(mymain(), debug=True)', filename="perf.cprof")
+    #asyncio.run(mymain())
