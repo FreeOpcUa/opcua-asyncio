@@ -7,16 +7,18 @@ from collections import defaultdict
 from dataclasses import astuple
 from enum import Enum
 from functools import partial
-from typing import TYPE_CHECKING, Dict, Set, Union
+from typing import TYPE_CHECKING, Dict, Set, Union, List, Optional
 from sortedcontainers import SortedDict
-from asyncua import ua
+from asyncua import ua, Client
 from pickle import PicklingError
 
-from .utils import batch, event_wait, get_digest
+from .common import batch, event_wait, get_digest
 from .virtual_subscription import VirtualSubscription
 
 
 _logger = logging.getLogger(__name__)
+
+SubMap = Dict[str, SortedDict]
 
 
 if TYPE_CHECKING:
@@ -64,7 +66,7 @@ class Reconciliator:
         self.node_to_handle = defaultdict(dict)
         self.init_hooks()
 
-    def init_hooks(self):
+    def init_hooks(self) -> None:
         """
         Implement hooks for custom actions like collecting metrics
         or triggering external events.
@@ -164,54 +166,67 @@ class Reconciliator:
         # look for missing options (publish/monitoring) for existing subs
         await self.update_subscription_modes(real_map, ideal_map, targets)
 
-    async def update_subscriptions(self, real_map, ideal_map, targets: Set[str]):
+    async def update_subscriptions(
+        self, real_map, ideal_map, targets: Set[str]
+    ) -> None:
         _logger.debug("In update_subscriptions")
-        tasks_add = []
-        tasks_del = []
+        tasks = []
         for url in targets:
-            sub_to_del = set(real_map[url]) - set(ideal_map[url])
-            if sub_to_del:
-                _logger.info(f"Removing {len(sub_to_del)} subscriptions")
-            for sub_name in sub_to_del:
-                sub_handle = self.name_to_subscription[url][sub_name]
-                task = self.loop.create_task(sub_handle.delete())
-                task.add_done_callback(
-                    partial(self.del_from_map, url, Method.DEL_SUB, sub_name=sub_name)
-                )
-                tasks_del.append(task)
+            tasks.extend(self._subs_to_del(url, real_map, ideal_map))
+            tasks.extend(self._subs_to_add(url, real_map, ideal_map))
+        await asyncio.gather(*tasks, return_exceptions=True)
 
-            sub_to_add = set(ideal_map[url]) - set(real_map[url])
-            if sub_to_add:
-                _logger.info(f"Adding {len(sub_to_add)} subscriptions")
-            client = self.ha_client.get_client_by_url(url)
-            for sub_name in sub_to_add:
-                vs = ideal_map[url][sub_name]
-                task = self.loop.create_task(
-                    client.create_subscription(
-                        vs.period, vs.handler, publishing=vs.publishing
-                    )
-                )
-                task.add_done_callback(
-                    partial(
-                        self.add_to_map,
-                        url,
-                        Method.ADD_SUB,
-                        period=vs.period,
-                        handler=vs.handler,
-                        publishing=vs.publishing,
-                        monitoring=vs.monitoring,
-                        sub_name=sub_name,
-                    )
-                )
-                tasks_add.append(task)
-                # add the sub name to real_map
-        await asyncio.gather(*tasks_add, return_exceptions=True)
-        await asyncio.gather(*tasks_del, return_exceptions=True)
+    def _subs_to_del(
+        self, url: str, real_map: SubMap, ideal_map: SubMap
+    ) -> List[Optional[asyncio.Task]]:
+        to_del = []
+        sub_to_del = set(real_map[url]) - set(ideal_map[url])
+        if sub_to_del:
+            _logger.info(f"Removing {len(sub_to_del)} subscriptions")
+        for sub_name in sub_to_del:
+            sub_handle = self.name_to_subscription[url][sub_name]
+            task = self.loop.create_task(sub_handle.delete())
+            task.add_done_callback(
+                partial(self.del_from_map, url, Method.DEL_SUB, sub_name=sub_name)
+            )
+            to_del.append(task)
+        return to_del
 
-    async def update_nodes(self, real_map, ideal_map, targets: Set[str]):
+    def _subs_to_add(
+        self, url: str, real_map: SubMap, ideal_map: SubMap
+    ) -> List[Optional[asyncio.Task]]:
+        to_add = []
+        sub_to_add = set(ideal_map[url]) - set(real_map[url])
+        if sub_to_add:
+            _logger.info(f"Adding {len(sub_to_add)} subscriptions")
+        client = self.ha_client.get_client_by_url(url)
+        for sub_name in sub_to_add:
+            vs = ideal_map[url][sub_name]
+            task = self.loop.create_task(
+                client.create_subscription(
+                    vs.period, vs.handler, publishing=vs.publishing
+                )
+            )
+            task.add_done_callback(
+                partial(
+                    self.add_to_map,
+                    url,
+                    Method.ADD_SUB,
+                    period=vs.period,
+                    handler=vs.handler,
+                    publishing=vs.publishing,
+                    monitoring=vs.monitoring,
+                    sub_name=sub_name,
+                )
+            )
+            to_add.append(task)
+        return to_add
+
+    async def update_nodes(
+        self, real_map: SubMap, ideal_map: SubMap, targets: Set[str]
+    ) -> None:
         _logger.debug("In update_nodes")
-        tasks_add = []
-        tasks_del = []
+        tasks = []
         for url in targets:
             client = self.ha_client.get_client_by_url(url)
             for sub_name in ideal_map[url]:
@@ -219,76 +234,98 @@ class Reconciliator:
                 # in case the previous create_subscription request failed
                 if not real_sub:
                     _logger.warning(
-                        f"Can't create nodes for {url} since underlying subscription for {sub_name} doesn't exist"
+                        f"Can't create nodes for {url} since underlying "
+                        f"subscription for {sub_name} doesn't exist"
                     )
                     continue
                 vs_real = real_map[url][sub_name]
                 vs_ideal = ideal_map[url][sub_name]
-                node_to_del = set(vs_real.nodes) - set(vs_ideal.nodes)
-                if node_to_del:
-                    _logger.info(f"Removing {len(node_to_del)} Nodes")
-                if node_to_del:
-                    for batch_nodes in batch(node_to_del, self.BATCH_MI_SIZE):
-                        node_handles = [
-                            self.node_to_handle[url][node] for node in batch_nodes
-                        ]
-                        task = self.loop.create_task(real_sub.unsubscribe(node_handles))
-                        task.add_done_callback(
-                            partial(
-                                self.del_from_map,
-                                url,
-                                Method.DEL_MI,
-                                sub_name=sub_name,
-                                nodes=batch_nodes,
-                            )
-                        )
-                        tasks_del.append(task)
-                # pyre-fixme[16]: `Reconciliator` has no attribute `hook_mi_request`.
+                tasks.extend(self._nodes_to_del(url, sub_name, vs_real, vs_ideal))
+                tasks.extend(
+                    self._nodes_to_add(url, sub_name, client, vs_real, vs_ideal)
+                )
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    def _nodes_to_add(
+        self,
+        url: str,
+        sub_name: str,
+        client: Client,
+        vs_real: VirtualSubscription,
+        vs_ideal: VirtualSubscription,
+    ) -> List[Optional[asyncio.Task]]:
+        tasks = []
+        real_sub = self.name_to_subscription[url].get(sub_name)
+        monitoring = vs_real.monitoring
+        node_to_add = set(vs_ideal.nodes) - set(vs_real.nodes)
+        if node_to_add:
+            _logger.info(f"Adding {len(node_to_add)} Nodes")
+        # hack to group subscription by NodeAttributes
+        attr_to_nodes = defaultdict(list)
+        for node in node_to_add:
+            node_attr = vs_ideal.nodes[node]
+            node_obj = client.get_node(node)
+            attr_to_nodes[node_attr].append(node_obj)
+        for node_attr, nodes_obj in attr_to_nodes.items():
+            # some servers are sensitive to the number of MI per request
+            for batch_nodes_obj in batch(nodes_obj, self.BATCH_MI_SIZE):
+                task = self.loop.create_task(
+                    real_sub.subscribe_data_change(
+                        batch_nodes_obj,
+                        *astuple(node_attr),
+                        monitoring=monitoring,
+                    )
+                )
+                nodes = [n.nodeid.to_string() for n in batch_nodes_obj]
+                task.add_done_callback(
+                    partial(
+                        self.add_to_map,
+                        url,
+                        Method.ADD_MI,
+                        sub_name=sub_name,
+                        nodes=nodes,
+                        node_attr=node_attr,
+                        monitoring=monitoring,
+                    )
+                )
+                tasks.append(task)
+        self.hook_mi_request(
+            url=url, sub_name=sub_name, nodes=node_to_add, action=Method.ADD_MI
+        )
+        return tasks
+
+    def _nodes_to_del(
+        self,
+        url: str,
+        sub_name: str,
+        vs_real: VirtualSubscription,
+        vs_ideal: VirtualSubscription,
+    ) -> List[Optional[asyncio.Task]]:
+        to_del = []
+        node_to_del = set(vs_real.nodes) - set(vs_ideal.nodes)
+        real_sub = self.name_to_subscription[url].get(sub_name)
+        if node_to_del:
+            _logger.info(f"Removing {len(node_to_del)} Nodes")
+            for batch_nodes in batch(node_to_del, self.BATCH_MI_SIZE):
+                node_handles = [self.node_to_handle[url][node] for node in batch_nodes]
+                task = self.loop.create_task(real_sub.unsubscribe(node_handles))
+                task.add_done_callback(
+                    partial(
+                        self.del_from_map,
+                        url,
+                        Method.DEL_MI,
+                        sub_name=sub_name,
+                        nodes=batch_nodes,
+                    )
+                )
+                to_del.append(task)
                 self.hook_mi_request(
                     url=url, sub_name=sub_name, nodes=node_to_del, action=Method.DEL_MI
                 )
-                monitoring = vs_real.monitoring
-                node_to_add = set(vs_ideal.nodes) - set(vs_real.nodes)
-                if node_to_add:
-                    _logger.info(f"Adding {len(node_to_add)} Nodes")
-                # hack to group subscription by NodeAttributes
-                attr_to_nodes = defaultdict(list)
-                for node in node_to_add:
-                    node_attr = vs_ideal.nodes[node]
-                    node_obj = client.get_node(node)
-                    attr_to_nodes[node_attr].append(node_obj)
-                for node_attr, nodes_obj in attr_to_nodes.items():
-                    # some servers are sensitive to the number of MI per request
-                    for batch_nodes_obj in batch(nodes_obj, self.BATCH_MI_SIZE):
-                        task = self.loop.create_task(
-                            real_sub.subscribe_data_change(
-                                batch_nodes_obj,
-                                *astuple(node_attr),
-                                monitoring=monitoring,
-                            )
-                        )
-                        nodes = [n.nodeid.to_string() for n in batch_nodes_obj]
-                        task.add_done_callback(
-                            partial(
-                                self.add_to_map,
-                                url,
-                                Method.ADD_MI,
-                                sub_name=sub_name,
-                                nodes=nodes,
-                                node_attr=node_attr,
-                                monitoring=monitoring,
-                            )
-                        )
-                        tasks_add.append(task)
-                self.hook_mi_request(
-                    url=url, sub_name=sub_name, nodes=node_to_add, action=Method.ADD_MI
-                )
-
-        await asyncio.gather(*tasks_del, return_exceptions=True)
-        await asyncio.gather(*tasks_add, return_exceptions=True)
+        return to_del
 
     async def update_subscription_modes(
-        self, real_map, ideal_map, targets: Set[str]
+        self, real_map: SubMap, ideal_map: SubMap, targets: Set[str]
     ) -> None:
         _logger.debug("In update_subscription_modes")
         modes = [Method.MONITORING, Method.PUBLISHING]
@@ -332,7 +369,7 @@ class Reconciliator:
         val: Union[bool, ua.MonitoringMode],
         fut: asyncio.Task,
         **kwargs,
-    ):
+    ) -> None:
         if fut.exception():
             _logger.warning(f"Can't {action.value} on {url}: {fut.exception()}")
             return
@@ -340,10 +377,9 @@ class Reconciliator:
         vs = self.real_map[url][sub_name]
         setattr(vs, action.name.lower(), val)
 
-    def add_to_map(self, url: str, action: Method, fut: asyncio.Task, **kwargs):
+    def add_to_map(self, url: str, action: Method, fut: asyncio.Task, **kwargs) -> None:
         if fut.exception():
             _logger.warning(f"Can't {action.value} on {url}: {fut.exception()}")
-            # pyre-fixme[16]: `Reconciliator` has no attribute `hook_add_to_map_error`.
             self.hook_add_to_map_error(url=url, action=action, fut=fut, **kwargs)
             return
 
@@ -371,10 +407,11 @@ class Reconciliator:
                         real_vs.unsubscribe([node])
                     continue
                 self.node_to_handle[url][node] = handle
-            # pyre-fixme[16]: `Reconciliator` has no attribute `hook_on_subscribe`.
         self.hook_add_to_map(fut=fut, url=url, action=action, **kwargs)
 
-    def del_from_map(self, url: str, action: Method, fut: asyncio.Task, **kwargs):
+    def del_from_map(
+        self, url: str, action: Method, fut: asyncio.Task, **kwargs
+    ) -> None:
         if fut.exception():
             # log exception but continues to delete local resources
             _logger.warning(f"Can't {action.value} on {url}: {fut.exception()}")
@@ -391,10 +428,9 @@ class Reconciliator:
             vs.unsubscribe(nodes)
             for node in nodes:
                 self.node_to_handle[url].pop(node)
-            # pyre-fixme[16]: `Reconciliator` has no attribute `hook_on_unsubscribe`.
         self.hook_del_from_map(fut=fut, url=url, action=action, **kwargs)
 
-    async def debug_status(self):
+    async def debug_status(self) -> None:
         """
         Return the class attribute for troubleshooting purposes
         """

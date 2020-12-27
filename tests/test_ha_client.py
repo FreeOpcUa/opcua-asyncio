@@ -14,7 +14,7 @@ from asyncua.client.ha.ha_client import (
     HaMode,
     HaSecurityConfig,
 )
-from asyncua.client.ha.utils import ClientNotFound
+from asyncua.client.ha.common import ClientNotFound
 from asyncua.crypto.uacrypto import CertProperties
 from .test_subscriptions import MySubHandler
 from .conftest import (

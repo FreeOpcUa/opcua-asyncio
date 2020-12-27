@@ -14,7 +14,7 @@ from .test_common import add_server_methods
 from .util_enum_struct import add_server_custom_enum_struct
 from threading import Thread
 
-from asyncio import get_event_loop_policy
+from asyncio import get_event_loop_policy, sleep
 from contextlib import closing
 
 import pytest
@@ -59,7 +59,7 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture(scope='module')
 def event_loop(request):
     """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    loop = get_event_loop_policy().new_event_loop()
     loop.set_debug(True)
     yield loop
     loop.close()
@@ -375,7 +375,7 @@ async def wait_clients_socket(ha_client, state):
         for _ in range(RETRY):
             if client.uaclient.protocol and client.uaclient.protocol.state == state:
                 break
-            await asyncio.sleep(SLEEP)
+            await sleep(SLEEP)
         assert client.uaclient.protocol.state == state
 
 
@@ -389,7 +389,7 @@ async def wait_sub_in_real_map(ha_client, sub, negation=False):
                 reconciliator.real_map.get(url) and reconciliator.real_map[url].get(sub)
             ):
                 break
-            await asyncio.sleep(SLEEP)
+            await sleep(SLEEP)
         assert oper(reconciliator.real_map[url].get(sub))
 
 
@@ -404,7 +404,7 @@ async def wait_node_in_real_map(ha_client, sub, node_str, negation=False):
                 vs = reconciliator.real_map[url][sub]
                 if oper(node_str in vs.nodes):
                     break
-            await asyncio.sleep(SLEEP)
+            await sleep(SLEEP)
         assert oper(node_str in vs.nodes)
 
 
@@ -417,7 +417,7 @@ async def wait_mode_in_real_map(ha_client, client, sub, mode, value):
         option = getattr(vsub, mode)
         if option == value:
             break
-        await asyncio.sleep(SLEEP)
+        await sleep(SLEEP)
     assert option == value
 
 
@@ -427,5 +427,5 @@ async def wait_for_status_change(ha_client, client, status):
     for _ in range(RETRY):
         if srv_info.status == status:
             break
-        await asyncio.sleep(SLEEP)
+        await sleep(SLEEP)
     assert srv_info.status == status

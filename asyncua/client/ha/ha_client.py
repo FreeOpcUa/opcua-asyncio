@@ -13,7 +13,7 @@ from asyncua.ua.uaerrors import BadSessionClosed, BadSessionNotActivated
 from typing import Dict, Generator, Iterable, List, Optional, Set, Tuple, Type, Union
 
 from .reconciliator import Reconciliator
-from .utils import ClientNotFound, event_wait
+from .common import ClientNotFound, event_wait
 from .virtual_subscription import TypeSubHandler, VirtualSubscription
 from ...crypto.uacrypto import CertProperties
 
@@ -544,7 +544,6 @@ class HaManager:
                 force
                 or not client.uaclient.protocol
                 or client.uaclient.protocol
-                # pyre-fixme[16]: `Optional` has no attribute `state`.
                 and client.uaclient.protocol.state == UASocketProtocol.CLOSED
             ):
                 _logger.info(f"Virtually reconnecting and resubscribing {client}")

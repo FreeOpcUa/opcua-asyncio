@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional, Set
+
 from asyncua import ua
 from sortedcontainers import SortedDict
 
@@ -19,7 +20,8 @@ class VirtualSubscription:
     handler: TypeSubHandler
     publishing: bool
     monitoring: ua.MonitoringMode
-    # full type: SortedDict[str, NodeAttr]
+    # type annotation (not supported yet): SortedDict[str, NodeAttr]
+    # see: https://github.com/grantjenks/python-sortedcontainers/pull/107
     nodes: SortedDict = field(default_factory=SortedDict)
 
     def subscribe_data_change(
