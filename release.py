@@ -24,8 +24,8 @@ def release():
     ans = input("version bumped, commiting?(Y/n)")
     if ans in ("", "y", "yes"):
         os.system("git add setup.py")
-        os.system("git commit -m 'new release'")
-        os.system(f"git tag {v}")
+        os.system(f"git commit -m 'new release v{v}'")
+        os.system(f"git tag v{v} -m 'new release v{v}'")
         ans = input("change committed, push to server?(Y/n)")
         if ans in ("", "y", "yes"):
             os.system("git push")
