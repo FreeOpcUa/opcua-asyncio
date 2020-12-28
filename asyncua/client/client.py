@@ -23,7 +23,6 @@ _logger = logging.getLogger(__name__)
 class Client:
     """
     High level client to connect to an OPC-UA server.
-
     This class makes it easy to connect and browse address space.
     It attempts to expose as much functionality as possible
     but if you want more flexibility it is possible and advised to
@@ -35,11 +34,9 @@ class Client:
         :param url: url of the server.
             if you are unsure of url, write at least hostname
             and port and call get_endpoints
-
         :param timeout:
             Each request sent to the server expects an answer within this
             time. The timeout is specified in seconds.
-
         Some other client parameters can be changed by setting
         attributes on the constructed object:
         See the source code for the exhaustive list.
@@ -110,17 +107,13 @@ class Client:
     async def set_security_string(self, string: str):
         """
         Set SecureConnection mode.
-
         :param string: Mode format ``Policy,Mode,certificate,private_key[,server_private_key]``
-
         where:
-
         - ``Policy`` is ``Basic128Rsa15``, ``Basic256`` or ``Basic256Sha256``
         - ``Mode`` is ``Sign`` or ``SignAndEncrypt``
         - ``certificate`` and ``server_private_key`` are paths to ``.pem`` or ``.der`` files
         - ``private_key`` may be a path to a ``.pem`` or ``.der`` file or a conjunction of ``path``::``password`` where
           ``password`` is the private key password.
-
         Call this before connect()
         """
         if not string:
@@ -542,10 +535,8 @@ class Client:
         """
         Create a subscription.
         Returns a Subscription object which allows to subscribe to events or data changes on server.
-
         :param period: Either a publishing interval in milliseconds or a `CreateSubscriptionParameters` instance.
             The second option should be used, if the asyncua-server has problems with the default options.
-
         :param handler: Class instance with data_change and/or event methods (see `SubHandler`
             base class for details). Remember not to block the main event loop inside the handler methods.
         """
