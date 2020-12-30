@@ -112,6 +112,11 @@ def call_method_full(tloop, parent, methodid, *args):
     pass
 
 
+@syncfunc(aio_func=common.ua_utils.data_type_to_variant_type)
+def data_type_to_variant_type(dtype_node):
+    pass
+
+
 class _SubHandler:
     def __init__(self, tloop, sync_handler):
         self.tloop = tloop
@@ -294,6 +299,13 @@ class EventGenerator:
         return self.tloop.post(self.aio_obj.trigger(time, message))
 
 
+def new_node(sync_node, nodeid):
+    """
+    given a sync node, create a new Node with the given nodeid
+    """
+    return Node(sync_node.tloop, node.Node(sync_node.aio_obj.server, nodeid))
+
+
 class Node:
     def __init__(self, tloop, aio_node):
         self.aio_obj = aio_node
@@ -321,6 +333,18 @@ class Node:
         self.aio_obj.nodeid = value
 
     nodeid = property(__get_nodeid, __set_nodeid)
+
+    @syncmethod
+    def get_parent(self):
+        pass
+
+    @syncmethod
+    def read_node_class(self):
+        pass
+
+    @syncmethod
+    def read_attribute(self, attr):
+        pass
 
     @syncmethod
     def read_browse_name(self):
