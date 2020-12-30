@@ -2,7 +2,7 @@ from concurrent.futures import Future
 
 import pytest
 
-from asyncua.sync import Client, Server, ThreadLoop, Node
+from asyncua.sync import Client, Server, ThreadLoop, Node, call_method_full
 from asyncua import ua, uamethod
 
 
@@ -122,4 +122,7 @@ def test_sync_client_no_tl(client_no_tloop, idx):
     test_sync_meth(client_no_tloop, idx)
 
 
-
+def test_sync_call_meth(client, idx):
+    methodid = client.nodes.objects.get_child(f"{idx}:Divide")
+    res = call_method_full(client.tloop, client.nodes.objects, methodid, 4, 2)
+    assert res.OutputArguments[0] == 2
