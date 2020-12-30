@@ -8,6 +8,7 @@ import logging
 from asyncua import ua
 from asyncua import client
 from asyncua import server
+from asyncua import common
 from asyncua.common import node
 from asyncua.common import subscription, shortcuts
 
@@ -58,28 +59,57 @@ class ThreadLoop(Thread):
         self.stop()
 
 
+def _to_async(args, kwargs):
+    args = list(args)  # FIXME: might be very inefficient...
+    for idx, arg in enumerate(args):
+        if isinstance(arg, Node):
+            args[idx] = arg.aio_obj
+    for k, v in kwargs.items():
+        if isinstance(v, Node):
+            kwargs[k] = v.aio_obj
+    return args, kwargs
+
+
+def _to_sync(tloop, result):
+    if isinstance(result, node.Node):
+        return Node(tloop, result)
+    if isinstance(result, list) and len(result) > 0 and isinstance(result[0], node.Node):
+        return [Node(tloop, i) for i in result]
+    if isinstance(result, server.event_generator.EventGenerator):
+        return EventGenerator(tloop, result)
+    if isinstance(result, subscription.Subscription):
+        return Subscription(tloop, result)
+    return result
+
+
 def syncmethod(func):
+    """
+    decorator for sync methods
+    """
     def wrapper(self, *args, **kwargs):
-        args = list(args)  # FIXME: might be very inefficient...
-        for idx, arg in enumerate(args):
-            if isinstance(arg, Node):
-                args[idx] = arg.aio_obj
-        for k, v in kwargs.items():
-            if isinstance(v, Node):
-                kwargs[k] = v.aio_obj
+        args, kwargs = _to_async(args, kwargs)
         aio_func = getattr(self.aio_obj, func.__name__)
         result = self.tloop.post(aio_func(*args, **kwargs))
-        if isinstance(result, node.Node):
-            return Node(self.tloop, result)
-        if isinstance(result, list) and len(result) > 0 and isinstance(result[0], node.Node):
-            return [Node(self.tloop, i) for i in result]
-        if isinstance(result, server.event_generator.EventGenerator):
-            return EventGenerator(self.tloop, result)
-        if isinstance(result, subscription.Subscription):
-            return Subscription(self.tloop, result)
-        return result
-
+        return _to_sync(self.tloop, result)
     return wrapper
+
+
+def syncfunc(aio_func):
+    """
+    decorator for sync function
+    """
+    def decorator(func, *args, **kwargs):
+        def wrapper(tloop, *args, **kwargs):
+            args, kwargs = _to_async(args, kwargs)
+            result = tloop.post(aio_func(*args, **kwargs))
+            return _to_sync(tloop, result)
+        return wrapper
+    return decorator
+
+
+@syncfunc(aio_func=common.methods.call_method_full)
+def call_method_full(tloop, parent, methodid, *args):
+    pass
 
 
 class _SubHandler:
@@ -270,7 +300,7 @@ class Node:
         self.tloop = tloop
 
     def __eq__(self, other):
-        return other != None and self.aio_obj == other.aio_obj
+        return other is not None and self.aio_obj == other.aio_obj
 
     def __ne__(self, other):
         return not self.__eq__(other)
