@@ -171,7 +171,7 @@ async def test_references_for_added_nodes_method(server):
                                          includesubtypes=False)
     assert objects in nodes
     assert await o.get_parent() == objects
-    assert (await o.get_type_definition()).Identifier == ua.ObjectIds.BaseObjectType
+    assert (await o.read_type_definition()).Identifier == ua.ObjectIds.BaseObjectType
 
     @uamethod
     def callback(parent):

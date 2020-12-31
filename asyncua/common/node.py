@@ -422,7 +422,7 @@ class Node:
             nodes.append(node)
         return nodes
 
-    async def get_type_definition(self):
+    async def read_type_definition(self):
         """
         returns type definition of the node.
         """
