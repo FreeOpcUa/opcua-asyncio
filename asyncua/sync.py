@@ -9,8 +9,7 @@ from asyncua import ua
 from asyncua import client
 from asyncua import server
 from asyncua import common
-from asyncua.common import node
-from asyncua.common import subscription, shortcuts
+from asyncua.common import node, subscription, shortcuts, xmlexporter, type_dictionary_builder
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +113,16 @@ def call_method_full(tloop, parent, methodid, *args):
 
 @syncfunc(aio_func=common.ua_utils.data_type_to_variant_type)
 def data_type_to_variant_type(dtype_node):
+    pass
+
+
+@syncfunc(aio_func=common.copy_node_util.copy_node)
+def copy_node(parent, node, nodeid=None, recursive=True):
+    pass
+
+
+@syncfunc(aio_func=common.instantiate_util.instantiate)
+def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, idx=0, instantiate_optional=True):
     pass
 
 
@@ -247,6 +256,10 @@ class Server:
         pass
 
     @syncmethod
+    async def get_namespace_array(self):
+        pass
+
+    @syncmethod
     def start(self):
         pass
 
@@ -335,6 +348,10 @@ class Node:
     nodeid = property(__get_nodeid, __set_nodeid)
 
     @syncmethod
+    def read_type_definition(self):
+        pass
+
+    @syncmethod
     def get_parent(self):
         pass
 
@@ -412,6 +429,10 @@ class Node:
         pass
 
     @syncmethod
+    def add_data_type(self, *args):
+        pass
+
+    @syncmethod
     def set_writable(self, writable=True):
         pass
 
@@ -468,10 +489,6 @@ class Node:
         pass
 
     @syncmethod
-    def read_node_class(self):
-        pass
-
-    @syncmethod
     def read_attributes(self):
         pass
 
@@ -508,4 +525,38 @@ class Subscription:
 
     @syncmethod
     def delete(self):
+        pass
+
+
+class XmlExporter:
+    def __init__(self, sync_server):
+        self.sync_server = sync_server
+        self.aio_obj = xmlexporter.XmlExporter(self.sync_server.server)
+
+    @syncmethod
+    def build_etree(self, node_list, uris=None):
+        pass
+
+    @syncmethod
+    async def write_xml(self, xmlpath, pretty=True):
+        pass
+
+
+class DataTypeDictionaryBuilder:
+    def __init__(self, server, idx, ns_urn, dict_name, dict_node_id=None):
+        self.server = server
+        self.dict_id = dict_node_id
+        self.aio_obj = type_dictionary_builder.DataTypeDictonaryBuilder(server, idx, ns_urn, dict_name, dict_node_id)
+        self.init()
+
+    @syncmethod
+    def init(self):
+        pass
+
+    @syncmethod
+    def create_data_type(self, type_name, nodeid=None, init=True):
+        pass
+
+    @syncmethod
+    async def set_dict_byte_string(self):
         pass

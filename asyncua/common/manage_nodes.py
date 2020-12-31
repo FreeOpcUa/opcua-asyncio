@@ -177,7 +177,7 @@ async def _create_object(server, parentnodeid, nodeid, qname, objecttype):
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
     addnode.ParentNodeId = parentnodeid
-    if await make_node(server, parentnodeid).get_type_definition() == ua.NodeId(ua.ObjectIds.FolderType):
+    if await make_node(server, parentnodeid).read_type_definition() == ua.NodeId(ua.ObjectIds.FolderType):
         addnode.ReferenceTypeId = ua.NodeId(ua.ObjectIds.Organizes)
     else:
         addnode.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasComponent)
