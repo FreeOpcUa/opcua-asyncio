@@ -2,7 +2,7 @@ from concurrent.futures import Future
 
 import pytest
 
-from asyncua.sync import Client, Server, ThreadLoop, Node
+from asyncua.sync import Client, Server, ThreadLoop, SyncNode, call_method_full, XmlExporter
 from asyncua import ua, uamethod
 
 
@@ -60,21 +60,21 @@ def test_sync_client(client, idx):
 
 
 def test_sync_client_get_node(client):
-    node  = client.get_node(85)
+    node = client.get_node(85)
     assert node == client.nodes.objects
     nodes = node.get_children()
     assert len(nodes) > 2
     assert nodes[0] == client.nodes.server
-    assert isinstance(nodes[0], Node)
+    assert isinstance(nodes[0], SyncNode)
 
 
 def test_sync_server_get_node(server):
-    node  = server.get_node(85)
+    node = server.get_node(85)
     assert node == server.nodes.objects
     nodes = node.get_children()
     assert len(nodes) > 2
     assert nodes[0] == server.nodes.server
-    assert isinstance(nodes[0], Node)
+    assert isinstance(nodes[0], SyncNode)
 
 
 class MySubHandler:
@@ -122,4 +122,13 @@ def test_sync_client_no_tl(client_no_tloop, idx):
     test_sync_meth(client_no_tloop, idx)
 
 
+def test_sync_call_meth(client, idx):
+    methodid = client.nodes.objects.get_child(f"{idx}:Divide")
+    res = call_method_full(client.tloop, client.nodes.objects, methodid, 4, 2)
+    assert res.OutputArguments[0] == 2
 
+
+def test_sync_xml_export(server):
+    exp = XmlExporter(server)
+    exp.build_etree([server.nodes.objects], uris=[])
+    exp.write_xml("toto_test_export.xml")

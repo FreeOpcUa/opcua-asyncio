@@ -11,6 +11,7 @@ pytestmark = pytest.mark.asyncio
 ROOT_NODE = "i=85"
 RW_NODE = "i=3078"
 
+
 async def test_cli_tools(running_server):
     # admin privileges are only needed for uawrite
     url = running_server.replace("//", "//admin@")

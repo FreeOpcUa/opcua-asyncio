@@ -51,11 +51,11 @@ async def _rdesc_from_node(parent, node):
     rdesc.BrowseName = qname
     rdesc.DisplayName = dname
     rdesc.NodeClass = nclass
-    if await parent.get_type_definition() == ua.NodeId(ua.ObjectIds.FolderType):
+    if await parent.read_type_definition() == ua.NodeId(ua.ObjectIds.FolderType):
         rdesc.ReferenceTypeId = ua.NodeId(ua.ObjectIds.Organizes)
     else:
         rdesc.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasComponent)
-    typedef = await node.get_type_definition()
+    typedef = await node.read_type_definition()
     if typedef:
         rdesc.TypeDefinition = typedef
     return rdesc
