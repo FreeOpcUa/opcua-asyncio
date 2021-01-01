@@ -61,21 +61,21 @@ class ThreadLoop(Thread):
 def _to_async(args, kwargs):
     args = list(args)  # FIXME: might be very inefficient...
     for idx, arg in enumerate(args):
-        if isinstance(arg, Node):
+        if isinstance(arg, SyncNode):
             args[idx] = arg.aio_obj
         elif isinstance(arg, (list, tuple)):
             args[idx] = _to_async(arg, {})[0]
     for k, v in kwargs.items():
-        if isinstance(v, Node):
+        if isinstance(v, SyncNode):
             kwargs[k] = v.aio_obj
     return args, kwargs
 
 
 def _to_sync(tloop, result):
     if isinstance(result, node.Node):
-        return Node(tloop, result)
-    if isinstance(result, list) and len(result) > 0 and isinstance(result[0], node.Node):
-        return [Node(tloop, i) for i in result]
+        return SyncNode(tloop, result)
+    if isinstance(result, (list, tuple)) and len(result) > 0 and isinstance(result[0], node.Node):
+        return [SyncNode(tloop, i) for i in result]
     if isinstance(result, server.event_generator.EventGenerator):
         return EventGenerator(tloop, result)
     if isinstance(result, subscription.Subscription):
@@ -143,7 +143,7 @@ class _SubHandler:
         self.sync_handler = sync_handler
 
     def datachange_notification(self, node, val, data):
-        self.sync_handler.datachange_notification(Node(self.tloop, node), val, data)
+        self.sync_handler.datachange_notification(SyncNode(self.tloop, node), val, data)
 
     def event_notification(self, event):
         self.sync_handler.event_notification(event)
@@ -205,7 +205,7 @@ class Client:
         pass
 
     def get_node(self, nodeid):
-        return Node(self.tloop, self.aio_obj.get_node(nodeid))
+        return SyncNode(self.tloop, self.aio_obj.get_node(nodeid))
 
     @syncmethod
     def connect_and_get_server_endpoints(self):
@@ -224,7 +224,7 @@ class Shortcuts:
         self.tloop = tloop
         self.aio_obj = shortcuts.Shortcuts(aio_server)
         for k, v in self.aio_obj.__dict__.items():
-            setattr(self, k, Node(self.tloop, v))
+            setattr(self, k, SyncNode(self.tloop, v))
 
 
 class Server:
@@ -287,7 +287,7 @@ class Server:
         pass
 
     def get_node(self, nodeid):
-        return Node(self.tloop, self.aio_obj.get_node(nodeid))
+        return SyncNode(self.tloop, self.aio_obj.get_node(nodeid))
 
     @syncmethod
     def import_xml(self, path=None, xmlstring=None):
@@ -325,12 +325,12 @@ class EventGenerator:
 
 def new_node(sync_node, nodeid):
     """
-    given a sync node, create a new Node with the given nodeid
+    given a sync node, create a new SyncNode with the given nodeid
     """
-    return Node(sync_node.tloop, node.Node(sync_node.aio_obj.server, nodeid))
+    return SyncNode(sync_node.tloop, node.Node(sync_node.aio_obj.server, nodeid))
 
 
-class Node:
+class SyncNode:
     def __init__(self, tloop, aio_node):
         self.aio_obj = aio_node
         self.tloop = tloop
@@ -537,7 +537,7 @@ class Subscription:
     ):
         pass
 
-    def _make_monitored_item_request(self, node: Node, attr, mfilter, queuesize) -> ua.MonitoredItemCreateRequest:
+    def _make_monitored_item_request(self, node: SyncNode, attr, mfilter, queuesize) -> ua.MonitoredItemCreateRequest:
         return self.aio_obj._make_monitored_item_request(node, attr, mfilter, queuesize)
 
     @syncmethod
