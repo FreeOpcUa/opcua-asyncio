@@ -2,7 +2,7 @@ from concurrent.futures import Future
 
 import pytest
 
-from asyncua.sync import Client, Server, ThreadLoop, Node, call_method_full
+from asyncua.sync import Client, Server, ThreadLoop, Node, call_method_full, XmlExporter
 from asyncua import ua, uamethod
 
 
@@ -126,3 +126,9 @@ def test_sync_call_meth(client, idx):
     methodid = client.nodes.objects.get_child(f"{idx}:Divide")
     res = call_method_full(client.tloop, client.nodes.objects, methodid, 4, 2)
     assert res.OutputArguments[0] == 2
+
+
+def test_sync_xml_export(server):
+    exp = XmlExporter(server)
+    exp.build_etree([server.nodes.objects], uris=[])
+    exp.write_xml("toto_test_export.xml")
