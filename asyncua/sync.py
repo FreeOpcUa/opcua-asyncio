@@ -63,6 +63,8 @@ def _to_async(args, kwargs):
     for idx, arg in enumerate(args):
         if isinstance(arg, Node):
             args[idx] = arg.aio_obj
+        elif isinstance(arg, (list, tuple)):
+            args[idx] = _to_async(arg, {})[0]
     for k, v in kwargs.items():
         if isinstance(v, Node):
             kwargs[k] = v.aio_obj
@@ -98,7 +100,16 @@ def syncfunc(aio_func):
     decorator for sync function
     """
     def decorator(func, *args, **kwargs):
-        def wrapper(tloop, *args, **kwargs):
+        def wrapper(*args, **kwargs):
+            if not args:
+                raise RuntimeError("first argument of function must a ThreadLoop object")
+            if isinstance(args[0], ThreadLoop):
+                tloop = args[0]
+                args = list(args)[1:]
+            elif hasattr(args[0], "tloop"):
+                tloop = args[0].tloop
+            else:
+                raise RuntimeError("first argument of function must a ThreadLoop object")
             args, kwargs = _to_async(args, kwargs)
             result = tloop.post(aio_func(*args, **kwargs))
             return _to_sync(tloop, result)
@@ -107,7 +118,7 @@ def syncfunc(aio_func):
 
 
 @syncfunc(aio_func=common.methods.call_method_full)
-def call_method_full(tloop, parent, methodid, *args):
+def call_method_full(parent, methodid, *args):
     pass
 
 
@@ -173,7 +184,7 @@ class Client:
         pass
 
     @syncmethod
-    async def load_data_type_definitions(self, node=None):
+    def load_data_type_definitions(self, node=None):
         pass
 
     @syncmethod
@@ -256,7 +267,7 @@ class Server:
         pass
 
     @syncmethod
-    async def get_namespace_array(self):
+    def get_namespace_array(self):
         pass
 
     @syncmethod
@@ -371,7 +382,21 @@ class Node:
     def read_display_name(self):
         pass
 
-    get_display_name = read_display_name  # legacy
+    @syncmethod
+    def read_data_type(self):
+        pass
+
+    @syncmethod
+    def read_array_dimensions(self):
+        pass
+
+    @syncmethod
+    def read_value_rank(self):
+        pass
+
+    @syncmethod
+    def delete(self):
+        pass
 
     @syncmethod
     def get_children(
@@ -520,7 +545,7 @@ class Subscription:
         pass
 
     @syncmethod
-    async def create_monitored_items(self, monitored_items):
+    def create_monitored_items(self, monitored_items):
         pass
 
     @syncmethod
@@ -530,24 +555,27 @@ class Subscription:
 
 class XmlExporter:
     def __init__(self, sync_server):
-        self.sync_server = sync_server
-        self.aio_obj = xmlexporter.XmlExporter(self.sync_server.server)
+        self.tloop = sync_server.tloop
+        self.aio_obj = xmlexporter.XmlExporter(sync_server.aio_obj)
 
     @syncmethod
     def build_etree(self, node_list, uris=None):
         pass
 
     @syncmethod
-    async def write_xml(self, xmlpath, pretty=True):
+    def write_xml(self, xmlpath, pretty=True):
         pass
 
 
 class DataTypeDictionaryBuilder:
     def __init__(self, server, idx, ns_urn, dict_name, dict_node_id=None):
-        self.server = server
-        self.dict_id = dict_node_id
-        self.aio_obj = type_dictionary_builder.DataTypeDictonaryBuilder(server, idx, ns_urn, dict_name, dict_node_id)
+        self.tloop = server.tloop
+        self.aio_obj = type_dictionary_builder.DataTypeDictionaryBuilder(server.aio_obj, idx, ns_urn, dict_name, dict_node_id)
         self.init()
+
+    @property
+    def dict_id(self):
+        return self.aio_obj.dict_id
 
     @syncmethod
     def init(self):
@@ -558,5 +586,5 @@ class DataTypeDictionaryBuilder:
         pass
 
     @syncmethod
-    async def set_dict_byte_string(self):
+    def set_dict_byte_string(self):
         pass
