@@ -10,6 +10,59 @@ from asyncua import ua
 logger = logging.getLogger(__name__)
 
 
+def new_struct_field(name, dtype, array=False, optional=False):
+    """
+    simple way to create a StructureField
+    """
+    field = ua.StructureField()
+    field.Name = name
+    field.IsOptional = optional
+    if isinstance(dtype, ua.VariantType):
+        field.DataType = ua.NodeId(dtype.value, 0)
+    elif isinstance(dtype, ua.NodeId):
+        field.DataType = dtype
+    elif isinstance(dtype, ua.Node):
+        field.DataType = dtype.nodeid
+    else:
+        raise ValueError(f"Datatype of a field must be a NodeId, not {dtype} of type {type(dtype)}")
+    if array:
+        field.ValueRand = ua.ValueRank.OneOrMoreDimensions
+        field.ArrayDimensions = [1]
+    return field
+
+
+async def new_struct(server, idx, name, *fields):
+    """
+    simple way to create a new structure
+    """
+    sdef = ua.StructureDefinition()
+    sdef.StructureType = ua.StructureType.Structure
+    sdef.fields = fields
+    sdef.BaseDatatype = ??
+    sdef.DefaultEncodingId = ??
+
+    dtype = await server.nodes.base_structure_type.add_data_type(idx, name)
+    await dtype.write_data_type_definition(sdef)
+    return dtype
+
+
+async def new_enum(server, idx, name, *args):
+    edef = ua.EnumDefinition()
+    edef.Name = name
+    counter = 0
+    for val_name in args:
+        field = ua.EnumField()
+        field.DisplayName = ua.LocalizedText(text=val_name)
+        field.Name = val_name
+        field.Value = counter
+        counter += 1
+        edef.Fields.append(field)
+
+    dtype = await server.nodes.enum_data_type.add_data_type(idx, name)
+    await dtype.write_data_type_definition(edef)
+    return dtype
+
+
 def clean_name(name):
     """
     Remove characters that might be present in  OPC UA structures
