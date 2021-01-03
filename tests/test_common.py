@@ -1142,13 +1142,13 @@ async def test_custom_enum(opc):
 async def test_custom_struct_(opc):
     idx = 4
 
-    await new_struct(opc.opc, idx, "MyStruct", [
+    await new_struct(opc.opc, idx, "MyMyStruct", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
     ])
 
     await opc.opc.load_data_type_definitions()
-    mystruct = ua.MyStruct()
+    mystruct = ua.MyMyStruct()
     mystruct.MyUInt32 = [78, 79]
     var = await opc.opc.nodes.objects.add_variable(idx, "my_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
@@ -1179,20 +1179,20 @@ async def test_custom_struct_with_optional_fields(opc):
 async def test_custom_struct_of_struct(opc):
     idx = 4
 
-    dtype = await new_struct(opc.opc, idx, "MySubStruct", [
+    dtype = await new_struct(opc.opc, idx, "MySubStruct2", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32", ua.VariantType.UInt32),
     ])
 
-    await new_struct(opc.opc, idx, "MyMotherStruct", [
+    await new_struct(opc.opc, idx, "MyMotherStruct2", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MySubStruct", dtype),
     ])
 
     await opc.opc.load_data_type_definitions()
 
-    mystruct = ua.MyMotherStruct()
-    mystruct.MySubStruct = ua.MySubStruct()
+    mystruct = ua.MyMotherStruct2()
+    mystruct.MySubStruct = ua.MySubStruct2()
     mystruct.MySubStruct.MyUInt32 = 78
     var = await opc.opc.nodes.objects.add_variable(idx, "my_mother_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
@@ -1202,21 +1202,59 @@ async def test_custom_struct_of_struct(opc):
 async def test_custom_list_of_struct(opc):
     idx = 4
 
-    dtype = await new_struct(opc.opc, idx, "MySubStruct", [
+    dtype = await new_struct(opc.opc, idx, "MySubStruct3", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32", ua.VariantType.UInt32),
     ])
 
-    await new_struct(opc.opc, idx, "MyMotherStruct", [
+    await new_struct(opc.opc, idx, "MyMotherStruct3", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MySubStruct", dtype, array=True),
     ])
 
     await opc.opc.load_data_type_definitions()
 
-    mystruct = ua.MyMotherStruct()
-    mystruct.MySubStruct = [ua.MySubStruct()]
+    mystruct = ua.MyMotherStruct3()
+    mystruct.MySubStruct = [ua.MySubStruct3()]
     mystruct.MySubStruct[0].MyUInt32 = 78
-    var = await opc.opc.nodes.objects.add_variable(idx, "my_mother_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_mother_struct3", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
     assert val.MySubStruct[0].MyUInt32 == 78
+
+
+async def test_custom_struct_with_enum(opc):
+    idx = 4
+
+    dtype = await new_enum(opc.opc, idx, "MyCustEnum2", [
+        "titi",
+        "toto",
+        "tutu",
+    ])
+
+    await new_struct(opc.opc, idx, "MyStructEnum", [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyEnum", dtype),
+    ])
+
+    await opc.opc.load_data_type_definitions()
+
+    mystruct = ua.MyStructEnum()
+    mystruct.MyEnum = ua.MyCustEnum2.tutu
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_struct2", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    val = await var.read_value()
+    assert val.MyEnum == ua.MyCustEnum2.tutu
+
+
+async def test_two_times_custom_struct(opc):
+    idx = 4
+
+    dtype = await new_enum(opc.opc, idx, "MyCustEnum5", [
+        "titi",
+        "toto",
+        "tutu",
+    ])
+
+    with pytest.raises(ua.uaerrors.BadBrowseNameDuplicated):
+        dtype = await new_enum(opc.opc, idx, "MyCustEnum5", [
+            "titi",
+        ])
