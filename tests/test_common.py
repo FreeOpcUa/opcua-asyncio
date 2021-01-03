@@ -18,6 +18,7 @@ from asyncua.common import ua_utils
 from asyncua.common.methods import call_method_full
 from asyncua.common.copy_node_util import copy_node
 from asyncua.common.instantiate_util import instantiate
+from asyncua.common.structures104 import new_struct, new_enum, new_struct_field
 
 pytestmark = pytest.mark.asyncio
 
@@ -1121,3 +1122,57 @@ async def test_duplicated_browsenames_different_ns(opc):
     except:
         await opc.opc.delete_nodes([parentfolder])
         return
+
+
+async def test_custom_enum(opc):
+    idx = 4
+    await new_enum(opc.opc, idx, "MyCustEnum", [
+        "titi",
+        "toto",
+        "tutu",
+    ])
+
+    await opc.opc.load_data_type_definitions()
+
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_enum", ua.MyCustEnum.toto)
+    val = await var.read_value()
+    assert val == 1
+
+
+async def test_custom_struct(opc):
+    idx = 4
+
+    await new_struct(opc.opc, idx, "MyStruct", [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyUInt32", ua.VariantType.UInt32),
+    ])
+
+    await opc.opc.load_data_type_definitions()
+    mystruct = ua.MyStruct()
+    mystruct.MyUInt32 = 78
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    val = await var.read_value()
+    assert val.MyUInt32 == 78
+
+
+async def test_custom_struct_with_optional_fields(opc):
+    idx = 4
+
+    await new_struct(opc.opc, idx, "MyOptionalStruct", [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyUInt32", ua.VariantType.UInt32),
+        new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
+    ])
+
+    await opc.opc.load_data_type_definitions()
+
+    my_struct_optional = ua.MyOptionalStruct()
+    my_struct_optional.MyUInt32 = 45
+    my_struct_optional.MyInt64 = -67
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_struct_optional", ua.Variant(my_struct_optional, ua.VariantType.ExtensionObject))
+
+    val = await var.read_value()
+    assert val.MyUInt32 == 45
+    assert val.MyInt64 == -67
+
+
