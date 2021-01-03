@@ -6,17 +6,22 @@ import logging
 import re
 
 from asyncua import ua
+from asyncua.common.manage_nodes import create_encoding, create_data_type
 
 logger = logging.getLogger(__name__)
 
 
-def new_struct_field(name, dtype, array=False, optional=False):
+def new_struct_field(name, dtype, array=False, optional=False, description=""):
     """
     simple way to create a StructureField
     """
     field = ua.StructureField()
     field.Name = name
     field.IsOptional = optional
+    if description:
+        field.Description = ua.LocalizedText(text=description)
+    else:
+        field.Description = ua.LocalizedText(text=name)
     if isinstance(dtype, ua.VariantType):
         field.DataType = ua.NodeId(dtype.value, 0)
     elif isinstance(dtype, ua.NodeId):
@@ -31,17 +36,25 @@ def new_struct_field(name, dtype, array=False, optional=False):
     return field
 
 
-async def new_struct(server, idx, name, *fields):
+async def new_struct(server, idx, name, fields):
     """
     simple way to create a new structure
     """
+    dtype = await create_data_type(server.nodes.base_structure_type, idx, name)
+    enc = await create_encoding(dtype, idx, "Default Binary")
+    # TODO: add other encoding the day we support them
+
     sdef = ua.StructureDefinition()
     sdef.StructureType = ua.StructureType.Structure
-    sdef.fields = fields
-    sdef.BaseDatatype = ??
-    sdef.DefaultEncodingId = ??
+    for field in fields:
+        print(type(field), field)
+        if field.IsOptional:
+            sdef.StructureType = ua.StructureType.StructureWithOptionalFields
+            break
+    sdef.Fields = fields
+    sdef.BaseDatatype = server.nodes.base_data_type.nodeid
+    sdef.DefaultEncodingId = enc.nodeid
 
-    dtype = await server.nodes.base_structure_type.add_data_type(idx, name)
     await dtype.write_data_type_definition(sdef)
     return dtype
 
@@ -199,7 +212,6 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False):
     else:
         code = make_structure_code(data_type, name, sdef)
     logger.debug("Executing code: %s", code)
-    print("CODE", code)
     exec(code, env)
     return env
 

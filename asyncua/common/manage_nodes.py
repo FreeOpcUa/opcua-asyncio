@@ -333,6 +333,35 @@ async def create_data_type(parent, nodeid, bname, description=None):
     return make_node(parent.server, results[0].AddedNodeId)
 
 
+async def create_encoding(parent, nodeid, bname):
+    """
+    Create a new encoding object to be instanciated in address space.
+    arguments are nodeid, browsename
+    or namespace index, name
+    """
+    nodeid, qname = _parse_nodeid_qname(nodeid, bname)
+    return make_node(parent.server, await _create_encoding(parent.server, parent.nodeid, nodeid, qname))
+
+
+async def _create_encoding(server, parentnodeid, nodeid, qname):
+    addnode = ua.AddNodesItem()
+    addnode.RequestedNewNodeId = nodeid
+    addnode.BrowseName = qname
+    addnode.ParentNodeId = parentnodeid
+    addnode.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasEncoding)
+    addnode.NodeClass = ua.NodeClass.ObjectType
+    attrs = ua.ObjectTypeAttributes()
+    attrs.IsAbstract = False
+    attrs.Description = ua.LocalizedText(qname.Name)
+    attrs.DisplayName = ua.LocalizedText(qname.Name)
+    attrs.WriteMask = 0
+    attrs.UserWriteMask = 0
+    addnode.NodeAttributes = attrs
+    results = await server.add_nodes([addnode])
+    results[0].StatusCode.check()
+    return results[0].AddedNodeId
+
+
 async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
