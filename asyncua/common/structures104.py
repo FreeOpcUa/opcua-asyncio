@@ -6,6 +6,7 @@ import logging
 import re
 
 from asyncua import ua
+from asyncua import Node
 from asyncua.common.manage_nodes import create_encoding, create_data_type
 
 logger = logging.getLogger(__name__)
@@ -26,12 +27,12 @@ def new_struct_field(name, dtype, array=False, optional=False, description=""):
         field.DataType = ua.NodeId(dtype.value, 0)
     elif isinstance(dtype, ua.NodeId):
         field.DataType = dtype
-    elif isinstance(dtype, ua.Node):
+    elif isinstance(dtype, Node):
         field.DataType = dtype.nodeid
     else:
         raise ValueError(f"Datatype of a field must be a NodeId, not {dtype} of type {type(dtype)}")
     if array:
-        field.ValueRand = ua.ValueRank.OneOrMoreDimensions
+        field.ValueRank = ua.ValueRank.OneOrMoreDimensions
         field.ArrayDimensions = [1]
     return field
 
@@ -149,7 +150,9 @@ class {name}:
         code += "        ('Encoding', 'Byte'),\n"
     uatypes = []
     for field in sdef.Fields:
-        prefix = 'ListOf' if field.ValueRank >= 1 else ''
+        prefix = ""
+        if field.ValueRank >= 1 or field.ArrayDimensions:
+            prefix = 'ListOf'
         if field.DataType.NamespaceIndex == 0 and field.DataType.Identifier in ua.ObjectIdNames:
             uatype = ua.ObjectIdNames[field.DataType.Identifier]
         elif field.DataType in ua.extension_objects_by_datatype:
