@@ -995,6 +995,7 @@ def register_enum(name, nodeid, class_type):
 extension_objects_by_datatype = {}  #Dict[Datatype, type]
 extension_objects_by_typeid = {}  #Dict[EncodingId, type]
 extension_object_typeids = {}
+datatype_by_extension_object = {}
 
 
 def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid=None):
@@ -1004,6 +1005,7 @@ def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid
     logger.info("registring new extension object: %s %s %s %s", name, encoding_nodeid, class_type, datatype_nodeid)
     if datatype_nodeid:
         extension_objects_by_datatype[datatype_nodeid] = class_type
+        datatype_by_extension_object[class_type] = datatype_nodeid
     extension_objects_by_typeid[encoding_nodeid] = class_type
     extension_object_typeids[name] = encoding_nodeid
     # FIXME: Next line is not exactly a Python best practices, so feel free to propose something else

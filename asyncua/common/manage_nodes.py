@@ -426,9 +426,11 @@ def _guess_datatype(variant):
         else:
             extobj = variant.Value
         classname = extobj.__class__.__name__
-        if not hasattr(ua.ObjectIds, classname):
-            raise ua.UaError(f"Cannot guess DataType of {variant} of python type {type(variant)}")
-        return ua.NodeId(getattr(ua.ObjectIds, classname))
+        if hasattr(ua.ObjectIds, classname):
+            return ua.NodeId(getattr(ua.ObjectIds, classname))
+        if extobj.__class__ in ua.datatype_by_extension_object:
+            return ua.datatype_by_extension_object[extobj.__class__]
+        raise ua.UaError(f"Cannot guess DataType of {variant} of python type {type(variant)}")
     else:
         return ua.NodeId(getattr(ua.ObjectIds, variant.VariantType.name))
 
