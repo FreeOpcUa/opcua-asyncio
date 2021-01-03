@@ -47,7 +47,6 @@ async def new_struct(server, idx, name, fields):
     sdef = ua.StructureDefinition()
     sdef.StructureType = ua.StructureType.Structure
     for field in fields:
-        print(type(field), field)
         if field.IsOptional:
             sdef.StructureType = ua.StructureType.StructureWithOptionalFields
             break
@@ -59,11 +58,11 @@ async def new_struct(server, idx, name, fields):
     return dtype
 
 
-async def new_enum(server, idx, name, *args):
+async def new_enum(server, idx, name, values):
     edef = ua.EnumDefinition()
     edef.Name = name
     counter = 0
-    for val_name in args:
+    for val_name in values:
         field = ua.EnumField()
         field.DisplayName = ua.LocalizedText(text=val_name)
         field.Name = val_name
