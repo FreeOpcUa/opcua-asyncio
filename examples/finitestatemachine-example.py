@@ -1,6 +1,6 @@
 import asyncio, logging
 from asyncua import Server, ua, Node
-from Statemachine import FiniteStateMachine
+from statemachine import FiniteStateMachine
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger('asyncua')
