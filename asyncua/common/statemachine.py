@@ -52,6 +52,7 @@ class StateMachine(object):
         self._current_state_id_node = None
         self._current_state_name_node = None
         self._current_state_number_node = None
+        self._current_state_effective_display_name_node = None
         self._last_transition_node = None
         self._last_transition_id_node = None
         self._last_transition_name_node = None
@@ -74,8 +75,10 @@ class StateMachine(object):
             self.name = name
             self.id = str(id)
             self.number = id
+            self.effective_display_name = ua.LocalizedText(name, "en-US")
             self.node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
             self.issub = issub #true if it is a substate
+
 
     class Transition(object):
         '''
@@ -184,11 +187,13 @@ class StateMachine(object):
         await self._current_state_node.write_value(ua.LocalizedText(state.name, self.locale), ua.VariantType.LocalizedText)
         if state.node:
             if self._current_state_id_node:
-                await self._current_state_id_node.write_value(state.node.nodeid, ua.VariantType.NodeId)
+                await self._current_state_id_node.write_value(state.id, ua.VariantType.String)
             if self._current_state_name_node:
                 await self._current_state_name_node.write_value(state.name, ua.VariantType.QualifiedName)
             if self._current_state_number_node:
                 await self._current_state_number_node.write_value(state.number, ua.VariantType.UInt32)
+            if self._current_state_effective_display_name_node:
+                await self._current_state_effective_display_name_node.write_value(state.effective_display_name, ua.VariantType.LocalizedText)
 
     async def _write_transition(self, transition, issub=False):
         '''
@@ -203,11 +208,11 @@ class StateMachine(object):
         await self._last_transition_node.write_value(ua.LocalizedText(transition.name, self.locale), ua.VariantType.LocalizedText)
         if self._optionals:
             if self._last_transition_id_node:
-                await self._last_transition_id_node.write_value(transition.node.nodeid, ua.VariantType.NodeId)
+                await self._last_transition_id_node.write_value(transition.id, ua.VariantType.String)
             if self._last_transition_name_node:
                 await self._last_transition_name_node.write_value(ua.QualifiedName(transition.name, self._idx), ua.VariantType.QualifiedName)
             if self._last_transition_number_node:
-                await self._last_transition_number_node.write_value(transition.number, ua.VariantType.UInt32)
+                await self._last_transition_number_node.write_value(transition.id, ua.VariantType.UInt32)
             if self._last_transition_transitiontime_node:
                 await self._last_transition_transitiontime_node.write_value(transition._transitiontime, ua.VariantType.DateTime)
             if self._last_transition_effectivetransitiontime_node:
@@ -258,6 +263,7 @@ class StateMachine(object):
         #FIXME Is it wise to remove a part of a program/statemachine dynamically? at this point i am not sure
         raise NotImplementedError
 
+
 class FiniteStateMachine(StateMachine):
     '''
     Implementation of an FiniteStateMachineType a little more advanced than the basic one
@@ -292,6 +298,7 @@ class FiniteStateMachine(StateMachine):
     async def find_all_transitions(self):
         return NotImplementedError
 
+
 class ExclusiveLimitStateMachine(FiniteStateMachine):
     '''
     NOT IMPLEMENTED "ExclusiveLimitStateMachineType"
@@ -303,9 +310,12 @@ class ExclusiveLimitStateMachine(FiniteStateMachine):
         self._state_machine_type = ua.NodeId(9318, 0)
         raise NotImplementedError
 
+
 class FileTransferStateMachine(FiniteStateMachine):
     '''
     NOT IMPLEMENTED "FileTransferStateMachineType"
+    https://reference.opcfoundation.org/v104/Core/ObjectTypes/FileTransferStateMachineType/
+    https://reference.opcfoundation.org/v104/Core/docs/Part5/C.4.6/
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
@@ -314,334 +324,382 @@ class FileTransferStateMachine(FiniteStateMachine):
         self._state_machine_type = ua.NodeId(15803, 0)
         raise NotImplementedError
 
-class ProgramStateMachine(FiniteStateMachine):
-    '''
-    https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.3/
-    Implementation of an ProgramStateMachine its quite a complex statemachine with the 
-    optional possibility to make the statchange from clientside via opcua-methods
-    '''
-    def __init__(self, server=None, parent=None, idx=None, name=None):
-        super().__init__(server, parent, idx, name)
-        if name == None:
-            name = "ProgramStateMachine"
-        self._state_machine_type = ua.NodeId(2391, 0)
-        self.evtype = ProgramTransitionEvent()
 
-        # 5.2.3.2 ProgramStateMachineType states
-        self._ready_state_node = None #State node
-        self._halted_state_node = None #State node
-        self._running_state_node = None #State node
-        self._suspended_state_node = None #State node
+# class ProgramStateMachine(FiniteStateMachine):
+#     '''
+#     https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.3/
+#     Implementation of an ProgramStateMachine its quite a complex statemachine with the 
+#     optional possibility to make the statchange from clientside via opcua-methods
+#     '''
+#     def __init__(self, server=None, parent=None, idx=None, name=None):
+#         super().__init__(server, parent, idx, name)
+#         if name == None:
+#             name = "ProgramStateMachine"
+#         self._state_machine_type = ua.NodeId(2391, 0)
+#         self.evtype = ProgramTransitionEvent()
 
-        # 5.2.3.3 ProgramStateMachineType transitions
-        self._halted_to_ready_node = None #Transition node
-        self._ready_to_running_node = None #Transition node
-        self._running_to_halted_node = None #Transition node
-        self._running_to_ready_node = None #Transition node
-        self._running_to_suspended_node = None #Transition node
-        self._suspended_to_running_node = None #Transition node
-        self._suspended_to_halted_node = None #Transition node
-        self._suspended_to_ready_node = None #Transition node
-        self._ready_to_halted_node = None #Transition node
+#         # 5.2.3.2 ProgramStateMachineType states
+#         self._ready_state_node = None #State node
+#         self._halted_state_node = None #State node
+#         self._running_state_node = None #State node
+#         self._suspended_state_node = None #State node
 
-        # 5.2.3.2 ProgramStateMachineType states
-        self._halted_state_id_node = None #State property (StateNumber value 11)
-        self._ready_state_id_node = None #State property (StateNumber value 12)
-        self._running_state_id_node = None #State property (StateNumber value 13)
-        self._suspended_state_id_node = None #State property (StateNumber value 14)
+#         # 5.2.3.3 ProgramStateMachineType transitions
+#         self._halted_to_ready_node = None #Transition node
+#         self._ready_to_running_node = None #Transition node
+#         self._running_to_halted_node = None #Transition node
+#         self._running_to_ready_node = None #Transition node
+#         self._running_to_suspended_node = None #Transition node
+#         self._suspended_to_running_node = None #Transition node
+#         self._suspended_to_halted_node = None #Transition node
+#         self._suspended_to_ready_node = None #Transition node
+#         self._ready_to_halted_node = None #Transition node
 
-        # 5.2.3.3 ProgramStateMachineType transitions
-        self._halted_to_ready_id_node = None #Transition property (TransitionNumber value 1)
-        self._ready_to_running_id_node = None #Transition property (TransitionNumber value 2)
-        self._running_to_halted_id_node = None #Transition property (TransitionNumber value 3)
-        self._running_to_ready_id_node = None #Transition property (TransitionNumber value 4)
-        self._running_to_suspended_id_node = None #Transition property (TransitionNumber value 5)
-        self._suspended_to_running_id_node = None #Transition property (TransitionNumber value 6)
-        self._suspended_to_halted_id_node = None #Transition property (TransitionNumber value 7)
-        self._suspended_to_ready_id_node = None #Transition property (TransitionNumber value 8)
-        self._ready_to_halted_id_node = None #Transition property (TransitionNumber value 9)
+#         # 5.2.3.2 ProgramStateMachineType states
+#         self._halted_state_id_node = None #State property (StateNumber value 11)
+#         self._ready_state_id_node = None #State property (StateNumber value 12)
+#         self._running_state_id_node = None #State property (StateNumber value 13)
+#         self._suspended_state_id_node = None #State property (StateNumber value 14)
 
-        # 4.2.7 Program Control Methods (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.7/)
-        self._halt_method_node = None #uamethod node
-        self._reset_method_node = None #uamethod node
-        self._resume_method_node = None #uamethod node
-        self._start_method_node = None #uamethod node
-        self._suspend_method_node = None #uamethod node
+#         # 5.2.3.3 ProgramStateMachineType transitions
+#         self._halted_to_ready_id_node = None #Transition property (TransitionNumber value 1)
+#         self._ready_to_running_id_node = None #Transition property (TransitionNumber value 2)
+#         self._running_to_halted_id_node = None #Transition property (TransitionNumber value 3)
+#         self._running_to_ready_id_node = None #Transition property (TransitionNumber value 4)
+#         self._running_to_suspended_id_node = None #Transition property (TransitionNumber value 5)
+#         self._suspended_to_running_id_node = None #Transition property (TransitionNumber value 6)
+#         self._suspended_to_halted_id_node = None #Transition property (TransitionNumber value 7)
+#         self._suspended_to_ready_id_node = None #Transition property (TransitionNumber value 8)
+#         self._ready_to_halted_id_node = None #Transition property (TransitionNumber value 9)
 
-        #can be overwritten if you want a different language
-        self.localizedtext_ready = ua.LocalizedText("Ready", "en-US")
-        self.localizedtext_running = ua.LocalizedText("Running", "en-US")
-        self.localizedtext_halted = ua.LocalizedText("Halted", "en-US")
-        self.localizedtext_suspended= ua.LocalizedText("Suspended", "en-US")
-        self.localizedtext_halted_to_ready = ua.LocalizedText("HaltedToReady", "en-US")
-        self.localizedtext_ready_to_running = ua.LocalizedText("ReadyToRunning", "en-US")
-        self.localizedtext_running_to_halted = ua.LocalizedText("RunningToHalted", "en-US")
-        self.localizedtext_running_to_ready = ua.LocalizedText("RunningToReady", "en-US")
-        self.localizedtext_running_to_suspended = ua.LocalizedText("RunningToSuspended", "en-US")
-        self.localizedtext_suspended_to_running = ua.LocalizedText("SuspendedToRunning", "en-US")
-        self.localizedtext_suspended_to_halted = ua.LocalizedText("SuspendedToHalted", "en-US")
-        self.localizedtext_suspended_to_ready = ua.LocalizedText("SuspendedToReady", "en-US")
-        self.localizedtext_ready_to_halted = ua.LocalizedText("ReadyToHalted", "en-US")
+#         # 4.2.7 Program Control Methods (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.7/)
+#         self._halt_method_node = None #uamethod node
+#         self._reset_method_node = None #uamethod node
+#         self._resume_method_node = None #uamethod node
+#         self._start_method_node = None #uamethod node
+#         self._suspend_method_node = None #uamethod node
 
-    async def install(self, optionals=False):
-        '''
-        setup adressspace and initialize 
-        '''
-        self._optionals = optionals
-        self._state_machine_node = await self._parent.add_object(
-            self._idx, 
-            self._name, 
-            objecttype=self._state_machine_type, 
-            instantiate_optional=optionals
-            )
-        #FIXME get children and map children
+#         # other possible props/comps https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.1/
+#         self._deletable_node = None
+#         self._deletable = False
+#         self._autodelete_node = None
+#         self._autodelete = False
+#         self._recyclecount_node = None
+#         self._recyclecount = 0
 
-    #Transition
-    async def HaltedToReady(self):
-        await self._current_state_node.write_value(
-            self.localizedtext_ready,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._current_state_id_node.write_value(
-            self._ready_state.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        await self._last_transition_node.write_value(
-            self.localizedtext_halted_to_ready,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._last_transition_id_node.write_value(
-            self._halted_to_ready.nodeid,
-            varianttype=ua.VariantType.NodeId
-            )
-        #FIXME 
-        # trigger ProgramTransitionEventType and 
-        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
-        return ua.StatusCode(ua.status_codes.StatusCodes.Good)
+#         #can be overwritten if you want a different language
+#         self.localizedtext_ready = ua.LocalizedText("Ready", "en-US")
+#         self.localizedtext_running = ua.LocalizedText("Running", "en-US")
+#         self.localizedtext_halted = ua.LocalizedText("Halted", "en-US")
+#         self.localizedtext_suspended= ua.LocalizedText("Suspended", "en-US")
+#         self.localizedtext_halted_to_ready = ua.LocalizedText("HaltedToReady", "en-US")
+#         self.localizedtext_ready_to_running = ua.LocalizedText("ReadyToRunning", "en-US")
+#         self.localizedtext_running_to_halted = ua.LocalizedText("RunningToHalted", "en-US")
+#         self.localizedtext_running_to_ready = ua.LocalizedText("RunningToReady", "en-US")
+#         self.localizedtext_running_to_suspended = ua.LocalizedText("RunningToSuspended", "en-US")
+#         self.localizedtext_suspended_to_running = ua.LocalizedText("SuspendedToRunning", "en-US")
+#         self.localizedtext_suspended_to_halted = ua.LocalizedText("SuspendedToHalted", "en-US")
+#         self.localizedtext_suspended_to_ready = ua.LocalizedText("SuspendedToReady", "en-US")
+#         self.localizedtext_ready_to_halted = ua.LocalizedText("ReadyToHalted", "en-US")
 
-    #Transition
-    async def ReadyToRunning(self):
-        await self._current_state_node.write_value(
-            self.localizedtext_running,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._current_state_id_node.write_value(
-            self._running_state.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        await self._last_transition_node.write_value(
-            self.localizedtext_ready_to_running,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._last_transition_id_node.write_value(
-            self._ready_to_running.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        #FIXME 
-        # trigger ProgramTransitionEventType and 
-        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
-        return ua.StatusCode(ua.status_codes.StatusCodes.Good)
+#     async def install(self, optionals=False):
+#         '''
+#         setup adressspace
+#         '''
+#         self._optionals = optionals
+#         self._state_machine_node = await self._parent.add_object(
+#             self._idx, 
+#             self._name, 
+#             objecttype=self._state_machine_type, 
+#             instantiate_optional=optionals
+#             )
+#         await self.init(self._state_machine_node)
+    
+#     async def init(self, statemachine):
+#         '''
+#         initialize and get subnodes
+#         '''
+#         self._current_state_node = await statemachine.get_child(["CurrentState"])
+#         current_state_props = await self._current_state_node.get_properties()
+#         for prop in current_state_props:
+#             dn = await prop.read_display_name()
+#             if dn.Text == "Id":
+#                 self._current_state_id_node = await self._current_state_node.get_child(["Id"])
+#             elif dn.Text == "Name":
+#                 self._current_state_name_node = await self._current_state_node.get_child(["Name"])
+#             elif dn.Text == "Number":
+#                 self._current_state_number_node = await self._current_state_node.get_child(["Number"])
+#             else:
+#                 _logger.warning(f"{await statemachine.read_browse_name()} CurrentState Unknown propertie: {dn.Text}")
+#         if self._optionals:
+#             self._last_transition_node = await statemachine.get_child(["LastTransition"])
+#             last_transition_props = await self._last_transition_node.get_properties()
+#             for prop in last_transition_props:
+#                 dn = await prop.read_display_name()
+#                 if dn.Text == "Id":
+#                     self._last_transition_id_node = await self._last_transition_node.get_child(["Id"])
+#                 elif dn.Text == "Name":
+#                     self._last_transition_name_node = await self._last_transition_node.get_child(["Name"])
+#                 elif dn.Text == "Number":
+#                     self._last_transition_number_node = await self._last_transition_node.get_child(["Number"])
+#                 elif dn.Text == "TransitionTime":
+#                     self._last_transition_transitiontime_node = await self._last_transition_node.get_child(["TransitionTime"])
+#                 elif dn.Text == "EffectiveTransitionTime":
+#                     self._last_transition_effectivetransitiontime_node = await self._last_transition_node.get_child(["EffectiveTransitionTime"])
+#                 else:
+#                     _logger.warning(f"{await statemachine.read_browse_name()} LastTransition Unknown propertie: {dn.Text}")
+#         self._evgen = await self._server.get_event_generator(self.evtype, self._state_machine_node)
 
-    #Transition
-    async def RunningToHalted(self):
-        await self._current_state_node.write_value(
-            self.localizedtext_halted,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._current_state_id_node.write_value(
-            self._halted_state.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        await self._last_transition_node.write_value(
-            self.localizedtext_running_to_halted,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._last_transition_id_node.write_value(
-            self._running_to_halted.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        #FIXME 
-        # trigger ProgramTransitionEventType and 
-        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
-        return ua.StatusCode(ua.status_codes.StatusCodes.Good)
+#         #bind methods if method node exist
+#         #write defaults
 
-    #Transition
-    async def RunningToReady(self):
-        await self._current_state_node.write_value(
-            self.localizedtext_ready,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._current_state_id_node.write_value(
-            self._ready_state.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        await self._last_transition_node.write_value(
-            self.localizedtext_running_to_ready,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._last_transition_id_node.write_value(
-            self._running_to_ready.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        #FIXME 
-        # trigger ProgramTransitionEventType and 
-        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
-        return ua.StatusCode(ua.status_codes.StatusCodes.Good)
+#     #Transition
+#     async def HaltedToReady(self):
+#         await self._current_state_node.write_value(
+#             self.localizedtext_ready,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._current_state_id_node.write_value(
+#             self._ready_state.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         await self._last_transition_node.write_value(
+#             self.localizedtext_halted_to_ready,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._last_transition_id_node.write_value(
+#             self._halted_to_ready.nodeid,
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         #FIXME 
+#         # trigger ProgramTransitionEventType and 
+#         # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+#         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
-    #Transition
-    async def RunningToSuspended(self):
-        await self._current_state_node.write_value(
-            self.localizedtext_suspended,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._current_state_id_node.write_value(
-            self._suspended_state.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        await self._last_transition_node.write_value(
-            self.localizedtext_running_to_suspended,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._last_transition_id_node.write_value(
-            self._running_to_suspended.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        #FIXME 
-        # trigger ProgramTransitionEventType and 
-        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
-        return ua.StatusCode(ua.status_codes.StatusCodes.Good)
+#     #Transition
+#     async def ReadyToRunning(self):
+#         await self._current_state_node.write_value(
+#             self.localizedtext_running,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._current_state_id_node.write_value(
+#             self._running_state.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         await self._last_transition_node.write_value(
+#             self.localizedtext_ready_to_running,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._last_transition_id_node.write_value(
+#             self._ready_to_running.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         #FIXME 
+#         # trigger ProgramTransitionEventType and 
+#         # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+#         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
-    #Transition 
-    async def SuspendedToRunning(self):
-        await self._current_state_node.write_value(
-            self.localizedtext_running,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._current_state_id_node.write_value(
-            self._running_state.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        await self._last_transition_node.write_value(
-            self.localizedtext_suspended_to_running,
-            varianttype=ua.VariantType.LocalizedText
-            )
-        await self._last_transition_id_node.write_value(
-            self._suspended_to_running.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        #FIXME 
-        # trigger ProgramTransitionEventType and 
-        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
-        return ua.StatusCode(ua.status_codes.StatusCodes.Good)
+#     #Transition
+#     async def RunningToHalted(self):
+#         await self._current_state_node.write_value(
+#             self.localizedtext_halted,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._current_state_id_node.write_value(
+#             self._halted_state.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         await self._last_transition_node.write_value(
+#             self.localizedtext_running_to_halted,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._last_transition_id_node.write_value(
+#             self._running_to_halted.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         #FIXME 
+#         # trigger ProgramTransitionEventType and 
+#         # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+#         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
-    #Transition
-    async def SuspendedToHalted(self):
-        await self._current_state_node.write_value(
-            self.localizedtext_halted,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._current_state_id_node.write_value(
-            self._halted_state.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        await self._last_transition_node.write_value(
-            self.localizedtext_suspended_to_halted,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._last_transition_id_node.write_value(
-            self._suspended_to_halted.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        #FIXME 
-        # trigger ProgramTransitionEventType and 
-        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
-        return ua.StatusCode(ua.status_codes.StatusCodes.Good)
+#     #Transition
+#     async def RunningToReady(self):
+#         await self._current_state_node.write_value(
+#             self.localizedtext_ready,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._current_state_id_node.write_value(
+#             self._ready_state.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         await self._last_transition_node.write_value(
+#             self.localizedtext_running_to_ready,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._last_transition_id_node.write_value(
+#             self._running_to_ready.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         #FIXME 
+#         # trigger ProgramTransitionEventType and 
+#         # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+#         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
-    #Transition
-    async def SuspendedToReady(self):
-        await self._current_state_node.write_value(
-            self.localizedtext_ready,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._current_state_id_node.write_value(
-            self._ready_state.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        await self._last_transition_node.write_value(
-            self.localizedtext_suspended_to_ready,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._last_transition_id_node.write_value(
-            self._suspended_to_ready.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        #FIXME 
-        # trigger ProgramTransitionEventType and 
-        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
-        return ua.StatusCode(ua.status_codes.StatusCodes.Good)
+#     #Transition
+#     async def RunningToSuspended(self):
+#         await self._current_state_node.write_value(
+#             self.localizedtext_suspended,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._current_state_id_node.write_value(
+#             self._suspended_state.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         await self._last_transition_node.write_value(
+#             self.localizedtext_running_to_suspended,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._last_transition_id_node.write_value(
+#             self._running_to_suspended.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         #FIXME 
+#         # trigger ProgramTransitionEventType and 
+#         # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+#         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
-    #Transition 
-    async def ReadyToHalted(self):
-        await self._current_state_node.write_value(
-            self.localizedtext_halted,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._current_state_id_node.write_value(
-            self._halted_state.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        await self._last_transition_node.write_value(
-            self.localizedtext_ready_to_halted,
-            varianttype=ua.VariantType.LocalizedText
-            ) 
-        await self._last_transition_id_node.write_value(
-            self._ready_to_halted.nodeid, 
-            varianttype=ua.VariantType.NodeId
-            )
-        #FIXME 
-        # trigger ProgramTransitionEventType and 
-        # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
-        return ua.StatusCode(ua.status_codes.StatusCodes.Good)
+#     #Transition 
+#     async def SuspendedToRunning(self):
+#         await self._current_state_node.write_value(
+#             self.localizedtext_running,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._current_state_id_node.write_value(
+#             self._running_state.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         await self._last_transition_node.write_value(
+#             self.localizedtext_suspended_to_running,
+#             varianttype=ua.VariantType.LocalizedText
+#             )
+#         await self._last_transition_id_node.write_value(
+#             self._suspended_to_running.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         #FIXME 
+#         # trigger ProgramTransitionEventType and 
+#         # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+#         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
-    #method to be linked to uamethod
-    async def Start(self):
-        if await self._current_state_node.read_value() == self.localizedtext_ready:
-            return await ReadyToRunning()
-        else:
-            return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+#     #Transition
+#     async def SuspendedToHalted(self):
+#         await self._current_state_node.write_value(
+#             self.localizedtext_halted,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._current_state_id_node.write_value(
+#             self._halted_state.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         await self._last_transition_node.write_value(
+#             self.localizedtext_suspended_to_halted,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._last_transition_id_node.write_value(
+#             self._suspended_to_halted.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         #FIXME 
+#         # trigger ProgramTransitionEventType and 
+#         # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+#         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
-    #method to be linked to uamethod
-    async def Suspend(self):
-        if await self._current_state_node.read_value() == self.localizedtext_running:
-            return await RunningToSuspended()
-        else:
-            return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+#     #Transition
+#     async def SuspendedToReady(self):
+#         await self._current_state_node.write_value(
+#             self.localizedtext_ready,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._current_state_id_node.write_value(
+#             self._ready_state.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         await self._last_transition_node.write_value(
+#             self.localizedtext_suspended_to_ready,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._last_transition_id_node.write_value(
+#             self._suspended_to_ready.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         #FIXME 
+#         # trigger ProgramTransitionEventType and 
+#         # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+#         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
-    #method to be linked to uamethod
-    async def Resume(self):
-        if await self._current_state_node.read_value() == self.localizedtext_suspended:
-            return await SuspendedToRunning()
-        else:
-            return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+#     #Transition 
+#     async def ReadyToHalted(self):
+#         await self._current_state_node.write_value(
+#             self.localizedtext_halted,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._current_state_id_node.write_value(
+#             self._halted_state.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         await self._last_transition_node.write_value(
+#             self.localizedtext_ready_to_halted,
+#             varianttype=ua.VariantType.LocalizedText
+#             ) 
+#         await self._last_transition_id_node.write_value(
+#             self._ready_to_halted.nodeid, 
+#             varianttype=ua.VariantType.NodeId
+#             )
+#         #FIXME 
+#         # trigger ProgramTransitionEventType and 
+#         # AuditUpdateMethodEvents/AuditProgramTransitionEventType (https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.2/)
+#         return ua.StatusCode(ua.status_codes.StatusCodes.Good)
 
-    #method to be linked to uamethod
-    async def Halt(self):
-        val = await self._current_state_node.read_value()
-        if val == self.localizedtext_ready:
-            return await ReadyToHalted()
-        elif val == self.localizedtext_running:
-            return await RunningToHalted()
-        elif val == self.localizedtext_suspended:
-            return await SuspendedToHalted()
-        else:
-            return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+#     #method to be linked to uamethod
+#     async def Start(self):
+#         if await self._current_state_node.read_value() == self.localizedtext_ready:
+#             return await ReadyToRunning()
+#         else:
+#             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
 
-    #method to be linked to uamethod
-    async def Reset(self):
-        if await self._current_state_node.read_value() == self.localizedtext_halted:
-            return await HaltedToReady()
-        else:
-            return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+#     #method to be linked to uamethod
+#     async def Suspend(self):
+#         if await self._current_state_node.read_value() == self.localizedtext_running:
+#             return await RunningToSuspended()
+#         else:
+#             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+
+#     #method to be linked to uamethod
+#     async def Resume(self):
+#         if await self._current_state_node.read_value() == self.localizedtext_suspended:
+#             return await SuspendedToRunning()
+#         else:
+#             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+
+#     #method to be linked to uamethod
+#     async def Halt(self):
+#         val = await self._current_state_node.read_value()
+#         if val == self.localizedtext_ready:
+#             return await ReadyToHalted()
+#         elif val == self.localizedtext_running:
+#             return await RunningToHalted()
+#         elif val == self.localizedtext_suspended:
+#             return await SuspendedToHalted()
+#         else:
+#             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+
+#     #method to be linked to uamethod
+#     async def Reset(self):
+#         if await self._current_state_node.read_value() == self.localizedtext_halted:
+#             return await HaltedToReady()
+#         else:
+#             return ua.StatusCode(ua.status_codes.StatusCodes.BadNotExecutable)
+
 
 class ShelvedStateMachine(FiniteStateMachine):
     '''
@@ -653,3 +711,4 @@ class ShelvedStateMachine(FiniteStateMachine):
             name = "ShelvedStateMachine"
         self._state_machine_type = ua.NodeId(2929, 0)
         raise NotImplementedError
+
