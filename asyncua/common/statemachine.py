@@ -24,6 +24,18 @@ from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
 
 _logger = logging.getLogger(__name__)
 
+
+class TransitionEvent(TransitionEvent):
+    """
+    TransitionEvent:
+    """
+    def __init__(self, sourcenode=None, message=None, severity=1):
+        super(TransitionEvent, self).__init__(sourcenode, message, severity)
+        self.EventType = ua.NodeId(ua.ObjectIds.TransitionEventType)
+        self.add_property('Transition', None, ua.VariantType.LocalizedText)
+        self.add_property('FromState', None, ua.VariantType.LocalizedText)
+        self.add_property('ToState', None, ua.VariantType.LocalizedText)
+
 class StateMachine(object):
     '''
     Implementation of an StateMachineType (most basic type)
@@ -61,6 +73,7 @@ class StateMachine(object):
         self._last_transition_effectivetransitiontime_node = None
         self._evgen = None
         self.evtype = TransitionEvent()
+        self._current_state = self.State(None, None, None)
 
     class State(object):
         '''
@@ -71,11 +84,11 @@ class StateMachine(object):
         id: Id is a name which uniquely identifies the current state within the StateMachineType. A subtype may restrict the DataType.
         number: Number is an integer which uniquely identifies the current state within the StateMachineType.
         '''
-        def __init__(self, name, id=0, node=None, issub=False):
+        def __init__(self, name, id, number, node=None, issub=False):
             self.name = name
-            self.id = str(id)
-            self.number = id
-            self.effective_display_name = ua.LocalizedText(name, "en-US")
+            self.id = id
+            self.number = number
+            self.effectivedisplayname = ua.LocalizedText(name, "en-US")
             self.node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
             self.issub = issub #true if it is a substate
 
@@ -94,10 +107,10 @@ class StateMachine(object):
         then the TransitionTime stays at the point in time where StateA became active whereas the EffectiveTransitionTime changes 
         with each change of a substate.
         '''
-        def __init__(self, name, id=0, node=None):
+        def __init__(self, name, id, number, node=None):
             self.name = name
-            self.id = str(id)
-            self.number = id
+            self.id = id
+            self.number = number
             self._transitiontime = datetime.datetime.utcnow() #will be overwritten from _write_transition()
             self._effectivetransitiontime = datetime.datetime.utcnow() #will be overwritten from _write_transition()
             self.node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
@@ -142,6 +155,8 @@ class StateMachine(object):
                 self._current_state_name_node = await self._current_state_node.get_child(["Name"])
             elif dn.Text == "Number":
                 self._current_state_number_node = await self._current_state_node.get_child(["Number"])
+            elif dn.Text == "EffectiveDisplayName":
+                self._current_state_effective_display_name_node = await self._current_state_node.get_child(["EffectiveDisplayName"])
             else:
                 _logger.warning(f"{await statemachine.read_browse_name()} CurrentState Unknown propertie: {dn.Text}")
         if self._optionals:
@@ -179,7 +194,12 @@ class StateMachine(object):
                 event_msg = ua.LocalizedText(event_msg, self.locale)
             self._evgen.event.Message = event_msg
             self._evgen.event.Severity = severity
+            self._evgen.event.ToState = state.effectivedisplayname
+            if transition:
+                self._evgen.event.Transition = ua.LocalizedText(transition.name, self.locale)
+            self._evgen.event.FromState = self._current_state.effectivedisplayname
             await self._evgen.trigger()
+        self._current_state = state
 
     async def _write_state(self, state):
         if not isinstance(state, self.State):
@@ -193,7 +213,7 @@ class StateMachine(object):
             if self._current_state_number_node:
                 await self._current_state_number_node.write_value(state.number, ua.VariantType.UInt32)
             if self._current_state_effective_display_name_node:
-                await self._current_state_effective_display_name_node.write_value(state.effective_display_name, ua.VariantType.LocalizedText)
+                await self._current_state_effective_display_name_node.write_value(state.effectivedisplayname, ua.VariantType.LocalizedText)
 
     async def _write_transition(self, transition, issub=False):
         '''
