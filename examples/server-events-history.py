@@ -2,12 +2,13 @@ import sys
 sys.path.insert(0, "..")
 import time
 from datetime import datetime
+import asyncio
 
 from asyncua import ua, Server
 from asyncua.server.history_sql import HistorySQLite
 
 
-if __name__ == "__main__":
+async def main():
 
     # setup our server
     server = Server()
@@ -33,32 +34,32 @@ if __name__ == "__main__":
                                              [('MyOtherProperty', ua.VariantType.Float)])
 
     # get an event generator for the myobj node which generates custom events
-    myevgen = server.get_event_generator(etype, myobj)
+    myevgen = await server.get_event_generator(etype, myobj)
     myevgen.event.Severity = 500
     myevgen.event.MyStringProperty = ua.Variant("hello world")
     myevgen.event.MyNumericProperty = ua.Variant(-456)
 
     # get another event generator for the myobj node which generates different custom events
-    myevgen2 = server.get_event_generator(etype2, myobj)
+    myevgen2 = await server.get_event_generator(etype2, myobj)
     myevgen2.event.Severity = 123
     myevgen2.event.MyOtherProperty = ua.Variant(1.337)
 
     # get an event generator for the server node which generates BaseEventType
-    serverevgen = server.get_event_generator()
+    serverevgen = await server.get_event_generator()
     serverevgen.event.Severity = 111
 
     # Configure server to use sqlite as history database (default is a simple in memory dict)
     server.iserver.history_manager.set_storage(HistorySQLite("my_event_history.sql"))
 
     # starting!
-    server.start()
+    await server.start()
 
     # enable history for myobj events; must be called after start since it uses subscription
     server.iserver.enable_history_event(myobj, period=None)
 
     # enable history for server events; must be called after start since it uses subscription
     server_node = server.get_node(ua.ObjectIds.Server)
-    server.historize_node_event(server_node, period=None)
+    await server.historize_node_event(server_node, period=None)
 
     try:
         count = 0
@@ -77,4 +78,7 @@ if __name__ == "__main__":
 
     finally:
         # close connection, remove subscriptions, etc
-        server.stop()
+        await server.stop()
+
+if __name__ == "__main__":
+    asyncio.run(main())
