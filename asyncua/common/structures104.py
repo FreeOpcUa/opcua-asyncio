@@ -34,6 +34,9 @@ def new_struct_field(name, dtype, array=False, optional=False, description=""):
     if array:
         field.ValueRank = ua.ValueRank.OneOrMoreDimensions
         field.ArrayDimensions = [1]
+    else:
+        field.ValueRank = ua.ValueRank.Scalar
+        field.ArrayDimensions = []
     return field
 
 

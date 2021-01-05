@@ -1245,7 +1245,7 @@ async def test_custom_struct_with_enum(opc):
     assert val.MyEnum == ua.MyCustEnum2.tutu
 
 
-async def test_two_times_custom_struct(opc):
+async def test_two_times_enum(opc):
     idx = 4
 
     dtype = await new_enum(opc.opc, idx, "MyCustEnum5", [
@@ -1258,3 +1258,27 @@ async def test_two_times_custom_struct(opc):
         dtype = await new_enum(opc.opc, idx, "MyCustEnum5", [
             "titi",
         ])
+
+
+async def test_custom_struct_export(opc):
+    idx = 4
+
+    dtype = await new_struct(opc.opc, idx, "MyMyStructExport", [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+    ])
+
+    await opc.opc.export_xml([dtype], "custom_struct_export.xml")
+
+
+async def test_custom_enum_export(opc):
+    idx = 4
+
+    dtype = await new_enum(opc.opc, idx, "MyCustEnumExport", [
+        "titi",
+        "toto",
+        "tutu",
+    ])
+
+    await opc.opc.export_xml([dtype], "custom_enum_export.xml")
+
