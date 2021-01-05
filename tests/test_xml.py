@@ -1,10 +1,10 @@
 import uuid
-import pytz
 import logging
 import datetime
 import pathlib
-
 import pytest
+
+from pytz import timezone
 
 from asyncua import ua, Node, uamethod
 from asyncua.ua import uaerrors
@@ -237,7 +237,7 @@ async def test_xml_datetime_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(3, "myxmlvar-array", [
         datetime.datetime.now(),
         datetime.datetime.utcnow(),
-        datetime.datetime.now(pytz.timezone("Asia/Tokyo"))
+        datetime.datetime.now(timezone("Asia/Tokyo"))
     ], ua.VariantType.DateTime)
     await _test_xml_var_type(opc, tmpdir, o, "datetime_array")
     await opc.opc.delete_nodes([o])

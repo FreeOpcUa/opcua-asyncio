@@ -768,6 +768,7 @@ class Variant(FrozenClass):
         return not self.__eq__(other)
 
     def _guess_type(self, val):
+        error_val = None
         if isinstance(val, (list, tuple)):
             error_val = val
         while isinstance(val, (list, tuple)):

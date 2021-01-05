@@ -2,7 +2,6 @@
 
 import sys
 import os
-import asyncio
 import logging
 logging.basicConfig(level=logging.DEBUG)
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))

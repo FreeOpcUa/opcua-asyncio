@@ -1,6 +1,4 @@
 import pytest
-
-from asyncio import Future, wait_for
 from itertools import chain
 
 from asyncua import ua, Client
@@ -135,6 +133,7 @@ class TestHaClient:
         # real map data are OK
         monitoring = {ua.MonitoringMode.Reporting, ua.MonitoringMode.Disabled}
         publishing = {True, False}
+        node_str = None
 
         for vsub in ha_client.reconciliator.real_map.values():
             vs = vsub[sub]
@@ -192,6 +191,7 @@ class TestHaClient:
 
         # real map data are OK
         reconciliator = ha_client.reconciliator
+        _url = None
         for _url, vsub in reconciliator.real_map.items():
             vs = vsub[sub]
             if vs.publishing:
