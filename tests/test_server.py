@@ -6,7 +6,7 @@ import asyncio
 import pytest
 import logging
 from datetime import timedelta
-from enum import Enum, EnumMeta
+from enum import EnumMeta
 
 import asyncua
 from asyncua import Server, Client, ua, uamethod
@@ -505,31 +505,31 @@ async def test_get_node_by_ns(server):
     # the tests
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=[idx_a, idx_b, idx_c])
     assert 3 == len(nodes)
-    assert set([idx_a, idx_b, idx_c]) == get_ns_of_nodes(nodes)
+    assert {idx_a, idx_b, idx_c} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=[idx_a])
     assert 1 == len(nodes)
-    assert set([idx_a]) == get_ns_of_nodes(nodes)
+    assert {idx_a} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=[idx_b])
     assert 1 == len(nodes)
-    assert set([idx_b]) == get_ns_of_nodes(nodes)
+    assert {idx_b} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=['a'])
     assert 1 == len(nodes)
-    assert set([idx_a]) == get_ns_of_nodes(nodes)
+    assert {idx_a} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=['a', 'c'])
     assert 2 == len(nodes)
-    assert set([idx_a, idx_c]) == get_ns_of_nodes(nodes)
+    assert {idx_a, idx_c} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces='b')
     assert 1 == len(nodes)
-    assert set([idx_b]) == get_ns_of_nodes(nodes)
+    assert {idx_b} == get_ns_of_nodes(nodes)
 
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=idx_b)
     assert 1 == len(nodes)
-    assert set([idx_b]) == get_ns_of_nodes(nodes)
+    assert {idx_b} == get_ns_of_nodes(nodes)
     with pytest.raises(ValueError):
         await ua_utils.get_nodes_of_namespace(server, namespaces='non_existing_ns')
 

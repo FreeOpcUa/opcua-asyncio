@@ -5,7 +5,7 @@ import os
 import socket
 
 from collections import namedtuple
-from asyncua import ua, Client, Server
+from asyncua import Client
 from asyncua.client.ha.ha_client import HaClient, HaConfig, HaMode
 from asyncua.server.history import HistoryDict
 from asyncua.server.history_sql import HistorySQLite
@@ -17,7 +17,6 @@ from threading import Thread
 from asyncio import get_event_loop_policy, sleep
 from contextlib import closing
 
-import pytest
 from asyncua import Server, ua
 
 
@@ -398,6 +397,7 @@ async def wait_node_in_real_map(ha_client, sub, node_str, negation=False):
     reconciliator = ha_client.reconciliator
     for client in ha_client.get_clients():
         url = client.server_url.geturl()
+        vs = None
         for _ in range(RETRY):
             # virtual subscription must already exist,
             if reconciliator.real_map.get(url):
@@ -413,6 +413,7 @@ async def wait_mode_in_real_map(ha_client, client, sub, mode, value):
     await wait_sub_in_real_map(ha_client, sub)
     url = client.server_url.geturl()
     vsub = reconciliator.real_map[url][sub]
+    option = None
     for _ in range(RETRY):
         option = getattr(vsub, mode)
         if option == value:
