@@ -3,6 +3,7 @@ from unittest.mock import patch
 import sys
 import subprocess
 import concurrent.futures
+import signal
 
 from asyncua.tools import uaread, uals, uawrite, uahistoryread, uaclient, uadiscover, uacall
 
@@ -55,4 +56,4 @@ async def test_cli_tools_which_require_sigint(running_server):
         with pytest.raises(subprocess.TimeoutExpired):
             # we consider there's no error if the process is still alive
             proc.communicate(timeout=2)
-        proc.send_signal(subprocess.signal.SIGINT)
+        proc.send_signal(signal.SIGINT)
