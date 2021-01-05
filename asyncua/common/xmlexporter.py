@@ -142,6 +142,7 @@ class XmlExporter:
         Returns:
         """
         node_class = await node.read_node_class()
+        print("EXPORT", node, node_class)
 
         if node_class is ua.NodeClass.Object:
             await self.add_etree_object(node)
@@ -295,7 +296,39 @@ class XmlExporter:
         Add a UA data type element to the XML etree
         """
         obj_el = await self._add_node_common("UADataType", obj)
+        dv = await obj.read_attribute(ua.AttributeIds.DataTypeDefinition)
+        sdef = dv.Value.Value
+        if sdef:
+            # FIXME: can probably get that name somewhere else
+            bname = await obj.read_attribute(ua.AttributeIds.BrowseName)
+            bname = bname.Value.Value
+            sdef_el = Et.SubElement(obj_el, 'Definition')
+            sdef_el.attrib['Name'] = bname.Name
+            if isinstance(sdef, ua.StructureDefinition):
+                self._structure_fields_to_etree(bname, sdef_el, sdef)
+            elif isinstance(sdef, ua.EnumDefinition):
+                self._enum_fields_to_etree(bname, sdef_el, sdef)
+            else:
+                self.logger.warning("Unknown DatatypeSpecification elemnt: %s", sdef)
         await self._add_ref_els(obj_el, obj)
+
+    def _structure_fields_to_etree(self, bname, sdef_el, sdef):
+        for field in sdef.Fields:
+            field_el = Et.SubElement(sdef_el, 'Field')
+            field_el.attrib['Name'] = field.Name
+            field_el.attrib['Datatype'] = field.DataType.to_string()
+            if field.ValueRank != -1:
+                field_el.attrib['ValueRank'] = str(int(field.ValueRank))
+            if field.ArrayDimensions != "":
+                field_el.attrib['ArrayDimensions'] = ", ".join([str(i) for i in field.ArrayDimensions])
+            if field.IsOptional:
+                field_el.attrib['IsOptional'] = "true"
+
+    def _enum_fields_to_etree(self, bname, sdef_el, sdef):
+        for field in sdef.Fields:
+            field_el = Et.SubElement(sdef_el, 'Field')
+            field_el.attrib['Name'] = field.Name
+            field_el.attrib['Value'] = str(field.Value)
 
     def _add_namespace_uri_els(self, uris):
         nuris_el = Et.Element('NamespaceUris')
