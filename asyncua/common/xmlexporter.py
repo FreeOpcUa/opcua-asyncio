@@ -142,7 +142,6 @@ class XmlExporter:
         Returns:
         """
         node_class = await node.read_node_class()
-        print("EXPORT", node, node_class)
 
         if node_class is ua.NodeClass.Object:
             await self.add_etree_object(node)
@@ -319,7 +318,7 @@ class XmlExporter:
             field_el.attrib['Datatype'] = field.DataType.to_string()
             if field.ValueRank != -1:
                 field_el.attrib['ValueRank'] = str(int(field.ValueRank))
-            if field.ArrayDimensions != "":
+            if field.ArrayDimensions:
                 field_el.attrib['ArrayDimensions'] = ", ".join([str(i) for i in field.ArrayDimensions])
             if field.IsOptional:
                 field_el.attrib['IsOptional'] = "true"

@@ -43,6 +43,7 @@ def new_struct_field(name, dtype, array=False, optional=False, description=""):
 async def new_struct(server, idx, name, fields):
     """
     simple way to create a new structure
+    return the created data type node and the list of encoding nodes
     """
     dtype = await create_data_type(server.nodes.base_structure_type, idx, name)
     enc = await create_encoding(dtype, idx, "Default Binary")
@@ -59,7 +60,7 @@ async def new_struct(server, idx, name, fields):
     sdef.DefaultEncodingId = enc.nodeid
 
     await dtype.write_data_type_definition(sdef)
-    return dtype
+    return dtype, [enc]
 
 
 async def new_enum(server, idx, name, values):
