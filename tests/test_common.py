@@ -1179,7 +1179,7 @@ async def test_custom_struct_with_optional_fields(opc):
 async def test_custom_struct_of_struct(opc):
     idx = 4
 
-    dtype = await new_struct(opc.opc, idx, "MySubStruct2", [
+    dtype, encs = await new_struct(opc.opc, idx, "MySubStruct2", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32", ua.VariantType.UInt32),
     ])
@@ -1202,7 +1202,7 @@ async def test_custom_struct_of_struct(opc):
 async def test_custom_list_of_struct(opc):
     idx = 4
 
-    dtype = await new_struct(opc.opc, idx, "MySubStruct3", [
+    dtype, encs = await new_struct(opc.opc, idx, "MySubStruct3", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32", ua.VariantType.UInt32),
     ])
@@ -1263,12 +1263,12 @@ async def test_two_times_enum(opc):
 async def test_custom_struct_export(opc):
     idx = 4
 
-    dtype = await new_struct(opc.opc, idx, "MyMyStructExport", [
+    dtype, encs = await new_struct(opc.opc, idx, "MyMyStructExport", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
     ])
 
-    await opc.opc.export_xml([dtype], "custom_struct_export.xml")
+    await opc.opc.export_xml([dtype, *encs], "custom_struct_export.xml")
 
 
 async def test_custom_enum_export(opc):
@@ -1279,6 +1279,25 @@ async def test_custom_enum_export(opc):
         "toto",
         "tutu",
     ])
+    path = "custom_enum_export.xml"
+    await opc.opc.export_xml([dtype], path )
 
-    await opc.opc.export_xml([dtype], "custom_enum_export.xml")
 
+async def test_custom_enum_import(opc):
+    nodes = await opc.opc.import_xml("tests/custom_enum.xml")
+    nodes = [opc.opc.get_node(node) for node in nodes]  # FIXME why does it return nodeids and not nodes?
+    node = nodes[0]
+    sdef = await node.read_data_type_definition()
+    assert sdef.Fields[0].Name == "titi"
+    await opc.opc.export_xml(nodes, "tests/custom_enum_v2.xml")
+
+
+async def test_custom_struct_import(opc):
+    nodes = await opc.opc.import_xml("tests/custom_struct.xml")
+    nodes = [opc.opc.get_node(node) for node in nodes]  # FIXME why does it return nodeids and not nodes?
+    node = nodes[0]  #FIXME: make that more robust
+    sdef = await node.read_data_type_definition()
+    assert sdef.StructureType == ua.StructureType.Structure
+    assert sdef.Fields[0].Name == "MyBool"
+
+    await opc.opc.export_xml(nodes, "tests/custom_struct_v2.xml")
