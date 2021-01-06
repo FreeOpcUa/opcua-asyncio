@@ -69,7 +69,7 @@ class NodeData:
 
 class Field:
     def __init__(self, data):
-        self.datatype = data.get("Datatype", "")
+        self.datatype = data.get("DataType", "")
         self.name = data.get("Name")
         self.dname = data.get("DisplayName", "")
         self.optional = bool(data.get("IsOptional", False))

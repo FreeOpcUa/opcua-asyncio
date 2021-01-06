@@ -546,15 +546,8 @@ class Server:
         """
         Export defined nodes to xml
         """
-        uris = await self.get_namespace_array()
-        uris_to_export = {}
-        for node in nodes:
-            idx = node.nodeid.NamespaceIndex
-            if idx not in uris_to_export and idx < len(uris):
-                uris_to_export[idx] = uris[idx]
-
         exp = XmlExporter(self)
-        await exp.build_etree(nodes, uris_to_export)
+        await exp.build_etree(nodes)
         await exp.write_xml(path)
 
     async def export_xml_by_ns(self, path: str, namespaces: list = None):
