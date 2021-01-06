@@ -20,20 +20,26 @@ class XmlImporter:
     def __init__(self, server):
         self.parser = None
         self.server = server
-        self.namespaces: Dict[int, int] = {}  #Dict[IndexInXml, IndexInServer]
+        self.namespaces: Dict[int, int] = {}  # Dict[IndexInXml, IndexInServer]
         self.aliases: Dict[str, ua.NodeId] = {}
         self.refs = None
 
-    async def _map_namespaces(self, namespaces_uris):
+    async def _map_namespaces(self):
         """
         creates a mapping between the namespaces in the xml file and in the server.
         if not present the namespace is registered.
         """
-        namespaces = {}
-        for ns_index, ns_uri in enumerate(namespaces_uris):
-            ns_server_index = await self.server.register_namespace(ns_uri)
-            namespaces[ns_index + 1] = ns_server_index
-        return namespaces
+        xml_uris = self.parser.get_used_namespaces()
+        server_uris = await self.server.get_namespace_array()
+        namespaces_map = {}
+        for ns_index, ns_uri in enumerate(xml_uris):
+            ns_index += 1  # since namespaces start at 1 in xml files
+            if ns_uri in server_uris:
+                namespaces_map[ns_index] = server_uris.index(ns_uri)
+            else:
+                ns_server_index = await self.server.register_namespace(ns_uri)
+                namespaces_map[ns_index] = ns_server_index
+        return namespaces_map
 
     def _map_aliases(self, aliases: dict):
         """
@@ -43,7 +49,6 @@ class XmlImporter:
         for alias, node_id in aliases.items():
             aliases_mapped[alias] = self._to_migrated_nodeid(node_id)
         return aliases_mapped
-
 
     async def _get_existing_model_in_namespace(self):
         server_model_list = []
@@ -85,7 +90,7 @@ class XmlImporter:
         self.parser = XMLParser()
         await self._check_required_models(xmlpath, xmlstring)
         await self.parser.parse(xmlpath, xmlstring)
-        self.namespaces = await self._map_namespaces(self.parser.get_used_namespaces())
+        self.namespaces = await self._map_namespaces()
         _logger.info("namespace map: %s", self.namespaces)
         self.aliases = self._map_aliases(self.parser.get_aliases())
         self.refs = []
@@ -509,13 +514,14 @@ class XmlImporter:
         sdef = ua.StructureDefinition()
         if obj.parent:
             sdef.BaseDataType = obj.parent
-        for data in obj.refs:
-            if data.reftype == self.server.nodes.HasEncoding.nodeid:
-                # looks likebinary encodingisthe firt one...can someone confirm?
-                sdef.DefaultEncodingId = data.target
+        for refdata in obj.refs:
+            if refdata.reftype == self.server.nodes.HasEncoding.nodeid:
+                # supposing that default encoding is the first one...
+                sdef.DefaultEncodingId = refdata.target
                 break
         optional = False
         for field in obj.definitions:
+            print("IMPORT FIEL", field.name, field.datatype)
             f = ua.StructureField()
             f.Name = field.name
             f.DataType = field.datatype
