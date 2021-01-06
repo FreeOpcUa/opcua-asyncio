@@ -44,30 +44,28 @@ class XmlExporter:
 
         self.etree = Et.ElementTree(Et.Element('UANodeSet', node_write_attributes))
 
-    async def build_etree(self, node_list, uris=None):
+    async def build_etree(self, node_list):
         """
-        Create an XML etree object from a list of nodes; custom namespace uris are optional
+        Create an XML etree object from a list of nodes;
         Namespaces used by nodes are always exported for consistency.
         Args:
             node_list: list of Node objects for export
-            uris: list of namespace uri strings
 
         Returns:
         """
         self.logger.info('Building XML etree')
-        await self._add_namespaces(node_list, uris)
+
+        await self._add_namespaces(node_list)
         # add all nodes in the list to the XML etree
         for node in node_list:
             await self.node_to_etree(node)
         # add aliases to the XML etree
         self._add_alias_els()
 
-    async def _add_namespaces(self, nodes, uris):
-        idxs = await self._get_ns_idxs_of_nodes(nodes)
+    async def _add_namespaces(self, nodes):
         ns_array = await self.server.get_namespace_array()
-        # now add index of provided uris if necessary
-        if uris:
-            self._add_idxs_from_uris(idxs, uris, ns_array)
+        idxs = await self._get_ns_idxs_of_nodes(nodes)
+
         # now create a dict of idx_in_address_space to idx_in_exported_file
         self._addr_idx_to_xml_idx = self._make_idx_dict(idxs, ns_array)
         ns_to_export = [ns_array[i] for i in sorted(list(self._addr_idx_to_xml_idx.keys())) if i != 0]
@@ -308,14 +306,14 @@ class XmlExporter:
             elif isinstance(sdef, ua.EnumDefinition):
                 self._enum_fields_to_etree(bname, sdef_el, sdef)
             else:
-                self.logger.warning("Unknown DatatypeSpecification elemnt: %s", sdef)
+                self.logger.warning("Unknown DataTypeSpecification elemnt: %s", sdef)
         await self._add_ref_els(obj_el, obj)
 
     def _structure_fields_to_etree(self, bname, sdef_el, sdef):
         for field in sdef.Fields:
             field_el = Et.SubElement(sdef_el, 'Field')
             field_el.attrib['Name'] = field.Name
-            field_el.attrib['Datatype'] = field.DataType.to_string()
+            field_el.attrib['DataType'] = field.DataType.to_string()
             if field.ValueRank != -1:
                 field_el.attrib['ValueRank'] = str(int(field.ValueRank))
             if field.ArrayDimensions:
