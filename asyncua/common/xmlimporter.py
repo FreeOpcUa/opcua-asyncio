@@ -494,8 +494,6 @@ class XmlImporter:
         if not obj.definitions:
             return None
         edef = ua.EnumDefinition()
-        if obj.parent:
-            edef.BaseDataType = obj.parent
         for field in obj.definitions:
             f = ua.EnumField()
             f.Name = field.name
@@ -521,7 +519,6 @@ class XmlImporter:
                 break
         optional = False
         for field in obj.definitions:
-            print("IMPORT FIEL", field.name, field.datatype)
             f = ua.StructureField()
             f.Name = field.name
             f.DataType = field.datatype

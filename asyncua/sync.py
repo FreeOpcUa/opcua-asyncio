@@ -375,6 +375,10 @@ class SyncNode:
         pass
 
     @syncmethod
+    def write_attribute(self, attributeid, datavalue, indexrange=None):
+        pass
+
+    @syncmethod
     def read_browse_name(self):
         pass
 

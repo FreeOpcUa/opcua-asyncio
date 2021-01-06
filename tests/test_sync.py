@@ -130,5 +130,5 @@ def test_sync_call_meth(client, idx):
 
 def test_sync_xml_export(server):
     exp = XmlExporter(server)
-    exp.build_etree([server.nodes.objects], uris=[])
+    exp.build_etree([server.nodes.objects])
     exp.write_xml("toto_test_export.xml")

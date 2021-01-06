@@ -30,7 +30,7 @@ def new_struct_field(name, dtype, array=False, optional=False, description=""):
     elif isinstance(dtype, Node):
         field.DataType = dtype.nodeid
     else:
-        raise ValueError(f"Datatype of a field must be a NodeId, not {dtype} of type {type(dtype)}")
+        raise ValueError(f"DataType of a field must be a NodeId, not {dtype} of type {type(dtype)}")
     if array:
         field.ValueRank = ua.ValueRank.OneOrMoreDimensions
         field.ArrayDimensions = [1]
@@ -56,7 +56,7 @@ async def new_struct(server, idx, name, fields):
             sdef.StructureType = ua.StructureType.StructureWithOptionalFields
             break
     sdef.Fields = fields
-    sdef.BaseDatatype = server.nodes.base_data_type.nodeid
+    sdef.BaseDataType = server.nodes.base_data_type.nodeid
     sdef.DefaultEncodingId = enc.nodeid
 
     await dtype.write_data_type_definition(sdef)
@@ -65,7 +65,6 @@ async def new_struct(server, idx, name, fields):
 
 async def new_enum(server, idx, name, values):
     edef = ua.EnumDefinition()
-    edef.Name = name
     counter = 0
     for val_name in values:
         field = ua.EnumField()
@@ -272,7 +271,7 @@ async def load_data_type_definitions(server, base_node=None):
 
 async def _read_data_type_definition(server, desc):
     if desc.BrowseName.Name == "FilterOperand":
-        #FIXME: find out why that one is not in ua namespace...
+        # FIXME: find out why that one is not in ua namespace...
         return None
     # FIXME: this is fishy, we may have same name in different Namespaces
     if hasattr(ua, desc.BrowseName.Name):

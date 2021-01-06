@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<UANodeSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd">
+  <NamespaceUris>
+    <Uri>http://toto.freeopcua.github.io/</Uri>
+  </NamespaceUris>
+  <Aliases>
+    <Alias Alias="HasEncoding">i=38</Alias>
+    <Alias Alias="HasSubtype">i=45</Alias>
+  </Aliases>
+  <UADataType NodeId="ns=1;i=6101" BrowseName="4:MyCrazyStruct">
+    <DisplayName>MyCrazyStruct</DisplayName>
+    <Description>My Description</Description>
+    <Definition Name="MyCrazyStruct">
+      <Field Name="MyBool" DataType="i=1" />
+      <Field Name="MyUInt32" DataType="i=7" ValueRank="0" ArrayDimensions="1" />
+    </Definition>
+    <References>
+      <Reference ReferenceType="HasSubtype" IsForward="false">i=22</Reference>
+      <Reference ReferenceType="HasEncoding">ns=1;i=6102</Reference>
+    </References>
+  </UADataType>
+  <UAObjectType NodeId="ns=1;i=6102" BrowseName="0:Default Binary">
+    <DisplayName>Default Binary</DisplayName>
+    <Description>Default Binary</Description>
+    <References>
+      <Reference ReferenceType="HasEncoding" IsForward="false">ns=1;i=6101</Reference>
+    </References>
+  </UAObjectType>
+</UANodeSet>
