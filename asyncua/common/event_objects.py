@@ -1101,7 +1101,7 @@ IMPLEMENTED_EVENTS = {
     ua.ObjectIds.PubSubTransportLimitsExceedEventType: PubSubTransportLimitsExceedEvent,
     ua.ObjectIds.PubSubCommunicationFailureEventType: PubSubCommunicationFailureEvent,
     ua.ObjectIds.DiscrepancyAlarmType: DiscrepancyAlarm,
-    ua.ObjectIds.AuditConditionSuppressEventType: AuditConditionSuppressEvent,
+    ua.ObjectIds.AuditConditionSuppressionEventType: AuditConditionSuppressEvent,
     ua.ObjectIds.AuditConditionSilenceEventType: AuditConditionSilenceEvent,
     ua.ObjectIds.AuditConditionOutOfServiceEventType: AuditConditionOutOfServiceEvent,
     ua.ObjectIds.RoleMappingRuleChangedAuditEventType: RoleMappingRuleChangedAuditEvent,

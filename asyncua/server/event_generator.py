@@ -84,7 +84,7 @@ class EventGenerator:
                 ref.IsForward = True
                 ref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasNotifier)
                 ref.SourceNodeId = node.nodeid
-                ref.TargetNodeClass = await node.get_node_class()
+                ref.TargetNodeClass = await node.read_node_class()
                 ref.TargetNodeId = notifier_path[i + 1].nodeid
                 refs.append(ref)
 
@@ -95,7 +95,7 @@ class EventGenerator:
                 ref.IsForward = True
                 ref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasNotifier)
                 ref.SourceNodeId = ua.NodeId(ua.ObjectIds.Server)
-                ref.TargetNodeClass = await emitting_node.get_node_class()
+                ref.TargetNodeClass = await emitting_node.read_node_class()
                 ref.TargetNodeId = emitting_node.nodeid
                 refs.append(ref)
 

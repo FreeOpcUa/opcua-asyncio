@@ -268,17 +268,17 @@ async def get_event_obj_from_type_node(node):
             curr_node = node
             while curr_node.nodeid.Identifier != parent_identifier:
                 for prop in await curr_node.get_properties():
-                    name = (await prop.get_browse_name()).Name
-                    val = await prop.get_data_value()
+                    name = (await prop.read_browse_name()).Name
+                    val = await prop.read_data_value()
                     self.add_property(name, val.Value.Value, val.Value.VariantType)
                 for var in await curr_node.get_variables():
-                    name = (await var.get_browse_name()).Name
-                    val = await var.get_data_value()
+                    name = (await var.read_browse_name()).Name
+                    val = await var.read_data_value()
                     self.add_variable(name, val.Value.Value, await var.get_data_type_as_variant_type())
                     for prop in await var.get_properties():
-                        prop_name = (await prop.get_browse_name()).Name
+                        prop_name = (await prop.read_browse_name()).Name
                         name = '%s/%s' % (name, prop_name)
-                        val = await prop.get_data_value()
+                        val = await prop.read_data_value()
                         self.add_property(name, val.Value.Value, val.Value.VariantType)
                 parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype,
                                                                direction=ua.BrowseDirection.Inverse,

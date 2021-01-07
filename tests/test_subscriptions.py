@@ -531,7 +531,7 @@ async def test_events_MyObject(opc):
 async def test_events_wrong_source(opc):
     # clean the previous BaseEvent from the server
     # it only exists if you run previous tests
-    server_node = opc.server.get_server_node()
+    server_node = opc.server.nodes.server
     server_refs = await server_node.get_references(41)
     for ref in server_refs:
         if ref.ReferenceTypeId.Identifier == 41 and ref.NodeId.Identifier == 2041:
