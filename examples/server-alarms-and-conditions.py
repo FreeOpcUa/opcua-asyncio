@@ -1,8 +1,9 @@
 # coding: utf-8
 
-from aioconsole import ainput
+#from aioconsole import ainput
 
 import asyncio
+import logging
 
 from asyncua import Server, ua
 logging.basicConfig(level=logging.WARNING)
