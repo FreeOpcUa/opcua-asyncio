@@ -4,15 +4,18 @@ import uuid
 from enum import IntEnum
 import logging
 import re
+from typing import Union, List, TYPE_CHECKING, Tuple
 
 from asyncua import ua
 from asyncua import Node
 from asyncua.common.manage_nodes import create_encoding, create_data_type
+if TYPE_CHECKING:
+    from asyncua import Client, Server
 
 logger = logging.getLogger(__name__)
 
 
-def new_struct_field(name, dtype, array=False, optional=False, description=""):
+def new_struct_field(name: str, dtype: Union[ua.NodeId, Node, ua.VariantType], array: bool = False, optional: bool = False, description: str = "") -> ua.StructureField:
     """
     simple way to create a StructureField
     """
@@ -40,12 +43,16 @@ def new_struct_field(name, dtype, array=False, optional=False, description=""):
     return field
 
 
-async def new_struct(server, idx, name, fields):
+async def new_struct(server: Union["Server", "Client"], idx: Union[int, ua.NodeId], name: Union[int, ua.QualifiedName], fields: List[ua.StructureField]) -> Tuple[Node, List[Node]]:
     """
     simple way to create a new structure
     return the created data type node and the list of encoding nodes
     """
     dtype = await create_data_type(server.nodes.base_structure_type, idx, name)
+
+    if isinstance(idx, ua.NodeId):
+        # user has provided a node id, we cannot reuse it
+        idx = idx.NamespaceIndex
     enc = await create_encoding(dtype, idx, "Default Binary")
     # TODO: add other encoding the day we support them
 
@@ -63,7 +70,7 @@ async def new_struct(server, idx, name, fields):
     return dtype, [enc]
 
 
-async def new_enum(server, idx, name, values):
+async def new_enum(server: Union["Server", "Client"], idx: Union[int, ua.NodeId], name: Union[int, ua.QualifiedName], values: List[str]) -> Node:
     edef = ua.EnumDefinition()
     counter = 0
     for val_name in values:
@@ -258,7 +265,7 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None):
         await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef)
 
 
-async def load_data_type_definitions(server, base_node=None):
+async def load_data_type_definitions(server: Union["Server", "Client"], base_node: Node = None) -> None:
     await load_enums(server)  # we need all enums to generate structure code
     if base_node is None:
         base_node = server.nodes.base_structure_type
@@ -315,7 +322,7 @@ class {name}(IntEnum):
     return code
 
 
-async def load_enums(server, base_node=None):
+async def load_enums(server: Union["Server", "Client"], base_node: Node = None) -> None:
     if base_node is None:
         base_node = server.nodes.enum_data_type
     for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
