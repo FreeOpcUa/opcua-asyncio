@@ -24,7 +24,6 @@ from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
 
 _logger = logging.getLogger(__name__)
 
-
 class TransitionEvent(TransitionEvent):
     """
     TransitionEvent:
@@ -35,6 +34,7 @@ class TransitionEvent(TransitionEvent):
         self.add_property('Transition', None, ua.VariantType.LocalizedText)
         self.add_property('FromState', None, ua.VariantType.LocalizedText)
         self.add_property('ToState', None, ua.VariantType.LocalizedText)
+
 
 class StateMachine(object):
     '''
@@ -194,10 +194,10 @@ class StateMachine(object):
                 event_msg = ua.LocalizedText(event_msg, self.locale)
             self._evgen.event.Message = event_msg
             self._evgen.event.Severity = severity
-            self._evgen.event.ToState = state.effectivedisplayname
+            self._evgen.event.ToState = ua.LocalizedText(state.name, self.locale)
             if transition:
                 self._evgen.event.Transition = ua.LocalizedText(transition.name, self.locale)
-            self._evgen.event.FromState = self._current_state.effectivedisplayname
+            self._evgen.event.FromState = ua.LocalizedText(self._current_state.name)
             await self._evgen.trigger()
         self._current_state = state
 
@@ -309,7 +309,7 @@ class FiniteStateMachine(StateMachine):
             if not self._available_transitions_node:
                 self._available_transitions_node = await self._state_machine_node.get_child(["AvailableTransitions"])
             if isinstance(transitions, list):
-                await self._available_transitions_node.write_value(transitions, varianttype=ua.VariantType.NodeId)
+                return await self._available_transitions_node.write_value(transitions, varianttype=ua.VariantType.NodeId)
             return ValueError
 
     async def find_all_states(self):
