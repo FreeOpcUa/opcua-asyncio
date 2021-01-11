@@ -1194,7 +1194,7 @@ async def test_custom_struct_of_struct(opc):
     mystruct = ua.MyMotherStruct2()
     mystruct.MySubStruct = ua.MySubStruct2()
     mystruct.MySubStruct.MyUInt32 = 78
-    var = await opc.opc.nodes.objects.add_variable(idx, "my_mother_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_mother_struct", mystruct)
     val = await var.read_value()
     assert val.MySubStruct.MyUInt32 == 78
 
@@ -1340,6 +1340,6 @@ async def test_custom_struct_of_struct_with_spaces(opc):
     mystruct = ua.My_Mother_Struct()
     mystruct.My_Sub_Struct = ua.My_Sub_Struct_1()
     mystruct.My_Sub_Struct.My_UInt32 = 78
-    var = await opc.opc.nodes.objects.add_variable(idx, "my mother struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    var = await opc.opc.nodes.objects.add_variable(idx, "my mother struct", mystruct)
     val = await var.read_value()
     assert val.My_Sub_Struct.My_UInt32 == 78

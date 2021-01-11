@@ -4,6 +4,7 @@ sync API of asyncua
 import asyncio
 from threading import Thread, Condition
 import logging
+from typing import List, Tuple, Union
 
 from asyncua import ua
 from asyncua import client
@@ -61,7 +62,7 @@ class ThreadLoop(Thread):
 def _to_async(args, kwargs):
     args = list(args)  # FIXME: might be very inefficient...
     for idx, arg in enumerate(args):
-        if isinstance(arg, SyncNode):
+        if isinstance(arg, (SyncNode, Client, Server)):
             args[idx] = arg.aio_obj
         elif isinstance(arg, (list, tuple)):
             args[idx] = _to_async(arg, {})[0]
@@ -92,6 +93,7 @@ def syncmethod(func):
         aio_func = getattr(self.aio_obj, func.__name__)
         result = self.tloop.post(aio_func(*args, **kwargs))
         return _to_sync(self.tloop, result)
+
     return wrapper
 
 
@@ -113,7 +115,9 @@ def syncfunc(aio_func):
             args, kwargs = _to_async(args, kwargs)
             result = tloop.post(aio_func(*args, **kwargs))
             return _to_sync(tloop, result)
+
         return wrapper
+
     return decorator
 
 
@@ -162,6 +166,7 @@ class Client:
 
     def __str__(self):
         return "Sync" + self.aio_obj.__str__()
+
     __repr__ = __str__
 
     @syncmethod
@@ -241,6 +246,7 @@ class Server:
 
     def __str__(self):
         return "Sync" + self.aio_obj.__str__()
+
     __repr__ = __str__
 
     def __enter__(self):
@@ -303,6 +309,10 @@ class Server:
 
     @syncmethod
     def load_type_definitions(self):
+        pass
+
+    @syncmethod
+    def load_data_type_definitions(self, node=None):
         pass
 
     @syncmethod
@@ -403,9 +413,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def get_children(
-        self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified
-    ):
+    def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
         pass
 
     @syncmethod
@@ -489,7 +497,7 @@ class SyncNode:
     def read_data_type_as_variant_type(self):
         pass
 
-    get_data_type_as_variant_type = read_data_type_as_variant_type #legacy
+    get_data_type_as_variant_type = read_data_type_as_variant_type  #legacy
 
     @syncmethod
     def call_method(self, methodid, *args):
@@ -592,3 +600,35 @@ class DataTypeDictionaryBuilder:
     @syncmethod
     def set_dict_byte_string(self):
         pass
+
+
+def new_struct_field(
+    name: str,
+    dtype: Union[ua.NodeId, SyncNode, ua.VariantType],
+    array: bool = False,
+    optional: bool = False,
+    description: str = "",
+) -> ua.StructureField:
+    if isinstance(dtype, SyncNode):
+        dtype = dtype.aio_obj
+    return common.structures104.new_struct_field(name, dtype, array, optional, description)
+
+
+@syncfunc(aio_func=common.structures104.new_enum)
+def new_enum(
+    server: Union["Server", "Client"],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    values: List[str],
+) -> SyncNode:
+    pass
+
+
+@syncfunc(aio_func=common.structures104.new_struct)
+def new_struct(
+    server: Union["Server", "Client"],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    fields: List[ua.StructureField],
+) -> Tuple[SyncNode, List[SyncNode]]:
+    pass
