@@ -1,7 +1,7 @@
 from enum import Enum
+from enum import IntEnum
 from datetime import datetime
 import uuid
-from enum import IntEnum
 import logging
 import re
 from typing import Union, List, TYPE_CHECKING, Tuple
@@ -104,24 +104,23 @@ def get_default_value(uatype, enums=None):
         enums = {}
     if uatype == "String":
         return "None"
-    elif uatype == "Guid":
+    if uatype == "Guid":
         return "uuid.uuid4()"
-    elif uatype in ("ByteString", "CharArray", "Char"):
+    if uatype in ("ByteString", "CharArray", "Char"):
         return b''
-    elif uatype == "Boolean":
+    if uatype == "Boolean":
         return "True"
-    elif uatype == "DateTime":
+    if uatype == "DateTime":
         return "datetime.utcnow()"
-    elif uatype in ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte", "SByte"):
+    if uatype in ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte", "SByte"):
         return 0
-    elif uatype in enums:
+    if uatype in enums:
         return f"ua.{uatype}({enums[uatype]})"
-    elif hasattr(ua, uatype) and issubclass(getattr(ua, uatype), Enum):
+    if hasattr(ua, uatype) and issubclass(getattr(ua, uatype), Enum):
         # We have an enum, try to initilize it correctly
         val = list(getattr(ua, uatype).__members__)[0]
         return f"ua.{uatype}.{val}"
-    else:
-        return f"ua.{uatype}()"
+    return f"ua.{uatype}()"
 
 
 def make_structure_code(data_type, struct_name, sdef):
@@ -225,8 +224,6 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False):
         code = make_enum_code(name, sdef)
     else:
         code = make_structure_code(data_type, name, sdef)
-    print("SDEF", sdef)
-    print("CODE", code)
     logger.debug("Executing code: %s", code)
     exec(code, env)
     return env
@@ -292,7 +289,7 @@ async def _read_data_type_definition(server, desc):
     try:
         sdef = await node.read_data_type_definition()
     except ua.uaerrors.BadAttributeIdInvalid:
-        logger.warning("%s has no DataTypeDefinition atttribute", node)
+        logger.debug("%s has no DataTypeDefinition atttribute", node)
         return None
     except Exception:
         logger.exception("Error getting datatype for node %s", node)
