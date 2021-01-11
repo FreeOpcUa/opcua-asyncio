@@ -15,7 +15,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def new_struct_field(name: str, dtype: Union[ua.NodeId, Node, ua.VariantType], array: bool = False, optional: bool = False, description: str = "") -> ua.StructureField:
+def new_struct_field(
+    name: str,
+    dtype: Union[ua.NodeId, Node, ua.VariantType],
+    array: bool = False,
+    optional: bool = False,
+    description: str = "",
+) -> ua.StructureField:
     """
     simple way to create a StructureField
     """
@@ -43,7 +49,12 @@ def new_struct_field(name: str, dtype: Union[ua.NodeId, Node, ua.VariantType], a
     return field
 
 
-async def new_struct(server: Union["Server", "Client"], idx: Union[int, ua.NodeId], name: Union[int, ua.QualifiedName], fields: List[ua.StructureField]) -> Tuple[Node, List[Node]]:
+async def new_struct(
+    server: Union["Server", "Client"],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    fields: List[ua.StructureField],
+) -> Tuple[Node, List[Node]]:
     """
     simple way to create a new structure
     return the created data type node and the list of encoding nodes
@@ -70,7 +81,12 @@ async def new_struct(server: Union["Server", "Client"], idx: Union[int, ua.NodeI
     return dtype, [enc]
 
 
-async def new_enum(server: Union["Server", "Client"], idx: Union[int, ua.NodeId], name: Union[int, ua.QualifiedName], values: List[str]) -> Node:
+async def new_enum(
+    server: Union["Server", "Client"],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    values: List[str],
+) -> Node:
     edef = ua.EnumDefinition()
     counter = 0
     for val_name in values:
