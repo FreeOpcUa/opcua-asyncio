@@ -56,8 +56,9 @@ class XmlImporter:
         for model_node in server_namespaces_node:
             server_model_list.append({"ModelUri": await(await model_node.get_child("NamespaceUri")).read_value(),
                                       "Version": await(await model_node.get_child("NamespaceVersion")).read_value(),
-                                      "PublicationDate": str(await(
-                                          await model_node.get_child("NamespacePublicationDate")).read_value())})
+                                      "PublicationDate": (await(
+                                          await model_node.get_child("NamespacePublicationDate")).
+                                                          read_value()).strftime("%Y-%m-%dT%H:%M:%SZ")})
         return server_model_list
 
     async def _check_required_models(self, xmlpath=None, xmlstring=None):
@@ -75,8 +76,9 @@ class XmlImporter:
                             else:
                                 req_models.remove(req_model)
         if len(req_models):
-            for missing_model in server_model_list:
-                _logger.warning("Model is missing: ", missing_model)
+            for missing_model in req_models:
+                _logger.warning("Model is missing: %s - Version: %s - PublicationDate: %s or newer",
+                                missing_model["ModelUri"], missing_model["Version"], missing_model["PublicationDate"])
             raise ValueError("Server doesn't satisfy required XML-Models. Import them first!")
         return None
 
