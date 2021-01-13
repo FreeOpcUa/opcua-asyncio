@@ -24,17 +24,17 @@ def release():
     ans = input("version bumped, commiting?(Y/n)")
     if ans in ("", "y", "yes"):
         os.system("git add setup.py")
-        os.system("git commit -m 'new release'")
-        os.system(f"git tag {v}")
+        os.system(f"git commit -m 'new release v{v}'")
+        os.system(f"git tag v{v} -m 'new release v{v}'")
         ans = input("change committed, push to server?(Y/n)")
         if ans in ("", "y", "yes"):
             os.system("git push")
             os.system("git push --tags")
-        ans = input("upload to pip?(Y/n)")
-        if ans in ("", "y", "yes"):
-            os.system("rm -rf dist/*")
-            os.system("python3 setup.py sdist")
-            os.system("twine upload dist/*")
+        #ans = input("upload to pip?(Y/n)")
+        #if ans in ("", "y", "yes"):
+            #os.system("rm -rf dist/*")
+            #os.system("python3 setup.py sdist")
+            #os.system("twine upload dist/*")
 
 
 if __name__ == "__main__":

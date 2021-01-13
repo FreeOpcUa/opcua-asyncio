@@ -4,6 +4,7 @@ from aioconsole import ainput
 import logging
 
 import asyncio
+import logging
 
 from asyncua import Server, ua
 logging.basicConfig(level=logging.WARNING)

@@ -45,7 +45,6 @@ class Node:
     OPC-UA protocol. Feel free to look at the code of this class and call
     directly UA services methods to optimize your code
     """
-
     def __init__(self, server, nodeid):
         self.server = server
         self.nodeid = None
@@ -58,8 +57,7 @@ class Node:
         elif isinstance(nodeid, int):
             self.nodeid = ua.NodeId(nodeid, 0)
         else:
-            raise ua.UaError(f"argument to node must be a NodeId object or a string"
-                             f" defining a nodeid found {nodeid} of type {type(nodeid)}")
+            raise ua.UaError(f"argument to node must be a NodeId object or a string" f" defining a nodeid found {nodeid} of type {type(nodeid)}")
         self.basenodeid = None
 
     def __eq__(self, other):
@@ -138,10 +136,7 @@ class Node:
         :param values: an iterable of EventNotifier enum values.
         """
         event_notifier_bitfield = ua.EventNotifier.to_bitfield(values)
-        await self.write_attribute(
-            ua.AttributeIds.EventNotifier,
-            ua.DataValue(ua.Variant(event_notifier_bitfield, ua.VariantType.Byte))
-        )
+        await self.write_attribute(ua.AttributeIds.EventNotifier, ua.DataValue(ua.Variant(event_notifier_bitfield, ua.VariantType.Byte)))
 
     async def read_node_class(self):
         """
@@ -288,11 +283,9 @@ class Node:
         result = await self.server.write(params)
         result[0].check()
 
-
     async def write_params(self, params):
         result = await self.server.write(params)
         return result
-    
 
     async def read_attribute(self, attr):
         """
@@ -326,7 +319,7 @@ class Node:
     async def read_params(self, params):
         result = await self.server.read(params)
         return result
-    
+
     async def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
         """
         Get all children of a node. By default hierarchical references and all node classes are returned.
@@ -373,8 +366,7 @@ class Node:
         """
         return self.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Method)
 
-    async def get_children_descriptions(self, refs=ua.ObjectIds.HierarchicalReferences,
-                                        nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
+    async def get_children_descriptions(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
         return await self.get_references(refs, ua.BrowseDirection.Forward, nodeclassmask, includesubtypes)
 
     def get_encoding_refs(self):
@@ -383,8 +375,7 @@ class Node:
     def get_description_refs(self):
         return self.get_referenced_nodes(ua.ObjectIds.HasDescription, ua.BrowseDirection.Forward)
 
-    async def get_references(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both,
-                             nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
+    async def get_references(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
         """
         returns references of the node based on specific filter defined with:
 
@@ -418,8 +409,7 @@ class Node:
             references.extend(results[0].References)
         return references
 
-    async def get_referenced_nodes(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both,
-                                   nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
+    async def get_referenced_nodes(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
         """
         returns referenced nodes based on specific filter
         Paramters are the same as for get_references
@@ -432,12 +422,11 @@ class Node:
             nodes.append(node)
         return nodes
 
-    async def get_type_definition(self):
+    async def read_type_definition(self):
         """
         returns type definition of the node.
         """
-        references = await self.get_references(refs=ua.ObjectIds.HasTypeDefinition,
-                                               direction=ua.BrowseDirection.Forward)
+        references = await self.get_references(refs=ua.ObjectIds.HasTypeDefinition, direction=ua.BrowseDirection.Forward)
         if len(references) == 0:
             return None
         return references[0].NodeId
@@ -470,9 +459,7 @@ class Node:
         path = []
         node = self
         while True:
-            refs = await node.get_references(
-                refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse
-            )
+            refs = await node.get_references(refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse)
             if len(refs) > 0:
                 path.insert(0, refs[0])
                 node = Node(self.server, refs[0].NodeId)
@@ -593,9 +580,7 @@ class Node:
         result.StatusCode.check()
         event_res = []
         for res in result.HistoryData.Events:
-            event_res.append(
-                Event.from_event_fields(evfilter.SelectClauses, res.EventFields)
-            )
+            event_res.append(Event.from_event_fields(evfilter.SelectClauses, res.EventFields))
         return event_res
 
     async def history_read_events(self, details):

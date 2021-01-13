@@ -84,26 +84,28 @@ class EventsCodeGenerator:
     def generate_event_class(self, event, *parent_event_browse_name):
         self.write("")
         if event.browseName == "BaseEvent":
-            self.write("class {0}(Event):".format(event.browseName))
+            self.write(f"""
+class {event.browseName}(Event):""")
             self.iidx += 1
             self.write('"""')
-            if event.description is not None:
+            if event.description:
                 self.write(event.browseName + ": " + event.description)
             else:
-                self.write(event.browseName + ": ")
+                self.write(event.browseName + ":")
             self.write('"""')
             self.write("def __init__(self, sourcenode=None, message=None, severity=1):")
             self.iidx += 1
             self.write("Event.__init__(self)")
             self.add_properties_and_variables(event)
         else:
-            self.write("class {0}({1}):".format(event.browseName, parent_event_browse_name[0]))
+            self.write(f"""
+class {event.browseName}({parent_event_browse_name[0]}):""")
             self.iidx += 1
             self.write('"""')
-            if event.description is not None:
+            if event.description:
                 self.write(event.browseName + ": " + event.description)
             else:
-                self.write(event.browseName + ": ")
+                self.write(event.browseName + ":")
             self.write('"""')
             self.write("def __init__(self, sourcenode=None, message=None, severity=1):")
             self.iidx += 1

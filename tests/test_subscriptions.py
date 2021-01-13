@@ -536,7 +536,7 @@ async def test_events_wrong_source(opc):
     for ref in server_refs:
         if ref.ReferenceTypeId.Identifier == 41 and ref.NodeId.Identifier == 2041:
             await server_node.delete_reference(2041, 41)
-    objects = opc.server.nodes.objects
+    objects = opc.server.get_objects_node()
     o = await objects.add_object(3, 'MyObject')
     o2 = await objects.add_object(3, 'MyObject2')
     evgen = await opc.server.get_event_generator(emitting_node=o)

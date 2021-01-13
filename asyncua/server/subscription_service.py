@@ -6,8 +6,8 @@ import asyncio
 import logging
 from typing import Dict, Iterable
 
-from asyncua import ua, uamethod
-from asyncua.common import utils
+from asyncua import ua
+from asyncua.common import utils, uamethod
 from .address_space import AddressSpace
 from .internal_subscription import InternalSubscription
 

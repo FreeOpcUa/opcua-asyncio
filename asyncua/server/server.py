@@ -46,7 +46,7 @@ class Server:
     Create your own namespace and then populate your server address space
     using use the get_root() or get_objects() to get Node objects.
     and get_event_object() to fire events.
-    Then start server. See example_server.py
+    Then start server. See server-example.py
     All methods are threadsafe
 
     If you need more flexibility you call directly the Ua Service methods
@@ -75,7 +75,6 @@ class Server:
 
     def __init__(self, iserver: InternalServer = None, loop: asyncio.AbstractEventLoop = None, user_manager=None):
         self.loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
-        _logger = logging.getLogger(__name__)
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
         self.product_uri = "urn:freeopcua.github.io:python:server"

@@ -6,8 +6,74 @@ import logging
 import re
 
 from asyncua import ua
+from asyncua import Node
+from asyncua.common.manage_nodes import create_encoding, create_data_type
 
 logger = logging.getLogger(__name__)
+
+
+def new_struct_field(name, dtype, array=False, optional=False, description=""):
+    """
+    simple way to create a StructureField
+    """
+    field = ua.StructureField()
+    field.Name = name
+    field.IsOptional = optional
+    if description:
+        field.Description = ua.LocalizedText(text=description)
+    else:
+        field.Description = ua.LocalizedText(text=name)
+    if isinstance(dtype, ua.VariantType):
+        field.DataType = ua.NodeId(dtype.value, 0)
+    elif isinstance(dtype, ua.NodeId):
+        field.DataType = dtype
+    elif isinstance(dtype, Node):
+        field.DataType = dtype.nodeid
+    else:
+        raise ValueError(f"Datatype of a field must be a NodeId, not {dtype} of type {type(dtype)}")
+    if array:
+        field.ValueRank = ua.ValueRank.OneOrMoreDimensions
+        field.ArrayDimensions = [1]
+    return field
+
+
+async def new_struct(server, idx, name, fields):
+    """
+    simple way to create a new structure
+    """
+    dtype = await create_data_type(server.nodes.base_structure_type, idx, name)
+    enc = await create_encoding(dtype, idx, "Default Binary")
+    # TODO: add other encoding the day we support them
+
+    sdef = ua.StructureDefinition()
+    sdef.StructureType = ua.StructureType.Structure
+    for field in fields:
+        if field.IsOptional:
+            sdef.StructureType = ua.StructureType.StructureWithOptionalFields
+            break
+    sdef.Fields = fields
+    sdef.BaseDatatype = server.nodes.base_data_type.nodeid
+    sdef.DefaultEncodingId = enc.nodeid
+
+    await dtype.write_data_type_definition(sdef)
+    return dtype
+
+
+async def new_enum(server, idx, name, values):
+    edef = ua.EnumDefinition()
+    edef.Name = name
+    counter = 0
+    for val_name in values:
+        field = ua.EnumField()
+        field.DisplayName = ua.LocalizedText(text=val_name)
+        field.Name = val_name
+        field.Value = counter
+        counter += 1
+        edef.Fields.append(field)
+
+    dtype = await server.nodes.enum_data_type.add_data_type(idx, name)
+    await dtype.write_data_type_definition(edef)
+    return dtype
 
 
 def clean_name(name):
@@ -53,7 +119,7 @@ def make_structure_code(data_type, name, sdef):
     given a StructureDefinition object, generate Python code
     """
     if sdef.StructureType not in (ua.StructureType.Structure, ua.StructureType.StructureWithOptionalFields):
-        #if sdef.StructureType != ua.StructureType.Structure:
+        # if sdef.StructureType != ua.StructureType.Structure:
         raise NotImplementedError(f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {name} with DataTypdeDefinition {sdef}")
 
     code = f"""
@@ -81,10 +147,12 @@ class {name}:
 
     code += '    ua_types = [\n'
     if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-        code += f"        ('Encoding', 'Byte'),\n"
+        code += "        ('Encoding', 'Byte'),\n"
     uatypes = []
     for field in sdef.Fields:
-        prefix = 'ListOf' if field.ValueRank >= 1 else ''
+        prefix = ""
+        if field.ValueRank >= 1 or field.ArrayDimensions:
+            prefix = 'ListOf'
         if field.DataType.NamespaceIndex == 0 and field.DataType.Identifier in ua.ObjectIdNames:
             uatype = ua.ObjectIdNames[field.DataType.Identifier]
         elif field.DataType in ua.extension_objects_by_datatype:
@@ -92,8 +160,8 @@ class {name}:
         elif field.DataType in ua.enums_by_datatype:
             uatype = ua.enums_by_datatype[field.DataType].__name__
         else:
-            #FIXME: we are probably missing many custom tyes here based on builtin types
-            #maybe we can use ua_utils.get_base_data_type()
+            # FIXME: we are probably missing many custom tyes here based on builtin types
+            # maybe we can use ua_utils.get_base_data_type()
             raise RuntimeError(f"Unknown datatype for field: {field} in structure:{name}, please report")
         if field.ValueRank >= 1 and uatype == 'Char':
             uatype = 'String'
@@ -112,7 +180,7 @@ class {name}:
     if not sdef.Fields:
         code += "      pass"
     if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-        code += f"        self.Encoding = 0\n"
+        code += "        self.Encoding = 0\n"
     for field, uatype in uatypes:
         if field.ValueRank >= 1:
             default_value = "[]"
@@ -146,7 +214,6 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False):
     else:
         code = make_structure_code(data_type, name, sdef)
     logger.debug("Executing code: %s", code)
-    print("CODE", code)
     exec(code, env)
     return env
 
