@@ -133,7 +133,7 @@ class MonitoredItemService:
                     if ref.NodeId not in self._monitored_events:
                         self._monitored_events[ref.NodeId] = []
                     self._monitored_events[ref.NodeId].append(result.MonitoredItemId)
-                elif ref.ReferenceTypeId == ua.NumericNodeId(48):
+                elif ref.ReferenceTypeId == ua.NumericNodeId(48) and ref.IsForward is True:
                     find_events(ref.NodeId)
 
         find_events(params.ItemToMonitor.NodeId)
@@ -221,7 +221,7 @@ class MonitoredItemService:
         if hasattr(event, 'Retain'):
             if event.Retain:
                 self._events_with_retain[event.emitting_node] = event
-            else:
+            elif event.emitting_node in self._events_with_retain:
                 del self._events_with_retain[event.emitting_node]
         if event.emitting_node not in self._monitored_events:
             self.logger.debug("%s has NO subscription for events %s from node: %s", self, event, event.emitting_node)
@@ -247,9 +247,11 @@ class MonitoredItemService:
                 else:
                     self._mid_with_retain[mid] = [event]
             else:
-                self._mid_with_retain[mid].remove(event)
-                if not self._mid_with_retain[mid]:
-                    del self._mid_with_retain[mid]
+                if mid in self._mid_with_retain.keys():
+                    if event in self._mid_with_retain[mid]:
+                        self._mid_with_retain[mid].remove(event)
+                    if not self._mid_with_retain[mid]:
+                        del self._mid_with_retain[mid]
         mdata = self._monitored_items[mid]
         if not mdata.where_clause_evaluator.eval(event):
             self.logger.info("%s, %s, Event %s does not fit WhereClause, not generating event", self, mid, event)
