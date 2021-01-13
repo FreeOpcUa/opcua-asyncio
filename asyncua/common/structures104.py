@@ -214,7 +214,7 @@ class {struct_name}(ua.FrozenClass):
         else:
             default_value = get_default_value(uatype)
         code += f"        self.{fname} = {default_value}\n"
-        code += "        self._freeze = True\n"
+    code += "        self._freeze = True\n"
     return code
 
 
