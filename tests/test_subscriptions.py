@@ -5,8 +5,9 @@ from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
 from asynctest import CoroutineMock
 
+from asyncua.common.subscription import Subscription
 import asyncua
-from asyncua import ua
+from asyncua import ua, Client
 
 pytestmark = pytest.mark.asyncio
 
@@ -356,6 +357,28 @@ async def test_subscription_data_change_many(opc):
     await sub.delete()
     await opc.opc.delete_nodes([v1, v2])
 
+def test_get_keepalive_count(mocker):
+    """
+    Check the subscription parameter MaxKeepAliveCount value
+    with various publishInterval and session_timeout values.
+    """
+
+    c = Client("opc.tcp://fake")
+    # session timeout < publish_interval
+    publish_interval = 1000 # ms
+    c.session_timeout = 30000 # ms
+    keepalive_count = c.get_keepalive_count(publish_interval)
+    assert keepalive_count == 22
+    # session_timeout > publish_interval
+    publish_interval = 75000
+    c.session_timeout = 30000
+    keepalive_count = c.get_keepalive_count(publish_interval)
+    assert keepalive_count == 0
+    # RequestedPublishingInterval == 0
+    publish_interval = 0
+    keepalive_count = c.get_keepalive_count(publish_interval)
+    assert keepalive_count == 22
+
 
 async def test_subscribe_server_time(opc):
     """
@@ -461,11 +484,61 @@ async def test_subscribe_events_to_wrong_node(opc):
     await sub.delete()
     await opc.opc.delete_nodes([v])
 
-async def test_get_event_from_type_node_BaseEvent(opc):
+
+async def test_get_event_attributes_from_type_node_BaseEvent(opc):
     etype = opc.opc.get_node(ua.ObjectIds.BaseEventType)
     properties = await asyncua.common.events.get_event_properties_from_type_node(etype)
     for child in await etype.get_properties():
         assert child in properties
+
+
+async def test_get_event_attributes_from_type_node_AlarmConditionType(opc):
+    alarmType = opc.opc.get_node(ua.ObjectIds.AlarmConditionType)
+    ackType = opc.opc.get_node(ua.ObjectIds.AcknowledgeableConditionType)
+    condType = opc.opc.get_node(ua.ObjectIds.ConditionType)
+    baseType = opc.opc.get_node(ua.ObjectIds.BaseEventType)
+    allProperties = await asyncua.common.events.get_event_properties_from_type_node(alarmType)
+    propertiesToCheck = await alarmType.get_properties()
+    propertiesToCheck.extend(await ackType.get_properties())
+    propertiesToCheck.extend(await condType.get_properties())
+    propertiesToCheck.extend(await baseType.get_properties())
+    for child in propertiesToCheck:
+        assert child in allProperties
+    allVariables = await asyncua.common.events.get_event_variables_from_type_node(alarmType)
+    variablesToCheck = await alarmType.get_variables()
+    variablesToCheck.extend(await ackType.get_variables())
+    variablesToCheck.extend(await condType.get_variables())
+    variablesToCheck.extend(await baseType.get_variables())
+    for child in await alarmType.get_variables():
+        assert child in allVariables
+
+
+async def test_get_filter_from_ConditionType(opc):
+    condType = opc.opc.get_node(ua.ObjectIds.ConditionType)
+    baseType = opc.opc.get_node(ua.ObjectIds.BaseEventType)
+    properties = await baseType.get_properties()
+    properties.extend(await condType.get_properties())
+    variables = await baseType.get_variables()
+    variables.extend(await condType.get_variables())
+    subproperties = []
+    for var in variables:
+        subproperties.extend(await var.get_properties())
+    evfilter = await asyncua.common.events.get_filter_from_event_type([condType])
+    # Check number of elements in select clause
+    assert len(evfilter.SelectClauses) == (len(properties) + len(variables) + len(subproperties))
+    # Check browse path variable with property
+    browsePathList = [o.BrowsePath for o in evfilter.SelectClauses if o.BrowsePath]
+    browsePathEnabledState = [ua.uatypes.QualifiedName("EnabledState")]
+    browsePathEnabledStateId = [ua.uatypes.QualifiedName("EnabledState"), ua.uatypes.QualifiedName("Id")]
+    assert browsePathEnabledState in browsePathList
+    assert browsePathEnabledStateId in browsePathList
+    # Check some subtypes in where clause
+    alarmType = opc.opc.get_node(ua.ObjectIds.AlarmConditionType)
+    systemType = opc.opc.get_node(ua.ObjectIds.SystemOffNormalAlarmType)
+    filterOperands = evfilter.WhereClause.Elements[0].FilterOperands
+    operandNodeIds = [f.Value.Value for f in filterOperands if type(f) is ua.uaprotocol_auto.LiteralOperand]
+    assert alarmType.nodeid in operandNodeIds
+    assert systemType.nodeid in operandNodeIds
 
 
 async def test_get_event_from_type_node_CustomEvent(opc):
@@ -572,6 +645,62 @@ async def test_events_CustomEvent(opc):
     assert tid == ev.Time
     assert propertynum == ev.PropertyNum
     assert propertystring == ev.PropertyString
+    await sub.unsubscribe(handle)
+    await sub.delete()
+    await opc.opc.delete_nodes([etype])
+
+
+async def test_events_CustomEvent_CustomFilter(opc):
+    etype = await opc.server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.ProgramTransitionAuditEventType,
+                                                     [('NodeId', ua.VariantType.NodeId),
+                                                      ('PropertyString', ua.VariantType.String)])
+    # Create Custom Event filter including AttributeId.NodeId
+    efilter = ua.EventFilter()
+    browsePathes = [[ua.uatypes.QualifiedName("PropertyString", 2)], 
+                    [ua.uatypes.QualifiedName("Transition"), ua.uatypes.QualifiedName("Id")],
+                    [ua.uatypes.QualifiedName("Message")],
+                    [ua.uatypes.QualifiedName("EventType")]]
+    # SelectClause
+    for bp in browsePathes:
+        op = ua.SimpleAttributeOperand()
+        op.AttributeId = ua.AttributeIds.Value
+        op.BrowsePath = bp
+        efilter.SelectClauses.append(op) 
+    op = ua.SimpleAttributeOperand()  # For NodeId
+    op.AttributeId = ua.AttributeIds.NodeId
+    op.TypeDefinitionId = ua.NodeId(ua.ObjectIds.BaseEventType) 
+    efilter.SelectClauses.append(op) 
+    # WhereClause
+    el = ua.ContentFilterElement()  
+    el.FilterOperator = ua.FilterOperator.OfType
+    op = ua.LiteralOperand()
+    op.Value = ua.Variant(etype.nodeid) # Define type
+    el.FilterOperands.append(op)
+    efilter.WhereClause.Elements.append(el)
+    # Create Subscription
+    myhandler = MySubHandler()
+    sub = await opc.opc.create_subscription(100, myhandler)
+    handle = await sub.subscribe_events(evtypes=etype, evfilter=efilter)
+    # Create Custom Event
+    evgen = await opc.server.get_event_generator(etype)
+    propertystring = "This is my test"
+    msg = "this is my msg "
+    myNodeId = ua.NodeId(8)
+    transId = ua.NodeId(99)
+    evgen.event.PropertyString = propertystring
+    evgen.event.Message = ua.LocalizedText(msg)
+    evgen.event.NodeId = myNodeId
+    setattr(evgen.event, "Transition/Id", transId)
+    # Fire Custom Event
+    await evgen.trigger()
+    ev = await myhandler.result()
+    # Perform tests
+    assert ev is not None  # we did not receive event
+    assert etype.nodeid == ev.EventType
+    assert msg == ev.Message.Text
+    assert propertystring == ev.PropertyString
+    assert myNodeId == ev.NodeId
+    assert transId == getattr(ev, "Transition/Id")
     await sub.unsubscribe(handle)
     await sub.delete()
     await opc.opc.delete_nodes([etype])
@@ -732,3 +861,62 @@ async def test_internal_server_subscription(opc):
     # Check that the results are not left un-acknowledged on internal Server Subscriptions.
     assert len(internal_sub._not_acknowledged_results) == 0
     await opc.opc.delete_nodes([sub_obj])
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_maxkeepalive_count(opc, mocker):
+    sub_handler = MySubHandler()
+    client, server = opc
+
+    period = 1
+    max_keepalive_count = client.get_keepalive_count(period)
+    mock_period = 500
+    mock_max_keepalive_count = client.get_keepalive_count(mock_period)
+
+    mock_response = ua.CreateSubscriptionResult(
+        SubscriptionId=78,
+        RevisedPublishingInterval=mock_period,
+        RevisedLifetimeCount=10000,
+        RevisedMaxKeepAliveCount=2700
+    )
+    mock_create_subscription = mocker.patch.object(
+        client.uaclient,
+        "create_subscription",
+        new=CoroutineMock(return_value=mock_response)
+    )
+    mock_update_subscription = mocker.patch.object(
+        client.uaclient,
+        "update_subscription",
+        new=CoroutineMock()
+    )
+
+    sub = await client.create_subscription(period, sub_handler)
+    assert sub.parameters.RequestedMaxKeepAliveCount == mock_max_keepalive_count
+    assert mock_max_keepalive_count != max_keepalive_count
+    # mock point to the object at its finale state,
+    # here the subscription params have already been updated
+    mock_create_subscription.assert_awaited_with(
+        ua.CreateSubscriptionParameters(
+            RequestedPublishingInterval=mock_period,
+            RequestedLifetimeCount=10000,
+            RequestedMaxKeepAliveCount=mock_max_keepalive_count,
+            MaxNotificationsPerPublish=10000,
+            PublishingEnabled=True,
+            Priority=0
+        ),
+        callback=mocker.ANY
+    )
+    mock_update_subscription.assert_awaited_with(
+        ua.ModifySubscriptionParameters(
+            SubscriptionId=78,
+            RequestedPublishingInterval=mock_period,
+            RequestedLifetimeCount=10000,
+            RequestedMaxKeepAliveCount=mock_max_keepalive_count,
+            MaxNotificationsPerPublish=10000
+        )
+    )
+
+    # we don't update when sub params == revised params
+    mock_update_subscription.reset_mock()
+    mock_create_subscription.reset_mock()
+    sub = await client.create_subscription(mock_period, sub_handler)
+    mock_update_subscription.assert_not_called()

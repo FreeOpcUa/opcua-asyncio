@@ -261,6 +261,7 @@ async def _create_variable(server, parentnodeid, nodeid, qname, var, datatype=No
     attrs.Value = var
     if not isinstance(var.Value, (list, tuple)):
         attrs.ValueRank = ua.ValueRank.Scalar
+        attrs.ArrayDimensions = None
     else:
         if var.Dimensions:
             attrs.ValueRank = len(var.Dimensions)
@@ -330,7 +331,19 @@ async def create_data_type(parent, nodeid, bname, description=None):
     addnode.NodeAttributes = attrs
     results = await parent.server.add_nodes([addnode])
     results[0].StatusCode.check()
-    return make_node(parent.server, results[0].AddedNodeId)
+
+    new_node_id = results[0].AddedNodeId
+
+    # add reverse_reference
+    aitem = ua.AddReferencesItem()
+    aitem.SourceNodeId = new_node_id
+    aitem.TargetNodeId = parent.nodeid
+    aitem.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasSubtype)
+    aitem.IsForward = False
+    params = [aitem]
+    results = await parent.server.add_references(params)
+
+    return make_node(parent.server, new_node_id)
 
 
 async def create_encoding(parent, nodeid, bname):
@@ -340,6 +353,8 @@ async def create_encoding(parent, nodeid, bname):
     or namespace index, name
     """
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
+    if qname.NamespaceIndex != 0:
+        raise ua.UaError("Encoding QualigiedName index must be 0")
     return make_node(parent.server, await _create_encoding(parent.server, parent.nodeid, nodeid, qname))
 
 
@@ -384,7 +399,7 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
     if inputs:
         await create_property(
             method,
-            ua.NodeId(namespaceidx=method.nodeid.NamespaceIndex),
+            ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex),
             ua.QualifiedName("InputArguments", 0),
             [_vtype_to_argument(vtype) for vtype in inputs],
             varianttype=ua.VariantType.ExtensionObject,
@@ -393,7 +408,7 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
     if outputs:
         await create_property(
             method,
-            ua.NodeId(namespaceidx=method.nodeid.NamespaceIndex),
+            ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex),
             ua.QualifiedName("OutputArguments", 0),
             [_vtype_to_argument(vtype) for vtype in outputs],
             varianttype=ua.VariantType.ExtensionObject,
@@ -408,8 +423,12 @@ def _vtype_to_argument(vtype):
     if isinstance(vtype, ua.Argument):
         return vtype
     arg = ua.Argument()
-    if isinstance(vtype, ua.VariantType):
+    if hasattr(vtype, "data_type"):
+        arg.DataType = vtype.data_type
+    elif isinstance(vtype, ua.VariantType):
         arg.DataType = ua.NodeId(vtype.value)
+    elif hasattr(ua.VariantType, vtype.__name__):
+        arg.DataType = ua.NodeId(ua.VariantType[vtype.__name__].value)
     else:
         arg.DataType = ua.NodeId(vtype)
     return arg

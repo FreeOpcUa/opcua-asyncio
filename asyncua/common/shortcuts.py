@@ -2,7 +2,7 @@ from ..ua import ObjectIds
 from .node import Node
 
 
-class Shortcuts(object):
+class Shortcuts:
     """
     This object contains Node objects to some commonly used nodes
     """
@@ -10,7 +10,6 @@ class Shortcuts(object):
         self.root = Node(server, ObjectIds.RootFolder)
         self.objects = Node(server, ObjectIds.ObjectsFolder)
         self.server = Node(server, ObjectIds.Server)
-        self.types = Node(server, ObjectIds.TypesFolder)
         self.base_object_type = Node(server, ObjectIds.BaseObjectType)
         self.base_data_type = Node(server, ObjectIds.BaseDataType)
         self.base_event_type = Node(server, ObjectIds.BaseEventType)

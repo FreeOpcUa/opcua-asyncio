@@ -17,7 +17,7 @@ class InternalSubscription:
     Runs the publication loop and stores the Publication Results until they are acknowledged.
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
+    def __init__(self, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
                  callback=None, no_acks=False):
         """
         :param loop: Event loop instance
@@ -27,7 +27,6 @@ class InternalSubscription:
         :param no_acks: If true no acknowledging will be expected (for server internal subscriptions)
         """
         self.logger = logging.getLogger(__name__)
-        self.loop: asyncio.AbstractEventLoop = loop
         self.data: ua.CreateSubscriptionResult = data
         self.pub_result_callback = callback
         self.monitored_item_srv = MonitoredItemService(self, aspace)
@@ -48,7 +47,7 @@ class InternalSubscription:
     async def start(self):
         self.logger.debug("starting subscription %s", self.data.SubscriptionId)
         if self.data.RevisedPublishingInterval > 0.0:
-            self._task = self.loop.create_task(self._subscription_loop())
+            self._task = asyncio.create_task(self._subscription_loop())
 
     async def stop(self):
         if self._task:

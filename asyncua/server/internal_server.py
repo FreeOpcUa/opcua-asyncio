@@ -43,8 +43,7 @@ class InternalServer:
     There is one `InternalServer` for every `Server`.
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, user_manager: UserManager = None):
-        self.loop: asyncio.AbstractEventLoop = loop
+    def __init__(self, user_manager: UserManager = None):
         self.logger = logging.getLogger(__name__)
         self.callback_service = CallbackService()
         self.endpoints = []
@@ -60,16 +59,19 @@ class InternalServer:
         self.method_service = MethodService(self.aspace)
         self.node_mgt_service = NodeManagementService(self.aspace)
         self.asyncio_transports = []
-        self.subscription_service: SubscriptionService = SubscriptionService(self.loop, self.aspace)
+        self.subscription_service: SubscriptionService = SubscriptionService(self.aspace)
         self.history_manager = HistoryManager(self)
         if user_manager is None:
-            logger.warning("No user manager specified. Using default permissive manager instead.")
+            logger.info("No user manager specified. Using default permissive manager instead.")
             user_manager = PermissiveUserManager()
         self.user_manager = user_manager
         # create a session to use on server side
-        self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal",
-                                        user=User(role=UserRole.Admin))
+        self.isession = InternalSession(
+            self, self.aspace, self.subscription_service, "Internal", user=User(role=UserRole.Admin)
+        )
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
+        self.time_task = None
+        self._time_task_stop = False
 
     async def init(self, shelffile=None):
         await self.load_standard_address_space(shelffile)
@@ -86,34 +88,40 @@ class InternalServer:
         await ns_node.write_value(uries)
 
         params = ua.WriteParameters()
-        for nodeid in (ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadData,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadEvents,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerWrite,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryUpdateData,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryUpdateEvents,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerMethodCall,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerBrowse,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRegisterNodes,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerTranslateBrowsePathsToNodeIds,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerNodeManagement,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxMonitoredItemsPerCall):
+        for nodeid in (
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadData,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadEvents,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerWrite,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryUpdateData,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryUpdateEvents,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerMethodCall,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerBrowse,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRegisterNodes,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerTranslateBrowsePathsToNodeIds,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerNodeManagement,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxMonitoredItemsPerCall,
+        ):
             attr = ua.WriteValue()
             attr.NodeId = ua.NodeId(nodeid)
             attr.AttributeId = ua.AttributeIds.Value
-            attr.Value = ua.DataValue(ua.Variant(10000, ua.VariantType.UInt32), ua.StatusCode(ua.StatusCodes.Good))
-            attr.Value.ServerTimestamp = datetime.utcnow()
+            attr.Value = ua.DataValue(
+                ua.Variant(10000, ua.VariantType.UInt32),
+                StatusCode_=ua.StatusCode(ua.StatusCodes.Good),
+                ServerTimestamp=datetime.utcnow(),
+            )
             params.NodesToWrite.append(attr)
         result = await self.isession.write(params)
         result[0].check()
 
     async def load_standard_address_space(self, shelf_file=None):
         if shelf_file:
-            is_file = (await self.loop.run_in_executor(None, os.path.isfile, shelf_file)
-                       or await self.loop.run_in_executor(None, os.path.isfile, f'{shelf_file}.db'))
+            is_file = await asyncio.get_running_loop().run_in_executor(
+                None, os.path.isfile, shelf_file
+            ) or await asyncio.get_running_loop().run_in_executor(None, os.path.isfile, f'{shelf_file}.db')
             if is_file:
                 # import address space from shelf
-                await self.loop.run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
+                await asyncio.get_running_loop().run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
                 return
         # import address space from code generated from xml
         await standard_address_space.fill_address_space(self.node_mgt_service)
@@ -122,7 +130,7 @@ class InternalServer:
         # importer.import_xml("/path/to/python-asyncua/schemas/Opc.Ua.NodeSet2.xml", self)
         if shelf_file:
             # path was supplied, but file doesn't exist - create one for next start up
-            await self.loop.run_in_executor(None, self.aspace.make_aspace_shelf, shelf_file)
+            await asyncio.get_running_loop().run_in_executor(None, self.aspace.make_aspace_shelf, shelf_file)
 
     async def _address_space_fixes(self) -> Coroutine:
         """
@@ -162,21 +170,26 @@ class InternalServer:
         self.logger.info('starting internal server')
         for edp in self.endpoints:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(ua.ServerState.Running,
-                                                                                                 ua.VariantType.Int32)
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(
+            ua.ServerState.Running, ua.VariantType.Int32
+        )
         await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.utcnow())
         if not self.disabled_clock:
-            self._set_current_time()
+            self.time_task = asyncio.create_task(self._set_current_time_loop())
 
     async def stop(self):
         self.logger.info('stopping internal server')
+        if self.time_task:
+            self._time_task_stop = True
+            await self.time_task
         self.method_service.stop()
         await self.isession.close_session()
         await self.history_manager.stop()
 
-    def _set_current_time(self):
-        self.loop.create_task(self.current_time_node.write_value(datetime.utcnow()))
-        self.loop.call_later(1, self._set_current_time)
+    async def _set_current_time_loop(self):
+        while not self._time_task_stop:
+            await self.current_time_node.write_value(datetime.utcnow())
+            await asyncio.sleep(1)
 
     def get_new_channel_id(self):
         self._channel_id_counter += 1
@@ -207,7 +220,7 @@ class InternalServer:
             serv_uri = serv.Server.ApplicationUri.split(':')
             for uri in params.ServerUris:
                 uri = uri.split(':')
-                if serv_uri[:len(uri)] == uri:
+                if serv_uri[: len(uri)] == uri:
                     servers.append(serv.Server)
                     break
         return servers
@@ -286,6 +299,12 @@ class InternalServer:
         """
         await self.aspace.write_attribute_value(nodeid, attr, datavalue)
 
+    def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
+        """
+        directly read datavalue of the Attribute
+        """
+        return self.aspace.read_attribute_value(nodeid, attr)  
+
     def set_user_manager(self, user_manager):
         """
         set up a function which that will check for authorize users. Input function takes username
@@ -322,7 +341,7 @@ class InternalServer:
                     # raise  # Should I raise a significant exception?
                     return user_name, password
                 length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
-                password = raw_pw[4:4 + length]
+                password = raw_pw[4 : 4 + length]
                 password = password.decode('utf-8')
             except Exception:
                 self.logger.exception("Unable to decrypt password")

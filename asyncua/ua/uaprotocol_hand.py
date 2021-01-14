@@ -1,63 +1,55 @@
 import struct
+from dataclasses import dataclass, field
 
 from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
 from asyncua.common import utils
-from asyncua.ua.uatypes import AccessLevel, FrozenClass
+from asyncua.ua.uatypes import AccessLevel
 
 OPC_TCP_SCHEME = 'opc.tcp'
 
 
-class Hello(uatypes.FrozenClass):
-    ua_types = (
-        ('ProtocolVersion', 'UInt32'),
-        ('ReceiveBufferSize', 'UInt32'),
-        ('SendBufferSize', 'UInt32'),
-        ('MaxMessageSize', 'UInt32'),
-        ('MaxChunkCount', 'UInt32'),
-        ('EndpointUrl', 'String'),
-    )
-
-    def __init__(self):
-        self.ProtocolVersion = 0
-        # the following values couldbe set to 0 (meaning no limits)
-        # unfortunaltely many servers do not support it
-        # even newer version of prosys are broken
-        # so we set then to a high value known to work most places
-        self.ReceiveBufferSize = 2**31 - 1
-        self.SendBufferSize = 2**31 - 1
-        self.MaxMessageSize = 2**31 - 1
-        self.MaxChunkCount = 2**31 - 1
-        self.EndpointUrl = ""
-        self._freeze = True
+@dataclass
+class Hello:
+    ProtocolVersion: uatypes.UInt32 = 0
+    # the following values couldbe set to 0 (meaning no limits)
+    # unfortunaltely many servers do not support it
+    # even newer version of prosys are broken
+    # so we set then to a high value known to work most places
+    ReceiveBufferSize: uatypes.UInt32 = 2**31 - 1
+    SendBufferSize: uatypes.UInt32 = 2**31 - 1
+    MaxMessageSize: uatypes.UInt32 = 2**31 - 1
+    MaxChunkCount: uatypes.UInt32 = 2**31 - 1
+    EndpointUrl: uatypes.String = ""
 
 
+@dataclass
 class MessageType:
-    Invalid = b'INV'  # FIXME: check value
-    Hello = b'HEL'
-    Acknowledge = b'ACK'
-    Error = b'ERR'
-    SecureOpen = b'OPN'
-    SecureClose = b'CLO'
-    SecureMessage = b'MSG'
+    Invalid: bytes = b'INV'  # FIXME: check value
+    Hello: bytes = b'HEL'
+    Acknowledge: bytes = b'ACK'
+    Error: bytes = b'ERR'
+    SecureOpen: bytes = b'OPN'
+    SecureClose: bytes = b'CLO'
+    SecureMessage: bytes = b'MSG'
 
 
+@dataclass
 class ChunkType:
-    Invalid = b'0'  # FIXME check
-    Single = b'F'
-    Intermediate = b'C'
-    Abort = b'A'  # when an error occurred and the Message is aborted (body is ErrorMessage)
+    Invalid: bytes = b'0'  # FIXME check
+    Single: bytes = b'F'
+    Intermediate: bytes = b'C'
+    Abort: bytes = b'A'  # when an error occurred and the Message is aborted (body is ErrorMessage)
 
 
-class Header(uatypes.FrozenClass):
-    def __init__(self, msgType=None, chunkType=None, channelid=0):
-        self.MessageType = msgType
-        self.ChunkType = chunkType
-        self.ChannelId = channelid
-        self.body_size = 0
-        self.packet_size = 0
-        self.header_size = 8
-        self._freeze = True
+@dataclass
+class Header:
+    MessageType: MessageType = None
+    ChunkType: ChunkType = None
+    ChannelId: int = 0
+    body_size = 0
+    packet_size = 0
+    header_size = 8
 
     def add_size(self, size):
         self.body_size += size
@@ -66,60 +58,27 @@ class Header(uatypes.FrozenClass):
     def max_size():
         return struct.calcsize("<3scII")
 
-    def __str__(self):
-        return f'Header(type:{self.MessageType}, chunk_type:{self.ChunkType}, body_size:{self.body_size},' \
-               f' channel:{self.ChannelId})'
 
-    __repr__ = __str__
-
-
-class ErrorMessage(uatypes.FrozenClass):
-    ua_types = (
-        ('Error', 'StatusCode'),
-        ('Reason', 'String'),
-    )
-
-    def __init__(self):
-        self.Error = uatypes.StatusCode()
-        self.Reason = ""
-        self._freeze = True
-
-    def __str__(self):
-        return f'MessageAbort(error:{self.Error}, reason:{self.Reason})'
-
-    __repr__ = __str__
+@dataclass
+class ErrorMessage:
+    Error: uatypes.StatusCode = uatypes.StatusCode()
+    Reason: uatypes.String = ""
 
 
-class Acknowledge(uatypes.FrozenClass):
-    ua_types = [
-        ('ProtocolVersion', 'UInt32'),
-        ('ReceiveBufferSize', 'UInt32'),
-        ('SendBufferSize', 'UInt32'),
-        ('MaxMessageSize', 'UInt32'),
-        ('MaxChunkCount', 'UInt32'),
-    ]
-
-    def __init__(self):
-        self.ProtocolVersion = 0
-        self.ReceiveBufferSize = 65536
-        self.SendBufferSize = 65536
-        self.MaxMessageSize = 0  # No limits
-        self.MaxChunkCount = 0  # No limits
-        self._freeze = True
+@dataclass
+class Acknowledge:
+    ProtocolVersion: uatypes.UInt32 = 0
+    ReceiveBufferSize: uatypes.UInt32 = 65536
+    SendBufferSize: uatypes.UInt32 = 65536
+    MaxMessageSize: uatypes.UInt32 = 0  # No limits
+    MaxChunkCount: uatypes.UInt32 = 0  # No limits
 
 
-class AsymmetricAlgorithmHeader(uatypes.FrozenClass):
-    ua_types = [
-        ('SecurityPolicyURI', 'String'),
-        ('SenderCertificate', 'ByteString'),
-        ('ReceiverCertificateThumbPrint', 'ByteString'),
-    ]
-
-    def __init__(self):
-        self.SecurityPolicyURI = 'http://opcfoundation.org/UA/SecurityPolicy#None'
-        self.SenderCertificate = None
-        self.ReceiverCertificateThumbPrint = None
-        self._freeze = True
+@dataclass
+class AsymmetricAlgorithmHeader:
+    SecurityPolicyURI: uatypes.String = 'http://opcfoundation.org/UA/SecurityPolicy#None'
+    SenderCertificate: uatypes.ByteString = None
+    ReceiverCertificateThumbPrint: uatypes.ByteString = None
 
     def __str__(self):
         size1 = len(self.SenderCertificate) if self.SenderCertificate is not None else None
@@ -130,44 +89,23 @@ class AsymmetricAlgorithmHeader(uatypes.FrozenClass):
     __repr__ = __str__
 
 
-class SymmetricAlgorithmHeader(uatypes.FrozenClass):
-    ua_types = [
-        ('TokenId', 'UInt32'),
-    ]
-
-    def __init__(self):
-        self.TokenId = 0
-        self._freeze = True
+@dataclass
+class SymmetricAlgorithmHeader:
+    TokenId: uatypes.UInt32 = 0
 
     @staticmethod
     def max_size():
         return struct.calcsize('<I')
 
-    def __str__(self):
-        return f'{self.__class__.__name__}(TokenId:{self.TokenId} )'
 
-    __repr__ = __str__
-
-
-class SequenceHeader(uatypes.FrozenClass):
-    ua_types = [
-        ('SequenceNumber', 'UInt32'),
-        ('RequestId', 'UInt32'),
-    ]
-
-    def __init__(self):
-        self.SequenceNumber = None
-        self.RequestId = None
-        self._freeze = True
+@dataclass
+class SequenceHeader:
+    SequenceNumber: uatypes.UInt32 = None
+    RequestId: uatypes.UInt32 = None
 
     @staticmethod
     def max_size():
         return struct.calcsize('<II')
-
-    def __str__(self):
-        return f'{self.__class__.__name__}(SequenceNumber:{self.SequenceNumber}, RequestId:{self.RequestId} )'
-
-    __repr__ = __str__
 
 
 class CryptographyNone:
@@ -230,9 +168,9 @@ class SecurityPolicy:
     Base class for security policy
     """
     URI = 'http://opcfoundation.org/UA/SecurityPolicy#None'
-    AsymmetricSignatureURI = ''
-    signature_key_size = 0
-    symmetric_key_size = 0
+    AsymmetricSignatureURI: str = ''
+    signature_key_size: int = 0
+    symmetric_key_size: int = 0
 
     def __init__(self, permissions=None):
         self.asymmetric_cryptography = CryptographyNone()
@@ -246,7 +184,7 @@ class SecurityPolicy:
     def make_local_symmetric_key(self, secret, seed):
         pass
 
-    def make_remote_symmetric_key(self, secret, seed):
+    def make_remote_symmetric_key(self, secret, seed, lifetime):
         pass
 
 
@@ -295,57 +233,56 @@ class Message:
 ana = auto.NodeAttributesMask
 
 
+@dataclass
 class ObjectAttributes(auto.ObjectAttributes):
-    def __init__(self):
-        auto.ObjectAttributes.__init__(self)
+    def __post_init__(self):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.EventNotifier
 
 
+@dataclass
 class ObjectTypeAttributes(auto.ObjectTypeAttributes):
-    def __init__(self):
-        auto.ObjectTypeAttributes.__init__(self)
+    def __post_init__(self):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract
 
 
+@dataclass
 class VariableAttributes(auto.VariableAttributes):
-    def __init__(self):
-        auto.VariableAttributes.__init__(self)
+    def __post_init__(self):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Value | ana.DataType | ana.ValueRank | ana.ArrayDimensions | ana.AccessLevel | ana.UserAccessLevel | ana.MinimumSamplingInterval | ana.Historizing
         self.Historizing = False
         self.AccessLevel = AccessLevel.CurrentRead.mask
         self.UserAccessLevel = AccessLevel.CurrentRead.mask
+        self.ArrayDimensions = None
 
 
+@dataclass
 class VariableTypeAttributes(auto.VariableTypeAttributes):
-    def __init__(self):
-        auto.VariableTypeAttributes.__init__(self)
+    def __post_init__(self):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Value | ana.DataType | ana.ValueRank | ana.ArrayDimensions | ana.IsAbstract
 
 
+@dataclass
 class MethodAttributes(auto.MethodAttributes):
-    def __init__(self):
-        auto.MethodAttributes.__init__(self)
+    def __post_init__(self):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Executable | ana.UserExecutable
 
 
+@dataclass
 class ReferenceTypeAttributes(auto.ReferenceTypeAttributes):
-    def __init__(self):
-        auto.ReferenceTypeAttributes.__init__(self)
+    def __post_init__(self):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract | ana.Symmetric | ana.InverseName
 
 
 # FIXME: changes in that class donnot seem to be part of spec as of 1.04
 #not sure what the spec expect, maybe DataTypeDefinition must be set using an extra call...
 # maybe it will be part of spec in 1.05??? no ideas
+@dataclass
 class DataTypeAttributes(auto.DataTypeAttributes):
-    auto.DataTypeAttributes.ua_types.append(('DataTypeDefinition', 'ExtensionObject'))
+    DataTypeDefinition: uatypes.ExtensionObject = field(default_factory=auto.ExtensionObject)
 
-    def __init__(self):
-        auto.DataTypeAttributes.__init__(self)
+    def __post_init__(self):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract | ana.DataTypeDefinition
-        self._freeze = False
-        self.DataTypeDefinition = auto.ExtensionObject()
-        self._freeze = True
+
 
 # we now need to register DataTypeAttributes since we added a new attritbute
 nid = uatypes.FourByteNodeId(auto.ObjectIds.DataTypeAttributes_Encoding_DefaultBinary)
@@ -353,37 +290,24 @@ uatypes.extension_objects_by_typeid[nid] = DataTypeAttributes
 uatypes.extension_object_typeids['DataTypeAttributes'] = nid
 
 
+@dataclass
 class ViewAttributes(auto.ViewAttributes):
-    def __init__(self):
-        auto.ViewAttributes.__init__(self)
+    def __post_init__(self):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.ContainsNoLoops | ana.EventNotifier
 
 
+@dataclass
 class Argument(auto.Argument):
-    def __init__(self):
-        auto.Argument.__init__(self)
+    def __post_init__(self):
         self.ValueRank = -2
 
 
-class XmlElement(FrozenClass):
+@dataclass
+class XmlElement:
     """
     An XML element encoded as a UTF-8 string.
     :ivar Value:
     :vartype Value: String
     """
 
-    ua_types = [
-        ('Value', 'String'),
-    ]
-
-    def __init__(self, xml=""):
-        self.Value = xml
-        self._freeze = True
-
-    def __str__(self):
-        return f'XmlElement(Value:{self.Value})'
-
-    __repr__ = __str__
-
-    def __eq__(self, el):
-        return isinstance(el, XmlElement) and self.Value == el.Value
+    Value: uatypes.String = ""

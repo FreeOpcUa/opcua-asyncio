@@ -4,7 +4,6 @@ import sqlite3
 from typing import Iterable
 from datetime import timedelta
 from datetime import datetime
-from asyncio import get_event_loop
 
 from asyncua import ua
 from ..ua.ua_binary import variant_from_binary, variant_to_binary
@@ -21,16 +20,16 @@ class HistorySQLite(HistoryStorageInterface):
     note that PARSE_DECLTYPES is active so certain data types (such as datetime) will not be BLOBs
     """
 
-    def __init__(self, path="history.db", loop=None):
+    def __init__(self, path="history.db", max_history_data_response_size=10000):
+        self.max_history_data_response_size = max_history_data_response_size
         self.logger = logging.getLogger(__name__)
         self._datachanges_period = {}
         self._db_file = path
         self._event_fields = {}
         self._db: aiosqlite.Connection = None
-        self._loop = loop or get_event_loop()
 
     async def init(self):
-        self._db = await aiosqlite.connect(self._db_file, loop=self._loop, detect_types=sqlite3.PARSE_DECLTYPES)
+        self._db = await aiosqlite.connect(self._db_file, detect_types=sqlite3.PARSE_DECLTYPES)
 
     async def stop(self):
         await self._db.close()
@@ -42,13 +41,16 @@ class HistorySQLite(HistoryStorageInterface):
         # create a table for the node which will store attributes of the DataValue object
         # note: Value/VariantType TEXT is only for human reading, the actual data is stored in VariantBinary column
         try:
-            await self._db.execute(f'CREATE TABLE "{table}" (_Id INTEGER PRIMARY KEY NOT NULL,'
-                                   ' ServerTimestamp TIMESTAMP,'
-                                   ' SourceTimestamp TIMESTAMP,'
-                                   ' StatusCode INTEGER,'
-                                   ' Value TEXT,'
-                                   ' VariantType TEXT,'
-                                   ' VariantBinary BLOB)', None)
+            await self._db.execute(
+                f'CREATE TABLE "{table}" (_Id INTEGER PRIMARY KEY NOT NULL,'
+                ' ServerTimestamp TIMESTAMP,'
+                ' SourceTimestamp TIMESTAMP,'
+                ' StatusCode INTEGER,'
+                ' Value TEXT,'
+                ' VariantType TEXT,'
+                ' VariantBinary BLOB)',
+                None,
+            )
             await self._db.commit()
         except aiosqlite.Error as e:
             self.logger.info("Historizing SQL Table Creation Error for %s: %s", node_id, e)
@@ -64,14 +66,17 @@ class HistorySQLite(HistoryStorageInterface):
         table = self._get_table_name(node_id)
         # insert the data change into the database
         try:
-            await self._db.execute(f'INSERT INTO "{table}" VALUES (NULL, ?, ?, ?, ?, ?, ?)', (
-                datavalue.ServerTimestamp,
-                datavalue.SourceTimestamp,
-                datavalue.StatusCode.value,
-                str(datavalue.Value.Value),
-                datavalue.Value.VariantType.name,
-                sqlite3.Binary(variant_to_binary(datavalue.Value))
-            ))
+            await self._db.execute(
+                f'INSERT INTO "{table}" VALUES (NULL, ?, ?, ?, ?, ?, ?)',
+                (
+                    datavalue.ServerTimestamp,
+                    datavalue.SourceTimestamp,
+                    datavalue.StatusCode.value,
+                    str(datavalue.Value.Value),
+                    datavalue.Value.VariantType.name,
+                    sqlite3.Binary(variant_to_binary(datavalue.Value)),
+                ),
+            )
             await self._db.commit()
         except aiosqlite.Error as e:
             self.logger.error("Historizing SQL Insert Error for %s: %s", node_id, e)
@@ -85,7 +90,11 @@ class HistorySQLite(HistoryStorageInterface):
             # ensure that no more than count records are stored for the specified node
             await self.execute_sql_delete(
                 'SourceTimestamp = (SELECT CASE WHEN COUNT(*) > ? '
-                f'THEN MIN(SourceTimestamp) ELSE NULL END FROM "{table}")', (count,), table, node_id)
+                f'THEN MIN(SourceTimestamp) ELSE NULL END FROM "{table}")',
+                (count,),
+                table,
+                node_id,
+            )
 
     async def read_node_history(self, node_id, start, end, nb_values):
         table = self._get_table_name(node_id)
@@ -95,21 +104,27 @@ class HistorySQLite(HistoryStorageInterface):
         # select values from the database; recreate UA Variant from binary
         try:
             async with self._db.execute(
-                    f'SELECT * FROM "{table}" WHERE "SourceTimestamp" BETWEEN ? AND ? '
-                    f'ORDER BY "_Id" {order} LIMIT ?', (start_time, end_time, limit,)) as cursor:
+                f'SELECT * FROM "{table}" WHERE "SourceTimestamp" BETWEEN ? AND ? ' f'ORDER BY "_Id" {order} LIMIT ?',
+                (
+                    start_time,
+                    end_time,
+                    limit,
+                ),
+            ) as cursor:
                 async for row in cursor:
                     # rebuild the data value object
-                    dv = ua.DataValue(variant_from_binary(Buffer(row[6])))
-                    dv.ServerTimestamp = row[1]
-                    dv.SourceTimestamp = row[2]
-                    dv.StatusCode = ua.StatusCode(row[3])
+                    dv = ua.DataValue(
+                        variant_from_binary(Buffer(row[6])),
+                        ServerTimestamp=row[1],
+                        SourceTimestamp=row[2],
+                        StatusCode_=ua.StatusCode(row[3]),
+                    )
                     results.append(dv)
         except aiosqlite.Error as e:
             self.logger.error("Historizing SQL Read Error for %s: %s", node_id, e)
-        if nb_values:
-            if len(results) > nb_values:
-                cont = results[nb_values].SourceTimestamp
-            results = results[:nb_values]
+        if len(results) > self.max_history_data_response_size:
+            cont = results[self.max_history_data_response_size].SourceTimestamp
+        results = results[:self.max_history_data_response_size]
         return results, cont
 
     async def new_historized_event(self, source_id, evtypes, period, count=0):
@@ -126,7 +141,7 @@ class HistorySQLite(HistoryStorageInterface):
             await self._db.execute(
                 f'CREATE TABLE "{table}" '
                 f'(_Id INTEGER PRIMARY KEY NOT NULL, _Timestamp TIMESTAMP, _EventTypeName TEXT, {columns})',
-                None
+                None,
             )
             await self._db.commit()
         except aiosqlite.Error as e:
@@ -141,7 +156,7 @@ class HistorySQLite(HistoryStorageInterface):
             await self._db.execute(
                 f'INSERT INTO "{table}" ("_Id", "_Timestamp", "_EventTypeName", {columns}) '
                 f'VALUES (NULL, "{event.Time}", "{event_type}", {placeholders})',
-                evtup
+                evtup,
             )
             await self._db.commit()
         except aiosqlite.Error as e:
@@ -167,9 +182,10 @@ class HistorySQLite(HistoryStorageInterface):
         # select events from the database; SQL select clause is built from EventFilter and available fields
         try:
             async with self._db.execute(
-                    f'SELECT "_Timestamp", {clauses_str} FROM "{table}" '
-                    f'WHERE "_Timestamp" BETWEEN ? AND ? ORDER BY "_Id" {order} LIMIT ?',
-                    (start_time, end_time, limit)) as cursor:
+                f'SELECT "_Timestamp", {clauses_str} FROM "{table}" '
+                f'WHERE "_Timestamp" BETWEEN ? AND ? ORDER BY "_Id" {order} LIMIT ?',
+                (start_time, end_time, limit),
+            ) as cursor:
                 async for row in cursor:
                     fdict = {}
                     cont_timestamps.append(row[0])
@@ -181,10 +197,9 @@ class HistorySQLite(HistoryStorageInterface):
                     results.append(Event.from_field_dict(fdict))
         except aiosqlite.Error as e:
             self.logger.error("Historizing SQL Read Error events for node %s: %s", source_id, e)
-        if nb_values:
-            if len(results) > nb_values:  # start > ua.get_win_epoch() and
-                cont = cont_timestamps[nb_values]
-            results = results[:nb_values]
+        if len(results) > self.max_history_data_response_size:  # start > ua.get_win_epoch() and
+            cont = cont_timestamps[self.max_history_data_response_size]
+        results = results[:self.max_history_data_response_size]
         return results, cont
 
     def _get_table_name(self, node_id):
@@ -223,7 +238,7 @@ class HistorySQLite(HistoryStorageInterface):
             start_time = end.isoformat(" ")
             end_time = start.isoformat(" ")
         if nb_values:
-            limit = nb_values + 1  # add 1 to the number of values for retrieving a continuation point
+            limit = nb_values
         else:
             limit = -1  # in SQLite a LIMIT of -1 returns all results
         return start_time, end_time, order, limit
@@ -266,8 +281,9 @@ class HistorySQLite(HistoryStorageInterface):
                     name = select_clause.BrowsePath[0].Name
                     s_clauses.append(name)
             except AttributeError:
-                self.logger.warning("Historizing SQL OPC UA Select Clause Warning for node %s,"
-                                    " Clause: %s:", source_id, select_clause)
+                self.logger.warning(
+                    "Historizing SQL OPC UA Select Clause Warning for node %s," " Clause: %s:", source_id, select_clause
+                )
         # remove select clauses that the event type doesn't have; SQL will error because the column doesn't exist
         clauses = [x for x in s_clauses if x in self._event_fields[source_id]]
         return clauses, self._list_to_sql_str(clauses)

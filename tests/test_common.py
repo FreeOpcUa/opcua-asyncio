@@ -31,7 +31,7 @@ async def add_server_methods(srv):
     o = srv.nodes.objects
     await o.add_method(
         ua.NodeId("ServerMethod", 2), ua.QualifiedName('ServerMethod', 2),
-        func, [ua.VariantType.Int64], [ua.VariantType.Int64]
+        func, [ua.Int64], [ua.Int64]
     )
 
     @uamethod
@@ -58,7 +58,7 @@ async def add_server_methods(srv):
     o = srv.nodes.objects
     await o.add_method(
         ua.NodeId("ServerMethodArray2", 2), ua.QualifiedName('ServerMethodArray2', 2), func3,
-        [ua.VariantType.Int64], [ua.VariantType.Int64]
+        [ua.VariantType.Int64], [ua.Int64]
     )
 
     @uamethod
@@ -131,6 +131,22 @@ async def test_delete_nodes(opc):
     childs = await fold.get_children()
     assert var not in childs
     await opc.opc.delete_nodes([fold])
+
+
+async def test_add_node_using_builtin(opc):
+    obj = opc.opc.nodes.objects
+    fold = await obj.add_folder(2, "FolderBuiltin")
+    var = await fold.add_variable(2, "VarBuiltin", ua.UInt16(9))
+    dv = await var.read_data_value()
+    assert dv.Value.VariantType == ua.VariantType.UInt16
+    data_type = await var.read_data_type()
+    assert data_type.Identifier == ua.VariantType.UInt16.value == ua.ObjectIds.UInt16
+    assert data_type.NamespaceIndex == 0
+    await var.write_value(ua.UInt16(6))
+    dv = await var.read_data_value()
+    assert dv.Value.VariantType == ua.VariantType.UInt16
+    assert dv.Value.Value == 6
+    assert (await var.read_value()) == 6
 
 
 async def test_delete_nodes_with_inverse_references(opc):
@@ -439,7 +455,7 @@ async def test_utf8(opc):
 async def test_null_variable(opc):
     objects = opc.opc.nodes.objects
     var = await objects.add_variable(3, 'nullstring', "a string")
-    await var.write_value(None)
+    await var.write_value(ua.Variant(None, ua.VariantType.String))
     val = await var.read_value()
     assert val is None
     await var.write_value("")
@@ -538,7 +554,7 @@ async def test_add_exception(opc):
 
 async def test_negative_value(opc):
     o = opc.opc.nodes.objects
-    v = await o.add_variable(3, 'VariableNegativeValue', 4)
+    v = await o.add_variable(3, 'VariableNegativeValue', 4.0)
     await v.write_value(-4.54)
     assert -4.54 == await v.read_value()
     await opc.opc.delete_nodes([v])
@@ -564,7 +580,7 @@ async def test_bad_node(opc):
 
 async def test_value(opc):
     o = opc.opc.nodes.objects
-    var = ua.Variant(1.98, ua.VariantType.Double)
+    var = ua.Variant(ua.Double(1.98))
     v = await o.add_variable(3, 'VariableValue', var)
     assert 1.98 == await v.read_value()
     dvar = ua.DataValue(var)
@@ -1124,12 +1140,12 @@ async def test_duplicated_browsenames_different_ns(opc):
         return
 
 
-async def test_custom_enum(opc):
+async def test_custom_enum_x(opc):
     idx = 4
     await new_enum(opc.opc, idx, "MyCustEnum", [
         "titi",
         "toto",
-        "tutu",
+        "None",
     ])
 
     await opc.opc.load_data_type_definitions()
@@ -1179,7 +1195,7 @@ async def test_custom_struct_with_optional_fields(opc):
 async def test_custom_struct_of_struct(opc):
     idx = 4
 
-    dtype = await new_struct(opc.opc, idx, "MySubStruct2", [
+    dtype, encs = await new_struct(opc.opc, idx, "MySubStruct2", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32", ua.VariantType.UInt32),
     ])
@@ -1194,7 +1210,7 @@ async def test_custom_struct_of_struct(opc):
     mystruct = ua.MyMotherStruct2()
     mystruct.MySubStruct = ua.MySubStruct2()
     mystruct.MySubStruct.MyUInt32 = 78
-    var = await opc.opc.nodes.objects.add_variable(idx, "my_mother_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_mother_struct", mystruct)
     val = await var.read_value()
     assert val.MySubStruct.MyUInt32 == 78
 
@@ -1202,7 +1218,7 @@ async def test_custom_struct_of_struct(opc):
 async def test_custom_list_of_struct(opc):
     idx = 4
 
-    dtype = await new_struct(opc.opc, idx, "MySubStruct3", [
+    dtype, encs = await new_struct(opc.opc, idx, "MySubStruct3", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32", ua.VariantType.UInt32),
     ])
@@ -1245,16 +1261,133 @@ async def test_custom_struct_with_enum(opc):
     assert val.MyEnum == ua.MyCustEnum2.tutu
 
 
-async def test_two_times_custom_struct(opc):
+async def test_two_times_enum(opc):
     idx = 4
 
-    dtype = await new_enum(opc.opc, idx, "MyCustEnum5", [
+    await new_enum(opc.opc, idx, "MyCustEnum5", [
         "titi",
         "toto",
         "tutu",
     ])
 
     with pytest.raises(ua.uaerrors.BadBrowseNameDuplicated):
-        dtype = await new_enum(opc.opc, idx, "MyCustEnum5", [
+        await new_enum(opc.opc, idx, "MyCustEnum5", [
             "titi",
         ])
+
+
+async def test_custom_struct_export(opc):
+    idx = 4
+
+    dtype, encs = await new_struct(opc.opc, idx, "MyMyStructExport", [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+    ])
+
+    await opc.opc.export_xml([dtype, *encs], "custom_struct_export.xml")
+
+
+async def test_custom_enum_export(opc):
+    idx = 4
+
+    dtype = await new_enum(opc.opc, idx, "MyCustEnumExport", [
+        "titi",
+        "toto",
+        "tutu",
+    ])
+    path = "custom_enum_export.xml"
+    await opc.opc.export_xml([dtype], path )
+
+
+async def test_custom_enum_import(opc):
+    nodes = await opc.opc.import_xml("tests/custom_enum.xml")
+    nodes = [opc.opc.get_node(node) for node in nodes]  # FIXME why does it return nodeids and not nodes?
+    node = nodes[0]
+    sdef = await node.read_data_type_definition()
+    assert sdef.Fields[0].Name == "titi"
+    await opc.opc.export_xml(nodes, "tests/custom_enum_v2.xml")
+
+
+async def test_custom_struct_import(opc):
+    nodes = await opc.opc.import_xml("tests/custom_struct.xml")
+    nodes = [opc.opc.get_node(node) for node in nodes]  # FIXME why does it return nodeids and not nodes?
+    node = nodes[0]  #FIXME: make that more robust
+    sdef = await node.read_data_type_definition()
+    assert sdef.StructureType == ua.StructureType.Structure
+    assert sdef.Fields[0].Name == "MyBool"
+
+    await opc.opc.export_xml(nodes, "tests/custom_struct_v2.xml")
+
+
+async def test_enum_string_identifier_and_spaces(opc):
+    idx = 4
+    nodeid = ua.NodeId("My Identifier", idx)
+    qname = ua.QualifiedName("My Enum", idx)
+    await new_enum(opc.opc, nodeid, qname, [
+        "my name with hole",
+        "toto",
+        "tutu",
+    ])
+
+    await opc.opc.load_data_type_definitions()
+
+    var = await opc.opc.nodes.objects.add_variable(idx, "my enum", ua.My_Enum.my_name_with_hole)
+    val = await var.read_value()
+    assert val == 0
+
+
+async def test_custom_struct_of_struct_with_spaces(opc):
+    idx = 6
+
+    nodeid = ua.NodeId("toto.My Identifier", idx)
+    qname = ua.QualifiedName("My Sub Struct 1", idx)
+    dtype, encs = await new_struct(opc.opc, nodeid, qname, [
+        new_struct_field("My Bool", ua.VariantType.Boolean),
+        new_struct_field("My UInt32", ua.VariantType.UInt32),
+    ])
+
+    await new_struct(opc.opc, idx, "My Mother Struct", [
+        new_struct_field("My Bool", ua.VariantType.Boolean),
+        new_struct_field("My Sub Struct", dtype),
+    ])
+
+    await opc.opc.load_data_type_definitions()
+
+    mystruct = ua.My_Mother_Struct()
+    mystruct.My_Sub_Struct = ua.My_Sub_Struct_1()
+    mystruct.My_Sub_Struct.My_UInt32 = 78
+    var = await opc.opc.nodes.objects.add_variable(idx, "my mother struct", mystruct)
+    val = await var.read_value()
+    assert val.My_Sub_Struct.My_UInt32 == 78
+
+
+async def test_custom_method_with_struct(opc):
+    idx = 4
+
+    data_type, nodes = await new_struct(opc.opc, idx, "MyStructArg", [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+    ])
+
+    await opc.opc.load_data_type_definitions()
+
+    @uamethod
+    def func(parent, mystruct):
+        print(mystruct)
+        mystruct.MyUInt32.append(100)
+        return mystruct
+
+    methodid = await opc.server.nodes.objects.add_method(
+        ua.NodeId("ServerMethodWithStruct", 10),
+        ua.QualifiedName('ServerMethodWithStruct', 10),
+        func, [ua.MyStructArg], [ua.MyStructArg]
+        )
+
+    mystruct = ua.MyStructArg()
+    mystruct.MyUInt32 = [78, 79]
+
+    assert data_type.nodeid == mystruct.data_type
+
+    result = await opc.opc.nodes.objects.call_method(methodid, mystruct)
+
+    assert result.MyUInt32 == [78, 79, 100]

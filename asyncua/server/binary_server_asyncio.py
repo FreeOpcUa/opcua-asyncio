@@ -43,13 +43,13 @@ class OPCUAProtocol(asyncio.Protocol):
         self.processor.set_policies(self.policies)
         self.iserver.asyncio_transports.append(transport)
         self.clients.append(self)
-        self._task = self.iserver.loop.create_task(self._process_received_message_loop())
+        self._task = asyncio.create_task(self._process_received_message_loop())
 
     def connection_lost(self, ex):
         logger.info('Lost connection from %s, %s', self.peer_name, ex)
         self.transport.close()
         self.iserver.asyncio_transports.remove(self.transport)
-        closing_task = self.iserver.loop.create_task(self.processor.close())
+        closing_task = asyncio.create_task(self.processor.close())
         self.closing_tasks.append(closing_task)
         if self in self.clients:
             self.clients.remove(self)
@@ -126,7 +126,7 @@ class BinaryServer:
         )
 
     async def start(self):
-        self._server = await self.iserver.loop.create_server(self._make_protocol, self.hostname, self.port)
+        self._server = await asyncio.get_running_loop().create_server(self._make_protocol, self.hostname, self.port)
         # get the port and the hostname from the created server socket
         # only relevant for dynamic port asignment (when self.port == 0)
         if self.port == 0 and len(self._server.sockets) == 1:
@@ -136,7 +136,7 @@ class BinaryServer:
             self.hostname = sockname[0]
             self.port = sockname[1]
         self.logger.info('Listening on %s:%s', self.hostname, self.port)
-        self.cleanup_task = self.iserver.loop.create_task(self._await_closing_tasks())
+        self.cleanup_task = asyncio.create_task(self._close_task_loop())
 
     async def stop(self):
         self.logger.info('Closing asyncio socket server')
@@ -149,13 +149,18 @@ class BinaryServer:
             await self.cleanup_task
         except asyncio.CancelledError:
             pass
-        await self._await_closing_tasks(recursive=False)
+        await self._close_tasks()
 
         if self._server:
-            self.iserver.loop.call_soon(self._server.close)
+            asyncio.get_running_loop().call_soon(self._server.close)
             await self._server.wait_closed()
 
-    async def _await_closing_tasks(self, recursive=True):
+    async def _close_task_loop(self):
+        while True:
+            await self._close_tasks()
+            await asyncio.sleep(10)
+
+    async def _close_tasks(self):
         while self.closing_tasks:
             task = self.closing_tasks.pop()
             try:
@@ -164,7 +169,4 @@ class BinaryServer:
                 # this means a stop request has been sent, it should not be catched
                 raise
             except Exception:
-                logger.exception("Unexpected crash in BinaryServer._await_closing_tasks")
-        if recursive:
-            await asyncio.sleep(10)
-            await self._await_closing_tasks()
+                logger.exception("Unexpected crash in BinaryServer._close_tasks")

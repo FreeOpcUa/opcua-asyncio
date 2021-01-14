@@ -2,7 +2,7 @@ from concurrent.futures import Future
 
 import pytest
 
-from asyncua.sync import Client, Server, ThreadLoop, SyncNode, call_method_full, XmlExporter
+from asyncua.sync import Client, Server, ThreadLoop, SyncNode, call_method_full, XmlExporter, new_enum, new_struct, new_struct_field
 from asyncua import ua, uamethod
 
 
@@ -130,5 +130,67 @@ def test_sync_call_meth(client, idx):
 
 def test_sync_xml_export(server):
     exp = XmlExporter(server)
-    exp.build_etree([server.nodes.objects], uris=[])
+    exp.build_etree([server.nodes.objects])
     exp.write_xml("toto_test_export.xml")
+
+
+def test_create_enum_sync(server):
+    idx = 4
+    new_enum(server, idx, "MyCustEnum", [
+        "titi",
+        "toto",
+        "tutu",
+    ])
+
+    server.load_data_type_definitions()
+
+    var = server.nodes.objects.add_variable(idx, "my_enum", ua.MyCustEnum.toto)
+    val = var.read_value()
+    assert val == 1
+
+
+def test_create_enum_sync_client(client):
+    idx = 4
+    new_enum(client, idx, "MyCustEnum2", [
+        "titi",
+        "toto",
+        "tutu",
+    ])
+
+    client.load_data_type_definitions()
+
+    var = client.nodes.objects.add_variable(idx, "my_enum", ua.MyCustEnum2.toto)
+    val = var.read_value()
+    assert val == 1
+
+
+def test_create_struct_sync(server):
+    idx = 4
+
+    new_struct(server, idx, "MyMyStruct", [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+    ])
+
+    server.load_data_type_definitions()
+    mystruct = ua.MyMyStruct()
+    mystruct.MyUInt32 = [78, 79]
+    var = server.nodes.objects.add_variable(idx, "my_struct", mystruct)
+    val = var.read_value()
+    assert val.MyUInt32 == [78, 79]
+
+
+def test_create_struct_sync_client(client):
+    idx = 4
+
+    new_struct(client, idx, "MyMyStruct", [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+    ])
+
+    client.load_data_type_definitions()
+    mystruct = ua.MyMyStruct()
+    mystruct.MyUInt32 = [78, 79]
+    var = client.nodes.objects.add_variable(idx, "my_struct", mystruct)
+    val = var.read_value()
+    assert val.MyUInt32 == [78, 79]

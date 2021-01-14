@@ -4,7 +4,8 @@ high level interface to subscriptions
 import asyncio
 import logging
 import collections.abc
-from typing import Union, List, Iterable
+from typing import Union, List, Iterable, Optional
+from asyncua.common.ua_utils import copy_dataclass_attr
 
 from asyncua import ua
 from .events import Event, get_filter_from_event_type
@@ -73,20 +74,31 @@ class Subscription:
     :param server: `InternalSession` or `UAClient`
     """
 
-    def __init__(self, server, params: ua.CreateSubscriptionParameters, handler: SubHandler, loop=None):
-        self.loop = loop or asyncio.get_event_loop()
+    def __init__(self, server, params: ua.CreateSubscriptionParameters, handler: SubHandler):
         self.logger = logging.getLogger(__name__)
         self.server = server
         self._client_handle = 200
         self._handler: SubHandler = handler
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items = {}
-        self.subscription_id = None
+        self.subscription_id: Optional[int] = None
 
-    async def init(self):
-        response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
+    async def init(self) -> ua.CreateSubscriptionResult:
+        response = await self.server.create_subscription(
+            self.parameters, callback=self.publish_callback
+        )
         self.subscription_id = response.SubscriptionId  # move to data class
-        self.logger.info('Subscription created %s', self.subscription_id)
+        self.logger.info("Subscription created %s", self.subscription_id)
+        return response
+
+    async def update(
+        self, params: ua.ModifySubscriptionParameters
+    ) -> ua.ModifySubscriptionResponse:
+        response = await self.server.update_subscription(params)
+        self.logger.info('Subscription updated %s', params.SubscriptionId)
+        # update the self.parameters attr with the updated values
+        copy_dataclass_attr(params, self.parameters)
+        return response
 
     async def publish_callback(self, publish_result: ua.PublishResult):
         """
@@ -180,6 +192,13 @@ class Subscription:
             nodes, attr, queuesize=queuesize, monitoring=monitoring
         )
 
+    async def _create_eventfilter(self, evtypes):
+        if not type(evtypes) in (list, tuple):
+            evtypes = [evtypes]
+        evtypes = [Node(self.server, evtype) for evtype in evtypes]
+        evfilter = await get_filter_from_event_type(evtypes)
+        return evfilter
+
     async def subscribe_events(self,
                                sourcenode: Node = ua.ObjectIds.Server,
                                evtypes=ua.ObjectIds.BaseEventType,
@@ -201,10 +220,38 @@ class Subscription:
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
-            if not type(evtypes) in (list, tuple):
-                evtypes = [evtypes]
-            evtypes = [Node(self.server, evtype) for evtype in evtypes]
-            evfilter = await get_filter_from_event_type(evtypes)
+            evfilter = await self._create_eventfilter(evtypes)
+        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
+
+    async def subscribe_alarms_and_conditions(self,
+                                              sourcenode: Node = ua.ObjectIds.Server,
+                                              evtypes=ua.ObjectIds.ConditionType,
+                                              evfilter=None,
+                                              queuesize=0) -> int:
+        """
+        Subscribe to alarm and condition events from a node. Default node is Server node.
+        In many servers the server node is the only one you can subscribe to.
+        If evtypes is not provided, evtype defaults to ConditionType.
+        If evtypes is a list or tuple of custom event types, the events will be filtered to the supplied types.
+        A handle (integer value) is returned which can be used to modify/cancel the subscription.
+
+        :param sourcenode:
+        :param evtypes:
+        :param evfilter:
+        :param queuesize: 0 for default queue size, 1 for minimum queue size, n for FIFO queue,
+        MaxUInt32 for max queue size
+        :return: Handle for changing/cancelling of the subscription
+        """
+        sourcenode = Node(self.server, sourcenode)
+        if evfilter is None:
+            evfilter = await self._create_eventfilter(evtypes)
+        # Add SimpleAttribute for NodeId if missing.
+        matches = [a for a in evfilter.SelectClauses if a.AttributeId == ua.AttributeIds.NodeId]
+        if not matches:
+            conditionIdOperand = ua.SimpleAttributeOperand()
+            conditionIdOperand.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)
+            conditionIdOperand.AttributeId = ua.AttributeIds.NodeId
+            evfilter.SelectClauses.append(conditionIdOperand)
         return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 
     async def _subscribe(self,

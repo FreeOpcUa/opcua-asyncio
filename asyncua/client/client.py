@@ -14,7 +14,7 @@ from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
 from ..common.structures104 import load_data_type_definitions
 from ..common.utils import create_nonce
-from ..common.ua_utils import value_to_datavalue
+from ..common.ua_utils import value_to_datavalue, copy_dataclass_attr
 from ..crypto import uacrypto, security_policies
 
 _logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class Client:
     use UaClient object, available as self.uaclient
     which offers the raw OPC-UA services interface.
     """
-    def __init__(self, url: str, timeout: int = 4, loop=None):
+    def __init__(self, url: str, timeout: int = 4):
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -41,7 +41,6 @@ class Client:
         attributes on the constructed object:
         See the source code for the exhaustive list.
         """
-        self.loop = loop or asyncio.get_event_loop()
         self.server_url = urlparse(url)
         # take initial username and password from the url
         self._username = self.server_url.username
@@ -55,7 +54,7 @@ class Client:
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
         self._policy_ids = []
-        self.uaclient: UaClient = UaClient(timeout, loop=self.loop)
+        self.uaclient: UaClient = UaClient(timeout)
         self.user_certificate = None
         self.user_private_key = None
         self._server_nonce = None
@@ -381,7 +380,7 @@ class Client:
         if self.session_timeout != response.RevisedSessionTimeout:
             _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
             self.session_timeout = response.RevisedSessionTimeout
-        self._renew_channel_task = self.loop.create_task(self._renew_channel_loop())
+        self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
         return response
 
     async def _renew_channel_loop(self):
@@ -391,9 +390,10 @@ class Client:
         but it does not cost much..
         """
         try:
-            duration = min(self.session_timeout, self.secure_channel_timeout) * 0.7 / 1000
+            # Part4 5.5.2.1:
+            # Clients should request a new SecurityToken after 75 % of its lifetime has elapsed
+            duration = self.secure_channel_timeout * 0.75 / 1000
             while True:
-                # 0.7 is from spec. 0.001 is because asyncio.sleep expects time in seconds
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
@@ -531,7 +531,9 @@ class Client:
         """
         return Node(self.uaclient, nodeid)
 
-    async def create_subscription(self, period, handler, publishing=True):
+    async def create_subscription(
+        self, period, handler, publishing=True
+    ) -> Subscription:
         """
         Create a subscription.
         Returns a Subscription object which allows to subscribe to events or data changes on server.
@@ -546,13 +548,68 @@ class Client:
             params = ua.CreateSubscriptionParameters()
             params.RequestedPublishingInterval = period
             params.RequestedLifetimeCount = 10000
-            params.RequestedMaxKeepAliveCount = 3000
+            params.RequestedMaxKeepAliveCount = self.get_keepalive_count(period)
             params.MaxNotificationsPerPublish = 10000
             params.PublishingEnabled = publishing
             params.Priority = 0
         subscription = Subscription(self.uaclient, params, handler)
-        await subscription.init()
+        results = await subscription.init()
+        new_params = self.get_subscription_revised_params(params, results)
+        if new_params:
+            results = await subscription.update(new_params)
+            _logger.info(f"Result from subscription update: {results}")
         return subscription
+
+    def get_subscription_revised_params(
+        self,
+        params: ua.CreateSubscriptionParameters,
+        results: ua.CreateSubscriptionResult,
+    ) -> None:
+        if (
+            results.RevisedPublishingInterval == params.RequestedPublishingInterval
+            and results.RevisedLifetimeCount == params.RequestedLifetimeCount
+            and results.RevisedMaxKeepAliveCount == params.RequestedMaxKeepAliveCount
+        ):
+            return
+        _logger.warning(
+            f"Revised values returned differ from subscription values: {results}"
+        )
+        revised_interval = results.RevisedPublishingInterval
+        # Adjust the MaxKeepAliveCount based on the RevisedPublishInterval when necessary
+        new_keepalive_count = self.get_keepalive_count(revised_interval)
+        if (
+            revised_interval != params.RequestedPublishingInterval
+            and new_keepalive_count != params.RequestedMaxKeepAliveCount
+        ):
+            _logger.info(
+                f"KeepAliveCount will be updated to {new_keepalive_count} "
+                f"for consistency with RevisedPublishInterval"
+            )
+            modified_params = ua.ModifySubscriptionParameters()
+            # copy the existing subscription parameters
+            copy_dataclass_attr(params, modified_params)
+            # then override with the revised values
+            modified_params.RequestedMaxKeepAliveCount = new_keepalive_count
+            modified_params.SubscriptionId = results.SubscriptionId
+            modified_params.RequestedPublishingInterval = (
+                results.RevisedPublishingInterval
+            )
+            # update LifetimeCount but chances are it will be re-revised again
+            modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
+            return modified_params
+
+    def get_keepalive_count(self, period) -> int:
+        """
+        We request the server to send a Keepalive notification when
+        no notification has been received for 75% of the session lifetime.
+        This is especially useful to keep the sesssion up
+        when self.session_timeout < self.secure_channel_timeout.
+
+        Part4 5.13.2: If the requested value is 0, the Server
+        shall revise with the smallest supported keep-alive count.
+        """
+        period = period or 1000
+        return int((self.session_timeout / period) * 0.75)
 
     async def get_namespace_array(self):
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
@@ -604,13 +661,13 @@ class Client:
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_type_definitions(self, nodes)
 
-    async def load_data_type_definitions(self, node=None):
+    async def load_data_type_definitions(self, node=None, overwrite_existing=False):
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
         These classes will be available in ua module
         """
-        return await load_data_type_definitions(self, node)
+        return await load_data_type_definitions(self, node, overwrite_existing=overwrite_existing)
 
     async def load_enums(self):
         """
@@ -665,3 +722,21 @@ class Client:
 
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
+
+    async def browse_nodes(self, nodes):
+        """
+        Browses multiple nodes in one ua call
+        returns a List of Tuples(Node, BrowseResult)
+        """
+        nodestobrowse = []
+        for node in nodes:
+            desc = ua.BrowseDescription()
+            desc.NodeId = node.nodeid
+            desc.ResultMask = ua.BrowseResultMask.All
+            nodestobrowse.append(desc)
+        parameters = ua.BrowseParameters()
+        parameters.View = ua.ViewDescription()
+        parameters.RequestedMaxReferencesPerNode = 0
+        parameters.NodesToBrowse = nodestobrowse
+        results = await self.uaclient.browse(parameters)
+        return list(zip(nodes, results))

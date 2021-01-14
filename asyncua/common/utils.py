@@ -12,7 +12,7 @@ _logger = logging.getLogger(__name__)
 
 class ServiceError(UaError):
     def __init__(self, code):
-        super(ServiceError, self).__init__('UA Service Error')
+        super().__init__('UA Service Error')
         self.code = code
 
 
@@ -78,6 +78,17 @@ class Buffer:
             raise NotEnoughData(f"Not enough data left in buffer, request for {size}, we have {self._size}")
         self._size -= size
         self._cur_pos += size
+
+    @property
+    def cur_pos(self):
+        return self._cur_pos
+
+    def rewind(self, cur_pos=0):
+        """
+        rewind the buffer
+        """
+        self._cur_pos = cur_pos
+        self._size = len(self._data) - cur_pos
 
 
 def create_nonce(size=32):

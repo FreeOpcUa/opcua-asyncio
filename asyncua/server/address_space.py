@@ -14,7 +14,6 @@ _logger = logging.getLogger(__name__)
 
 
 class AttributeValue(object):
-
     def __init__(self, value):
         self.value = value
         self.value_callback = None
@@ -27,7 +26,6 @@ class AttributeValue(object):
 
 
 class NodeData:
-
     def __init__(self, nodeid):
         self.nodeid = nodeid
         self.attributes = {}
@@ -41,7 +39,6 @@ class NodeData:
 
 
 class AttributeService:
-
     def __init__(self, aspace: "AddressSpace"):
         self.logger = logging.getLogger(__name__)
         self._aspace: "AddressSpace" = aspace
@@ -69,12 +66,12 @@ class AttributeService:
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
             res.append(
-                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
+                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value)
+            )
         return res
 
 
 class ViewService(object):
-
     def __init__(self, aspace: "AddressSpace"):
         self.logger = logging.getLogger(__name__)
         self._aspace: "AddressSpace" = aspace
@@ -112,8 +109,7 @@ class ViewService(object):
         return True
 
     def _suitable_reftype(self, ref1, ref2, subtypes):
-        """
-        """
+        """"""
         if ref1 == ua.NodeId(ua.ObjectIds.Null):
             # If ReferenceTypeId is not specified in the BrowseDescription,
             # all References are returned and includeSubtypes is ignored.
@@ -195,7 +191,6 @@ class ViewService(object):
 
 
 class NodeManagementService:
-
     def __init__(self, aspace: "AddressSpace"):
         self.logger = logging.getLogger(__name__)
         self._aspace: "AddressSpace" = aspace
@@ -241,21 +236,34 @@ class NodeManagementService:
 
         parentdata = self._aspace.get(item.ParentNodeId)
         if parentdata is None and not item.ParentNodeId.is_null():
-            self.logger.info("add_node: while adding node %s, requested parent node %s does not exists",
-                             item.RequestedNewNodeId, item.ParentNodeId)
+            self.logger.info(
+                "add_node: while adding node %s, requested parent node %s does not exists",
+                item.RequestedNewNodeId,
+                item.ParentNodeId,
+            )
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
             return result
 
         if item.ParentNodeId in self._aspace:
             for ref in self._aspace[item.ParentNodeId].references:
                 # Check if the Parent has a "HasChild" Reference (or subtype of it) with the Node
-                if ref.ReferenceTypeId.Identifier in [ua.ObjectIds.HasChild, ua.ObjectIds.HasComponent,
-                                           ua.ObjectIds.HasProperty, ua.ObjectIds.HasSubtype,
-                                           ua.ObjectIds.HasOrderedComponent] and ref.IsForward:
+                if (
+                    ref.ReferenceTypeId.Identifier
+                    in [
+                        ua.ObjectIds.HasChild,
+                        ua.ObjectIds.HasComponent,
+                        ua.ObjectIds.HasProperty,
+                        ua.ObjectIds.HasSubtype,
+                        ua.ObjectIds.HasOrderedComponent,
+                    ]
+                    and ref.IsForward
+                ):
                     if item.BrowseName.Name == ref.BrowseName.Name:
-                        self.logger.warning(f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
-                                            f" already exists in Parent Node. ParentID:{item.ParentNodeId} --- "
-                                            f"ItemId:{item.RequestedNewNodeId}")
+                        self.logger.warning(
+                            f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
+                            f" already exists in Parent Node. ParentID:{item.ParentNodeId} --- "
+                            f"ItemId:{item.RequestedNewNodeId}"
+                        )
                         result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
                         return result
 
@@ -354,7 +362,9 @@ class NodeManagementService:
                         self._aspace[elem].references.remove(rdesc)
 
         self._delete_node_callbacks(self._aspace[item.NodeId])
-        del (self._aspace[item.NodeId])
+
+        del self._aspace[item.NodeId]
+
         return ua.StatusCode()
 
     def _delete_node_callbacks(self, nodedata):
@@ -364,8 +374,9 @@ class NodeManagementService:
                     callback(handle, None, ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
                     self._aspace.delete_datachange_callback(handle)
                 except Exception as ex:
-                    self.logger.exception("Error calling delete node callback callback %s, %s, %s", nodedata,
-                                          ua.AttributeIds.Value, ex)
+                    self.logger.exception(
+                        "Error calling delete node callback callback %s, %s, %s", nodedata, ua.AttributeIds.Value, ex
+                    )
 
     async def add_references(self, refs, user=User(role=UserRole.Admin)):
         result = []
@@ -439,17 +450,17 @@ class NodeManagementService:
             self._delete_unique_reference(item, True)
         return self._delete_unique_reference(item)
 
-    def _add_node_attr(self, item, nodedata, name, vtype=None, add_timestamps=False):
+    def _add_node_attr(self, item, nodedata, name, vtype=None, add_timestamps=False, is_array=False):
         if item.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
-            dv = ua.DataValue(ua.Variant(getattr(item, name), vtype))
-            if add_timestamps:
-                # dv.ServerTimestamp = datetime.utcnow()  # Disabled until someone explains us it should be there
-                dv.SourceTimestamp = datetime.utcnow()
+            dv = ua.DataValue(
+                ua.Variant(getattr(item, name), vtype, is_array=is_array),
+                SourceTimestamp=datetime.utcnow() if add_timestamps else None,
+            )
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
 
     def _add_nodeattributes(self, item, nodedata, add_timestamps):
         self._add_node_attr(item, nodedata, "AccessLevel", ua.VariantType.Byte)
-        self._add_node_attr(item, nodedata, "ArrayDimensions", ua.VariantType.UInt32)
+        self._add_node_attr(item, nodedata, "ArrayDimensions", ua.VariantType.UInt32, is_array=True)
         self._add_node_attr(item, nodedata, "BrowseName", ua.VariantType.QualifiedName)
         self._add_node_attr(item, nodedata, "ContainsNoLoops", ua.VariantType.Boolean)
         self._add_node_attr(item, nodedata, "DataType", ua.VariantType.NodeId)
@@ -475,7 +486,6 @@ class NodeManagementService:
 
 
 class MethodService:
-
     def __init__(self, aspace: "AddressSpace"):
         self.logger = logging.getLogger(__name__)
         self._aspace: "AddressSpace" = aspace
@@ -561,12 +571,14 @@ class AddressSpace:
             self._nodeid_counter[idx] += 1
         else:
             # get the biggest identifier number from the existed nodes in address space
-            identifier_list = sorted([
-                nodeid.Identifier for nodeid in self._nodes.keys()
-                if nodeid.NamespaceIndex == idx and nodeid.NodeIdType in (
-                    ua.NodeIdType.Numeric, ua.NodeIdType.TwoByte, ua.NodeIdType.FourByte
-                )
-            ])
+            identifier_list = sorted(
+                [
+                    nodeid.Identifier
+                    for nodeid in self._nodes.keys()
+                    if nodeid.NamespaceIndex == idx
+                    and nodeid.NodeIdType in (ua.NodeIdType.Numeric, ua.NodeIdType.TwoByte, ua.NodeIdType.FourByte)
+                ]
+            )
             if identifier_list:
                 self._nodeid_counter[idx] = identifier_list[-1]
             else:
@@ -672,13 +684,11 @@ class AddressSpace:
     async def read_attribute_value(self, nodeid, attr):
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
         if nodeid not in self._nodes:
-            dv = ua.DataValue()
-            dv.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown)
+            dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
             return dv
         node = self._nodes[nodeid]
         if attr not in node.attributes:
-            dv = ua.DataValue()
-            dv.StatusCode = ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
+            dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
             return dv
         attval = node.attributes[attr]
         if attval.value_callback:
@@ -697,10 +707,14 @@ class AddressSpace:
         if attval is None:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
 
+        if not self._is_expected_variant_type(value, attval, node):
+            return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
+
         old = attval.value
         attval.value = value
         cbs = []
-        if old.Value != value.Value:  # only send call callback when a value change has happend
+        # only send call callback when a value or status code change has happened
+        if (old.Value != value.Value) or (old.StatusCode != value.StatusCode):
             cbs = list(attval.datachange_callbacks.items())
 
         for k, v in cbs:
@@ -710,6 +724,24 @@ class AddressSpace:
                 self.logger.exception("Error calling datachange callback %s, %s, %s", k, v, ex)
 
         return ua.StatusCode()
+
+    def _is_expected_variant_type(self, value, attval, node):
+        vtype = attval.value.Value.VariantType
+        if vtype == ua.VariantType.Null:
+            # Node had a null value, many nodes are initialized with that value
+            # we should check what the real type is
+            dtype = node.attributes[ua.AttributeIds.DataType].value.Value.Value
+            if dtype.NamespaceIndex == 0 and dtype.Identifier <= 25:
+                vtype = ua.VariantType(dtype.Identifier)
+            else:
+                # FIXME: should find the correct variant type given data type but
+                # this is a bit complicaed so trusting the first write
+                return True
+        if value.Value.VariantType == vtype:
+            return True
+        _logger.critical("Write refused: Variant: %s with type %s does not have expected type: %s",
+                value.Value, value.Value.VariantType, attval.value.Value.VariantType)
+        return False
 
     def add_datachange_callback(self, nodeid, attr, callback):
         self.logger.debug("set attr callback: %s %s %s", nodeid, attr, callback)

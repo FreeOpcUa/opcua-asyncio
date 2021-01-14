@@ -1,3 +1,12 @@
+---
+name: Bug report
+about: Create a report to help us improve
+title: ''
+labels: ''
+assignees: ''
+
+---
+
 ### Please read, before you post!
 
 This is a _**BUG REPORT for issues in the existing code**_. 

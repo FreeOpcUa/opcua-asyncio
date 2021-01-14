@@ -5,12 +5,12 @@ import re
 import asyncio
 import base64
 import logging
-from pytz import utc
-
 import xml.etree.ElementTree as ET
 
-from .ua_utils import string_to_val
+from pytz import utc
 from asyncua import ua
+
+from .ua_utils import string_to_val
 
 
 def ua_type_to_python(val, uatype_as_str):
@@ -123,7 +123,7 @@ class XMLParser:
         if xmlstring:
             self.root = ET.fromstring(xmlstring)
         else:
-            tree = await asyncio.get_event_loop().run_in_executor(None, ET.parse, xmlpath)
+            tree = await asyncio.get_running_loop().run_in_executor(None, ET.parse, xmlpath)
             self.root = tree.getroot()
 
     def parse_sync(self, xmlpath=None, xmlstring=None):
@@ -403,4 +403,3 @@ class XMLParser:
                 # check if ModelUri X, in Version Y from time Z was already imported
                 required_models.append(child.attrib)
         return required_models
-

@@ -3,9 +3,9 @@ Low level binary client
 """
 import asyncio
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
+
 from asyncua import ua
-from typing import Optional
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, UaStructParsingError
 from ..common.connection import SecureConnection
@@ -20,14 +20,12 @@ class UASocketProtocol(asyncio.Protocol):
     OPEN = 'open'
     CLOSED = 'closed'
 
-    def __init__(self, timeout=1, security_policy=ua.SecurityPolicy(), loop=None):
+    def __init__(self, timeout=1, security_policy=ua.SecurityPolicy()):
         """
         :param timeout: Timeout in seconds
         :param security_policy: Security policy (optional)
-        :param loop: Event loop (optional)
         """
         self.logger = logging.getLogger(f"{__name__}.UASocketProtocol")
-        self.loop = loop or asyncio.get_event_loop()
         self.transport = None
         self.receive_buffer: Optional[bytes] = None
         self.is_receiving = False
@@ -125,7 +123,7 @@ class UASocketProtocol(asyncio.Protocol):
             self._request_handle -= 1
             raise
         self._request_id += 1
-        future = self.loop.create_future()
+        future = asyncio.get_running_loop().create_future()
         self._callbackmap[self._request_id] = future
 
         # Change to the new security token if the connection has been renewed.
@@ -158,8 +156,8 @@ class UASocketProtocol(asyncio.Protocol):
         data = data.copy()
         typeid = nodeid_from_binary(data)
         if typeid == ua.FourByteNodeId(ua.ObjectIds.ServiceFault_Encoding_DefaultBinary):
-            self.logger.warning("ServiceFault from server received %s", context)
             hdr = struct_from_binary(ua.ResponseHeader, data)
+            self.logger.warning("ServiceFault (%s, diagnostics: %s) from server received %s", hdr.ServiceResult.name, hdr.ServiceDiagnostics, context)
             hdr.ServiceResult.check()
             return False
         return True
@@ -167,11 +165,12 @@ class UASocketProtocol(asyncio.Protocol):
     def _call_callback(self, request_id, body):
         try:
             self._callbackmap[request_id].set_result(body)
-        except KeyError:
-            raise ua.UaError(f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}")
+        except KeyError as ex:
+            raise ua.UaError(f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}, body was {body}") from ex
         except asyncio.InvalidStateError:
             if not self.closed:
-                raise ua.UaError(f"Future for request id {request_id} is already done")
+                self.logger.warning("Future for request id %s is already done", request_id)
+                return
             self.logger.debug("Future for request id %s not handled due to disconnect", request_id)
         del self._callbackmap[request_id]
 
@@ -242,13 +241,11 @@ class UaClient:
     In this Python implementation  most of the structures are defined in
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
-    def __init__(self, timeout=1, loop=None):
+    def __init__(self, timeout=1):
         """
         :param timeout: Timout in seconds
-        :param loop: Event loop (optional)
         """
         self.logger = logging.getLogger(f'{__name__}.UaClient')
-        self.loop = loop or asyncio.get_event_loop()
         self._subscription_callbacks = {}
         self._timeout = timeout
         self.security_policy = ua.SecurityPolicy()
@@ -259,14 +256,14 @@ class UaClient:
         self.security_policy = policy
 
     def _make_protocol(self):
-        self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy, loop=self.loop)
+        self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
         return self.protocol
 
     async def connect_socket(self, host: str, port: int):
         """Connect to server socket."""
         self.logger.info("opening connection")
         # Timeout the connection when the server isn't available
-        await asyncio.wait_for(self.loop.create_connection(self._make_protocol, host, port), self._timeout)
+        await asyncio.wait_for(asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout)
 
     def disconnect_socket(self):
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
@@ -361,16 +358,6 @@ class UaClient:
         response = struct_from_binary(ua.ReadResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
-        # cast to Enum attributes that need to
-        for idx, rv in enumerate(parameters.NodesToRead):
-            if rv.AttributeId == ua.AttributeIds.NodeClass:
-                dv = response.Results[idx]
-                if dv.StatusCode.is_good():
-                    dv.Value.Value = ua.NodeClass(dv.Value.Value)
-            elif rv.AttributeId == ua.AttributeIds.ValueRank:
-                dv = response.Results[idx]
-                if dv.StatusCode.is_good() and dv.Value.Value in (-3, -2, -1, 0, 1, 2, 3, 4):
-                    dv.Value.Value = ua.ValueRank(dv.Value.Value)
         return response.Results
 
     async def write(self, params):
@@ -443,7 +430,9 @@ class UaClient:
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def create_subscription(self, params, callback):
+    async def create_subscription(
+        self, params, callback
+    ) -> ua.CreateSubscriptionResult:
         self.logger.debug("create_subscription")
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
@@ -451,13 +440,30 @@ class UaClient:
         response = struct_from_binary(ua.CreateSubscriptionResponse, data)
         response.ResponseHeader.ServiceResult.check()
         self._subscription_callbacks[response.Parameters.SubscriptionId] = callback
-        self.logger.info("create_subscription success SubscriptionId %s", response.Parameters.SubscriptionId)
+        self.logger.info(
+            "create_subscription success SubscriptionId %s",
+            response.Parameters.SubscriptionId
+        )
         if not self._publish_task or self._publish_task.done():
             # Start the publish loop if it is not yet running
             # The current strategy is to have only one open publish request per UaClient. This might not be enough
             # in high latency networks or in case many subscriptions are created. A Set of Tasks of `_publish_loop`
             # could be used if necessary.
-            self._publish_task = self.loop.create_task(self._publish_loop())
+            self._publish_task = asyncio.create_task(self._publish_loop())
+        return response.Parameters
+
+    async def update_subscription(
+        self, params: ua.ModifySubscriptionParameters
+    ) -> ua.ModifySubscriptionResult:
+        request = ua.ModifySubscriptionRequest()
+        request.Parameters = params
+        data = await self.protocol.send_request(request)
+        response = struct_from_binary(ua.ModifySubscriptionResponse, data)
+        response.ResponseHeader.ServiceResult.check()
+        self.logger.info(
+            "update_subscription success SubscriptionId %s",
+            params.SubscriptionId
+        )
         return response.Parameters
 
     async def delete_subscriptions(self, subscription_ids):
@@ -483,9 +489,9 @@ class UaClient:
         self.protocol.check_answer(data, "while waiting for publish response")
         try:
             response = struct_from_binary(ua.PublishResponse, data)
-        except Exception:
+        except Exception as ex:
             self.logger.exception("Error parsing notification from server")
-            raise UaStructParsingError
+            raise UaStructParsingError from ex
         return response
 
     async def _publish_loop(self):

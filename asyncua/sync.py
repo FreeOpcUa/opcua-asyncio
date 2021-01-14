@@ -4,6 +4,7 @@ sync API of asyncua
 import asyncio
 from threading import Thread, Condition
 import logging
+from typing import List, Tuple, Union
 
 from asyncua import ua
 from asyncua import client
@@ -61,7 +62,7 @@ class ThreadLoop(Thread):
 def _to_async(args, kwargs):
     args = list(args)  # FIXME: might be very inefficient...
     for idx, arg in enumerate(args):
-        if isinstance(arg, SyncNode):
+        if isinstance(arg, (SyncNode, Client, Server)):
             args[idx] = arg.aio_obj
         elif isinstance(arg, (list, tuple)):
             args[idx] = _to_async(arg, {})[0]
@@ -92,6 +93,7 @@ def syncmethod(func):
         aio_func = getattr(self.aio_obj, func.__name__)
         result = self.tloop.post(aio_func(*args, **kwargs))
         return _to_sync(self.tloop, result)
+
     return wrapper
 
 
@@ -113,7 +115,9 @@ def syncfunc(aio_func):
             args, kwargs = _to_async(args, kwargs)
             result = tloop.post(aio_func(*args, **kwargs))
             return _to_sync(tloop, result)
+
         return wrapper
+
     return decorator
 
 
@@ -157,11 +161,12 @@ class Client:
             self.tloop = ThreadLoop()
             self.tloop.start()
             self.close_tloop = True
-        self.aio_obj = client.Client(url, timeout, loop=self.tloop.loop)
+        self.aio_obj = client.Client(url, timeout)
         self.nodes = Shortcuts(self.tloop, self.aio_obj.uaclient)
 
     def __str__(self):
         return "Sync" + self.aio_obj.__str__()
+
     __repr__ = __str__
 
     @syncmethod
@@ -188,7 +193,15 @@ class Client:
         pass
 
     @syncmethod
+    def get_namespace_array(self):
+        pass
+
+    @syncmethod
     def set_security(self):
+        pass
+
+    @syncmethod
+    def set_security_string(self, string):
         pass
 
     @syncmethod
@@ -209,6 +222,14 @@ class Client:
 
     @syncmethod
     def connect_and_get_server_endpoints(self):
+        pass
+
+    @syncmethod
+    def read_values(self, nodes):
+        pass
+
+    @syncmethod
+    def write_values(self, nodes, values):
         pass
 
     def __enter__(self):
@@ -235,12 +256,13 @@ class Server:
             self.tloop = ThreadLoop()
             self.tloop.start()
             self.close_tloop = True
-        self.aio_obj = server.Server(loop=self.tloop.loop)
+        self.aio_obj = server.Server()
         self.tloop.post(self.aio_obj.init(shelf_file))
         self.nodes = Shortcuts(self.tloop, self.aio_obj.iserver.isession)
 
     def __str__(self):
         return "Sync" + self.aio_obj.__str__()
+
     __repr__ = __str__
 
     def __enter__(self):
@@ -303,6 +325,10 @@ class Server:
 
     @syncmethod
     def load_type_definitions(self):
+        pass
+
+    @syncmethod
+    def load_data_type_definitions(self, node=None):
         pass
 
     @syncmethod
@@ -375,6 +401,10 @@ class SyncNode:
         pass
 
     @syncmethod
+    def write_attribute(self, attributeid, datavalue, indexrange=None):
+        pass
+
+    @syncmethod
     def read_browse_name(self):
         pass
 
@@ -399,9 +429,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def get_children(
-        self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified
-    ):
+    def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
         pass
 
     @syncmethod
@@ -446,6 +474,10 @@ class SyncNode:
         pass
 
     @syncmethod
+    def add_variable_type(self, ns, name, datatype):
+        pass
+
+    @syncmethod
     def add_folder(self, ns, name):
         pass
 
@@ -485,7 +517,7 @@ class SyncNode:
     def read_data_type_as_variant_type(self):
         pass
 
-    get_data_type_as_variant_type = read_data_type_as_variant_type #legacy
+    get_data_type_as_variant_type = read_data_type_as_variant_type  # legacy
 
     @syncmethod
     def call_method(self, methodid, *args):
@@ -502,6 +534,10 @@ class SyncNode:
         pass
 
     @syncmethod
+    def add_reference(self, target, reftype, forward=True, bidirectional=True):
+        pass
+
+    @syncmethod
     def read_description(self):
         pass
 
@@ -514,7 +550,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def read_attributes(self):
+    def read_attributes(self, attrs):
         pass
 
 
@@ -537,8 +573,8 @@ class Subscription:
     ):
         pass
 
-    def _make_monitored_item_request(self, node: SyncNode, attr, mfilter, queuesize) -> ua.MonitoredItemCreateRequest:
-        return self.aio_obj._make_monitored_item_request(node, attr, mfilter, queuesize)
+    def _make_monitored_item_request(self, node: SyncNode, attr, mfilter, queuesize, monitoring=ua.MonitoringMode.Reporting,) -> ua.MonitoredItemCreateRequest:
+        return self.aio_obj._make_monitored_item_request(node, attr, mfilter, queuesize, monitoring)
 
     @syncmethod
     def unsubscribe(self, handle):
@@ -588,3 +624,35 @@ class DataTypeDictionaryBuilder:
     @syncmethod
     def set_dict_byte_string(self):
         pass
+
+
+def new_struct_field(
+    name: str,
+    dtype: Union[ua.NodeId, SyncNode, ua.VariantType],
+    array: bool = False,
+    optional: bool = False,
+    description: str = "",
+) -> ua.StructureField:
+    if isinstance(dtype, SyncNode):
+        dtype = dtype.aio_obj
+    return common.structures104.new_struct_field(name, dtype, array, optional, description)
+
+
+@syncfunc(aio_func=common.structures104.new_enum)
+def new_enum(
+    server: Union["Server", "Client"],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    values: List[str],
+) -> SyncNode:
+    pass
+
+
+@syncfunc(aio_func=common.structures104.new_struct)
+def new_struct(
+    server: Union["Server", "Client"],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    fields: List[ua.StructureField],
+) -> Tuple[SyncNode, List[SyncNode]]:
+    pass

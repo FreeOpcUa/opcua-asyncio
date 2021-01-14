@@ -1,4 +1,6 @@
 import os
+from dataclasses import dataclass
+
 from asyncua import ua
 from asyncua.ua import uatypes
 from enum import IntEnum
@@ -18,21 +20,10 @@ import asyncua.ua
 setattr(asyncua.ua, 'ExampleEnum', ExampleEnum)
 
 
-class ExampleStruct(uatypes.FrozenClass):
-    ua_types = [
-        ('IntVal1', 'Int16'),
-        ('EnumVal', 'ExampleEnum'),
-    ]
-
-    def __init__(self):
-        self.IntVal1 = 0
-        self.EnumVal = ExampleEnum(0)
-        self._freeze = True
-
-    def __str__(self):
-        return f'ExampleStruct(IntVal1:{self.IntVal1}, EnumVal:{self.EnumVal})'
-
-    __repr__ = __str__
+@dataclass
+class ExampleStruct:
+    IntVal1: uatypes.Int16 = 0
+    EnumVal: ExampleEnum = ExampleEnum(0)
 
 
 async def add_server_custom_enum_struct(server: Server):
