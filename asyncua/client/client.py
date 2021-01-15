@@ -665,3 +665,20 @@ class Client:
 
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
+    
+    async def browse_nodes(self, nodes):
+        """
+        Browses multiple nodes in one ua call
+        """
+        nodeids = []
+        for node in nodes:
+            desc = ua.BrowseDescription()
+            desc.NodeId = node.nodeid
+            nodeids.append(desc)
+        parameters = ua.BrowseParameters()
+        parameters.View = ua.ViewDescription()
+        parameters.RequestedMaxReferencesPerNode = 0
+        parameters.NodesToBrowse = nodeids
+        results = await self.uaclient.browse(parameters)
+        return results
+    
