@@ -4,6 +4,7 @@ import pytest
 
 from asyncua import Client
 from asyncua import ua
+from asyncua import Node
 
 _logger = logging.getLogger(__name__)
 pytestmark = pytest.mark.asyncio
