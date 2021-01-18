@@ -197,6 +197,10 @@ class Client:
         pass
 
     @syncmethod
+    def set_security_string(self, string):
+        pass
+
+    @syncmethod
     def load_enums(self):
         pass
 
