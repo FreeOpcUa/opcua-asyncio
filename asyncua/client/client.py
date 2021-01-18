@@ -675,6 +675,7 @@ class Client:
         for node in nodes:
             desc = ua.BrowseDescription()
             desc.NodeId = node.nodeid
+            desc.ResultMask = 63
             nodestobrowse.append(desc)
         parameters = ua.BrowseParameters()
         parameters.View = ua.ViewDescription()
