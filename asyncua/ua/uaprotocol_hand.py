@@ -246,7 +246,7 @@ class SecurityPolicy:
     def make_local_symmetric_key(self, secret, seed):
         pass
 
-    def make_remote_symmetric_key(self, secret, seed):
+    def make_remote_symmetric_key(self, secret, seed, lifetime):
         pass
 
 

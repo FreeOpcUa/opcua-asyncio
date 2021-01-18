@@ -1,5 +1,6 @@
 import logging
 import struct
+import time
 
 from abc import ABCMeta, abstractmethod
 from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError
@@ -12,6 +13,7 @@ except ImportError:
 
 
 POLICY_NONE_URI = 'http://opcfoundation.org/UA/SecurityPolicy#None'
+logger = logging.getLogger(__name__)
 
 
 def require_cryptography(obj):
@@ -103,8 +105,14 @@ class Cryptography(CryptographyNone):
     def __init__(self, mode=MessageSecurityMode.Sign):
         self.Signer = None
         self.Verifier = None
+        self.Prev_Verifier = None
         self.Encryptor = None
         self.Decryptor = None
+        self.Prev_Decryptor = None
+        # we turn this flag on to fallback on previous key
+        self._use_prev_key = False
+        self.key_expiration = 0.0
+        self.prev_key_expiration = 0.0
         if mode not in (MessageSecurityMode.Sign,
                         MessageSecurityMode.SignAndEncrypt):
             raise ValueError(f"unknown security mode {mode}")
@@ -159,7 +167,11 @@ class Cryptography(CryptographyNone):
         return self.Verifier.signature_size()
 
     def verify(self, data, sig):
-        self.Verifier.verify(data, sig)
+        if not self.use_prev_key:
+            self.Verifier.verify(data, sig)
+        else:
+            logger.warning(f"FALLBACK! Checking signature with previous secure_channel key")
+            self.Prev_Verifier.verify(data, sig)
 
     def encrypt(self, data):
         if self.is_encrypted:
@@ -170,12 +182,44 @@ class Cryptography(CryptographyNone):
 
     def decrypt(self, data):
         if self.is_encrypted:
+            self.revolved_expired_key()
+            if self.use_prev_key:
+                logger.warning(f"FALLBACK! Decrypt with previous secure_channel key")
+                return self.Prev_Decryptor.decrypt(data)
             return self.Decryptor.decrypt(data)
         return data
 
+    def revolved_expired_key(self):
+        """
+        Remove expired keys as soon as possible
+        """
+        now = time.time()
+        if now > self.prev_key_expiration:
+            logger.info("Removing expired secure_channel key")
+            if getattr(self.Prev_Decryptor, "key", None):
+                self.Prev_Decryptor.key = None
+            self.Prev_Decryptor = None
+            if getattr(self.Prev_Verifier, "key", None):
+                self.Prev_Verifier.key = None
+            self.Prev_Verifier = None
+
+    @property
+    def use_prev_key(self):
+        if self._use_prev_key:
+            if self.Prev_Decryptor and self.Prev_Verifier:
+                return True
+            raise uacrypto.InvalidSignature("Previous key has expired")
+        else:
+            return False
+
+    @use_prev_key.setter
+    def use_prev_key(self, value: bool):
+        self._use_prev_key = value
+
     def remove_padding(self, data):
+        decryptor = self.Decryptor if not self.use_prev_key else self.Prev_Decryptor
         if self.is_encrypted:
-            if self.Decryptor.encrypted_block_size() > 256:
+            if decryptor.encrypted_block_size() > 256:
                 pad_size = struct.unpack('<h', data[-2:])[0] + 2
             else:
                 pad_size = bytearray(data[-1:])[0] + 1
@@ -284,6 +328,8 @@ class VerifierAesCbc(Verifier):
     def verify(self, data, signature):
         expected = uacrypto.hmac_sha1(self.key, data)
         if signature != expected:
+            logger.warning(f"Actual signature: {signature}")
+            logger.warning(f"Expected signature: {expected}")
             raise uacrypto.InvalidSignature
 
 
@@ -372,6 +418,8 @@ class VerifierHMac256(Verifier):
     def verify(self, data, signature):
         expected = uacrypto.hmac_sha256(self.key, data)
         if signature != expected:
+            logger.warning(f"Actual signature: {signature}")
+            logger.warning(f"Expected signature: {expected}")
             raise uacrypto.InvalidSignature
 
 
@@ -414,7 +462,6 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
         return uacrypto.encrypt_rsa15(pubkey, data)
 
     def __init__(self, server_cert, client_cert, client_pk, mode):
-        logger = logging.getLogger(__name__)
         logger.warning("DEPRECATED! Do not use SecurityPolicyBasic128Rsa15 anymore!")
 
         require_cryptography(self)
@@ -442,10 +489,17 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
         self.symmetric_cryptography.Signer = SignerAesCbc(sigkey)
         self.symmetric_cryptography.Encryptor = EncryptorAesCbc(key, init_vec)
 
-    def make_remote_symmetric_key(self, secret, seed):
+    def make_remote_symmetric_key(self, secret, seed, lifetime):
         key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
 
         (sigkey, key, init_vec) = uacrypto.p_sha1(secret, seed, key_sizes)
+        if self.symmetric_cryptography.Verifier or self.symmetric_cryptography.Decryptor:
+            self.symmetric_cryptography.Prev_Verifier = self.symmetric_cryptography.Verifier
+            self.symmetric_cryptography.Prev_Decryptor = self.symmetric_cryptography.Decryptor
+            self.symmetric_cryptography.prev_key_expiration = self.symmetric_cryptography.key_expiration
+
+        # lifetime is in ms
+        self.symmetric_cryptography.key_expiration = time.time() + (lifetime * 0.001)
         self.symmetric_cryptography.Verifier = VerifierAesCbc(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
@@ -489,7 +543,6 @@ class SecurityPolicyBasic256(SecurityPolicy):
         return uacrypto.encrypt_rsa_oaep(pubkey, data)
 
     def __init__(self, server_cert, client_cert, client_pk, mode):
-        logger = logging.getLogger(__name__)
         logger.warning("DEPRECATED! Do not use SecurityPolicyBasic256 anymore!")
 
         require_cryptography(self)
@@ -518,12 +571,19 @@ class SecurityPolicyBasic256(SecurityPolicy):
         self.symmetric_cryptography.Signer = SignerAesCbc(sigkey)
         self.symmetric_cryptography.Encryptor = EncryptorAesCbc(key, init_vec)
 
-    def make_remote_symmetric_key(self, secret, seed):
+    def make_remote_symmetric_key(self, secret, seed, lifetime):
 
         # specs part 6, 6.7.5
         key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
 
         (sigkey, key, init_vec) = uacrypto.p_sha1(secret, seed, key_sizes)
+        if self.symmetric_cryptography.Verifier or self.symmetric_cryptography.Decryptor:
+            self.symmetric_cryptography.Prev_Verifier = self.symmetric_cryptography.Verifier
+            self.symmetric_cryptography.Prev_Decryptor = self.symmetric_cryptography.Decryptor
+            self.symmetric_cryptography.prev_key_expiration = self.symmetric_cryptography.key_expiration
+
+        # lifetime is in ms
+        self.symmetric_cryptography.key_expiration = time.time() + (lifetime * 0.001)
         self.symmetric_cryptography.Verifier = VerifierAesCbc(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
@@ -596,12 +656,19 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         self.symmetric_cryptography.Signer = SignerHMac256(sigkey)
         self.symmetric_cryptography.Encryptor = EncryptorAesCbc(key, init_vec)
 
-    def make_remote_symmetric_key(self, secret, seed):
+    def make_remote_symmetric_key(self, secret, seed, lifetime):
 
         # specs part 6, 6.7.5
         key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
 
         (sigkey, key, init_vec) = uacrypto.p_sha256(secret, seed, key_sizes)
+        if self.symmetric_cryptography.Verifier or self.symmetric_cryptography.Decryptor:
+            self.symmetric_cryptography.Prev_Verifier = self.symmetric_cryptography.Verifier
+            self.symmetric_cryptography.Prev_Decryptor = self.symmetric_cryptography.Decryptor
+            self.symmetric_cryptography.prev_key_expiration = self.symmetric_cryptography.key_expiration
+
+        # lifetime is in ms
+        self.symmetric_cryptography.key_expiration = time.time() + (lifetime * 0.001)
         self.symmetric_cryptography.Verifier = VerifierHMac256(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 

@@ -6,6 +6,12 @@ import copy
 from asyncua import ua
 from ..ua.ua_binary import struct_from_binary, struct_to_binary, header_from_binary, header_to_binary
 
+try:
+    from ..crypto.uacrypto import InvalidSignature
+except ImportError:
+    class InvalidSignature(Exception):
+        pass
+
 logger = logging.getLogger('asyncua.uaprotocol')
 
 
@@ -29,10 +35,13 @@ class MessageChunk(ua.FrozenClass):
     @staticmethod
     def from_binary(security_policy, data):
         h = header_from_binary(data)
-        return MessageChunk.from_header_and_body(security_policy, h, data)
+        try:
+            return MessageChunk.from_header_and_body(security_policy, h, data)
+        except InvalidSignature:
+            return MessageChunk.from_header_and_body(security_policy, h, data, use_prev_key=True)
 
     @staticmethod
-    def from_header_and_body(security_policy, header, buf):
+    def from_header_and_body(security_policy, header, buf, use_prev_key=False):
         if not len(buf) >= header.body_size:
             raise ValueError('Full body expected here')
         data = buf.copy(header.body_size)
@@ -45,6 +54,7 @@ class MessageChunk(ua.FrozenClass):
             crypto = security_policy.asymmetric_cryptography
         else:
             raise ua.UaError(f"Unsupported message type: {header.MessageType}")
+        crypto.use_prev_key = use_prev_key
         obj = MessageChunk(crypto)
         obj.MessageHeader = header
         obj.SecurityHeader = security_header
@@ -155,8 +165,10 @@ class SecureConnection:
             self.security_token = params.SecurityToken
             self.local_nonce = client_nonce
             self.remote_nonce = params.ServerNonce
+            logger.warning(f"params {params.SecurityToken.RevisedLifetime} security policy: {self.security_policy}")
+            revised_lifetime = self.security_token.RevisedLifetime
             self.security_policy.make_local_symmetric_key(self.remote_nonce, self.local_nonce)
-            self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce)
+            self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce, revised_lifetime)
             self._open = True
         else:
             self.next_security_token = params.SecurityToken
@@ -185,7 +197,7 @@ class SecureConnection:
             response.SecurityToken = self.security_token
 
             self.security_policy.make_local_symmetric_key(self.remote_nonce, self.local_nonce)
-            self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce)
+            self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce, self.security_token.RevisedLifetime)
         else:
             self.next_security_token = copy.deepcopy(self.security_token)
             self.next_security_token.TokenId += 1
@@ -231,7 +243,7 @@ class SecureConnection:
         self.security_token = self.next_security_token
         self.next_security_token = ua.ChannelSecurityToken()
         self.security_policy.make_local_symmetric_key(self.remote_nonce, self.local_nonce)
-        self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce)
+        self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce, self.security_token.RevisedLifetime)
 
     def message_to_binary(self, message, message_type=ua.MessageType.SecureMessage, request_id=0):
         """
@@ -328,7 +340,12 @@ class SecureConnection:
             self._check_sym_header(security_header)
 
         if header.MessageType in (ua.MessageType.SecureMessage, ua.MessageType.SecureOpen, ua.MessageType.SecureClose):
-            chunk = MessageChunk.from_header_and_body(self.security_policy, header, body)
+            try:
+                pos = body.cur_pos
+                chunk = MessageChunk.from_header_and_body(self.security_policy, header, body, use_prev_key=False)
+            except InvalidSignature:
+                body.rewind(cur_pos=pos)
+                chunk = MessageChunk.from_header_and_body(self.security_policy, header, body, use_prev_key=True)
             return self._receive(chunk)
         if header.MessageType == ua.MessageType.Hello:
             msg = struct_from_binary(ua.Hello, body)
@@ -341,7 +358,6 @@ class SecureConnection:
         if header.MessageType == ua.MessageType.Error:
             msg = struct_from_binary(ua.ErrorMessage, body)
             logger.warning(f"Received an error: {msg}")
-            return msg
         raise ua.UaError(f"Unsupported message type {header.MessageType}")
 
     def _receive(self, msg):
