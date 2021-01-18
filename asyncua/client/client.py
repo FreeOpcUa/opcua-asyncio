@@ -669,16 +669,17 @@ class Client:
     async def browse_nodes(self, nodes):
         """
         Browses multiple nodes in one ua call
+        returns a List of Tuples(Node, BrowseResult)
         """
-        nodeids = []
+        nodestobrowse = []
         for node in nodes:
             desc = ua.BrowseDescription()
             desc.NodeId = node.nodeid
-            nodeids.append(desc)
+            nodestobrowse.append(desc)
         parameters = ua.BrowseParameters()
         parameters.View = ua.ViewDescription()
         parameters.RequestedMaxReferencesPerNode = 0
-        parameters.NodesToBrowse = nodeids
+        parameters.NodesToBrowse = nodestobrowse
         results = await self.uaclient.browse(parameters)
-        return results
+        return zip(nodes, results)
     
