@@ -682,5 +682,5 @@ class Client:
         parameters.RequestedMaxReferencesPerNode = 0
         parameters.NodesToBrowse = nodestobrowse
         results = await self.uaclient.browse(parameters)
-        return zip(nodes, results)
+        return list(zip(nodes, results))
     
