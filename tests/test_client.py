@@ -4,6 +4,7 @@ import pytest
 
 from asyncua import Client
 from asyncua import ua
+from asyncua import Node
 
 _logger = logging.getLogger(__name__)
 pytestmark = pytest.mark.asyncio
@@ -108,4 +109,19 @@ async def test_multiple_read_and_write_value(server, client):
     with pytest.raises(ua.uaerrors.BadUserAccessDenied):
         await client.write_values([v1, v2, v_ro], [4, 5, 6])
 
-
+async def test_browse_nodes(server, client):
+    nodes = [
+        client.get_node("ns=0;i=2267"),
+        client.get_node("ns=0;i=2259"),
+    ]
+    results = await client.browse_nodes(nodes)
+    assert len(results) == 2
+    assert isinstance(results, list)
+    assert results[0][0] == nodes[0]
+    assert results[1][0] == nodes[1]
+    assert isinstance(results[0][0], Node)
+    assert isinstance(results[1][0], Node)
+    assert isinstance(results[0][1], ua.BrowseResult)
+    assert isinstance(results[1][1], ua.BrowseResult)
+    
+    
