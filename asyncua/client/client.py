@@ -23,7 +23,6 @@ _logger = logging.getLogger(__name__)
 class Client:
     """
     High level client to connect to an OPC-UA server.
-
     This class makes it easy to connect and browse address space.
     It attempts to expose as much functionality as possible
     but if you want more flexibility it is possible and advised to
@@ -35,11 +34,9 @@ class Client:
         :param url: url of the server.
             if you are unsure of url, write at least hostname
             and port and call get_endpoints
-
         :param timeout:
             Each request sent to the server expects an answer within this
             time. The timeout is specified in seconds.
-
         Some other client parameters can be changed by setting
         attributes on the constructed object:
         See the source code for the exhaustive list.
@@ -87,8 +84,7 @@ class Client:
         """
         _logger.info("find_endpoint %r %r %r", endpoints, security_mode, policy_uri)
         for ep in endpoints:
-            if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and
-                    ep.SecurityPolicyUri == policy_uri):
+            if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and ep.SecurityPolicyUri == policy_uri):
                 return ep
         raise ua.UaError(f"No matching endpoints: {security_mode}, {policy_uri}")
 
@@ -111,17 +107,13 @@ class Client:
     async def set_security_string(self, string: str):
         """
         Set SecureConnection mode.
-
         :param string: Mode format ``Policy,Mode,certificate,private_key[,server_private_key]``
-
         where:
-
         - ``Policy`` is ``Basic128Rsa15``, ``Basic256`` or ``Basic256Sha256``
         - ``Mode`` is ``Sign`` or ``SignAndEncrypt``
         - ``certificate`` and ``server_private_key`` are paths to ``.pem`` or ``.der`` files
         - ``private_key`` may be a path to a ``.pem`` or ``.der`` file or a conjunction of ``path``::``password`` where
           ``password`` is the private key password.
-
         Call this before connect()
         """
         if not string:
@@ -137,16 +129,17 @@ class Client:
 
         policy_class = getattr(security_policies, f"SecurityPolicy{parts[0]}")
         mode = getattr(ua.MessageSecurityMode, parts[1])
-        return await self.set_security(policy_class, parts[2], parts[3], client_key_password,
-                                       parts[4] if len(parts) >= 5 else None, mode)
+        return await self.set_security(policy_class, parts[2], parts[3], client_key_password, parts[4] if len(parts) >= 5 else None, mode)
 
-    async def set_security(self,
-                           policy: ua.SecurityPolicy,
-                           certificate: Union[str, uacrypto.CertProperties],
-                           private_key: Union[str, uacrypto.CertProperties],
-                           private_key_password: Optional[Union[str, bytes]] = None,
-                           server_certificate: Optional[Union[str, uacrypto.CertProperties]] = None,
-                           mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
+    async def set_security(
+        self,
+        policy: ua.SecurityPolicy,
+        certificate: Union[str, uacrypto.CertProperties],
+        private_key: Union[str, uacrypto.CertProperties],
+        private_key_password: Optional[Union[str, bytes]] = None,
+        server_certificate: Optional[Union[str, uacrypto.CertProperties]] = None,
+        mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
+    ):
         """
         Set SecureConnection mode.
         Call this before connect()
@@ -164,17 +157,23 @@ class Client:
             private_key = uacrypto.CertProperties(private_key, password=private_key_password)
         return await self._set_security(policy, certificate, private_key, server_certificate, mode)
 
-    async def _set_security(self,
-                            policy: ua.SecurityPolicy,
-                            certificate: uacrypto.CertProperties,
-                            private_key: uacrypto.CertProperties,
-                            server_cert: uacrypto.CertProperties,
-                            mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt):
+    async def _set_security(
+        self,
+        policy: ua.SecurityPolicy,
+        certificate: uacrypto.CertProperties,
+        private_key: uacrypto.CertProperties,
+        server_cert: uacrypto.CertProperties,
+        mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
+    ):
 
         if isinstance(server_cert, uacrypto.CertProperties):
             server_cert = await uacrypto.load_certificate(server_cert.path, server_cert.extension)
         cert = await uacrypto.load_certificate(certificate.path, certificate.extension)
-        pk = await uacrypto.load_private_key(private_key.path, private_key.password, private_key.extension)
+        pk = await uacrypto.load_private_key(
+            private_key.path,
+            private_key.password,
+            private_key.extension,
+        )
         self.security_policy = policy(server_cert, cert, pk, mode)
         self.uaclient.set_security(self.security_policy)
 
@@ -184,10 +183,7 @@ class Client:
         """
         self.user_certificate = await uacrypto.load_certificate(path, extension)
 
-    async def load_private_key(self,
-                               path: str,
-                               password: Optional[Union[str, bytes]] = None,
-                               extension: Optional[str] = None):
+    async def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
         """
         Load user private key. This is used for authenticating using certificate
         """
@@ -297,8 +293,7 @@ class Client:
         params.ClientNonce = create_nonce(self.security_policy.symmetric_key_size)
         result = await self.uaclient.open_secure_channel(params)
         if self.secure_channel_timeout != result.SecurityToken.RevisedLifetime:
-            _logger.info("Requested secure channel timeout to be %dms, got %dms instead",
-                         self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
+            _logger.info("Requested secure channel timeout to be %dms, got %dms instead", self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
             self.secure_channel_timeout = result.SecurityToken.RevisedLifetime
 
     async def close_secure_channel(self):
@@ -385,8 +380,7 @@ class Client:
         self._policy_ids = ep.UserIdentityTokens
         #  Actual maximum number of milliseconds that a Session shall remain open without activity
         if self.session_timeout != response.RevisedSessionTimeout:
-            _logger.warning("Requested session timeout to be %dms, got %dms instead",
-                            self.secure_channel_timeout, response.RevisedSessionTimeout)
+            _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
             self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = self.loop.create_task(self._renew_channel_loop())
         return response
@@ -408,7 +402,7 @@ class Client:
                 _logger.debug("server state is: %s ", val)
         except asyncio.CancelledError:
             pass
-        except:
+        except Exception:
             _logger.exception("Error while renewing session")
             raise
 
@@ -449,9 +443,7 @@ class Client:
         if self.security_policy.AsymmetricSignatureURI:
             params.ClientSignature.Algorithm = self.security_policy.AsymmetricSignatureURI
         else:
-            params.ClientSignature.Algorithm = (
-                security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI
-            )
+            params.ClientSignature.Algorithm = (security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI)
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
         params.LocaleIds.append("en")
         if not username and not certificate:
@@ -544,10 +536,8 @@ class Client:
         """
         Create a subscription.
         Returns a Subscription object which allows to subscribe to events or data changes on server.
-
         :param period: Either a publishing interval in milliseconds or a `CreateSubscriptionParameters` instance.
             The second option should be used, if the asyncua-server has problems with the default options.
-
         :param handler: Class instance with data_change and/or event methods (see `SubHandler`
             base class for details). Remember not to block the main event loop inside the handler methods.
         """
@@ -676,3 +666,22 @@ class Client:
 
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
+    
+    async def browse_nodes(self, nodes):
+        """
+        Browses multiple nodes in one ua call
+        returns a List of Tuples(Node, BrowseResult)
+        """
+        nodestobrowse = []
+        for node in nodes:
+            desc = ua.BrowseDescription()
+            desc.NodeId = node.nodeid
+            desc.ResultMask = ua.BrowseResultMask.All
+            nodestobrowse.append(desc)
+        parameters = ua.BrowseParameters()
+        parameters.View = ua.ViewDescription()
+        parameters.RequestedMaxReferencesPerNode = 0
+        parameters.NodesToBrowse = nodestobrowse
+        results = await self.uaclient.browse(parameters)
+        return list(zip(nodes, results))
+    

@@ -329,7 +329,7 @@ async def _uals():
             elif args.long_format == 1:
                 await _lsprint_1(node, args.depth - 1)
             else:
-                _lsprint_long(node, args.depth - 1)
+                await _lsprint_long(node, args.depth - 1)
     except (OSError, concurrent.futures._base.TimeoutError) as e:
         print(e)
         sys.exit(1)
@@ -364,11 +364,11 @@ async def _lsprint_1(node, depth, indent=""):
             await _lsprint_1(Node(node.server, desc.NodeId), depth - 1, indent + "  ")
 
 
-def _lsprint_long(pnode, depth, indent=""):
+async def _lsprint_long(pnode, depth, indent=""):
     if not indent:
         print("{0:30} {1:25} {2:25} {3:10} {4:30} {5:25}".format("DisplayName", "NodeId", "BrowseName", "DataType", "Timestamp", "Value"))
         print("")
-    for node in pnode.get_children():
+    for node in await pnode.get_children():
         attrs = node.read_attributes([ua.AttributeIds.DisplayName,
                                      ua.AttributeIds.BrowseName,
                                      ua.AttributeIds.NodeClass,
@@ -383,7 +383,7 @@ def _lsprint_long(pnode, depth, indent=""):
         else:
             print("{0}{1:30} {2:25} {3:25}".format(indent, name.to_string(), bname.to_string(), node.nodeid.to_string()))
         if depth:
-            _lsprint_long(node, depth - 1, indent + "  ")
+            await _lsprint_long(node, depth - 1, indent + "  ")
 
 
 class SubHandler(object):

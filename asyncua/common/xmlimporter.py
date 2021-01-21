@@ -4,7 +4,7 @@ format is the one from opc-ua specification
 """
 import logging
 import uuid
-from typing import Coroutine, Union, Dict
+from typing import Union, Dict
 from copy import copy
 
 from asyncua import ua
@@ -20,20 +20,26 @@ class XmlImporter:
     def __init__(self, server):
         self.parser = None
         self.server = server
-        self.namespaces: Dict[int, int] = {}  #Dict[IndexInXml, IndexInServer]
+        self.namespaces: Dict[int, int] = {}  # Dict[IndexInXml, IndexInServer]
         self.aliases: Dict[str, ua.NodeId] = {}
         self.refs = None
 
-    async def _map_namespaces(self, namespaces_uris):
+    async def _map_namespaces(self):
         """
         creates a mapping between the namespaces in the xml file and in the server.
         if not present the namespace is registered.
         """
-        namespaces = {}
-        for ns_index, ns_uri in enumerate(namespaces_uris):
-            ns_server_index = await self.server.register_namespace(ns_uri)
-            namespaces[ns_index + 1] = ns_server_index
-        return namespaces
+        xml_uris = self.parser.get_used_namespaces()
+        server_uris = await self.server.get_namespace_array()
+        namespaces_map = {}
+        for ns_index, ns_uri in enumerate(xml_uris):
+            ns_index += 1  # since namespaces start at 1 in xml files
+            if ns_uri in server_uris:
+                namespaces_map[ns_index] = server_uris.index(ns_uri)
+            else:
+                ns_server_index = await self.server.register_namespace(ns_uri)
+                namespaces_map[ns_index] = ns_server_index
+        return namespaces_map
 
     def _map_aliases(self, aliases: dict):
         """
@@ -44,14 +50,49 @@ class XmlImporter:
             aliases_mapped[alias] = self._to_migrated_nodeid(node_id)
         return aliases_mapped
 
+    async def _get_existing_model_in_namespace(self):
+        server_model_list = []
+        server_namespaces_node = await self.server.nodes.namespaces.get_children()
+        for model_node in server_namespaces_node:
+            server_model_list.append({"ModelUri": await(await model_node.get_child("NamespaceUri")).read_value(),
+                                      "Version": await(await model_node.get_child("NamespaceVersion")).read_value(),
+                                      "PublicationDate": (await(
+                                          await model_node.get_child("NamespacePublicationDate")).
+                                                          read_value()).strftime("%Y-%m-%dT%H:%M:%SZ")})
+        return server_model_list
+
+    async def _check_required_models(self, xmlpath=None, xmlstring=None):
+        req_models = self.parser.list_required_models(xmlpath, xmlstring)
+        if not req_models:
+            return None
+        server_model_list = await self._get_existing_model_in_namespace()
+        for model in server_model_list:
+            for req_model in req_models:
+                if model["ModelUri"] == req_model["ModelUri"] and \
+                        model["PublicationDate"] >= req_model["PublicationDate"]:
+                            if "Version" in model and "Version" in req_model:
+                                if model["Version"] >= req_model["Version"]:
+                                    req_models.remove(req_model)
+                            else:
+                                req_models.remove(req_model)
+        if len(req_models):
+            for missing_model in req_models:
+                _logger.warning("Model is missing: %s - Version: %s - PublicationDate: %s or newer",
+                                missing_model["ModelUri"], missing_model["Version"], missing_model["PublicationDate"])
+            raise ValueError("Server doesn't satisfy required XML-Models. Import them first!")
+        return None
+
     async def import_xml(self, xmlpath=None, xmlstring=None):
         """
         import xml and return added nodes
         """
+        if (xmlpath is None and xmlstring is None) or (xmlpath and xmlstring):
+            raise ValueError("Expected either xmlpath or xmlstring, not both or neither.")
         _logger.info("Importing XML file %s", xmlpath)
         self.parser = XMLParser()
+        await self._check_required_models(xmlpath, xmlstring)
         await self.parser.parse(xmlpath, xmlstring)
-        self.namespaces = await self._map_namespaces(self.parser.get_used_namespaces())
+        self.namespaces = await self._map_namespaces()
         _logger.info("namespace map: %s", self.namespaces)
         self.aliases = self._map_aliases(self.parser.get_aliases())
         self.refs = []
@@ -81,10 +122,13 @@ class XmlImporter:
                 missing.append(nd)
             for ref in nd.refs:
                 if ref.forward:
-                    if ref.reftype in [self.server.nodes.HasComponent.nodeid, self.server.nodes.HasProperty.nodeid, self.server.nodes.Organizes.nodeid]:
+                    if ref.reftype in [self.server.nodes.HasComponent.nodeid,
+                                       self.server.nodes.HasProperty.nodeid,
+                                       self.server.nodes.Organizes.nodeid]:
                         # if a node has several links, the last one will win
                         if ref.target in childs:
-                            _logger.warning("overwriting parent target, shouldbe fixed", ref.target, nd.nodeid, ref.reftype, childs[ref.target])
+                            _logger.warning("overwriting parent target, shouldbe fixed",
+                                            ref.target, nd.nodeid, ref.reftype, childs[ref.target])
                         childs[ref.target] = (nd.nodeid, ref.reftype)
         for nd in missing:
             if nd.nodeid in childs:
@@ -94,7 +138,7 @@ class XmlImporter:
                 from IPython import embed
                 embed()
 
-    async def _add_node_data(self, nodedata) -> "Node":
+    async def _add_node_data(self, nodedata) -> ua.NodeId:
         if nodedata.nodetype == "UAObject":
             node = await self.add_object(nodedata)
         elif nodedata.nodetype == "UAObjectType":
@@ -166,7 +210,7 @@ class XmlImporter:
         node.RequestedNewNodeId = self._migrate_ns(obj.nodeid)
         node.BrowseName = self._migrate_ns(obj.browsename)
         _logger.info("Importing xml node (%s, %s) as (%s %s)", obj.browsename,
-                         obj.nodeid, node.BrowseName, node.RequestedNewNodeId)
+                     obj.nodeid, node.BrowseName, node.RequestedNewNodeId)
         node.NodeClass = getattr(ua.NodeClass, obj.nodetype[2:])
         if obj.parent and obj.parentlink:
             node.ParentNodeId = self._migrate_ns(obj.parent)
@@ -427,7 +471,8 @@ class XmlImporter:
                 if self.server.nodes.base_structure_type in path:
                     attrs.DataTypeDefinition = self._get_sdef(node, obj)
                 else:
-                    _logger.warning("%s has datatypedefinition and path %s but we could not find out if this is a struct", obj, path)
+                    _logger.warning("%s has datatypedefinition and path %s"
+                                    " but we could not find out if this is a struct", obj, path)
         node.NodeAttributes = attrs
         res = await self._get_server().add_nodes([node])
         res[0].StatusCode.check()
@@ -451,8 +496,6 @@ class XmlImporter:
         if not obj.definitions:
             return None
         edef = ua.EnumDefinition()
-        if obj.parent:
-            edef.BaseDataType = obj.parent
         for field in obj.definitions:
             f = ua.EnumField()
             f.Name = field.name
@@ -471,10 +514,10 @@ class XmlImporter:
         sdef = ua.StructureDefinition()
         if obj.parent:
             sdef.BaseDataType = obj.parent
-        for data in obj.refs:
-            if data.reftype == self.server.nodes.HasEncoding.nodeid:
-                # looks likebinary encodingisthe firt one...can someone confirm?
-                sdef.DefaultEncodingId = data.target
+        for refdata in obj.refs:
+            if refdata.reftype == self.server.nodes.HasEncoding.nodeid:
+                # supposing that default encoding is the first one...
+                sdef.DefaultEncodingId = refdata.target
                 break
         optional = False
         for field in obj.definitions:
