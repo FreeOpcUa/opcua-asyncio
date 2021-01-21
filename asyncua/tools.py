@@ -558,9 +558,9 @@ async def _uaserver():
     server = Server()
     server.set_endpoint(args.url)
     if args.certificate:
-        server.load_certificate(args.certificate)
+        await server.load_certificate(args.certificate)
     if args.private_key:
-        server.load_private_key(args.private_key)
+        await server.load_private_key(args.private_key)
     server.disable_clock(args.disable_clock)
     server.set_server_name("FreeOpcUa Example Server")
     if args.xml:
