@@ -308,8 +308,9 @@ async def test_secure_channel_key_expiration(srv_crypto_one_cert, mocker):
         assert clt.uaclient.security_policy.symmetric_cryptography.Prev_Decryptor is None
 
         await asyncio.sleep(timeout)
-        prev_verifier = clt.uaclient.security_policy.symmetric_cryptography.Prev_Verifier
-        prev_decryptor = clt.uaclient.security_policy.symmetric_cryptography.Prev_Decryptor
+        sym_crypto = clt.uaclient.security_policy.symmetric_cryptography
+        prev_verifier = sym_crypto.Prev_Verifier
+        prev_decryptor = sym_crypto.Prev_Decryptor
         assert isinstance(prev_verifier, Verifier)
         assert isinstance(prev_decryptor, Decryptor)
 
@@ -320,6 +321,11 @@ async def test_secure_channel_key_expiration(srv_crypto_one_cert, mocker):
 
         await asyncio.sleep(timeout*0.3)
         assert await clt.get_objects_node().get_children()
+
+        assert sym_crypto.key_expiration > 0
+        assert sym_crypto.prev_key_expiration > 0
+        assert sym_crypto.key_expiration > sym_crypto.prev_key_expiration
+
         assert mock_decry_reset.call_count == 1
         assert mock_verif_reset.call_count == 1
         assert clt.uaclient.security_policy.symmetric_cryptography.Prev_Verifier is None
