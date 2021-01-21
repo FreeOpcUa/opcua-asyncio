@@ -1,6 +1,6 @@
 import asyncio, logging
 from asyncua import Server, ua, Node
-from statemachine import StateMachine
+from asyncua.common.statemachine import StateMachine
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger('asyncua')
@@ -23,9 +23,9 @@ if __name__ == "__main__":
         state1 = mystatemachine.State("Idle", "S-Id-1", 1)
         # adds the state (StateType) to the statemachine childs - this is optional!
         await mystatemachine.add_state(state1, state_type=ua.NodeId(2309, 0)) #this is a init state -> InitialStateType: ua.NodeId(2309, 0)
-        state2 = mystatemachine.State("Loading", "S-Id-2", 2, issub=True)
+        state2 = mystatemachine.State("Loading", "S-Id-2", 2)
         await mystatemachine.add_state(state2)
-        state3 = mystatemachine.State("Initializing", "S-Id-3", 3, issub=True)
+        state3 = mystatemachine.State("Initializing", "S-Id-3", 3)
         await mystatemachine.add_state(state3)
         state4 = mystatemachine.State("Processing", "S-Id-4", 4)
         await mystatemachine.add_state(state4)
@@ -52,11 +52,11 @@ if __name__ == "__main__":
         # if event_msg is None no event will be triggered
         await mystatemachine.change_state(state1, trans1, f"{mystatemachine._name}: Idle", 300)
 
-        mystatemachine2 = StateMachine(server, server.nodes.objects, idx, "StateMachine2")
+        mystatemachine2 = StateMachine(server, server.nodes.objects, idx, "StateMachineMinimal")
         await mystatemachine2.install(optionals=False)
         await mystatemachine2.change_state(state1)
 
-        mystatemachine3 = StateMachine(server, server.nodes.objects, idx, "StateMachine3")
+        mystatemachine3 = StateMachine(server, server.nodes.objects, idx, "StateMachineRegular")
         await mystatemachine3.install(optionals=True)
         await mystatemachine3.change_state(state1, trans1)
 

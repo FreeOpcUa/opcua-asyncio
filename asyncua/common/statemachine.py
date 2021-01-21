@@ -279,10 +279,6 @@ class StateMachine(object):
         await transition_number.write_value(transition.number, ua.VariantType.UInt32)
         return transition.node
 
-    async def remove(self, nodes):
-        #FIXME Is it wise to remove a part of a program/statemachine dynamically? at this point i am not sure
-        raise NotImplementedError
-
 
 class FiniteStateMachine(StateMachine):
     '''
@@ -312,12 +308,6 @@ class FiniteStateMachine(StateMachine):
                 return await self._available_transitions_node.write_value(transitions, varianttype=ua.VariantType.NodeId)
             return ValueError
 
-    async def find_all_states(self):
-        return NotImplementedError
-    
-    async def find_all_transitions(self):
-        return NotImplementedError
-
 
 class ExclusiveLimitStateMachine(FiniteStateMachine):
     '''
@@ -345,18 +335,19 @@ class FileTransferStateMachine(FiniteStateMachine):
         raise NotImplementedError
 
 
-# class ProgramStateMachine(FiniteStateMachine):
-#     '''
-#     https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.3/
-#     Implementation of an ProgramStateMachine its quite a complex statemachine with the 
-#     optional possibility to make the statchange from clientside via opcua-methods
-#     '''
-#     def __init__(self, server=None, parent=None, idx=None, name=None):
-#         super().__init__(server, parent, idx, name)
-#         if name == None:
-#             name = "ProgramStateMachine"
-#         self._state_machine_type = ua.NodeId(2391, 0)
-#         self.evtype = ProgramTransitionEvent()
+class ProgramStateMachine(FiniteStateMachine):
+    '''
+    https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.3/
+    Implementation of an ProgramStateMachine its quite a complex statemachine with the 
+    optional possibility to make the statchange from clientside via opcua-methods
+    '''
+    def __init__(self, server=None, parent=None, idx=None, name=None):
+        super().__init__(server, parent, idx, name)
+        if name == None:
+            name = "ProgramStateMachine"
+        self._state_machine_type = ua.NodeId(2391, 0)
+        self.evtype = ProgramTransitionEvent()
+        raise NotImplementedError
 
 #         # 5.2.3.2 ProgramStateMachineType states
 #         self._ready_state_node = None #State node

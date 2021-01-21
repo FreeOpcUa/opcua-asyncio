@@ -1,6 +1,6 @@
 import asyncio, logging
 from asyncua import Server, ua, Node
-from statemachine import FiniteStateMachine
+from asyncua.common.statemachine import FiniteStateMachine
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger('asyncua')
@@ -23,9 +23,9 @@ if __name__ == "__main__":
         state1 = mystatemachine.State("Idle", "S-Id-1", 1)
         # adds the state (StateType) to the statemachine childs - this is mandatory for the FiniteStateMachine!
         await mystatemachine.add_state(state1, state_type=ua.NodeId(2309, 0)) #this is a init state -> InitialStateType: ua.NodeId(2309, 0)
-        state2 = mystatemachine.State("Loading", "S-Id-2", 2, issub=True)
+        state2 = mystatemachine.State("Loading", "S-Id-2", 2)
         await mystatemachine.add_state(state2)
-        state3 = mystatemachine.State("Initializing", "S-Id-3", 3, issub=True)
+        state3 = mystatemachine.State("Initializing", "S-Id-3", 3)
         await mystatemachine.add_state(state3)
         state4 = mystatemachine.State("Processing", "S-Id-4", 4)
         await mystatemachine.add_state(state4)
