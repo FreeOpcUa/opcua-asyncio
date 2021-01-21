@@ -56,6 +56,11 @@ class Verifier(object):
     def verify(self, data, signature):
         pass
 
+    def reset(self):
+        attrs = self.__dict__
+        for k in attrs:
+            attrs[k] = None
+
 
 class Encryptor(object):
     """
@@ -95,6 +100,11 @@ class Decryptor(object):
     @abstractmethod
     def decrypt(self, data):
         pass
+
+    def reset(self):
+        attrs = self.__dict__
+        for k in attrs:
+            attrs[k] = None
 
 
 class Cryptography(CryptographyNone):
@@ -170,7 +180,7 @@ class Cryptography(CryptographyNone):
         if not self.use_prev_key:
             self.Verifier.verify(data, sig)
         else:
-            logger.warning(f"FALLBACK! Checking signature with previous secure_channel key")
+            logger.debug(f"Message verification fallback: trying with previous secure channel key")
             self.Prev_Verifier.verify(data, sig)
 
     def encrypt(self, data):
@@ -184,7 +194,6 @@ class Cryptography(CryptographyNone):
         if self.is_encrypted:
             self.revolved_expired_key()
             if self.use_prev_key:
-                logger.warning(f"FALLBACK! Decrypt with previous secure_channel key")
                 return self.Prev_Decryptor.decrypt(data)
             return self.Decryptor.decrypt(data)
         return data
@@ -195,20 +204,19 @@ class Cryptography(CryptographyNone):
         """
         now = time.time()
         if now > self.prev_key_expiration:
-            logger.info("Removing expired secure_channel key")
-            if getattr(self.Prev_Decryptor, "key", None):
-                self.Prev_Decryptor.key = None
-            self.Prev_Decryptor = None
-            if getattr(self.Prev_Verifier, "key", None):
-                self.Prev_Verifier.key = None
-            self.Prev_Verifier = None
+            if self.Prev_Decryptor and self.Prev_Verifier:
+                self.Prev_Decryptor.reset()
+                self.Prev_Decryptor = None
+                self.Prev_Verifier.reset()
+                self.Prev_Verifier = None
+                logger.debug(f"Expired secure_channel keys removed")
 
     @property
     def use_prev_key(self):
         if self._use_prev_key:
             if self.Prev_Decryptor and self.Prev_Verifier:
                 return True
-            raise uacrypto.InvalidSignature("Previous key has expired")
+            raise uacrypto.InvalidSignature
         else:
             return False
 
@@ -328,8 +336,6 @@ class VerifierAesCbc(Verifier):
     def verify(self, data, signature):
         expected = uacrypto.hmac_sha1(self.key, data)
         if signature != expected:
-            logger.warning(f"Actual signature: {signature}")
-            logger.warning(f"Expected signature: {expected}")
             raise uacrypto.InvalidSignature
 
 
@@ -418,8 +424,6 @@ class VerifierHMac256(Verifier):
     def verify(self, data, signature):
         expected = uacrypto.hmac_sha256(self.key, data)
         if signature != expected:
-            logger.warning(f"Actual signature: {signature}")
-            logger.warning(f"Expected signature: {expected}")
             raise uacrypto.InvalidSignature
 
 

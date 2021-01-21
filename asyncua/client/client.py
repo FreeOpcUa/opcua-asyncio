@@ -286,7 +286,6 @@ class Client:
         params.RequestType = ua.SecurityTokenRequestType.Issue
         if renew:
             params.RequestType = ua.SecurityTokenRequestType.Renew
-            _logger.warning("Renewing secure channel")
         params.SecurityMode = self.security_policy.Mode
         params.RequestedLifetime = self.secure_channel_timeout
         # length should be equal to the length of key of symmetric encryption

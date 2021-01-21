@@ -19,7 +19,8 @@ class MessageChunk(ua.FrozenClass):
     """
     Message Chunk, as described in OPC UA specs Part 6, 6.7.2.
     """
-    def __init__(self, security_policy, body=b'', msg_type=ua.MessageType.SecureMessage, chunk_type=ua.ChunkType.Single):
+    def __init__(self, security_policy, body=b'', msg_type=ua.MessageType.SecureMessage,
+                 chunk_type=ua.ChunkType.Single):
         self.MessageHeader = ua.Header(msg_type, chunk_type)
         if msg_type in (ua.MessageType.SecureMessage, ua.MessageType.SecureClose):
             self.SecurityHeader = ua.SymmetricAlgorithmHeader()
@@ -62,7 +63,10 @@ class MessageChunk(ua.FrozenClass):
         if signature_size > 0:
             signature = decrypted[-signature_size:]
             decrypted = decrypted[:-signature_size]
-            crypto.verify(header_to_binary(obj.MessageHeader) + struct_to_binary(obj.SecurityHeader) + decrypted, signature)
+            crypto.verify(
+                header_to_binary(obj.MessageHeader) + struct_to_binary(obj.SecurityHeader) + decrypted,
+                signature
+            )
         data = ua.utils.Buffer(crypto.remove_padding(decrypted))
         obj.SequenceHeader = struct_from_binary(ua.SequenceHeader, data)
         obj.Body = data.read(len(data))
@@ -91,7 +95,8 @@ class MessageChunk(ua.FrozenClass):
         return max_plain_size - ua.SequenceHeader.max_size() - crypto.signature_size() - crypto.min_padding_size()
 
     @staticmethod
-    def message_to_chunks(security_policy, body, max_chunk_size, message_type=ua.MessageType.SecureMessage, channel_id=1, request_id=1, token_id=1):
+    def message_to_chunks(security_policy, body, max_chunk_size, message_type=ua.MessageType.SecureMessage,
+                          channel_id=1, request_id=1, token_id=1):
         """
         Pack message body (as binary string) into one or more chunks.
         Size of each chunk will not exceed max_chunk_size.
@@ -162,10 +167,12 @@ class SecureConnection:
             self.security_token = params.SecurityToken
             self.local_nonce = client_nonce
             self.remote_nonce = params.ServerNonce
-            logger.warning(f"params {params.SecurityToken.RevisedLifetime} security policy: {self.security_policy}")
-            revised_lifetime = self.security_token.RevisedLifetime
             self.security_policy.make_local_symmetric_key(self.remote_nonce, self.local_nonce)
-            self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce, revised_lifetime)
+            self.security_policy.make_remote_symmetric_key(
+                self.local_nonce,
+                self.remote_nonce,
+                self.security_token.RevisedLifetime
+            )
             self._open = True
         else:
             self.next_security_token = params.SecurityToken
@@ -194,7 +201,11 @@ class SecureConnection:
             response.SecurityToken = self.security_token
 
             self.security_policy.make_local_symmetric_key(self.remote_nonce, self.local_nonce)
-            self.security_policy.make_remote_symmetric_key(self.local_nonce, self.remote_nonce, self.security_token.RevisedLifetime)
+            self.security_policy.make_remote_symmetric_key(
+                self.local_nonce,
+                self.remote_nonce,
+                self.security_token.RevisedLifetime
+            )
         else:
             self.next_security_token = copy.deepcopy(self.security_token)
             self.next_security_token.TokenId += 1
@@ -248,15 +259,9 @@ class SecureConnection:
         The only supported types are SecureOpen, SecureMessage, SecureClose.
         If message_type is SecureMessage, the AlgorithmHeader should be passed as arg.
         """
-        chunks = MessageChunk.message_to_chunks(
-            self.security_policy,
-            message,
-            self._max_chunk_size,
-            message_type=message_type,
-            channel_id=self.security_token.ChannelId,
-            request_id=request_id,
-            token_id=self.security_token.TokenId,
-        )
+        chunks = MessageChunk.message_to_chunks(self.security_policy, message, self._max_chunk_size,
+                                                message_type=message_type, channel_id=self.security_token.ChannelId,
+                                                request_id=request_id, token_id=self.security_token.TokenId)
         for chunk in chunks:
             self._sequence_number += 1
             if self._sequence_number >= (1 << 32):
@@ -287,7 +292,8 @@ class SecureConnection:
             timeout = self.prev_security_token.CreatedAt + \
                 timedelta(milliseconds=self.prev_security_token.RevisedLifetime * 1.25)
             if timeout < datetime.utcnow():
-                raise ua.UaError(f"Security token id {security_hdr.TokenId} has timed out " f"({timeout} < {datetime.utcnow()})")
+                raise ua.UaError(f"Security token id {security_hdr.TokenId} has timed out "
+                                 f"({timeout} < {datetime.utcnow()})")
             return
 
         expected_tokens = [self.security_token.TokenId, self.next_security_token.TokenId]
@@ -300,10 +306,12 @@ class SecureConnection:
             raise ValueError(f'Expected chunk, got: {chunk}')
         if chunk.MessageHeader.MessageType != ua.MessageType.SecureOpen:
             if chunk.MessageHeader.ChannelId != self.security_token.ChannelId:
-                raise ua.UaError(f'Wrong channel id {chunk.MessageHeader.ChannelId},' f' expected {self.security_token.ChannelId}')
+                raise ua.UaError(f'Wrong channel id {chunk.MessageHeader.ChannelId},'
+                                 f' expected {self.security_token.ChannelId}')
         if self._incoming_parts:
             if self._incoming_parts[0].SequenceHeader.RequestId != chunk.SequenceHeader.RequestId:
-                raise ua.UaError(f'Wrong request id {chunk.SequenceHeader.RequestId},' f' expected {self._incoming_parts[0].SequenceHeader.RequestId}')
+                raise ua.UaError(f'Wrong request id {chunk.SequenceHeader.RequestId},'
+                                 f' expected {self._incoming_parts[0].SequenceHeader.RequestId}')
         # The sequence number must monotonically increase (but it can wrap around)
         seq_num = chunk.SequenceHeader.SequenceNumber
         if self._peer_sequence_number is not None:
@@ -314,7 +322,9 @@ class SecureConnection:
                     logger.debug('Sequence number wrapped: %d -> %d', self._peer_sequence_number, seq_num)
                 else:
                     # Condition for monotonically increase is not met
-                    raise ua.UaError(f"Received chunk: {chunk} with wrong sequence expecting:" f" {self._peer_sequence_number}, received: {seq_num}," f" spec says to close connection")
+                    raise ua.UaError(f"Received chunk: {chunk} with wrong sequence expecting:"
+                                     f" {self._peer_sequence_number}, received: {seq_num},"
+                                     f" spec says to close connection")
         self._peer_sequence_number = seq_num
 
     def receive_from_header_and_body(self, header, body):
@@ -356,6 +366,7 @@ class SecureConnection:
         if header.MessageType == ua.MessageType.Error:
             msg = struct_from_binary(ua.ErrorMessage, body)
             logger.warning(f"Received an error: {msg}")
+            return msg
         raise ua.UaError(f"Unsupported message type {header.MessageType}")
 
     def _receive(self, msg):
