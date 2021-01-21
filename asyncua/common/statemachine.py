@@ -4,10 +4,10 @@ https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.1/
 Basic statemachines described in OPC UA Spec.:
 StateMachineType
 FiniteStateMachineType
-ExclusiveLimitStateMachineType
-FileTransferStateMachineType
-ProgramStateMachineType
-ShelvedStateMachineType
+ExclusiveLimitStateMachineType - not implemented
+FileTransferStateMachineType - not implemented
+ProgramStateMachineType - not implemented
+ShelvedStateMachineType - not implemented
 Relevant information:
 Overview - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5.2.3.1
 States - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5.2.3.2
@@ -24,6 +24,8 @@ from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
 
 _logger = logging.getLogger(__name__)
 
+############
+''' Workaround till fixed in event_objects.py'''
 class TransitionEvent(TransitionEvent):
     """
     TransitionEvent:
@@ -34,7 +36,7 @@ class TransitionEvent(TransitionEvent):
         self.add_property('Transition', None, ua.VariantType.LocalizedText)
         self.add_property('FromState', None, ua.VariantType.LocalizedText)
         self.add_property('ToState', None, ua.VariantType.LocalizedText)
-
+############
 
 class StateMachine(object):
     '''
