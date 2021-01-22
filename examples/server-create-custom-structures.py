@@ -1,10 +1,8 @@
 import logging
 import asyncio
 
-from IPython import embed
-
 from asyncua import ua, Server
-from asyncua.common.type_dictionary_buider import DataTypeDictionaryBuilder
+from asyncua.common.type_dictionary_builder import DataTypeDictionaryBuilder
 
 
 async def main():

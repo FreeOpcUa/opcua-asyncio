@@ -177,7 +177,7 @@ async def _create_object(server, parentnodeid, nodeid, qname, objecttype):
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
     addnode.ParentNodeId = parentnodeid
-    if await make_node(server, parentnodeid).get_type_definition() == ua.NodeId(ua.ObjectIds.FolderType):
+    if await make_node(server, parentnodeid).read_type_definition() == ua.NodeId(ua.ObjectIds.FolderType):
         addnode.ReferenceTypeId = ua.NodeId(ua.ObjectIds.Organizes)
     else:
         addnode.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasComponent)
@@ -330,7 +330,49 @@ async def create_data_type(parent, nodeid, bname, description=None):
     addnode.NodeAttributes = attrs
     results = await parent.server.add_nodes([addnode])
     results[0].StatusCode.check()
-    return make_node(parent.server, results[0].AddedNodeId)
+
+    new_node_id = results[0].AddedNodeId
+
+    # add reverse_reference
+    aitem = ua.AddReferencesItem()
+    aitem.SourceNodeId = new_node_id
+    aitem.TargetNodeId = parent.nodeid
+    aitem.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasSubtype)
+    aitem.IsForward = False
+    params = [aitem]
+    results = await parent.server.add_references(params)
+
+    return make_node(parent.server, new_node_id)
+
+
+async def create_encoding(parent, nodeid, bname):
+    """
+    Create a new encoding object to be instanciated in address space.
+    arguments are nodeid, browsename
+    or namespace index, name
+    """
+    nodeid, qname = _parse_nodeid_qname(nodeid, bname)
+    qname.NamespaceIndex = 0  # encoding bname idx must be 0
+    return make_node(parent.server, await _create_encoding(parent.server, parent.nodeid, nodeid, qname))
+
+
+async def _create_encoding(server, parentnodeid, nodeid, qname):
+    addnode = ua.AddNodesItem()
+    addnode.RequestedNewNodeId = nodeid
+    addnode.BrowseName = qname
+    addnode.ParentNodeId = parentnodeid
+    addnode.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasEncoding)
+    addnode.NodeClass = ua.NodeClass.ObjectType
+    attrs = ua.ObjectTypeAttributes()
+    attrs.IsAbstract = False
+    attrs.Description = ua.LocalizedText(qname.Name)
+    attrs.DisplayName = ua.LocalizedText(qname.Name)
+    attrs.WriteMask = 0
+    attrs.UserWriteMask = 0
+    addnode.NodeAttributes = attrs
+    results = await server.add_nodes([addnode])
+    results[0].StatusCode.check()
+    return results[0].AddedNodeId
 
 
 async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
@@ -397,9 +439,11 @@ def _guess_datatype(variant):
         else:
             extobj = variant.Value
         classname = extobj.__class__.__name__
-        if not hasattr(ua.ObjectIds, classname):
-            raise ua.UaError(f"Cannot guess DataType of {variant} of python type {type(variant)}")
-        return ua.NodeId(getattr(ua.ObjectIds, classname))
+        if hasattr(ua.ObjectIds, classname):
+            return ua.NodeId(getattr(ua.ObjectIds, classname))
+        if extobj.__class__ in ua.datatype_by_extension_object:
+            return ua.datatype_by_extension_object[extobj.__class__]
+        raise ua.UaError(f"Cannot guess DataType of {variant} of python type {type(variant)}")
     else:
         return ua.NodeId(getattr(ua.ObjectIds, variant.VariantType.name))
 

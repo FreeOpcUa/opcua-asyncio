@@ -1,13 +1,11 @@
-import unittest
-import logging
 import xml.etree.ElementTree as Et
 
 import pytest
 
-from asyncua import ua, Server
-import asyncua.common.type_dictionary_buider
-from asyncua.common.type_dictionary_buider import OPCTypeDictionaryBuilder, DataTypeDictionaryBuilder
-from asyncua.common.type_dictionary_buider import get_ua_class, StructNode
+from asyncua import ua
+import asyncua.common.type_dictionary_builder
+from asyncua.common.type_dictionary_builder import OPCTypeDictionaryBuilder, DataTypeDictionaryBuilder
+from asyncua.common.type_dictionary_builder import get_ua_class, StructNode
 
 port_num = 48540
 ns_urn = 'http://test.freeopcua.github.io'
@@ -17,12 +15,12 @@ pytestmark = pytest.mark.asyncio
 
 
 def to_camel_case(name):
-    func = getattr(asyncua.common.type_dictionary_buider, '_to_camel_case')
+    func = getattr(asyncua.common.type_dictionary_builder, '_to_camel_case')
     return func(name)
 
 
 def reference_generator(source_id, target_id, reference_type, is_forward=True):
-    func = getattr(asyncua.common.type_dictionary_buider, '_reference_generator')
+    func = getattr(asyncua.common.type_dictionary_builder, '_reference_generator')
     return func(source_id, target_id, reference_type, is_forward)
 
 
@@ -46,7 +44,7 @@ async def _srv(server):
     srv.idx = await srv.srv.register_namespace(ns_urn)
     yield srv
 
-    
+
 @pytest.fixture
 async def srv(_srv):
     _srv.test_etree = set_up_test_tree()
@@ -186,7 +184,7 @@ async def test_data_type_dict_add_dictionary(srv):
     assert await dict_node.read_node_class() == ua.NodeClass.Variable
     assert (await dict_node.get_parent()).nodeid == ua.NodeId(ua.ObjectIds.OPCBinarySchema_TypeSystem, 0)
     assert ua.NodeId(ua.ObjectIds.HasComponent, 0) == (await dict_node.get_references(refs=ua.ObjectIds.HasComponent))[0].ReferenceTypeId
-    assert await dict_node.get_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeDictionaryType, 0)
+    assert await dict_node.read_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeDictionaryType, 0)
     assert await dict_node.read_display_name() == ua.LocalizedText(dict_name)
     assert await dict_node.read_data_type() == ua.NodeId(ua.ObjectIds.ByteString)
     assert await dict_node.read_value_rank() == -1
@@ -211,7 +209,7 @@ async def test_data_type_dict_create_data_type(srv):
     assert await desc_node.read_node_class() == ua.NodeClass.Variable
     assert (await desc_node.get_parent()).nodeid == srv.dict_builder.dict_id
     assert ua.NodeId(ua.ObjectIds.HasComponent, 0) == (await desc_node.get_references(refs=ua.ObjectIds.HasComponent))[0].ReferenceTypeId
-    assert await desc_node.get_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeDescriptionType, 0)
+    assert await desc_node.read_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeDescriptionType, 0)
 
     assert await desc_node.read_display_name() == ua.LocalizedText(type_name)
     assert await desc_node.read_data_type() == ua.NodeId(ua.ObjectIds.String)
@@ -224,7 +222,7 @@ async def test_data_type_dict_create_data_type(srv):
     assert await obj_node.read_node_class() == ua.NodeClass.Object
     assert (await obj_node.get_references(refs=ua.ObjectIds.HasEncoding))[0].NodeId == type_node.nodeid
     assert ua.NodeId(ua.ObjectIds.HasEncoding, 0) == (await obj_node.get_references(refs=ua.ObjectIds.HasEncoding))[0].ReferenceTypeId
-    assert await obj_node.get_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeEncodingType, 0)
+    assert await obj_node.read_type_definition() == ua.NodeId(ua.ObjectIds.DataTypeEncodingType, 0)
     assert await obj_node.read_display_name() == ua.LocalizedText('Default Binary')
     assert len(await obj_node.read_event_notifier()) == 0
 

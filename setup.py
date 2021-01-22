@@ -1,21 +1,29 @@
 from setuptools import setup, find_packages
 import sys
 
+# read the contents of your README file
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
 # don't require pytest-runner unless we have been invoked as a test launch
 needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
 pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 setup(
     name="asyncua",
-    version="0.9.3",
+    version="0.9.10",
     description="Pure Python OPC-UA client and server library",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author="Olivier Roulet-Dubonnet",
     author_email="olivier.roulet@gmail.com",
     url='http://freeopcua.github.io/',
     packages=find_packages(),
     provides=["asyncua"],
     license="GNU Lesser General Public License v3 or later",
-    install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", 'cryptography'],
+    install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", "cryptography", "sortedcontainers"],
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

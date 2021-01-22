@@ -1,13 +1,105 @@
 from enum import Enum
+from enum import IntEnum
 from datetime import datetime
 import uuid
-from enum import IntEnum
 import logging
 import re
+from typing import Union, List, TYPE_CHECKING, Tuple
 
 from asyncua import ua
+from asyncua import Node
+from asyncua.common.manage_nodes import create_encoding, create_data_type
+if TYPE_CHECKING:
+    from asyncua import Client, Server
 
 logger = logging.getLogger(__name__)
+
+
+def new_struct_field(
+    name: str,
+    dtype: Union[ua.NodeId, Node, ua.VariantType],
+    array: bool = False,
+    optional: bool = False,
+    description: str = "",
+) -> ua.StructureField:
+    """
+    simple way to create a StructureField
+    """
+    field = ua.StructureField()
+    field.Name = name
+    field.IsOptional = optional
+    if description:
+        field.Description = ua.LocalizedText(text=description)
+    else:
+        field.Description = ua.LocalizedText(text=name)
+    if isinstance(dtype, ua.VariantType):
+        field.DataType = ua.NodeId(dtype.value, 0)
+    elif isinstance(dtype, ua.NodeId):
+        field.DataType = dtype
+    elif isinstance(dtype, Node):
+        field.DataType = dtype.nodeid
+    else:
+        raise ValueError(f"DataType of a field must be a NodeId, not {dtype} of type {type(dtype)}")
+    if array:
+        field.ValueRank = ua.ValueRank.OneOrMoreDimensions
+        field.ArrayDimensions = [1]
+    else:
+        field.ValueRank = ua.ValueRank.Scalar
+        field.ArrayDimensions = []
+    return field
+
+
+async def new_struct(
+    server: Union["Server", "Client"],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    fields: List[ua.StructureField],
+) -> Tuple[Node, List[Node]]:
+    """
+    simple way to create a new structure
+    return the created data type node and the list of encoding nodes
+    """
+    dtype = await create_data_type(server.nodes.base_structure_type, idx, name)
+
+    if isinstance(idx, ua.NodeId):
+        # user has provided a node id, we cannot reuse it
+        idx = idx.NamespaceIndex
+    enc = await create_encoding(dtype, idx, "Default Binary")
+    # TODO: add other encoding the day we support them
+
+    sdef = ua.StructureDefinition()
+    sdef.StructureType = ua.StructureType.Structure
+    for field in fields:
+        if field.IsOptional:
+            sdef.StructureType = ua.StructureType.StructureWithOptionalFields
+            break
+    sdef.Fields = fields
+    sdef.BaseDataType = server.nodes.base_data_type.nodeid
+    sdef.DefaultEncodingId = enc.nodeid
+
+    await dtype.write_data_type_definition(sdef)
+    return dtype, [enc]
+
+
+async def new_enum(
+    server: Union["Server", "Client"],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    values: List[str],
+) -> Node:
+    edef = ua.EnumDefinition()
+    counter = 0
+    for val_name in values:
+        field = ua.EnumField()
+        field.DisplayName = ua.LocalizedText(text=val_name)
+        field.Name = val_name
+        field.Value = counter
+        counter += 1
+        edef.Fields.append(field)
+
+    dtype = await server.nodes.enum_data_type.add_data_type(idx, name)
+    await dtype.write_data_type_definition(edef)
+    return dtype
 
 
 def clean_name(name):
@@ -28,63 +120,65 @@ def get_default_value(uatype, enums=None):
         enums = {}
     if uatype == "String":
         return "None"
-    elif uatype == "Guid":
+    if uatype == "Guid":
         return "uuid.uuid4()"
-    elif uatype in ("ByteString", "CharArray", "Char"):
+    if uatype in ("ByteString", "CharArray", "Char"):
         return b''
-    elif uatype == "Boolean":
+    if uatype == "Boolean":
         return "True"
-    elif uatype == "DateTime":
+    if uatype == "DateTime":
         return "datetime.utcnow()"
-    elif uatype in ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte", "SByte"):
+    if uatype in ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte", "SByte"):
         return 0
-    elif uatype in enums:
+    if uatype in enums:
         return f"ua.{uatype}({enums[uatype]})"
-    elif hasattr(ua, uatype) and issubclass(getattr(ua, uatype), Enum):
+    if hasattr(ua, uatype) and issubclass(getattr(ua, uatype), Enum):
         # We have an enum, try to initilize it correctly
         val = list(getattr(ua, uatype).__members__)[0]
         return f"ua.{uatype}.{val}"
-    else:
-        return f"ua.{uatype}()"
+    return f"ua.{uatype}()"
 
 
-def make_structure_code(data_type, name, sdef):
+def make_structure_code(data_type, struct_name, sdef):
     """
     given a StructureDefinition object, generate Python code
     """
     if sdef.StructureType not in (ua.StructureType.Structure, ua.StructureType.StructureWithOptionalFields):
-        #if sdef.StructureType != ua.StructureType.Structure:
-        raise NotImplementedError(f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {name} with DataTypdeDefinition {sdef}")
-
+        # if sdef.StructureType != ua.StructureType.Structure:
+        raise NotImplementedError(f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {struct_name} with DataTypdeDefinition {sdef}")
     code = f"""
 
-class {name}:
+class {struct_name}(ua.FrozenClass):
 
     '''
-    {name} structure autogenerated from StructureDefinition object
+    {struct_name} structure autogenerated from StructureDefinition object
     '''
 
-    data_type = ua.NodeId({data_type.Identifier}, {data_type.NamespaceIndex})
+    data_type = ua.NodeId.from_string("{data_type.to_string()}")
 
 """
     counter = 0
-    # FIXME: with subscturutre weprobably need to add all fields from parents
+    # FIXME: to support inheritance we probably need to add all fields from parents
     # this requires network call etc...
     if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
         code += '    ua_switches = {\n'
         for field in sdef.Fields:
+            fname = clean_name(field.Name)
 
             if field.IsOptional:
-                code += f"        '{field.Name}': ('Encoding', {counter}),\n"
+                code += f"        '{fname}': ('Encoding', {counter}),\n"
                 counter += 1
         code += "    }\n\n"
 
     code += '    ua_types = [\n'
     if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-        code += f"        ('Encoding', 'Byte'),\n"
+        code += "        ('Encoding', 'Byte'),\n"
     uatypes = []
     for field in sdef.Fields:
-        prefix = 'ListOf' if field.ValueRank >= 1 else ''
+        fname = clean_name(field.Name)
+        prefix = ""
+        if field.ValueRank >= 1 or field.ArrayDimensions:
+            prefix = 'ListOf'
         if field.DataType.NamespaceIndex == 0 and field.DataType.Identifier in ua.ObjectIdNames:
             uatype = ua.ObjectIdNames[field.DataType.Identifier]
         elif field.DataType in ua.extension_objects_by_datatype:
@@ -92,18 +186,18 @@ class {name}:
         elif field.DataType in ua.enums_by_datatype:
             uatype = ua.enums_by_datatype[field.DataType].__name__
         else:
-            #FIXME: we are probably missing many custom tyes here based on builtin types
-            #maybe we can use ua_utils.get_base_data_type()
-            raise RuntimeError(f"Unknown datatype for field: {field} in structure:{name}, please report")
+            # FIXME: we are probably missing many custom tyes here based on builtin types
+            # maybe we can use ua_utils.get_base_data_type()
+            raise RuntimeError(f"Unknown datatype for field: {field} in structure:{struct_name}, please report")
         if field.ValueRank >= 1 and uatype == 'Char':
             uatype = 'String'
         uatypes.append((field, uatype))
-        code += f"        ('{field.Name}', '{prefix + uatype}'),\n"
+        code += f"        ('{fname}', '{prefix + uatype}'),\n"
     code += "    ]\n"
     code += f"""
     def __str__(self):
-        vals = [f"{{name}}:{{val}}" for name, val in self.__dict__.items()]
-        return f"{name}({{','.join(vals)}})"
+        vals = [f"{{field_name}}:{{val}}" for field_name, val in self.__dict__.items()]
+        return f"{struct_name}({{','.join(vals)}})"
 
     __repr__ = __str__
 
@@ -112,13 +206,15 @@ class {name}:
     if not sdef.Fields:
         code += "      pass"
     if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-        code += f"        self.Encoding = 0\n"
+        code += "        self.Encoding = 0\n"
     for field, uatype in uatypes:
+        fname = clean_name(field.Name)
         if field.ValueRank >= 1:
             default_value = "[]"
         else:
             default_value = get_default_value(uatype)
-        code += f"        self.{field.Name} = {default_value}\n"
+        code += f"        self.{fname} = {default_value}\n"
+    code += "        self._freeze = True\n"
     return code
 
 
@@ -146,7 +242,6 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False):
     else:
         code = make_structure_code(data_type, name, sdef)
     logger.debug("Executing code: %s", code)
-    print("CODE", code)
     exec(code, env)
     return env
 
@@ -184,7 +279,7 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None):
         await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef)
 
 
-async def load_data_type_definitions(server, base_node=None):
+async def load_data_type_definitions(server: Union["Server", "Client"], base_node: Node = None) -> None:
     await load_enums(server)  # we need all enums to generate structure code
     if base_node is None:
         base_node = server.nodes.base_structure_type
@@ -201,7 +296,7 @@ async def load_data_type_definitions(server, base_node=None):
 
 async def _read_data_type_definition(server, desc):
     if desc.BrowseName.Name == "FilterOperand":
-        #FIXME: find out why that one is not in ua namespace...
+        # FIXME: find out why that one is not in ua namespace...
         return None
     # FIXME: this is fishy, we may have same name in different Namespaces
     if hasattr(ua, desc.BrowseName.Name):
@@ -211,7 +306,7 @@ async def _read_data_type_definition(server, desc):
     try:
         sdef = await node.read_data_type_definition()
     except ua.uaerrors.BadAttributeIdInvalid:
-        logger.warning("%s has no DataTypeDefinition atttribute", node)
+        logger.debug("%s has no DataTypeDefinition atttribute", node)
         return None
     except Exception:
         logger.exception("Error getting datatype for node %s", node)
@@ -234,21 +329,21 @@ class {name}(IntEnum):
 """
 
     for field in edef.Fields:
-        name = field.Name
+        name = clean_name(field.Name)
         value = field.Value
         code += f"    {name} = {value}\n"
 
     return code
 
 
-async def load_enums(server, base_node=None):
+async def load_enums(server: Union["Server", "Client"], base_node: Node = None) -> None:
     if base_node is None:
         base_node = server.nodes.enum_data_type
     for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
-        if hasattr(ua, desc.BrowseName.Name):
-            continue
-        logger.warning("Registring Enum %s %s", desc.NodeId, desc.BrowseName)
         name = clean_name(desc.BrowseName.Name)
+        if hasattr(ua, name):
+            continue
+        logger.warning("Registring Enum %s %s", desc.NodeId, name)
         edef = await _read_data_type_definition(server, desc)
         if not edef:
             continue

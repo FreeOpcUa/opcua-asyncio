@@ -74,9 +74,7 @@ class UASocketProtocol(asyncio.Protocol):
                     self.receive_buffer = data
                     return
                 if len(buf) < header.body_size:
-                    self.logger.debug(
-                        'We did not receive enough data from server. Need %s got %s', header.body_size, len(buf)
-                    )
+                    self.logger.debug('We did not receive enough data from server. Need %s got %s', header.body_size, len(buf))
                     self.receive_buffer = data
                     return
                 msg = self._connection.receive_from_header_and_body(header, buf)
@@ -146,10 +144,7 @@ class UASocketProtocol(asyncio.Protocol):
         """
         timeout = self.timeout if timeout is None else timeout
         try:
-            data = await asyncio.wait_for(
-                self._send_request(request, timeout, message_type),
-                timeout if timeout else None
-            )
+            data = await asyncio.wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
         except Exception:
             if self.state != self.OPEN:
                 raise ConnectionError("Connection is closed") from None
@@ -173,9 +168,7 @@ class UASocketProtocol(asyncio.Protocol):
         try:
             self._callbackmap[request_id].set_result(body)
         except KeyError:
-            raise ua.UaError(
-                f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}"
-            )
+            raise ua.UaError(f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}")
         except asyncio.InvalidStateError:
             if not self.closed:
                 raise ua.UaError(f"Future for request id {request_id} is already done")
@@ -216,13 +209,9 @@ class UASocketProtocol(asyncio.Protocol):
         request = ua.OpenSecureChannelRequest()
         request.Parameters = params
         if self._open_secure_channel_exchange is not None:
-            raise RuntimeError('Two Open Secure Channel requests can not happen too close to each other. '
-                'The response must be processed and returned before the next request can be sent.')
+            raise RuntimeError('Two Open Secure Channel requests can not happen too close to each other. ' 'The response must be processed and returned before the next request can be sent.')
         self._open_secure_channel_exchange = params
-        await asyncio.wait_for(
-            self._send_request(request, message_type=ua.MessageType.SecureOpen),
-            self.timeout
-        )
+        await asyncio.wait_for(self._send_request(request, message_type=ua.MessageType.SecureOpen), self.timeout)
         _return = self._open_secure_channel_exchange.Parameters
         self._open_secure_channel_exchange = None
         return _return
@@ -253,7 +242,6 @@ class UaClient:
     In this Python implementation  most of the structures are defined in
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
-
     def __init__(self, timeout=1, loop=None):
         """
         :param timeout: Timout in seconds
@@ -278,9 +266,7 @@ class UaClient:
         """Connect to server socket."""
         self.logger.info("opening connection")
         # Timeout the connection when the server isn't available
-        await asyncio.wait_for(
-            self.loop.create_connection(self._make_protocol, host, port), self._timeout
-        )
+        await asyncio.wait_for(self.loop.create_connection(self._make_protocol, host, port), self._timeout)
 
     def disconnect_socket(self):
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
@@ -462,10 +448,7 @@ class UaClient:
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
         data = await self.protocol.send_request(request)
-        response = struct_from_binary(
-            ua.CreateSubscriptionResponse,
-            data
-        )
+        response = struct_from_binary(ua.CreateSubscriptionResponse, data)
         response.ResponseHeader.ServiceResult.check()
         self._subscription_callbacks[response.Parameters.SubscriptionId] = callback
         self.logger.info("create_subscription success SubscriptionId %s", response.Parameters.SubscriptionId)
@@ -482,10 +465,7 @@ class UaClient:
         request = ua.DeleteSubscriptionsRequest()
         request.Parameters.SubscriptionIds = subscription_ids
         data = await self.protocol.send_request(request)
-        response = struct_from_binary(
-            ua.DeleteSubscriptionsResponse,
-            data
-        )
+        response = struct_from_binary(ua.DeleteSubscriptionsResponse, data)
         response.ResponseHeader.ServiceResult.check()
         self.logger.info("remove subscription callbacks for %r", subscription_ids)
         for sid in subscription_ids:
@@ -549,10 +529,7 @@ class UaClient:
             try:
                 callback = self._subscription_callbacks[subscription_id]
             except KeyError:
-                self.logger.warning(
-                    "Received data for unknown subscription %s active are %s", subscription_id,
-                    self._subscription_callbacks.keys()
-                )
+                self.logger.warning("Received data for unknown subscription %s active are %s", subscription_id, self._subscription_callbacks.keys())
             else:
                 try:
                     if asyncio.iscoroutinefunction(callback):

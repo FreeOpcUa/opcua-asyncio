@@ -2,8 +2,6 @@ import pytest
 import os.path
 import xml.etree.ElementTree as ET
 
-import pytest
-
 from asyncua.server.address_space import AddressSpace
 from asyncua.server.address_space import NodeManagementService
 from asyncua.server.standard_address_space import standard_address_space

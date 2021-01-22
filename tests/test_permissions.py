@@ -1,6 +1,5 @@
 import os
 import pytest
-import sys
 
 from asyncua import Client
 from asyncua import Server
