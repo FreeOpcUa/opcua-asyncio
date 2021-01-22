@@ -7,7 +7,7 @@ import logging
 from typing import Dict, Iterable
 
 from asyncua import ua
-from asyncua.common import utils
+from asyncua.common import utils, uamethod
 from .address_space import AddressSpace
 from .internal_subscription import InternalSubscription
 
@@ -24,6 +24,7 @@ class SubscriptionService:
         self.aspace: AddressSpace = aspace
         self.subscriptions: Dict[int, InternalSubscription] = {}
         self._sub_id_counter = 77
+        self.standard_events = {}
 
     @property
     def active_subscription_ids(self):
@@ -116,3 +117,26 @@ class SubscriptionService:
     async def trigger_event(self, event):
         for sub in self.subscriptions.values():
             await sub.monitored_item_srv.trigger_event(event)
+
+
+    @uamethod
+    async def condition_refresh(self, parent, sub_id):
+        if sub_id not in self.subscriptions:
+            return ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
+        if ua.ObjectIds.RefreshStartEventType in self.standard_events:
+            await self.standard_events[ua.ObjectIds.RefreshStartEventType].trigger()
+        await self.subscriptions[sub_id].monitored_item_srv.condition_refresh()
+        if ua.ObjectIds.RefreshEndEventType in self.standard_events:
+            await self.standard_events[ua.ObjectIds.RefreshEndEventType].trigger()
+
+    @uamethod
+    async def condition_refresh2(self, parent, sub_id, mid):
+        if sub_id not in self.subscriptions:
+            return ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
+        if mid not in self.subscriptions[sub_id].monitored_item_srv._monitored_items:
+            return ua.StatusCode(ua.StatusCodes.BadMonitoredItemIdInvalid)
+        if ua.ObjectIds.RefreshStartEventType in self.standard_events:
+            await self.standard_events[ua.ObjectIds.RefreshStartEventType].trigger()
+        self.subscriptions[sub_id].monitored_item_srv.condition_refresh2(mid)
+        if ua.ObjectIds.RefreshEndEventType in self.standard_events:
+            await self.standard_events[ua.ObjectIds.RefreshEndEventType].trigger()

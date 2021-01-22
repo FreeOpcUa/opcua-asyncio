@@ -111,6 +111,7 @@ What works:
 * login with certificate
 * communication encryption
 * removing nodes
+* receiving alarms and conditions
 
 Tested servers: freeopcua C++, freeopcua Python, prosys, kepware, beckhoff, winCC, B&R, …
 
@@ -141,6 +142,7 @@ What works:
 * removing nodes
 * history support for data change and events
 * more high level solution to create custom structures
+* alarms and conditions (the events if you want the representation in the address space you have to make it on your own)
 
 Tested clients: freeopcua C++, freeopcua Python, uaexpert, prosys, quickopc
 
@@ -149,7 +151,6 @@ Not yet implemented:
 * UDP
 * WebSocket
 * session restore
-* alarms
 * XML protocol
 * views
 * localized text features

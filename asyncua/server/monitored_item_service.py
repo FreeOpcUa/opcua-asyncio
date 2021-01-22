@@ -49,6 +49,8 @@ class MonitoredItemService:
         self._monitored_events = {}
         self._monitored_datachange: Dict[int, int] = {}
         self._monitored_item_counter = 111
+        self._events_with_retain = {}
+        self._mid_with_retain = {}
 
     def __str__(self):
         return f"MonitoredItemService({self.isub.data.SubscriptionId})"
@@ -124,6 +126,17 @@ class MonitoredItemService:
         # result.FilterResult = ua.EventFilterResult()  # spec says we can ignore if not error
         mdata.where_clause_evaluator = WhereClauseEvaluator(self.logger, self.aspace, mdata.filter.WhereClause)
         self._commit_monitored_item(result, mdata)
+
+        def find_events(node_id):
+            for ref in self.aspace.get(node_id).references:
+                if ref.ReferenceTypeId == ua.NumericNodeId(41):
+                    if ref.NodeId not in self._monitored_events:
+                        self._monitored_events[ref.NodeId] = []
+                    self._monitored_events[ref.NodeId].append(result.MonitoredItemId)
+                elif ref.ReferenceTypeId == ua.NumericNodeId(48) and ref.IsForward is True:
+                    find_events(ref.NodeId)
+
+        find_events(params.ItemToMonitor.NodeId)
         if params.ItemToMonitor.NodeId not in self._monitored_events:
             self._monitored_events[params.ItemToMonitor.NodeId] = []
         self._monitored_events[params.ItemToMonitor.NodeId].append(result.MonitoredItemId)
@@ -205,11 +218,18 @@ class MonitoredItemService:
         return False
 
     async def trigger_event(self, event):
+        if hasattr(event, 'Retain'):
+            if event.Retain:
+                self._events_with_retain[event.emitting_node] = event
+            elif event.emitting_node in self._events_with_retain:
+                del self._events_with_retain[event.emitting_node]
         if event.emitting_node not in self._monitored_events:
             self.logger.debug("%s has NO subscription for events %s from node: %s", self, event, event.emitting_node)
             return False
+
         self.logger.debug("%s has subscription for events %s from node: %s", self, event, event.emitting_node)
         mids = self._monitored_events[event.emitting_node]
+
         for mid in mids:
             await self._trigger_event(event, mid)
         return True
@@ -219,6 +239,19 @@ class MonitoredItemService:
             self.logger.debug("Could not find monitored items for id %s for event %s in subscription %s", mid, event,
                               self)
             return
+        if hasattr(event, 'Retain'):
+            if event.Retain:
+                if mid in self._mid_with_retain:
+                    if event not in self._mid_with_retain[mid]:
+                        self._mid_with_retain[mid].append(event)
+                else:
+                    self._mid_with_retain[mid] = [event]
+            else:
+                if mid in self._mid_with_retain.keys():
+                    if event in self._mid_with_retain[mid]:
+                        self._mid_with_retain[mid].remove(event)
+                    if not self._mid_with_retain[mid]:
+                        del self._mid_with_retain[mid]
         mdata = self._monitored_items[mid]
         if not mdata.where_clause_evaluator.eval(event):
             self.logger.info("%s, %s, Event %s does not fit WhereClause, not generating event", self, mid, event)
@@ -226,10 +259,20 @@ class MonitoredItemService:
         fieldlist = ua.EventFieldList()
         fieldlist.ClientHandle = mdata.client_handle
         fieldlist.EventFields = event.to_event_fields(mdata.filter.SelectClauses)
+
         await self.isub.enqueue_event(mid, fieldlist, mdata.queue_size)
 
     async def trigger_statuschange(self, code):
         await self.isub.enqueue_statuschange(code)
+
+    async def condition_refresh(self):
+        for event in self._events_with_retain.values():
+            await self.trigger_event(event)
+
+    def condition_refresh2(self, mid):
+        if mid in self._mid_with_retain:
+            for event in self._mid_with_retain[mid]:
+                self._trigger_event(event, mid)
 
 
 class WhereClauseEvaluator:

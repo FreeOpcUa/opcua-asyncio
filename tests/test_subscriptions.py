@@ -529,12 +529,21 @@ async def test_events_MyObject(opc):
 
 
 async def test_events_wrong_source(opc):
-    objects = opc.server.nodes.objects
+    # clean the previous BaseEvent from the server
+    # it only exists if you run previous tests
+    server_node = opc.server.nodes.server
+    server_refs = await server_node.get_references(41)
+    for ref in server_refs:
+        if ref.ReferenceTypeId.Identifier == 41 and ref.NodeId.Identifier == 2041:
+            await server_node.delete_reference(2041, 41)
+    objects = opc.server.get_objects_node()
     o = await objects.add_object(3, 'MyObject')
+    o2 = await objects.add_object(3, 'MyObject2')
     evgen = await opc.server.get_event_generator(emitting_node=o)
+    evgen2 = await opc.server.get_event_generator(2782, emitting_node=o2)
     myhandler = MySubHandler()
     sub = await opc.opc.create_subscription(100, myhandler)
-    handle = await sub.subscribe_events()
+    handle = await sub.subscribe_events(o2)
     tid = datetime.utcnow()
     msg = "this is my msg "
     await evgen.trigger(tid, msg)

@@ -6,6 +6,7 @@ from typing import Optional
 import sys
 
 from asyncua import ua
+from asyncua.ua.uaerrors import BadSourceNodeIdInvalid, BadTargetNodeIdInvalid
 from ..common import events, event_objects, Node
 
 
@@ -17,8 +18,9 @@ class EventGenerator:
 
     Arguments to constructor are:
         server: The InternalSession object to use for query and event triggering
-        source: The emiting source for the node, either an objectId, NodeId or a Node
+        emitting_node: The emiting source for the node, either an objectId, NodeId or a Node
         etype: The event type, either an objectId, a NodeId or a Node object
+        notifier_path: the path from the Server-Object to the emitting node
     """
 
     def __init__(self, isession):
@@ -27,7 +29,7 @@ class EventGenerator:
         self.event: Optional[event_objects.BaseEvent] = None
         self.emitting_node: Optional[Node] = None
 
-    async def init(self, etype=None, emitting_node=ua.ObjectIds.Server):
+    async def init(self, etype=None, emitting_node=ua.ObjectIds.Server, notifier_path=None):
         node = None
 
         if isinstance(etype, event_objects.BaseEvent):
@@ -41,6 +43,17 @@ class EventGenerator:
 
         if node:
             self.event = await events.get_event_obj_from_type_node(node)
+            if isinstance(self.event, event_objects.Condition):
+                # we need this that it works proper for conditions and alarms aka ConditionId
+                if isinstance(emitting_node, Node):
+                    condition_id = ua.NodeId(emitting_node.nodeid.Identifier, emitting_node.nodeid.NamespaceIndex)
+                elif isinstance(emitting_node, ua.NodeId):
+                    condition_id = emitting_node
+                elif isinstance(emitting_node, int):
+                    condition_id = ua.NodeId(emitting_node)
+                else:
+                    condition_id = ua.NodeId(emitting_node.Identifier, emitting_node.NamespaceIndex)
+                self.event.add_property('NodeId', condition_id, ua.VariantType.NodeId)
 
         if isinstance(emitting_node, Node):
             pass
@@ -55,8 +68,38 @@ class EventGenerator:
         if not self.event.SourceName:
             self.event.SourceName = (await Node(self.isession, self.event.SourceNode).read_browse_name()).Name
 
-        await emitting_node.set_event_notifier([ua.EventNotifier.SubscribeToEvents])
         refs = []
+        if notifier_path is not None:
+            for i, node in enumerate(notifier_path):
+                if not isinstance(node, Node):
+                    notifier_path[i] = Node(self.isession, node)
+            if notifier_path[0] != Node(self.isession, ua.ObjectIds.Server):
+                raise BadSourceNodeIdInvalid
+            if notifier_path[-1] != emitting_node:
+                raise BadTargetNodeIdInvalid
+            for i, node in enumerate(notifier_path):
+                if node == emitting_node:
+                    continue
+                ref = ua.AddReferencesItem()
+                ref.IsForward = True
+                ref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasNotifier)
+                ref.SourceNodeId = node.nodeid
+                ref.TargetNodeClass = await node.read_node_class()
+                ref.TargetNodeId = notifier_path[i + 1].nodeid
+                refs.append(ref)
+
+                await node.set_event_notifier([ua.EventNotifier.SubscribeToEvents])
+        else:
+            if emitting_node.nodeid.Identifier != ua.ObjectIds.Server:
+                ref = ua.AddReferencesItem()
+                ref.IsForward = True
+                ref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasNotifier)
+                ref.SourceNodeId = ua.NodeId(ua.ObjectIds.Server)
+                ref.TargetNodeClass = await emitting_node.read_node_class()
+                ref.TargetNodeId = emitting_node.nodeid
+                refs.append(ref)
+
+        await emitting_node.set_event_notifier([ua.EventNotifier.SubscribeToEvents])
         ref = ua.AddReferencesItem()
         ref.IsForward = True
         ref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.GeneratesEvent)
@@ -65,7 +108,8 @@ class EventGenerator:
         ref.TargetNodeId = self.event.EventType
         refs.append(ref)
         results = await self.isession.add_references(refs)
-        # result.StatusCode.check()
+        for result in results:
+            result.check()
 
         self.emitting_node = emitting_node
 
@@ -99,5 +143,4 @@ class EventGenerator:
             self.event.Message = ua.LocalizedText(message)
         elif not self.event.Message:
             self.event.Message = ua.LocalizedText((await Node(self.isession, self.event.SourceNode).read_browse_name()).Name).Text
-
         await self.isession.subscription_service.trigger_event(self.event)
