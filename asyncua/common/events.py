@@ -40,14 +40,22 @@ class Event:
 
     def add_property(self, name, val, datatype):
         """
-        Add a property to event and tore its data type
+        Add a property to event and store its data type
+        """
+        setattr(self, name, val)
+        self.data_types[name] = datatype
+
+    def add_variable(self, name, val, datatype):
+        """
+        Add a variable to event and store its data type
+        variables are able to have properties as children
         """
         setattr(self, name, val)
         self.data_types[name] = datatype
 
     def get_event_props_as_fields_dict(self):
         """
-        convert all properties of the Event class to a dict of variants
+        convert all properties and variables of the Event class to a dict of variants
         """
         field_vars = {}
         for key, value in vars(self).items():
@@ -84,16 +92,16 @@ class Event:
         """
         fields = []
         for sattr in select_clauses:
-            if not sattr.BrowsePath:
-                name = ua.AttributeIds(sattr.AttributeId).name
-            else:
-                name = sattr.BrowsePath[0].Name
+            name = self.simple_attribute_to_field_name(sattr)
             try:
                 val = getattr(self, name)
             except AttributeError:
                 field = ua.Variant(None)
             else:
-                field = ua.Variant(copy.deepcopy(val), self.data_types[name])
+                if val is None:
+                    field = ua.Variant(None)
+                else:
+                    field = ua.Variant(copy.deepcopy(val), self.data_types[name])
             fields.append(field)
         return fields
 
@@ -106,12 +114,22 @@ class Event:
         ev.select_clauses = select_clauses
         ev.event_fields = fields
         for idx, sattr in enumerate(select_clauses):
-            if len(sattr.BrowsePath) == 0:
-                name = sattr.AttributeId.name
-            else:
-                name = sattr.BrowsePath[0].Name
+            name = Event.simple_attribute_to_field_name(sattr)
             ev.add_property(name, fields[idx].Value, fields[idx].VariantType)
         return ev
+
+    @staticmethod
+    def simple_attribute_to_field_name(simpleAttribute):
+        if len(simpleAttribute.BrowsePath) == 0:
+            name = simpleAttribute.AttributeId.name
+        else:
+            name = simpleAttribute.BrowsePath[0].Name
+            # Append the sub-property of a VariableType with '/'
+            iter_paths = iter(simpleAttribute.BrowsePath)
+            next(iter_paths)                
+            for path in iter_paths:
+                name += '/' + path.Name
+        return name
 
 
 async def get_filter_from_event_type(eventtypes):
@@ -121,21 +139,29 @@ async def get_filter_from_event_type(eventtypes):
     return evfilter
 
 
+async def append_new_field_to_select_clauses(field, select_clauses, parent_variable):
+    already_selected = [op.BrowsePath for op in select_clauses if not op.BrowsePath]
+    browsePath = []
+    if parent_variable:
+        browsePath.append(await parent_variable.read_browse_name())
+    browsePath.append(await field.read_browse_name())
+    if browsePath not in already_selected:
+        op = ua.SimpleAttributeOperand()
+        op.AttributeId = ua.AttributeIds.Value
+        op.BrowsePath = browsePath
+        select_clauses.append(op)    
+
+
 async def select_clauses_from_evtype(evtypes):
-    clauses = []
-    selected_paths = []
+    select_clauses = []
     for evtype in evtypes:
-        event_props_and_vars = await get_event_properties_from_type_node(evtype)
-        event_props_and_vars.extend(await get_event_variables_from_type_node(evtype))
-        for node in event_props_and_vars:
-            browse_name = await node.read_browse_name()
-            if browse_name not in selected_paths:
-                op = ua.SimpleAttributeOperand()
-                op.AttributeId = ua.AttributeIds.Value
-                op.BrowsePath = [browse_name]
-                clauses.append(op)
-                selected_paths.append(browse_name)
-    return clauses
+        for property in await get_event_properties_from_type_node(evtype):
+            await append_new_field_to_select_clauses(property, select_clauses, None)
+        for variable in await get_event_variables_from_type_node(evtype):
+            await append_new_field_to_select_clauses(variable, select_clauses, None)
+            for subproperty in await variable.get_properties():
+                await append_new_field_to_select_clauses(subproperty, select_clauses, variable)
+    return select_clauses
 
 
 async def where_clause_from_evtype(evtypes):
@@ -166,11 +192,11 @@ async def where_clause_from_evtype(evtypes):
     return cf
 
 
-async def get_event_properties_from_type_node(node):
-    properties = []
+async def select_event_fields_from_type_node(node, fieldSelector):
+    fields = []
     curr_node = node
     while True:
-        properties.extend(await curr_node.get_properties())
+        fields.extend(await fieldSelector(curr_node))
         if curr_node.nodeid.Identifier == ua.ObjectIds.BaseEventType:
             break
         parents = await curr_node.get_referenced_nodes(
@@ -179,58 +205,64 @@ async def get_event_properties_from_type_node(node):
         if len(parents) != 1:  # Something went wrong
             return None
         curr_node = parents[0]
-    return properties
+    return fields
+
+
+async def get_event_properties_from_type_node(node):
+    return await select_event_fields_from_type_node(node, lambda n: n.get_properties())
 
 
 async def get_event_variables_from_type_node(node):
-    variables = []
-    curr_node = node
-    while True:
-        variables.extend(await curr_node.get_variables())
-        if curr_node.nodeid.Identifier == ua.ObjectIds.BaseEventType:
-            break
-        parents = await curr_node.get_referenced_nodes(
-            refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True
-        )
-        if len(parents) != 1:  # Something went wrong
-            return None
-        curr_node = parents[0]
-    return variables
+    return await select_event_fields_from_type_node(node, lambda n: n.get_variables())
 
 
 async def get_event_obj_from_type_node(node):
     """
     return an Event object from an event type node
     """
-    if node.nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
-        return asyncua.common.event_objects.IMPLEMENTED_EVENTS[node.nodeid.Identifier]()
-    else:
-        parent_identifier, parent_eventtype = await _find_parent_eventtype(node)
+    if node.nodeid.NamespaceIndex == 0:
+        if node.nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
+            return asyncua.common.event_objects.IMPLEMENTED_EVENTS[node.nodeid.Identifier]()
 
-        class CustomEvent(parent_eventtype):
+    parent_identifier, parent_eventtype = await _find_parent_eventtype(node)
 
-            def __init__(self):
-                parent_eventtype.__init__(self)
-                self.EventType = node.nodeid
+    class CustomEvent(parent_eventtype):
 
-            async def init(self):
-                curr_node = node
-                while curr_node.nodeid.Identifier != parent_identifier:
-                    node_props_and_vars = await curr_node.get_properties()
-                    node_props_and_vars.extend(await curr_node.get_variables())
-                    for field in node_props_and_vars:
-                        name = (await field.read_browse_name()).Name
-                        val = await field.read_data_value()
-                        self.add_property(name, val.Value.Value, val.Value.VariantType)
-                    parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype,
-                                                                   direction=ua.BrowseDirection.Inverse,
-                                                                   includesubtypes=True)
+        def __init__(self):
+            parent_eventtype.__init__(self)
+            self.EventType = node.nodeid
 
-                    if len(parents) != 1:  # Something went wrong
-                        raise UaError("Parent of event type could notbe found")
-                    curr_node = parents[0]
+        async def add_new_property(self, property, parent_variable):
+            name = (await property.read_browse_name()).Name
+            if parent_variable:
+                parent_name = (await parent_variable.read_browse_name()).Name
+                name = f'{parent_name}/{name}'
+            val = await property.read_data_value()
+            self.add_property(name, val.Value.Value, val.Value.VariantType)
 
-                self._freeze = True
+        async def add_new_variable(self, variable):
+            name = (await variable.read_browse_name()).Name
+            val = await variable.read_data_value()
+            self.add_variable(name, val.Value.Value, await variable.get_data_type_as_variant_type())
+
+        async def init(self):
+            curr_node = node
+            while curr_node.nodeid.Identifier != parent_identifier:
+                for prop in await curr_node.get_properties():
+                    await self.add_new_property(prop, None)
+                for var in await curr_node.get_variables():
+                    await self.add_new_variable(var)
+                    # Add the sub-properties of the VariableType
+                    for prop in await var.get_properties():
+                        await self.add_new_property(prop, var)
+                parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype,
+                                                               direction=ua.BrowseDirection.Inverse,
+                                                               includesubtypes=True)
+                if len(parents) != 1:  # Something went wrong
+                    raise UaError("Parent of event type could not be found")
+                curr_node = parents[0]
+
+            self._freeze = True
 
     ce = CustomEvent()
     await ce.init()
@@ -240,13 +272,12 @@ async def get_event_obj_from_type_node(node):
 async def _find_parent_eventtype(node):
     """
     """
-    parents = await node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype,
-                                              direction=ua.BrowseDirection.Inverse, includesubtypes=True)
+    parents = await node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse,
+                                              includesubtypes=True)
 
     if len(parents) != 1:   # Something went wrong
-        raise UaError("Parent of event type could notbe found")
-    if parents[0].nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
-        return parents[0].nodeid.Identifier,\
-               asyncua.common.event_objects.IMPLEMENTED_EVENTS[parents[0].nodeid.Identifier]
-    else:
-        return await _find_parent_eventtype(parents[0])
+        raise UaError("Parent of event type could not be found")
+    if parents[0].nodeid.NamespaceIndex == 0:
+        if parents[0].nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
+            return parents[0].nodeid.Identifier, asyncua.common.event_objects.IMPLEMENTED_EVENTS[parents[0].nodeid.Identifier]
+    return await _find_parent_eventtype(parents[0])
