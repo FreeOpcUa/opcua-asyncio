@@ -66,6 +66,9 @@ class Parser(object):
         node = Node_struct()
         for child in root:
             if nodeId == child.attrib.get('NodeId'):
+                # The xml-tag is the type of an xml-element e.g. <Reference> then tag is Reference. 
+                # The tag also includes the namespace which needs to be removed 
+                # e.g. '{http://opcfoundation.org/UA/2011/03/UANodeSet.xsd}Reference'
                 node.tag = child.tag.split(self.nameSpace)[1]
                 node.browseName = str(child.attrib.get('BrowseName'))
                 node.nodeId = child.attrib.get('NodeId')
@@ -120,19 +123,22 @@ class Parser(object):
                     reference.refDataType = self.findNodeWithNodeId(root, reference.refId).dataType
                     if ref.attrib.get('IsForward') is not None:
                         node.parentNodeId = reference.refId
+                    # ReferenceType is 'HasProperty'  -> There is just a simple PropertyType
+                    # ReferenceType is 'HasComponent' -> There is a VariableType with sub-properties
                     if reference.referenceType == 'HasComponent':
                         refs_node = self.findNodeWithNodeId(root, reference.refId)
                         if refs_node.tag != 'UAVariable':
                             continue
+                        # Collect the sub-properties of the VariableType
                         for ref in refs_node.references:
                             if ref.referenceType == 'HasProperty':
                                 child_ref_node = self.findNodeWithNodeId(root, ref.refId)
-                                reference2 = Reference()
-                                reference2.referenceType = 'HasProperty'
-                                reference2.refId = ref.refId
-                                reference2.refBrowseName = refs_node.browseName + '/' + child_ref_node.browseName
-                                reference2.refDataType = child_ref_node.dataType
-                                node.references.append(reference2)
+                                subReference = Reference()
+                                subReference.referenceType = 'HasProperty'
+                                subReference.refId = ref.refId
+                                subReference.refBrowseName = refs_node.browseName + '/' + child_ref_node.browseName
+                                subReference.refDataType = child_ref_node.dataType
+                                node.references.append(subReference)
                     node.references.append(reference)
                 listEventType.update({node.nodeId: node})
 
