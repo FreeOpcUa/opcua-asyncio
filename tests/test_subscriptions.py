@@ -461,11 +461,61 @@ async def test_subscribe_events_to_wrong_node(opc):
     await sub.delete()
     await opc.opc.delete_nodes([v])
 
-async def test_get_event_from_type_node_BaseEvent(opc):
+
+async def test_get_event_attributes_from_type_node_BaseEvent(opc):
     etype = opc.opc.get_node(ua.ObjectIds.BaseEventType)
     properties = await asyncua.common.events.get_event_properties_from_type_node(etype)
     for child in await etype.get_properties():
         assert child in properties
+
+
+async def test_get_event_attributes_from_type_node_AlarmConditionType(opc):
+    alarmType = opc.opc.get_node(ua.ObjectIds.AlarmConditionType)
+    ackType = opc.opc.get_node(ua.ObjectIds.AcknowledgeableConditionType)
+    condType = opc.opc.get_node(ua.ObjectIds.ConditionType)
+    baseType = opc.opc.get_node(ua.ObjectIds.BaseEventType)
+    allProperties = await asyncua.common.events.get_event_properties_from_type_node(alarmType)
+    propertiesToCheck = await alarmType.get_properties()
+    propertiesToCheck.extend(await ackType.get_properties())
+    propertiesToCheck.extend(await condType.get_properties())
+    propertiesToCheck.extend(await baseType.get_properties())
+    for child in propertiesToCheck:
+        assert child in allProperties
+    allVariables = await asyncua.common.events.get_event_variables_from_type_node(alarmType)
+    variablesToCheck = await alarmType.get_variables()
+    variablesToCheck.extend(await ackType.get_variables())
+    variablesToCheck.extend(await condType.get_variables())
+    variablesToCheck.extend(await baseType.get_variables())
+    for child in await alarmType.get_variables():
+        assert child in allVariables
+
+
+async def test_get_filter_from_ConditionType(opc):
+    condType = opc.opc.get_node(ua.ObjectIds.ConditionType)
+    baseType = opc.opc.get_node(ua.ObjectIds.BaseEventType)
+    properties = await baseType.get_properties()
+    properties.extend(await condType.get_properties())
+    variables = await baseType.get_variables()
+    variables.extend(await condType.get_variables())
+    subproperties = []
+    for var in variables:
+        subproperties.extend(await var.get_properties())
+    evfilter = await asyncua.common.events.get_filter_from_event_type([condType])
+    # Check number of elements in select clause
+    assert len(evfilter.SelectClauses) == (len(properties) + len(variables) + len(subproperties))
+    # Check browse path variable with property
+    browsePathList = [o.BrowsePath for o in evfilter.SelectClauses if o.BrowsePath]
+    browsePathEnabledState = [ua.uatypes.QualifiedName("EnabledState")]
+    browsePathEnabledStateId = [ua.uatypes.QualifiedName("EnabledState"), ua.uatypes.QualifiedName("Id")]
+    assert browsePathEnabledState in browsePathList
+    assert browsePathEnabledStateId in browsePathList
+    # Check some subtypes in where clause
+    alarmType = opc.opc.get_node(ua.ObjectIds.AlarmConditionType)
+    systemType = opc.opc.get_node(ua.ObjectIds.SystemOffNormalAlarmType)
+    filterOperands = evfilter.WhereClause.Elements[0].FilterOperands
+    operandNodeIds = [f.Value.Value for f in filterOperands if type(f) is ua.uaprotocol_auto.LiteralOperand]
+    assert alarmType.nodeid in operandNodeIds
+    assert systemType.nodeid in operandNodeIds
 
 
 async def test_get_event_from_type_node_CustomEvent(opc):
