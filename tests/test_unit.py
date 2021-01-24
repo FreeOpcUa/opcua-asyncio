@@ -28,13 +28,13 @@ EXAMPLE_BSD_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "exam
 
 
 def test_variant_array_none():
-    v = ua.Variant(None, varianttype=ua.VariantType.Int32, is_array=True)
+    v = ua.Variant(None, VariantType=ua.VariantType.Int32, is_array=True)
     data = variant_to_binary(v)
     v2 = variant_from_binary(ua.utils.Buffer(data))
     assert v == v2
     assert v2.is_array
 
-    v = ua.Variant(None, varianttype=ua.VariantType.Null, is_array=True)
+    v = ua.Variant(None, VariantType=ua.VariantType.Null, is_array=True)
     data = variant_to_binary(v)
     v2 = variant_from_binary(ua.utils.Buffer(data))
     assert v == v2
@@ -42,7 +42,7 @@ def test_variant_array_none():
 
 
 def test_variant_empty_list():
-    v = ua.Variant([], varianttype=ua.VariantType.Int32, is_array=True)
+    v = ua.Variant([], VariantType=ua.VariantType.Int32, is_array=True)
     data = variant_to_binary(v)
     v2 = variant_from_binary(ua.utils.Buffer(data))
     assert v == v2
@@ -135,14 +135,14 @@ def test_custom_structs_array(tmpdir):
 
 
 def test_nodeid_nsu():
-    n = ua.NodeId(100, 2)
-    n.NamespaceUri = "http://freeopcua/tests"
-    n.ServerIndex = 4
-    data = nodeid_to_binary(n)
+    n1 = ua.ExpandedNodeId(100, 2, NamespaceUri="http://freeopcua/tests", ServerIndex=4)
+    data = nodeid_to_binary(n1)
     n2 = nodeid_from_binary(ua.utils.Buffer(data))
-    assert n == n2
-    n3 = ua.NodeId.from_string(n.to_string())
-    assert n == n3
+    assert n1 == n2
+    string = n1.to_string()
+    print(string)
+    n3 = ua.NodeId.from_string(string)
+    assert n1 == n3
 
 
 def test_nodeid_ordering():
@@ -153,7 +153,7 @@ def test_nodeid_ordering():
     e = ua.NodeId("aaaaa", 1)
     f = ua.NodeId("aaaaa", 2)
     g = ua.NodeId(uuid.uuid4(), 1)
-    h = ua.TwoByteNodeId(2001)
+    h = ua.TwoByteNodeId(201)
     i = ua.NodeId(b"lkjkl", 1, ua.NodeIdType.ByteString)
     j = ua.NodeId(b"aaa", 5, ua.NodeIdType.ByteString)
 
@@ -333,7 +333,7 @@ def test_guid():
 
 
 def test_nodeid_guid_string():
-    n = ua.GuidNodeId(identifier=uuid.uuid4())
+    n = ua.GuidNodeId(Identifier=uuid.uuid4())
     s = n.to_string()
     n2 = ua.NodeId.from_string(s)
     s2 = n2.to_string()
@@ -361,9 +361,8 @@ def test__nodeid():
     s1 = ua.StringNodeId("53", 0)
     bs = ua.ByteStringNodeId(b"53", 0)
     gid = uuid.uuid4()
-    g = ua.ByteStringNodeId(str(gid), 0)
+    g = ua.ByteStringNodeId(gid.bytes, 0)
     guid = ua.GuidNodeId(gid)
-    assert tb == fb
     assert tb == n
     assert tb == n1
     assert n1 == fb
@@ -416,18 +415,18 @@ def test_expandednodeid():
 
 def test_null_guid():
     with pytest.raises(ua.UaError):
-        n = ua.NodeId(b'000000', 0, nodeidtype=ua.NodeIdType.Guid)
-    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 0, nodeidtype=ua.NodeIdType.Guid)
+        n = ua.NodeId(b'000000', 0, NodeIdType=ua.NodeIdType.Guid)
+    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 0, NodeIdType=ua.NodeIdType.Guid)
     assert n.is_null()
     assert n.has_null_identifier()
 
     with pytest.raises(ua.UaError):
-        n = ua.NodeId(b'000000', 1, nodeidtype=ua.NodeIdType.Guid)
-    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 1, nodeidtype=ua.NodeIdType.Guid)
+        n = ua.NodeId(b'000000', 1, NodeIdType=ua.NodeIdType.Guid)
+    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 1, NodeIdType=ua.NodeIdType.Guid)
     assert not n.is_null()
     assert n.has_null_identifier()
 
-    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000001000000'), 1, nodeidtype=ua.NodeIdType.Guid)
+    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000001000000'), 1, NodeIdType=ua.NodeIdType.Guid)
     assert not n.is_null()
     assert not n.has_null_identifier()
 
@@ -520,7 +519,7 @@ def test_unicode_string_nodeid():
 
 
 def test_numeric_nodeid():
-    nid = ua.NodeId(999, 2)
+    nid = ua.NumericNodeId(999, 2)
     assert nid.NamespaceIndex == 2
     assert nid.Identifier == 999
     assert nid.NodeIdType == ua.NodeIdType.Numeric
@@ -588,7 +587,7 @@ def test_variant_array():
 
 
 def test_variant_array_dim():
-    v = ua.Variant([1, 2, 3, 4, 5, 6], dimensions=[2, 3])
+    v = ua.Variant([1, 2, 3, 4, 5, 6], Dimensions=[2, 3])
     assert v.Value[1] == 2
     v2 = variant_from_binary(ua.utils.Buffer(variant_to_binary(v)))
     assert _reshape(v.Value, (2, 3)) == v2.Value
@@ -607,13 +606,23 @@ def test_text():
     assert t1 == t4
 
 
+def test_text_simple():
+    t = ua.LocalizedText('Root')
+    b = struct_to_binary(t)
+    print("BIN", b)
+    buf = ua.utils.Buffer(b)
+    print("BUF", buf)
+    t2 = struct_from_binary(ua.LocalizedText, buf)
+    assert t == t2
+
+
 def test_text_with_locale():
     t0 = ua.LocalizedText('Root')
     t1 = ua.LocalizedText('Root', 'de-AT')
     t2 = ua.LocalizedText('Root', 'de-AT')
     t3 = ua.LocalizedText('Root', 'de-DE')
-    t4 = ua.LocalizedText(locale='de-DE')
-    t5 = ua.LocalizedText(locale='de-DE')
+    t4 = ua.LocalizedText(Locale='de-DE')
+    t5 = ua.LocalizedText(Locale='de-DE')
     assert t0 != t1
     assert t1 == t2
     assert t1 != t3
