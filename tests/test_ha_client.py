@@ -174,6 +174,12 @@ class TestHaClient:
         new_socket = first_client.uaclient.protocol
         assert socket != new_socket
 
+        # urls to reconnect should only be added once
+        await ha_client.reconciliator.stop()
+        await ha_client.reconnect(first_client)
+        await ha_client.reconnect(first_client)
+        assert len(ha_client.url_to_reset) == 2
+
     @pytest.mark.asyncio
     async def test_failover_warm(self, ha_client, srv_variables):
         await ha_client.start()
@@ -374,9 +380,9 @@ class TestReconciliator:
         real_sub = reconciliator.name_to_subscription[primary_url][sub]
         real_handle = reconciliator.node_to_handle[primary_url][node_str]
 
-        # Append to url_to_reset triggers reconciliator to resub
+        # Add to url_to_reset triggers reconciliator to resub
         async with ha_client._url_to_reset_lock:
-            ha_client.url_to_reset.append(primary_url)
+            ha_client.url_to_reset.add(primary_url)
 
         # hack to wait for the reconciliator iteration
         sub2 = await ha_client.create_subscription(100, myhandler)

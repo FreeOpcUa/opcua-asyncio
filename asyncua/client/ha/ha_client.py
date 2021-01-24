@@ -127,7 +127,7 @@ class HaClient:
         # full type: Dict[str, SortedDict[str, VirtualSubscription]]
         self.ideal_map: Dict[str, SortedDict] = {}
         self.sub_names: Set[str] = set()
-        self.url_to_reset: List[str] = []
+        self.url_to_reset: Set[str] = set()
         self.is_running = False
 
         if config.ha_mode != HaMode.WARM:
@@ -272,7 +272,7 @@ class HaClient:
         """
         async with self._url_to_reset_lock:
             url = client.server_url.geturl()
-            self.url_to_reset.append(url)
+            self.url_to_reset.add(url)
         try:
             await client.disconnect()
         except Exception:
