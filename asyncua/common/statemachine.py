@@ -129,18 +129,23 @@ class StateMachine(object):
             instantiate_optional=optionals
             )
         if self._optionals:
-            #FIXME somehow propertys dont get added if i instantiate with optionals
             self._last_transition_node = await self._state_machine_node.get_child(["LastTransition"])
-            self._last_transition_transitiontime_node = await self._last_transition_node.add_property(
-                0, 
-                "TransitionTime", 
-                ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
-                )
-            self._last_transition_effectivetransitiontime_node = await self._last_transition_node.add_property(
-                0, 
-                "EffectiveTransitionTime", 
-                ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
-                )
+            children = await self._last_transition_node.get_children()
+            childnames = []
+            for each in children:
+                childnames.append(await each.read_browse_name())
+            if "TransitionTime" not in childnames:
+                self._last_transition_transitiontime_node = await self._last_transition_node.add_property(
+                    0, 
+                    "TransitionTime", 
+                    ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
+                    )
+            if "EffectiveTransitionTime" not in childnames:
+                self._last_transition_effectivetransitiontime_node = await self._last_transition_node.add_property(
+                    0, 
+                    "EffectiveTransitionTime", 
+                    ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
+                    )
         await self.init(self._state_machine_node)
     
     async def init(self, statemachine):
