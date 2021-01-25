@@ -168,6 +168,7 @@ static struct _OpcUa_EnumeratedValue g_OpcUa_AccessLevelExType_EnumeratedValues[
     { "NonatomicRead", 256 },
     { "NonatomicWrite", 512 },
     { "WriteFullArrayOnly", 1024 },
+    { "NoSubDataTypes", 2048 },
     { OpcUa_Null, 0 }
 };
 
@@ -208,6 +209,7 @@ static struct _OpcUa_EnumeratedValue g_OpcUa_AccessRestrictionType_EnumeratedVal
     { "SigningRequired", 1 },
     { "EncryptionRequired", 2 },
     { "SessionRequired", 4 },
+    { "ApplyRestrictionsToBrowse", 8 },
     { OpcUa_Null, 0 }
 };
 
@@ -3915,7 +3917,7 @@ OpcUa_Void OpcUa_SessionlessInvokeRequestType_Initialize(OpcUa_SessionlessInvoke
 {
     if (a_pValue != OpcUa_Null)
     {
-        OpcUa_Field_InitializeArray(UInt32, UrisVersion);
+        OpcUa_Field_Initialize(UInt32, UrisVersion);
         OpcUa_Field_InitializeArray(String, NamespaceUris);
         OpcUa_Field_InitializeArray(String, ServerUris);
         OpcUa_Field_InitializeArray(String, LocaleIds);
@@ -3930,7 +3932,7 @@ OpcUa_Void OpcUa_SessionlessInvokeRequestType_Clear(OpcUa_SessionlessInvokeReque
 {
     if (a_pValue != OpcUa_Null)
     {
-        OpcUa_Field_ClearArray(UInt32, UrisVersion);
+        OpcUa_Field_Clear(UInt32, UrisVersion);
         OpcUa_Field_ClearArray(String, NamespaceUris);
         OpcUa_Field_ClearArray(String, ServerUris);
         OpcUa_Field_ClearArray(String, LocaleIds);
@@ -3953,7 +3955,7 @@ OpcUa_StatusCode OpcUa_SessionlessInvokeRequestType_GetSize(OpcUa_SessionlessInv
 
     *a_pSize = -1;
 
-    OpcUa_Field_GetSizeArray(UInt32, UrisVersion);
+    OpcUa_Field_GetSize(UInt32, UrisVersion);
     OpcUa_Field_GetSizeArray(String, NamespaceUris);
     OpcUa_Field_GetSizeArray(String, ServerUris);
     OpcUa_Field_GetSizeArray(String, LocaleIds);
@@ -3979,7 +3981,7 @@ OpcUa_StatusCode OpcUa_SessionlessInvokeRequestType_Encode(OpcUa_SessionlessInvo
     OpcUa_ReturnErrorIfArgumentNull(a_pValue);
     OpcUa_ReturnErrorIfArgumentNull(a_pEncoder);
 
-    OpcUa_Field_WriteArray(UInt32, UrisVersion);
+    OpcUa_Field_Write(UInt32, UrisVersion);
     OpcUa_Field_WriteArray(String, NamespaceUris);
     OpcUa_Field_WriteArray(String, ServerUris);
     OpcUa_Field_WriteArray(String, LocaleIds);
@@ -4005,7 +4007,7 @@ OpcUa_StatusCode OpcUa_SessionlessInvokeRequestType_Decode(OpcUa_SessionlessInvo
 
     OpcUa_SessionlessInvokeRequestType_Initialize(a_pValue);
 
-    OpcUa_Field_ReadArray(UInt32, UrisVersion);
+    OpcUa_Field_Read(UInt32, UrisVersion);
     OpcUa_Field_ReadArray(String, NamespaceUris);
     OpcUa_Field_ReadArray(String, ServerUris);
     OpcUa_Field_ReadArray(String, LocaleIds);

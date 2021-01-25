@@ -35,9 +35,9 @@
         <Uri>http://opcfoundation.org/UA/DI/</Uri>
     </NamespaceUris>
     <Models>
-        <Model ModelUri="http://opcfoundation.org/UA/PlasticsRubber/Extrusion/ExtrusionLine/" PublicationDate="2020-06-01T00:00:00Z" Version="1.00">
-            <RequiredModel ModelUri="http://opcfoundation.org/UA/" PublicationDate="2019-09-09T00:00:00Z" Version="1.04.3"/>
-            <RequiredModel ModelUri="http://opcfoundation.org/UA/DI/" PublicationDate="2019-05-01T00:00:00Z" Version="1.02"/>
+        <Model ModelUri="http://opcfoundation.org/UA/PlasticsRubber/Extrusion/ExtrusionLine/" PublicationDate="2020-11-09T00:00:00Z" Version="1.00.01">
+            <RequiredModel ModelUri="http://opcfoundation.org/UA/" PublicationDate="2020-04-14T00:00:00Z" Version="1.04.6"/>
+            <RequiredModel ModelUri="http://opcfoundation.org/UA/DI/" PublicationDate="2020-05-19T00:00:00Z" Version="1.02.1"/>
             <RequiredModel ModelUri="http://opcfoundation.org/UA/PlasticsRubber/GeneralTypes/" PublicationDate="2020-06-01T00:00:00Z" Version="1.02"/>
         </Model>
     </Models>
@@ -78,7 +78,7 @@
     </Aliases>
     <Extensions>
         <Extension>
-            <ua:ModelInfo Tool="UaModeler" Hash="/b1MFvmY/hX39PduzIh+qA==" Version="1.6.3"/>
+            <ua:ModelInfo Tool="UaModeler" Hash="0RRKapBU5er/C25YAJLKDA==" Version="1.6.4"/>
         </Extension>
     </Extensions>
     <UADataType NodeId="ns=1;i=3003" BrowseName="1:MaterialMappingType">
@@ -439,7 +439,7 @@
             <Reference ReferenceType="HasComponent">ns=1;i=5005</Reference>
         </References>
     </UAObjectType>
-    <UAMethod ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=7005" BrowseName="2:ClearMESMessage">
+    <UAMethod ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=7005" BrowseName="1:ClearMESMessage">
         <DisplayName>ClearMESMessage</DisplayName>
         <References>
             <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
@@ -855,7 +855,7 @@
             <uax:Int32>0</uax:Int32>
         </Value>
     </UAVariable>
-    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5002" BrowseName="2:MachineConfiguration">
+    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5002" BrowseName="1:MachineConfiguration">
         <DisplayName>MachineConfiguration</DisplayName>
         <References>
             <Reference ReferenceType="HasComponent">ns=1;i=7002</Reference>
@@ -1110,7 +1110,7 @@
             <uax:String></uax:String>
         </Value>
     </UAVariable>
-    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5001" BrowseName="2:MachineInformation">
+    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5001" BrowseName="1:MachineInformation">
         <DisplayName>MachineInformation</DisplayName>
         <References>
             <Reference ReferenceType="HasProperty">ns=1;i=6239</Reference>
@@ -1276,7 +1276,7 @@
             <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5001</Reference>
         </References>
     </UAVariable>
-    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5003" BrowseName="2:MachineMESConfiguration">
+    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5003" BrowseName="1:MachineMESConfiguration">
         <DisplayName>MachineMESConfiguration</DisplayName>
         <References>
             <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
@@ -1456,7 +1456,7 @@
             </uax:ListOfExtensionObject>
         </Value>
     </UAVariable>
-    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5004" BrowseName="2:MESMessage">
+    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5004" BrowseName="1:MESMessage">
         <DisplayName>MESMessage</DisplayName>
         <References>
             <Reference ReferenceType="HasProperty">ns=1;i=6054</Reference>
@@ -2697,7 +2697,7 @@
             <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
         </References>
     </UAVariable>
-    <UAMethod ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=7004" BrowseName="2:SetMESMessage">
+    <UAMethod ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=7004" BrowseName="1:SetMESMessage">
         <DisplayName>SetMESMessage</DisplayName>
         <References>
             <Reference ReferenceType="HasProperty">ns=1;i=6057</Reference>
@@ -2765,7 +2765,7 @@
             </uax:ListOfExtensionObject>
         </Value>
     </UAVariable>
-    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5005" BrowseName="2:Users">
+    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5005" BrowseName="1:Users">
         <DisplayName>Users</DisplayName>
         <References>
             <Reference ReferenceType="GeneratesEvent">i=2133</Reference>
@@ -3331,7 +3331,7 @@
             <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
         </References>
     </UAVariable>
-    <UAVariable DataType="String" ParentNodeId="ns=1;i=5021" ValueRank="1" NodeId="ns=1;i=6194" ArrayDimensions="0" BrowseName="1:Description">
+    <UAVariable DataType="String" ParentNodeId="ns=1;i=5021" NodeId="ns=1;i=6194" BrowseName="1:Description">
         <DisplayName>Description</DisplayName>
         <References>
             <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5021</Reference>
@@ -5119,7 +5119,7 @@
             <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
         </References>
         <Value>
-            <uax:DateTime>2020-06-01T00:00:00Z</uax:DateTime>
+            <uax:DateTime>2020-11-09T00:00:00Z</uax:DateTime>
         </Value>
     </UAVariable>
     <UAVariable DataType="String" ParentNodeId="ns=1;i=5024" NodeId="ns=1;i=6261" BrowseName="NamespaceUri">
@@ -5139,7 +5139,7 @@
             <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
         </References>
         <Value>
-            <uax:String>1.00</uax:String>
+            <uax:String>1.00.01</uax:String>
         </Value>
     </UAVariable>
     <UAVariable DataType="IdType" ParentNodeId="ns=1;i=5024" ValueRank="1" NodeId="ns=1;i=6263" ArrayDimensions="0" BrowseName="StaticNodeIdTypes">

@@ -10,6 +10,10 @@ ActivateSessionResponse,468,DataType
 ActivateSessionResponse_Encoding_DefaultBinary,470,Object
 ActivateSessionResponse_Encoding_DefaultJson,15146,Object
 ActivateSessionResponse_Encoding_DefaultXml,469,Object
+AdditionalParametersType,16313,DataType
+AdditionalParametersType_Encoding_DefaultBinary,17537,Object
+AdditionalParametersType_Encoding_DefaultJson,17547,Object
+AdditionalParametersType_Encoding_DefaultXml,17541,Object
 AddNodesItem,376,DataType
 AddNodesItem_Encoding_DefaultBinary,378,Object
 AddNodesItem_Encoding_DefaultJson,15165,Object
@@ -184,6 +188,7 @@ AuditUrlMismatchEventType,2748,ObjectType
 AuditWriteUpdateEventType,2100,ObjectType
 AuthorizationServiceConfigurationType,17852,ObjectType
 AuthorizationServices,17732,Object
+AuthorizationServicesConfigurationFolderType,23556,ObjectType
 AxisInformation,12079,DataType
 AxisInformation_Encoding_DefaultBinary,12089,Object
 AxisInformation_Encoding_DefaultJson,15379,Object
@@ -469,7 +474,6 @@ DataTypeSchemaHeader_Encoding_DefaultXml,15950,Object
 DataTypesFolder,90,Object
 DataTypeSystemType,75,ObjectType
 DataValue,23,DataType
-Date,293,DataType
 DateString,12881,DataType
 DateTime,13,DataType
 DeadbandType,718,DataType
@@ -480,7 +484,6 @@ DecimalDataType_Encoding_DefaultJson,15045,Object
 DecimalDataType_Encoding_DefaultXml,17862,Object
 DecimalString,12878,DataType
 DefaultBinary,3062,Object
-DefaultInputValues,16306,Variable
 DefaultInstanceBrowseName,17605,Variable
 DefaultXml,3063,Object
 DeleteAtTimeDetails,689,DataType
@@ -556,6 +559,14 @@ DoubleComplexNumberType_Encoding_DefaultJson,15378,Object
 DoubleComplexNumberType_Encoding_DefaultXml,12174,Object
 Duration,290,DataType
 DurationString,12879,DataType
+EccApplicationCertificateType,23537,ObjectType
+EccBrainpoolP256r1ApplicationCertificateType,23540,ObjectType
+EccBrainpoolP384r1ApplicationCertificateType,23541,ObjectType
+EccCurve25519ApplicationCertificateType,23542,ObjectType
+EccCurve448ApplicationCertificateType,23543,ObjectType
+EccEncryptedSecret,17546,DataType
+EccNistP256ApplicationCertificateType,23538,ObjectType
+EccNistP384ApplicationCertificateType,23539,ObjectType
 ElementOperand,592,DataType
 ElementOperand_Encoding_DefaultBinary,594,Object
 ElementOperand_Encoding_DefaultJson,15207,Object
@@ -597,6 +608,10 @@ EnumValueType,7594,DataType
 EnumValueType_Encoding_DefaultBinary,8251,Object
 EnumValueType_Encoding_DefaultJson,15082,Object
 EnumValueType_Encoding_DefaultXml,7616,Object
+EphemeralKeyType,17548,DataType
+EphemeralKeyType_Encoding_DefaultBinary,17549,Object
+EphemeralKeyType_Encoding_DefaultJson,17557,Object
+EphemeralKeyType_Encoding_DefaultXml,17553,Object
 EUInformation,887,DataType
 EUInformation_Encoding_DefaultBinary,889,Object
 EUInformation_Encoding_DefaultJson,15376,Object
@@ -1318,6 +1333,10 @@ SemanticChangeStructureDataType_Encoding_DefaultBinary,899,Object
 SemanticChangeStructureDataType_Encoding_DefaultJson,15374,Object
 SemanticChangeStructureDataType_Encoding_DefaultXml,898,Object
 Server,2253,Object
+Server_ServerRedundancy_CurrentServerId,11312,Variable
+Server_ServerRedundancy_RedundantServerArray,11313,Variable
+Server_ServerRedundancy_ServerNetworkGroups,14415,Variable
+Server_ServerRedundancy_ServerUriArray,11314,Variable
 ServerCapabilitiesType,2013,ObjectType
 ServerConfiguration,12637,Object
 ServerConfigurationType,12581,ObjectType
@@ -1493,7 +1512,6 @@ ThreeDVector_Encoding_DefaultBinary,18817,Object
 ThreeDVector_Encoding_DefaultJson,19066,Object
 ThreeDVector_Encoding_DefaultXml,18853,Object
 ThreeDVectorType,17716,VariableType
-Time,292,DataType
 TimestampsToReturn,625,DataType
 TimeString,12880,DataType
 TimeZoneDataType,8912,DataType

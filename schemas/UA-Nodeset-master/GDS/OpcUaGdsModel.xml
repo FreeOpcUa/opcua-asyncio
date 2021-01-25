@@ -276,6 +276,26 @@
     </opc:OutputArguments>
   </opc:Method>
 
+  <opc:Method SymbolicName="GetCertificatesMethodType">
+    <opc:InputArguments>
+      <opc:Argument Name="ApplicationId" DataType="ua:NodeId"></opc:Argument>
+      <opc:Argument Name="CertificateGroupId" DataType="ua:NodeId"></opc:Argument>
+    </opc:InputArguments>
+    <opc:OutputArguments>
+      <opc:Argument Name="Certificates" DataType="ua:ByteString" ValueRank="Scalar"></opc:Argument>
+    </opc:OutputArguments>
+  </opc:Method>
+
+  <opc:Method SymbolicName="CheckRevocationStatusMethodType">
+    <opc:InputArguments>
+      <opc:Argument Name="Certificate" DataType="ua:ByteString"></opc:Argument>
+    </opc:InputArguments>
+    <opc:OutputArguments>
+      <opc:Argument Name="CertificateStatus" DataType="ua:StatusCode"></opc:Argument>
+      <opc:Argument Name="ValidityTime" DataType="ua:UtcTime" />
+    </opc:OutputArguments>
+  </opc:Method>
+
   <opc:ObjectType SymbolicName="CertificateDirectoryType" BaseType="DirectoryType">
     <opc:Children>
       <opc:Object SymbolicName="CertificateGroups" TypeDefinition="ua:CertificateGroupFolderType"  ModellingRule="Mandatory">
@@ -286,8 +306,10 @@
       <opc:Method SymbolicName="FinishRequest" TypeDefinition="FinishRequestMethodType" ModellingRule="Mandatory" />
       <opc:Method SymbolicName="RevokeCertificate" TypeDefinition="RevokeCertificateMethodType" ModellingRule="Optional" />
       <opc:Method SymbolicName="GetCertificateGroups" TypeDefinition="GetCertificateGroupsMethodType" ModellingRule="Mandatory" />
+      <opc:Method SymbolicName="GetCertificates" TypeDefinition="GetCertificatesMethodType" ModellingRule="Optional" ReleaseStatus="Draft" />
       <opc:Method SymbolicName="GetTrustList" TypeDefinition="GetTrustListMethodType" ModellingRule="Mandatory" />
       <opc:Method SymbolicName="GetCertificateStatus" TypeDefinition="GetCertificateStatusMethodType" ModellingRule="Mandatory" />
+      <opc:Method SymbolicName="CheckRevocationStatus" TypeDefinition="CheckRevocationStatusMethodType" ModellingRule="Optional" ReleaseStatus="Draft" />
     </opc:Children>
   </opc:ObjectType>
 
@@ -304,14 +326,17 @@
       <opc:Property SymbolicName="CertificateType" DataType="ua:NodeId" ModellingRule="Mandatory" />
     </opc:Children>
   </opc:ObjectType>
-  
-  <opc:Object SymbolicName="KeyCredentialManagement" TypeDefinition="ua:FolderType">
+
+  <opc:ObjectType SymbolicName="KeyCredentialManagementFolderType" BaseType="ua:FolderType">
     <opc:Children>
       <opc:Object SymbolicName="ServiceName_Placeholder" TypeDefinition="KeyCredentialServiceType" ModellingRule="OptionalPlaceholder">
         <opc:BrowseName>&lt;ServiceName&gt;</opc:BrowseName>
-        <opc:ReferenceType>ua:Organizes</opc:ReferenceType>
+        <opc:ReferenceType>ua:HasComponent</opc:ReferenceType>
       </opc:Object>
     </opc:Children>
+  </opc:ObjectType>
+  
+  <opc:Object SymbolicName="KeyCredentialManagement" TypeDefinition="KeyCredentialManagementFolderType">
     <opc:References>
       <opc:Reference IsInverse="true">
         <opc:ReferenceType>ua:Organizes</opc:ReferenceType>
@@ -365,14 +390,17 @@
   <opc:ObjectType SymbolicName="KeyCredentialRequestedAuditEventType" BaseType="ua:KeyCredentialAuditEventType" IsAbstract="false" />
   <opc:ObjectType SymbolicName="KeyCredentialDeliveredAuditEventType" BaseType="ua:KeyCredentialAuditEventType" IsAbstract="false" />
   <opc:ObjectType SymbolicName="KeyCredentialRevokedAuditEventType" BaseType="ua:KeyCredentialAuditEventType" IsAbstract="false" />
-  
-  <opc:Object SymbolicName="AuthorizationServices" TypeDefinition="ua:FolderType">
+
+  <opc:ObjectType SymbolicName="AuthorizationServicesFolderType" BaseType="ua:FolderType">
     <opc:Children>
       <opc:Object SymbolicName="ServiceName_Placeholder" TypeDefinition="AuthorizationServiceType"  ModellingRule="OptionalPlaceholder">
         <opc:BrowseName>&lt;ServiceName&gt;</opc:BrowseName>
         <opc:ReferenceType>ua:Organizes</opc:ReferenceType>
       </opc:Object>
     </opc:Children>
+  </opc:ObjectType>
+  
+  <opc:Object SymbolicName="AuthorizationServices" TypeDefinition="AuthorizationServicesFolderType">
     <opc:References>
       <opc:Reference IsInverse="true">
         <opc:ReferenceType>ua:Organizes</opc:ReferenceType>

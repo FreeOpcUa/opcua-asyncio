@@ -28,9 +28,9 @@
  * http://opcfoundation.org/License/MIT/1.00/
 -->
 
-<UANodeSet xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LastModified="2020-07-15T00:00:00Z" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd">
+<UANodeSet xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LastModified="2020-11-20T00:00:00Z" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd">
   <Models>
-    <Model ModelUri="http://opcfoundation.org/UA/" Version="1.04.7" PublicationDate="2020-07-15T00:00:00Z" />
+    <Model ModelUri="http://opcfoundation.org/UA/" Version="1.04.8" PublicationDate="2020-11-20T00:00:00Z" />
   </Models>
   <Aliases>
     <Alias Alias="Boolean">i=1</Alias>
@@ -398,13 +398,9 @@
             <EnumValueType>
               <Value>1</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Mandatory</Text>
               </DisplayName>
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The BrowseName must appear in all instances of the type.</Text>
               </Description>
             </EnumValueType>
@@ -418,13 +414,9 @@
             <EnumValueType>
               <Value>2</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Optional</Text>
               </DisplayName>
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The BrowseName may appear in an instance of the type.</Text>
               </Description>
             </EnumValueType>
@@ -438,13 +430,9 @@
             <EnumValueType>
               <Value>3</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Constraint</Text>
               </DisplayName>
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The modelling rule defines a constraint and the BrowseName is not used in an instance of the type.</Text>
               </Description>
             </EnumValueType>
@@ -563,12 +551,6 @@
       <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
     </References>
   </UAVariable>
-  <UAVariable NodeId="i=16306" BrowseName="DefaultInputValues" ValueRank="1" ArrayDimensions="0">
-    <DisplayName>DefaultInputValues</DisplayName>
-    <References>
-      <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
-    </References>
-  </UAVariable>
   <UAVariable NodeId="i=17605" BrowseName="DefaultInstanceBrowseName" DataType="QualifiedName">
     <DisplayName>DefaultInstanceBrowseName</DisplayName>
     <References>
@@ -644,23 +626,15 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Numeric</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>String</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Guid</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Opaque</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -701,8 +675,6 @@
             <EnumValueType>
               <Value>0</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Unspecified</Text>
               </DisplayName>
             </EnumValueType>
@@ -716,8 +688,6 @@
             <EnumValueType>
               <Value>1</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Object</Text>
               </DisplayName>
             </EnumValueType>
@@ -731,8 +701,6 @@
             <EnumValueType>
               <Value>2</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Variable</Text>
               </DisplayName>
             </EnumValueType>
@@ -746,8 +714,6 @@
             <EnumValueType>
               <Value>4</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Method</Text>
               </DisplayName>
             </EnumValueType>
@@ -761,8 +727,6 @@
             <EnumValueType>
               <Value>8</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>ObjectType</Text>
               </DisplayName>
             </EnumValueType>
@@ -776,8 +740,6 @@
             <EnumValueType>
               <Value>16</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>VariableType</Text>
               </DisplayName>
             </EnumValueType>
@@ -791,8 +753,6 @@
             <EnumValueType>
               <Value>32</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>ReferenceType</Text>
               </DisplayName>
             </EnumValueType>
@@ -806,8 +766,6 @@
             <EnumValueType>
               <Value>64</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>DataType</Text>
               </DisplayName>
             </EnumValueType>
@@ -821,8 +779,6 @@
             <EnumValueType>
               <Value>128</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>View</Text>
               </DisplayName>
             </EnumValueType>
@@ -867,88 +823,54 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Browse</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>ReadRolePermissions</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>WriteAttribute</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>WriteRolePermissions</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>WriteHistorizing</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Read</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Write</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>ReadHistory</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>InsertHistory</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>ModifyHistory</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>DeleteHistory</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>ReceiveEvents</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Call</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>AddReference</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>RemoveReference</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>DeleteNode</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>AddNode</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -980,38 +902,24 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>CurrentRead</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>CurrentWrite</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>HistoryRead</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>HistoryWrite</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>SemanticChange</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>StatusWrite</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>TimestampWrite</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -1034,6 +942,7 @@
       <Field Name="NonatomicRead" Value="8" />
       <Field Name="NonatomicWrite" Value="9" />
       <Field Name="WriteFullArrayOnly" Value="10" />
+      <Field Name="NoSubDataTypes" Value="11" />
     </Definition>
   </UADataType>
   <UAVariable NodeId="i=15407" BrowseName="OptionSetValues" ParentNodeId="i=15406" DataType="LocalizedText" ValueRank="1" ArrayDimensions="0">
@@ -1046,59 +955,40 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>CurrentRead</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>CurrentWrite</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>HistoryRead</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>HistoryWrite</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>SemanticChange</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>StatusWrite</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>TimestampWrite</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Reserved</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>NonatomicRead</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>NonatomicWrite</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>WriteFullArrayOnly</Text>
+        </LocalizedText>
+        <LocalizedText>
+          <Text>NoSubDataTypes</Text>
         </LocalizedText>
       </ListOfLocalizedText>
     </Value>
@@ -1125,23 +1015,15 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>SubscribeToEvents</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Reserved</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>HistoryRead</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>HistoryWrite</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -1151,12 +1033,13 @@
     <DisplayName>AccessRestrictionType</DisplayName>
     <References>
       <Reference ReferenceType="HasProperty">i=15035</Reference>
-      <Reference ReferenceType="HasSubtype" IsForward="false">i=7</Reference>
+      <Reference ReferenceType="HasSubtype" IsForward="false">i=5</Reference>
     </References>
     <Definition Name="AccessRestrictionType" IsOptionSet="true">
       <Field Name="SigningRequired" Value="0" />
       <Field Name="EncryptionRequired" Value="1" />
       <Field Name="SessionRequired" Value="2" />
+      <Field Name="ApplyRestrictionsToBrowse" Value="3" />
     </Definition>
   </UADataType>
   <UAVariable NodeId="i=15035" BrowseName="OptionSetValues" ParentNodeId="i=95" DataType="LocalizedText" ValueRank="1" ArrayDimensions="0">
@@ -1169,19 +1052,16 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>SigningRequired</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>EncryptionRequired</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>SessionRequired</Text>
+        </LocalizedText>
+        <LocalizedText>
+          <Text>ApplyRestrictionsToBrowse</Text>
         </LocalizedText>
       </ListOfLocalizedText>
     </Value>
@@ -1224,18 +1104,12 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Structure</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>StructureWithOptionalFields</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Union</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -1296,13 +1170,13 @@
       <Field Name="References" DataType="i=285" ValueRank="1" />
     </Definition>
   </UADataType>
-  <UADataType NodeId="i=11879" BrowseName="InstanceNode">
+  <UADataType NodeId="i=11879" BrowseName="InstanceNode" Purpose="CodeGenerator">
     <DisplayName>InstanceNode</DisplayName>
     <References>
       <Reference ReferenceType="HasSubtype" IsForward="false">i=258</Reference>
     </References>
   </UADataType>
-  <UADataType NodeId="i=11880" BrowseName="TypeNode">
+  <UADataType NodeId="i=11880" BrowseName="TypeNode" Purpose="CodeGenerator">
     <DisplayName>TypeNode</DisplayName>
     <References>
       <Reference ReferenceType="HasSubtype" IsForward="false">i=258</Reference>

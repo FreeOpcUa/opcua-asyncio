@@ -768,6 +768,11 @@ OPCUA_BEGIN_EXTERN_C
 #define OpcUa_BadSequenceNumberUnknown 0x807A0000
 
 /*============================================================================
+ * The Server does not support retransmission queue and acknowledgement of sequence numbers is not available.
+ *===========================================================================*/
+#define OpcUa_GoodRetransmissionQueueNotSupported 0x00DF0000
+
+/*============================================================================
  * The requested notification message is no longer available.
  *===========================================================================*/
 #define OpcUa_BadMessageNotAvailable 0x807B0000
@@ -1086,6 +1091,16 @@ OPCUA_BEGIN_EXTERN_C
  * The request has not been processed by the server yet.
  *===========================================================================*/
 #define OpcUa_BadRequestNotComplete 0x81130000
+
+/*============================================================================
+ * The device identity needs a ticket before it can be accepted.
+ *===========================================================================*/
+#define OpcUa_BadTicketRequired 0x811F0000
+
+/*============================================================================
+ * The device identity needs a ticket before it can be accepted.
+ *===========================================================================*/
+#define OpcUa_BadTicketInvalid 0x81200000
 
 /*============================================================================
  * The value does not come from the real source and has been edited by the server.

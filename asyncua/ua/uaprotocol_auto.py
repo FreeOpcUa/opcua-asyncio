@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2021-01-25 14:34:30.921145
+Date:2021-01-25 15:17:06.213325
 """
 
 from datetime import datetime
@@ -497,6 +497,8 @@ class AccessLevelExType(IntEnum):
     :vartype NonatomicWrite: 512
     :ivar WriteFullArrayOnly:
     :vartype WriteFullArrayOnly: 1024
+    :ivar NoSubDataTypes:
+    :vartype NoSubDataTypes: 2048
     """
     None_ = 0
     CurrentRead = 1
@@ -509,6 +511,7 @@ class AccessLevelExType(IntEnum):
     NonatomicRead = 256
     NonatomicWrite = 512
     WriteFullArrayOnly = 1024
+    NoSubDataTypes = 2048
 
 
 class EventNotifierType(IntEnum):
@@ -538,11 +541,14 @@ class AccessRestrictionType(IntEnum):
     :vartype EncryptionRequired: 2
     :ivar SessionRequired:
     :vartype SessionRequired: 4
+    :ivar ApplyRestrictionsToBrowse:
+    :vartype ApplyRestrictionsToBrowse: 8
     """
     None_ = 0
     SigningRequired = 1
     EncryptionRequired = 2
     SessionRequired = 4
+    ApplyRestrictionsToBrowse = 8
 
 
 class StructureType(IntEnum):
@@ -1231,6 +1237,52 @@ class KeyValuePair(FrozenClass):
 
     def __str__(self):
         return f'KeyValuePair(Key:{self.Key}, Value:{self.Value})'
+
+    __repr__ = __str__
+
+
+class AdditionalParametersType(FrozenClass):
+    """
+    :ivar Parameters:
+    :vartype Parameters: KeyValuePair
+    """
+
+    ua_types = [
+        ('Parameters', 'ListOfKeyValuePair'),
+               ]
+
+    def __init__(self):
+        self.Parameters = []
+        self._freeze = True
+
+    def __str__(self):
+        return f'AdditionalParametersType(Parameters:{self.Parameters})'
+
+    __repr__ = __str__
+
+
+class EphemeralKeyType(FrozenClass):
+    """
+    :ivar PublicKey:
+    :vartype PublicKey: ByteString
+    :ivar Signature:
+    :vartype Signature: ByteString
+    """
+
+    data_type = NodeId(ObjectIds.EphemeralKeyType)
+
+    ua_types = [
+        ('PublicKey', 'ByteString'),
+        ('Signature', 'ByteString'),
+               ]
+
+    def __init__(self):
+        self.PublicKey = None
+        self.Signature = None
+        self._freeze = True
+
+    def __str__(self):
+        return f'EphemeralKeyType(PublicKey:{self.PublicKey}, Signature:{self.Signature})'
 
     __repr__ = __str__
 
@@ -3726,7 +3778,7 @@ class SessionlessInvokeRequestType(FrozenClass):
     data_type = NodeId(ObjectIds.SessionlessInvokeRequestType)
 
     ua_types = [
-        ('UrisVersion', 'ListOfUInt32'),
+        ('UrisVersion', 'UInt32'),
         ('NamespaceUris', 'ListOfString'),
         ('ServerUris', 'ListOfString'),
         ('LocaleIds', 'ListOfString'),
@@ -3734,7 +3786,7 @@ class SessionlessInvokeRequestType(FrozenClass):
                ]
 
     def __init__(self):
-        self.UrisVersion = []
+        self.UrisVersion = 0
         self.NamespaceUris = []
         self.ServerUris = []
         self.LocaleIds = []
@@ -11816,6 +11868,12 @@ class Annotation(FrozenClass):
 nid = FourByteNodeId(ObjectIds.KeyValuePair_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = KeyValuePair
 extension_object_typeids['KeyValuePair'] = nid
+nid = FourByteNodeId(ObjectIds.AdditionalParametersType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = AdditionalParametersType
+extension_object_typeids['AdditionalParametersType'] = nid
+nid = FourByteNodeId(ObjectIds.EphemeralKeyType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = EphemeralKeyType
+extension_object_typeids['EphemeralKeyType'] = nid
 nid = FourByteNodeId(ObjectIds.EndpointType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = EndpointType
 extension_object_typeids['EndpointType'] = nid

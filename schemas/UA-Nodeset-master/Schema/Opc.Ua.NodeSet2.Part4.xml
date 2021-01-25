@@ -28,9 +28,9 @@
  * http://opcfoundation.org/License/MIT/1.00/
 -->
 
-<UANodeSet xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LastModified="2020-07-15T00:00:00Z" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd">
+<UANodeSet xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LastModified="2020-11-20T00:00:00Z" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd">
   <Models>
-    <Model ModelUri="http://opcfoundation.org/UA/" Version="1.04.7" PublicationDate="2020-07-15T00:00:00Z" />
+    <Model ModelUri="http://opcfoundation.org/UA/" Version="1.04.8" PublicationDate="2020-11-20T00:00:00Z" />
   </Models>
   <Aliases>
     <Alias Alias="Boolean">i=1</Alias>
@@ -128,23 +128,15 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Server</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Client</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>ClientAndServer</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>DiscoveryServer</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -215,7 +207,7 @@
       <Reference ReferenceType="HasSubtype" IsForward="false">i=22</Reference>
     </References>
     <Definition Name="SessionlessInvokeRequestType">
-      <Field Name="UrisVersion" DataType="i=20998" ValueRank="1" />
+      <Field Name="UrisVersion" DataType="i=20998" />
       <Field Name="NamespaceUris" DataType="i=12" ValueRank="1" />
       <Field Name="ServerUris" DataType="i=12" ValueRank="1" />
       <Field Name="LocaleIds" DataType="i=295" ValueRank="1" />
@@ -319,23 +311,15 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Invalid</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>None</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Sign</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>SignAndEncrypt</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -364,23 +348,15 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Anonymous</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>UserName</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Certificate</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>IssuedToken</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -531,13 +507,9 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Issue</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Renew</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -705,8 +677,14 @@
       <Field Name="EncryptionAlgorithm" DataType="i=12" />
     </Definition>
   </UADataType>
-  <UADataType NodeId="i=17545" BrowseName="RsaEncryptedSecret">
+  <UADataType NodeId="i=17545" BrowseName="RsaEncryptedSecret" Purpose="ServicesOnly">
     <DisplayName>RsaEncryptedSecret</DisplayName>
+    <References>
+      <Reference ReferenceType="HasSubtype" IsForward="false">i=24</Reference>
+    </References>
+  </UADataType>
+  <UADataType NodeId="i=17546" BrowseName="EccEncryptedSecret" Purpose="ServicesOnly">
+    <DisplayName>EccEncryptedSecret</DisplayName>
     <References>
       <Reference ReferenceType="HasSubtype" IsForward="false">i=24</Reference>
     </References>
@@ -837,8 +815,6 @@
             <EnumValueType>
               <Value>0</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>None</Text>
               </DisplayName>
             </EnumValueType>
@@ -852,8 +828,6 @@
             <EnumValueType>
               <Value>1</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>AccessLevel</Text>
               </DisplayName>
             </EnumValueType>
@@ -867,8 +841,6 @@
             <EnumValueType>
               <Value>2</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>ArrayDimensions</Text>
               </DisplayName>
             </EnumValueType>
@@ -882,8 +854,6 @@
             <EnumValueType>
               <Value>4</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>BrowseName</Text>
               </DisplayName>
             </EnumValueType>
@@ -897,8 +867,6 @@
             <EnumValueType>
               <Value>8</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>ContainsNoLoops</Text>
               </DisplayName>
             </EnumValueType>
@@ -912,8 +880,6 @@
             <EnumValueType>
               <Value>16</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>DataType</Text>
               </DisplayName>
             </EnumValueType>
@@ -927,8 +893,6 @@
             <EnumValueType>
               <Value>32</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Description</Text>
               </DisplayName>
             </EnumValueType>
@@ -942,8 +906,6 @@
             <EnumValueType>
               <Value>64</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>DisplayName</Text>
               </DisplayName>
             </EnumValueType>
@@ -957,8 +919,6 @@
             <EnumValueType>
               <Value>128</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>EventNotifier</Text>
               </DisplayName>
             </EnumValueType>
@@ -972,8 +932,6 @@
             <EnumValueType>
               <Value>256</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Executable</Text>
               </DisplayName>
             </EnumValueType>
@@ -987,8 +945,6 @@
             <EnumValueType>
               <Value>512</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Historizing</Text>
               </DisplayName>
             </EnumValueType>
@@ -1002,8 +958,6 @@
             <EnumValueType>
               <Value>1024</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>InverseName</Text>
               </DisplayName>
             </EnumValueType>
@@ -1017,8 +971,6 @@
             <EnumValueType>
               <Value>2048</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>IsAbstract</Text>
               </DisplayName>
             </EnumValueType>
@@ -1032,8 +984,6 @@
             <EnumValueType>
               <Value>4096</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>MinimumSamplingInterval</Text>
               </DisplayName>
             </EnumValueType>
@@ -1047,8 +997,6 @@
             <EnumValueType>
               <Value>8192</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>NodeClass</Text>
               </DisplayName>
             </EnumValueType>
@@ -1062,8 +1010,6 @@
             <EnumValueType>
               <Value>16384</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>NodeId</Text>
               </DisplayName>
             </EnumValueType>
@@ -1077,8 +1023,6 @@
             <EnumValueType>
               <Value>32768</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Symmetric</Text>
               </DisplayName>
             </EnumValueType>
@@ -1092,8 +1036,6 @@
             <EnumValueType>
               <Value>65536</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>UserAccessLevel</Text>
               </DisplayName>
             </EnumValueType>
@@ -1107,8 +1049,6 @@
             <EnumValueType>
               <Value>131072</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>UserExecutable</Text>
               </DisplayName>
             </EnumValueType>
@@ -1122,8 +1062,6 @@
             <EnumValueType>
               <Value>262144</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>UserWriteMask</Text>
               </DisplayName>
             </EnumValueType>
@@ -1137,8 +1075,6 @@
             <EnumValueType>
               <Value>524288</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>ValueRank</Text>
               </DisplayName>
             </EnumValueType>
@@ -1152,8 +1088,6 @@
             <EnumValueType>
               <Value>1048576</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>WriteMask</Text>
               </DisplayName>
             </EnumValueType>
@@ -1167,8 +1101,6 @@
             <EnumValueType>
               <Value>2097152</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Value</Text>
               </DisplayName>
             </EnumValueType>
@@ -1182,8 +1114,6 @@
             <EnumValueType>
               <Value>4194304</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>DataTypeDefinition</Text>
               </DisplayName>
             </EnumValueType>
@@ -1197,8 +1127,6 @@
             <EnumValueType>
               <Value>8388608</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>RolePermissions</Text>
               </DisplayName>
             </EnumValueType>
@@ -1212,8 +1140,6 @@
             <EnumValueType>
               <Value>16777216</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>AccessRestrictions</Text>
               </DisplayName>
             </EnumValueType>
@@ -1227,8 +1153,6 @@
             <EnumValueType>
               <Value>33554431</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>All</Text>
               </DisplayName>
             </EnumValueType>
@@ -1242,8 +1166,6 @@
             <EnumValueType>
               <Value>26501220</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>BaseNode</Text>
               </DisplayName>
             </EnumValueType>
@@ -1257,8 +1179,6 @@
             <EnumValueType>
               <Value>26501348</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Object</Text>
               </DisplayName>
             </EnumValueType>
@@ -1272,8 +1192,6 @@
             <EnumValueType>
               <Value>26503268</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>ObjectType</Text>
               </DisplayName>
             </EnumValueType>
@@ -1287,8 +1205,6 @@
             <EnumValueType>
               <Value>26571383</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Variable</Text>
               </DisplayName>
             </EnumValueType>
@@ -1302,8 +1218,6 @@
             <EnumValueType>
               <Value>28600438</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>VariableType</Text>
               </DisplayName>
             </EnumValueType>
@@ -1317,8 +1231,6 @@
             <EnumValueType>
               <Value>26632548</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Method</Text>
               </DisplayName>
             </EnumValueType>
@@ -1332,8 +1244,6 @@
             <EnumValueType>
               <Value>26537060</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>ReferenceType</Text>
               </DisplayName>
             </EnumValueType>
@@ -1347,8 +1257,6 @@
             <EnumValueType>
               <Value>26501356</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>View</Text>
               </DisplayName>
             </EnumValueType>
@@ -1667,133 +1575,81 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>AccessLevel</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>ArrayDimensions</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>BrowseName</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>ContainsNoLoops</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>DataType</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Description</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>DisplayName</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>EventNotifier</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Executable</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Historizing</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>InverseName</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>IsAbstract</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>MinimumSamplingInterval</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>NodeClass</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>NodeId</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Symmetric</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>UserAccessLevel</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>UserExecutable</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>UserWriteMask</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>ValueRank</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>WriteMask</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>ValueForVariableType</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>DataTypeDefinition</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>RolePermissions</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>AccessRestrictions</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>AccessLevelEx</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -1822,23 +1678,15 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Forward</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Inverse</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Both</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Invalid</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -1905,8 +1753,6 @@
             <EnumValueType>
               <Value>0</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>None</Text>
               </DisplayName>
             </EnumValueType>
@@ -1920,8 +1766,6 @@
             <EnumValueType>
               <Value>1</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>ReferenceTypeId</Text>
               </DisplayName>
             </EnumValueType>
@@ -1935,8 +1779,6 @@
             <EnumValueType>
               <Value>2</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>IsForward</Text>
               </DisplayName>
             </EnumValueType>
@@ -1950,8 +1792,6 @@
             <EnumValueType>
               <Value>4</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>NodeClass</Text>
               </DisplayName>
             </EnumValueType>
@@ -1965,8 +1805,6 @@
             <EnumValueType>
               <Value>8</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>BrowseName</Text>
               </DisplayName>
             </EnumValueType>
@@ -1980,8 +1818,6 @@
             <EnumValueType>
               <Value>16</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>DisplayName</Text>
               </DisplayName>
             </EnumValueType>
@@ -1995,8 +1831,6 @@
             <EnumValueType>
               <Value>32</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>TypeDefinition</Text>
               </DisplayName>
             </EnumValueType>
@@ -2010,8 +1844,6 @@
             <EnumValueType>
               <Value>63</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>All</Text>
               </DisplayName>
             </EnumValueType>
@@ -2025,8 +1857,6 @@
             <EnumValueType>
               <Value>3</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>ReferenceTypeInfo</Text>
               </DisplayName>
             </EnumValueType>
@@ -2040,8 +1870,6 @@
             <EnumValueType>
               <Value>60</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>TargetInfo</Text>
               </DisplayName>
             </EnumValueType>
@@ -2250,18 +2078,6 @@
       <Reference ReferenceType="HasSubtype" IsForward="false">i=12</Reference>
     </References>
   </UADataType>
-  <UADataType NodeId="i=292" BrowseName="Time">
-    <DisplayName>Time</DisplayName>
-    <References>
-      <Reference ReferenceType="HasSubtype" IsForward="false">i=12</Reference>
-    </References>
-  </UADataType>
-  <UADataType NodeId="i=293" BrowseName="Date">
-    <DisplayName>Date</DisplayName>
-    <References>
-      <Reference ReferenceType="HasSubtype" IsForward="false">i=13</Reference>
-    </References>
-  </UADataType>
   <UADataType NodeId="i=331" BrowseName="EndpointConfiguration">
     <DisplayName>EndpointConfiguration</DisplayName>
     <References>
@@ -2338,93 +2154,57 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Equals</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>IsNull</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>GreaterThan</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>LessThan</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>GreaterThanOrEqual</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>LessThanOrEqual</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Like</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Not</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Between</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>InList</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>And</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Or</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Cast</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>InView</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>OfType</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>RelatedTo</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>BitwiseAnd</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>BitwiseOr</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -2627,28 +2407,18 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Source</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Server</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Both</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Neither</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Invalid</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -2712,7 +2482,7 @@
       <Field Name="HistoryData" DataType="i=22" />
     </Definition>
   </UADataType>
-  <UADataType NodeId="i=641" BrowseName="HistoryReadDetails">
+  <UADataType NodeId="i=641" BrowseName="HistoryReadDetails" Purpose="ServicesOnly">
     <DisplayName>HistoryReadDetails</DisplayName>
     <References>
       <Reference ReferenceType="HasSubtype" IsForward="false">i=22</Reference>
@@ -2909,8 +2679,6 @@
             <EnumValueType>
               <Value>1</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Insert</Text>
               </DisplayName>
             </EnumValueType>
@@ -2924,8 +2692,6 @@
             <EnumValueType>
               <Value>2</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Replace</Text>
               </DisplayName>
             </EnumValueType>
@@ -2939,8 +2705,6 @@
             <EnumValueType>
               <Value>3</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Update</Text>
               </DisplayName>
             </EnumValueType>
@@ -2954,8 +2718,6 @@
             <EnumValueType>
               <Value>4</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Delete</Text>
               </DisplayName>
             </EnumValueType>
@@ -2994,8 +2756,6 @@
             <EnumValueType>
               <Value>1</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Insert</Text>
               </DisplayName>
             </EnumValueType>
@@ -3009,8 +2769,6 @@
             <EnumValueType>
               <Value>2</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Replace</Text>
               </DisplayName>
             </EnumValueType>
@@ -3024,8 +2782,6 @@
             <EnumValueType>
               <Value>3</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Update</Text>
               </DisplayName>
             </EnumValueType>
@@ -3039,8 +2795,6 @@
             <EnumValueType>
               <Value>4</Value>
               <DisplayName>
-                <Locale>
-                </Locale>
                 <Text>Remove</Text>
               </DisplayName>
             </EnumValueType>
@@ -3207,18 +2961,12 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Disabled</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Sampling</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Reporting</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -3246,18 +2994,12 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Status</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>StatusValue</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>StatusValueTimestamp</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -3285,18 +3027,12 @@
     <Value>
       <ListOfLocalizedText xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>None</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Absolute</Text>
         </LocalizedText>
         <LocalizedText>
-          <Locale>
-          </Locale>
           <Text>Percent</Text>
         </LocalizedText>
       </ListOfLocalizedText>
@@ -3354,7 +3090,7 @@
       <Field Name="AggregateConfiguration" DataType="i=948" />
     </Definition>
   </UADataType>
-  <UADataType NodeId="i=731" BrowseName="MonitoringFilterResult">
+  <UADataType NodeId="i=731" BrowseName="MonitoringFilterResult" Purpose="ServicesOnly">
     <DisplayName>MonitoringFilterResult</DisplayName>
     <References>
       <Reference ReferenceType="HasSubtype" IsForward="false">i=22</Reference>
@@ -3646,7 +3382,7 @@
       <Field Name="NotificationData" DataType="i=22" ValueRank="1" />
     </Definition>
   </UADataType>
-  <UADataType NodeId="i=945" BrowseName="NotificationData">
+  <UADataType NodeId="i=945" BrowseName="NotificationData" Purpose="ServicesOnly">
     <DisplayName>NotificationData</DisplayName>
     <References>
       <Reference ReferenceType="HasSubtype" IsForward="false">i=22</Reference>

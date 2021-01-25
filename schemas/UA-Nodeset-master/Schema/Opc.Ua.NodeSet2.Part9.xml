@@ -28,9 +28,9 @@
  * http://opcfoundation.org/License/MIT/1.00/
 -->
 
-<UANodeSet xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LastModified="2020-07-15T00:00:00Z" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd">
+<UANodeSet xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LastModified="2020-11-20T00:00:00Z" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd">
   <Models>
-    <Model ModelUri="http://opcfoundation.org/UA/" Version="1.04.7" PublicationDate="2020-07-15T00:00:00Z" />
+    <Model ModelUri="http://opcfoundation.org/UA/" Version="1.04.8" PublicationDate="2020-11-20T00:00:00Z" />
   </Models>
   <Aliases>
     <Alias Alias="Boolean">i=1</Alias>
@@ -422,8 +422,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The identifier for the event to comment.</Text>
               </Description>
             </Argument>
@@ -442,8 +440,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The comment to add to the condition.</Text>
               </Description>
             </Argument>
@@ -483,8 +479,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The identifier for the suscription to refresh.</Text>
               </Description>
             </Argument>
@@ -524,8 +518,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The identifier for the suscription to refresh.</Text>
               </Description>
             </Argument>
@@ -544,8 +536,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The identifier for the monitored item to refresh.</Text>
               </Description>
             </Argument>
@@ -723,8 +713,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The response to the dialog condition.</Text>
               </Description>
             </Argument>
@@ -908,8 +896,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The identifier for the event to comment.</Text>
               </Description>
             </Argument>
@@ -928,8 +914,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The comment to add to the condition.</Text>
               </Description>
             </Argument>
@@ -969,8 +953,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The identifier for the event to comment.</Text>
               </Description>
             </Argument>
@@ -989,8 +971,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The comment to add to the condition.</Text>
               </Description>
             </Argument>
@@ -1343,8 +1323,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>If not 0, this parameter specifies a fixed time for which the Alarm is to be shelved.</Text>
               </Description>
             </Argument>
@@ -1885,8 +1863,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The identifier for the event to comment.</Text>
               </Description>
             </Argument>
@@ -1905,8 +1881,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The comment to add to the condition.</Text>
               </Description>
             </Argument>
@@ -1963,8 +1937,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The identifier for the event to comment.</Text>
               </Description>
             </Argument>
@@ -1983,8 +1955,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>The comment to add to the condition.</Text>
               </Description>
             </Argument>
@@ -2072,9 +2042,12 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=2930</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">1</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=2932" BrowseName="TimedShelved" ParentNodeId="i=2929">
-    <DisplayName>Timed Shelved</DisplayName>
+    <DisplayName>TimedShelved</DisplayName>
     <References>
       <Reference ReferenceType="HasProperty">i=6100</Reference>
       <Reference ReferenceType="i=52" IsForward="false">i=2935</Reference>
@@ -2092,9 +2065,12 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=2932</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">2</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=2933" BrowseName="OneShotShelved" ParentNodeId="i=2929">
-    <DisplayName>One Shot Shelved</DisplayName>
+    <DisplayName>OneShotShelved</DisplayName>
     <References>
       <Reference ReferenceType="HasProperty">i=6101</Reference>
       <Reference ReferenceType="i=52" IsForward="false">i=2936</Reference>
@@ -2112,6 +2088,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=2933</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">3</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=2935" BrowseName="UnshelvedToTimedShelved" ParentNodeId="i=2929">
     <DisplayName>UnshelvedToTimedShelved</DisplayName>
@@ -2132,6 +2111,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=2935</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">12</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=2936" BrowseName="UnshelvedToOneShotShelved" ParentNodeId="i=2929">
     <DisplayName>UnshelvedToOneShotShelved</DisplayName>
@@ -2152,6 +2134,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=2936</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">13</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=2940" BrowseName="TimedShelvedToUnshelved" ParentNodeId="i=2929">
     <DisplayName>TimedShelvedToUnshelved</DisplayName>
@@ -2172,6 +2157,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=2940</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">21</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=2942" BrowseName="TimedShelvedToOneShotShelved" ParentNodeId="i=2929">
     <DisplayName>TimedShelvedToOneShotShelved</DisplayName>
@@ -2192,6 +2180,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=2942</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">23</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=2943" BrowseName="OneShotShelvedToUnshelved" ParentNodeId="i=2929">
     <DisplayName>OneShotShelvedToUnshelved</DisplayName>
@@ -2212,6 +2203,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=2943</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">31</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=2945" BrowseName="OneShotShelvedToTimedShelved" ParentNodeId="i=2929">
     <DisplayName>OneShotShelvedToTimedShelved</DisplayName>
@@ -2232,6 +2226,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=2945</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">32</UInt32>
+    </Value>
   </UAVariable>
   <UAMethod NodeId="i=2949" BrowseName="TimedShelve" ParentNodeId="i=2929">
     <DisplayName>TimedShelve</DisplayName>
@@ -2266,8 +2263,6 @@
               <ValueRank>-1</ValueRank>
               <ArrayDimensions />
               <Description>
-                <Locale>
-                </Locale>
                 <Text>If not 0, this parameter specifies a fixed time for which the Alarm is to be shelved.</Text>
               </Description>
             </Argument>
@@ -2405,6 +2400,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=9329</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">1</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=9331" BrowseName="High" ParentNodeId="i=9318">
     <DisplayName>High</DisplayName>
@@ -2423,6 +2421,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=9331</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">2</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=9333" BrowseName="Low" ParentNodeId="i=9318">
     <DisplayName>Low</DisplayName>
@@ -2441,6 +2442,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=9333</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">3</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=9335" BrowseName="LowLow" ParentNodeId="i=9318">
     <DisplayName>LowLow</DisplayName>
@@ -2459,6 +2463,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=9335</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">4</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=9337" BrowseName="LowLowToLow" ParentNodeId="i=9318">
     <DisplayName>LowLowToLow</DisplayName>
@@ -2477,6 +2484,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=9337</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">43</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=9338" BrowseName="LowToLowLow" ParentNodeId="i=9318">
     <DisplayName>LowToLowLow</DisplayName>
@@ -2495,6 +2505,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=9338</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">34</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=9339" BrowseName="HighHighToHigh" ParentNodeId="i=9318">
     <DisplayName>HighHighToHigh</DisplayName>
@@ -2513,6 +2526,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=9339</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">12</UInt32>
+    </Value>
   </UAVariable>
   <UAObject NodeId="i=9340" BrowseName="HighToHighHigh" ParentNodeId="i=9318">
     <DisplayName>HighToHighHigh</DisplayName>
@@ -2531,6 +2547,9 @@
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">i=9340</Reference>
     </References>
+    <Value>
+      <UInt32 xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">21</UInt32>
+    </Value>
   </UAVariable>
   <UAObjectType NodeId="i=9341" BrowseName="ExclusiveLimitAlarmType">
     <DisplayName>ExclusiveLimitAlarmType</DisplayName>

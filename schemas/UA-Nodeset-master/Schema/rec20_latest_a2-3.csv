@@ -538,7 +538,7 @@ X,CV,cover,"Use UN/ECE Recommendation 21 (refer to Note 2 in the spreadsheet int
 X,CY,cylinder,"Use UN/ECE Recommendation 21 (refer to Note 2 in the spreadsheet introduction, 1st sheet).",3.3,,
 X,CZ,combo,,3.9,,
 ,D03,kilowatt hour per hour,A unit of accumulated energy of a thousand watts over a period of one hour.,3.1,kW·h/h,
-,D04,lot  [unit of weight],A unit of weight equal to about 1/2 ounce or 15 grams.,3.2,,
+,D04,lot [unit of weight],A unit of weight equal to about 1/2 ounce or 15 grams.,3.2,,
 ,D1,reciprocal second per steradian,,1,s⁻¹/sr,s⁻¹/sr
 ,D10,siemens per metre,,1,S/m,S/m
 ,D11,mebibit,A unit of information equal to 2²⁰ (1048576) bits (binary digits).,3.6,Mibit,
@@ -604,7 +604,7 @@ X,D67,dollar per hour,,3.9,,
 ,D68,number of words,A unit of count defining the number of words.,3.7,,
 ,D69,inch to the fourth power,,2,in⁴,"41,623 14 x 10⁻⁸ m⁴"
 X,D7,sandwich,,3.9,,
-D,D70,calorie (international table) ,,2,calIT,"4,186 8 J"
+D,D70,calorie (international table),,2,calIT,"4,186 8 J"
 D,D71,calorie (international table) per second centimetre kelvin,,2,calIT/(s·cm·K),"418,68 W/(m x K)"
 D,D72,calorie (international table) per second square centimetre kelvin,,2,calIT/(s·cm²·K),"4,186 8 x 10⁴ W/(m² x K)"
 ,D73,joule square metre,,1,J·m²,J x m²
@@ -1169,7 +1169,7 @@ X,IP,insurance policy,,3.9,,
 ,ISD,international sugar degree,"A unit of measure defining the sugar content of a solution, expressed in degrees.",3.5,,
 X,IT,count per centimetre,,3.9,,
 ,IU,inch per second,,2,in/s,"0,025 4 m/s"
-+,IUG,international unit per gram,A unit of count defining the number of international units per gram.,3.7,,
+,IUG,international unit per gram,A unit of count defining the number of international units per gram.,3.7,,
 ,IV,inch per second squared,,2,in/s²,"0,025 4 m/s²"
 ,J10,percent per millimetre,"A unit of proportion, equal to 0.01, in relation to a millimetre.",3.7,%/mm,10 m⁻¹
 ,J12,per mille per psi,A unit of pressure equal to one thousandth of a psi (pound-force per square inch).,3.7,‰/psi,"1,450 377 x 10⁻⁷ Pa⁻¹"
@@ -1406,9 +1406,10 @@ X,KTM,kilometre,,1S,km,10³ m
 ,KVT,kilovolt,,1S,kV,10³ V
 ,KW,kilogram per millimetre,,1M,kg/mm,10³ kg/m
 ,KWH,kilowatt hour,,1S,kW·h,"3,6 x 10⁶ J"
-,KWN,Kilowatt hour per normalized cubic metre,Kilowatt hour per normalized cubic metre (temperature 0°C and pressure 101325 millibars ).,2,,
+,KWY,kilowatt year,killowatt year,2,kW/year,
+,KWN,Kilowatt hour per normalized cubic metre,Kilowatt hour per normalized cubic metre (temperature 0°C and pressure 1013.25 millibars ).,2,,
 ,KWO,kilogram of tungsten trioxide,A unit of mass equal to one thousand grams of tungsten trioxide.,3.1,kg WO₃,
-,KWS,Kilowatt hour per standard cubic metre,Kilowatt hour per standard cubic metre (temperature 15°C and pressure 101325 millibars).,2,,
+,KWS,Kilowatt hour per standard cubic metre,Kilowatt hour per standard cubic metre (temperature 15°C and pressure 1013.25 millibars).,2,,
 ,KWT,kilowatt,,1S,kW,10³ W
 ,KX,millilitre per kilogram,,1M,ml/kg,10⁻⁶ m³/kg
 ,L10,quart (US liquid) per minute,,2,qt (US liq.)/min,"1,577 255 x 10⁻⁵ m³/s"
@@ -1515,7 +1516,7 @@ X,LJ,large spray,,3.9,,
 ,LK,link,A unit of distance equal to 0.01 chain.,3.9,,
 ,LM,linear metre,A unit of count defining the number of metres in length of a uniform width object.,3.1,,
 ,LN,length,A unit of distance defining the linear extent of an item measured from end to end.,3.9,,
-,LO,lot  [unit of procurement],A unit of count defining the number of lots (lot: a collection of associated items).,3.9,,
+,LO,lot [unit of procurement],A unit of count defining the number of lots (lot: a collection of associated items).,3.9,,
 ,LP,liquid pound,A unit of mass defining the number of pounds of a liquid substance.,3.1,,
 ,LPA,litre of pure alcohol,A unit of volume equal to one litre of pure alcohol.,3.1,,
 ,LR,layer,A unit of count defining the number of layers.,3.9,,
@@ -1565,23 +1566,23 @@ X,M0,magnetic tape,,3.6,,
 ,M43,mil,"Unit to indicate an angle at military zone, equal to the 6400th part of the full circle of the 360° or 2·p·rad.",2,mil,"9,817 477  x 10⁻⁴ rad"
 ,M44,revolution,Unit to identify an angle of the full circle of 360° or 2·p·rad (Refer ISO/TC12 SI Guide).,2,rev,"6,283 185 rad"
 ,M45,degree [unit of angle] per second squared,360 part of a full circle divided by the power of the SI base unit second and the exponent 2.,1M,°/s²,"1,745 329 x 10⁻² rad / s"
-,M46,revolution per minute ,Unit of the angular velocity.,2,r/min,"0,104 719 8 rad/s"
-,M47,circular mil ,"Unit of an area, of which the size is given by a diameter of length of 1 mm (0,001 in) based on the formula: area = p·(diameter/2)².",2,cmil,"5,067 075 x 10⁻¹⁰ m²"
-,M48,square mile (based on U.S. survey foot) ,"Unit of the area, which is mainly common in the agriculture and forestry.",2,mi² (US survey),"2,589 998 x 10⁶ m²"
+,M46,revolution per minute,Unit of the angular velocity.,2,r/min,"0,104 719 8 rad/s"
+,M47,circular mil,"Unit of an area, of which the size is given by a diameter of length of 1 mm (0,001 in) based on the formula: area = p·(diameter/2)².",2,cmil,"5,067 075 x 10⁻¹⁰ m²"
+,M48,square mile (based on U.S. survey foot),"Unit of the area, which is mainly common in the agriculture and forestry.",2,mi² (US survey),"2,589 998 x 10⁶ m²"
 ,M49,chain (based on U.S. survey foot),Unit of the length according the Anglo-American system of units.,2,ch (US survey) ,"2,011684 x 10 m"
 ,M5,microcurie,,2S,µCi,"3,7 x 10⁴ Bq"
 ,M50,furlong,Unit commonly used in Great Britain at rural distances: 1 furlong = 40 rods = 10 chains (UK) = 1/8 mile = 1/10 furlong = 220 yards = 660 foot.,2,fur,"2,011 68 x 10² m"
-,M51,foot (U.S. survey) ,"Unit commonly used in the United States for ordnance survey.",2,ft (US survey) ,"3,048 006 x 10⁻¹ m"
-,M52,mile (based on U.S. survey foot) ,Unit commonly used in the United States for ordnance survey.,2,mi (US survey) ,"1,609347 x 10³ m"
+,M51,foot (U.S. survey),"Unit commonly used in the United States for ordnance survey.",2,ft (US survey) ,"3,048 006 x 10⁻¹ m"
+,M52,mile (based on U.S. survey foot),Unit commonly used in the United States for ordnance survey.,2,mi (US survey) ,"1,609347 x 10³ m"
 ,M53,metre per pascal,SI base unit metre divided by the derived SI unit pascal.,1M,m/Pa,kg⁻¹ x m² x s²
 ,M55,metre per radiant,Unit of the translation factor for implementation from rotation to linear movement.,1S,m/rad,m/rad
 ,M56,shake,Unit for a very short period.,2,shake,10⁻⁸ s
-,M57,mile per minute ,Unit of velocity from the Imperial system of units.,2,mi/min,"26,822 4 m/s"
-,M58,mile per second ,Unit of the velocity from the Imperial system of units.,2,mi/s,"1,609 344 x 10³ m/s"
+,M57,mile per minute,Unit of velocity from the Imperial system of units.,2,mi/min,"26,822 4 m/s"
+,M58,mile per second,Unit of the velocity from the Imperial system of units.,2,mi/s,"1,609 344 x 10³ m/s"
 ,M59,metre per second pascal,SI base unit meter divided by the product of SI base unit second and the derived SI unit pascal.,1S,(m/s)/Pa,m² x kg⁻¹ x s
 ,M60,metre per hour,SI base unit metre divided by the unit hour.,2,m/h,"2,777 78 x 10⁻⁴ m/s"
 ,M61,inch per year,Unit of the length according to the Anglo-American and Imperial system of units divided by the unit common year with 365 days.,2,in/y,"8,048 774 x 10⁻¹⁰ m/s"
-,M62,kilometre per second ,1000-fold of the SI base unit metre divided by the SI base unit second.,2,km/s,10³ m/s
+,M62,kilometre per second,1000-fold of the SI base unit metre divided by the SI base unit second.,2,km/s,10³ m/s
 ,M63,inch per minute,Unit inch according to the Anglo-American and Imperial system of units divided by the unit minute.,2,in/min,"4,233 333 x 10⁻⁴ m/s"
 ,M64,yard per second,Unit yard according to the Anglo-American and Imperial system of units divided by the SI base unit second.,2,yd/s,"9,144 x 10⁻¹ m/s"
 ,M65,yard per minute,Unit yard according to the Anglo-American and Imperial system of units divided by the unit minute.,2,yd/min,"1,524 x 10⁻² m/s"
@@ -1590,7 +1591,7 @@ X,M0,magnetic tape,,3.6,,
 ,M68,cord (128 ft3),Traditional unit of the volume of stacked firewood which has been measured with a cord.,2,cord,"3,624 556 m³"
 ,M69,cubic mile (UK statute),Unit of volume according to the Imperial system of units.,2,mi³,"4,168 182 x 10⁹ m³"
 ,M7,micro-inch,,2,µin,"25,4 x 10⁻⁹ m"
-,M70,"ton, register ",Traditional unit of the cargo capacity.,2,RT,"2,831 685 m³"
+,M70,"ton, register",Traditional unit of the cargo capacity.,2,RT,"2,831 685 m³"
 ,M71,cubic metre per pascal,Power of the SI base unit meter by exponent 3 divided by the derived SI base unit pascal.,1S,m³/Pa,kg⁻¹ x m⁴ x s²
 ,M72,bel,Logarithmic relationship to base 10.,1M,B,B
 ,M73,kilogram per cubic metre pascal,SI base unit kilogram divided by the product of the power of the SI base unit metre with exponent 3 and the derived SI unit pascal.,1M,(kg/m³)/Pa,m⁻² x s²
@@ -1599,12 +1600,12 @@ X,M0,magnetic tape,,3.6,,
 ,M76,poundal,"Non SI-conforming unit of the power, which corresponds to a mass of a pound multiplied with the acceleration of a foot per square second.",2,pdl,"1,382 550 x 10⁻¹ N"
 ,M77,kilogram metre per second squared,Product of the SI base unit kilogram and the SI base unit metre divided by the power of the SI base unit second by exponent 2.,2,kg·m/s²,(kg x m)/s²
 ,M78,pond,"0,001-fold of the unit of the weight, defined as a mass of 1 kg which finds out about a weight strength from 1 kp by the gravitational force at sea level which corresponds to a strength of 9,806 65 newton.",2,p,"9,806 65 x 10⁻³ N"
-,M79,square foot per hour ,Power of the unit foot according to the Anglo-American and Imperial system of units by exponent 2 divided by the unit of time hour.,2,ft²/h,"2,580 64 x 10⁻⁵ m²/s"
+,M79,square foot per hour,Power of the unit foot according to the Anglo-American and Imperial system of units by exponent 2 divided by the unit of time hour.,2,ft²/h,"2,580 64 x 10⁻⁵ m²/s"
 ,M80,stokes per pascal,CGS (Centimetre-Gram-Second system) unit stokes divided by the derived SI unit pascal.,2,St/Pa,10⁻⁴ kg⁻¹ x m³ x s
 ,M81,square centimetre per second,"0,000 1-fold of the power of the SI base unit metre by exponent 2 divided by the SI base unit second.",2,cm²/s,10⁻⁴ m²/s
 ,M82,square metre per second pascal,Power of the SI base unit metre with the exponent 2 divided by the SI base unit second and the derived SI unit pascal.,1,(m²/s)/Pa,kg⁻¹ x m³ x s
-,M83,denier ,Traditional unit for the indication of the linear mass of textile fibers and yarns.,2,den,"1,111 111 x 10⁻⁷ kg/m"
-,M84,pound per yard ,Unit for linear mass according to avoirdupois system of units.,2,lb/yd,"4,960 546 x 10⁻¹ kg/m"
+,M83,denier,Traditional unit for the indication of the linear mass of textile fibers and yarns.,2,den,"1,111 111 x 10⁻⁷ kg/m"
+,M84,pound per yard,Unit for linear mass according to avoirdupois system of units.,2,lb/yd,"4,960 546 x 10⁻¹ kg/m"
 ,M85,"ton, assay",Non SI-conforming unit of the mass used in the mineralogy to determine the concentration of precious metals in ore according to the mass of the precious metal in milligrams in a sample of the mass of an assay sound (number of troy ounces in a short ton (1 000 lb)).,2,,"2,916 667 x 10⁻² kg"
 ,M86,pfund,Outdated unit of the mass used in Germany.,2,pfd,"0,5 kg"
 ,M87,kilogram per second pascal,SI base unit kilogram divided by the product of the SI base unit second and the derived SI unit pascal.,1S,(kg/s)/Pa,m x s
@@ -1675,13 +1676,13 @@ X,MV,number of mults,,3.7,,
 ,N19,inch of water (60 ºF),"Non SI-conforming unit of pressure according to the Anglo-American and Imperial system for units, whereas the value of 1 inH2O meets the static pressure, which is generated by a head of water at a temperature of 60°F with a height of 1 inch .",2,inH₂O (60 ºF),"2,488 4 × 10² Pa"
 X,N2,number of lines,,3.9,,
 ,N20,kip per square inch,Non SI-conforming unit of the pressure according to the Anglo-American system of units as the 1000-fold of the unit of the force pound-force divided by the power of the unit inch by exponent 2.,2,ksi,"6,894 757 x 10⁶ Pa"
-,N21,poundal per square foot ,"Non SI-conforming unit of pressure by the Imperial system of units according to NIST: 1 pdl/ft² = 1,488 164 Pa.",2,pdl/ft²,"1,488 164 Pa"
-,N22,ounce (avoirdupois) per square inch ,Unit of the surface specific mass (avoirdupois ounce according to the avoirdupois system of units according to the surface square inch according to the Anglo-American and Imperial system of units).,2,oz/in²,"4,394 185 x 10 kg/m²"
+,N21,poundal per square foot,"Non SI-conforming unit of pressure by the Imperial system of units according to NIST: 1 pdl/ft² = 1,488 164 Pa.",2,pdl/ft²,"1,488 164 Pa"
+,N22,ounce (avoirdupois) per square inch,Unit of the surface specific mass (avoirdupois ounce according to the avoirdupois system of units according to the surface square inch according to the Anglo-American and Imperial system of units).,2,oz/in²,"4,394 185 x 10 kg/m²"
 ,N23,conventional metre of water,"Not SI-conforming unit of pressure, whereas a value of 1 mH2O is equivalent to the static pressure, which is produced by one metre high water column .",2,mH₂O,"9,806 65 x 10³ Pa"
 ,N24,gram per square millimetre,"0,001-fold of the SI base unit kilogram divided by the 0.000 001-fold of the power of the SI base unit meter by exponent 2.",2,g/mm²,10³ kg/m²
 ,N25,pound per square yard,Unit for areal-related mass as a unit pound according to the avoirdupois unit system divided by the power of the unit yard according to the Anglo-American and Imperial system of units with exponent 2.,2,lb/yd²,"5,424 919 x 10⁻¹ kg/m²"
 ,N26,poundal per square inch,Non SI-conforming unit of the pressure according to the Imperial system of units (poundal by square inch).,2,pdl/in²,"2,142 957 × 10² Pa"
-,N27,foot to the fourth power ,"Power of the unit foot according to the Anglo-American and Imperial system of units by exponent 4 according to NIST: 1 ft4 = 8,630 975 m4.",2,ft⁴,"8,630 975 x 10⁻³ m⁴"
+,N27,foot to the fourth power,"Power of the unit foot according to the Anglo-American and Imperial system of units by exponent 4 according to NIST: 1 ft4 = 8,630 975 m4.",2,ft⁴,"8,630 975 x 10⁻³ m⁴"
 ,N28,cubic decimetre per kilogram,"0,001 fold of the power of the SI base unit meter by exponent 3 divided by the SI based unit kilogram.",1M,dm³/kg,10⁻³ m³ x kg⁻¹
 ,N29,cubic foot per pound,Power of the unit foot according to the Anglo-American and Imperial system of units by exponent 3 divided by the unit avoirdupois pound according to the avoirdupois unit system.,2,ft³/lb,"6,242 796 x 10⁻² m³/kg"
 ,N3,print point,,3.5,,"0,013 8 in (approx)"
@@ -1689,7 +1690,7 @@ X,N2,number of lines,,3.9,,
 ,N31,kilonewton per metre,1000-fold of the derived SI unit newton divided by the SI base unit metre.,1M,kN/m,10³ N/m
 ,N32,poundal per inch,Non SI-conforming unit of the surface tension according to the Imperial unit system as quotient poundal by inch.,2,pdl/in,"5,443 110 N/m"
 ,N33,pound-force per yard,Unit of force per unit length based on the Anglo-American system of units.,2,lbf/yd,"4,864 635 N/m"
-,N34,poundal second per square foot ,Non SI-conforming unit of viscosity.,2,(pdl/ft²)·s,"1,488 164 Pa x s"
+,N34,poundal second per square foot,Non SI-conforming unit of viscosity.,2,(pdl/ft²)·s,"1,488 164 Pa x s"
 ,N35,poise per pascal,CGS (Centimetre-Gram-Second system) unit poise divided by the derived SI unit pascal.,2,P/Pa,"0,1 s"
 ,N36,newton second per square metre,Unit of the dynamic viscosity as a product of unit of the pressure (newton by square metre) multiplied with the SI base unit second.,1S,(N/m²)·s,Pa x s
 ,N37,kilogram per metre second,Unit of the dynamic viscosity as a quotient SI base unit kilogram divided by the SI base unit metre and by the SI base unit second.,1,kg/(m·s),Pa x s
@@ -1703,8 +1704,8 @@ X,N2,number of lines,,3.9,,
 ,N45,cubic metre per second pascal,Power of the SI base unit meter by exponent 3 divided by the product of the SI base unit second and the derived SI base unit pascal.,1S,(m³/s)/Pa,kg⁻¹ x m⁴ x s
 ,N46,foot poundal,Unit of the work (force-path).,2,ft·pdl,"4,214 011 x 10⁻² J"
 ,N47,inch poundal,Unit of work (force multiplied by path) according to the Imperial system of units as a product unit inch multiplied by poundal.,2,in·pdl,"3,511 677 x 10⁻³ J"
-,N48,watt per square centimetre ,"Derived SI unit watt divided by the power of the 0,01-fold the SI base unit metre by exponent 2.",2,W/cm²,10⁴ W/m²
-,N49,watt per square inch ,Derived SI unit watt divided by the power of the unit inch according to the Anglo-American and Imperial system of units by exponent 2.,2,W/in²,"1,550 003 x 10³ W/m²"
+,N48,watt per square centimetre,"Derived SI unit watt divided by the power of the 0,01-fold the SI base unit metre by exponent 2.",2,W/cm²,10⁴ W/m²
+,N49,watt per square inch,Derived SI unit watt divided by the power of the unit inch according to the Anglo-American and Imperial system of units by exponent 2.,2,W/in²,"1,550 003 x 10³ W/m²"
 ,N50,British thermal unit (international table) per square foot hour,Unit of the surface heat flux according to the Imperial system of units.,2,BtuIT/(ft²·h),"3,154 591 W/m²"
 ,N51,British thermal unit (thermochemical) per square foot hour,Unit of the surface heat flux according to the Imperial system of units.,2,Btuth/(ft²·h),"3,152 481 W/m²"
 ,N52,British thermal unit (thermochemical) per square foot minute,Unit of the surface heat flux according to the Imperial system of units.,2,Btuth/(ft²·min) ,"1,891 489 x 10² W/m²"
@@ -1713,7 +1714,7 @@ X,N2,number of lines,,3.9,,
 ,N55,British thermal unit (international table) per square inch second,Unit of the surface heat flux according to the Imperial system of units.,2,BtuIT/(in²·s),"1,634 246 x 10⁶ W/m²"
 ,N56,calorie (thermochemical) per square centimetre minute,Unit of the surface heat flux according to the Imperial system of units.,2,calth/(cm²·min),"6,973 333 x 10² W/m²"
 ,N57,calorie (thermochemical) per square centimetre second,Unit of the surface heat flux according to the Imperial system of units.,2,calth/(cm²·s),"4,184 x 10⁴ W/m²"
-,N58,British thermal unit (international table) per cubic foot ,Unit of the energy density according to the Imperial system of units.,2,BtuIT/ft³,"3,725 895 x10⁴ J/m³"
+,N58,British thermal unit (international table) per cubic foot,Unit of the energy density according to the Imperial system of units.,2,BtuIT/ft³,"3,725 895 x10⁴ J/m³"
 ,N59,British thermal unit (thermochemical) per cubic foot,Unit of the energy density according to the Imperial system of units.,2,Btuth/ft³,"3,723 403 x10⁴ J/m³"
 ,N60,British thermal unit (international table) per degree Fahrenheit,Unit of the heat capacity according to the Imperial system of units.,2,BtuIT/ºF,"1,899 101 x 10³ J/K"
 ,N61,British thermal unit (thermochemical) per degree Fahrenheit,Unit of the heat capacity according to the Imperial system of units.,2,Btuth/ºF,"1,897 830 x 10³ J/K"
@@ -1721,10 +1722,10 @@ X,N2,number of lines,,3.9,,
 ,N63,British thermal unit (thermochemical) per degree Rankine,Unit of the heat capacity according to the Imperial system of units.,2,Btuth/ºR,"1,897 830 x 10³ J/K"
 ,N64,British thermal unit (thermochemical) per pound degree Rankine,Unit of the heat capacity (British thermal unit according to the international table according to the Rankine degree) according to the Imperial system of units divided by the unit avoirdupois pound according to the avoirdupois system of units.,2,(Btuth/°R)/lb,"4,184 x 10³ J/(kg x K)"
 ,N65,kilocalorie (international table) per gram kelvin,"Unit of the mass-related heat capacity as quotient 1000-fold of the calorie (international table) divided by the product of the 0,001-fold of the SI base units kilogram and kelvin.",2,(kcalIT/K)/g,"4,186 8 x 10⁶ J/(kg x K)"
-,N66,British thermal unit (39 ºF) ,Unit of heat energy according to the Imperial system of units in a reference temperature of 39 °F.,2,Btu (39 ºF) ,"1,059 67  x 10³ J"
+,N66,British thermal unit (39 ºF),Unit of heat energy according to the Imperial system of units in a reference temperature of 39 °F.,2,Btu (39 ºF) ,"1,059 67  x 10³ J"
 ,N67,British thermal unit (59 ºF),Unit of heat energy according to the Imperial system of units in a reference temperature of 59 °F.,2,Btu (59 ºF),"1,054 80  x 10³ J"
-,N68,British thermal unit (60 ºF) ,Unit of head energy according to the Imperial system of units at a reference temperature of 60 °F.,2,Btu (60 ºF) ,"1,054 68  x 10³ J"
-,N69,calorie (20 ºC) ,"Unit for quantity of heat, which is to be required for 1 g air free water at a constant pressure from 101,325 kPa, to warm up the pressure of standard atmosphere at sea level, from 19,5 °C on 20,5 °C.",2,cal₂₀,"4,181 90"
+,N68,British thermal unit (60 ºF),Unit of head energy according to the Imperial system of units at a reference temperature of 60 °F.,2,Btu (60 ºF) ,"1,054 68  x 10³ J"
+,N69,calorie (20 ºC),"Unit for quantity of heat, which is to be required for 1 g air free water at a constant pressure from 101,325 kPa, to warm up the pressure of standard atmosphere at sea level, from 19,5 °C on 20,5 °C.",2,cal₂₀,"4,181 90"
 ,N70,quad (1015 BtuIT),Unit of heat energy according to the imperial system of units.,2,quad,"1,055 056 × 10¹⁸ J"
 ,N71,therm (EC),"Unit of heat energy in commercial use, within the EU defined: 1 thm (EC) = 100 000 BtuIT.",2,thm (EC),"1,055 06 × 10⁸ J"
 ,N72,therm (U.S.),Unit of heat energy in commercial use.,2,thm (US),"1,054 804 × 10⁸ J"
@@ -1772,7 +1773,7 @@ X,NI,net imperial gallon,,3.1,,
 ,NIU,number of international units,A unit of count defining the number of international units.,3.7,,
 X,NJ,number of screens,,3.7,,
 ,NL,load,A unit of volume defining the number of loads (load: a quantity of items carried or processed at one time).,3.4,,
-,NM3,Normalised cubic metre,Normalised cubic metre (temperature 0°C and pressure 101325 millibars ),2,,m3
+,NM3,Normalised cubic metre,Normalised cubic metre (temperature 0°C and pressure 1013.25 millibars ),2,,m3
 ,NMI,nautical mile,,1,n mile,1 852 m
 ,NMP,number of packs,A unit of count defining the number of packs (pack: a collection of objects packaged together).,3.7,,
 X,NN,train,,3.5,,
@@ -1791,10 +1792,10 @@ Synonym: per mille",3.7,‰,1 x 10⁻³
 X,NY,pound per air dry metric ton,,3.5,,
 ,OA,panel,"A unit of count defining the number of panels (panel: a distinct, usually rectangular, section of a surface).",3.9,,
 ,ODE,ozone depletion equivalent,"A unit of mass defining the ozone depletion potential in kilograms of a product relative to the calculated depletion for the reference substance, Trichlorofluoromethane (CFC-11).",3.1,,
-+,ODG,ODS Grams,"A unit of measure calculated by multiplying the mass of the substance in grams and the ozone-depleting potential for the substance.
+,ODG,ODS Grams,"A unit of measure calculated by multiplying the mass of the substance in grams and the ozone-depleting potential for the substance.
 ",3.1,,
-+,ODK,ODS Kilograms,A unit of measure calculated by multiplying the mass of the substance in kilograms and the ozone-depleting potential for the substance.,3.1,,
-+,ODM,ODS Milligrams,A unit of measure calculated by multiplying the mass of the substance in milligrams and the ozone-depleting potential for the substance.,3.1,,
+,ODK,ODS Kilograms,A unit of measure calculated by multiplying the mass of the substance in kilograms and the ozone-depleting potential for the substance.,3.1,,
+,ODM,ODS Milligrams,A unit of measure calculated by multiplying the mass of the substance in milligrams and the ozone-depleting potential for the substance.,3.1,,
 ,OHM,ohm,,1,Ω,Ω
 ,ON,ounce per square yard,,2,oz/yd²,"3,390 575 x 10⁻² kg/m²"
 ,ONZ,ounce (avoirdupois),,2,oz,"2,834 952 x 10⁻² kg"
@@ -1820,12 +1821,12 @@ X,P0,page - electronic,,3.9,,
 ,P20,kilojoule per hour,Quotient from the 1000-fold of the derived SI unit joule divided by the unit hour.,1M,kJ/h,"2,777 78 x 10⁻¹ W"
 ,P21,kilojoule per day,Quotient from the 1000-fold of the derived SI unit joule divided by the unit day.,1M,kJ/d,"1,157 41 x 10⁻² W"
 ,P22,nanoohm,"0,000 000 001-fold of the derived SI unit ohm.",1M,nΩ,10⁻⁹ Ω
-,P23,ohm circular-mil per foot ,Unit of resistivity.,2,Ω·cmil/ft ,"1,662 426 x 10⁻⁹ Ω x m"
+,P23,ohm circular-mil per foot,Unit of resistivity.,2,Ω·cmil/ft ,"1,662 426 x 10⁻⁹ Ω x m"
 ,P24,kilohenry,1000-fold of the derived SI unit henry.,1M,kH,10³ H
-,P25,lumen per square foot ,Derived SI unit lumen divided by the power of the unit foot according to the Anglo-American and Imperial system of units by exponent 2.,2,lm/ft²,"1,076 391 x 10¹ cd x sr / m²"
+,P25,lumen per square foot,Derived SI unit lumen divided by the power of the unit foot according to the Anglo-American and Imperial system of units by exponent 2.,2,lm/ft²,"1,076 391 x 10¹ cd x sr / m²"
 ,P26,phot,"CGS (Centimetre-Gram-Second system) unit of luminance, defined as lumen by square centimetre.",2,ph,10⁴ cd x sr / m²
 ,P27,footcandle,"Non SI conform traditional unit, defined as density of light which impinges on a surface which has a distance of one foot from a light source, which shines with an intensity of an international candle.",2,ftc,"1,076 391 x 10¹ cd x sr / m²"
-,P28,candela per square inch ,SI base unit candela divided by the power of unit inch according to the Anglo-American and Imperial system of units by exponent 2.,2,cd/in²,"1,550 003 x 10³ cd/m²"
+,P28,candela per square inch,SI base unit candela divided by the power of unit inch according to the Anglo-American and Imperial system of units by exponent 2.,2,cd/in²,"1,550 003 x 10³ cd/m²"
 ,P29,footlambert,"Unit of the luminance according to the Anglo-American system of units, defined as emitted or reflected luminance of a lm/ft².",2,ftL,"3,426 259 cd/m²"
 X,P3,three pack,,3.2,,
 ,P30,lambert,"CGS (Centimetre-Gram-Second system) unit of luminance, defined as the emitted or reflected luminance by one lumen per square centimetre.",2,Lb,"3,183 099 x 10³ cd/m²"
@@ -1834,10 +1835,10 @@ X,P3,three pack,,3.2,,
 ,P33,kilocandela,1000-fold of the SI base unit candela.,1M,kcd,10³ cd
 ,P34,millicandela,"0,001-fold of the SI base unit candela.",1M,mcd,10⁻³ cd
 ,P35,Hefner-Kerze,"Obsolete, non-legal unit of the power in Germany relating to DIN 1301-3:1979: 1 HK = 0,903 cd.",2,HK,"0,903 cd"
-,P36,international candle ,"Obsolete, non-legal unit of the power in Germany relating to DIN 1301-3:1979: 1 HK = 1,019 cd.",2,IK,"1,019 cd"
+,P36,international candle,"Obsolete, non-legal unit of the power in Germany relating to DIN 1301-3:1979: 1 HK = 1,019 cd.",2,IK,"1,019 cd"
 ,P37,British thermal unit (international table) per square foot,Unit of the areal-related energy transmission according to the Imperial system of units.,2,BtuIT/ft²,"1,135 653 x 10⁴ J/m²"
 ,P38,British thermal unit (thermochemical) per square foot,Unit of the areal-related energy transmission according to the Imperial system of units.,2,Btuth/ft²,"1,134 893 x 10⁴ J/m²"
-,P39,calorie (thermochemical) per square centimetre ,Unit of the areal-related energy transmission according to the Imperial system of units.,2,calth/cm²,"4,184 x 10⁴ J/m²"
+,P39,calorie (thermochemical) per square centimetre,Unit of the areal-related energy transmission according to the Imperial system of units.,2,calth/cm²,"4,184 x 10⁴ J/m²"
 X,P4,four pack,,3.2,,
 ,P40,langley,CGS (Centimetre-Gram-Second system) unit of the areal-related energy transmission (as a measure of the incident quantity of heat of solar radiation on the earth's surface).,2,Ly,"4,184 x 10⁴ J/m²"
 ,P41,decade (logarithmic),"1 Dec := log2 10 ˜ 3,32 according to the logarithm for frequency range between f1 and f2, when f2/f1 = 10.",2,dec,dec
@@ -1853,7 +1854,7 @@ X,P4,four pack,,3.2,,
 ,P50,weber metre,Product of the derived SI unit weber and SI base unit metre.,1S,Wb·m,m³ x kg x s⁻²  x A⁻¹
 ,P51,mol per kilogram pascal,SI base unit mol divided by the product of the SI base unit kilogram and the derived SI unit pascal.,1S,(mol/kg)/Pa,m x kg⁻² x s² x mol
 ,P52,mol per cubic metre pascal,SI base unit mol divided by the product of the power from the SI base unit metre with exponent 3 and the derived SI unit pascal.,1S,(mol/m³)/Pa,m⁻² x kg⁻¹ x s² x mol
-,P53,unit pole ,CGS (Centimetre-Gram-Second system) unit for magnetic flux of a magnetic pole (according to the interaction of identical poles of 1 dyn at a distance of a cm).,2,unit pole ,"1,256 637 x 10⁻⁷ Wb"
+,P53,unit pole,CGS (Centimetre-Gram-Second system) unit for magnetic flux of a magnetic pole (according to the interaction of identical poles of 1 dyn at a distance of a cm).,2,unit pole ,"1,256 637 x 10⁻⁷ Wb"
 ,P54,milligray per second,"0,001-fold of the derived SI unit gray divided by the SI base unit second.",1M,mGy/s,10⁻³ Gy/s
 ,P55,microgray per second,"0,000 001-fold of the derived SI unit gray divided by the SI base unit second.",1M,µGy/s,10⁻⁶ Gy/s
 ,P56,nanogray per second,"0,000 000 001-fold of the derived SI unit gray divided by the SI base unit second.",1M,nGy/s,10⁻⁹ Gy/s
@@ -1894,9 +1895,9 @@ X,P8,eight pack,,3.2,,
 ,P88,rhe,Non SI-conforming unit of fluidity of dynamic viscosity.,3.5,rhe,10 m x kg⁻¹ x s
 ,P89,pound-force foot per inch,Unit for length-related rotational moment according to the Anglo-American and Imperial system of units.,3.5,lbf·ft/in,"53,378 66 m x kg / s²"
 X,P9,nine pack,,3.2,,
-,P90,pound-force inch per inch ,Unit for length-related rotational moment according to the Anglo-American and Imperial system of units.,3.5,lbf·in/in,"4,448 222 m x kg / s²"
-,P91,perm (0 ºC) ,"Traditional unit for the ability of a material to allow the transition of the steam, defined at a temperature of 0 °C as steam transmittance, where the mass of one grain steam penetrates an area of one foot squared at a pressure from one inch mercury per hour.",3.5,perm (0 ºC) ,"5,721 35 x 10⁻¹¹ kg/(m² x Pa x s)"
-,P92,perm (23 ºC) ,"Traditional unit for the ability of a material to allow the transition of the steam, defined at a temperature of 23 °C as steam transmittance at which the mass of one grain of steam penetrates an area of one square foot at a pressure of one inch mercury per hour.",3.5,perm (23 ºC) ,"5,745 25 x 10⁻¹¹ kg/(m² x Pa x s)"
+,P90,pound-force inch per inch,Unit for length-related rotational moment according to the Anglo-American and Imperial system of units.,3.5,lbf·in/in,"4,448 222 m x kg / s²"
+,P91,perm (0 ºC),"Traditional unit for the ability of a material to allow the transition of the steam, defined at a temperature of 0 °C as steam transmittance, where the mass of one grain steam penetrates an area of one foot squared at a pressure from one inch mercury per hour.",3.5,perm (0 ºC) ,"5,721 35 x 10⁻¹¹ kg/(m² x Pa x s)"
+,P92,perm (23 ºC),"Traditional unit for the ability of a material to allow the transition of the steam, defined at a temperature of 23 °C as steam transmittance at which the mass of one grain of steam penetrates an area of one square foot at a pressure of one inch mercury per hour.",3.5,perm (23 ºC) ,"5,745 25 x 10⁻¹¹ kg/(m² x Pa x s)"
 ,P93,byte per second,Unit byte divided by the SI base unit second.,3.6,byte/s,byte/s
 ,P94,kilobyte per second,1000-fold of the unit byte divided by the SI base unit second.,3.6,kbyte/s,10³ byte/s
 ,P95,megabyte per second,1 000 000-fold of the unit byte divided by the SI base unit second.,3.6,Mbyte/s,10⁶ byte/s
@@ -1961,12 +1962,12 @@ X,PZ,peck dry (UK),,3.5,,
 ,Q34,nanolitre,,1S,nl,10-12 m3
 ,Q35,megawatts per minute,A unit of power defining the total amount of bulk energy transferred or consumer per minute.,1M,MW/min,1.667 × 104 W/s
 ,Q36,square metre per cubic metre,A unit of the amount of surface area per unit volume of an object or collection of objects.,3.1,m2/m3,1 m2/m3
-,Q37,Standard cubic metre per day,Standard cubic metre (temperature 15°C and pressure 101325 millibars ) per day,2,,1.15741 × 10-5 m3/s
-,Q38,Standard cubic metre per hour,Standard cubic metre (temperature 15°C and pressure 101325 millibars ) per hour,2,,2.77778 × 10-4 m3/s
-,Q39,Normalized cubic metre per day,Normalized cubic metre (temperature 0°C and pressure 101325 millibars ) per day,2,,1.15741 × 10-5 m3/s
-,Q40,Normalized cubic metre per hour,Normalized cubic metre (temperature 0°C and pressure 101325 millibars ) per hour,2,,2.77778 × 10-4 m3/s
-,Q41,Joule per normalised cubic metre,Joule per normalised cubic metre (temperature 0°C and pressure 101325 millibars).,2,,
-,Q42,Joule per standard cubic metre,Joule per standard cubic metre (temperature 15°C and pressure 101325 millibars).,2,,
+,Q37,Standard cubic metre per day,Standard cubic metre (temperature 15°C and pressure 1013.25 millibars ) per day,2,,1.15741 × 10-5 m3/s
+,Q38,Standard cubic metre per hour,Standard cubic metre (temperature 15°C and pressure 1013.25 millibars ) per hour,2,,2.77778 × 10-4 m3/s
+,Q39,Normalized cubic metre per day,Normalized cubic metre (temperature 0°C and pressure 1013.25 millibars ) per day,2,,1.15741 × 10-5 m3/s
+,Q40,Normalized cubic metre per hour,Normalized cubic metre (temperature 0°C and pressure 1013.25 millibars ) per hour,2,,2.77778 × 10-4 m3/s
+,Q41,Joule per normalised cubic metre,Joule per normalised cubic metre (temperature 0°C and pressure 1013.25 millibars).,2,,
+,Q42,Joule per standard cubic metre,Joule per standard cubic metre (temperature 15°C and pressure 1013.25 millibars).,2,,
 ,Q3,meal,A unit of count defining the number of meals (meal: an amount of food to be eaten on a single occasion).,3.9,,
 ,QA,page - facsimile,A unit of count defining the number of facsimile pages.,3.5,,
 ,QAN,quarter (of a year),A unit of time defining the number of quarters (3 months).,3.8,,
@@ -2018,7 +2019,7 @@ D,SHT,shipping ton,A unit of mass defining the number of tons for shipping.,3.4,
 ,SIE,siemens,,1,S,A/V
 X,SK,split tank truck,,3.4,,
 X,SL,slipsheet,"Use UN/ECE Recommendation 21 (refer to Note 2 in the spreadsheet introduction, 1st sheet).",3.3,,
-,SM3,Standard cubic metre,Standard cubic metre (temperature 15°C and pressure 101325 millibars ),2,,m3
+,SM3,Standard cubic metre,Standard cubic metre (temperature 15°C and pressure 1013.25 millibars ),2,,m3
 ,SMI,mile (statute mile),,2,mile,"1 609,344 m"
 X,SN,square rod,,3.8,rd²,"25,292 9 m²"
 X,SO,spool,"Use UN/ECE Recommendation 21 (refer to Note 2 in the spreadsheet introduction, 1st sheet).",3.3,,
@@ -2131,3 +2132,19 @@ X,Z6,conference point,,3.5,,
 X,Z8,newspage agate line,,3.9,,
 ,ZP,page,A unit of count defining the number of pages.,3.5,,
 ,ZZ,mutually defined,A unit of measure as agreed in common between two or more parties.,3.9,,
++,MRW,Metre Week,"Unit for measuring physical dimensions and time, as required by DIN 18451",3.2,m·wk,
++,MKW,Square Metre Week,Unit for measuring physical dimensions and time as required by DIN 18451,3.2,m²· wk,
++,MQW,Cubic Metre Week,Unit for measuring physical dimensions and time as required by DIN 18451,3.2,m³·wk,
++,HWE,Piece Week,Unit for measuring the item amount and time as required by DIN 18451,3.2,piece·k,
++,MRD,Metre Day,Unit for measuring physical dimensions and time as required by DIN 18451,3.2,m·day,
++,MKD,Square Metre Day,Unit for measuring physical dimensions and time as required by DIN 18451,3.2,m²·d,
++,MQD,Cubic Metre Day,Unit for measuring physical dimensions and time as required by DIN 18451,3.2,m³·d,
++,HAD,Piece Day,Unit for measuring the item amount and time as required by DIN 18451,3.2,piece·d,
++,MRM,Metre Month,Unit for measuring physical dimensions and time as required by DIN 18451,3.2,m·mo,
++,MKM,Square Metre Month,Unit for measuring physical dimensions and time as required by DIN 18451,3.2,m²·mo,
++,MQM,Cubic Metre Month,Unit for measuring physical dimensions and time as required by DIN 18451,3.2,m³·mo,
++,HMO,Piece Month,Unit for measuring the item amount and time as required by DIN 18451,3.2,piece·mo,
++,DBW,Decibel watt,The decibel watt or dBW is a unit for the measurement of the strength of a signal expressed in decibels relative to one watt.,3.1,dBW,10^[Power in dBW/10] W
++,DBM,Decibel-milliwatts,dBm (sometimes dBmW or decibel-milliwatts) is unit of level used to indicate that a power ratio is expressed in decibels (dB) with reference to one milliwatt (mW).,3.1,dBm,10^[(Power in dBm-30)/10] W
++,FNU,Formazin nephelometric unit,Formazin nephelometric unit (FNU) is used for water turbidity level evaluation,3.5,FNU,
++,NTU,Nephelometric turbidity unit,Nephelometric turbidity unit (NTU) is used for water turbidity level evaluation,3.5,NTU,

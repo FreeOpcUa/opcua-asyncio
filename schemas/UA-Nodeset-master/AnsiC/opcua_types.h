@@ -170,7 +170,8 @@ typedef enum _OpcUa_AccessLevelExType
     OpcUa_AccessLevelExType_TimestampWrite     = 64,
     OpcUa_AccessLevelExType_NonatomicRead      = 256,
     OpcUa_AccessLevelExType_NonatomicWrite     = 512,
-    OpcUa_AccessLevelExType_WriteFullArrayOnly = 1024
+    OpcUa_AccessLevelExType_WriteFullArrayOnly = 1024,
+    OpcUa_AccessLevelExType_NoSubDataTypes     = 2048
 #if OPCUA_FORCE_INT32_ENUMS
     ,_OpcUa_AccessLevelExType_MaxEnumerationValue = OpcUa_Int32_Max
 #endif
@@ -213,10 +214,11 @@ OPCUA_IMEXPORT extern struct _OpcUa_EnumeratedType OpcUa_EventNotifierType_Enume
  *===========================================================================*/
 typedef enum _OpcUa_AccessRestrictionType
 {
-    OpcUa_AccessRestrictionType_None               = 0,
-    OpcUa_AccessRestrictionType_SigningRequired    = 1,
-    OpcUa_AccessRestrictionType_EncryptionRequired = 2,
-    OpcUa_AccessRestrictionType_SessionRequired    = 4
+    OpcUa_AccessRestrictionType_None                      = 0,
+    OpcUa_AccessRestrictionType_SigningRequired           = 1,
+    OpcUa_AccessRestrictionType_EncryptionRequired        = 2,
+    OpcUa_AccessRestrictionType_SessionRequired           = 4,
+    OpcUa_AccessRestrictionType_ApplyRestrictionsToBrowse = 8
 #if OPCUA_FORCE_INT32_ENUMS
     ,_OpcUa_AccessRestrictionType_MaxEnumerationValue = OpcUa_Int32_Max
 #endif
@@ -1072,8 +1074,7 @@ OPCUA_IMEXPORT extern struct _OpcUa_EncodeableType OpcUa_ServiceFault_Encodeable
  *===========================================================================*/
 typedef struct _OpcUa_SessionlessInvokeRequestType
 {
-    OpcUa_Int32   NoOfUrisVersion;
-    OpcUa_UInt32* UrisVersion;
+    OpcUa_UInt32  UrisVersion;
     OpcUa_Int32   NoOfNamespaceUris;
     OpcUa_String* NamespaceUris;
     OpcUa_Int32   NoOfServerUris;

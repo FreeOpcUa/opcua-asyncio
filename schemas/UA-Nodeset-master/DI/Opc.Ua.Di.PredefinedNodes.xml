@@ -218,6 +218,13 @@
         <uax:Identifier>i=68</uax:Identifier>
       </uax:TypeDefinitionId>
       <uax:NumericId>15007</uax:NumericId>
+      <uax:Value>
+        <uax:Value>
+          <uax:ListOfString>
+            <uax:String>1:2147483647</uax:String>
+          </uax:ListOfString>
+        </uax:Value>
+      </uax:Value>
       <uax:DataType>
         <uax:Identifier>i=291</uax:Identifier>
       </uax:DataType>
@@ -244,7 +251,7 @@
       <uax:NumericId>15008</uax:NumericId>
       <uax:Value>
         <uax:Value>
-          <uax:String></uax:String>
+          <uax:String />
         </uax:Value>
       </uax:Value>
       <uax:DataType>
@@ -336,7 +343,6 @@
       <uax:Name>ConnectsTo</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Used to indicate that source and target Node have a topological connection.</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -354,7 +360,6 @@
       <uax:Name>ConnectsToParent</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Defines the parent (i.e. the communication Device) of a Network.</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -372,14 +377,12 @@
       <uax:Name>IsOnline</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Used to bind the offline representation of a Device to the online representation.</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
       <uax:Identifier>i=44</uax:Identifier>
     </uax:SuperTypeId>
     <uax:InverseName>
-      <uax:Locale></uax:Locale>
       <uax:Text>OnlineOf</uax:Text>
     </uax:InverseName>
   </IsOnline>
@@ -393,7 +396,6 @@
       <uax:Name>DeviceSet</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Contains all instances of devices</uax:Text>
     </uax:Description>
     <uax:ReferenceTypeId>
@@ -453,7 +455,6 @@
       <uax:Name>NetworkSet</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Contains all instances of communication networks</uax:Text>
     </uax:Description>
     <uax:ReferenceTypeId>
@@ -485,7 +486,6 @@
       <uax:Name>DeviceTopology</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Starting point of the configured device topology.</uax:Text>
     </uax:Description>
     <uax:ReferenceTypeId>
@@ -516,7 +516,6 @@
         <uax:Name>OnlineAccess</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Hint of whether the Server is currently able to communicate to Devices in the topology.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -544,7 +543,6 @@
       <uax:Name>TopologyElementType</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Defines the basic information components for all configurable elements in a device topology</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -561,7 +559,6 @@
         <uax:Name>ParameterSet</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Flat list of Parameters</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -584,7 +581,6 @@
           <uax:Name>&lt;ParameterIdentifier&gt;</uax:Name>
         </uax:BrowseName>
         <uax:Description>
-          <uax:Locale></uax:Locale>
           <uax:Text>A parameter which belongs to the topology element.</uax:Text>
         </uax:Description>
         <uax:ReferenceTypeId>
@@ -615,7 +611,6 @@
         <uax:Name>MethodSet</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Flat list of Methods</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -638,7 +633,6 @@
           <uax:Name>&lt;MethodIdentifier&gt;</uax:Name>
         </uax:BrowseName>
         <uax:Description>
-          <uax:Locale></uax:Locale>
           <uax:Text>A method which belongs to the topology element.</uax:Text>
         </uax:Description>
         <uax:ReferenceTypeId>
@@ -665,7 +659,6 @@
         <uax:Name>&lt;GroupIdentifier&gt;</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>An application specific functional group used to organize parameters and methods.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -689,7 +682,6 @@
         <uax:Name>Identification</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Used to organize parameters for identification of this TopologyElement</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -713,7 +705,6 @@
         <uax:Name>Lock</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Used to lock the topology element.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2216,7 +2207,6 @@
       <uax:Name>DeviceType</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Defines the basic information components for all configurable elements in a device topology</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -2251,7 +2241,6 @@
         <uax:Name>Manufacturer</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Name of the company that manufactured the device</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2307,7 +2296,6 @@
         <uax:Name>Model</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Model name of the device</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2337,7 +2325,6 @@
         <uax:Name>HardwareRevision</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Revision level of the hardware of the device</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2367,7 +2354,6 @@
         <uax:Name>SoftwareRevision</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Revision level of the software/firmware of the device</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2397,7 +2383,6 @@
         <uax:Name>DeviceRevision</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Overall revision level of the device</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2453,7 +2438,6 @@
         <uax:Name>DeviceManual</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Address (pathname in the file system or a URL | Web address) of user manual for the device</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2509,7 +2493,6 @@
         <uax:Name>SerialNumber</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Identifier that uniquely identifies, within a manufacturer, a device instance</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2565,7 +2548,6 @@
         <uax:Name>RevisionCounter</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>An incremental counter indicating the number of times the static data within the Device has been modified</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2614,7 +2596,6 @@
           <uax:Name>NetworkAddress</uax:Name>
         </uax:BrowseName>
         <uax:Description>
-          <uax:Locale></uax:Locale>
           <uax:Text>The address of the device on this network.</uax:Text>
         </uax:Description>
         <uax:ReferenceTypeId>
@@ -2685,7 +2666,6 @@
         <uax:Name>DeviceTypeImage</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Organizes pictures of the device.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2708,7 +2688,6 @@
           <uax:Name>&lt;ImageIdentifier&gt;</uax:Name>
         </uax:BrowseName>
         <uax:Description>
-          <uax:Locale></uax:Locale>
           <uax:Text>An image of the device.</uax:Text>
         </uax:Description>
         <uax:ReferenceTypeId>
@@ -2739,7 +2718,6 @@
         <uax:Name>Documentation</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Organizes documents for the device.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2762,7 +2740,6 @@
           <uax:Name>&lt;DocumentIdentifier&gt;</uax:Name>
         </uax:BrowseName>
         <uax:Description>
-          <uax:Locale></uax:Locale>
           <uax:Text>A document for the device.</uax:Text>
         </uax:Description>
         <uax:ReferenceTypeId>
@@ -2793,7 +2770,6 @@
         <uax:Name>ProtocolSupport</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Protocol-specific files for the device.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2816,7 +2792,6 @@
           <uax:Name>&lt;ProtocolSupportIdentifier&gt;</uax:Name>
         </uax:BrowseName>
         <uax:Description>
-          <uax:Locale></uax:Locale>
           <uax:Text>A protocol-specific file for the device.</uax:Text>
         </uax:Description>
         <uax:ReferenceTypeId>
@@ -2847,7 +2822,6 @@
         <uax:Name>ImageSet</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Organizes images that are used within UIElements.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -2870,7 +2844,6 @@
           <uax:Name>&lt;ImageIdentifier&gt;</uax:Name>
         </uax:BrowseName>
         <uax:Description>
-          <uax:Locale></uax:Locale>
           <uax:Text>An image for a UIElement.</uax:Text>
         </uax:Description>
         <uax:ReferenceTypeId>
@@ -2993,7 +2966,6 @@
       <uax:Name>BlockType</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Adds the concept of Blocks needed for block-oriented FieldDevices</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -3010,7 +2982,6 @@
         <uax:Name>RevisionCounter</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Incremental counter indicating the number of times the static data within the Block has been modified</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -3040,7 +3011,6 @@
         <uax:Name>ActualMode</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Current mode of operation the Block is able to achieve</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -3070,7 +3040,6 @@
         <uax:Name>PermittedMode</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Modes of operation that are allowed for the Block based on application requirements</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -3101,7 +3070,6 @@
         <uax:Name>NormalMode</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Mode the Block should be set to during normal operating conditions</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -3132,7 +3100,6 @@
         <uax:Name>TargetMode</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Mode of operation that is desired for the Block</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -3233,7 +3200,6 @@
       <uax:Name>ConfigurableObjectType</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Defines a general pattern to expose and configure modular components</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -3249,7 +3215,6 @@
         <uax:Name>SupportedTypes</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Folder maintaining the set of (sub-types of) BaseObjectTypes that can be instantiated in the ConfigurableComponent</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -3294,7 +3259,6 @@
       <uax:Name>FunctionalGroupType</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>FolderType is used to organize the Parameters and Methods from the complete set (ParameterSet, MethodSet) with regard to their application</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -3310,7 +3274,6 @@
         <uax:Name>&lt;GroupIdentifier&gt;</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>An application specific functional group used to organize parameters and methods.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -3333,7 +3296,6 @@
           <uax:Name>UIElement</uax:Name>
         </uax:BrowseName>
         <uax:Description>
-          <uax:Locale></uax:Locale>
           <uax:Text>A user interface element assigned to this group.</uax:Text>
         </uax:Description>
         <uax:ReferenceTypeId>
@@ -3364,7 +3326,6 @@
         <uax:Name>UIElement</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>A user interface element assigned to this group.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -3395,7 +3356,6 @@
       <uax:Name>ProtocolType</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>General structure of a Protocol ObjectType</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -3498,23 +3458,18 @@
         <uax:Value>
           <uax:ListOfLocalizedText>
             <uax:LocalizedText>
-              <uax:Locale></uax:Locale>
               <uax:Text>NORMAL</uax:Text>
             </uax:LocalizedText>
             <uax:LocalizedText>
-              <uax:Locale></uax:Locale>
               <uax:Text>FAILURE</uax:Text>
             </uax:LocalizedText>
             <uax:LocalizedText>
-              <uax:Locale></uax:Locale>
               <uax:Text>CHECK_FUNCTION</uax:Text>
             </uax:LocalizedText>
             <uax:LocalizedText>
-              <uax:Locale></uax:Locale>
               <uax:Text>OFF_SPEC</uax:Text>
             </uax:LocalizedText>
             <uax:LocalizedText>
-              <uax:Locale></uax:Locale>
               <uax:Text>MAINTENANCE_REQUIRED</uax:Text>
             </uax:LocalizedText>
           </uax:ListOfLocalizedText>
@@ -3539,7 +3494,6 @@
       <uax:Name>UIElementType</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>The base type for all UI Element Types.</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -3561,7 +3515,6 @@
       <uax:Name>NetworkType</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Represents the communication means for Devices that are connected to it.</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -3597,7 +3550,6 @@
         <uax:Name>&lt;CPIdentifier&gt;</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>The ConnectionPoint(s) that have been configured for this Network.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -3620,7 +3572,6 @@
           <uax:Name>NetworkAddress</uax:Name>
         </uax:BrowseName>
         <uax:Description>
-          <uax:Locale></uax:Locale>
           <uax:Text>The address of the device on this network.</uax:Text>
         </uax:Description>
         <uax:ReferenceTypeId>
@@ -3645,7 +3596,6 @@
         <uax:Name>Lock</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>Used to lock the Network.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -4102,7 +4052,6 @@
       <uax:Name>ConnectionPointType</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Represents the interface (interface card) of a Device to a Network.</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
@@ -4119,7 +4068,6 @@
         <uax:Name>NetworkAddress</uax:Name>
       </uax:BrowseName>
       <uax:Description>
-        <uax:Locale></uax:Locale>
         <uax:Text>The address of the device on this network.</uax:Text>
       </uax:Description>
       <uax:ReferenceTypeId>
@@ -4708,7 +4656,6 @@
       <uax:Name>MaxInactiveLockTime</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>Server-specific period of time in milliseconds until the Server will revoke a lock.</uax:Text>
     </uax:Description>
     <uax:ReferenceTypeId>
@@ -4746,7 +4693,6 @@
       <uax:Name>LockingServicesType</uax:Name>
     </uax:BrowseName>
     <uax:Description>
-      <uax:Locale></uax:Locale>
       <uax:Text>An interface for Locking.</uax:Text>
     </uax:Description>
     <uax:SuperTypeId>
