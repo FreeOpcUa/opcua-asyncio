@@ -47,9 +47,9 @@ class StateMachine(object):
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         if not isinstance(server, Server): 
-            raise ValueError
+            raise ValueError(f"server: {type(server)} is not a instance of Server class")
         if not isinstance(parent, Node): 
-            raise ValueError
+            raise ValueError(f"parent: {type(parent)} is not a instance of Node class")
         if idx == None:
             idx = parent.nodeid.NamespaceIndex
         if name == None:
@@ -140,12 +140,16 @@ class StateMachine(object):
                     "TransitionTime", 
                     ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
                     )
+            else:
+                self._last_transition_transitiontime_node = await self._last_transition_node.get_child("TransitionTime")
             if "EffectiveTransitionTime" not in childnames:
                 self._last_transition_effectivetransitiontime_node = await self._last_transition_node.add_property(
                     0, 
                     "EffectiveTransitionTime", 
                     ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
                     )
+            else:
+                self._last_transition_transitiontime_node = await self._last_transition_node.get_child("EffectiveTransitionTime")
         await self.init(self._state_machine_node)
     
     async def init(self, statemachine):
@@ -210,7 +214,7 @@ class StateMachine(object):
 
     async def _write_state(self, state):
         if not isinstance(state, self.State):
-            raise ValueError
+            raise ValueError(f"Statemachine: {self._name} -> state: {state} is not a instance of StateMachine.State class")
         await self._current_state_node.write_value(ua.LocalizedText(state.name, self.locale), ua.VariantType.LocalizedText)
         if state.node:
             if self._current_state_id_node:
@@ -228,7 +232,7 @@ class StateMachine(object):
         issub: boolean (true if it is a transition between substates)
         '''
         if not isinstance(transition, self.Transition):
-            raise ValueError
+            raise ValueError(f"Statemachine: {self._name} -> state: {transition} is not a instance of StateMachine.Transition class")
         if issub == False:
             transition._transitiontime = datetime.datetime.utcnow()
         transition._effectivetransitiontime = datetime.datetime.utcnow()
@@ -254,10 +258,10 @@ class StateMachine(object):
         ChoiceStateType: ua.NodeId(15109,0),
         '''
         if not isinstance(state, self.State):
-            raise ValueError
+            raise ValueError(f"Statemachine: {self._name} -> state: {state} is not a instance of StateMachine.State class")
         if not state_type in [ua.NodeId(2309, 0),ua.NodeId(2307, 0),ua.NodeId(15109,0)]:
             # unknown state type!
-            raise ValueError
+            raise ValueError(f"Statemachine: {self._name} -> state_type: {state_type} is not in list: [ua.NodeId(2309, 0),ua.NodeId(2307, 0),ua.NodeId(15109,0)]")
         state.node = await self._state_machine_node.add_object(
             self._idx, 
             state.name, 
@@ -275,7 +279,7 @@ class StateMachine(object):
         transition_type: ua.NodeId(2310, 0),
         '''
         if not isinstance(transition, self.Transition):
-            raise ValueError
+            raise ValueError(f"Statemachine: {self._name} -> state: {transition} is not a instance of StateMachine.Transition class")
         transition.node = await self._state_machine_node.add_object(
             self._idx, 
             transition.name, 
@@ -305,7 +309,7 @@ class FiniteStateMachine(StateMachine):
             self._available_states_node = await self._state_machine_node.get_child(["AvailableStates"])
         if isinstance(states, list):
             return await self._available_states_node.write_value(states, varianttype=ua.VariantType.NodeId)
-        return ValueError
+        return ValueError(f"Statemachine: {self._name} -> states: {states} is not a list")
 
     async def set_available_transitions(self, transitions):
         if self._optionals:
@@ -313,7 +317,7 @@ class FiniteStateMachine(StateMachine):
                 self._available_transitions_node = await self._state_machine_node.get_child(["AvailableTransitions"])
             if isinstance(transitions, list):
                 return await self._available_transitions_node.write_value(transitions, varianttype=ua.VariantType.NodeId)
-            return ValueError
+            return ValueError(f"Statemachine: {self._name} -> transitions: {transitions} is not a list")
 
 
 class ExclusiveLimitStateMachine(FiniteStateMachine):
