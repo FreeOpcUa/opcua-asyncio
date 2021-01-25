@@ -127,6 +127,7 @@ class CodeGenerator:
             if child.tag.endswith("Model"):
                 # check if ModelUri X, in Version Y from time Z was already imported
                 model = child
+                break
 
 
         self.writecode(f'''
