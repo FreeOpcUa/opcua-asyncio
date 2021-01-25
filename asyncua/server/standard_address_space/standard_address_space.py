@@ -7,6 +7,9 @@ from .standard_address_space_part9 import create_standard_address_space_Part9
 from .standard_address_space_part10 import create_standard_address_space_Part10
 from .standard_address_space_part11 import create_standard_address_space_Part11
 from .standard_address_space_part13 import create_standard_address_space_Part13
+from .standard_address_space_part14 import create_standard_address_space_Part14
+from .standard_address_space_part17 import create_standard_address_space_Part17
+from .standard_address_space_part19 import create_standard_address_space_Part19
 
 
 class PostponeReferences:
@@ -48,3 +51,6 @@ def fill_address_space(nodeservice):
         create_standard_address_space_Part10(server)
         create_standard_address_space_Part11(server)
         create_standard_address_space_Part13(server)
+        create_standard_address_space_Part14(server)
+        create_standard_address_space_Part17(server)
+        create_standard_address_space_Part19(server)
