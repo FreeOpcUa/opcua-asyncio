@@ -553,8 +553,8 @@ class Subscription:
     ):
         pass
 
-    def _make_monitored_item_request(self, node: SyncNode, attr, mfilter, queuesize) -> ua.MonitoredItemCreateRequest:
-        return self.aio_obj._make_monitored_item_request(node, attr, mfilter, queuesize)
+    def _make_monitored_item_request(self, node: SyncNode, attr, mfilter, queuesize, monitoring=ua.MonitoringMode.Reporting,) -> ua.MonitoredItemCreateRequest:
+        return self.aio_obj._make_monitored_item_request(node, attr, mfilter, queuesize, monitoring)
 
     @syncmethod
     def unsubscribe(self, handle):
