@@ -261,6 +261,7 @@ async def _create_variable(server, parentnodeid, nodeid, qname, var, datatype=No
     attrs.Value = var
     if not isinstance(var.Value, (list, tuple)):
         attrs.ValueRank = ua.ValueRank.Scalar
+        attrs.ArrayDimensions = None
     else:
         if var.Dimensions:
             attrs.ValueRank = len(var.Dimensions)

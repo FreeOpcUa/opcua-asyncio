@@ -314,6 +314,7 @@ class VariableAttributes(auto.VariableAttributes):
         self.Historizing = False
         self.AccessLevel = AccessLevel.CurrentRead.mask
         self.UserAccessLevel = AccessLevel.CurrentRead.mask
+        self.ArrayDimensions = None
 
 
 class VariableTypeAttributes(auto.VariableTypeAttributes):
