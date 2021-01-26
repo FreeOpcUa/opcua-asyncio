@@ -440,9 +440,9 @@ class NodeManagementService:
             self._delete_unique_reference(item, True)
         return self._delete_unique_reference(item)
 
-    def _add_node_attr(self, item, nodedata, name, vtype=None, add_timestamps=False):
+    def _add_node_attr(self, item, nodedata, name, vtype=None, add_timestamps=False, is_array=False):
         if item.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
-            dv = ua.DataValue(ua.Variant(getattr(item, name), vtype))
+            dv = ua.DataValue(ua.Variant(getattr(item, name), vtype, is_array=is_array))
             if add_timestamps:
                 # dv.ServerTimestamp = datetime.utcnow()  # Disabled until someone explains us it should be there
                 dv.SourceTimestamp = datetime.utcnow()
@@ -450,7 +450,7 @@ class NodeManagementService:
 
     def _add_nodeattributes(self, item, nodedata, add_timestamps):
         self._add_node_attr(item, nodedata, "AccessLevel", ua.VariantType.Byte)
-        self._add_node_attr(item, nodedata, "ArrayDimensions", ua.VariantType.UInt32)
+        self._add_node_attr(item, nodedata, "ArrayDimensions", ua.VariantType.UInt32, is_array=True)
         self._add_node_attr(item, nodedata, "BrowseName", ua.VariantType.QualifiedName)
         self._add_node_attr(item, nodedata, "ContainsNoLoops", ua.VariantType.Boolean)
         self._add_node_attr(item, nodedata, "DataType", ua.VariantType.NodeId)

@@ -265,6 +265,7 @@ class XmlImporter:
         return res[0].AddedNodeId
 
     async def add_variable(self, obj):
+        print("\n\n\nADDD", obj, obj.dimensions)
         node = self._get_add_node_item(obj)
         attrs = ua.VariableAttributes()
         if obj.desc:
