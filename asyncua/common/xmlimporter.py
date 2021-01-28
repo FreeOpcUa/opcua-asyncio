@@ -135,8 +135,6 @@ class XmlImporter:
                 target, reftype = childs[nd.nodeid]
                 nd.parent = target
                 nd.parentlink = reftype
-                from IPython import embed
-                embed()
 
     async def _add_node_data(self, nodedata) -> ua.NodeId:
         if nodedata.nodetype == "UAObject":
