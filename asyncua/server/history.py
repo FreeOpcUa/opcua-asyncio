@@ -1,11 +1,13 @@
 import logging
-from typing import Coroutine
 from datetime import timedelta
 from datetime import datetime
 
 from asyncua import ua
 from ..common.subscription import Subscription, SubHandler
 from ..common.utils import Buffer
+
+
+logger = logging.getLogger(__name__)
 
 
 class UaNodeAlreadyHistorizedError(ua.UaError):
@@ -91,7 +93,6 @@ class HistoryDict(HistoryStorageInterface):
         self._datachanges_period = {}
         self._events = {}
         self._events_periods = {}
-        self.logger = logging.getLogger(__name__)
 
     async def init(self):
         pass
@@ -116,7 +117,7 @@ class HistoryDict(HistoryStorageInterface):
     async def read_node_history(self, node_id, start, end, nb_values):
         cont = None
         if node_id not in self._datachanges:
-            self.logger.warning("Error attempt to read history for a node which is not historized")
+            logger.warning("Error attempt to read history for a node which is not historized")
             return [], cont
         else:
             if start is None:
@@ -124,14 +125,24 @@ class HistoryDict(HistoryStorageInterface):
             if end is None:
                 end = ua.get_win_epoch()
             if start == ua.get_win_epoch():
-                results = [dv for dv in reversed(self._datachanges[node_id]) if start <= dv.SourceTimestamp]
+                results = [
+                    dv
+                    for dv in reversed(self._datachanges[node_id])
+                    if start <= dv.SourceTimestamp
+                ]
             elif end == ua.get_win_epoch():
                 results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp]
             elif start > end:
-                results = [dv for dv in reversed(self._datachanges[node_id]) if end <= dv.SourceTimestamp <= start]
+                results = [
+                    dv
+                    for dv in reversed(self._datachanges[node_id])
+                    if end <= dv.SourceTimestamp <= start
+                ]
 
             else:
-                results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp <= end]
+                results = [
+                    dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp <= end
+                ]
             if nb_values and len(results) > nb_values:
                 cont = results[nb_values + 1].SourceTimestamp
                 results = results[:nb_values]
@@ -157,7 +168,10 @@ class HistoryDict(HistoryStorageInterface):
     async def read_event_history(self, source_id, start, end, nb_values, evfilter):
         cont = None
         if source_id not in self._events:
-            print("Error attempt to read event history for a node which does not historize events")
+            logger.warning(
+                "Error attempt to read event history for node %s which does not historize events",
+                source_id,
+            )
             return [], cont
         else:
             if start is None:
@@ -169,7 +183,9 @@ class HistoryDict(HistoryStorageInterface):
             elif end == ua.get_win_epoch():
                 results = [ev for ev in self._events[source_id] if start <= ev.Time]
             elif start > end:
-                results = [ev for ev in reversed(self._events[source_id]) if end <= ev.Time <= start]
+                results = [
+                    ev for ev in reversed(self._events[source_id]) if end <= ev.Time <= start
+                ]
 
             else:
                 results = [ev for ev in self._events[source_id] if start <= ev.Time <= end]
@@ -188,19 +204,14 @@ class SubHandler(SubHandler):
         self.loop = loop
 
     def datachange_notification(self, node, val, data):
-        self.loop.create_task(
-            self.storage.save_node_value(node.nodeid, data.monitored_item.Value)
-        )
+        self.loop.create_task(self.storage.save_node_value(node.nodeid, data.monitored_item.Value))
 
     def event_notification(self, event):
-        self.loop.create_task(
-            self.storage.save_event(event)
-        )
+        self.loop.create_task(self.storage.save_event(event))
 
 
 class HistoryManager:
     def __init__(self, iserver):
-        self.logger = logging.getLogger(__name__)
         self.iserver = iserver
         self.storage = HistoryDict()
         self._sub = None
@@ -232,7 +243,9 @@ class HistoryManager:
         Subscribe to the nodes' data changes and store the data in the active storage.
         """
         if not self._sub:
-            self._sub = await self._create_subscription(SubHandler(self.storage, self.iserver.loop))
+            self._sub = await self._create_subscription(
+                SubHandler(self.storage, self.iserver.loop)
+            )
         if node in self._handlers:
             raise ua.UaError(f"Node {node} is already historized")
         await self.storage.new_historized_node(node.nodeid, period, count)
@@ -244,20 +257,25 @@ class HistoryManager:
         Subscribe to the source nodes' events and store the data in the active storage.
 
         SQL Implementation
-        The default is to historize every event type the source generates, custom event properties are included. At
-        this time there is no way to historize a specific event type. The user software can filter out events which are
-        not desired when reading.
+        The default is to historize every event type the source generates,
+        custom event properties are included. At
+        this time there is no way to historize a specific event type. The user software can filter
+        out events which are not desired when reading.
 
-        Note that adding custom events to a source node AFTER historizing has been activated is not supported at this
-        time (in SQL history there will be no columns in the SQL table for the new event properties). For SQL The table
+        Note that adding custom events to a source node AFTER historizing has been activated is not
+        supported at this time (in SQL history there will be no columns in the SQL table for the new
+        event properties). For SQL The table
         must be deleted manually so that a new table with the custom event fields can be created.
         """
         if not self._sub:
-            self._sub = await self._create_subscription(SubHandler(self.storage, self.iserver.loop))
+            self._sub = await self._create_subscription(
+                SubHandler(self.storage, self.iserver.loop)
+            )
         if source in self._handlers:
             raise ua.UaError(f"Events from {source} are already historized")
 
-        # get list of all event types that the source node generates; change this to only historize specific events
+        # get list of all event types that the source node generates;
+        # change this to only historize specific events
         event_types = await source.get_referenced_nodes(ua.ObjectIds.GeneratesEvent)
 
         await self.storage.new_historized_event(source.nodeid, event_types, period, count)
@@ -274,9 +292,9 @@ class HistoryManager:
         """
         if node in self._handlers:
             await self._sub.unsubscribe(self._handlers[node])
-            del (self._handlers[node])
+            del self._handlers[node]
         else:
-            self.logger.error("History Manager isn't subscribed to %s", node)
+            logger.error("History Manager isn't subscribed to %s", node)
 
     async def read_history(self, params):
         """
@@ -293,7 +311,8 @@ class HistoryManager:
 
     async def _read_history(self, details, rv):
         """
-        determine if the history read is for a data changes or events; then read the history for that node
+        determine if the history read is for a data changes or events;
+        then read the history for that node
         """
         result = ua.HistoryReadResult()
         if isinstance(details, ua.ReadRawModifiedDetails):
@@ -328,10 +347,9 @@ class HistoryManager:
             # send correctly with continuation point
             starttime = ua.ua_binary.Primitives.DateTime.unpack(Buffer(rv.ContinuationPoint))
 
-        dv, cont = await self.storage.read_node_history(rv.NodeId,
-                                                        starttime,
-                                                        details.EndTime,
-                                                        details.NumValuesPerNode)
+        dv, cont = await self.storage.read_node_history(
+            rv.NodeId, starttime, details.EndTime, details.NumValuesPerNode
+        )
         if cont:
             cont = ua.ua_binary.Primitives.DateTime.pack(cont)
         # rv.IndexRange
@@ -347,11 +365,9 @@ class HistoryManager:
             # send correctly with continuation point
             starttime = ua.ua_binary.Primitives.DateTime.unpack(Buffer(rv.ContinuationPoint))
 
-        evts, cont = await self.storage.read_event_history(rv.NodeId,
-                                                           starttime,
-                                                           details.EndTime,
-                                                           details.NumValuesPerNode,
-                                                           details.Filter)
+        evts, cont = await self.storage.read_event_history(
+            rv.NodeId, starttime, details.EndTime, details.NumValuesPerNode, details.Filter
+        )
         results = []
         for ev in evts:
             field_list = ua.HistoryEventFieldList()
@@ -375,7 +391,7 @@ class HistoryManager:
             results.append(results)
         return results
 
-    async def stop(self) -> Coroutine:
+    async def stop(self):
         """
         call stop methods of active storage interface whenever the server is stopped
         """

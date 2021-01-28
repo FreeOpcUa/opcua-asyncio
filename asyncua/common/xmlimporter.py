@@ -16,7 +16,6 @@ _logger = logging.getLogger(__name__)
 
 
 class XmlImporter:
-
     def __init__(self, server):
         self.parser = None
         self.server = server
@@ -54,11 +53,15 @@ class XmlImporter:
         server_model_list = []
         server_namespaces_node = await self.server.nodes.namespaces.get_children()
         for model_node in server_namespaces_node:
-            server_model_list.append({"ModelUri": await(await model_node.get_child("NamespaceUri")).read_value(),
-                                      "Version": await(await model_node.get_child("NamespaceVersion")).read_value(),
-                                      "PublicationDate": (await(
-                                          await model_node.get_child("NamespacePublicationDate")).
-                                                          read_value()).strftime("%Y-%m-%dT%H:%M:%SZ")})
+            server_model_list.append(
+                {
+                    "ModelUri": await (await model_node.get_child("NamespaceUri")).read_value(),
+                    "Version": await (await model_node.get_child("NamespaceVersion")).read_value(),
+                    "PublicationDate": (
+                        await (await model_node.get_child("NamespacePublicationDate")).read_value()
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+            )
         return server_model_list
 
     async def _check_required_models(self, xmlpath=None, xmlstring=None):
@@ -68,17 +71,23 @@ class XmlImporter:
         server_model_list = await self._get_existing_model_in_namespace()
         for model in server_model_list:
             for req_model in req_models:
-                if model["ModelUri"] == req_model["ModelUri"] and \
-                        model["PublicationDate"] >= req_model["PublicationDate"]:
-                            if "Version" in model and "Version" in req_model:
-                                if model["Version"] >= req_model["Version"]:
-                                    req_models.remove(req_model)
-                            else:
-                                req_models.remove(req_model)
+                if (
+                    model["ModelUri"] == req_model["ModelUri"]
+                    and model["PublicationDate"] >= req_model["PublicationDate"]
+                ):
+                    if "Version" in model and "Version" in req_model:
+                        if model["Version"] >= req_model["Version"]:
+                            req_models.remove(req_model)
+                    else:
+                        req_models.remove(req_model)
         if len(req_models):
             for missing_model in req_models:
-                _logger.warning("Model is missing: %s - Version: %s - PublicationDate: %s or newer",
-                                missing_model["ModelUri"], missing_model["Version"], missing_model["PublicationDate"])
+                _logger.warning(
+                    "Model is missing: %s - Version: %s - PublicationDate: %s or newer",
+                    missing_model["ModelUri"],
+                    missing_model["Version"],
+                    missing_model["PublicationDate"],
+                )
             raise ValueError("Server doesn't satisfy required XML-Models. Import them first!")
         return None
 
@@ -111,7 +120,10 @@ class XmlImporter:
         self.refs, remaining_refs = [], self.refs
         await self._add_references(remaining_refs)
         if len(self.refs):
-            _logger.warning("The following references could not be imported and are probably broken: %s", self.refs)
+            _logger.warning(
+                "The following references could not be imported and are probably broken: %s",
+                self.refs,
+            )
         return nodes
 
     def _add_missing_parents(self, dnodes):
@@ -122,13 +134,20 @@ class XmlImporter:
                 missing.append(nd)
             for ref in nd.refs:
                 if ref.forward:
-                    if ref.reftype in [self.server.nodes.HasComponent.nodeid,
-                                       self.server.nodes.HasProperty.nodeid,
-                                       self.server.nodes.Organizes.nodeid]:
+                    if ref.reftype in [
+                        self.server.nodes.HasComponent.nodeid,
+                        self.server.nodes.HasProperty.nodeid,
+                        self.server.nodes.Organizes.nodeid,
+                    ]:
                         # if a node has several links, the last one will win
                         if ref.target in childs:
-                            _logger.warning("overwriting parent target, shouldbe fixed",
-                                            ref.target, nd.nodeid, ref.reftype, childs[ref.target])
+                            _logger.warning(
+                                "overwriting parent target, shouldbe fixed",
+                                ref.target,
+                                nd.nodeid,
+                                ref.reftype,
+                                childs[ref.target],
+                            )
                         childs[ref.target] = (nd.nodeid, ref.reftype)
         for nd in missing:
             if nd.nodeid in childs:
@@ -207,8 +226,13 @@ class XmlImporter:
         node = ua.AddNodesItem()
         node.RequestedNewNodeId = self._migrate_ns(obj.nodeid)
         node.BrowseName = self._migrate_ns(obj.browsename)
-        _logger.info("Importing xml node (%s, %s) as (%s %s)", obj.browsename,
-                     obj.nodeid, node.BrowseName, node.RequestedNewNodeId)
+        _logger.info(
+            "Importing xml node (%s, %s) as (%s %s)",
+            obj.browsename,
+            obj.nodeid,
+            node.BrowseName,
+            node.RequestedNewNodeId,
+        )
         node.NodeClass = getattr(ua.NodeClass, obj.nodetype[2:])
         if obj.parent and obj.parentlink:
             node.ParentNodeId = self._migrate_ns(obj.parent)
@@ -263,7 +287,6 @@ class XmlImporter:
         return res[0].AddedNodeId
 
     async def add_variable(self, obj):
-        print("\n\n\nADDD", obj, obj.dimensions)
         node = self._get_add_node_item(obj)
         attrs = ua.VariableAttributes()
         if obj.desc:
@@ -271,7 +294,9 @@ class XmlImporter:
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
         attrs.DataType = obj.datatype
         if obj.value is not None:
-            attrs.Value = self._add_variable_value(obj,)
+            attrs.Value = self._add_variable_value(
+                obj,
+            )
         if obj.rank:
             attrs.ValueRank = obj.rank
         if obj.accesslevel:
@@ -305,7 +330,12 @@ class XmlImporter:
         ext = self._get_ext_class(obj.objname)()
         for name, val in obj.body:
             if not isinstance(val, list):
-                raise Exception("Error val should be a list, this is a python-asyncua bug", name, type(val), val)
+                raise Exception(
+                    "Error val should be a list, this is a python-asyncua bug",
+                    name,
+                    type(val),
+                    val,
+                )
             else:
                 for attname, v in val:
                     self._set_attr(ext, attname, v)
@@ -352,30 +382,35 @@ class XmlImporter:
         Returns the value for a Variable based on the objects value type.
         """
         _logger.debug("Setting value with type %s and value %s", obj.valuetype, obj.value)
-        if obj.valuetype == 'ListOfExtensionObject':
+        if obj.valuetype == "ListOfExtensionObject":
             values = []
             for ext in obj.value:
                 extobj = self._make_ext_obj(ext)
                 values.append(extobj)
             return ua.Variant(values, ua.VariantType.ExtensionObject)
-        elif obj.valuetype == 'ListOfGuid':
-            return ua.Variant([
-                uuid.UUID(guid) for guid in obj.value
-            ], getattr(ua.VariantType, obj.valuetype[6:]))
+        elif obj.valuetype == "ListOfGuid":
+            return ua.Variant(
+                [uuid.UUID(guid) for guid in obj.value], getattr(ua.VariantType, obj.valuetype[6:])
+            )
         elif obj.valuetype.startswith("ListOf"):
             vtype = obj.valuetype[6:]
             if hasattr(ua.ua_binary.Primitives, vtype):
                 return ua.Variant(obj.value, getattr(ua.VariantType, vtype))
             elif vtype == "LocalizedText":
-                return ua.Variant([getattr(ua, vtype)(text=item["Text"], locale=item["Locale"]) for item in obj.value])
+                return ua.Variant(
+                    [
+                        getattr(ua, vtype)(text=item["Text"], locale=item["Locale"])
+                        for item in obj.value
+                    ]
+                )
             else:
                 return ua.Variant([getattr(ua, vtype)(v) for v in obj.value])
-        elif obj.valuetype == 'ExtensionObject':
+        elif obj.valuetype == "ExtensionObject":
             extobj = self._make_ext_obj(obj.value)
             return ua.Variant(extobj, getattr(ua.VariantType, obj.valuetype))
-        elif obj.valuetype == 'Guid':
+        elif obj.valuetype == "Guid":
             return ua.Variant(uuid.UUID(obj.value), getattr(ua.VariantType, obj.valuetype))
-        elif obj.valuetype == 'LocalizedText':
+        elif obj.valuetype == "LocalizedText":
             ltext = ua.LocalizedText()
             for name, val in obj.value:
                 if name == "Text":
@@ -383,9 +418,13 @@ class XmlImporter:
                 elif name == "Locale":
                     ltext.Locale = val
                 else:
-                    _logger.warning("While parsing localizedText value, unkown element: %s with val: %s", name, val)
+                    _logger.warning(
+                        "While parsing localizedText value, unkown element: %s with val: %s",
+                        name,
+                        val,
+                    )
             return ua.Variant(ltext, ua.VariantType.LocalizedText)
-        elif obj.valuetype == 'NodeId':
+        elif obj.valuetype == "NodeId":
             return ua.Variant(ua.NodeId.from_string(obj.value))
         else:
             return ua.Variant(obj.value, getattr(ua.VariantType, obj.valuetype))
@@ -437,7 +476,7 @@ class XmlImporter:
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
-        if obj. inversename:
+        if obj.inversename:
             attrs.InverseName = ua.LocalizedText(obj.inversename)
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
@@ -470,8 +509,12 @@ class XmlImporter:
                 if self.server.nodes.base_structure_type in path:
                     attrs.DataTypeDefinition = self._get_sdef(node, obj)
                 else:
-                    _logger.warning("%s has datatypedefinition and path %s"
-                                    " but we could not find out if this is a struct", obj, path)
+                    _logger.warning(
+                        "%s has datatypedefinition and path %s"
+                        " but we could not find out if this is a struct",
+                        obj,
+                        path,
+                    )
         node.NodeAttributes = attrs
         res = await self._get_server().add_nodes([node])
         res[0].StatusCode.check()
@@ -550,9 +593,11 @@ class XmlImporter:
         all_node_ids = [data.nodeid for data in ndatas]
         while ndatas:
             for ndata in ndatas[:]:
-                if ndata.nodeid.NamespaceIndex not in self.namespaces.values() or \
-                        ndata.parent is None or \
-                        ndata.parent not in all_node_ids:
+                if (
+                    ndata.nodeid.NamespaceIndex not in self.namespaces.values()
+                    or ndata.parent is None
+                    or ndata.parent not in all_node_ids
+                ):
                     sorted_ndatas.append(ndata)
                     sorted_nodes_ids.append(ndata.nodeid)
                     ndatas.remove(ndata)
