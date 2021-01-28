@@ -24,20 +24,6 @@ from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
 
 _logger = logging.getLogger(__name__)
 
-############
-''' Workaround till fixed in event_objects.py'''
-class TransitionEvent(TransitionEvent):
-    """
-    TransitionEvent:
-    """
-    def __init__(self, sourcenode=None, message=None, severity=1):
-        super(TransitionEvent, self).__init__(sourcenode, message, severity)
-        self.EventType = ua.NodeId(ua.ObjectIds.TransitionEventType)
-        self.add_property('Transition', None, ua.VariantType.LocalizedText)
-        self.add_property('FromState', None, ua.VariantType.LocalizedText)
-        self.add_property('ToState', None, ua.VariantType.LocalizedText)
-############
-
 class StateMachine(object):
     '''
     Implementation of an StateMachineType (most basic type)
