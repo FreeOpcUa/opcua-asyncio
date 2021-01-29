@@ -211,13 +211,13 @@ class Subscription:
             evfilter = await self._create_eventfilter(evtypes)
         return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 
-    async def subscribe_conditions(self,
-                                   sourcenode: Node = ua.ObjectIds.Server,
-                                   evtypes=ua.ObjectIds.ConditionType,
-                                   evfilter=None,
-                                   queuesize=0) -> int:
+    async def subscribe_alarms_and_conditions(self,
+                                              sourcenode: Node = ua.ObjectIds.Server,
+                                              evtypes=ua.ObjectIds.ConditionType,
+                                              evfilter=None,
+                                              queuesize=0) -> int:
         """
-        Subscribe to condition events from a node. Default node is Server node.
+        Subscribe to alarm and condition events from a node. Default node is Server node.
         In many servers the server node is the only one you can subscribe to.
         If evtypes is not provided, evtype defaults to ConditionType.
         If evtypes is a list or tuple of custom event types, the events will be filtered to the supplied types.
