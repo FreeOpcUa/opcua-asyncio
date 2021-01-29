@@ -180,6 +180,13 @@ class Subscription:
             nodes, attr, queuesize=queuesize, monitoring=monitoring
         )
 
+    async def _create_eventfilter(self, evtypes):
+        if not type(evtypes) in (list, tuple):
+            evtypes = [evtypes]
+        evtypes = [Node(self.server, evtype) for evtype in evtypes]
+        evfilter = await get_filter_from_event_type(evtypes)
+        return evfilter
+
     async def subscribe_events(self,
                                sourcenode: Node = ua.ObjectIds.Server,
                                evtypes=ua.ObjectIds.BaseEventType,
@@ -201,10 +208,38 @@ class Subscription:
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
-            if not type(evtypes) in (list, tuple):
-                evtypes = [evtypes]
-            evtypes = [Node(self.server, evtype) for evtype in evtypes]
-            evfilter = await get_filter_from_event_type(evtypes)
+            evfilter = await self._create_eventfilter(evtypes)
+        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
+
+    async def subscribe_conditions(self,
+                                   sourcenode: Node = ua.ObjectIds.Server,
+                                   evtypes=ua.ObjectIds.ConditionType,
+                                   evfilter=None,
+                                   queuesize=0) -> int:
+        """
+        Subscribe to condition events from a node. Default node is Server node.
+        In many servers the server node is the only one you can subscribe to.
+        If evtypes is not provided, evtype defaults to ConditionType.
+        If evtypes is a list or tuple of custom event types, the events will be filtered to the supplied types.
+        A handle (integer value) is returned which can be used to modify/cancel the subscription.
+
+        :param sourcenode:
+        :param evtypes:
+        :param evfilter:
+        :param queuesize: 0 for default queue size, 1 for minimum queue size, n for FIFO queue,
+        MaxUInt32 for max queue size
+        :return: Handle for changing/cancelling of the subscription
+        """
+        sourcenode = Node(self.server, sourcenode)
+        if evfilter is None:
+            evfilter = await self._create_eventfilter(evtypes)
+        # Add SimpleAttribute for NodeId if missing.
+        matches = [a for a in evfilter.SelectClauses if a.AttributeId == ua.AttributeIds.NodeId]
+        if not matches:
+            conditionIdOperand = ua.SimpleAttributeOperand()
+            conditionIdOperand.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)    
+            conditionIdOperand.AttributeId = ua.AttributeIds.NodeId 
+            evfilter.SelectClauses.append(conditionIdOperand)
         return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 
     async def _subscribe(self,
