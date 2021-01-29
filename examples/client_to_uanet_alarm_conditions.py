@@ -41,7 +41,7 @@ async def main():
         # Create subscription for AlarmConditionType
         msclt = SubHandler()
         sub = await client.create_subscription(0, msclt)
-        handle = await sub.subscribe_conditions(client.nodes.server, alarmConditionType)     
+        handle = await sub.subscribe_alarms_and_conditions(client.nodes.server, alarmConditionType)     
 
         # Call ConditionRefresh to get the current conditions with retain = true
         # Should also be called after reconnects
