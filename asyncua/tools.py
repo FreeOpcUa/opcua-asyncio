@@ -5,7 +5,7 @@ import argparse
 from datetime import datetime, timedelta
 import math
 import time
-import concurrent.futures._base
+import concurrent.futures
 
 try:
     from IPython import embed
@@ -20,21 +20,6 @@ from asyncua import ua
 from asyncua import Client, Server
 from asyncua import Node, uamethod
 from asyncua.ua.uaerrors import UaStatusCodeError
-
-
-if sys.version_info.major < 3:
-    raise ValueError("This is a python 3 application")
-if sys.version_info.minor >= 7:
-
-    def run(coro):
-        return asyncio.run(coro)
-
-
-else:
-
-    def run(coro):
-        loop = asyncio.new_event_loop()
-        return loop.run_until_complete(coro)
 
 
 def add_minimum_args(parser):
@@ -84,7 +69,8 @@ def add_common_args(parser, default_node="i=84", require_node=False):
     )
     parser.add_argument(
         "--security",
-        help="Security settings, for example: Basic256Sha256,SignAndEncrypt,cert.der,pk.pem[,server_cert.der]. Default: None",
+        help="Security settings, for example:"
+             " Basic256Sha256,SignAndEncrypt,cert.der,pk.pem[,server_cert.der]. Default: None",
         default="",
     )
     parser.add_argument(
@@ -128,7 +114,7 @@ async def get_node(client, args):
 
 
 def uaread():
-    run(_uaread())
+    asyncio.run(_uaread())
 
 
 async def _uaread():
@@ -277,7 +263,7 @@ async def _configure_client_with_args(client, args):
 
 
 def uawrite():
-    run(_uawrite())
+    asyncio.run(_uawrite())
 
 
 async def _uawrite():
@@ -353,7 +339,7 @@ async def _uawrite():
 
 
 def uals():
-    run(_uals())
+    asyncio.run(_uals())
 
 
 async def _uals():
@@ -380,7 +366,7 @@ async def _uals():
                 await _lsprint_1(node, args.depth - 1)
             else:
                 await _lsprint_long(node, args.depth - 1)
-    except (OSError, concurrent.futures._base.TimeoutError) as e:
+    except (OSError, concurrent.futures.TimeoutError) as e:
         print(e)
         sys.exit(1)
     sys.exit(0)
@@ -486,7 +472,7 @@ class SubHandler(object):
 
 
 def uasubscribe():
-    run(_uasubscribe())
+    asyncio.run(_uasubscribe())
 
 
 async def _uasubscribe():
@@ -580,7 +566,7 @@ def endpoint_to_strings(ep):
 
 
 def uaclient():
-    run(_uaclient())
+    asyncio.run(_uaclient())
 
 
 async def _uaclient():
@@ -596,14 +582,14 @@ async def _uaclient():
     client = Client(args.url, timeout=args.timeout)
     await _configure_client_with_args(client, args)
     if args.certificate:
-        client.load_client_certificate(args.certificate)
+        await client.load_client_certificate(args.certificate)
     if args.private_key:
-        client.load_private_key(args.private_key)
+        await client.load_private_key(args.private_key)
 
     try:
         async with client:
             mynode = await get_node(client, args)
-    except (OSError, concurrent.futures._base.TimeoutError) as e:
+    except (OSError, concurrent.futures.TimeoutError) as e:
         print(e)
         sys.exit(1)
 
@@ -660,13 +646,13 @@ async def _uaserver():
     server = Server()
     server.set_endpoint(args.url)
     if args.certificate:
-        server.load_certificate(args.certificate)
+        await server.load_certificate(args.certificate)
     if args.private_key:
-        server.load_private_key(args.private_key)
+        await server.load_private_key(args.private_key)
     server.disable_clock(args.disable_clock)
     server.set_server_name("FreeOpcUa Example Server")
     if args.xml:
-        server.import_xml(args.xml)
+        await server.import_xml(args.xml)
     if args.populate:
 
         @uamethod
@@ -716,11 +702,11 @@ async def _uaserver():
 
 
 def uaserver():
-    run(_uaserver())
+    asyncio.run(_uaserver())
 
 
 def uadiscover():
-    run(_uadiscover())
+    asyncio.run(_uadiscover())
 
 
 async def _uadiscover():
@@ -769,7 +755,7 @@ async def _uadiscover():
             for (n, v) in endpoint_to_strings(ep):
                 print(f"  {n}: {v}")
             print("")
-    except (OSError, concurrent.futures._base.TimeoutError) as e:
+    except (OSError, concurrent.futures.TimeoutError) as e:
         print(e)
         sys.exit(1)
 
@@ -796,7 +782,7 @@ def str_to_datetime(s, default=None):
 
 
 def uahistoryread():
-    run(_uahistoryread())
+    asyncio.run(_uahistoryread())
 
 
 async def _uahistoryread():
@@ -849,7 +835,7 @@ async def _uahistoryread():
 
 
 def uacall():
-    run(_uacall())
+    asyncio.run(_uacall())
 
 
 async def _uacall():
@@ -945,12 +931,13 @@ async def _uacall():
 
 
 def uageneratestructs():
-    run(_uageneratestructs())
+    asyncio.run(_uageneratestructs())
 
 
 async def _uageneratestructs():
     parser = argparse.ArgumentParser(
-        description="Generate a Python module from the xml structure definition (.bsd), the node argument is typically a children of i=93"
+        description="Generate a Python module from the xml structure definition (.bsd),"
+                    " the node argument is typically a children of i=93"
     )
     add_common_args(parser, require_node=True)
     parser.add_argument(
