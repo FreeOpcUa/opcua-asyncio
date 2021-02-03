@@ -233,7 +233,7 @@ class CodeGenerator:
 
 if __name__ == '__main__':
     import generate_model as gm
-    xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset', 'Schema', 'Opc.Ua.Types.bsd')
+    xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset-master', 'Schema', 'Opc.Ua.Types.bsd')
     protocol_path = os.path.join(BASE_DIR, "asyncua", "ua", "uaprotocol_auto.py")
     p = gm.Parser(xml_path)
     model = p.parse()
