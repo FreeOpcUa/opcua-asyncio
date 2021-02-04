@@ -63,7 +63,7 @@ class InternalServer:
         self.subscription_service: SubscriptionService = SubscriptionService(self.loop, self.aspace)
         self.history_manager = HistoryManager(self)
         if user_manager is None:
-            logger.warning("No user manager specified. Using default permissive manager instead.")
+            logger.info("No user manager specified. Using default permissive manager instead.")
             user_manager = PermissiveUserManager()
         self.user_manager = user_manager
         # create a session to use on server side

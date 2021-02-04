@@ -301,7 +301,7 @@ async def _read_data_type_definition(server, desc):
     # FIXME: this is fishy, we may have same name in different Namespaces
     if hasattr(ua, desc.BrowseName.Name):
         return None
-    logger.warning("Registring data type %s %s", desc.NodeId, desc.BrowseName)
+    logger.info("Registring data type %s %s", desc.NodeId, desc.BrowseName)
     node = server.get_node(desc.NodeId)
     try:
         sdef = await node.read_data_type_definition()
@@ -343,7 +343,7 @@ async def load_enums(server: Union["Server", "Client"], base_node: Node = None) 
         name = clean_name(desc.BrowseName.Name)
         if hasattr(ua, name):
             continue
-        logger.warning("Registring Enum %s %s", desc.NodeId, name)
+        logger.info("Registring Enum %s %s", desc.NodeId, name)
         edef = await _read_data_type_definition(server, desc)
         if not edef:
             continue
