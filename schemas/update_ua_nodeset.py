@@ -11,8 +11,7 @@ class UpdateError(Exception):
     pass
 
 
-def get_new_nodeset():
-    timeout = 120   # seconds
+def get_new_nodeset(timeout=120):
     if path.isdir("./UA-Nodeset"):
         rename("./UA-Nodeset", "./UA-Nodeset-old")
     elif path.isdir("./UA-Nodeset-master"):
