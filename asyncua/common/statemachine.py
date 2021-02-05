@@ -72,13 +72,12 @@ class StateMachine(object):
         id: Id is a name which uniquely identifies the current state within the StateMachineType. A subtype may restrict the DataType.
         number: Number is an integer which uniquely identifies the current state within the StateMachineType.
         '''
-        def __init__(self, name, id, number, node=None, issub=False):
+        def __init__(self, name, id, number, node=None):
             self.name = name
             self.id = id
             self.number = number
             self.effectivedisplayname = ua.LocalizedText(name, "en-US")
             self.node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
-            self.issub = issub #true if it is a substate
 
 
     class Transition(object):
