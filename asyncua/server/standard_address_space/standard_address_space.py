@@ -6,6 +6,7 @@ from .standard_address_space_part8 import create_standard_address_space_Part8
 from .standard_address_space_part9 import create_standard_address_space_Part9
 from .standard_address_space_part10 import create_standard_address_space_Part10
 from .standard_address_space_part11 import create_standard_address_space_Part11
+from .standard_address_space_part12 import create_standard_address_space_Part12
 from .standard_address_space_part13 import create_standard_address_space_Part13
 from .standard_address_space_part14 import create_standard_address_space_Part14
 from .standard_address_space_part17 import create_standard_address_space_Part17
@@ -50,6 +51,7 @@ def fill_address_space(nodeservice):
         create_standard_address_space_Part9(server)
         create_standard_address_space_Part10(server)
         create_standard_address_space_Part11(server)
+        create_standard_address_space_Part12(server)
         create_standard_address_space_Part13(server)
         create_standard_address_space_Part14(server)
         create_standard_address_space_Part17(server)
