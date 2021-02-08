@@ -58,7 +58,6 @@ class StateMachine(object):
         self._last_transition_name_node = None
         self._last_transition_number_node = None
         self._last_transition_transitiontime_node = None
-        self._last_transition_effectivetransitiontime_node = None
         self._evgen = None
         self.evtype = TransitionEvent()
         self._current_state = self.State(None, None, None)
@@ -99,7 +98,6 @@ class StateMachine(object):
             self.id = id
             self.number = number
             self._transitiontime = datetime.datetime.utcnow() #will be overwritten from _write_transition()
-            self._effectivetransitiontime = datetime.datetime.utcnow() #will be overwritten from _write_transition()
             self.node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
 
     async def install(self, optionals=False):
@@ -127,14 +125,6 @@ class StateMachine(object):
                     )
             else:
                 self._last_transition_transitiontime_node = await self._last_transition_node.get_child("TransitionTime")
-            if "EffectiveTransitionTime" not in childnames:
-                self._last_transition_effectivetransitiontime_node = await self._last_transition_node.add_property(
-                    0, 
-                    "EffectiveTransitionTime", 
-                    ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
-                    )
-            else:
-                self._last_transition_transitiontime_node = await self._last_transition_node.get_child("EffectiveTransitionTime")
         await self.init(self._state_machine_node)
     
     async def init(self, statemachine):
@@ -168,8 +158,6 @@ class StateMachine(object):
                     self._last_transition_number_node = await self._last_transition_node.get_child(["Number"])
                 elif dn.Text == "TransitionTime":
                     self._last_transition_transitiontime_node = await self._last_transition_node.get_child(["TransitionTime"])
-                elif dn.Text == "EffectiveTransitionTime":
-                    self._last_transition_effectivetransitiontime_node = await self._last_transition_node.get_child(["EffectiveTransitionTime"])
                 else:
                     _logger.warning(f"{await statemachine.read_browse_name()} LastTransition Unknown propertie: {dn.Text}")
         self._evgen = await self._server.get_event_generator(self.evtype, self._state_machine_node)
@@ -184,7 +172,7 @@ class StateMachine(object):
         '''
         await self._write_state(state)
         if transition:
-            await self._write_transition(transition, state.issub)
+            await self._write_transition(transition)
         if event_msg:
             if isinstance(event_msg, str):
                 event_msg = ua.LocalizedText(event_msg, self.locale)
@@ -211,16 +199,14 @@ class StateMachine(object):
             if self._current_state_effective_display_name_node:
                 await self._current_state_effective_display_name_node.write_value(state.effectivedisplayname, ua.VariantType.LocalizedText)
 
-    async def _write_transition(self, transition, issub=False):
+    async def _write_transition(self, transition):
         '''
         transition: self.Transition
         issub: boolean (true if it is a transition between substates)
         '''
         if not isinstance(transition, self.Transition):
             raise ValueError(f"Statemachine: {self._name} -> state: {transition} is not a instance of StateMachine.Transition class")
-        if issub == False:
-            transition._transitiontime = datetime.datetime.utcnow()
-        transition._effectivetransitiontime = datetime.datetime.utcnow()
+        transition._transitiontime = datetime.datetime.utcnow()
         await self._last_transition_node.write_value(ua.LocalizedText(transition.name, self.locale), ua.VariantType.LocalizedText)
         if self._optionals:
             if self._last_transition_id_node:
@@ -231,8 +217,6 @@ class StateMachine(object):
                 await self._last_transition_number_node.write_value(transition.number, ua.VariantType.UInt32)
             if self._last_transition_transitiontime_node:
                 await self._last_transition_transitiontime_node.write_value(transition._transitiontime, ua.VariantType.DateTime)
-            if self._last_transition_effectivetransitiontime_node:
-                await self._last_transition_effectivetransitiontime_node.write_value(transition._effectivetransitiontime, ua.VariantType.DateTime)
             
     async def add_state(self, state, state_type=ua.NodeId(2307, 0), optionals=False):
         '''
