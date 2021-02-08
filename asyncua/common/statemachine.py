@@ -228,7 +228,7 @@ class StateMachine(object):
             if self._last_transition_name_node:
                 await self._last_transition_name_node.write_value(ua.QualifiedName(transition.name, self._idx), ua.VariantType.QualifiedName)
             if self._last_transition_number_node:
-                await self._last_transition_number_node.write_value(transition.id, ua.VariantType.UInt32)
+                await self._last_transition_number_node.write_value(transition.number, ua.VariantType.UInt32)
             if self._last_transition_transitiontime_node:
                 await self._last_transition_transitiontime_node.write_value(transition._transitiontime, ua.VariantType.DateTime)
             if self._last_transition_effectivetransitiontime_node:
