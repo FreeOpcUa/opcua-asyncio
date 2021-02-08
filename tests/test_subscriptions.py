@@ -5,8 +5,9 @@ from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
 from asynctest import CoroutineMock
 
+from asyncua.common.subscription import Subscription
 import asyncua
-from asyncua import ua
+from asyncua import ua, Client
 
 pytestmark = pytest.mark.asyncio
 
@@ -355,6 +356,26 @@ async def test_subscription_data_change_many(opc):
             raise RuntimeError(f"Error node {node} is neither {v1} nor {v2}")
     await sub.delete()
     await opc.opc.delete_nodes([v1, v2])
+
+async def test_subscription_keepalive_count(mocker):
+    """
+    Check the subscription parameter MaxKeepAliveCount value
+    with various publishInterval and session_timeout values.
+    """
+
+    mock_subscription = mocker.patch("asyncua.common.subscription.Subscription.init", new=CoroutineMock())
+    c = Client("opc.tcp://fake")
+    # session timeout < publish_interval
+    c.session_timeout = 30000 # ms
+    publish_interval = 1000 # ms
+    handler = 123
+    sub = await c.create_subscription(publish_interval, handler)
+    assert sub.parameters.RequestedMaxKeepAliveCount == 22
+    # session_timeout > publish_interval
+    c.session_timeout = 30000
+    publish_interval = 75000
+    sub = await c.create_subscription(publish_interval, handler)
+    assert sub.parameters.RequestedMaxKeepAliveCount == 0
 
 
 async def test_subscribe_server_time(opc):

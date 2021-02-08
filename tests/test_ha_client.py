@@ -41,7 +41,7 @@ class TestHaClient:
             urls.remove(url)
             assert client.session_timeout == ha_config.session_timeout * 1000
             assert client.session_timeout == ha_client.session_timeout * 1000
-            assert client.secure_channel_timeout == ha_config.request_timeout * 1000
+            assert client.secure_channel_timeout == ha_config.secure_channel_timeout * 1000
             assert client.uaclient._timeout == ha_config.request_timeout
             assert client.description == ha_config.session_name
             # ideal map is empty at startup
