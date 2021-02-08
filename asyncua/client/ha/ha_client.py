@@ -85,6 +85,7 @@ class HaConfig:
     reconciliator_timer: int = 15
     session_timeout: int = 60
     request_timeout: int = 30
+    secure_channel_timeout: int = 3600
     session_name: str = "HaClient"
     urls: List[str] = field(default_factory=list)
 
@@ -142,7 +143,7 @@ class HaClient:
             c = Client(url, timeout=self._config.request_timeout, loop=self.loop)
             # timeouts for the session and secure channel are in ms
             c.session_timeout = self._config.session_timeout * 1000
-            c.secure_channel_timeout = self._config.request_timeout * 1000
+            c.secure_channel_timeout = self._config.secure_channel_timeout * 1000
             c.description = self._config.session_name
             server_info = ServerInfo(url)
             self.clients[c] = server_info

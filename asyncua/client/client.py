@@ -391,9 +391,10 @@ class Client:
         but it does not cost much..
         """
         try:
-            duration = min(self.session_timeout, self.secure_channel_timeout) * 0.7 / 1000
+            # Part4 5.5.2.1:
+            # Clients should request a new SecurityToken after 75 % of its lifetime has elapsed
+            duration = self.secure_channel_timeout * 0.75 / 1000
             while True:
-                # 0.7 is from spec. 0.001 is because asyncio.sleep expects time in seconds
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
@@ -546,13 +547,25 @@ class Client:
             params = ua.CreateSubscriptionParameters()
             params.RequestedPublishingInterval = period
             params.RequestedLifetimeCount = 10000
-            params.RequestedMaxKeepAliveCount = 3000
+            params.RequestedMaxKeepAliveCount = self.get_keepalive_count(period)
             params.MaxNotificationsPerPublish = 10000
             params.PublishingEnabled = publishing
             params.Priority = 0
         subscription = Subscription(self.uaclient, params, handler)
         await subscription.init()
         return subscription
+
+    def get_keepalive_count(self, period) -> int:
+        """
+        We request the server to send a Keepalive notification when
+        no notification has been received for 75% of the session lifetime.
+        This is especially useful to keep the sesssion up
+        when self.session_timeout < self.secure_channel_timeout.
+
+        Part4 5.13.2: If the requested value is 0, the Server
+        shall revise with the smallest supported keep-alive count.
+        """
+        return int((self.session_timeout / period) * 0.75)
 
     async def get_namespace_array(self):
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
