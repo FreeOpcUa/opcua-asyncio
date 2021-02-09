@@ -1,15 +1,4 @@
-
-from .standard_address_space_part3 import create_standard_address_space_Part3
-from .standard_address_space_part4 import create_standard_address_space_Part4
-from .standard_address_space_part5 import create_standard_address_space_Part5
-from .standard_address_space_part8 import create_standard_address_space_Part8
-from .standard_address_space_part9 import create_standard_address_space_Part9
-from .standard_address_space_part10 import create_standard_address_space_Part10
-from .standard_address_space_part11 import create_standard_address_space_Part11
-from .standard_address_space_part13 import create_standard_address_space_Part13
-from .standard_address_space_part14 import create_standard_address_space_Part14
-from .standard_address_space_part17 import create_standard_address_space_Part17
-from .standard_address_space_part19 import create_standard_address_space_Part19
+from .standard_address_space_services import create_standard_address_space_Services
 
 
 class PostponeReferences:
@@ -17,7 +6,7 @@ class PostponeReferences:
         self.server = server
         self.postponed_refs = None
         self.postponed_nodes = None
-        #self.add_nodes = self.server.add_nodes
+        # self.add_nodes = self.server.add_nodes
 
     def add_nodes(self, nodes):
         self.postponed_nodes.extend(self.server.try_add_nodes(nodes, check=False))
@@ -43,14 +32,4 @@ class PostponeReferences:
 
 def fill_address_space(nodeservice):
     with PostponeReferences(nodeservice) as server:
-        create_standard_address_space_Part3(server)
-        create_standard_address_space_Part4(server)
-        create_standard_address_space_Part5(server)
-        create_standard_address_space_Part8(server)
-        create_standard_address_space_Part9(server)
-        create_standard_address_space_Part10(server)
-        create_standard_address_space_Part11(server)
-        create_standard_address_space_Part13(server)
-        create_standard_address_space_Part14(server)
-        create_standard_address_space_Part17(server)
-        create_standard_address_space_Part19(server)
+        create_standard_address_space_Services(server)
