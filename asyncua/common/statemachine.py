@@ -21,6 +21,7 @@ import asyncio, logging, datetime
 # -remove unused imports
 from asyncua import Server, ua, Node
 from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
+from typing import Union
 
 _logger = logging.getLogger(__name__)
 
