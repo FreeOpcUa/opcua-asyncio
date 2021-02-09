@@ -168,7 +168,7 @@ class StateMachine(object):
                     _logger.warning(f"{await statemachine.read_browse_name()} LastTransition Unknown propertie: {dn.Text}")
         self._evgen = await self._server.get_event_generator(self.evtype, self._state_machine_node)
 
-    async def change_state(self, state: State, transition: Transition=None, event_msg:str or ua.LocalizedText=None, severity: int=500):
+    async def change_state(self, state: State, transition: Transition=None, event_msg:Union[str, ua.LocalizedText]=None, severity: int=500):
         '''
         method to change the state of the statemachine
         state: "State" mandatory
