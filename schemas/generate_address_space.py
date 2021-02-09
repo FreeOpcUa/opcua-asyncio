@@ -1,6 +1,7 @@
 """
 Generate address space code from xml file specification
-xmlparser.py is a requirement. it is in asyncua folder but to avoid importing all code, developer can link xmlparser.py in current directory
+xmlparser.py is a requirement.
+It is in asyncua folder, but to avoid importing all code, developer can link xmlparser.py in current directory
 """
 import asyncio
 import sys
@@ -11,6 +12,7 @@ import logging
 from asyncua.common import xmlparser
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 def _to_val(objs, attr, val):
     from asyncua import ua
@@ -48,13 +50,13 @@ def bname_code(string):
 
 
 def nodeid_code(string):
-    l = string.split(";")
+    line = string.split(";")
     identifier = None
     namespace = 0
     ntype = None
     srv = None
     nsu = None
-    for el in l:
+    for el in line:
         if not el:
             continue
         k, v = el.split("=", 1)
@@ -128,7 +130,6 @@ class CodeGenerator:
                 # check if ModelUri X, in Version Y from time Z was already imported
                 model = child
                 break
-
 
         self.writecode(f'''
 # -*- coding: utf-8 -*-
@@ -223,7 +224,8 @@ def create_standard_address_space_{self.part!s}(server):
                 value = ['LocalizedText({0})'.format(repr(d['Text'])) for d in obj.value]
                 self.writecode(indent, 'attrs.Value = [{}]'.format(', '.join(value)))
             elif obj.valuetype == "LocalizedText":
-                self.writecode(indent, 'attrs.Value = ua.Variant(LocalizedText("{0}"), ua.VariantType.LocalizedText)'.format(obj.value[1][1]))
+                self.writecode(indent, 'attrs.Value = ua.Variant(LocalizedText("{0}"),'
+                                       ' ua.VariantType.LocalizedText)'.format(obj.value[1][1]))
             else:
                 if obj.valuetype.startswith("ListOf"):
                     obj.valuetype = obj.valuetype[6:]
@@ -248,7 +250,7 @@ def create_standard_address_space_{self.part!s}(server):
                     val = _to_val([extobj.objname], k, v)
                     self.writecode(indent, f'extobj.{k} = {val}')
                 else:
-                    if k == "DataType":  #hack for strange nodeid xml format
+                    if k == "DataType":  # hack for strange nodeid xml format
                         self.writecode(indent, 'extobj.{0} = {1}'.format(k, nodeid_code(v[0][1])))
                         continue
                     if k == "ArrayDimensions":  # hack for v1.04 - Ignore UInt32 tag?
@@ -357,10 +359,10 @@ def save_aspace_to_disk():
 
 async def main():
     logging.basicConfig(level=logging.WARN)
-    for i in (3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 17, 19):
-        xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset-master', 'Schema', f'Opc.Ua.NodeSet2.Part{i}.xml')
-        py_path = os.path.join(BASE_DIR, 'asyncua', 'server', 'standard_address_space', f'standard_address_space_part{i}.py')
-        await CodeGenerator(xml_path, py_path).run()
+    xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset-master', 'Schema', f'Opc.Ua.NodeSet2.Services.xml')
+    py_path = os.path.join(BASE_DIR, 'asyncua', 'server', 'standard_address_space',
+                           f'standard_address_space_services.py')
+    await CodeGenerator(xml_path, py_path).run()
     save_aspace_to_disk()
 
 

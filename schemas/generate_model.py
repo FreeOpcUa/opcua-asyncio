@@ -5,10 +5,15 @@ from copy import copy
 from xml.etree import ElementTree
 
 NeedOverride = []
-NeedConstructor = []  # ["RelativePathElement", "ReadValueId", "OpenSecureChannelParameters", "UserIdentityToken", "RequestHeader", "ResponseHeader", "ReadParameters", "UserIdentityToken", "BrowseDescription", "ReferenceDescription", "CreateSubscriptionParameters", "PublishResult", "NotificationMessage", "SetPublishingModeParameters"]
+NeedConstructor = []  # ["RelativePathElement", "ReadValueId", "OpenSecureChannelParameters", "UserIdentityToken",
+# "RequestHeader", "ResponseHeader", "ReadParameters", "UserIdentityToken",
+# "BrowseDescription", "ReferenceDescription", "CreateSubscriptionParameters", "PublishResult",
+# "NotificationMessage", "SetPublishingModeParameters"]
 IgnoredEnums = []  # ["IdType", "NodeIdType"]
 # we want to implement som struct by hand, to make better interface or simply because they are too complicated
-IgnoredStructs = []  # ["NodeId", "ExpandedNodeId", "Variant", "QualifiedName", "DataValue", "LocalizedText"]#, "ExtensionObject"]
+IgnoredStructs = []  # ["NodeId", "ExpandedNodeId", "Variant", "QualifiedName", "DataValue", "LocalizedText"]
+# #, "ExtensionObject"]
+
 # by default we split requests and respons in header and parameters, but some are so simple we do not split them
 NoSplitStruct = ["GetEndpointsResponse", "CloseSessionRequest", "AddNodesResponse", "DeleteNodesResponse",
                  "BrowseResponse", "HistoryReadResponse", "HistoryUpdateResponse", "RegisterServerResponse",
@@ -21,13 +26,21 @@ NoSplitStruct = ["GetEndpointsResponse", "CloseSessionRequest", "AddNodesRespons
                  "RegisterServerRequest", "RegisterServer2Response"]
 # structs that end with Request or Response but are not
 NotRequest = ["MonitoredItemCreateRequest", "MonitoredItemModifyRequest", "CallMethodRequest"]
-OverrideTypes = {}  # AttributeId": "AttributeID",  "ResultMask": "BrowseResultMask", "NodeClassMask": "NodeClass", "AccessLevel": "VariableAccessLevel", "UserAccessLevel": "VariableAccessLevel", "NotificationData": "NotificationData"}
-OverrideNames = {}  # {"RequestHeader": "Header", "ResponseHeader": "Header", "StatusCode": "Status", "NodesToRead": "AttributesToRead"} # "MonitoringMode": "Mode",, "NotificationMessage": "Notification", "NodeIdType": "Type"}
+OverrideTypes = {}  # AttributeId": "AttributeID",  "ResultMask": "BrowseResultMask", "NodeClassMask": "NodeClass",
+# "AccessLevel": "VariableAccessLevel", "UserAccessLevel": "VariableAccessLevel",
+# "NotificationData": "NotificationData"}
+OverrideNames = {}  # {"RequestHeader": "Header", "ResponseHeader": "Header", "StatusCode": "Status",
+
+
+# "NodesToRead": "AttributesToRead"} # "MonitoringMode": "Mode",
+# "NotificationMessage": "Notification", "NodeIdType": "Type"}
 
 
 # some object are defined in extensionobjects in spec but seems not to be in reality
 # in addition to this list all request and response and descriptions will not inherit
-# NoInherit = ["RequestHeader", "ResponseHeader", "ChannelSecurityToken", "UserTokenPolicy", "SignatureData", "BrowseResult", "ReadValueId", "WriteValue", "BrowsePath", "BrowsePathTarget", "RelativePath", "RelativePathElement", "BrowsePathResult"]#, "ApplicationDescription", "EndpointDescription"
+# NoInherit = ["RequestHeader", "ResponseHeader", "ChannelSecurityToken", "UserTokenPolicy", "SignatureData",
+# "BrowseResult", "ReadValueId", "WriteValue", "BrowsePath", "BrowsePathTarget", "RelativePath",
+# "RelativePathElement", "BrowsePathResult"]#, "ApplicationDescription", "EndpointDescription"
 
 
 class Bit(object):
@@ -85,8 +98,8 @@ class Field(object):
 
     def is_native_type(self):
         if self.uatype in (
-        'Char', 'SByte', 'Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'Boolean', 'Double', 'Float', 'Byte',
-        'String', 'CharArray', 'ByteString', 'DateTime'):
+                'Char', 'SByte', 'Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'Boolean', 'Double',
+                'Float', 'Byte', 'String', 'CharArray', 'ByteString', 'DateTime'):
             return True
         return False
 
@@ -158,7 +171,8 @@ def reorder_structs(model):
                     if not s2.waitingfor:
                         newstructs.append(s2)
     if len(model.structs) != len(newstructs):
-        print(f'Error while reordering structs, some structs could not be reinserted, had {len(model.structs)} structs, we now have {len(newstructs)} structs')
+        print(f'Error while reordering structs, some structs could not be reinserted,'
+              f' had {len(model.structs)} structs, we now have {len(newstructs)} structs')
         s1 = set(model.structs)
         s2 = set(newstructs)
         rest = s1 - s2
@@ -260,7 +274,7 @@ def split_requests(model):
     structs = []
     for struct in model.structs:
         structtype = None
-        if struct.name.endswith('Request') and not struct.name in NotRequest:
+        if struct.name.endswith('Request') and struct.name not in NotRequest:
             structtype = 'Request'
         elif struct.name.endswith('Response') or struct.name == 'ServiceFault':
             structtype = 'Response'
@@ -279,7 +293,7 @@ def split_requests(model):
             field.uatype = 'NodeId'
             struct.fields.insert(0, field)
 
-        if structtype and not struct.name in NoSplitStruct:
+        if structtype and struct.name not in NoSplitStruct:
             paramstruct = Struct()
             if structtype == 'Request':
                 basename = struct.name.replace('Request', '') + 'Parameters'
