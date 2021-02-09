@@ -21,35 +21,35 @@ def rm_tree(path: Path):
 
 def get_new_nodeset(timeout=120):
     cwd = Path(".")
-    p_v1 = cwd / "./UA-Nodeset"
-    p_v1_backup = cwd / "./UA-Nodeset-backup"
-    p_v2 = cwd / "./UA-Nodeset-master"
-    p_v2_backup = cwd / "./UA-Nodeset-master-backup"
-    if p_v1.is_dir():
-        p_v1.rename(str(p_v2))
-    elif p_v2.is_dir():
-        p_v2.rename(str(p_v2_backup))
+    target_v1 = cwd / "UA-Nodeset"
+    backup_v1 = target_v1.parent / (target_v1.name + "_backup")
+    target_v2 = cwd / "UA-Nodeset-master"
+    backup_v2 = target_v2.parent / (target_v2.name + "_backup")
+    if target_v1.is_dir():
+        target_v1.rename(str(target_v2))
+    elif target_v2.is_dir():
+        target_v2.rename(str(backup_v2))
     try:
         check_call(["git", "clone", "--depth=1",
                     "https://github.com/OPCFoundation/UA-Nodeset.git", "UA-Nodeset-master"], timeout=timeout)
     except CalledProcessError:
-        if p_v1_backup.is_dir():
-            p_v1_backup.rename(str(p_v1))
-        elif p_v2_backup.is_dir():
-            p_v2_backup.rename(str(p_v2))
+        if backup_v1.is_dir():
+            backup_v1.rename(str(target_v1))
+        elif backup_v2.is_dir():
+            backup_v2.rename(str(target_v2))
             logger.warning("Failed to clone repository. Try continue with old Nodeset folder.")
         else:
             raise UpdateError("Nodeset neither existed nor was downloaded. Abort update.")
     except TimeoutExpired:
         raise UpdateError(f"Timeout expired - Waited {timeout} seconds to clone from repo."
                           f" Either change value or check network connection. Abort update.")
-    if p_v1_backup.is_dir():
-        rm_tree(p_v1_backup)
-    elif p_v2_backup.is_dir():
-        rm_tree(p_v2_backup)
-    rm_tree(cwd / "./UA-Nodeset-master/.git")
-    rm_tree(cwd / "./UA-Nodeset-master/.github")
-    (cwd / "./UA-Nodeset-master/PublishNodeSets.bat").unlink()
+    if backup_v1.is_dir():
+        rm_tree(backup_v1)
+    elif backup_v2.is_dir():
+        rm_tree(backup_v2)
+    rm_tree(target_v2 / ".git")
+    rm_tree(target_v2 / ".github")
+    (target_v2 / "PublishNodeSets.bat").unlink()
 
 
 def generate_standard_nodesets():
