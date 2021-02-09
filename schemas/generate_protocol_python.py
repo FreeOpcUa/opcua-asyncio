@@ -1,9 +1,11 @@
 import os
 import datetime
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IgnoredEnums = ["NodeIdType"]
-IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "FilterOperand", "Variant", "DataValue", "ExtensionObject", "XmlElement", "LocalizedText"]
+IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "FilterOperand", "Variant", "DataValue",
+                  "ExtensionObject", "XmlElement", "LocalizedText"]
 
 
 class Primitives1(object):
@@ -79,7 +81,7 @@ class CodeGenerator:
         self.write('from datetime import datetime')
         self.write('from enum import IntEnum')
         self.write('')
-        #self.write('from asyncua.ua.uaerrors import UaError')
+        # self.write('from asyncua.ua.uaerrors import UaError')
         self.write('from asyncua.ua.uatypes import *')
         self.write('from asyncua.ua.object_ids import ObjectIds')
 
@@ -116,8 +118,8 @@ class CodeGenerator:
         self.write('"""')
 
         self.write('')
-        #FIXME: next line is a weak way to find out if object is a datatype or not...
-        if not "Parameter" in obj.name and not "Result" in obj.name:
+        # FIXME: next line is a weak way to find out if object is a datatype or not...
+        if "Parameter" not in obj.name and "Result" not in obj.name:
             self.write(f'data_type = NodeId(ObjectIds.{obj.name})')
             self.write('')
         switch_written = False
@@ -129,7 +131,7 @@ class CodeGenerator:
 
                 bit = obj.bits[field.switchfield]
                 self.write(f"    '{field.name}': ('{bit.container}', {bit.idx}),")
-            #if field.switchvalue is not None: Not sure we need to handle that one
+            # if field.switchvalue is not None: Not sure we need to handle that one
         if switch_written:
             self.write("           }")
         self.write("ua_types = [")
@@ -155,14 +157,15 @@ class CodeGenerator:
                 self.write("self.Encoding = 1")
             elif field.uatype == obj.name:  # help!!! selv referencing class
                 self.write("self.{} = None".format(field.name))
-            elif not obj.name in ("ExtensionObject",) and field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
+            elif obj.name not in ("ExtensionObject",) and \
+                    field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
                 self.write(f"self.TypeId = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultBinary)")
             else:
                 self.write(f"self.{field.name} = {'[]' if field.length else self.get_default_value(field)}")
         self.write("self._freeze = True")
         self.iidx = 1
 
-        #__str__
+        # __str__
         self.write("")
         self.write("def __str__(self):")
         self.iidx += 1
@@ -176,7 +179,7 @@ class CodeGenerator:
         self.write("")
         self.write("__repr__ = __str__")
 
-        self.iix = 0
+        self.iidx = 0
 
     def write_unpack_enum(self, name, enum):
         self.write(f"self.{name} = {enum.name}(uabin.Primitives.{enum.uatype}.unpack(data))")
@@ -233,6 +236,7 @@ class CodeGenerator:
 
 if __name__ == '__main__':
     import generate_model as gm
+
     xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset-master', 'Schema', 'Opc.Ua.Types.bsd')
     protocol_path = os.path.join(BASE_DIR, "asyncua", "ua", "uaprotocol_auto.py")
     p = gm.Parser(xml_path)

@@ -83,7 +83,7 @@ class Parser(object):
                     reference = Reference()
                     reference.referenceType = ref.attrib.get('ReferenceType')
                     reference.refId = ref.text
-                    if ref.attrib.get('IsForward') != None:
+                    if ref.attrib.get('IsForward') is not None:
                         node.parentNodeId = reference.refId
                     node.references.append(reference)
         return node
@@ -130,12 +130,12 @@ class Parser(object):
                         if refs_node.tag != 'UAVariable':
                             continue
                         # Collect the sub-properties of the VariableType
-                        for ref in refs_node.references:
-                            if ref.referenceType == 'HasProperty':
-                                child_ref_node = self.findNodeWithNodeId(root, ref.refId)
+                        for ref_ in refs_node.references:
+                            if ref_.referenceType == 'HasProperty':
+                                child_ref_node = self.findNodeWithNodeId(root, ref_.refId)
                                 subReference = Reference()
                                 subReference.referenceType = 'HasProperty'
-                                subReference.refId = ref.refId
+                                subReference.refId = ref_.refId
                                 subReference.refBrowseName = refs_node.browseName + '/' + child_ref_node.browseName
                                 subReference.refDataType = child_ref_node.dataType
                                 node.references.append(subReference)
