@@ -20,10 +20,11 @@ def rm_tree(path: Path):
 
 
 def get_new_nodeset(timeout=120):
-    p_v1 = Path("./UA-Nodeset")
-    p_v1_backup = Path("./UA-Nodeset-backup")
-    p_v2 = Path("./UA-Nodeset-master")
-    p_v2_backup = Path("./UA-Nodeset-master-backup")
+    cwd = Path(".")
+    p_v1 = cwd / "./UA-Nodeset"
+    p_v1_backup = cwd / "./UA-Nodeset-backup"
+    p_v2 = cwd / "./UA-Nodeset-master"
+    p_v2_backup = cwd / "./UA-Nodeset-master-backup"
     if p_v1.is_dir():
         p_v1.rename(str(p_v2))
     elif p_v2.is_dir():
@@ -46,9 +47,9 @@ def get_new_nodeset(timeout=120):
         rm_tree(p_v1_backup)
     elif p_v2_backup.is_dir():
         rm_tree(p_v2_backup)
-    rm_tree(Path("./UA-Nodeset-master/.git"))
-    rm_tree(Path("./UA-Nodeset-master/.github"))
-    Path("./UA-Nodeset-master/PublishNodeSets.bat").unlink()
+    rm_tree(cwd / "./UA-Nodeset-master/.git")
+    rm_tree(cwd / "./UA-Nodeset-master/.github")
+    (cwd / "./UA-Nodeset-master/PublishNodeSets.bat").unlink()
 
 
 def generate_standard_nodesets():
