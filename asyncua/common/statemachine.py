@@ -14,14 +14,12 @@ States - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5.2.3.
 Transitions - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5.2.3.3
 Events - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.5/
 '''
-import asyncio, logging, datetime
+import logging
+import datetime
 
-#FIXME 
-# -change to relativ imports!
-# -remove unused imports
 from asyncua import Server, ua, Node
 from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
-from typing import Union
+from typing import Union, List
 
 _logger = logging.getLogger(__name__)
 
@@ -35,7 +33,7 @@ class State(object):
     number: Number is an integer which uniquely identifies the current state within the StateMachineType.
     '''
     def __init__(self, id, name: str=None, number: int=None, node: Node=None):
-        if id:
+        if id is not None:
             self.id = ua.Variant(id)
         else:
             self.id = id #in this case it needs to be added with add_state which takes the nodeid returen from add_state
@@ -60,7 +58,7 @@ class Transition(object):
     with each change of a substate.
     '''
     def __init__(self, id, name: str=None, number: int=None, node: Node=None):
-        if id:
+        if id is not None:
             self.id = ua.Variant(id)
         else:
             self.id = id #in this case it needs to be added with add_transition which takes the nodeid returen from add_transition
@@ -68,6 +66,7 @@ class Transition(object):
         self.number = number
         self._transitiontime = datetime.datetime.utcnow() #will be overwritten from _write_transition()
         self.node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
+
 
 class StateMachine(object):
     '''
@@ -81,9 +80,9 @@ class StateMachine(object):
             raise ValueError(f"server: {type(server)} is not a instance of Server class")
         if not isinstance(parent, Node): 
             raise ValueError(f"parent: {type(parent)} is not a instance of Node class")
-        if idx == None:
+        if idx is None:
             idx = parent.nodeid.NamespaceIndex
-        if name == None:
+        if name is None:
             name = "StateMachine"
         self.locale = "en-US"
         self._server = server
@@ -105,7 +104,7 @@ class StateMachine(object):
         self._last_transition_transitiontime_node = None
         self._evgen = None
         self.evtype = TransitionEvent()
-        self._current_state = State(None, None, None)
+        self._current_state = State(None)
 
     async def install(self, optionals: bool=False):
         '''
@@ -284,24 +283,24 @@ class FiniteStateMachine(StateMachine):
     '''
     def __init__(self, server: Server=None, parent: Node=None, idx: int=None, name: str=None):
         super().__init__(server, parent, idx, name)
-        if name == None:
-            name = "FiniteStateMachine"
+        if name is None:
+            self._name = "FiniteStateMachine"
         self._state_machine_type = ua.NodeId(2771, 0)
         self._available_states_node = None
         self._available_transitions_node = None
 
-    async def set_available_states(self, states: [ua.NodeId]):
+    async def set_available_states(self, states: List[ua.NodeId]):
         if not self._available_states_node:
             self._available_states_node = await self._state_machine_node.get_child(["AvailableStates"])
-        if isinstance(states, list)and isinstance(states[0], ua.NodeId):
+        if isinstance(states, list) and all(isinstance(state, ua.NodeId) for state in states):
             return await self._available_states_node.write_value(states, varianttype=ua.VariantType.NodeId)
         return ValueError(f"Statemachine: {self._name} -> states: {states} is not a list")
 
-    async def set_available_transitions(self, transitions: [ua.NodeId]):
+    async def set_available_transitions(self, transitions: List[ua.NodeId]):
         if self._optionals:
             if not self._available_transitions_node:
                 self._available_transitions_node = await self._state_machine_node.get_child(["AvailableTransitions"])
-            if isinstance(transitions, list) and isinstance(transitions[0], ua.NodeId):
+            if isinstance(transitions, list) and all(isinstance(transition, ua.NodeId) for transition in transitions):
                 return await self._available_transitions_node.write_value(transitions, varianttype=ua.VariantType.NodeId)
             return ValueError(f"Statemachine: {self._name} -> transitions: {transitions} is not a list")
 
@@ -312,7 +311,7 @@ class ExclusiveLimitStateMachine(FiniteStateMachine):
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
-        if name == None:
+        if name is None:
             name = "ExclusiveLimitStateMachine"
         self._state_machine_type = ua.NodeId(9318, 0)
         raise NotImplementedError
@@ -326,7 +325,7 @@ class FileTransferStateMachine(FiniteStateMachine):
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
-        if name == None:
+        if name is None:
             name = "FileTransferStateMachine"
         self._state_machine_type = ua.NodeId(15803, 0)
         raise NotImplementedError
@@ -340,7 +339,7 @@ class ProgramStateMachine(FiniteStateMachine):
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
-        if name == None:
+        if name is None:
             name = "ProgramStateMachine"
         self._state_machine_type = ua.NodeId(2391, 0)
         self.evtype = ProgramTransitionEvent()
@@ -353,7 +352,7 @@ class ShelvedStateMachine(FiniteStateMachine):
     '''
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
-        if name == None:
+        if name is None:
             name = "ShelvedStateMachine"
         self._state_machine_type = ua.NodeId(2929, 0)
         raise NotImplementedError
