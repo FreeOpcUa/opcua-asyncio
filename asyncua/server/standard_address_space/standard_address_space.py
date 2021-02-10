@@ -1,5 +1,5 @@
-from .standard_address_space_services import create_standard_address_space_Services
-
+from .standard_address_space_services import create_standard_address_space_services
+from asyncio import sleep
 
 class PostponeReferences:
     def __init__(self, server):
@@ -21,7 +21,7 @@ class PostponeReferences:
     async def __aenter__(self):
         self.postponed_refs = []
         self.postponed_nodes = []
-        await asyncio.sleep(0)
+        await sleep(0)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -42,4 +42,4 @@ class PostponeReferences:
 
 async def fill_address_space(nodeservice):
     async with PostponeReferences(nodeservice) as server:
-        await create_standard_address_space_Services(server)
+        await create_standard_address_space_services(server)
