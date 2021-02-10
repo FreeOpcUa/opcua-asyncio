@@ -19,33 +19,31 @@ if __name__ == "__main__":
         await mystatemachine.install(optionals=True)
 
         # the StateMachine provides helperclasses for states and transition each class is a representation of the state- and transition-variabletype
-        # "def __init__(self, name, id=0, node=None):"
         # if the state node already exist for example from xml model you can assign it here aswell as if its a substate this is importent for the change of the state
-        state1 = State("S-Id-1", "Idle", 1)
+        state1 = State("State-Id-1", "Idle", 1)
         # adds the state (StateType) to the statemachine childs - this is optional!
         await mystatemachine.add_state(state1, state_type=ua.NodeId(2309, 0)) #this is a init state -> InitialStateType: ua.NodeId(2309, 0)
-        state2 = State("S-Id-2", "Loading", 2)
+        state2 = State("State-Id-2", "Loading", 2)
         await mystatemachine.add_state(state2)
-        state3 = State("S-Id-3", "Initializing", 3)
+        state3 = State("State-Id-3", "Initializing", 3)
         await mystatemachine.add_state(state3)
-        state4 = State("S-Id-4", "Processing", 4)
+        state4 = State("State-Id-4", "Processing", 4)
         await mystatemachine.add_state(state4)
-        state5 = State("S-Id-5", "Finished", 5)
+        state5 = State("State-Id-5", "Finished", 5)
         await mystatemachine.add_state(state5)
 
         # setup your transition helperclass 
-        # "def __init__(self, name, id=0, node=None):"
         # if the transition node already exist for example from xml model you can assign it here        
-        trans1 = Transition("T-Id-1", "to Idle", 1)
+        trans1 = Transition("Transition-Id-1", "to Idle", 1)
         # adds the state (TransitionType) to the statemachine childs - this is optional!
         await mystatemachine.add_transition(trans1)
-        trans2 = Transition("T-Id-2", "to Loading", 2)
+        trans2 = Transition("Transition-Id-2", "to Loading", 2)
         await mystatemachine.add_transition(trans2)
-        trans3 = Transition("T-Id-3", "to Initializing", 3)
+        trans3 = Transition("Transition-Id-3", "to Initializing", 3)
         await mystatemachine.add_transition(trans3)
-        trans4 = Transition("T-Id-4", "to Processing", 4)
+        trans4 = Transition("Transition-Id-4", "to Processing", 4)
         await mystatemachine.add_transition(trans4)
-        trans5 = Transition("T-Id-5", "to Finished", 5)
+        trans5 = Transition("Transition-Id-5", "to Finished", 5)
         await mystatemachine.add_transition(trans5)
 
         # initialise the StateMachine by call change_state() with the InitialState
