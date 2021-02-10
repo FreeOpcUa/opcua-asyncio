@@ -285,7 +285,8 @@ class CodeGenerator:
         if obj.minsample:
             self.writecode(indent, f'    MinimumSamplingInterval={obj.minsample},')
         self.make_common_variable_code(indent, obj)
-        self.make_node_code(obj, indent)
+        self.writecode(indent, 'node.NodeAttributes = attrs')
+        self.writecode(indent, 'await server.add_nodes([node])')
         self.make_refs_code(obj, indent)
 
     def make_variable_type_code(self, obj):
@@ -297,7 +298,8 @@ class CodeGenerator:
         if obj.abstract:
             self.writecode(indent, f'    IsAbstract={obj.abstract},')
         self.make_common_variable_code(indent, obj)
-        self.make_node_code(obj, indent)
+        self.writecode(indent, 'node.NodeAttributes = attrs')
+        self.writecode(indent, 'await server.add_nodes([node])')
         self.make_refs_code(obj, indent)
 
     def make_method_code(self, obj):
@@ -324,9 +326,9 @@ class CodeGenerator:
         if obj.abstract:
             self.writecode(indent, f'    IsAbstract={obj.abstract},')
         if obj.symmetric:
-            self.writecode(indent, f'    Symmetric={obj.symmetric},')
-        self.writecode(indent, '    )')
-        self.make_node_code(obj, indent)
+            self.writecode(indent, f'attrs.Symmetric = {obj.symmetric}')
+        self.writecode(indent, 'node.NodeAttributes = attrs')
+        self.writecode(indent, 'await server.add_nodes([node])')
         self.make_refs_code(obj, indent)
 
     def make_datatype_code(self, obj):
@@ -337,9 +339,9 @@ class CodeGenerator:
             self.writecode(indent, u'    Description=LocalizedText("{0}"),'.format(obj.desc))
         self.writecode(indent, '    DisplayName=LocalizedText("{0}"),'.format(obj.displayname))
         if obj.abstract:
-            self.writecode(indent, f'    IsAbstract={obj.abstract},')
-        self.writecode(indent, '    )')
-        self.make_node_code(obj, indent)
+            self.writecode(indent, f'attrs.IsAbstract = {obj.abstract}')
+        self.writecode(indent, 'node.NodeAttributes = attrs')
+        self.writecode(indent, 'await server.add_nodes([node])')
         self.make_refs_code(obj, indent)
 
     def make_refs_code(self, obj, indent):
@@ -366,7 +368,7 @@ def save_aspace_to_disk():
     from asyncua.server.standard_address_space import standard_address_space
     from asyncua.server.address_space import NodeManagementService, AddressSpace
     a_space = AddressSpace()
-    standard_address_space.fill_address_space(NodeManagementService(a_space))
+    await standard_address_space.fill_address_space(NodeManagementService(a_space))
     a_space.dump(path)
 
 
@@ -375,7 +377,7 @@ async def main():
     xml_path = BASE_DIR / 'schemas' / 'UA-Nodeset-master' / 'Schema' / f'Opc.Ua.NodeSet2.Services.xml'
     py_path = BASE_DIR / 'asyncua' / 'server' / 'standard_address_space' / 'standard_address_space_services.py'
     await CodeGenerator(xml_path, py_path).run()
-    save_aspace_to_disk()
+    await save_aspace_to_disk()
 
 
 if __name__ == '__main__':
