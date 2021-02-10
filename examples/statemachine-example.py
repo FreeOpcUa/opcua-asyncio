@@ -1,4 +1,5 @@
-import asyncio, logging
+import asyncio
+import logging
 from asyncua import Server, ua, Node
 from asyncua.common.statemachine import StateMachine, State, Transition
 
