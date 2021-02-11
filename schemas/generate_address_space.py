@@ -191,7 +191,7 @@ class CodeGenerator:
         if obj.desc:
             self.writecode(indent, 'attrs.Description = LocalizedText("{0}")'.format(obj.desc))
         self.writecode(
-            f'''    attrs.DisplayName = LocalizedText("{obj.displayname})\n'''
+            f'''    attrs.DisplayName = LocalizedText("{obj.displayname}")\n'''
             f'''    attrs.EventNotifier = {obj.eventnotifier}\n'''
             f'''    node.NodeAttributes = attrs\n'''
             f'''    server.add_nodes([node])''')
