@@ -7,6 +7,7 @@ import datetime
 
 BASE_DIR = Path.cwd().parent
 
+
 class EventsCodeGenerator:
 
     def __init__(self, event_model, output_file, input_path=None):
@@ -67,7 +68,8 @@ from .events import Event
                     self.get_data_type(ref)
                 ))
 
-    def get_value(self, reference):
+    @staticmethod
+    def get_value(reference):
         if reference.refBrowseName == "SourceNode":
             return "sourcenode"
         elif reference.refBrowseName == "Severity":
@@ -84,7 +86,8 @@ from .events import Event
         else:
             return "None"
 
-    def get_data_type(self, reference):
+    @staticmethod
+    def get_data_type(reference):
         if str(reference.refBrowseName) in ("Time", "ReceiveTime"):
             return "ua.VariantType.DateTime"
         elif str(reference.refBrowseName) == "LocalTime":
@@ -128,19 +131,19 @@ class {event.browseName}({parent_event_browse_name[0]}):""")
             self.add_properties_and_variables(event)
         self.iidx -= 2
 
-    def generate_events_code(self, model):
-        self.make_header(model.values())
-        for event in model.values():
+    def generate_events_code(self, model_):
+        self.make_header(model_.values())
+        for event in model_.values():
             if event.browseName == "BaseEvent":
                 self.generate_event_class(event)
             else:
-                parent_node = model[event.parentNodeId]
+                parent_node = model_[event.parentNodeId]
                 self.generate_event_class(event, parent_node.browseName)
         self.write("")
         self.write("")
         self.write("IMPLEMENTED_EVENTS = {")
         self.iidx += 1
-        for event in model.values():
+        for event in model_.values():
             self.write("ua.ObjectIds.{0}Type: {0},".format(event.browseName))
         self.write("}")
 

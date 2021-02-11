@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import datetime
+
 BASE_DIR = Path.cwd().parent
 
 if __name__ == "__main__":
@@ -9,8 +10,8 @@ if __name__ == "__main__":
                      f"\n"
                      f"from enum import IntEnum\n"
                      f"\n"
-    # Making ObjectIds inherit IntEnum has a huge performance impact!!!!!
-    # so we use a normal class and a reverse one for the few places we need it
+                     # Making ObjectIds inherit IntEnum has a huge performance impact!!!!!
+                     # so we use a normal class and a reverse one for the few places we need it
                      f"class ObjectIds:\n"
                      f"    Null = 0\n")
     nb = None
