@@ -3,16 +3,12 @@ Generate address space code from xml file specification
 """
 from copy import copy
 from xml.etree import ElementTree
+from logging import getLogger
 
-NeedOverride = []
-NeedConstructor = []  # ["RelativePathElement", "ReadValueId", "OpenSecureChannelParameters", "UserIdentityToken",
-# "RequestHeader", "ResponseHeader", "ReadParameters", "UserIdentityToken",
-# "BrowseDescription", "ReferenceDescription", "CreateSubscriptionParameters", "PublishResult",
-# "NotificationMessage", "SetPublishingModeParameters"]
-IgnoredEnums = []  # ["IdType", "NodeIdType"]
-# we want to implement som struct by hand, to make better interface or simply because they are too complicated
-IgnoredStructs = []  # ["NodeId", "ExpandedNodeId", "Variant", "QualifiedName", "DataValue", "LocalizedText"]
-# #, "ExtensionObject"]
+_logger = getLogger(__name__)
+
+IgnoredEnums = []
+IgnoredStructs = []
 
 # by default we split requests and respons in header and parameters, but some are so simple we do not split them
 NoSplitStruct = ["GetEndpointsResponse", "CloseSessionRequest", "AddNodesResponse", "DeleteNodesResponse",
@@ -24,31 +20,18 @@ NoSplitStruct = ["GetEndpointsResponse", "CloseSessionRequest", "AddNodesRespons
                  "CreateMonitoredItemsResponse", "ServiceFault", "AddReferencesResponse",
                  "ModifyMonitoredItemsResponse", "RepublishResponse", "CallResponse", "FindServersResponse",
                  "RegisterServerRequest", "RegisterServer2Response"]
+
 # structs that end with Request or Response but are not
 NotRequest = ["MonitoredItemCreateRequest", "MonitoredItemModifyRequest", "CallMethodRequest"]
-OverrideTypes = {}  # AttributeId": "AttributeID",  "ResultMask": "BrowseResultMask", "NodeClassMask": "NodeClass",
-# "AccessLevel": "VariableAccessLevel", "UserAccessLevel": "VariableAccessLevel",
-# "NotificationData": "NotificationData"}
-OverrideNames = {}  # {"RequestHeader": "Header", "ResponseHeader": "Header", "StatusCode": "Status",
-
-
-# "NodesToRead": "AttributesToRead"} # "MonitoringMode": "Mode",
-# "NotificationMessage": "Notification", "NodeIdType": "Type"}
-
-
-# some object are defined in extensionobjects in spec but seems not to be in reality
-# in addition to this list all request and response and descriptions will not inherit
-# NoInherit = ["RequestHeader", "ResponseHeader", "ChannelSecurityToken", "UserTokenPolicy", "SignatureData",
-# "BrowseResult", "ReadValueId", "WriteValue", "BrowsePath", "BrowsePathTarget", "RelativePath",
-# "RelativePathElement", "BrowsePathResult"]#, "ApplicationDescription", "EndpointDescription"
+OverrideTypes = {}
 
 
 class Bit(object):
-    def __init__(self):
-        self.name = None
-        self.idx = None
-        self.container = None
-        self.length = 1
+    def __init__(self, name=None, idx=None, container=None, length=1):
+        self.name = name
+        self.idx = idx
+        self.container = container
+        self.length = length
 
     def __str__(self):
         return f'(Bit: {self.name}, container:{self.container}, idx:{self.idx})'
@@ -82,14 +65,15 @@ class Struct(object):
 
 
 class Field(object):
-    def __init__(self):
-        self.name = None
-        self.uatype = None
-        self.length = None
-        self.sourcetype = None
-        self.switchfield = None
-        self.switchvalue = None
-        self.bitlength = 1
+    def __init__(self, name=None, uatype=None, length=None, sourcetype=None,
+                 switchfield=None, switchvalue=None, bitlength=1):
+        self.name = name
+        self.uatype = uatype
+        self.length = length
+        self.sourcetype = sourcetype
+        self.switchfield = switchfield
+        self.switchvalue = switchvalue
+        self.bitlength = bitlength
 
     def __str__(self):
         return f'Field {self.name}({self.uatype})'
@@ -171,16 +155,13 @@ def reorder_structs(model):
                     if not s2.waitingfor:
                         newstructs.append(s2)
     if len(model.structs) != len(newstructs):
-        print(f'Error while reordering structs, some structs could not be reinserted,'
-              f' had {len(model.structs)} structs, we now have {len(newstructs)} structs')
+        _logger.warning(f'Error while reordering structs, some structs could not be reinserted,'
+                        f' had {len(model.structs)} structs, we now have {len(newstructs)} structs')
         s1 = set(model.structs)
         s2 = set(newstructs)
-        rest = s1 - s2
-        print('Variant' in types)
+        _logger.debug('Variant' in types)
         for s in s1 - s2:
-            print(f'{s} is waiting for: {s.waitingfor}')
-        # print(s1 -s2)
-        # print(waiting)
+            _logger.debug(f'{s} is waiting for: {s.waitingfor}')
     model.structs = newstructs
 
 
@@ -210,11 +191,7 @@ def add_encoding_field(model):
         for field in struct.fields:
             if field.uatype in ('UInt6', 'NodeIdType'):
                 container = field.name
-                b = Bit()
-                b.name = field.name
-                b.idx = 0
-                b.container = container
-                b.length = 6
+                b = Bit(field.name, 0, container, 6)
                 idx = b.length
                 struct.bits[b.name] = b
 
@@ -222,17 +199,10 @@ def add_encoding_field(model):
                 if not container or idx > 7:
                     container = 'Encoding'
                     idx = 0
-                    f = Field()
-                    f.sourcetype = field.sourcetype
-                    f.name = 'Encoding'
-                    f.uatype = 'Byte'
+                    f = Field('Encoding', 'Byte', sourcetype=field.sourcetype)
                     newfields.append(f)
 
-                b = Bit()
-                b.name = field.name
-                b.idx = idx
-                b.container = container
-                b.length = field.bitlength
+                b = Bit(field.name, idx, container, field.bitlength)
                 idx += field.bitlength
                 struct.bits[b.name] = b
             else:
@@ -279,14 +249,6 @@ def split_requests(model):
         elif struct.name.endswith('Response') or struct.name == 'ServiceFault':
             structtype = 'Response'
         if structtype:
-            # for field in struct.fields:
-            # if field.name == "Encoding":
-            # struct.fields.remove(field)
-            # break
-            # for field in struct.fields:
-            # if field.name == "BodyLength":
-            # struct.fields.remove(field)
-            # break
             struct.needconstructor = True
             field = Field()
             field.name = 'TypeId'
@@ -305,7 +267,6 @@ def split_requests(model):
             paramstruct.bits = struct.bits
 
             struct.fields = struct.fields[:2]
-            # struct.bits = {}
             structs.append(paramstruct)
 
             typeid = Field()
@@ -322,7 +283,7 @@ class Parser(object):
         self.model = None
 
     def parse(self):
-        print("Parsing: ", self.path)
+        _logger.debug("Parsing: ", self.path)
         self.model = Model()
         tree = ElementTree.parse(self.path)
         root = tree.getroot()
@@ -339,32 +300,17 @@ class Parser(object):
                 enum = self.parse_enum(child)
                 self.model.enums.append(enum)
                 self.model.enum_list.append(enum.name)
-            # else:
-            # print("Not implemented node type: " + tag + "\n")
+            else:
+                _logger.debug("Not implemented node type: " + tag + "\n")
         return self.model
 
     def add_extension_object(self):
         obj = Struct()
-        obj.name = 'ExtensionObject'
-        f = Field()
-        f.name = 'TypeId'
-        f.uatype = 'NodeId'
-        obj.fields.append(f)
-        f = Field()
-        f.name = 'BinaryBody'
-        f.uatype = 'Bit'
-        obj.fields.append(f)
-        f = Field()
-        f.name = 'XmlBody'
-        f.uatype = 'Bit'
-        obj.fields.append(f)
-        f = Field()
-        f.name = 'Body'
-        f.uatype = 'ByteString'
-        f.switchfield = 'BinaryBody'
-        obj.fields.append(f)
+        obj.fields.extend([Field('TypeId', 'NodeId'),
+                           Field('BinaryBody', 'Bit'),
+                           Field('XmlBody', 'Bit'),
+                           Field('Body', 'ByteString', switchfield='BinaryBody')])
         self.model.struct_list.append(obj.name)
-
         self.model.structs.append(obj)
 
     def add_data_type_definition(self):
@@ -374,7 +320,6 @@ class Parser(object):
         self.model.structs.append(obj)
 
     def parse_struct(self, child):
-        tag = child.tag[40:]
         struct = Struct()
         for key, val in child.attrib.items():
             if key == 'Name':
@@ -388,7 +333,7 @@ class Parser(object):
                     struct.parents.append(tmp.basetype)
                     tmp = self.model.get_struct(tmp.basetype)
             else:
-                print(f'Error unknown key: {key}')
+                _logger.warning(f'Error unknown key: {key}')
         for el in child:
             tag = el.tag[40:]
             if tag == 'Field':
@@ -409,18 +354,18 @@ class Parser(object):
                     elif key == 'Length':
                         field.bitlength = int(val)
                     else:
-                        print(f'Unknown field item: {struct.name} {key}')
+                        _logger.warning(f'Unknown field item: {struct.name} {key}')
 
                 struct.fields.append(field)
             elif tag == 'Documentation':
                 struct.doc = el.text
             else:
-                print(f'Unknown tag: {tag}')
+                _logger.warning(f'Unknown tag: {tag}')
 
         return struct
 
-    def parse_enum(self, child):
-        tag = child.tag[40:]
+    @staticmethod
+    def parse_enum(child):
         enum = Enum()
         for k, v in child.items():
             if k == 'Name':
@@ -428,7 +373,7 @@ class Parser(object):
             elif k == 'LengthInBits':
                 enum.uatype = f'UIntv{v}'
             else:
-                print(f'Unknown attr for enum: {k}')
+                _logger.warning(f'Unknown attr for enum: {k}')
         for el in child:
             tag = el.tag[40:]
             if tag == 'EnumeratedValue':
@@ -439,21 +384,14 @@ class Parser(object):
                     elif k == 'Value':
                         ev.value = v
                     else:
-                        print(f'Unknown field attrib: {k}')
+                        _logger.warning(f'Unknown field attrib: {k}')
                 enum.values.append(ev)
             elif tag == 'Documentation':
                 enum.doc = el.text
             else:
-                print(f'Unknown enum tag: {tag}')
+                _logger.warning(f'Unknown enum tag: {tag}')
         return enum
 
-
-# "def reorder_extobjects(model):
-# ext = model.get_struct("ExtensionObject")
-# print(ext)
-# typeid = ext.fields[4]
-# ext.fields.remove(typeid)
-# ext.fields.insert(0, typeid)
 
 def add_basetype_members(model):
     for struct in model.structs:
@@ -466,38 +404,16 @@ def add_basetype_members(model):
             struct.basetype = None
             continue
         base = model.get_struct(struct.basetype)
-        # if struct.basetype == "ExtensionObject" and len(struct.fields) != 0:
-        # if struct.basetype == "ExtensionObject" and len(struct.fields) != 0:
-        # if struc
-        # for f in base.fields:
-        # if f.name == "TypeId":
-        # f2 = copy(f)
-        # f2.switchfield = None
-        # struct.fields.insert(0, f2)
-        # break
-        # continue
         for name, bit in base.bits.items():
             struct.bits[name] = bit
         for idx, field in enumerate(base.fields):
             field = copy(field)
             if field.name == 'Body' and not emptystruct:
-                # print('Field is names Body', struct.name, field.name)
                 struct.extensionobject = True
                 field.name = 'BodyLength'
                 field.uatype = 'Int32'
                 field.length = None
                 field.switchfield = None
-                # print("Field is names Body 2", struct.name, field.name)
-            # HACK EXTENSIONOBJECT
-            # if base.name == "ExtensionObject":
-            # continue
-            # if field.uatype == "Bit":
-            # continue
-            # if field.name == "Body":
-            # continue
-            # if field.name == "TypeId":
-            # field.switchfield = None
-            # END HACK
             if not field.sourcetype:
                 field.sourcetype = base.name
             struct.fields.insert(idx, field)
