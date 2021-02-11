@@ -14,7 +14,6 @@ def status_codes():
         for line in inputfile:
             name, val, doc = line.split(",", 2)
             additional[int(val, 0)] = (name, val, doc)
-
     with open(BASE_DIR / 'schemas' / 'UA-Nodeset-master' / 'Schema' / 'StatusCode.csv') as inputfile:
         result = []
         for line in inputfile:
