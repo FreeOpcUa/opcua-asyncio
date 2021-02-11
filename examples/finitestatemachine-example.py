@@ -19,8 +19,8 @@ if __name__ == "__main__":
         await mystatemachine.install(optionals=True)
 
         # the FiniteStateMachine provides helperclasses for states and transition each class is a representation of the state- and transition-variabletype
-        # if the state node already exist for example from xml model you can assign it here aswell as if its a substate this is importent for the change of the state
-        state1 = State("State-Id-1", "Idle", 1)
+        # if the state node already exist for example from xml model you can assign it here: node=<StateNode>
+        state1 = State("State-Id-1", "Idle", 1, node=None)
         # adds the state (StateType) to the statemachine childs - this is mandatory for the FiniteStateMachine!
         await mystatemachine.add_state(state1, state_type=ua.NodeId(2309, 0)) #this is a init state -> InitialStateType: ua.NodeId(2309, 0)
         state2 = State("State-Id-2", "Loading", 2)
@@ -43,9 +43,9 @@ if __name__ == "__main__":
         ])
 
         # setup your transition helperclass 
-        # if the transition node already exist for example from xml model you can assign it here
+        # if the transition node already exist for example from xml model you can assign it here: node=<TransitionNode> 
         trans1 = Transition("Transition-Id-1", "to Idle", 1)
-        # adds the state (TransitionType) to the statemachine childs - this is optional for the FiniteStateMachine
+        # adds the transition (TransitionType) to the statemachine childs - this is optional for the FiniteStateMachine
         await mystatemachine.add_transition(trans1)
         trans2 = Transition("Transition-Id-2", "to Loading", 2)
         await mystatemachine.add_transition(trans2)
