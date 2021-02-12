@@ -127,30 +127,21 @@ class XmlImporter:
         return nodes
 
     async def _add_missing_reverse_references(self, new_nodes):
-        # References which shall be uni-directional only:
-        # GuardvariableType NodeId(15113)
-        # Has Guard Reference Type NodeId(15112)
-        # TransitionVariableType NodeId(2762)
-        # StatemachineType NodeId(2771)
-        # StateVariableType  NodeId(2755)
-        # Two-stateVariableType NodeId(8995)
-        # StateType NodeId(2307)
-        # TransitionType NodeId(2310)
-        # FiniteTransitionVariableType NodeId(2767)
-        __unidirectional_nodes = {ua.NodeId(15113, 0), ua.NodeId(15112, 0), ua.NodeId(2762, 0), ua.NodeId(2771, 0),
-                                  ua.NodeId(2755, 0), ua.NodeId(8995, 0), ua.NodeId(2307, 0),
-                                  ua.NodeId(2310, 0), ua.NodeId(2767, 0), ua.NodeId(17603, 0)}
+        __unidirectional_types = {ua.ObjectIds.GuardVariableType, ua.ObjectIds.HasGuard,
+                                  ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType,
+                                  ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType,
+                                  ua.ObjectIds.StateType, ua.ObjectIds.TransitionType,
+                                  ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
         dangling_refs_to_missing_nodes = set()
         for new_node in new_nodes:
             for ref in new_node.refs:
-                if ref.reftype not in __unidirectional_nodes:
-                    try:
-                        n = self.server.get_node(ref.target)
-                    except:
-                        _logger.warning(f"Node {ref.target} does not exist in Server, but reference exist!")
+                if ref.reftype not in __unidirectional_types:
+                    n = self.server.get_node(ref.target)
+                    n_refs = await n.get_references()
+                    if len(n_refs) == 0:
+                        _logger.warning(f"Node {ref.target} has no references, so it does not exist in Server!")
                         dangling_refs_to_missing_nodes.add(ref.target)
                         continue
-                    n_refs = await n.get_references()
                     for n_ref in n_refs:
                         if new_node.nodeid == n_ref.NodeId and n_ref.ReferenceTypeId == ref.reftype:
                             break
