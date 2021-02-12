@@ -119,12 +119,44 @@ class XmlImporter:
             nodes.append(node)
         self.refs, remaining_refs = [], self.refs
         await self._add_references(remaining_refs)
+        missing_nodes = await self._add_missing_reverse_references(nodes_parsed)
+        if missing_nodes:
+            _logger.warning(f"The following references exist, but the Nodes are missing: {missing_nodes}")
         if len(self.refs):
-            _logger.warning(
-                "The following references could not be imported and are probably broken: %s",
-                self.refs,
-            )
+            _logger.warning("The following references could not be imported and are probably broken: %s", self.refs,)
         return nodes
+
+    async def _add_missing_reverse_references(self, new_nodes):
+        # References which shall be uni-directional only:
+        # GuardvariableType NodeId(15113)
+        # Has Guard Reference Type NodeId(15112)
+        # TransitionVariableType NodeId(2762)
+        # StatemachineType NodeId(2771)
+        # StateVariableType  NodeId(2755)
+        # Two-stateVariableType NodeId(8995)
+        # StateType NodeId(2307)
+        # TransitionType NodeId(2310)
+        # FiniteTransitionVariableType NodeId(2767)
+        __unidirectional_nodes = {ua.NodeId(15113, 0), ua.NodeId(15112, 0), ua.NodeId(2762, 0), ua.NodeId(2771, 0),
+                                  ua.NodeId(2755, 0), ua.NodeId(8995, 0), ua.NodeId(2307, 0),
+                                  ua.NodeId(2310, 0), ua.NodeId(2767, 0), ua.NodeId(17603, 0)}
+        dangling_refs_to_missing_nodes = set()
+        for new_node in new_nodes:
+            for ref in new_node.refs:
+                if ref.reftype not in __unidirectional_nodes:
+                    try:
+                        n = self.server.get_node(ref.target)
+                    except:
+                        _logger.warning(f"Node {ref.target} does not exist in Server, but reference exist!")
+                        dangling_refs_to_missing_nodes.add(ref.target)
+                        continue
+                    n_refs = await n.get_references()
+                    for n_ref in n_refs:
+                        if new_node.nodeid == n_ref.NodeId and n_ref.ReferenceTypeId == ref.reftype:
+                            break
+                    else:
+                        await n.add_reference(new_node.nodeid, ref.reftype, not ref.forward)
+        return dangling_refs_to_missing_nodes
 
     def _add_missing_parents(self, dnodes):
         missing = []
