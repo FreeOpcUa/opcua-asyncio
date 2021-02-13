@@ -171,7 +171,8 @@ class UASocketProtocol(asyncio.Protocol):
             raise ua.UaError(f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}")
         except asyncio.InvalidStateError:
             if not self.closed:
-                raise ua.UaError(f"Future for request id {request_id} is already done")
+                self.logger.warning("Future for request id %s is already done", request_id)
+                return
             self.logger.debug("Future for request id %s not handled due to disconnect", request_id)
         del self._callbackmap[request_id]
 
