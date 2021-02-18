@@ -245,7 +245,7 @@ async def get_event_obj_from_type_node(node):
         async def _add_new_variable(self, variable):
             name = (await variable.read_browse_name()).Name
             val = await variable.read_data_value()
-            self.add_variable(name, val.Value.Value, await variable.get_data_type_as_variant_type())
+            self.add_variable(name, val.Value.Value, await variable.read_data_type_as_variant_type())
 
         async def init(self):
             curr_node = node
