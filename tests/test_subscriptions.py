@@ -648,6 +648,62 @@ async def test_events_CustomEvent(opc):
     await opc.opc.delete_nodes([etype])
 
 
+async def test_events_CustomEvent_CustomFilter(opc):
+    etype = await opc.server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.ProgramTransitionAuditEventType,
+                                                     [('NodeId', ua.VariantType.NodeId),
+                                                      ('PropertyString', ua.VariantType.String)])
+    # Create Custom Event filter including AttributeId.NodeId
+    efilter = ua.EventFilter()
+    browsePathes = [[ua.uatypes.QualifiedName("PropertyString", 2)], 
+                    [ua.uatypes.QualifiedName("Transition"), ua.uatypes.QualifiedName("Id")],
+                    [ua.uatypes.QualifiedName("Message")],
+                    [ua.uatypes.QualifiedName("EventType")]]
+    # SelectClause
+    for bp in browsePathes:
+        op = ua.SimpleAttributeOperand()
+        op.AttributeId = ua.AttributeIds.Value
+        op.BrowsePath = bp
+        efilter.SelectClauses.append(op) 
+    op = ua.SimpleAttributeOperand()  # For NodeId
+    op.AttributeId = ua.AttributeIds.NodeId
+    op.TypeDefinitionId = ua.NodeId(ua.ObjectIds.BaseEventType) 
+    efilter.SelectClauses.append(op) 
+    # WhereClause
+    el = ua.ContentFilterElement()  
+    el.FilterOperator = ua.FilterOperator.OfType
+    op = ua.LiteralOperand()
+    op.Value = ua.Variant(etype.nodeid) # Define type
+    el.FilterOperands.append(op)
+    efilter.WhereClause.Elements.append(el)
+    # Create Subscription
+    myhandler = MySubHandler()
+    sub = await opc.opc.create_subscription(100, myhandler)
+    handle = await sub.subscribe_events(evtypes=etype, evfilter=efilter)
+    # Create Custom Event
+    evgen = await opc.server.get_event_generator(etype)
+    propertystring = "This is my test"
+    msg = "this is my msg "
+    myNodeId = ua.NodeId(8)
+    transId = ua.NodeId(99)
+    evgen.event.PropertyString = propertystring
+    evgen.event.Message = ua.LocalizedText(msg)
+    evgen.event.NodeId = myNodeId
+    setattr(evgen.event, "Transition/Id", transId)
+    # Fire Custom Event
+    await evgen.trigger()
+    ev = await myhandler.result()
+    # Perform tests
+    assert ev is not None  # we did not receive event
+    assert etype.nodeid == ev.EventType
+    assert msg == ev.Message.Text
+    assert propertystring == ev.PropertyString
+    assert myNodeId == ev.NodeId
+    assert transId == getattr(ev, "Transition/Id")
+    await sub.unsubscribe(handle)
+    await sub.delete()
+    await opc.opc.delete_nodes([etype])
+
+
 async def test_events_CustomEvent_MyObject(opc):
     objects = opc.server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
