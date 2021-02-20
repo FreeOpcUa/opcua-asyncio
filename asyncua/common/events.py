@@ -91,8 +91,11 @@ class Event:
         return a field list using a select clause and the object properties
         """
         fields = []
-        for sattr in select_clauses:
-            name = self.simple_attribute_to_attribute_name(sattr)
+        for sattr in select_clauses:           
+            if len(sattr.BrowsePath) == 0:                  
+                name = ua.AttributeIds(sattr.AttributeId).name
+            else:
+                name = self.browse_path_to_attribute_name(sattr.BrowsePath)               
             try:
                 val = getattr(self, name)
             except AttributeError:
@@ -113,22 +116,22 @@ class Event:
         ev = Event()
         ev.select_clauses = select_clauses
         ev.event_fields = fields
-        for idx, sattr in enumerate(select_clauses):
-            name = Event.simple_attribute_to_attribute_name(sattr)
+        for idx, sattr in enumerate(select_clauses):           
+            if len(sattr.BrowsePath) == 0:
+                name = sattr.AttributeId.name               
+            else:
+                name = Event.browse_path_to_attribute_name(sattr.BrowsePath)
             ev.add_property(name, fields[idx].Value, fields[idx].VariantType)
         return ev
 
     @staticmethod
-    def simple_attribute_to_attribute_name(simpleAttribute):
-        if len(simpleAttribute.BrowsePath) == 0:
-            name = simpleAttribute.AttributeId.name
-        else:
-            name = simpleAttribute.BrowsePath[0].Name
-            # Append the sub-property of a VariableType with '/'
-            iter_paths = iter(simpleAttribute.BrowsePath)
-            next(iter_paths)                
-            for path in iter_paths:
-                name += '/' + path.Name
+    def browse_path_to_attribute_name(browsePath):  
+        name = browsePath[0].Name
+        # Append the sub-property of a VariableType with '/'
+        iter_paths = iter(browsePath)
+        next(iter_paths)                
+        for path in iter_paths:
+            name += '/' + path.Name
         return name
 
 

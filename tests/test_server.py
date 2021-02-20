@@ -431,6 +431,23 @@ async def test_eventgenerator_custom_event(server):
     await server.delete_nodes([etype])
 
 
+async def test_eventgenerator_custom_event_with_variables(server):
+    # Here use generic create_custom_object_type
+    # Variables are still missing in create_custom_event_type
+    properties = [('PropertyNum', ua.VariantType.Int32),
+                  ('PropertyString', ua.VariantType.String)]
+    variables = [('VariableString', ua.VariantType.String),
+                 ('MyEnumVar', ua.VariantType.Int32, ua.NodeId(ua.ObjectIds.ApplicationType))]
+    etype = await server.create_custom_object_type(2, 'MyEvent33', ua.ObjectIds.BaseEventType, 
+                                                       properties, variables)
+    evgen = await server.get_event_generator(etype, ua.ObjectIds.Server)
+    check_eventgenerator_custom_event(evgen, etype, server)
+    await check_eventgenerator_source_server(evgen, server)
+    assert 0 == evgen.event.PropertyNum
+    assert evgen.event.PropertyString is None
+    await server.delete_nodes([etype])
+
+
 async def test_eventgenerator_double_custom_event(server):
     event1 = await server.create_custom_event_type(3, 'MyEvent4', ua.ObjectIds.BaseEventType,
                                                    [('PropertyNum', ua.VariantType.Int32),
