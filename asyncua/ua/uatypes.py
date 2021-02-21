@@ -254,7 +254,20 @@ class EventNotifier(_MaskEnum):
 
 @dataclass(frozen=FROZEN)
 class StatusCode:
+    """
+    :ivar value:
+    :vartype value: int
+    :ivar name:
+    :vartype name: string
+    :ivar doc:
+    :vartype doc: string
+    """
+
     value: UInt32 = 0
+
+    def __post_init__(self):
+        if isinstance(self.value, str):
+            self.value = getattr(status_codes.StatusCodes, self.value)
 
     def check(self):
         """
@@ -297,7 +310,7 @@ class NodeIdType(IntEnum):
 _NodeIdType = NodeIdType  # ugly hack
 
 
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True, eq=False, order=False)
 class NodeId:
     """
     NodeId Object
@@ -372,10 +385,9 @@ class NodeId:
     def __lt__(self, other):
         if not isinstance(other, NodeId):
             raise AttributeError("Can only compare to NodeId")
+        print("COMPARE", self, other)
+        print (self.NodeIdType, self.NamespaceIndex, self.Identifier, other.NodeIdType, other.NamespaceIndex, other.Identifier)
         return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (other.NodeIdType, other.NamespaceIndex, other.Identifier)
-        raise UaError(
-            f"NodeId of type {self.NodeIdType.name} has an incompatible identifier {self.Identifier} of type {type(self.Identifier)}"
-        )
 
     def is_null(self):
         if self.NamespaceIndex != 0:
@@ -460,7 +472,7 @@ class NodeId:
         return asyncua.ua.ua_binary.nodeid_to_binary(self)
 
 
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True, eq=False, order=False)
 class TwoByteNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.TwoByte)
@@ -472,7 +484,7 @@ class TwoByteNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__}  cannot have NamespaceIndex != 0")
 
 
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True, eq=False, order=False)
 class FourByteNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.FourByte)
@@ -484,7 +496,7 @@ class FourByteNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__} cannot have NamespaceIndex != 0")
 
 
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True, eq=False, order=False)
 class NumericNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.Numeric)
@@ -492,7 +504,7 @@ class NumericNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__} Identifier must be int")
 
 
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True, eq=False, order=False)
 class ByteStringNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.ByteString)
@@ -500,7 +512,7 @@ class ByteStringNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__} Identifier must be bytes")
 
 
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True, eq=False, order=False)
 class GuidNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.Guid)
@@ -508,7 +520,7 @@ class GuidNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__} Identifier must be uuid")
 
 
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True, eq=False, order=False)
 class StringNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.String)
@@ -516,7 +528,7 @@ class StringNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__} Identifier must be string")
 
 
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True, eq=False, order=False)
 class ExpandedNodeId(NodeId):
     NamespaceUri: Optional[String] = field(default=None, compare=True)
     ServerIndex: Int32 = field(default=0, compare=True)
@@ -540,7 +552,7 @@ class QualifiedName:
     NamespaceIndex: UInt16 = 0
     Name: String = ""
 
-    def __init__(self, Name, NamespaceIndex=0):
+    def __init__(self, Name="MISSING_NAME", NamespaceIndex=0):
         self.Name = Name
         self.NamespaceIndex = NamespaceIndex
         if isinstance(self.NamespaceIndex, str) and isinstance(self.Name, int):
@@ -758,8 +770,8 @@ class Variant:
                 self.is_array = False
         self._freeze = True
         if isinstance(self.Value, Variant):
-            self.Value = self.Value.Value
             self.VariantType = self.Value.VariantType
+            self.Value = self.Value.Value
         if self.VariantType is None:
             self.VariantType = self._guess_type(self.Value)
         if (

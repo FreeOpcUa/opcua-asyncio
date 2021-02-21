@@ -267,7 +267,7 @@ def struct_to_binary(obj):
         print("SETATTR", name, idx, bin(container_val))
         setattr(obj, container_name, container_val)
     for name, uatype in get_type_hints(obj).items():
-        print("STRUCT", obj, name, uatype)
+        print("STRUCT LEMENT", obj, name, uatype)
         if name == "Encoding":
             packet.append(Primitives.Byte.pack(obj.Encoding))
             continue
@@ -278,6 +278,7 @@ def struct_to_binary(obj):
             packet.append(list_to_binary(_from_list(uatype), val))
         else:
             if has_switch and val is None and name in obj.ua_switches:
+                print("SWTICH SAYS TO NOT WRITE")
                 pass
             else:
                 packet.append(to_binary(uatype, val))

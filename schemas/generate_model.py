@@ -125,35 +125,43 @@ class Model(object):
         raise Exception("No enum named: " + str(name))
 
 
+def _add_struct(struct, newstructs, waiting_structs, known_structs):
+    print("appending", struct)
+    newstructs.append(struct)
+    known_structs.append(struct.name)
+    # now seeing if some struct where waiting for this one
+    waitings = waiting_structs.pop(struct.name, None)
+    if waitings:
+        for s in waitings:
+            s.waitingfor.remove(struct.name)
+            print("TRY POP", s, s.waitingfor)
+            if not s.waitingfor:
+                _add_struct(s, newstructs, waiting_structs, known_structs)
+
+
 def reorder_structs(model):
     types = IgnoredStructs + IgnoredEnums + [
         'Bit', 'Char', 'CharArray', 'Guid', 'SByte', 'Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64',
         'DateTime', 'Boolean', 'Double', 'Float', 'ByteString', 'Byte', 'StatusCode', 'DiagnosticInfo', 'String',
-        'AttributeID'
+        'AttributeID', "NodeId", "Variant"
     ] + [enum.name for enum in model.enums] + ['VariableAccessLevel']
-    waiting = {}
+    waiting_structs = {}
     newstructs = []
     for s in model.structs:
-        types.append(s.name)
+        print("Trying to add ", s)
         s.waitingfor = []
         ok = True
         for f in s.fields:
             if f.uatype not in types:
-                if f.uatype in waiting.keys():
-                    waiting[f.uatype].append(s)
-                    s.waitingfor.append(f.uatype)
+                if f.uatype in waiting_structs:
+                    waiting_structs[f.uatype].append(s)
                 else:
-                    waiting[f.uatype] = [s]
-                    s.waitingfor.append(f.uatype)
+                    waiting_structs[f.uatype] = [s]
+                s.waitingfor.append(f.uatype)
+                print(s, " waiting for ", f.uatype)
                 ok = False
         if ok:
-            newstructs.append(s)
-            waitings = waiting.pop(s.name, None)
-            if waitings:
-                for s2 in waitings:
-                    s2.waitingfor.remove(s.name)
-                    if not s2.waitingfor:
-                        newstructs.append(s2)
+            _add_struct(s, newstructs, waiting_structs, types)
     if len(model.structs) != len(newstructs):
         _logger.warning(f'Error while reordering structs, some structs could not be reinserted,'
                         f' had {len(model.structs)} structs, we now have {len(newstructs)} structs')
@@ -161,7 +169,9 @@ def reorder_structs(model):
         s2 = set(newstructs)
         _logger.debug('Variant' in types)
         for s in s1 - s2:
-            _logger.debug(f'{s} is waiting for: {s.waitingfor}')
+            _logger.warning(f'{s} is waiting_structs for: {s.waitingfor}')
+    #from IPython import embed
+    #embed()
     model.structs = newstructs
 
 
