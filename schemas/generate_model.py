@@ -306,6 +306,7 @@ class Parser(object):
 
     def add_extension_object(self):
         obj = Struct()
+        obj.name = "ExtensionObject"
         obj.fields.extend([Field('TypeId', 'NodeId'),
                            Field('BinaryBody', 'Bit'),
                            Field('XmlBody', 'Bit'),
