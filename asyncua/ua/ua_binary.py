@@ -6,8 +6,8 @@ import struct
 import logging
 import uuid
 from enum import IntEnum, Enum
-from typing import get_origin, Union, get_type_hints, get_args
-from dataclasses import is_dataclass
+from typing import get_origin, Union, get_args
+from dataclasses import is_dataclass, fields
 
 from .uaerrors import UaError
 from ..common.utils import Buffer
@@ -261,24 +261,20 @@ def struct_to_binary(obj):
             member = getattr(obj, name)
             container_name, idx = switch
             if member is not None:
-                print("container_val before", container_val, idx)
                 container_val = container_val | 1 << idx
-                print("container_val after", container_val, idx)
-        print("SETATTR", name, idx, bin(container_val))
         setattr(obj, container_name, container_val)
-    for name, uatype in get_type_hints(obj).items():
-        print("STRUCT LEMENT", obj, name, uatype)
-        if name == "Encoding":
+    for field in fields(obj):
+        uatype = field.type
+        if field.name == "Encoding":
             packet.append(Primitives.Byte.pack(obj.Encoding))
             continue
-        val = getattr(obj, name)
+        val = getattr(obj, field.name)
         if _is_union(uatype):
             uatype = _from_union(uatype)
         if _is_list(uatype):
             packet.append(list_to_binary(_from_list(uatype), val))
         else:
-            if has_switch and val is None and name in obj.ua_switches:
-                print("SWTICH SAYS TO NOT WRITE")
+            if has_switch and val is None and field.name in obj.ua_switches:
                 pass
             else:
                 packet.append(to_binary(uatype, val))
@@ -289,7 +285,6 @@ def to_binary(uatype, val):
     """
     Pack a python object to binary given a type hint
     """
-    print("TOBIN", uatype, val)
     if _is_list(uatype):
         return list_to_binary(_from_list(uatype), val)
     elif hasattr(Primitives, uatype.__name__):
@@ -525,18 +520,15 @@ def struct_from_binary(objtype, data):
     if issubclass(objtype, Enum):
         return objtype(Primitives.UInt32.unpack(data))
     obj = objtype()
-    for name, uatype in get_type_hints(obj).items():
+    for field in fields(obj):
         # if our member has a switch and it is not set we skip it
-        if hasattr(obj, "ua_switches") and name in obj.ua_switches:
-            container_name, idx = obj.ua_switches[name]
+        if hasattr(obj, "ua_switches") and field.name in obj.ua_switches:
+            container_name, idx = obj.ua_switches[field.name]
             val = getattr(obj, container_name)
-            print("BIN VAL", val, idx)
             if not test_bit(val, idx):
-                print("NOT", name)
                 continue
-        val = from_binary(uatype, data)
-        print("SETATR", obj, name, val)
-        setattr(obj, name, val)
+        val = from_binary(field.type, data)
+        setattr(obj, field.name, val)
     return obj
 
 
