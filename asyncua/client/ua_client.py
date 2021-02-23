@@ -168,7 +168,8 @@ class UASocketProtocol(asyncio.Protocol):
         try:
             self._callbackmap[request_id].set_result(body)
         except KeyError:
-            raise ua.UaError(f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}")
+            #raise ua.UaError(f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}, body was {body}")
+            pass
         except asyncio.InvalidStateError:
             if not self.closed:
                 self.logger.warning("Future for request id %s is already done", request_id)

@@ -350,12 +350,13 @@ def nodeid_to_binary(nodeid):
 def nodeid_from_binary(data):
     encoding = ord(data.read(1))
     nidtype = ua.NodeIdType(encoding & 0b00111111)
-    expanded = False
+    uri = None
+    server_idx = None
 
     if nidtype == ua.NodeIdType.TwoByte:
         identifier = ord(data.read(1))
-        return ua.TwoByteNodeId(identifier)
-    if nidtype == ua.NodeIdType.FourByte:
+        nidx = 0
+    elif nidtype == ua.NodeIdType.FourByte:
         nidx, identifier = struct.unpack("<BH", data.read(3))
     elif nidtype == ua.NodeIdType.Numeric:
         nidx, identifier = struct.unpack("<HI", data.read(6))
@@ -373,12 +374,10 @@ def nodeid_from_binary(data):
 
     if test_bit(encoding, 7):
         uri = Primitives.String.unpack(data)
-        expanded = True
     if test_bit(encoding, 6):
         server_idx = Primitives.UInt32.unpack(data)
-        expanded = True
 
-    if expanded:
+    if uri is not None or server_idx is not None:
         return ua.ExpandedNodeId(identifier, nidx, nidtype, uri, server_idx)
     return ua.NodeId(identifier, nidx, nidtype)
 
@@ -449,7 +448,7 @@ def extensionobject_from_binary(data):
             body = data.copy(length)
             data.skip(length)
     if typeid.Identifier == 0:
-        return None
+        return ua.ExtensionObject()
     elif typeid in ua.extension_objects_by_typeid:
         cls = ua.extension_objects_by_typeid[typeid]
         if body is None:

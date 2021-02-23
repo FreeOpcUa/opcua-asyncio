@@ -11,16 +11,16 @@ OPC_TCP_SCHEME = 'opc.tcp'
 
 @dataclass
 class Hello(uatypes.FrozenClass):
-        ProtocolVersion: uatypes.UInt32 = 0
-        # the following values couldbe set to 0 (meaning no limits)
-        # unfortunaltely many servers do not support it
-        # even newer version of prosys are broken
-        # so we set then to a high value known to work most places
-        ReceiveBufferSize: uatypes.UInt32 = 2**31 - 1
-        SendBufferSize: uatypes.UInt32 = 2**31 - 1
-        MaxMessageSize: uatypes.UInt32 = 2**31 - 1
-        MaxChunkCount: uatypes.UInt32 = 2**31 - 1
-        EndpointUrl: uatypes.String = ""
+    ProtocolVersion: uatypes.UInt32 = 0
+    # the following values couldbe set to 0 (meaning no limits)
+    # unfortunaltely many servers do not support it
+    # even newer version of prosys are broken
+    # so we set then to a high value known to work most places
+    ReceiveBufferSize: uatypes.UInt32 = 2**31 - 1
+    SendBufferSize: uatypes.UInt32 = 2**31 - 1
+    MaxMessageSize: uatypes.UInt32 = 2**31 - 1
+    MaxChunkCount: uatypes.UInt32 = 2**31 - 1
+    EndpointUrl: uatypes.String = ""
 
 
 @dataclass
@@ -49,6 +49,7 @@ class Header(uatypes.FrozenClass):
     ChannelId: int = 0
     body_size = 0
     packet_size = 0
+    header_size = 8
 
     def add_size(self, size):
         self.body_size += size
