@@ -5,12 +5,10 @@ format is the one from opc-ua specification
 import logging
 import uuid
 from typing import Union, Dict
-from copy import copy
 
 from asyncua import ua
 from .xmlparser import XMLParser, ua_type_to_python
 from ..ua.uaerrors import UaError
-
 
 _logger = logging.getLogger(__name__)
 
@@ -53,15 +51,11 @@ class XmlImporter:
         server_model_list = []
         server_namespaces_node = await self.server.nodes.namespaces.get_children()
         for model_node in server_namespaces_node:
-            server_model_list.append(
-                {
-                    "ModelUri": await (await model_node.get_child("NamespaceUri")).read_value(),
-                    "Version": await (await model_node.get_child("NamespaceVersion")).read_value(),
-                    "PublicationDate": (
-                        await (await model_node.get_child("NamespacePublicationDate")).read_value()
-                    ).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                }
-            )
+            server_model_list.append({
+                "ModelUri": await (await model_node.get_child("NamespaceUri")).read_value(),
+                "Version": await (await model_node.get_child("NamespaceVersion")).read_value(),
+                "PublicationDate": (await (await model_node.get_child("NamespacePublicationDate")).read_value()).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            })
         return server_model_list
 
     async def _check_required_models(self, xmlpath=None, xmlstring=None):
@@ -71,10 +65,7 @@ class XmlImporter:
         server_model_list = await self._get_existing_model_in_namespace()
         for model in server_model_list:
             for req_model in req_models:
-                if (
-                    model["ModelUri"] == req_model["ModelUri"]
-                    and model["PublicationDate"] >= req_model["PublicationDate"]
-                ):
+                if (model["ModelUri"] == req_model["ModelUri"] and model["PublicationDate"] >= req_model["PublicationDate"]):
                     if "Version" in model and "Version" in req_model:
                         if model["Version"] >= req_model["Version"]:
                             req_models.remove(req_model)
@@ -123,15 +114,14 @@ class XmlImporter:
         if missing_nodes:
             _logger.warning(f"The following references exist, but the Nodes are missing: {missing_nodes}")
         if len(self.refs):
-            _logger.warning("The following references could not be imported and are probably broken: %s", self.refs,)
+            _logger.warning(
+                "The following references could not be imported and are probably broken: %s",
+                self.refs,
+            )
         return nodes
 
     async def _add_missing_reverse_references(self, new_nodes):
-        __unidirectional_types = {ua.ObjectIds.GuardVariableType, ua.ObjectIds.HasGuard,
-                                  ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType,
-                                  ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType,
-                                  ua.ObjectIds.StateType, ua.ObjectIds.TransitionType,
-                                  ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
+        __unidirectional_types = {ua.ObjectIds.GuardVariableType, ua.ObjectIds.HasGuard, ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType, ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType, ua.ObjectIds.StateType, ua.ObjectIds.TransitionType, ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
         dangling_refs_to_missing_nodes = set()
         for new_node_id in new_nodes:
             new_n = self.server.get_node(new_node_id)
@@ -163,9 +153,9 @@ class XmlImporter:
             for ref in nd.refs:
                 if ref.forward:
                     if ref.reftype in [
-                        self.server.nodes.HasComponent.nodeid,
-                        self.server.nodes.HasProperty.nodeid,
-                        self.server.nodes.Organizes.nodeid,
+                            self.server.nodes.HasComponent.nodeid,
+                            self.server.nodes.HasProperty.nodeid,
+                            self.server.nodes.Organizes.nodeid,
                     ]:
                         # if a node has several links, the last one will win
                         if ref.target in childs:
@@ -237,7 +227,7 @@ class XmlImporter:
                     field.datatype = self._to_migrated_nodeid(field.datatype)
         return new_nodes
 
-    def _migrate_ns(self, nodeid: ua.NodeId) -> ua.NodeId:
+    def _migrate_ns(self, obj: Union[ua.NodeId, ua.QualifiedName]) -> Union[ua.NodeId, ua.QualifiedName]:
         """
         Check if the index of nodeid or browsename  given in the xml model file
         must be converted to a already existing namespace id based on the files
@@ -245,10 +235,13 @@ class XmlImporter:
 
         :returns: NodeId (str)
         """
-        if nodeid.NamespaceIndex in self.namespaces:
-            nodeid = copy(nodeid)
-            nodeid.NamespaceIndex = self.namespaces[nodeid.NamespaceIndex]
-        return nodeid
+        if isinstance(obj, ua.NodeId):
+            if obj.NamespaceIndex in self.namespaces:
+                obj = ua.NodeId(Identifier=obj.Identifier, NamespaceIndex=self.namespaces[obj.NamespaceIndex], NodeIdType=obj.NodeIdType)
+        if isinstance(obj, ua.QualifiedName):
+            if obj.NamespaceIndex in self.namespaces:
+                obj = ua.QualifiedName(Name=obj.Name, NamespaceIndex=self.namespaces[obj.NamespaceIndex])
+        return obj
 
     def _get_add_node_item(self, obj):
         node = ua.AddNodesItem()
@@ -322,9 +315,7 @@ class XmlImporter:
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
         attrs.DataType = obj.datatype
         if obj.value is not None:
-            attrs.Value = self._add_variable_value(
-                obj,
-            )
+            attrs.Value = self._add_variable_value(obj, )
         if obj.rank:
             attrs.ValueRank = obj.rank
         if obj.accesslevel:
@@ -417,20 +408,13 @@ class XmlImporter:
                 values.append(extobj)
             return ua.Variant(values, ua.VariantType.ExtensionObject)
         elif obj.valuetype == "ListOfGuid":
-            return ua.Variant(
-                [uuid.UUID(guid) for guid in obj.value], getattr(ua.VariantType, obj.valuetype[6:])
-            )
+            return ua.Variant([uuid.UUID(guid) for guid in obj.value], getattr(ua.VariantType, obj.valuetype[6:]))
         elif obj.valuetype.startswith("ListOf"):
             vtype = obj.valuetype[6:]
             if hasattr(ua.ua_binary.Primitives, vtype):
                 return ua.Variant(obj.value, getattr(ua.VariantType, vtype))
             elif vtype == "LocalizedText":
-                return ua.Variant(
-                    [
-                        getattr(ua, vtype)(text=item["Text"], locale=item["Locale"])
-                        for item in obj.value
-                    ]
-                )
+                return ua.Variant([getattr(ua, vtype)(Text=item["Text"], Locale=item["Locale"]) for item in obj.value])
             else:
                 return ua.Variant([getattr(ua, vtype)(v) for v in obj.value])
         elif obj.valuetype == "ExtensionObject":
@@ -570,11 +554,11 @@ class XmlImporter:
             f = ua.EnumField()
             f.Name = field.name
             if field.dname:
-                f.DisplayName = ua.LocalizedText(text=field.dname)
+                f.DisplayName = ua.LocalizedText(Text=field.dname)
             else:
-                f.DisplayName = ua.LocalizedText(text=field.name)
+                f.DisplayName = ua.LocalizedText(Text=field.name)
             f.Value = field.value
-            f.Description = ua.LocalizedText(text=field.desc)
+            f.Description = ua.LocalizedText(Text=field.desc)
             edef.Fields.append(f)
         return edef
 
@@ -599,7 +583,7 @@ class XmlImporter:
             if f.IsOptional:
                 optional = True
             f.ArrayDimensions = field.arraydim
-            f.Description = ua.LocalizedText(text=field.desc)
+            f.Description = ua.LocalizedText(Text=field.desc)
             sdef.Fields.append(f)
         if optional:
             sdef.StructureType = ua.StructureType.StructureWithOptionalFields
@@ -621,11 +605,7 @@ class XmlImporter:
         all_node_ids = [data.nodeid for data in ndatas]
         while ndatas:
             for ndata in ndatas[:]:
-                if (
-                    ndata.nodeid.NamespaceIndex not in self.namespaces.values()
-                    or ndata.parent is None
-                    or ndata.parent not in all_node_ids
-                ):
+                if (ndata.nodeid.NamespaceIndex not in self.namespaces.values() or ndata.parent is None or ndata.parent not in all_node_ids):
                     sorted_ndatas.append(ndata)
                     sorted_nodes_ids.append(ndata.nodeid)
                     ndatas.remove(ndata)

@@ -80,7 +80,7 @@ class CodeGenerator:
         self.write('')
         self.write('from datetime import datetime')
         self.write('from enum import IntEnum')
-        self.write('from typing import Union, List')
+        self.write('from typing import Union, List, Optional')
         self.write('from dataclasses import dataclass, field')
         self.write('')
         # self.write('from asyncua.ua.uaerrors import UaError')
@@ -137,14 +137,21 @@ class CodeGenerator:
         if "BodyLength" in [f.name for f in obj.fields]:
             extobj_hack = True
 
+        hack_names = []
+
         for field in obj.fields:
+            # FIXME; flag optional those that are optional
             if field.length:
                 typestring = f"List[{field.uatype}]"
+            elif field.switchfield is not None:
+                typestring = f"Optional[{field.uatype}]"
             else:
                 typestring = field.uatype
 
-            if field.name == field.uatype:  # help!!! selv referencing class
+            if field.name == field.uatype:
+                # variable name and type name are the same. Dataclass do not like it
                 print("SELF REFENCING", obj, field)
+                hack_names.append(field.name)
                 fieldname = field.name + "_"
             else:
                 fieldname = field.name
@@ -153,8 +160,8 @@ class CodeGenerator:
                 val = 0 if not extobj_hack else 1
                 self.write(f"{field.name}: Byte = field(default={val}, repr=False, init=False)")
             elif field.uatype == obj.name:  # help!!! selv referencing class
-                pass
-                #FIXME:  handle
+                #FIXME: handle better
+                self.write(f"{fieldname}: Optional[ExtensionObject] = None")
             elif obj.name not in ("ExtensionObject",) and \
                     field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
                 self.write(f"TypeId: NodeId = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultBinary)")
@@ -174,6 +181,17 @@ class CodeGenerator:
             # if field.switchvalue is not None: Not sure we need to handle that one
         if switch_written:
             self.write("}")
+
+        if hack_names:
+            self.write("")
+        for name in hack_names:
+            self.write("@property")
+            self.write(f"def {name}(self):")
+            self.write(f"    return self.{name}_")
+            self.write("")
+            self.write(f"@{name}.setter")
+            self.write(f"def {name}(self, val):")
+            self.write(f"    self.{name}_ = val")
 
         self.iidx = 0
 

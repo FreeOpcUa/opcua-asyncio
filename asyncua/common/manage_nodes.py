@@ -398,7 +398,7 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
     if inputs:
         await create_property(
             method,
-            ua.NodeId(namespaceidx=method.nodeid.NamespaceIndex),
+            ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex),
             ua.QualifiedName("InputArguments", 0),
             [_vtype_to_argument(vtype) for vtype in inputs],
             varianttype=ua.VariantType.ExtensionObject,
@@ -407,7 +407,7 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
     if outputs:
         await create_property(
             method,
-            ua.NodeId(namespaceidx=method.nodeid.NamespaceIndex),
+            ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex),
             ua.QualifiedName("OutputArguments", 0),
             [_vtype_to_argument(vtype) for vtype in outputs],
             varianttype=ua.VariantType.ExtensionObject,

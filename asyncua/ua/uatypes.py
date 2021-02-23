@@ -263,7 +263,7 @@ class StatusCode:
     :vartype doc: string
     """
 
-    value: UInt32 = 0
+    value: UInt32 = status_codes.StatusCodes.Good
 
     def __post_init__(self):
         if isinstance(self.value, str):
@@ -385,7 +385,6 @@ class NodeId:
     def __lt__(self, other):
         if not isinstance(other, NodeId):
             raise AttributeError("Can only compare to NodeId")
-        print("COMPARE", self, other)
         print (self.NodeIdType, self.NamespaceIndex, self.Identifier, other.NodeIdType, other.NamespaceIndex, other.Identifier)
         return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (other.NodeIdType, other.NamespaceIndex, other.Identifier)
 
@@ -643,7 +642,7 @@ class ExtensionObject:
 
     TypeId: NodeId = NodeId()
     Encoding: Byte = field(default=0, repr=False, init=False)
-    Body: Optional[ByteString] = b""
+    Body: Optional[ByteString] = None
 
     def __bool__(self):
         return self.Body is not None
@@ -910,7 +909,7 @@ class DataValue:
 
     Encoding: Byte = field(default=0, repr=False, init=False)
     Value: Optional[Variant] = None
-    StatusCode: Optional[StatusCode] = None  # field(default_factory=StatusCode)
+    StatusCode_: Optional[StatusCode] = field(default_factory=StatusCode)
     SourceTimestamp: Optional[DateTime] = None
     SourcePicoseconds: Optional[UInt16] = None
     ServerTimestamp: Optional[DateTime] = None
@@ -921,6 +920,14 @@ class DataValue:
     ):
         if not isinstance(self.Value, Variant):
             self.Value = Variant(self.Value)
+
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
 
 
 def datatype_to_varianttype(int_type):

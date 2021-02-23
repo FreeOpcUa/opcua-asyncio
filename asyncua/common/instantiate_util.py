@@ -23,7 +23,7 @@ async def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, id
     rdesc.TypeDefinition = node_type.nodeid
 
     if nodeid is None:
-        nodeid = ua.NodeId(namespaceidx=idx)  # will trigger automatic node generation in namespace idx
+        nodeid = ua.NodeId(NamespaceIndex=idx)  # will trigger automatic node generation in namespace idx
     if bname is None:
         bname = rdesc.BrowseName
     elif isinstance(bname, str):
@@ -112,7 +112,7 @@ async def _instantiate_node(server,
                             c_node_type,
                             res.AddedNodeId,
                             c_rdesc,
-                            nodeid=ua.NodeId(identifier=inst_nodeid, namespaceidx=res.AddedNodeId.NamespaceIndex),
+                            nodeid=ua.NodeId(Identifier=inst_nodeid, NamespaceIndex=res.AddedNodeId.NamespaceIndex),
                             bname=c_rdesc.BrowseName,
                             instantiate_optional=instantiate_optional
                         )
@@ -122,7 +122,7 @@ async def _instantiate_node(server,
                             c_node_type,
                             res.AddedNodeId,
                             c_rdesc,
-                            nodeid=ua.NodeId(namespaceidx=res.AddedNodeId.NamespaceIndex),
+                            nodeid=ua.NodeId(NamespaceIndex=res.AddedNodeId.NamespaceIndex),
                             bname=c_rdesc.BrowseName,
                             instantiate_optional=instantiate_optional
                         )

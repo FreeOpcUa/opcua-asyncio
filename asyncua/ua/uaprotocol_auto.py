@@ -1,11 +1,11 @@
 """
 Autogenerate code from xml spec
-Date:2021-02-22 19:54:27.985263
+Date:2021-02-24 19:45:05.562631
 """
 
 from datetime import datetime
 from enum import IntEnum
-from typing import Union, List
+from typing import Union, List, Optional
 from dataclasses import dataclass, field
 
 from asyncua.ua.uatypes import FROZEN
@@ -1177,12 +1177,13 @@ class DiagnosticInfo:
     data_type = NodeId(ObjectIds.DiagnosticInfo)
 
     Encoding: Byte = field(default=0, repr=False, init=False)
-    SymbolicId: Int32 = None
-    NamespaceURI: Int32 = None
-    Locale: Int32 = None
-    LocalizedText: Int32 = None
-    AdditionalInfo: String = None
-    InnerStatusCode: StatusCode = None
+    SymbolicId: Optional[Int32] = None
+    NamespaceURI: Optional[Int32] = None
+    Locale: Optional[Int32] = None
+    LocalizedText: Optional[Int32] = None
+    AdditionalInfo: Optional[String] = None
+    InnerStatusCode: Optional[StatusCode] = None
+    InnerDiagnosticInfo: Optional[ExtensionObject] = None
 
     ua_switches = {
         'SymbolicId': ('Encoding', 0),
@@ -1625,6 +1626,14 @@ class DataSetWriterDataType:
     TransportSettings: ExtensionObject = ExtensionObject()
     MessageSettings: ExtensionObject = ExtensionObject()
 
+    @property
+    def DataSetFieldContentMask(self):
+        return self.DataSetFieldContentMask_
+
+    @DataSetFieldContentMask.setter
+    def DataSetFieldContentMask(self, val):
+        self.DataSetFieldContentMask_ = val
+
 
 @dataclass(frozen=FROZEN)
 class DataSetWriterTransportDataType:
@@ -1761,6 +1770,14 @@ class FieldTargetDataType:
     WriteIndexRange: String = None
     OverrideValueHandling_: OverrideValueHandling = OverrideValueHandling.Disabled
     OverrideValue: Variant = field(default_factory=Variant)
+
+    @property
+    def OverrideValueHandling(self):
+        return self.OverrideValueHandling_
+
+    @OverrideValueHandling.setter
+    def OverrideValueHandling(self, val):
+        self.OverrideValueHandling_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -2104,6 +2121,14 @@ class StructureDefinition:
     StructureType_: StructureType = StructureType.Structure
     Fields: List[StructureField] = field(default_factory=list)
 
+    @property
+    def StructureType(self):
+        return self.StructureType_
+
+    @StructureType.setter
+    def StructureType(self, val):
+        self.StructureType_ = val
+
 
 @dataclass(frozen=FROZEN)
 class StructureDescription:
@@ -2121,6 +2146,14 @@ class StructureDescription:
     DataTypeId: NodeId = field(default_factory=NodeId)
     Name: QualifiedName = field(default_factory=QualifiedName)
     StructureDefinition_: StructureDefinition = field(default_factory=StructureDefinition)
+
+    @property
+    def StructureDefinition(self):
+        return self.StructureDefinition_
+
+    @StructureDefinition.setter
+    def StructureDefinition(self, val):
+        self.StructureDefinition_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -2217,6 +2250,14 @@ class EnumDescription:
     Name: QualifiedName = field(default_factory=QualifiedName)
     EnumDefinition_: EnumDefinition = field(default_factory=EnumDefinition)
     BuiltInType: Byte = 0
+
+    @property
+    def EnumDefinition(self):
+        return self.EnumDefinition_
+
+    @EnumDefinition.setter
+    def EnumDefinition(self, val):
+        self.EnumDefinition_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -2397,6 +2438,14 @@ class ApplicationDescription:
     DiscoveryProfileUri: String = None
     DiscoveryUrls: List[String] = field(default_factory=list)
 
+    @property
+    def ApplicationType(self):
+        return self.ApplicationType_
+
+    @ApplicationType.setter
+    def ApplicationType(self, val):
+        self.ApplicationType_ = val
+
 
 @dataclass(frozen=FROZEN)
 class RequestHeader:
@@ -2468,6 +2517,14 @@ class ServiceFault:
 
     TypeId: NodeId = FourByteNodeId(ObjectIds.ServiceFault_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -2545,6 +2602,14 @@ class FindServersRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: FindServersParameters = field(default_factory=FindServersParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class FindServersResponse:
@@ -2562,6 +2627,14 @@ class FindServersResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.FindServersResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Servers: List[ApplicationDescription] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -2618,6 +2691,14 @@ class FindServersOnNetworkRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: FindServersOnNetworkParameters = field(default_factory=FindServersOnNetworkParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class FindServersOnNetworkResult:
@@ -2648,6 +2729,14 @@ class FindServersOnNetworkResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.FindServersOnNetworkResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: FindServersOnNetworkResult = field(default_factory=FindServersOnNetworkResult)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -2853,6 +2942,14 @@ class DataSetReaderDataType:
     MessageSettings: ExtensionObject = ExtensionObject()
     SubscribedDataSet: ExtensionObject = ExtensionObject()
 
+    @property
+    def DataSetFieldContentMask(self):
+        return self.DataSetFieldContentMask_
+
+    @DataSetFieldContentMask.setter
+    def DataSetFieldContentMask(self, val):
+        self.DataSetFieldContentMask_ = val
+
 
 @dataclass(frozen=FROZEN)
 class ReaderGroupDataType:
@@ -2980,6 +3077,14 @@ class GetEndpointsRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: GetEndpointsParameters = field(default_factory=GetEndpointsParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class GetEndpointsResponse:
@@ -2997,6 +3102,14 @@ class GetEndpointsResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.GetEndpointsResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Endpoints: List[EndpointDescription] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -3049,6 +3162,14 @@ class RegisterServerRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Server: RegisteredServer = field(default_factory=RegisteredServer)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class RegisterServerResponse:
@@ -3063,6 +3184,14 @@ class RegisterServerResponse:
 
     TypeId: NodeId = FourByteNodeId(ObjectIds.RegisterServerResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -3118,6 +3247,14 @@ class RegisterServer2Request:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: RegisterServer2Parameters = field(default_factory=RegisterServer2Parameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class RegisterServer2Response:
@@ -3138,6 +3275,14 @@ class RegisterServer2Response:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     ConfigurationResults: List[StatusCode] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -3200,6 +3345,14 @@ class OpenSecureChannelRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: OpenSecureChannelParameters = field(default_factory=OpenSecureChannelParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class OpenSecureChannelResult:
@@ -3234,6 +3387,14 @@ class OpenSecureChannelResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: OpenSecureChannelResult = field(default_factory=OpenSecureChannelResult)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class CloseSecureChannelRequest:
@@ -3249,6 +3410,14 @@ class CloseSecureChannelRequest:
     TypeId: NodeId = FourByteNodeId(ObjectIds.CloseSecureChannelRequest_Encoding_DefaultBinary)
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class CloseSecureChannelResponse:
@@ -3263,6 +3432,14 @@ class CloseSecureChannelResponse:
 
     TypeId: NodeId = FourByteNodeId(ObjectIds.CloseSecureChannelResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -3343,6 +3520,14 @@ class CreateSessionRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: CreateSessionParameters = field(default_factory=CreateSessionParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class CreateSessionResult:
@@ -3394,6 +3579,14 @@ class CreateSessionResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.CreateSessionResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: CreateSessionResult = field(default_factory=CreateSessionResult)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -3513,6 +3706,14 @@ class ActivateSessionRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: ActivateSessionParameters = field(default_factory=ActivateSessionParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class ActivateSessionResult:
@@ -3547,6 +3748,14 @@ class ActivateSessionResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: ActivateSessionResult = field(default_factory=ActivateSessionResult)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class CloseSessionRequest:
@@ -3565,6 +3774,14 @@ class CloseSessionRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     DeleteSubscriptions: Boolean = True
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class CloseSessionResponse:
@@ -3579,6 +3796,14 @@ class CloseSessionResponse:
 
     TypeId: NodeId = FourByteNodeId(ObjectIds.CloseSessionResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -3608,6 +3833,14 @@ class CancelRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: CancelParameters = field(default_factory=CancelParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class CancelResult:
@@ -3635,6 +3868,14 @@ class CancelResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.CancelResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: CancelResult = field(default_factory=CancelResult)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -3993,6 +4234,14 @@ class AddNodesItem:
     NodeAttributes: ExtensionObject = ExtensionObject()
     TypeDefinition: ExpandedNodeId = field(default_factory=ExpandedNodeId)
 
+    @property
+    def NodeClass(self):
+        return self.NodeClass_
+
+    @NodeClass.setter
+    def NodeClass(self, val):
+        self.NodeClass_ = val
+
 
 @dataclass(frozen=FROZEN)
 class AddNodesResult:
@@ -4005,6 +4254,14 @@ class AddNodesResult:
 
     StatusCode_: StatusCode = field(default_factory=StatusCode)
     AddedNodeId: NodeId = field(default_factory=NodeId)
+
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4034,6 +4291,14 @@ class AddNodesRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: AddNodesParameters = field(default_factory=AddNodesParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class AddNodesResponse:
@@ -4054,6 +4319,14 @@ class AddNodesResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Results: List[AddNodesResult] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4110,6 +4383,14 @@ class AddReferencesRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: AddReferencesParameters = field(default_factory=AddReferencesParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class AddReferencesResponse:
@@ -4131,6 +4412,14 @@ class AddReferencesResponse:
     Results: List[StatusCode] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class DeleteNodesItem:
@@ -4145,6 +4434,14 @@ class DeleteNodesItem:
 
     NodeId_: NodeId = field(default_factory=NodeId)
     DeleteTargetReferences: Boolean = True
+
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4174,6 +4471,14 @@ class DeleteNodesRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: DeleteNodesParameters = field(default_factory=DeleteNodesParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class DeleteNodesResponse:
@@ -4194,6 +4499,14 @@ class DeleteNodesResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Results: List[StatusCode] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4247,6 +4560,14 @@ class DeleteReferencesRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: DeleteReferencesParameters = field(default_factory=DeleteReferencesParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class DeleteReferencesResult:
@@ -4277,6 +4598,14 @@ class DeleteReferencesResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.DeleteReferencesResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: DeleteReferencesResult = field(default_factory=DeleteReferencesResult)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4323,6 +4652,21 @@ class BrowseDescription:
     NodeClassMask: UInt32 = 0
     ResultMask: UInt32 = 0
 
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
+    @property
+    def BrowseDirection(self):
+        return self.BrowseDirection_
+
+    @BrowseDirection.setter
+    def BrowseDirection(self, val):
+        self.BrowseDirection_ = val
+
 
 @dataclass(frozen=FROZEN)
 class ReferenceDescription:
@@ -4353,6 +4697,14 @@ class ReferenceDescription:
     NodeClass_: NodeClass = NodeClass.Unspecified
     TypeDefinition: ExpandedNodeId = field(default_factory=ExpandedNodeId)
 
+    @property
+    def NodeClass(self):
+        return self.NodeClass_
+
+    @NodeClass.setter
+    def NodeClass(self, val):
+        self.NodeClass_ = val
+
 
 @dataclass(frozen=FROZEN)
 class BrowseResult:
@@ -4368,6 +4720,14 @@ class BrowseResult:
     StatusCode_: StatusCode = field(default_factory=StatusCode)
     ContinuationPoint: ByteString = None
     References: List[ReferenceDescription] = field(default_factory=list)
+
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4403,6 +4763,14 @@ class BrowseRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: BrowseParameters = field(default_factory=BrowseParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class BrowseResponse:
@@ -4423,6 +4791,14 @@ class BrowseResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Results: List[BrowseResult] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4455,6 +4831,14 @@ class BrowseNextRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: BrowseNextParameters = field(default_factory=BrowseNextParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class BrowseNextResult:
@@ -4485,6 +4869,14 @@ class BrowseNextResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.BrowseNextResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: BrowseNextResult = field(default_factory=BrowseNextResult)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4534,6 +4926,14 @@ class BrowsePath:
     StartingNode: NodeId = field(default_factory=NodeId)
     RelativePath_: RelativePath = field(default_factory=RelativePath)
 
+    @property
+    def RelativePath(self):
+        return self.RelativePath_
+
+    @RelativePath.setter
+    def RelativePath(self, val):
+        self.RelativePath_ = val
+
 
 @dataclass(frozen=FROZEN)
 class BrowsePathTarget:
@@ -4561,6 +4961,14 @@ class BrowsePathResult:
 
     StatusCode_: StatusCode = field(default_factory=StatusCode)
     Targets: List[BrowsePathTarget] = field(default_factory=list)
+
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4590,6 +4998,14 @@ class TranslateBrowsePathsToNodeIdsRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: TranslateBrowsePathsToNodeIdsParameters = field(default_factory=TranslateBrowsePathsToNodeIdsParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class TranslateBrowsePathsToNodeIdsResponse:
@@ -4610,6 +5026,14 @@ class TranslateBrowsePathsToNodeIdsResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Results: List[BrowsePathResult] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4639,6 +5063,14 @@ class RegisterNodesRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: RegisterNodesParameters = field(default_factory=RegisterNodesParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class RegisterNodesResult:
@@ -4666,6 +5098,14 @@ class RegisterNodesResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.RegisterNodesResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: RegisterNodesResult = field(default_factory=RegisterNodesResult)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4695,6 +5135,14 @@ class UnregisterNodesRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: UnregisterNodesParameters = field(default_factory=UnregisterNodesParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class UnregisterNodesResponse:
@@ -4709,6 +5157,14 @@ class UnregisterNodesResponse:
 
     TypeId: NodeId = FourByteNodeId(ObjectIds.UnregisterNodesResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4763,6 +5219,14 @@ class QueryDataDescription:
     RelativePath_: RelativePath = field(default_factory=RelativePath)
     AttributeId: UInt32 = 0
     IndexRange: String = None
+
+    @property
+    def RelativePath(self):
+        return self.RelativePath_
+
+    @RelativePath.setter
+    def RelativePath(self, val):
+        self.RelativePath_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4821,6 +5285,14 @@ class NodeReference:
     IsForward: Boolean = True
     ReferencedNodeIds: List[NodeId] = field(default_factory=list)
 
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
+
 
 @dataclass(frozen=FROZEN)
 class ContentFilterElement:
@@ -4835,6 +5307,14 @@ class ContentFilterElement:
 
     FilterOperator_: FilterOperator = FilterOperator.Equals
     FilterOperands: List[ExtensionObject] = field(default_factory=list)
+
+    @property
+    def FilterOperator(self):
+        return self.FilterOperator_
+
+    @FilterOperator.setter
+    def FilterOperator(self, val):
+        self.FilterOperator_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -4896,6 +5376,14 @@ class AttributeOperand:
     AttributeId: UInt32 = 0
     IndexRange: String = None
 
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
+
 
 @dataclass(frozen=FROZEN)
 class SimpleAttributeOperand:
@@ -4951,6 +5439,14 @@ class ContentFilterElementResult:
     OperandStatusCodes: List[StatusCode] = field(default_factory=list)
     OperandDiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
 
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
+
 
 @dataclass(frozen=FROZEN)
 class ContentFilterResult:
@@ -4979,6 +5475,14 @@ class ParsingResult:
     StatusCode_: StatusCode = field(default_factory=StatusCode)
     DataStatusCodes: List[StatusCode] = field(default_factory=list)
     DataDiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5020,6 +5524,14 @@ class QueryFirstRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: QueryFirstParameters = field(default_factory=QueryFirstParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class QueryFirstResult:
@@ -5060,6 +5572,14 @@ class QueryFirstResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: QueryFirstResult = field(default_factory=QueryFirstResult)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class QueryNextParameters:
@@ -5090,6 +5610,14 @@ class QueryNextRequest:
     TypeId: NodeId = FourByteNodeId(ObjectIds.QueryNextRequest_Encoding_DefaultBinary)
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: QueryNextParameters = field(default_factory=QueryNextParameters)
+
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5122,6 +5650,14 @@ class QueryNextResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: QueryNextResult = field(default_factory=QueryNextResult)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class ReadValueId:
@@ -5143,6 +5679,14 @@ class ReadValueId:
     IndexRange: String = None
     DataEncoding: QualifiedName = field(default_factory=QualifiedName)
 
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
+
 
 @dataclass(frozen=FROZEN)
 class ReadParameters:
@@ -5158,6 +5702,14 @@ class ReadParameters:
     MaxAge: Double = 0
     TimestampsToReturn_: TimestampsToReturn = TimestampsToReturn.Source
     NodesToRead: List[ReadValueId] = field(default_factory=list)
+
+    @property
+    def TimestampsToReturn(self):
+        return self.TimestampsToReturn_
+
+    @TimestampsToReturn.setter
+    def TimestampsToReturn(self, val):
+        self.TimestampsToReturn_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5176,6 +5728,14 @@ class ReadRequest:
     TypeId: NodeId = FourByteNodeId(ObjectIds.ReadRequest_Encoding_DefaultBinary)
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: ReadParameters = field(default_factory=ReadParameters)
+
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5198,6 +5758,14 @@ class ReadResponse:
     Results: List[DataValue] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class HistoryReadValueId:
@@ -5219,6 +5787,14 @@ class HistoryReadValueId:
     DataEncoding: QualifiedName = field(default_factory=QualifiedName)
     ContinuationPoint: ByteString = None
 
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
+
 
 @dataclass(frozen=FROZEN)
 class HistoryReadResult:
@@ -5234,6 +5810,14 @@ class HistoryReadResult:
     StatusCode_: StatusCode = field(default_factory=StatusCode)
     ContinuationPoint: ByteString = None
     HistoryData: ExtensionObject = ExtensionObject()
+
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5358,6 +5942,14 @@ class HistoryReadParameters:
     ReleaseContinuationPoints: Boolean = True
     NodesToRead: List[HistoryReadValueId] = field(default_factory=list)
 
+    @property
+    def TimestampsToReturn(self):
+        return self.TimestampsToReturn_
+
+    @TimestampsToReturn.setter
+    def TimestampsToReturn(self, val):
+        self.TimestampsToReturn_ = val
+
 
 @dataclass(frozen=FROZEN)
 class HistoryReadRequest:
@@ -5375,6 +5967,14 @@ class HistoryReadRequest:
     TypeId: NodeId = FourByteNodeId(ObjectIds.HistoryReadRequest_Encoding_DefaultBinary)
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: HistoryReadParameters = field(default_factory=HistoryReadParameters)
+
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5397,6 +5997,14 @@ class HistoryReadResponse:
     Results: List[HistoryReadResult] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class WriteValue:
@@ -5417,6 +6025,14 @@ class WriteValue:
     AttributeId: UInt32 = 0
     IndexRange: String = None
     Value: DataValue = field(default_factory=DataValue)
+
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5446,6 +6062,14 @@ class WriteRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: WriteParameters = field(default_factory=WriteParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class WriteResponse:
@@ -5467,6 +6091,14 @@ class WriteResponse:
     Results: List[StatusCode] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class HistoryUpdateDetails:
@@ -5478,6 +6110,14 @@ class HistoryUpdateDetails:
     data_type = NodeId(ObjectIds.HistoryUpdateDetails)
 
     NodeId_: NodeId = field(default_factory=NodeId)
+
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5497,6 +6137,14 @@ class UpdateDataDetails:
     PerformInsertReplace: PerformUpdateType = PerformUpdateType.Insert
     UpdateValues: List[DataValue] = field(default_factory=list)
 
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
+
 
 @dataclass(frozen=FROZEN)
 class UpdateStructureDataDetails:
@@ -5514,6 +6162,14 @@ class UpdateStructureDataDetails:
     NodeId_: NodeId = field(default_factory=NodeId)
     PerformInsertReplace: PerformUpdateType = PerformUpdateType.Insert
     UpdateValues: List[DataValue] = field(default_factory=list)
+
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5536,6 +6192,14 @@ class DeleteRawModifiedDetails:
     StartTime: DateTime = datetime.utcnow()
     EndTime: DateTime = datetime.utcnow()
 
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
+
 
 @dataclass(frozen=FROZEN)
 class DeleteAtTimeDetails:
@@ -5550,6 +6214,14 @@ class DeleteAtTimeDetails:
 
     NodeId_: NodeId = field(default_factory=NodeId)
     ReqTimes: List[DateTime] = field(default_factory=list)
+
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5566,6 +6238,14 @@ class DeleteEventDetails:
     NodeId_: NodeId = field(default_factory=NodeId)
     EventIds: List[ByteString] = field(default_factory=list)
 
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
+
 
 @dataclass(frozen=FROZEN)
 class HistoryUpdateResult:
@@ -5581,6 +6261,14 @@ class HistoryUpdateResult:
     StatusCode_: StatusCode = field(default_factory=StatusCode)
     OperationResults: List[StatusCode] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5610,6 +6298,14 @@ class HistoryUpdateRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: HistoryUpdateParameters = field(default_factory=HistoryUpdateParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class HistoryUpdateResponse:
@@ -5630,6 +6326,14 @@ class HistoryUpdateResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Results: List[HistoryUpdateResult] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5668,6 +6372,14 @@ class CallMethodResult:
     InputArgumentDiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
     OutputArguments: List[Variant] = field(default_factory=list)
 
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
+
 
 @dataclass(frozen=FROZEN)
 class CallParameters:
@@ -5696,6 +6408,14 @@ class CallRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: CallParameters = field(default_factory=CallParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class CallResponse:
@@ -5716,6 +6436,14 @@ class CallResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Results: List[CallMethodResult] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5827,6 +6555,14 @@ class ReadProcessedDetails:
     AggregateType: List[NodeId] = field(default_factory=list)
     AggregateConfiguration_: AggregateConfiguration = field(default_factory=AggregateConfiguration)
 
+    @property
+    def AggregateConfiguration(self):
+        return self.AggregateConfiguration_
+
+    @AggregateConfiguration.setter
+    def AggregateConfiguration(self, val):
+        self.AggregateConfiguration_ = val
+
 
 @dataclass(frozen=FROZEN)
 class AggregateFilter:
@@ -5847,6 +6583,14 @@ class AggregateFilter:
     AggregateType: NodeId = field(default_factory=NodeId)
     ProcessingInterval: Double = 0
     AggregateConfiguration_: AggregateConfiguration = field(default_factory=AggregateConfiguration)
+
+    @property
+    def AggregateConfiguration(self):
+        return self.AggregateConfiguration_
+
+    @AggregateConfiguration.setter
+    def AggregateConfiguration(self, val):
+        self.AggregateConfiguration_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5926,6 +6670,14 @@ class MonitoredItemCreateRequest:
     MonitoringMode_: MonitoringMode = MonitoringMode.Disabled
     RequestedParameters: MonitoringParameters = field(default_factory=MonitoringParameters)
 
+    @property
+    def MonitoringMode(self):
+        return self.MonitoringMode_
+
+    @MonitoringMode.setter
+    def MonitoringMode(self, val):
+        self.MonitoringMode_ = val
+
 
 @dataclass(frozen=FROZEN)
 class MonitoredItemCreateResult:
@@ -5948,6 +6700,14 @@ class MonitoredItemCreateResult:
     RevisedQueueSize: UInt32 = 0
     FilterResult: ExtensionObject = ExtensionObject()
 
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
+
 
 @dataclass(frozen=FROZEN)
 class CreateMonitoredItemsParameters:
@@ -5963,6 +6723,14 @@ class CreateMonitoredItemsParameters:
     SubscriptionId: UInt32 = 0
     TimestampsToReturn_: TimestampsToReturn = TimestampsToReturn.Source
     ItemsToCreate: List[MonitoredItemCreateRequest] = field(default_factory=list)
+
+    @property
+    def TimestampsToReturn(self):
+        return self.TimestampsToReturn_
+
+    @TimestampsToReturn.setter
+    def TimestampsToReturn(self, val):
+        self.TimestampsToReturn_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -5981,6 +6749,14 @@ class CreateMonitoredItemsRequest:
     TypeId: NodeId = FourByteNodeId(ObjectIds.CreateMonitoredItemsRequest_Encoding_DefaultBinary)
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: CreateMonitoredItemsParameters = field(default_factory=CreateMonitoredItemsParameters)
+
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6002,6 +6778,14 @@ class CreateMonitoredItemsResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Results: List[MonitoredItemCreateResult] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6037,6 +6821,14 @@ class MonitoredItemModifyResult:
     RevisedQueueSize: UInt32 = 0
     FilterResult: ExtensionObject = ExtensionObject()
 
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
+
 
 @dataclass(frozen=FROZEN)
 class ModifyMonitoredItemsParameters:
@@ -6052,6 +6844,14 @@ class ModifyMonitoredItemsParameters:
     SubscriptionId: UInt32 = 0
     TimestampsToReturn_: TimestampsToReturn = TimestampsToReturn.Source
     ItemsToModify: List[MonitoredItemModifyRequest] = field(default_factory=list)
+
+    @property
+    def TimestampsToReturn(self):
+        return self.TimestampsToReturn_
+
+    @TimestampsToReturn.setter
+    def TimestampsToReturn(self, val):
+        self.TimestampsToReturn_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6070,6 +6870,14 @@ class ModifyMonitoredItemsRequest:
     TypeId: NodeId = FourByteNodeId(ObjectIds.ModifyMonitoredItemsRequest_Encoding_DefaultBinary)
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: ModifyMonitoredItemsParameters = field(default_factory=ModifyMonitoredItemsParameters)
+
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6092,6 +6900,14 @@ class ModifyMonitoredItemsResponse:
     Results: List[MonitoredItemModifyResult] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class SetMonitoringModeParameters:
@@ -6107,6 +6923,14 @@ class SetMonitoringModeParameters:
     SubscriptionId: UInt32 = 0
     MonitoringMode_: MonitoringMode = MonitoringMode.Disabled
     MonitoredItemIds: List[UInt32] = field(default_factory=list)
+
+    @property
+    def MonitoringMode(self):
+        return self.MonitoringMode_
+
+    @MonitoringMode.setter
+    def MonitoringMode(self, val):
+        self.MonitoringMode_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6125,6 +6949,14 @@ class SetMonitoringModeRequest:
     TypeId: NodeId = FourByteNodeId(ObjectIds.SetMonitoringModeRequest_Encoding_DefaultBinary)
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: SetMonitoringModeParameters = field(default_factory=SetMonitoringModeParameters)
+
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6156,6 +6988,14 @@ class SetMonitoringModeResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.SetMonitoringModeResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: SetMonitoringModeResult = field(default_factory=SetMonitoringModeResult)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6194,6 +7034,14 @@ class SetTriggeringRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: SetTriggeringParameters = field(default_factory=SetTriggeringParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class SetTriggeringResult:
@@ -6231,6 +7079,14 @@ class SetTriggeringResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: SetTriggeringResult = field(default_factory=SetTriggeringResult)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class DeleteMonitoredItemsParameters:
@@ -6262,6 +7118,14 @@ class DeleteMonitoredItemsRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: DeleteMonitoredItemsParameters = field(default_factory=DeleteMonitoredItemsParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class DeleteMonitoredItemsResponse:
@@ -6282,6 +7146,14 @@ class DeleteMonitoredItemsResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Results: List[StatusCode] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6326,6 +7198,14 @@ class CreateSubscriptionRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: CreateSubscriptionParameters = field(default_factory=CreateSubscriptionParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class CreateSubscriptionResult:
@@ -6362,6 +7242,14 @@ class CreateSubscriptionResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.CreateSubscriptionResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: CreateSubscriptionResult = field(default_factory=CreateSubscriptionResult)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6406,6 +7294,14 @@ class ModifySubscriptionRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: ModifySubscriptionParameters = field(default_factory=ModifySubscriptionParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class ModifySubscriptionResult:
@@ -6440,6 +7336,14 @@ class ModifySubscriptionResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: ModifySubscriptionResult = field(default_factory=ModifySubscriptionResult)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class SetPublishingModeParameters:
@@ -6471,6 +7375,14 @@ class SetPublishingModeRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: SetPublishingModeParameters = field(default_factory=SetPublishingModeParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class SetPublishingModeResult:
@@ -6501,6 +7413,14 @@ class SetPublishingModeResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.SetPublishingModeResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: SetPublishingModeResult = field(default_factory=SetPublishingModeResult)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6630,6 +7550,14 @@ class UpdateEventDetails:
     Filter: EventFilter = field(default_factory=EventFilter)
     EventData: List[HistoryEventFieldList] = field(default_factory=list)
 
+    @property
+    def NodeId(self):
+        return self.NodeId_
+
+    @NodeId.setter
+    def NodeId(self, val):
+        self.NodeId_ = val
+
 
 @dataclass(frozen=FROZEN)
 class StatusChangeNotification:
@@ -6644,6 +7572,14 @@ class StatusChangeNotification:
 
     Status: StatusCode = field(default_factory=StatusCode)
     DiagnosticInfo_: DiagnosticInfo = field(default_factory=DiagnosticInfo)
+
+    @property
+    def DiagnosticInfo(self):
+        return self.DiagnosticInfo_
+
+    @DiagnosticInfo.setter
+    def DiagnosticInfo(self, val):
+        self.DiagnosticInfo_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6688,6 +7624,14 @@ class PublishRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: PublishParameters = field(default_factory=PublishParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class PublishResult:
@@ -6713,6 +7657,14 @@ class PublishResult:
     Results: List[StatusCode] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
 
+    @property
+    def NotificationMessage(self):
+        return self.NotificationMessage_
+
+    @NotificationMessage.setter
+    def NotificationMessage(self, val):
+        self.NotificationMessage_ = val
+
 
 @dataclass(frozen=FROZEN)
 class PublishResponse:
@@ -6730,6 +7682,14 @@ class PublishResponse:
     TypeId: NodeId = FourByteNodeId(ObjectIds.PublishResponse_Encoding_DefaultBinary)
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: PublishResult = field(default_factory=PublishResult)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6762,6 +7722,14 @@ class RepublishRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: RepublishParameters = field(default_factory=RepublishParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class RepublishResponse:
@@ -6780,6 +7748,21 @@ class RepublishResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     NotificationMessage_: NotificationMessage = field(default_factory=NotificationMessage)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+    @property
+    def NotificationMessage(self):
+        return self.NotificationMessage_
+
+    @NotificationMessage.setter
+    def NotificationMessage(self, val):
+        self.NotificationMessage_ = val
+
 
 @dataclass(frozen=FROZEN)
 class TransferResult:
@@ -6792,6 +7775,14 @@ class TransferResult:
 
     StatusCode_: StatusCode = field(default_factory=StatusCode)
     AvailableSequenceNumbers: List[UInt32] = field(default_factory=list)
+
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6824,6 +7815,14 @@ class TransferSubscriptionsRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: TransferSubscriptionsParameters = field(default_factory=TransferSubscriptionsParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class TransferSubscriptionsResult:
@@ -6855,6 +7854,14 @@ class TransferSubscriptionsResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Parameters: TransferSubscriptionsResult = field(default_factory=TransferSubscriptionsResult)
 
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class DeleteSubscriptionsParameters:
@@ -6883,6 +7890,14 @@ class DeleteSubscriptionsRequest:
     RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
     Parameters: DeleteSubscriptionsParameters = field(default_factory=DeleteSubscriptionsParameters)
 
+    @property
+    def RequestHeader(self):
+        return self.RequestHeader_
+
+    @RequestHeader.setter
+    def RequestHeader(self, val):
+        self.RequestHeader_ = val
+
 
 @dataclass(frozen=FROZEN)
 class DeleteSubscriptionsResponse:
@@ -6903,6 +7918,14 @@ class DeleteSubscriptionsResponse:
     ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
     Results: List[StatusCode] = field(default_factory=list)
     DiagnosticInfos: List[DiagnosticInfo] = field(default_factory=list)
+
+    @property
+    def ResponseHeader(self):
+        return self.ResponseHeader_
+
+    @ResponseHeader.setter
+    def ResponseHeader(self, val):
+        self.ResponseHeader_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -6948,6 +7971,14 @@ class RedundantServerDataType:
     ServerId: String = None
     ServiceLevel: Byte = 0
     ServerState_: ServerState = ServerState.Running
+
+    @property
+    def ServerState(self):
+        return self.ServerState_
+
+    @ServerState.setter
+    def ServerState(self, val):
+        self.ServerState_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -7068,6 +8099,14 @@ class ServerStatusDataType:
     BuildInfo_: BuildInfo = field(default_factory=BuildInfo)
     SecondsTillShutdown: UInt32 = 0
     ShutdownReason: LocalizedText = field(default_factory=LocalizedText)
+
+    @property
+    def BuildInfo(self):
+        return self.BuildInfo_
+
+    @BuildInfo.setter
+    def BuildInfo(self, val):
+        self.BuildInfo_ = val
 
 
 @dataclass(frozen=FROZEN)
@@ -7270,6 +8309,21 @@ class StatusResult:
 
     StatusCode_: StatusCode = field(default_factory=StatusCode)
     DiagnosticInfo_: DiagnosticInfo = field(default_factory=DiagnosticInfo)
+
+    @property
+    def StatusCode(self):
+        return self.StatusCode_
+
+    @StatusCode.setter
+    def StatusCode(self, val):
+        self.StatusCode_ = val
+    @property
+    def DiagnosticInfo(self):
+        return self.DiagnosticInfo_
+
+    @DiagnosticInfo.setter
+    def DiagnosticInfo(self, val):
+        self.DiagnosticInfo_ = val
 
 
 @dataclass(frozen=FROZEN)

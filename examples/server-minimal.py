@@ -7,9 +7,6 @@ from asyncua import ua, Server
 from asyncua.common.methods import uamethod
 
 
-logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger('asyncua')
-
 
 @uamethod
 def func(parent, value):
@@ -17,6 +14,7 @@ def func(parent, value):
 
 
 async def main():
+    _logger = logging.getLogger('asyncua')
     # setup our server
     server = Server()
     await server.init()
@@ -43,4 +41,7 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+
+    logging.basicConfig(level=logging.DEBUG)
+
+    asyncio.run(main(), debug=True)

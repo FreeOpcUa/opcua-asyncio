@@ -441,6 +441,13 @@ def test_null_string():
     assert v.Value == v2.Value
 
 
+def test_empty_extension_object():
+    obj = ua.ExtensionObject()
+    obj2 = extensionobject_from_binary(ua.utils.Buffer(extensionobject_to_binary(obj)))
+    assert type(obj) == type(obj2)
+    assert obj == obj2
+
+
 def test_extension_object():
     obj = ua.UserNameIdentityToken()
     obj.UserName = "admin"
@@ -732,6 +739,8 @@ def test_bin_data_type_def():
     dta = ua.DataTypeAttributes()
     dta.DisplayName = ua.LocalizedText("titi")
     ad.NodeAttributes = dta
+    from IPython import embed
+    embed()
 
     data = struct_to_binary(ad)
     ad2 = struct_from_binary(ua.AddNodesItem, ua.utils.Buffer(data))
@@ -746,3 +755,24 @@ def test_bin_datattributes():
     data = struct_to_binary(dta)
     dta2 = struct_from_binary(ua.DataTypeAttributes, ua.utils.Buffer(data))
     assert dta.DisplayName == dta2.DisplayName
+
+
+def test_browse():
+    data = b'\x01\x00\x12\x02\xe0S2\xb3\x8f\n\xd7\x01\x04\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x03\x00\x00\x00\x00#\x01@U\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00Objects\x02\x07\x00\x00\x00Objects\x01\x00\x00\x00@=\x00\x00\x00\x00\x00#\x01@V\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00Types\x02\x05\x00\x00\x00Types\x01\x00\x00\x00@=\x00\x00\x00\x00\x00#\x01@W\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00Views\x02\x05\x00\x00\x00Views\x01\x00\x00\x00@=\x00\x00\x00\x00\xff\xff\xff\xff'
+    #data = b'\x01\x00\x12\x020)E\x11"\n\xd7\x01\x04\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x03\x00\x00\x00\x00#\x01@U\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00Objects\x02\x07\x00\x00\x00Objects\x01\x00\x00\x00@=\x00\x00\x00\x00\x00#\x01@V\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00Types\x02\x05\x00\x00\x00Types\x01\x00\x00\x00@=\x00\x00\x00\x00\x00#\x01@W\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00Views\x02\x05\x00\x00\x00Views\x01\x00\x00\x00@=\x00\x00\x00\x00\xff\xff\xff\xff'
+    res = struct_from_binary(ua.BrowseResponse, ua.utils.Buffer(data))
+
+
+def test_bname():
+    qn = ua.QualifiedName("TOTO", 2)
+    d = struct_to_binary(qn)
+    qn2 = struct_from_binary(ua.QualifiedName, ua.utils.Buffer(d))
+    assert qn == qn2
+
+
+def test_expandedNodeId():
+    d = b"\x40\x55\x00\x00\x00\x00"
+    nid = nodeid_from_binary(ua.utils.Buffer(d))
+    assert isinstance(nid, ua.ExpandedNodeId)
+    assert nid.ServerIndex == 0
+    assert nid.Identifier == 85
