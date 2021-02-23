@@ -614,10 +614,6 @@ class LocalizedText:
                 )
 
     def to_string(self):
-        if self.Text is None:
-            return ""
-        if self.Locale is None:
-            return self.Text
         return self.__str__()
 
     @staticmethod

@@ -322,4 +322,4 @@ class XmlElement(FrozenClass):
     :vartype Value: String
     """
 
-    Value: uatypes.String
+    Value: uatypes.String = ""

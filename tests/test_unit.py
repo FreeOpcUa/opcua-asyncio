@@ -131,7 +131,6 @@ def test_custom_structs_array(tmpdir):
     data = struct_to_binary(v)
     v2 = struct_from_binary(ns["ArrayValueDataType"], ua.utils.Buffer(data))
     assert v.NodeIdValue == v2.NodeIdValue
-    # print(v2.NodeIdValue)
 
 
 def test_nodeid_nsu():
@@ -140,7 +139,6 @@ def test_nodeid_nsu():
     n2 = nodeid_from_binary(ua.utils.Buffer(data))
     assert n1 == n2
     string = n1.to_string()
-    print(string)
     n3 = ua.NodeId.from_string(string)
     assert n1 == n3
 
@@ -237,7 +235,6 @@ def test_string_to_variant_localized_text_with_locale():
     string_repr = f'LocalizedText(Encoding:3, Locale:{locale}, Text:{string})'
     obj = ua.LocalizedText(string, locale)
     assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
-    breakpoint()
     assert string_repr == val_to_string(obj)
 
 
@@ -611,9 +608,7 @@ def test_text():
 def test_text_simple():
     t = ua.LocalizedText('Root')
     b = struct_to_binary(t)
-    print("BIN", b)
     buf = ua.utils.Buffer(b)
-    print("BUF", buf)
     t2 = struct_from_binary(ua.LocalizedText, buf)
     assert t == t2
 
@@ -742,3 +737,12 @@ def test_bin_data_type_def():
     ad2 = struct_from_binary(ua.AddNodesItem, ua.utils.Buffer(data))
     assert ad.ParentNodeId == ad2.ParentNodeId
     assert ad.NodeAttributes.DisplayName == ad2.NodeAttributes.DisplayName
+
+
+def test_bin_datattributes():
+    dta = ua.DataTypeAttributes()
+    dta.DisplayName = ua.LocalizedText("titi")
+
+    data = struct_to_binary(dta)
+    dta2 = struct_from_binary(ua.DataTypeAttributes, ua.utils.Buffer(data))
+    assert dta.DisplayName == dta2.DisplayName
