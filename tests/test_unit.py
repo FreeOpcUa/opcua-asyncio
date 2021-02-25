@@ -739,8 +739,6 @@ def test_bin_data_type_def():
     dta = ua.DataTypeAttributes()
     dta.DisplayName = ua.LocalizedText("titi")
     ad.NodeAttributes = dta
-    from IPython import embed
-    embed()
 
     data = struct_to_binary(ad)
     ad2 = struct_from_binary(ua.AddNodesItem, ua.utils.Buffer(data))

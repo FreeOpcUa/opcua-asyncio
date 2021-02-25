@@ -9,6 +9,9 @@ import logging
 # The next two imports are for generated code
 from datetime import datetime
 from enum import IntEnum, EnumMeta
+from dataclasses import dataclass
+
+
 from xml.etree import ElementTree as ET
 from asyncua import ua
 
@@ -70,6 +73,7 @@ class Struct:
     def get_code(self):
         code = f"""
 
+@dataclass
 class {self.name}:
 
     '''
@@ -77,27 +81,15 @@ class {self.name}:
     '''
 
 """
-        code += '    ua_types = [\n'
         for field in self.fields:
-            prefix = 'ListOf' if field.array else ''
-            uatype = prefix + field.uatype
-            if uatype == 'ListOfChar':
+            uatype = f"ua.{field.uatype}"
+            if field.array:
+                uatype = f"List[{uatype}]"
+            else:
+                uatype = uatype
+            if uatype == 'List[ua.Char]':
                 uatype = 'String'
-            code += f"        ('{field.name}', '{uatype}'),\n"
-        code += "    ]"
-        code += """
-    def __str__(self):
-        vals = [name + ": " + str(val) for name, val in self.__dict__.items()]
-        return self.__class__.__name__ + "(" + ", ".join(vals) + ")"
-
-    __repr__ = __str__
-
-    def __init__(self):
-"""
-        if not self.fields:
-            code += "      pass"
-        for field in self.fields:
-            code += f"        self.{field.name} = {field.value}\n"
+            code += f"    {field.name}:{uatype} = {field.value}\n"
         return code
 
 
@@ -274,6 +266,8 @@ def _generate_python_class(model, env=None):
         env['uuid'] = uuid
     if "enum" not in env:
         env['IntEnum'] = IntEnum
+    if "dataclass" not in env:
+        env['dataclass'] = dataclass
     # generate classes one by one and add them to dict
     for element in model:
         code = element.get_code()

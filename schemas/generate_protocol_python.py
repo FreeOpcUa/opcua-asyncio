@@ -158,7 +158,7 @@ class CodeGenerator:
 
             if field.name == "Encoding":
                 val = 0 if not extobj_hack else 1
-                self.write(f"{field.name}: Byte = field(default={val}, repr=False, init=False)")
+                self.write(f"{field.name}: Byte = field(default={val}, repr=False, init=False, compare=False)")
             elif field.uatype == obj.name:  # help!!! selv referencing class
                 #FIXME: handle better
                 self.write(f"{fieldname}: Optional[ExtensionObject] = None")
