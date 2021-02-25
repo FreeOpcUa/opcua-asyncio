@@ -130,7 +130,7 @@ class Server:
                 instead!""")
         
         if not isinstance(build_date, datetime):
-            raise TypeError(f"Expected datetime.utcnow() got {type(build_date)} instead!")
+            raise TypeError(f"Expected datetime got {type(build_date)} instead!")
         
         status_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus))
         build_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo))
