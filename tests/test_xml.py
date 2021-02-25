@@ -167,9 +167,10 @@ async def test_xml_ns(opc, tmpdir):
     # get index of namespaces after import
     new_ns = await opc.opc.register_namespace("my_new_namespace")
     bname_ns = await opc.opc.register_namespace("bname_namespace")
-    onew.nodeid.NamespaceIndex = new_ns
-    await onew.read_browse_name()
-    vnew2 = (await onew.get_children())[0]
+
+    nnode = Node(onew.server, ua.NodeId(Identifier=onew.nodeid.Identifier, NamespaceIndex=new_ns))
+    await nnode.read_browse_name()
+    vnew2 = (await nnode.get_children())[0]
     assert vnew2.nodeid.NamespaceIndex == new_ns
 
 
@@ -286,8 +287,8 @@ async def test_xml_localizedtext_array(opc, tmpdir):
 
 async def test_xml_localizedtext_array_with_locale(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array",
-                                                 [ua.LocalizedText(text="erert", locale="en"),
-                                                  ua.LocalizedText(text="erert33", locale="de")])
+                                                 [ua.LocalizedText(Text="erert", Locale="en"),
+                                                  ua.LocalizedText(Text="erert33", Locale="de")])
     await _test_xml_var_type(opc, tmpdir, o, "localized_text_array")
     await opc.opc.delete_nodes([o])
 
