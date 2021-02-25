@@ -112,7 +112,7 @@ class Server:
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
 
     async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
-                             build_number, build_date=):
+                             build_number, build_date):
         
         if not all(isinstance(arg, str) for arg in [
             product_uri, 
