@@ -148,8 +148,8 @@ async def test_opc_type_dict_get_dict_value(srv):
 
 
 async def test_reference_generator_1(srv):
-    id1 = ua.NodeId(1, namespaceidx=2, nodeidtype=ua.NodeIdType.Numeric)
-    id2 = ua.NodeId(2, namespaceidx=2, nodeidtype=ua.NodeIdType.Numeric)
+    id1 = ua.NodeId(1, NamespaceIndex=2, NodeIdType=ua.NodeIdType.Numeric)
+    id2 = ua.NodeId(2, NamespaceIndex=2, NodeIdType=ua.NodeIdType.Numeric)
     ref = ua.NodeId(ua.ObjectIds.HasEncoding, 0)
     result = reference_generator(id1, id2, ref)
     assert result.IsForward
@@ -160,8 +160,8 @@ async def test_reference_generator_1(srv):
 
 
 async def test_reference_generator_2(srv):
-    id1 = ua.NodeId(1, namespaceidx=2, nodeidtype=ua.NodeIdType.Numeric)
-    id2 = ua.NodeId(2, namespaceidx=2, nodeidtype=ua.NodeIdType.Numeric)
+    id1 = ua.NodeId(1, NamespaceIndex=2, NodeIdType=ua.NodeIdType.Numeric)
+    id2 = ua.NodeId(2, NamespaceIndex=2, NodeIdType=ua.NodeIdType.Numeric)
     ref = ua.NodeId(ua.ObjectIds.HasEncoding, 0)
     result = reference_generator(id1, id2, ref, False)
     assert not result.IsForward
@@ -264,8 +264,6 @@ async def test_data_type_dict_add_field_1(srv):
     await srv.dict_builder.set_dict_byte_string()
     await srv.srv.load_type_definitions()
     struct = get_ua_class(struct_name)
-    assert struct.ua_types[0][0] == 'id'
-    assert struct.ua_types[0][1] == 'Int32'
     struct_instance = struct()
     assert struct_instance.id == 0
 
@@ -277,8 +275,6 @@ async def test_data_type_dict_add_field_2(srv):
     await srv.dict_builder.set_dict_byte_string()
     await srv.srv.load_type_definitions()
     struct = get_ua_class(struct_name)
-    assert struct.ua_types[0][0] == 'id'
-    assert struct.ua_types[0][1] == 'ListOfInt32'
     struct_instance = struct()
     assert isinstance(struct_instance.id, list)
 
@@ -298,8 +294,6 @@ async def test_struct_node_add_field(srv):
     await srv.dict_builder.set_dict_byte_string()
     await srv.srv.load_type_definitions()
     struct = get_ua_class(struct_name)
-    assert struct.ua_types[0][0] == 'id'
-    assert struct.ua_types[0][1] == 'Int32'
     struct_instance = struct()
     assert struct_instance.id == 0
 
@@ -339,7 +333,7 @@ async def test_functional_basic(srv):
     await srv.dict_builder.set_dict_byte_string()
     await srv.srv.load_type_definitions()
 
-    basic_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(namespaceidx=srv.idx), 'BasicStruct',
+    basic_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(NamespaceIndex=srv.idx), 'BasicStruct',
                                                     ua.Variant(None, ua.VariantType.Null),
                                                     datatype=basic_struct.data_type)
 
@@ -370,7 +364,7 @@ async def test_functional_advance(srv):
     await srv.dict_builder.set_dict_byte_string()
     await srv.srv.load_type_definitions()
 
-    basic_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(namespaceidx=srv.idx), 'BasicStruct',
+    basic_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(NamespaceIndex=srv.idx), 'BasicStruct',
                                                     ua.Variant(None, ua.VariantType.Null),
                                                     datatype=basic_struct.data_type)
 
@@ -380,7 +374,7 @@ async def test_functional_advance(srv):
     basic_msg.Comments = 'Test string'
     await basic_var.write_value(basic_msg)
 
-    nested_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(namespaceidx=srv.idx), 'NestedStruct',
+    nested_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(NamespaceIndex=srv.idx), 'NestedStruct',
                                                      ua.Variant(None, ua.VariantType.Null),
                                                      datatype=nested_struct.data_type)
 
