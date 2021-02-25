@@ -8,8 +8,10 @@ from collections import OrderedDict
 import xml.etree.ElementTree as Et
 from copy import copy
 import base64
+from dataclasses import fields, is_dataclass
 
 from asyncua import ua
+from asyncua.ua.uatypes import type_string_from_type
 from ..ua import object_ids as o_ids
 from .ua_utils import get_base_data_type
 from asyncua.ua.uaerrors import UaError
@@ -169,13 +171,12 @@ class XmlExporter:
 
         if nodeid.NamespaceIndex in self._addr_idx_to_xml_idx:
             nodeid = copy(nodeid)
-            nodeid.NamespaceIndex = self._addr_idx_to_xml_idx[nodeid.NamespaceIndex]
+            nodeid = ua.NodeId(nodeid.Identifier, NamespaceIndex=self._addr_idx_to_xml_idx[nodeid.NamespaceIndex])
         return nodeid.to_string()
 
     def _bname_to_string(self, bname):
         if bname.NamespaceIndex in self._addr_idx_to_xml_idx:
-            bname = copy(bname)
-            bname.NamespaceIndex = self._addr_idx_to_xml_idx[bname.NamespaceIndex]
+            bname = ua.QualifiedName(Name=bname.Name, NamespaceIndex=self._addr_idx_to_xml_idx[bname.NamespaceIndex])
         return bname.to_string()
 
     async def _add_node_common(self, nodetype, node):
@@ -382,7 +383,7 @@ class XmlExporter:
                 val = b""
             data = base64.b64encode(val)
             el.text = data.decode("utf-8")
-        elif not hasattr(val, "ua_types"):
+        elif not is_dataclass(val):
             if isinstance(val, bytes):
                 # FIXME: should we also encode this (localized text I guess) using base64??
                 el.text = val.decode("utf-8")
@@ -390,8 +391,7 @@ class XmlExporter:
                 if val is not None:
                     el.text = str(val)
         else:
-            for name, vtype in val.ua_types:
-                await self.member_to_etree(el, name, ua.NodeId(getattr(ua.ObjectIds, vtype)), getattr(val, name))
+            await self._all_fields_to_etree(el, val)
 
     async def value_to_etree(self, el, dtype_name, dtype, node):
         var = (await node.read_data_value()).Value
@@ -434,27 +434,16 @@ class XmlExporter:
         id_el.text = dtype.to_string()
         body_el = Et.SubElement(obj_el, "uax:Body")
         struct_el = Et.SubElement(body_el, "uax:" + name)
-        for name, vtype in val.ua_types:
+        await self._all_fields_to_etree(struct_el, val)
+
+    async def _all_fields_to_etree(self, struct_el, val):
+        for field in fields(val):
             # FIXME; what happend if we have a custom type which is not part of ObjectIds???
-            if vtype.startswith("ListOf"):
-                vtype = vtype[6:]
-            await self.member_to_etree(struct_el, name, ua.NodeId(getattr(ua.ObjectIds, vtype)), getattr(val, name))
+            type_name = type_string_from_type(field.type)
+            await self.member_to_etree(struct_el, field.name, ua.NodeId(getattr(ua.ObjectIds, type_name)), getattr(val, field.name))
             # self.member_to_etree(struct_el, name, extension_object_typeids[vtype], getattr(val, name))
         # for name in self._get_member_order(dtype, val):
         # self.member_to_etree(struct_el, name, ua.NodeId(getattr(ua.ObjectIds, val.ua_types[name])), getattr(val, name))
-
-    def _get_member_order(self, dtype, val):
-        """
-        If an dtype has an entry in XmlExporter.extobj_ordered_elements return the export order of the elements
-        else return the unordered members.
-        """
-        if dtype not in XmlExporter.extobj_ordered_elements.keys():
-            return val.ua_types.keys()
-        else:
-            member_keys = [name for name in XmlExporter.extobj_ordered_elements[dtype] if
-                           name in val.ua_types.keys() and getattr(val, name) is not None]
-
-        return member_keys
 
 
 def indent(elem, level=0):

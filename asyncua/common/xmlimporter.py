@@ -5,8 +5,10 @@ format is the one from opc-ua specification
 import logging
 import uuid
 from typing import Union, Dict
+from dataclasses import fields, is_dataclass
 
 from asyncua import ua
+from asyncua.ua.uatypes import type_string_from_type
 from .xmlparser import XMLParser, ua_type_to_python
 from ..ua.uaerrors import UaError
 
@@ -361,9 +363,9 @@ class XmlImporter:
         return ext
 
     def _get_val_type(self, obj, attname: str):
-        for name, uatype in obj.ua_types:
-            if name == attname:
-                return uatype
+        for field in fields(obj):
+            if field.name == attname:
+                return type_string_from_type(field.type)
         raise UaError(f"Attribute '{attname}' defined in xml is not found in object '{obj}'")
 
     def _set_attr(self, obj, attname: str, val):
@@ -385,7 +387,7 @@ class XmlImporter:
                             obj2 = ua.NodeId.from_string(v2)
                         setattr(obj, attname, self._migrate_ns(obj2))
                         break
-            elif not hasattr(obj2, "ua_types"):
+            elif not is_dataclass(obj2):
                 # we probably have a list
                 my_list = []
                 for vtype, v2 in val:
