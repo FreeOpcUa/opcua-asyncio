@@ -203,7 +203,6 @@ class {struct_name}(ua.FrozenClass):
                 code += f"        '{fname}': ('Encoding', {counter}),\n"
                 counter += 1
         code += "    }\n\n"
-    print("CODE", code)
     return code
 
 

@@ -225,14 +225,15 @@ def test_string_to_variant_qname():
 def test_string_to_variant_localized_text():
     string = "_This is my nøåæ"
     obj = ua.LocalizedText(string)
+    string_repr = f"LocalizedText(Locale=None, Text='{string}')"
     assert obj == string_to_val(string, ua.VariantType.LocalizedText)
-    assert string == val_to_string(obj)
+    assert string_repr == val_to_string(obj)
 
 
 def test_string_to_variant_localized_text_with_locale():
     locale = "cs-CZ"
     string = "Moje jméno"
-    string_repr = f'LocalizedText(Encoding:3, Locale:{locale}, Text:{string})'
+    string_repr = f"LocalizedText(Locale='{locale}', Text='{string}')"
     obj = ua.LocalizedText(string, locale)
     assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
     assert string_repr == val_to_string(obj)
@@ -241,22 +242,20 @@ def test_string_to_variant_localized_text_with_locale():
 def test_string_to_variant_localized_text_with_none1():
     locale = "en-US"
     string = ""
-    string_repr = f"LocalizedText(Encoding:1, Locale:{locale}, Text:{string})"
+    string_repr = f"LocalizedText(Locale='{locale}', Text='{string}')"
     obj = ua.LocalizedText(string, locale)
     obj2 = ua.LocalizedText(string)
     assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
     assert obj2 == string_to_val(string, ua.VariantType.LocalizedText)
-    assert "" == val_to_string(obj)
 
 
 def test_string_to_variant_localized_text_with_none2():
     locale = None
     string = "my name is ..."
-    string_repr = f"LocalizedText(Encoding:2, Locale:{locale}, Text:{string})"
+    string_repr = f"LocalizedText(Locale='{locale}', Text='{string}')"
     obj = ua.LocalizedText(string, locale)
     assert obj == string_to_val(string_repr, ua.VariantType.LocalizedText)
     assert obj == string_to_val(string, ua.VariantType.LocalizedText)
-    assert string == val_to_string(obj)
 
 
 def test_string_to_val_xml_element():
