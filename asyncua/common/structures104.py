@@ -4,7 +4,8 @@ from datetime import datetime
 import uuid
 import logging
 import re
-from typing import Union, List, TYPE_CHECKING, Tuple
+from typing import Union, List, TYPE_CHECKING, Tuple, Optional
+from dataclasses import dataclass, field
 
 from asyncua import ua
 from asyncua import Node
@@ -29,9 +30,9 @@ def new_struct_field(
     field.Name = name
     field.IsOptional = optional
     if description:
-        field.Description = ua.LocalizedText(text=description)
+        field.Description = ua.LocalizedText(Text=description)
     else:
-        field.Description = ua.LocalizedText(text=name)
+        field.Description = ua.LocalizedText(Text=name)
     if isinstance(dtype, ua.VariantType):
         field.DataType = ua.NodeId(dtype.value, 0)
     elif isinstance(dtype, ua.NodeId):
@@ -91,7 +92,7 @@ async def new_enum(
     counter = 0
     for val_name in values:
         field = ua.EnumField()
-        field.DisplayName = ua.LocalizedText(text=val_name)
+        field.DisplayName = ua.LocalizedText(Text=val_name)
         field.Name = val_name
         field.Value = counter
         counter += 1
@@ -148,6 +149,7 @@ def make_structure_code(data_type, struct_name, sdef):
         raise NotImplementedError(f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {struct_name} with DataTypdeDefinition {sdef}")
     code = f"""
 
+@dataclass
 class {struct_name}(ua.FrozenClass):
 
     '''
@@ -157,64 +159,51 @@ class {struct_name}(ua.FrozenClass):
     data_type = ua.NodeId.from_string("{data_type.to_string()}")
 
 """
+
+    if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
+        code += "    Encoding: ua.Byte = field(default=0, repr=False, init=False, compare=False)\n"
+
+    for sfield in sdef.Fields:
+        fname = clean_name(sfield.Name)
+        if sfield.DataType.NamespaceIndex == 0 and sfield.DataType.Identifier in ua.ObjectIdNames:
+            uatype = ua.ObjectIdNames[sfield.DataType.Identifier]
+        elif sfield.DataType in ua.extension_objects_by_datatype:
+            uatype = ua.extension_objects_by_datatype[sfield.DataType].__name__
+        elif sfield.DataType in ua.enums_by_datatype:
+            uatype = ua.enums_by_datatype[sfield.DataType].__name__
+        else:
+            # FIXME: we are probably missing many custom tyes here based on builtin types
+            # maybe we can use ua_utils.get_base_data_type()
+            raise RuntimeError(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
+
+        if sfield.ValueRank >= 1:
+            default_value = "[]"
+        else:
+            default_value = get_default_value(uatype)
+
+        uatype = f"ua.{uatype}"
+        if sfield.ValueRank >= 1 and uatype == 'Char':
+            uatype = 'String'
+        elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
+            uatype = f"List[{uatype}]"
+        elif sfield.IsOptional:
+            uatype = f"Optional[{uatype}]"
+
+        code += f"    {fname}: {uatype} = {default_value}\n"
+
     counter = 0
     # FIXME: to support inheritance we probably need to add all fields from parents
     # this requires network call etc...
     if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
         code += '    ua_switches = {\n'
-        for field in sdef.Fields:
-            fname = clean_name(field.Name)
+        for sfield in sdef.Fields:
+            fname = clean_name(sfield.Name)
 
-            if field.IsOptional:
+            if sfield.IsOptional:
                 code += f"        '{fname}': ('Encoding', {counter}),\n"
                 counter += 1
         code += "    }\n\n"
-
-    code += '    ua_types = [\n'
-    if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-        code += "        ('Encoding', 'Byte'),\n"
-    uatypes = []
-    for field in sdef.Fields:
-        fname = clean_name(field.Name)
-        prefix = ""
-        if field.ValueRank >= 1 or field.ArrayDimensions:
-            prefix = 'ListOf'
-        if field.DataType.NamespaceIndex == 0 and field.DataType.Identifier in ua.ObjectIdNames:
-            uatype = ua.ObjectIdNames[field.DataType.Identifier]
-        elif field.DataType in ua.extension_objects_by_datatype:
-            uatype = ua.extension_objects_by_datatype[field.DataType].__name__
-        elif field.DataType in ua.enums_by_datatype:
-            uatype = ua.enums_by_datatype[field.DataType].__name__
-        else:
-            # FIXME: we are probably missing many custom tyes here based on builtin types
-            # maybe we can use ua_utils.get_base_data_type()
-            raise RuntimeError(f"Unknown datatype for field: {field} in structure:{struct_name}, please report")
-        if field.ValueRank >= 1 and uatype == 'Char':
-            uatype = 'String'
-        uatypes.append((field, uatype))
-        code += f"        ('{fname}', '{prefix + uatype}'),\n"
-    code += "    ]\n"
-    code += f"""
-    def __str__(self):
-        vals = [f"{{field_name}}:{{val}}" for field_name, val in self.__dict__.items()]
-        return f"{struct_name}({{','.join(vals)}})"
-
-    __repr__ = __str__
-
-    def __init__(self):
-"""
-    if not sdef.Fields:
-        code += "      pass"
-    if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-        code += "        self.Encoding = 0\n"
-    for field, uatype in uatypes:
-        fname = clean_name(field.Name)
-        if field.ValueRank >= 1:
-            default_value = "[]"
-        else:
-            default_value = get_default_value(uatype)
-        code += f"        self.{fname} = {default_value}\n"
-    code += "        self._freeze = True\n"
+    print("CODE", code)
     return code
 
 
@@ -236,6 +225,14 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False):
         env['uuid'] = uuid
     if "enum" not in env:
         env['IntEnum'] = IntEnum
+    if "dataclass" not in env:
+        env['dataclass'] = dataclass
+    if "Optional" not in env:
+        env['Optional'] = Optional
+    if "List" not in env:
+        env['List'] = List
+    if "field" not in env:
+        env['field'] = field
     # generate classe add it to env dict
     if enum:
         code = make_enum_code(name, sdef)

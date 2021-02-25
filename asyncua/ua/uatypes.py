@@ -3,7 +3,7 @@ implement ua datatypes
 """
 
 import logging
-from typing import Optional, Any, Union
+from typing import Optional, Any, Union, get_origin, get_args
 from enum import Enum, IntEnum
 from calendar import timegm
 import uuid
@@ -20,6 +20,38 @@ logger = logging.getLogger(__name__)
 EPOCH_AS_FILETIME = 116444736000000000  # January 1, 1970 as MS file time
 HUNDREDS_OF_NANOSECONDS = 10000000
 FILETIME_EPOCH_AS_DATETIME = datetime(1601, 1, 1)
+
+
+def type_is_union(uatype):
+    return get_origin(uatype) == Union
+
+
+def type_is_list(uatype):
+    return get_origin(uatype) == list
+
+
+def type_from_union(uatype, origin=None):
+    if origin is None:
+        origin = get_origin(uatype)
+    if origin != Union:
+        raise ValueError(f"{uatype} is not an Union")
+    # need to find out what real type is
+    for subtype in get_args(uatype):
+        if subtype is not None.__class__:  # FIXME: strange comparison...
+            return subtype
+    raise ValueError(f"Union {uatype} does not seem to contain a valid type")
+
+
+def type_from_list(uatype):
+    return get_args(uatype)[0]
+
+
+def type_string_from_type(uatype):
+    if type_is_union(uatype):
+        uatype = type_from_union(uatype)
+    elif type_is_list(uatype):
+        uatype = type_from_list(uatype)
+    return uatype.__name__
 
 
 class SByte(bytes):
@@ -584,7 +616,7 @@ class LocalizedText:
     A string qualified with a namespace index.
     """
 
-    Encoding: Byte = field(default=0, repr=False, init=False)
+    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     Locale: Optional[String] = None
     Text: Optional[String] = None
 
@@ -641,7 +673,7 @@ class ExtensionObject:
     }
 
     TypeId: NodeId = NodeId()
-    Encoding: Byte = field(default=0, repr=False, init=False)
+    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     Body: Optional[ByteString] = None
 
     def __bool__(self):
@@ -813,32 +845,30 @@ class Variant:
             val = val[0]
         if val is None:
             return VariantType.Null
-        elif isinstance(val, bool):
+        if isinstance(val, bool):
             return VariantType.Boolean
-        elif isinstance(val, float):
+        if isinstance(val, float):
             return VariantType.Double
-        elif isinstance(val, IntEnum):
+        if isinstance(val, IntEnum):
             return VariantType.Int32
-        elif isinstance(val, int):
+        if isinstance(val, int):
             return VariantType.Int64
-        elif isinstance(val, str):
+        if isinstance(val, str):
             return VariantType.String
-        elif isinstance(val, bytes):
+        if isinstance(val, bytes):
             return VariantType.ByteString
-        elif isinstance(val, datetime):
+        if isinstance(val, datetime):
             return VariantType.DateTime
-        elif isinstance(val, uuid.UUID):
+        if isinstance(val, uuid.UUID):
             return VariantType.Guid
-        else:
-            if isinstance(val, object):
-                try:
-                    return getattr(VariantType, val.__class__.__name__)
-                except AttributeError:
-                    return VariantType.ExtensionObject
-            else:
-                raise UaError(
-                    f"Could not guess UA type of {val} with type {type(val)}, specify UA type"
-                )
+        if isinstance(val, object):
+            try:
+                return getattr(VariantType, val.__class__.__name__)
+            except AttributeError:
+                return VariantType.ExtensionObject
+        raise UaError(
+            f"Could not guess UA type of {val} with type {type(val)}, specify UA type"
+        )
 
 
 def _split_list(l, n):
@@ -907,7 +937,7 @@ class DataValue:
         "ServerPicoseconds": ("Encoding", 5),
     }
 
-    Encoding: Byte = field(default=0, repr=False, init=False)
+    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     Value: Optional[Variant] = None
     StatusCode_: Optional[StatusCode] = field(default_factory=StatusCode)
     SourceTimestamp: Optional[DateTime] = None
@@ -1044,8 +1074,7 @@ def get_extensionobject_class_type(typeid):
     """
     if typeid in extension_objects_by_typeid:
         return extension_objects_by_typeid[typeid]
-    else:
-        return None
+    return None
 
 
 class SecurityPolicyType(Enum):
