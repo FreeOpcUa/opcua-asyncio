@@ -177,7 +177,7 @@ class {struct_name}(ua.FrozenClass):
             raise RuntimeError(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
 
         if sfield.ValueRank >= 1:
-            default_value = "[]"
+            default_value = "field(default_factory=list)"
         else:
             default_value = get_default_value(uatype)
 

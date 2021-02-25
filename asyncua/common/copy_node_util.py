@@ -13,7 +13,7 @@ async def copy_node(parent, node, nodeid=None, recursive=True):
     """
     rdesc = await _rdesc_from_node(parent, node)
     if nodeid is None:
-        nodeid = ua.NodeId(namespaceidx=node.nodeid.NamespaceIndex)
+        nodeid = ua.NodeId(NamespaceIndex=node.nodeid.NamespaceIndex)
     added_nodeids = await _copy_node(parent.server, parent.nodeid, rdesc, nodeid, recursive)
     return [make_node(parent.server, nid) for nid in added_nodeids]
 
@@ -35,7 +35,7 @@ async def _copy_node(server, parent_nodeid, rdesc, nodeid, recursive):
         descs = await node_to_copy.get_children_descriptions()
         for desc in descs:
             nodes = await _copy_node(server, res.AddedNodeId, desc,
-                                     nodeid=ua.NodeId(namespaceidx=desc.NodeId.NamespaceIndex), recursive=True)
+                                     nodeid=ua.NodeId(NamespaceIndex=desc.NodeId.NamespaceIndex), recursive=True)
             added_nodes.extend(nodes)
 
     return added_nodes
