@@ -112,7 +112,26 @@ class Server:
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
 
     async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
-                             build_number, build_date):
+                             build_number, build_date=):
+        
+        if not all(isinstance(arg, str) for arg in [
+            product_uri, 
+            manufacturer_name, 
+            product_name, 
+            software_version, 
+            build_number
+            ]):
+            raise TypeError(f"""Expected all str got 
+                product_uri: {type(product_uri)}, 
+                manufacturer_name: {type(manufacturer_name)}, 
+                product_name: {type(product_name)}, 
+                software_version: {type(software_version)}, 
+                build_number: {type(build_number)}
+                instead!""")
+        
+        if not isinstance(build_date, datetime):
+            raise TypeError(f"Expected datetime.utcnow() got {type(build_date)} instead!")
+        
         status_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus))
         build_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo))
 
