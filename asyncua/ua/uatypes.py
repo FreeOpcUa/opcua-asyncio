@@ -2,8 +2,31 @@
 implement ua datatypes
 """
 
+import sys
+from typing import Optional, Any, Union, Generic
+import collections
+
+
+# hack to support python < 3.8
+if sys.version_info.minor < 10:
+    def get_origin(tp):
+        if hasattr(tp, "__origin__"):
+            return tp.__origin__
+        if tp is Generic:
+            return Generic
+        return None
+
+    def get_args(tp):
+        if hasattr(tp, "__args__"):
+            res = tp.__args__
+            if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:
+                res = (list(res[:-1]), res[-1])
+            return res
+        return ()
+else:
+    from typing import get_origin, get_args
+
 import logging
-from typing import Optional, Any, Union, get_origin, get_args
 from enum import Enum, IntEnum
 from calendar import timegm
 import uuid
@@ -14,6 +37,7 @@ from dataclasses import dataclass, field
 
 from asyncua.ua import status_codes
 from .uaerrors import UaError, UaStatusCodeError, UaStringParsingError
+
 
 logger = logging.getLogger(__name__)
 
