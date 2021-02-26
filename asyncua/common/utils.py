@@ -90,5 +90,6 @@ class Buffer:
         self._cur_pos = cur_pos
         self._size = len(self._data) - cur_pos
 
+
 def create_nonce(size=32):
     return os.urandom(size)

@@ -70,8 +70,8 @@ async def new_struct(
 
     sdef = ua.StructureDefinition()
     sdef.StructureType = ua.StructureType.Structure
-    for field in fields:
-        if field.IsOptional:
+    for sfield in fields:
+        if sfield.IsOptional:
             sdef.StructureType = ua.StructureType.StructureWithOptionalFields
             break
     sdef.Fields = fields
@@ -269,8 +269,8 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None):
             continue
         name = clean_name(desc.BrowseName.Name)
         if parent_sdef:
-            for field in reversed(parent_sdef.Fields):
-                sdef.Fields.insert(0, field)
+            for sfield in reversed(parent_sdef.Fields):
+                sdef.Fields.insert(0, sfield)
         dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
         await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef)
 
@@ -324,9 +324,9 @@ class {name}(IntEnum):
 
 """
 
-    for field in edef.Fields:
-        name = clean_name(field.Name)
-        value = field.Value
+    for sfield in edef.Fields:
+        name = clean_name(sfield.Name)
+        value = sfield.Value
         code += f"    {name} = {value}\n"
 
     return code

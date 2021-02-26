@@ -678,7 +678,7 @@ class Client:
 
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
-    
+
     async def browse_nodes(self, nodes):
         """
         Browses multiple nodes in one ua call
@@ -696,4 +696,3 @@ class Client:
         parameters.NodesToBrowse = nodestobrowse
         results = await self.uaclient.browse(parameters)
         return list(zip(nodes, results))
-    

@@ -501,7 +501,7 @@ class SyncNode:
     def read_data_type_as_variant_type(self):
         pass
 
-    get_data_type_as_variant_type = read_data_type_as_variant_type  #legacy
+    get_data_type_as_variant_type = read_data_type_as_variant_type  # legacy
 
     @syncmethod
     def call_method(self, methodid, *args):
