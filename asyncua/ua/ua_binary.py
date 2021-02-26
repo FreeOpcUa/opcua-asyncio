@@ -258,7 +258,7 @@ def to_binary(uatype, val):
     Pack a python object to binary given a type hint
     """
     if type_is_list(uatype):
-        return list_to_binary(_from_list(uatype), val)
+        return list_to_binary(type_from_list(uatype), val)
     if hasattr(Primitives, uatype.__name__):
         return getattr(Primitives, uatype.__name__).pack(val)
     if isinstance(val, (IntEnum, Enum)):

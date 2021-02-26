@@ -417,7 +417,7 @@ class NodeId:
     def __lt__(self, other):
         if not isinstance(other, NodeId):
             raise AttributeError("Can only compare to NodeId")
-        print (self.NodeIdType, self.NamespaceIndex, self.Identifier, other.NodeIdType, other.NamespaceIndex, other.Identifier)
+        print(self.NodeIdType, self.NamespaceIndex, self.Identifier, other.NodeIdType, other.NamespaceIndex, other.Identifier)
         return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (other.NodeIdType, other.NamespaceIndex, other.Identifier)
 
     def is_null(self):
@@ -869,11 +869,6 @@ class Variant:
         raise UaError(
             f"Could not guess UA type of {val} with type {type(val)}, specify UA type"
         )
-
-
-def _split_list(l, n):
-    n = max(1, n)
-    return [l[i : i + n] for i in range(0, len(l), n)]
 
 
 def flatten_and_get_shape(mylist):

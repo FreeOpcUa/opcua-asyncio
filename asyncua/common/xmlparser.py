@@ -403,4 +403,3 @@ class XMLParser:
                 # check if ModelUri X, in Version Y from time Z was already imported
                 required_models.append(child.attrib)
         return required_models
-
