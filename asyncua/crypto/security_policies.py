@@ -3,7 +3,7 @@ import struct
 import time
 
 from abc import ABCMeta, abstractmethod
-from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError
+from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError, uaerrors
 
 try:
     from ..crypto import uacrypto

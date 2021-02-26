@@ -35,7 +35,7 @@ class Reference:
         self.refId = None
 
     def __hash__(self):
-        return hash(self.referenceType, self.refId)
+        return hash((self.referenceType, self.refId))
 
     def __eq__(self, other):
         return (self.referenceType, self.refId) == (other.referenceType, other.refValue)
