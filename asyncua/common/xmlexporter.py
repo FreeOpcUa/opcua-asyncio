@@ -441,9 +441,6 @@ class XmlExporter:
             # FIXME; what happend if we have a custom type which is not part of ObjectIds???
             type_name = type_string_from_type(field.type)
             await self.member_to_etree(struct_el, field.name, ua.NodeId(getattr(ua.ObjectIds, type_name)), getattr(val, field.name))
-            # self.member_to_etree(struct_el, name, extension_object_typeids[vtype], getattr(val, name))
-        # for name in self._get_member_order(dtype, val):
-        # self.member_to_etree(struct_el, name, ua.NodeId(getattr(ua.ObjectIds, val.ua_types[name])), getattr(val, name))
 
 
 def indent(elem, level=0):

@@ -61,25 +61,12 @@ class Header(uatypes.FrozenClass):
 
 @dataclass
 class ErrorMessage(uatypes.FrozenClass):
-    ua_types = (
-        ('Error', 'StatusCode'),
-        ('Reason', 'String'),
-    )
-
     Error: uatypes.StatusCode = uatypes.StatusCode()
     Reason: uatypes.String = ""
 
 
 @dataclass
 class Acknowledge(uatypes.FrozenClass):
-    ua_types = [
-        ('ProtocolVersion', 'UInt32'),
-        ('ReceiveBufferSize', 'UInt32'),
-        ('SendBufferSize', 'UInt32'),
-        ('MaxMessageSize', 'UInt32'),
-        ('MaxChunkCount', 'UInt32'),
-    ]
-
     ProtocolVersion: uatypes.UInt32 = 0
     ReceiveBufferSize: uatypes.UInt32 = 65536
     SendBufferSize: uatypes.UInt32 = 65536

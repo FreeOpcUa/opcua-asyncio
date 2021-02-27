@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2021-02-24 19:45:05.562631
+Date:2021-02-27 19:37:13.366414
 """
 
 from datetime import datetime
@@ -1176,7 +1176,7 @@ class DiagnosticInfo:
 
     data_type = NodeId(ObjectIds.DiagnosticInfo)
 
-    Encoding: Byte = field(default=0, repr=False, init=False)
+    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     SymbolicId: Optional[Int32] = None
     NamespaceURI: Optional[Int32] = None
     Locale: Optional[Int32] = None
@@ -1184,16 +1184,6 @@ class DiagnosticInfo:
     AdditionalInfo: Optional[String] = None
     InnerStatusCode: Optional[StatusCode] = None
     InnerDiagnosticInfo: Optional[ExtensionObject] = None
-
-    ua_switches = {
-        'SymbolicId': ('Encoding', 0),
-        'NamespaceURI': ('Encoding', 1),
-        'Locale': ('Encoding', 3),
-        'LocalizedText': ('Encoding', 2),
-        'AdditionalInfo': ('Encoding', 4),
-        'InnerStatusCode': ('Encoding', 5),
-        'InnerDiagnosticInfo': ('Encoding', 6),
-    }
 
 
 @dataclass(frozen=FROZEN)
@@ -8138,7 +8128,7 @@ class SessionSecurityDiagnosticsDataType:
     ClientUserIdOfSession: String = None
     ClientUserIdHistory: List[String] = field(default_factory=list)
     AuthenticationMechanism: String = None
-    Encoding: Byte = field(default=0, repr=False, init=False)
+    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     TransportProtocol: String = None
     SecurityMode: MessageSecurityMode = MessageSecurityMode.Invalid
     SecurityPolicyUri: String = None

@@ -226,15 +226,16 @@ def unpack_uatype_array(vtype, data):
 
 def struct_to_binary(obj):
     packet = []
-    has_switch = hasattr(obj, 'ua_switches')
-    if has_switch:
-        container_val = 0
-        for name, switch in obj.ua_switches.items():
-            member = getattr(obj, name)
-            container_name, idx = switch
-            if member is not None:
-                container_val = container_val | 1 << idx
-        setattr(obj, container_name, container_val)
+    enc_count = 0
+    enc = 0
+    for field in fields(obj):
+        if type_is_union(field.type):
+            if getattr(obj, field.name) is not None:
+                enc = enc | 1 << enc_count
+            enc_count += 1
+    if hasattr(obj, "Encoding"):
+        setattr(obj, "Encoding", enc)
+
     for field in fields(obj):
         uatype = field.type
         if field.name == "Encoding":
@@ -246,7 +247,7 @@ def struct_to_binary(obj):
         if type_is_list(uatype):
             packet.append(list_to_binary(type_from_list(uatype), val))
         else:
-            if has_switch and val is None and field.name in obj.ua_switches:
+            if val is None and type_is_union(field.type):
                 pass
             else:
                 packet.append(to_binary(uatype, val))
@@ -460,7 +461,7 @@ def extensionobject_to_binary(obj):
 
 def from_binary(uatype, data):
     """
-    unpack data given an uatype as a string or a python class having a ua_types member
+    unpack data given an uatype as a string or a python dataclass using ua types
     """
     if type_is_union(uatype):
         uatype = type_from_union(uatype)
@@ -488,12 +489,13 @@ def struct_from_binary(objtype, data):
     if issubclass(objtype, Enum):
         return objtype(Primitives.UInt32.unpack(data))
     obj = objtype()
+    enc_count = -1
     for field in fields(obj):
         # if our member has a switch and it is not set we skip it
-        if hasattr(obj, "ua_switches") and field.name in obj.ua_switches:
-            container_name, idx = obj.ua_switches[field.name]
-            val = getattr(obj, container_name)
-            if not test_bit(val, idx):
+        if type_is_union(field.type):
+            enc_count += 1
+            val = getattr(obj, "Encoding")
+            if not test_bit(val, enc_count):
                 continue
         val = from_binary(field.type, data)
         setattr(obj, field.name, val)

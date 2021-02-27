@@ -644,11 +644,6 @@ class LocalizedText:
     Locale: Optional[String] = None
     Text: Optional[String] = None
 
-    ua_switches = {
-        "Locale": ("Encoding", 0),
-        "Text": ("Encoding", 1),
-    }
-
     def __init__(self, Text=None, Locale=None):
         # need to write init method since args ar inverted in original implementataion
         self.Text = Text
@@ -691,10 +686,6 @@ class ExtensionObject:
     :ivar Body:
     :vartype Body: bytes
     """
-
-    ua_switches = {
-        "Body": ("Encoding", 0),
-    }
 
     TypeId: NodeId = NodeId()
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
@@ -946,15 +937,6 @@ class DataValue:
     :ivar ServerPicoseconds:
     :vartype ServerPicoseconds: int
     """
-
-    ua_switches = {
-        "Value": ("Encoding", 0),
-        "StatusCode": ("Encoding", 1),
-        "SourceTimestamp": ("Encoding", 2),
-        "ServerTimestamp": ("Encoding", 3),
-        "SourcePicoseconds": ("Encoding", 4),
-        "ServerPicoseconds": ("Encoding", 5),
-    }
 
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     Value: Optional[Variant] = None

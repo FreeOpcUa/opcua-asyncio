@@ -168,20 +168,6 @@ class CodeGenerator:
             else:
                 self.write(f"{fieldname}: {typestring} = {'field(default_factory=list)' if field.length else self.get_default_value(field)}")
 
-        switch_written = False
-        for field in obj.fields:
-            if field.switchfield is not None:
-                if not switch_written:
-                    self.write("")
-                    self.write('ua_switches = {')
-                    switch_written = True
-
-                bit = obj.bits[field.switchfield]
-                self.write(f"    '{field.name}': ('{bit.container}', {bit.idx}),")
-            # if field.switchvalue is not None: Not sure we need to handle that one
-        if switch_written:
-            self.write("}")
-
         if hack_names:
             self.write("")
         for name in hack_names:
