@@ -126,7 +126,6 @@ class Model(object):
 
 
 def _add_struct(struct, newstructs, waiting_structs, known_structs):
-    print("appending", struct)
     newstructs.append(struct)
     known_structs.append(struct.name)
     # now seeing if some struct where waiting for this one
@@ -134,7 +133,6 @@ def _add_struct(struct, newstructs, waiting_structs, known_structs):
     if waitings:
         for s in waitings:
             s.waitingfor.remove(struct.name)
-            print("TRY POP", s, s.waitingfor)
             if not s.waitingfor:
                 _add_struct(s, newstructs, waiting_structs, known_structs)
 
@@ -148,7 +146,6 @@ def reorder_structs(model):
     waiting_structs = {}
     newstructs = []
     for s in model.structs:
-        print("Trying to add ", s)
         s.waitingfor = []
         ok = True
         for f in s.fields:
@@ -158,7 +155,6 @@ def reorder_structs(model):
                 else:
                     waiting_structs[f.uatype] = [s]
                 s.waitingfor.append(f.uatype)
-                print(s, " waiting for ", f.uatype)
                 ok = False
         if ok:
             _add_struct(s, newstructs, waiting_structs, types)
