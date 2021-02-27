@@ -190,19 +190,6 @@ class {struct_name}(ua.FrozenClass):
             uatype = f"Optional[{uatype}]"
 
         code += f"    {fname}: {uatype} = {default_value}\n"
-
-    counter = 0
-    # FIXME: to support inheritance we probably need to add all fields from parents
-    # this requires network call etc...
-    if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-        code += '    ua_switches = {\n'
-        for sfield in sdef.Fields:
-            fname = clean_name(sfield.Name)
-
-            if sfield.IsOptional:
-                code += f"        '{fname}': ('Encoding', {counter}),\n"
-                counter += 1
-        code += "    }\n\n"
     return code
 
 

@@ -10,6 +10,8 @@ import uuid
 import pytest
 import logging
 from datetime import datetime
+from dataclasses import dataclass, field
+from typing import Optional, List
 
 from asyncua import ua
 from asyncua.ua.ua_binary import extensionobject_from_binary
@@ -773,3 +775,24 @@ def test_expandedNodeId():
     assert isinstance(nid, ua.ExpandedNodeId)
     assert nid.ServerIndex == 0
     assert nid.Identifier == 85
+
+
+def test_struct_104():
+    @dataclass
+    class MyStruct:
+        Encoding: ua.Byte = field(default=0, repr=False, init=False)
+        a: ua.Int32 = 1
+        b: Optional[ua.Int32] = None
+        c: Optional[ua.String] = None
+        l: List[ua.String] = None
+
+    m = MyStruct()
+    data = struct_to_binary(m)
+    m2 = struct_from_binary(MyStruct, ua.utils.Buffer(data))
+    assert m == m2
+
+    m = MyStruct(a=4, b=5, c="lkjkæl", l=["a", "b", "c"])
+    data = struct_to_binary(m)
+    m2 = struct_from_binary(MyStruct, ua.utils.Buffer(data))
+    assert m == m2
+

@@ -7,9 +7,12 @@ import asyncio
 import sys
 import datetime
 import logging
+from dataclasses import fields
 # sys.path.insert(0, "..")  # load local freeopcua implementation
-from asyncua.common import xmlparser
 from pathlib import Path
+
+from asyncua.common import xmlparser
+from asyncua.ua.uatypes import type_string_from_type
 
 BASE_DIR = Path.cwd().parent
 
@@ -25,9 +28,9 @@ def _to_val(objs, attr, val):
 
 
 def _get_uatype_name(cls, attname):
-    for name, uat in cls.ua_types:
-        if name == attname:
-            return uat
+    for field in fields(cls):
+        if field.name == attname:
+            return type_string_from_type(field.type)
     raise Exception(f"Could not find attribute {attname} in obj {cls}")
 
 
