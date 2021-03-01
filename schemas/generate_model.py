@@ -166,8 +166,6 @@ def reorder_structs(model):
         _logger.debug('Variant' in types)
         for s in s1 - s2:
             _logger.warning(f'{s} is waiting_structs for: {s.waitingfor}')
-    #from IPython import embed
-    #embed()
     model.structs = newstructs
 
 

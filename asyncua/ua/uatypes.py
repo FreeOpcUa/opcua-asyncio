@@ -441,7 +441,6 @@ class NodeId:
     def __lt__(self, other):
         if not isinstance(other, NodeId):
             raise AttributeError("Can only compare to NodeId")
-        print(self.NodeIdType, self.NamespaceIndex, self.Identifier, other.NodeIdType, other.NamespaceIndex, other.Identifier)
         return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (other.NodeIdType, other.NamespaceIndex, other.Identifier)
 
     def is_null(self):

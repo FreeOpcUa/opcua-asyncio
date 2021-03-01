@@ -82,15 +82,13 @@ class {self.name}:
     '''
 
 """
-        for field in self.fields:
-            uatype = f"ua.{field.uatype}"
-            if field.array:
+        for sfield in self.fields:
+            uatype = f"ua.{sfield.uatype}"
+            if sfield.array:
                 uatype = f"List[{uatype}]"
-            else:
-                uatype = uatype
             if uatype == 'List[ua.Char]':
                 uatype = 'String'
-            code += f"    {field.name}:{uatype} = {field.value}\n"
+            code += f"    {sfield.name}:{uatype} = {sfield.value}\n"
         return code
 
 

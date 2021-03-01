@@ -170,7 +170,6 @@ class XmlExporter:
             nodeid = nodeid.nodeid
 
         if nodeid.NamespaceIndex in self._addr_idx_to_xml_idx:
-            nodeid = copy(nodeid)
             nodeid = ua.NodeId(nodeid.Identifier, NamespaceIndex=self._addr_idx_to_xml_idx[nodeid.NamespaceIndex])
         return nodeid.to_string()
 
