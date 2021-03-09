@@ -1343,3 +1343,35 @@ async def test_custom_struct_of_struct_with_spaces(opc):
     var = await opc.opc.nodes.objects.add_variable(idx, "my mother struct", mystruct)
     val = await var.read_value()
     assert val.My_Sub_Struct.My_UInt32 == 78
+
+
+async def test_custom_method_with_struct(opc):
+    idx = 4
+
+    data_type, nodes = await new_struct(opc.opc, idx, "MyStructArg", [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+    ])
+
+    await opc.opc.load_data_type_definitions()
+
+    @uamethod
+    def func(parent, mystruct):
+        print(mystruct)
+        mystruct.MyUInt32.append(100)
+        return mystruct
+
+    methodid = await opc.server.nodes.objects.add_method(
+        ua.NodeId("ServerMethodWithStruct", 10),
+        ua.QualifiedName('ServerMethodWithStruct', 10),
+        func, [ua.MyStructArg], [ua.MyStructArg]
+        )
+
+    mystruct = ua.MyStructArg()
+    mystruct.MyUInt32 = [78, 79]
+
+    assert data_type.nodeid == mystruct.data_type
+
+    result = await opc.opc.nodes.objects.call_method(methodid, mystruct)
+
+    assert result.MyUInt32 == [78, 79, 100]
