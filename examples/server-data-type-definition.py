@@ -20,11 +20,11 @@ async def main():
 
     await new_struct(server, idx, "MyStruct", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
-        new_struct_field("MyUInt32", ua.VariantType.UInt32),
+        new_struct_field("MyUInt32List", ua.VariantType.UInt32, array=True),
     ])
     await new_struct(server, idx, "MyOptionalStruct", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
-        new_struct_field("MyUInt32", ua.VariantType.UInt32),
+        new_struct_field("MyUInt32List", ua.VariantType.UInt32, array=True),
         new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
     ])
     await new_enum(server, idx, "MyEnum", [
@@ -38,7 +38,7 @@ async def main():
     await server.nodes.objects.add_variable(idx, "my_enum", ua.MyEnum.toto)
     await server.nodes.objects.add_variable(idx, "my_struct", ua.Variant(ua.MyStruct(), ua.VariantType.ExtensionObject))
     my_struct_optional = ua.MyOptionalStruct()
-    my_struct_optional.MyUInt32 = 45
+    my_struct_optional.MyUInt32List = [45, 67]
     my_struct_optional.MyInt64 = -67
     await server.nodes.objects.add_variable(idx, "my_struct_optional", ua.Variant(my_struct_optional, ua.VariantType.ExtensionObject))
 

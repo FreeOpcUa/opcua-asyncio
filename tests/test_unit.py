@@ -332,7 +332,17 @@ def test_guid():
     assert v == v2
 
 
-def test_nodeid():
+def test_nodeid_guid_string():
+    n = ua.GuidNodeId(identifier=uuid.uuid4())
+    s = n.to_string()
+    n2 = ua.NodeId.from_string(s)
+    s2 = n2.to_string()
+    print(n, n2, s, s2)
+    assert n == n2
+    assert s == s2
+
+
+def test__nodeid():
     nid = ua.NodeId()
     assert nid.NodeIdType == ua.NodeIdType.TwoByte
     nid = ua.NodeId(446, 3, ua.NodeIdType.FourByte)
