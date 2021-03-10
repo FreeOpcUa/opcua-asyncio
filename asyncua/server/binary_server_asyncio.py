@@ -156,15 +156,16 @@ class BinaryServer:
             await self._server.wait_closed()
 
     async def _await_closing_tasks(self, recursive=True):
-        while self.closing_tasks:
-            task = self.closing_tasks.pop()
-            try:
-                await task
-            except asyncio.CancelledError:
-                # this means a stop request has been sent, it should not be catched
-                raise
-            except Exception:
-                logger.exception("Unexpected crash in BinaryServer._await_closing_tasks")
-        if recursive:
+        while True:
+            while self.closing_tasks:
+                task = self.closing_tasks.pop()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    # this means a stop request has been sent, it should not be catched
+                    raise
+                except:
+                    logger.exception("Unexpected crash in BinaryServer._await_closing_tasks")
+            if not recursive:
+                return
             await asyncio.sleep(10)
-            await self._await_closing_tasks()
