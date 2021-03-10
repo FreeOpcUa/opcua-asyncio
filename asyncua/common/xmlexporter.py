@@ -6,9 +6,9 @@ import logging
 import functools
 from collections import OrderedDict
 import xml.etree.ElementTree as Et
-from copy import copy
 import base64
 from dataclasses import fields, is_dataclass
+from enum import Enum
 
 from asyncua import ua
 from asyncua.ua.uatypes import type_string_from_type
@@ -197,6 +197,7 @@ class XmlExporter:
         if desc not in (None, ""):
             self._add_sub_el(node_el, 'Description', desc)
         # FIXME: add WriteMask and UserWriteMask
+        await self._add_ref_els(node_el, node)
         return node_el
 
     async def add_etree_object(self, node):
@@ -207,7 +208,6 @@ class XmlExporter:
         var = await node.read_attribute(ua.AttributeIds.EventNotifier)
         if var.Value.Value != 0:
             obj_el.attrib["EventNotifier"] = str(var.Value.Value)
-        await self._add_ref_els(obj_el, node)
 
     async def add_etree_object_type(self, node):
         """
@@ -217,7 +217,6 @@ class XmlExporter:
         abstract = (await node.read_attribute(ua.AttributeIds.IsAbstract)).Value.Value
         if abstract:
             obj_el.attrib["IsAbstract"] = 'true'
-        await self._add_ref_els(obj_el, node)
 
     async def add_variable_common(self, node, el):
         dtype = await node.read_data_type()
@@ -240,7 +239,6 @@ class XmlExporter:
         Add a UA variable element to the XML etree
         """
         var_el = await self._add_node_common("UAVariable", node)
-        await self._add_ref_els(var_el, node)
         await self.add_variable_common(node, var_el)
 
         accesslevel = (await node.read_attribute(ua.AttributeIds.AccessLevel)).Value.Value
@@ -269,7 +267,6 @@ class XmlExporter:
         abstract = await node.read_attribute(ua.AttributeIds.IsAbstract)
         if abstract.Value.Value:
             var_el.attrib["IsAbstract"] = "true"
-        await self._add_ref_els(var_el, node)
 
     async def add_etree_method(self, node):
         obj_el = await self._add_node_common("UAMethod", node)
@@ -279,11 +276,9 @@ class XmlExporter:
         var = await node.read_attribute(ua.AttributeIds.UserExecutable)
         if var.Value.Value is False:
             obj_el.attrib["UserExecutable"] = "false"
-        await self._add_ref_els(obj_el, node)
 
     async def add_etree_reference_type(self, obj):
         obj_el = await self._add_node_common("UAReferenceType", obj)
-        await self._add_ref_els(obj_el, obj)
         var = await obj.read_attribute(ua.AttributeIds.InverseName)
         if var is not None and var.Value.Value is not None and var.Value.Value.Text is not None:
             self._add_sub_el(obj_el, 'InverseName', var.Value.Value.Text)
@@ -307,7 +302,6 @@ class XmlExporter:
                 self._enum_fields_to_etree(bname, sdef_el, sdef)
             else:
                 self.logger.warning("Unknown DataTypeSpecification elemnt: %s", sdef)
-        await self._add_ref_els(obj_el, obj)
 
     def _structure_fields_to_etree(self, bname, sdef_el, sdef):
         for field in sdef.Fields:
@@ -386,6 +380,8 @@ class XmlExporter:
             if isinstance(val, bytes):
                 # FIXME: should we also encode this (localized text I guess) using base64??
                 el.text = val.decode("utf-8")
+            elif isinstance(val, Enum):
+                el.text = str(val.value)
             else:
                 if val is not None:
                     el.text = str(val)
