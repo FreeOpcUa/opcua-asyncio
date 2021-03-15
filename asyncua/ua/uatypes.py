@@ -606,14 +606,14 @@ class QualifiedName:
     NamespaceIndex: UInt16 = 0
     Name: String = ""
 
-    def __init__(self, Name="MISSING_NAME", NamespaceIndex=0):
+    def __init__(self, Name=None, NamespaceIndex=0):
         self.Name = Name
         self.NamespaceIndex = NamespaceIndex
         if isinstance(self.NamespaceIndex, str) and isinstance(self.Name, int):
             # originally the order or argument was inversed, try to support it
             logger.warning("QualifiedName are str, int, while int, str is expected, swithcing")
 
-        if not isinstance(self.NamespaceIndex, int) or not isinstance(self.Name, str):
+        if not isinstance(self.NamespaceIndex, int) or not isinstance(self.Name, (str, type(None))):
             raise ValueError(f"QualifiedName constructore args have wrong types, {self}")
 
     def to_string(self):
