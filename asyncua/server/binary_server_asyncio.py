@@ -136,7 +136,7 @@ class BinaryServer:
             self.hostname = sockname[0]
             self.port = sockname[1]
         self.logger.info('Listening on %s:%s', self.hostname, self.port)
-        self.cleanup_task = self.iserver.loop.create_task(self.close_task_loop())
+        self.cleanup_task = self.iserver.loop.create_task(self._close_task_loop())
 
     async def stop(self):
         self.logger.info('Closing asyncio socket server')
@@ -155,17 +155,18 @@ class BinaryServer:
             self.iserver.loop.call_soon(self._server.close)
             await self._server.wait_closed()
 
-    async def close_task_loop(self):
+    async def _close_task_loop(self):
         while True:
             await self._close_tasks()
             await asyncio.sleep(10)
 
     async def _close_tasks(self):
-        task = self.closing_tasks.pop()
-        try:
-            await task
-        except asyncio.CancelledError:
-            # this means a stop request has been sent, it should not be catched
-            raise
-        except Exception:
-            logger.exception("Unexpected crash in BinaryServer._close_tasks")
+        while self.closing_tasks:
+            task = self.closing_tasks.pop()
+            try:
+                await task
+            except asyncio.CancelledError:
+                # this means a stop request has been sent, it should not be catched
+                raise
+            except Exception:
+                logger.exception("Unexpected crash in BinaryServer._close_tasks")
