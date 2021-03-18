@@ -565,6 +565,7 @@ class Client:
         Part4 5.13.2: If the requested value is 0, the Server
         shall revise with the smallest supported keep-alive count.
         """
+        period = period or 1000
         return int((self.session_timeout / period) * 0.75)
 
     async def get_namespace_array(self):
