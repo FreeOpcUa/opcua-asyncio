@@ -72,7 +72,7 @@ async def main():
 
     async with server:
         while 1:
-            await asyncio.sleep(0)
+            await asyncio.sleep(1)
 
 if  __name__ == "__main__":
     asyncio.run(main())
