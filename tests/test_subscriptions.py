@@ -376,6 +376,10 @@ async def test_subscription_keepalive_count(mocker):
     publish_interval = 75000
     sub = await c.create_subscription(publish_interval, handler)
     assert sub.parameters.RequestedMaxKeepAliveCount == 0
+    # RequestedPublishingInterval == 0
+    publish_interval = 0
+    sub = await c.create_subscription(publish_interval, handler)
+    assert sub.parameters.RequestedMaxKeepAliveCount == 22
 
 
 async def test_subscribe_server_time(opc):
