@@ -706,6 +706,36 @@ class AddressSpace:
         if attval is None:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
 
+        if value.Value.VariantType is not attval.value.Value.VariantType and (nodeid.NamespaceIndex == 0 and nodeid.Identifier not in (
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadData,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadEvents,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerWrite,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryUpdateData,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryUpdateEvents,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerMethodCall,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerBrowse,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRegisterNodes,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerTranslateBrowsePathsToNodeIds,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerNodeManagement,
+                    ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxMonitoredItemsPerCall,
+                    ua.ObjectIds.Server_ServerArray,
+                    ua.ObjectIds.Server_ServiceLevel,
+                    ua.ObjectIds.Server_ServerStatus,
+                    ua.ObjectIds.Server_ServerStatus_BuildInfo,
+                    ua.ObjectIds.Server_ServerStatus_BuildInfo_ProductUri,
+                    ua.ObjectIds.Server_ServerStatus_BuildInfo_ProductName,
+                    ua.ObjectIds.Server_ServerStatus_BuildInfo_ManufacturerName,
+                    ua.ObjectIds.Server_ServerStatus_BuildInfo_SoftwareVersion,
+                    ua.ObjectIds.Server_ServerStatus_BuildInfo_BuildNumber,
+                    ua.ObjectIds.Server_ServerStatus_BuildInfo_BuildDate,
+                    ua.ObjectIds.Server_ServerStatus_State,
+                    ua.ObjectIds.Server_ServerStatus_StartTime,
+                    ua.ObjectIds.Server_ServerStatus_CurrentTime,
+                    ua.ObjectIds.Server_NamespaceArray)):
+            return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
+
+            #return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
         old = attval.value
         attval.value = value
         cbs = []
