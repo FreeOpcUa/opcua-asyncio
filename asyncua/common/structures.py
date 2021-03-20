@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 
 class EnumType(object):
     def __init__(self, name):
-        self.name = name
+        self.name = clean_name(name)
         self.fields = []
         self.typeid = None
 
@@ -44,7 +44,7 @@ class {0}(IntEnum):
 """.format(self.name)
 
         for EnumeratedValue in self.fields:
-            name = EnumeratedValue.Name
+            name = clean_name(EnumeratedValue.Name)
             value = EnumeratedValue.Value
             code += f"    {name} = {value}\n"
 

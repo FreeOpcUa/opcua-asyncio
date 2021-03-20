@@ -108,12 +108,13 @@ def clean_name(name):
     Remove characters that might be present in  OPC UA structures
     but cannot be part of of Python class names
     """
-    newname = re.sub(r'\W+', '_', name)
-    newname = re.sub(r'^[0-9]+', r'_\g<0>', newname)
-
-    if name != newname:
+    if name.isidentifier():
+        return name
+    else:
+        newname = re.sub(r'\W+', '_', name)
+        newname = re.sub(r'^[0-9]+', r'_\g<0>', newname)
         logger.warning("renamed %s to %s due to Python syntax", name, newname)
-    return newname
+        return newname
 
 
 def get_default_value(uatype, enums=None):
