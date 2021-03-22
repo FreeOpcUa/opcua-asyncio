@@ -156,9 +156,7 @@ class XmlImporter:
                 if ref.forward:
                     if ref.reftype in [
                             self.server.nodes.HasComponent.nodeid,
-                            self.server.nodes.HasProperty.nodeid,
-                            self.server.nodes.Organizes.nodeid,
-                    ]:
+                            self.server.nodes.HasProperty.nodeid]:
                         # if a node has several links, the last one will win
                         if ref.target in childs:
                             _logger.warning(
