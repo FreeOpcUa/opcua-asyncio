@@ -618,13 +618,13 @@ class Client:
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_type_definitions(self, nodes)
 
-    async def load_data_type_definitions(self, node=None):
+    async def load_data_type_definitions(self, node=None, overwrite_existing=False):
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
         These classes will be available in ua module
         """
-        return await load_data_type_definitions(self, node)
+        return await load_data_type_definitions(self, node, overwrite_existing=overwrite_existing)
 
     async def load_enums(self):
         """
