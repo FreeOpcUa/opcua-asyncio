@@ -45,6 +45,10 @@ class CodeGenerator:
         print('Writting python protocol code to ', self.output_path)
         self.output_file = open(self.output_path, 'w', encoding='utf-8')
         self.make_header()
+        for alias in self.model.aliases.values():
+            self.write("")
+            self.write("")
+            self.write(f"{alias.name} = {alias.real_type}")
         for enum in self.model.enums:
             if enum.name not in IgnoredEnums:
                 self.generate_enum_code(enum)
@@ -63,10 +67,12 @@ class CodeGenerator:
                 continue
             if struct.name.endswith('Node') or struct.name.endswith('NodeId'):
                 continue
-            if 'ExtensionObject' in struct.parents or "DataTypeDefinition" in struct.parents:
-                self.write(f"nid = FourByteNodeId(ObjectIds.{struct.name}_Encoding_DefaultBinary)")
-                self.write(f"extension_objects_by_typeid[nid] = {struct.name}")
-                self.write(f"extension_object_typeids['{struct.name}'] = nid")
+            if struct.do_not_register:
+                continue
+            #if 'ExtensionObject' in struct.parents or "DataTypeDefinition" in struct.parents:
+            self.write(f"nid = FourByteNodeId(ObjectIds.{struct.name}_Encoding_DefaultBinary)")
+            self.write(f"extension_objects_by_typeid[nid] = {struct.name}")
+            self.write(f"extension_object_typeids['{struct.name}'] = nid")
 
     def write(self, line):
         if line:
@@ -88,7 +94,7 @@ class CodeGenerator:
         self.write('from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32, UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid')
         self.write('from asyncua.ua.uatypes import AccessLevel, EventNotifier  ')
         self.write('from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue')
-        self.write('from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject')
+        self.write('from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo')
         self.write('from asyncua.ua.uatypes import extension_object_typeids, extension_objects_by_typeid')
         self.write('from asyncua.ua.object_ids import ObjectIds')
 
@@ -101,11 +107,11 @@ class CodeGenerator:
         if enum.doc:
             self.write(enum.doc)
             self.write("")
-        for val in enum.values:
+        for val in enum.fields:
             self.write(f':ivar {val.name}:')
             self.write(f':vartype {val.name}: {val.value}')
         self.write('"""')
-        for val in enum.values:
+        for val in enum.fields:
             self.write(f'{val.name} = {val.value}')
         self.iidx = 0
 
@@ -122,7 +128,7 @@ class CodeGenerator:
             self.write("")
         for field in obj.fields:
             self.write(f':ivar {field.name}:')
-            self.write(f':vartype {field.name}: {field.uatype}')
+            self.write(f':vartype {field.name}: {field.data_type}')
         self.write('"""')
 
         # FIXME: next line is a weak way to find out if object is a datatype or not...
@@ -132,7 +138,7 @@ class CodeGenerator:
 
         if obj.fields:
             self.write('')
-       # hack extension object stuff
+        # hack extension object stuff
         extobj_hack = False
         if "BodyLength" in [f.name for f in obj.fields]:
             extobj_hack = True
@@ -140,17 +146,15 @@ class CodeGenerator:
         hack_names = []
 
         for field in obj.fields:
-            # FIXME; flag optional those that are optional
-            if field.length:
-                typestring = f"List[{field.uatype}]"
-            elif field.switchfield is not None:
-                typestring = f"Optional[{field.uatype}]"
-            else:
-                typestring = field.uatype
+            typestring = field.data_type
+            if field.is_array():
+                typestring = f"List[{typestring}]"
+            if field.is_optional:
+                typestring = f"Optional[{typestring}]"
 
-            if field.name == field.uatype:
+            if field.name == field.data_type:
                 # variable name and type name are the same. Dataclass do not like it
-                print("SELF REFENCING", obj, field)
+                #print("SELF REFENCING", obj, field)
                 hack_names.append(field.name)
                 fieldname = field.name + "_"
             else:
@@ -159,14 +163,14 @@ class CodeGenerator:
             if field.name == "Encoding":
                 val = 0 if not extobj_hack else 1
                 self.write(f"{field.name}: Byte = field(default={val}, repr=False, init=False, compare=False)")
-            elif field.uatype == obj.name:  # help!!! selv referencing class
+            elif field.data_type == obj.name:  # help!!! selv referencing class
                 #FIXME: handle better
                 self.write(f"{fieldname}: Optional[ExtensionObject] = None")
             elif obj.name not in ("ExtensionObject",) and \
                     field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
                 self.write(f"TypeId: NodeId = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultBinary)")
             else:
-                self.write(f"{fieldname}: {typestring} = {'field(default_factory=list)' if field.length else self.get_default_value(field)}")
+                self.write(f"{fieldname}: {typestring} = {'field(default_factory=list)' if field.is_array() else self.get_default_value(field)}")
 
         if hack_names:
             self.write("")
@@ -181,73 +185,46 @@ class CodeGenerator:
 
         self.iidx = 0
 
-    def write_unpack_enum(self, name, enum):
-        self.write(f"self.{name} = {enum.name}(uabin.Primitives.{enum.uatype}.unpack(data))")
-
-    def get_size_from_uatype(self, uatype):
-        if uatype in ("Sbyte", "Byte", "Char", "Boolean"):
-            return 1
-        elif uatype in ("Int16", "UInt16"):
-            return 2
-        elif uatype in ("Int32", "UInt32", "Float"):
-            return 4
-        elif uatype in ("Int64", "UInt64", "Double"):
-            return 8
-        else:
-            raise Exception(f"Cannot get size from type {uatype}")
-
-    def write_unpack_uatype(self, name, uatype):
-        if hasattr(Primitives, uatype):
-            self.write(f"self.{name} = uabin.Primitives.{uatype}.unpack(data)")
-        else:
-            self.write(f"self.{name} = {uatype}.from_binary(data))")
-
-    def write_pack_enum(self, listname, name, enum):
-        self.write(f"{listname}.append(uabin.Primitives.{enum.uatype}.pack({name}.value))")
-
-    def write_pack_uatype(self, listname, name, uatype):
-        if hasattr(Primitives, uatype):
-            self.write(f"{listname}.append(uabin.Primitives.{uatype}.pack({name}))")
-        else:
-            self.write(f"{listname}.append({name}.to_binary())")
-            return
-
     def get_default_value(self, field):
-        if field.switchfield:
+        if field.is_optional:
             return None
-        if field.uatype in self.model.enum_list:
-            enum = self.model.get_enum(field.uatype)
-            return f'{enum.name}.{enum.values[0].name}'
-        if field.uatype == 'String':
+        dtype = field.data_type
+        if dtype in self.model.enum_list:
+            enum = self.model.get_enum(dtype)
+            return f'{enum.name}.{enum.fields[0].name}'
+
+        al = self.model.get_alias(dtype)
+        if al is not None:
+            dtype = al.real_type
+
+        if dtype == 'String':
             return None
-        elif field.uatype in ('ByteString', 'CharArray', 'Char'):
+        if dtype in ('ByteString', 'CharArray', 'Char'):
             return None
-        elif field.uatype == 'Boolean':
+        if dtype == 'Boolean':
             return 'True'
-        elif field.uatype == 'DateTime':
-            return 'datetime.utcnow()'
-        elif field.uatype in ('Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'Double', 'Float', 'Byte'):
+        if dtype == 'DateTime':
+            return 'field(default_factory=datetime.now)'
+        if dtype in ('Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'Double', 'Float', 'Byte'):
             return 0
-        elif field.uatype in 'ExtensionObject':
+        if dtype in 'ExtensionObject':
             return 'ExtensionObject()'
-        else:
-            return f'field(default_factory={field.uatype})'
+        return f'field(default_factory={dtype})'
 
 
 if __name__ == '__main__':
-    import generate_model as gm
+    import generate_model_from_nodeset as gm
 
-    xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset-master', 'Schema', 'Opc.Ua.Types.bsd')
+    xml_path = os.path.join(BASE_DIR, 'schemas', 'UA-Nodeset-master', 'Schema', 'Opc.Ua.NodeSet2.Services.xml')
     protocol_path = os.path.join(BASE_DIR, "asyncua", "ua", "uaprotocol_auto.py")
     p = gm.Parser(xml_path)
     model = p.parse()
-    gm.add_basetype_members(model)
-    gm.add_encoding_field(model)
-    gm.remove_duplicates(model)
-    gm.remove_vector_length(model)
+    gm.nodeid_to_names(model)
+    #gm.add_encoding_field(model)
+    #gm.remove_duplicates(model)
     gm.split_requests(model)
     gm.fix_names(model)
-    gm.remove_duplicate_types(model)
+    #gm.remove_duplicate_types(model)
     gm.reorder_structs(model)
     c = CodeGenerator(model, protocol_path)
     c.run()
