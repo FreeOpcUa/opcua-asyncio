@@ -937,6 +937,8 @@ class DataValue:
     :vartype ServerPicoseconds: int
     """
 
+    data_type = NodeId(25)
+
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     Value: Optional[Variant] = None
     StatusCode_: Optional[StatusCode] = field(default_factory=StatusCode)
@@ -958,6 +960,42 @@ class DataValue:
     @StatusCode.setter
     def StatusCode(self, val):
         self.StatusCode_ = val
+
+
+@dataclass
+class DiagnosticInfo:
+    """
+    A recursive structure containing diagnostic information associated with a status code.
+
+    :ivar Encoding:
+    :vartype Encoding: Byte
+    :ivar SymbolicId:
+    :vartype SymbolicId: Int32
+    :ivar NamespaceURI:
+    :vartype NamespaceURI: Int32
+    :ivar Locale:
+    :vartype Locale: Int32
+    :ivar LocalizedText:
+    :vartype LocalizedText: Int32
+    :vartype LocalizedText: Int32
+    :ivar AdditionalInfo:
+    :vartype AdditionalInfo: String
+    :ivar InnerStatusCode:
+    :vartype InnerStatusCode: StatusCode
+    :ivar InnerDiagnosticInfo:
+    :vartype InnerDiagnosticInfo: DiagnosticInfo
+    """
+
+    data_type = NodeId(25)
+
+    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
+    SymbolicId: Optional[Int32] = None
+    NamespaceURI: Optional[Int32] = None
+    Locale: Optional[Int32] = None
+    LocalizedText: Optional[Int32] = None
+    AdditionalInfo: Optional[String] = None
+    InnerStatusCode: Optional[StatusCode] = None
+    InnerDiagnosticInfo: Optional[ExtensionObject] = None
 
 
 def datatype_to_varianttype(int_type):

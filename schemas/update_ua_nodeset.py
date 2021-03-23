@@ -56,7 +56,7 @@ def generate_standard_nodesets():
     run_module("generate_address_space")
     run_module("generate_event_objects")
     run_module("generate_ids")
-    run_module("generate_model")
+    run_module("generate_protocol_python")
     run_module("generate_model_event")
     run_module("generate_event_objects")
     run_module("generate_statuscode")
