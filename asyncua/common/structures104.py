@@ -118,6 +118,10 @@ def clean_name(name):
 
 
 def get_default_value(uatype, enums=None):
+    if hasattr(ua, uatype):
+        # That type is know, make sure this is not a subtype
+        dtype = getattr(ua, uatype)
+        uatype = dtype.__name__
     if enums is None:
         enums = {}
     if uatype == "String":
@@ -167,7 +171,12 @@ class {struct_name}(ua.FrozenClass):
     for sfield in sdef.Fields:
         fname = clean_name(sfield.Name)
         if sfield.DataType.NamespaceIndex == 0 and sfield.DataType.Identifier in ua.ObjectIdNames:
-            uatype = ua.ObjectIdNames[sfield.DataType.Identifier]
+            if sfield.DataType.Identifier == 24:
+                uatype = "Variant"
+            elif sfield.DataType.Identifier == 22:
+                uatype = "ExtensionObject"
+            else:
+                uatype = ua.ObjectIdNames[sfield.DataType.Identifier]
         elif sfield.DataType in ua.extension_objects_by_datatype:
             uatype = ua.extension_objects_by_datatype[sfield.DataType].__name__
         elif sfield.DataType in ua.enums_by_datatype:
@@ -226,6 +235,7 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False):
     else:
         code = make_structure_code(data_type, name, sdef)
     logger.debug("Executing code: %s", code)
+    print(code)
     exec(code, env)
     return env
 
@@ -250,9 +260,9 @@ class DataTypeSorter:
     __repr__ = __str__
 
 
-async def _recursive_parse(server, base_node, dtypes, parent_sdef=None):
+async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_existing=False):
     for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
-        sdef = await _read_data_type_definition(server, desc)
+        sdef = await _read_data_type_definition(server, desc, read_existing=add_existing)
         if not sdef:
             continue
         name = clean_name(desc.BrowseName.Name)
@@ -260,15 +270,19 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None):
             for sfield in reversed(parent_sdef.Fields):
                 sdef.Fields.insert(0, sfield)
         dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
-        await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef)
+        await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef, add_existing=add_existing)
 
 
-async def load_data_type_definitions(server: Union["Server", "Client"], base_node: Node = None) -> None:
+async def load_data_type_definitions(server: Union["Server", "Client"], base_node: Node = None, overwrite_existing=False) -> None:
+    """
+    Read DataTypeDefition attribute on all Structure  and Enumeration  defined
+    on server and generate Python objects in ua namespace to be used to talk with server
+    """
     await load_enums(server)  # we need all enums to generate structure code
     if base_node is None:
         base_node = server.nodes.base_structure_type
     dtypes = []
-    await _recursive_parse(server, base_node, dtypes)
+    await _recursive_parse(server, base_node, dtypes, add_existing=overwrite_existing)
     dtypes.sort()
     for dts in dtypes:
         try:
@@ -278,12 +292,12 @@ async def load_data_type_definitions(server: Union["Server", "Client"], base_nod
             logger.exception("Structure type %s not implemented", dts.sdef)
 
 
-async def _read_data_type_definition(server, desc):
+async def _read_data_type_definition(server, desc: ua.BrowseDescription, read_existing: bool = False):
     if desc.BrowseName.Name == "FilterOperand":
         # FIXME: find out why that one is not in ua namespace...
         return None
     # FIXME: this is fishy, we may have same name in different Namespaces
-    if hasattr(ua, desc.BrowseName.Name):
+    if not read_existing and hasattr(ua, desc.BrowseName.Name):
         return None
     logger.info("Registring data type %s %s", desc.NodeId, desc.BrowseName)
     node = server.get_node(desc.NodeId)
