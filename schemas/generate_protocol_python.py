@@ -8,30 +8,6 @@ IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "FilterOperand", 
                   "ExtensionObject", "XmlElement", "LocalizedText"]
 
 
-class Primitives1(object):
-    SByte = 0
-    Int16 = 0
-    Int32 = 0
-    Int64 = 0
-    Char = 0
-    Byte = 0
-    UInt16 = 0
-    UInt32 = 0
-    UInt64 = 0
-    Boolean = 0
-    Double = 0
-    Float = 0
-
-
-class Primitives(Primitives1):
-    Null = 0
-    String = 0
-    Bytes = 0
-    ByteString = 0
-    CharArray = 0
-    DateTime = 0
-
-
 class CodeGenerator:
 
     def __init__(self, model, output):
@@ -69,7 +45,6 @@ class CodeGenerator:
                 continue
             if struct.do_not_register:
                 continue
-            #if 'ExtensionObject' in struct.parents or "DataTypeDefinition" in struct.parents:
             self.write(f"nid = FourByteNodeId(ObjectIds.{struct.name}_Encoding_DefaultBinary)")
             self.write(f"extension_objects_by_typeid[nid] = {struct.name}")
             self.write(f"extension_object_typeids['{struct.name}'] = nid")
@@ -89,9 +64,9 @@ class CodeGenerator:
         self.write('from typing import Union, List, Optional')
         self.write('from dataclasses import dataclass, field')
         self.write('')
-        # self.write('from asyncua.ua.uaerrors import UaError')
         self.write('from asyncua.ua.uatypes import FROZEN')
-        self.write('from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32, UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid')
+        self.write('from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32')
+        self.write('from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid')
         self.write('from asyncua.ua.uatypes import AccessLevel, EventNotifier  ')
         self.write('from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue')
         self.write('from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo')
@@ -154,7 +129,6 @@ class CodeGenerator:
 
             if field.name == field.data_type:
                 # variable name and type name are the same. Dataclass do not like it
-                #print("SELF REFENCING", obj, field)
                 hack_names.append(field.name)
                 fieldname = field.name + "_"
             else:
@@ -164,7 +138,7 @@ class CodeGenerator:
                 val = 0 if not extobj_hack else 1
                 self.write(f"{field.name}: Byte = field(default={val}, repr=False, init=False, compare=False)")
             elif field.data_type == obj.name:  # help!!! selv referencing class
-                #FIXME: handle better
+                # FIXME: Might not be good enough
                 self.write(f"{fieldname}: Optional[ExtensionObject] = None")
             elif obj.name not in ("ExtensionObject",) and \
                     field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
@@ -220,11 +194,8 @@ if __name__ == '__main__':
     p = gm.Parser(xml_path)
     model = p.parse()
     gm.nodeid_to_names(model)
-    #gm.add_encoding_field(model)
-    #gm.remove_duplicates(model)
     gm.split_requests(model)
     gm.fix_names(model)
-    #gm.remove_duplicate_types(model)
     gm.reorder_structs(model)
     c = CodeGenerator(model, protocol_path)
     c.run()
