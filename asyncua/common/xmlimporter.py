@@ -31,7 +31,8 @@ class XmlImporter:
         xml_uris = self.parser.get_used_namespaces()
         server_uris = await self.server.get_namespace_array()
         namespaces_map = {}
-        for ns_index, ns_uri in enumerate(xml_uris):
+        xml_uris_enum = enumerate(xml_uris)
+        for ns_index, ns_uri in xml_uris_enum:
             ns_index += 1  # since namespaces start at 1 in xml files
             if ns_uri in server_uris:
                 namespaces_map[ns_index] = server_uris.index(ns_uri)
@@ -105,7 +106,7 @@ class XmlImporter:
         nodes = []
         for nodedata in nodes_parsed:  # self.parser:
             try:
-                node = await self._add_node_data(nodedata)
+                node = await self._add_node_data(nodedata, suppress_migration=True)
             except Exception:
                 _logger.warning("failure adding node %s", nodedata)
                 raise
@@ -123,7 +124,11 @@ class XmlImporter:
         return nodes
 
     async def _add_missing_reverse_references(self, new_nodes):
-        __unidirectional_types = {ua.ObjectIds.GuardVariableType, ua.ObjectIds.HasGuard, ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType, ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType, ua.ObjectIds.StateType, ua.ObjectIds.TransitionType, ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
+        __unidirectional_types = {ua.ObjectIds.GuardVariableType, ua.ObjectIds.HasGuard,
+                                  ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType,
+                                  ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType,
+                                  ua.ObjectIds.StateType, ua.ObjectIds.TransitionType,
+                                  ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
         dangling_refs_to_missing_nodes = set()
         for new_node_id in new_nodes:
             new_n = self.server.get_node(new_node_id)
@@ -173,24 +178,25 @@ class XmlImporter:
                 nd.parent = target
                 nd.parentlink = reftype
 
-    async def _add_node_data(self, nodedata) -> ua.NodeId:
+    async def _add_node_data(self, nodedata, suppress_migration=False) -> ua.NodeId:
         if nodedata.nodetype == "UAObject":
-            node = await self.add_object(nodedata)
+            node = await self.add_object(nodedata, suppress_migration)
         elif nodedata.nodetype == "UAObjectType":
-            node = await self.add_object_type(nodedata)
+            node = await self.add_object_type(nodedata, suppress_migration)
         elif nodedata.nodetype == "UAVariable":
-            node = await self.add_variable(nodedata)
+            node = await self.add_variable(nodedata, suppress_migration)
         elif nodedata.nodetype == "UAVariableType":
-            node = await self.add_variable_type(nodedata)
+            node = await self.add_variable_type(nodedata, suppress_migration)
         elif nodedata.nodetype == "UAReferenceType":
-            node = await self.add_reference_type(nodedata)
+            node = await self.add_reference_type(nodedata, suppress_migration)
         elif nodedata.nodetype == "UADataType":
-            node = await self.add_datatype(nodedata)
+            node = await self.add_datatype(nodedata, suppress_migration)
         elif nodedata.nodetype == "UAMethod":
-            node = await self.add_method(nodedata)
+            node = await self.add_method(nodedata, suppress_migration)
         else:
             raise ValueError(f"Not implemented node type: {nodedata.nodetype} ")
         return node
+
 
     def _get_server(self):
         if hasattr(self.server, "iserver"):
@@ -262,6 +268,25 @@ class XmlImporter:
             node.TypeDefinition = self._migrate_ns(obj.typedef)
         return node
 
+    def _get_add_node_item_suppressed(self, obj):
+        node = ua.AddNodesItem()
+        node.RequestedNewNodeId = obj.nodeid
+        node.BrowseName = obj.browsename
+        _logger.info(
+            "Importing xml node (%s, %s) as (%s %s)",
+            obj.browsename,
+            obj.nodeid,
+            node.BrowseName,
+            node.RequestedNewNodeId,
+        )
+        node.NodeClass = getattr(ua.NodeClass, obj.nodetype[2:])
+        if obj.parent and obj.parentlink:
+            node.ParentNodeId = obj.parent
+            node.ReferenceTypeId = obj.parentlink
+        if obj.typedef:
+            node.TypeDefinition = obj.typedef
+        return node
+
     def _to_migrated_nodeid(self, nodeid: Union[ua.NodeId, None, str]) -> ua.NodeId:
         nodeid = self._to_nodeid(nodeid)
         return self._migrate_ns(nodeid)
@@ -281,8 +306,11 @@ class XmlImporter:
             else:
                 return ua.NodeId(getattr(ua.ObjectIds, nodeid))
 
-    async def add_object(self, obj):
-        node = self._get_add_node_item(obj)
+    async def add_object(self, obj, suppress_migration=False):
+        if suppress_migration:
+            node = self._get_add_node_item_suppressed(obj)
+        else:
+            node = self._get_add_node_item(obj)
         attrs = ua.ObjectAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -294,8 +322,11 @@ class XmlImporter:
         res[0].StatusCode.check()
         return res[0].AddedNodeId
 
-    async def add_object_type(self, obj):
-        node = self._get_add_node_item(obj)
+    async def add_object_type(self, obj, suppress_migration=False):
+        if suppress_migration:
+            node = self._get_add_node_item_suppressed(obj)
+        else:
+            node = self._get_add_node_item(obj)
         attrs = ua.ObjectTypeAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -307,8 +338,11 @@ class XmlImporter:
         res[0].StatusCode.check()
         return res[0].AddedNodeId
 
-    async def add_variable(self, obj):
-        node = self._get_add_node_item(obj)
+    async def add_variable(self, obj, suppress_migration=False):
+        if suppress_migration:
+            node = self._get_add_node_item(obj)
+        else:
+            node = self._get_add_node_item(obj)
         attrs = ua.VariableAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -441,8 +475,11 @@ class XmlImporter:
         else:
             return ua.Variant(obj.value, getattr(ua.VariantType, obj.valuetype))
 
-    async def add_variable_type(self, obj):
-        node = self._get_add_node_item(obj)
+    async def add_variable_type(self, obj, suppress_migration=False):
+        if suppress_migration:
+            node = self._get_add_node_item_suppressed(obj)
+        else:
+            node = self._get_add_node_item(obj)
         attrs = ua.VariableTypeAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -462,8 +499,11 @@ class XmlImporter:
         res[0].StatusCode.check()
         return res[0].AddedNodeId
 
-    async def add_method(self, obj):
-        node = self._get_add_node_item(obj)
+    async def add_method(self, obj, suppress_migration=False):
+        if suppress_migration:
+            node = self._get_add_node_item_suppressed(obj)
+        else:
+            node = self._get_add_node_item(obj)
         attrs = ua.MethodAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -482,8 +522,11 @@ class XmlImporter:
         res[0].StatusCode.check()
         return res[0].AddedNodeId
 
-    async def add_reference_type(self, obj):
-        node = self._get_add_node_item(obj)
+    async def add_reference_type(self, obj, suppress_migration=False):
+        if suppress_migration:
+            node = self._get_add_node_item_suppressed(obj)
+        else:
+            node = self._get_add_node_item(obj)
         attrs = ua.ReferenceTypeAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
@@ -500,8 +543,11 @@ class XmlImporter:
         res[0].StatusCode.check()
         return res[0].AddedNodeId
 
-    async def add_datatype(self, obj):
-        node = self._get_add_node_item(obj)
+    async def add_datatype(self, obj, suppress_migration=False):
+        if suppress_migration:
+            node = self._get_add_node_item_suppressed(obj)
+        else:
+            node = self._get_add_node_item(obj)
         attrs = ua.DataTypeAttributes()
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
