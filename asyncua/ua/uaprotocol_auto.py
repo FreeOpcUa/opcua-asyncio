@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2021-03-23 14:31:16.503518
+Date:2021-03-25 13:57:54.246658
 """
 
 from datetime import datetime
@@ -9,7 +9,8 @@ from typing import Union, List, Optional
 from dataclasses import dataclass, field
 
 from asyncua.ua.uatypes import FROZEN
-from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32, UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid
+from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32
+from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid
 from asyncua.ua.uatypes import AccessLevel, EventNotifier  
 from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue
 from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo
