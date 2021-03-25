@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from asyncua import Client, Node, ua
+from asyncua.common.structures104 import load_custom_struct
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger('asyncua')
@@ -20,6 +21,10 @@ async def main():
         print("STRUCT", await my_struct.read_value())
         my_struct_opt = await client.nodes.objects.get_child(f"{idx}:my_struct_optional")
         print("STRUCT WITH OPTIA VALUE", await my_struct_opt.read_value())
+
+        # loading one specific custom struct
+        mystructnode = await client.nodes.base_structure_type.get_child(f"{idx}:MyStruct")
+        my_type = await load_custom_struct(mystructnode)
 
 if __name__ == '__main__':
     asyncio.run(main())

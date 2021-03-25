@@ -33,7 +33,10 @@ async def main():
         "tutu",
     ])
 
-    await server.load_data_type_definitions()
+    custom_objs = await server.load_data_type_definitions()
+    print("Custom objects on server")
+    for name, obj in custom_objs.items():
+        print("    ", obj)
 
     valnode = await server.nodes.objects.add_variable(idx, "my_enum", ua.MyEnum.toto)
     await server.nodes.objects.add_variable(idx, "my_struct", ua.Variant(ua.MyStruct(), ua.VariantType.ExtensionObject))
