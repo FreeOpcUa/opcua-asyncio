@@ -1124,12 +1124,12 @@ async def test_duplicated_browsenames_different_ns(opc):
         return
 
 
-async def test_custom_enum(opc):
+async def test_custom_enum_x(opc):
     idx = 4
     await new_enum(opc.opc, idx, "MyCustEnum", [
         "titi",
         "toto",
-        "tutu",
+        "None",
     ])
 
     await opc.opc.load_data_type_definitions()
