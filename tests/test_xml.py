@@ -76,9 +76,9 @@ async def test_xml_import_additional_ns(opc):
 
 async def test_xml_import_ns_dependencies(opc):
     a = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)
-    b = await opc.opc.import_xml("CUSTOM_NODES_NS_XML_PATH1")
-    c = await opc.opc.import_xml("CUSTOM_NODES_NS_XML_PATH2")
-    d = await opc.opc.import_xml("CUSTOM_NODES_NS_XML_PATH3")
+    b = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH1)
+    c = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH2)
+    d = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH3)
     ns = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/")
     ns2 = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/xmlfile_1/")
     ns3 = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/xmlfile_2/")
