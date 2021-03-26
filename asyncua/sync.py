@@ -193,6 +193,10 @@ class Client:
         pass
 
     @syncmethod
+    def get_namespace_array(self):
+        pass
+
+    @syncmethod
     def set_security(self):
         pass
 
