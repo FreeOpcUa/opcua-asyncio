@@ -43,8 +43,7 @@ class InternalServer:
     There is one `InternalServer` for every `Server`.
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, user_manager: UserManager = None):
-        self.loop: asyncio.AbstractEventLoop = loop
+    def __init__(self, user_manager: UserManager = None):
         self.logger = logging.getLogger(__name__)
         self.callback_service = CallbackService()
         self.endpoints = []
@@ -60,7 +59,7 @@ class InternalServer:
         self.method_service = MethodService(self.aspace)
         self.node_mgt_service = NodeManagementService(self.aspace)
         self.asyncio_transports = []
-        self.subscription_service: SubscriptionService = SubscriptionService(self.loop, self.aspace)
+        self.subscription_service: SubscriptionService = SubscriptionService(self.aspace)
         self.history_manager = HistoryManager(self)
         if user_manager is None:
             logger.info("No user manager specified. Using default permissive manager instead.")
@@ -109,11 +108,11 @@ class InternalServer:
 
     async def load_standard_address_space(self, shelf_file=None):
         if shelf_file:
-            is_file = (await self.loop.run_in_executor(None, os.path.isfile, shelf_file)
-                       or await self.loop.run_in_executor(None, os.path.isfile, f'{shelf_file}.db'))
+            is_file = (await asyncio.get_running_loop().run_in_executor(None, os.path.isfile, shelf_file)
+                       or await asyncio.get_running_loop().run_in_executor(None, os.path.isfile, f'{shelf_file}.db'))
             if is_file:
                 # import address space from shelf
-                await self.loop.run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
+                await asyncio.get_running_loop().run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
                 return
         # import address space from code generated from xml
         standard_address_space.fill_address_space(self.node_mgt_service)
@@ -122,7 +121,7 @@ class InternalServer:
         # importer.import_xml("/path/to/python-asyncua/schemas/Opc.Ua.NodeSet2.xml", self)
         if shelf_file:
             # path was supplied, but file doesn't exist - create one for next start up
-            await self.loop.run_in_executor(None, self.aspace.make_aspace_shelf, shelf_file)
+            await asyncio.get_running_loop().run_in_executor(None, self.aspace.make_aspace_shelf, shelf_file)
 
     async def _address_space_fixes(self) -> Coroutine:
         """
@@ -175,8 +174,8 @@ class InternalServer:
         await self.history_manager.stop()
 
     def _set_current_time(self):
-        self.loop.create_task(self.current_time_node.write_value(datetime.utcnow()))
-        self.loop.call_later(1, self._set_current_time)
+        asyncio.create_task(self.current_time_node.write_value(datetime.utcnow()))
+        asyncio.get_running_loop().call_later(1, self._set_current_time)
 
     def get_new_channel_id(self):
         self._channel_id_counter += 1

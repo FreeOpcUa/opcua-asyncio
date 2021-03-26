@@ -73,8 +73,7 @@ class Subscription:
     :param server: `InternalSession` or `UAClient`
     """
 
-    def __init__(self, server, params: ua.CreateSubscriptionParameters, handler: SubHandler, loop=None):
-        self.loop = loop or asyncio.get_event_loop()
+    def __init__(self, server, params: ua.CreateSubscriptionParameters, handler: SubHandler):
         self.logger = logging.getLogger(__name__)
         self.server = server
         self._client_handle = 200
@@ -237,8 +236,8 @@ class Subscription:
         matches = [a for a in evfilter.SelectClauses if a.AttributeId == ua.AttributeIds.NodeId]
         if not matches:
             conditionIdOperand = ua.SimpleAttributeOperand()
-            conditionIdOperand.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)    
-            conditionIdOperand.AttributeId = ua.AttributeIds.NodeId 
+            conditionIdOperand.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)
+            conditionIdOperand.AttributeId = ua.AttributeIds.NodeId
             evfilter.SelectClauses.append(conditionIdOperand)
         return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 

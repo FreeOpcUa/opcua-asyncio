@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import timedelta
 from datetime import datetime
@@ -199,15 +200,14 @@ class HistoryDict(HistoryStorageInterface):
 
 
 class SubHandler(SubHandler):
-    def __init__(self, storage, loop):
+    def __init__(self, storage):
         self.storage = storage
-        self.loop = loop
 
     def datachange_notification(self, node, val, data):
-        self.loop.create_task(self.storage.save_node_value(node.nodeid, data.monitored_item.Value))
+        asyncio.create_task(self.storage.save_node_value(node.nodeid, data.monitored_item.Value))
 
     def event_notification(self, event):
-        self.loop.create_task(self.storage.save_event(event))
+        asyncio.create_task(self.storage.save_event(event))
 
 
 class HistoryManager:
@@ -244,7 +244,7 @@ class HistoryManager:
         """
         if not self._sub:
             self._sub = await self._create_subscription(
-                SubHandler(self.storage, self.iserver.loop)
+                SubHandler(self.storage)
             )
         if node in self._handlers:
             raise ua.UaError(f"Node {node} is already historized")
@@ -269,7 +269,7 @@ class HistoryManager:
         """
         if not self._sub:
             self._sub = await self._create_subscription(
-                SubHandler(self.storage, self.iserver.loop)
+                SubHandler(self.storage)
             )
         if source in self._handlers:
             raise ua.UaError(f"Events from {source} are already historized")
