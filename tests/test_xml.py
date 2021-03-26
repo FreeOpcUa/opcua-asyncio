@@ -19,6 +19,9 @@ pytestmark = pytest.mark.asyncio
 BASE_DIR = pathlib.Path(__file__).parent.absolute()
 CUSTOM_NODES_XML_PATH = BASE_DIR / "custom_nodes.xml"
 CUSTOM_NODES_NS_XML_PATH = BASE_DIR / "custom_nodesns.xml"
+CUSTOM_NODES_NS_XML_PATH1 = BASE_DIR / "custom_nodesns_2.xml"
+CUSTOM_NODES_NS_XML_PATH2 = BASE_DIR / "custom_nodesns_3.xml"
+CUSTOM_NODES_NS_XML_PATH3 = BASE_DIR / "custom_nodesns_4.xml"
 CUSTOM_REQ_XML_PASS_PATH = BASE_DIR / "test_requirement_pass.xml"
 CUSTOM_REQ_XML_FAIL_PATH = BASE_DIR / "test_requirement_fail.xml"
 
@@ -73,9 +76,9 @@ async def test_xml_import_additional_ns(opc):
 
 async def test_xml_import_ns_dependencies(opc):
     a = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)
-    b = await opc.opc.import_xml("/home/fbtl/PycharmProjects/opcua-asyncio/tests/custom_nodesns_2.xml")
-    c = await opc.opc.import_xml("/home/fbtl/PycharmProjects/opcua-asyncio/tests/custom_nodesns_3.xml")
-    d = await opc.opc.import_xml("/home/fbtl/PycharmProjects/opcua-asyncio/tests/custom_nodesns_4.xml")
+    b = await opc.opc.import_xml("CUSTOM_NODES_NS_XML_PATH1")
+    c = await opc.opc.import_xml("CUSTOM_NODES_NS_XML_PATH2")
+    d = await opc.opc.import_xml("CUSTOM_NODES_NS_XML_PATH3")
     ns = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/")
     ns2 = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/xmlfile_1/")
     ns3 = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/xmlfile_2/")
