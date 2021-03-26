@@ -19,6 +19,9 @@ pytestmark = pytest.mark.asyncio
 BASE_DIR = pathlib.Path(__file__).parent.absolute()
 CUSTOM_NODES_XML_PATH = BASE_DIR / "custom_nodes.xml"
 CUSTOM_NODES_NS_XML_PATH = BASE_DIR / "custom_nodesns.xml"
+CUSTOM_NODES_NS_XML_PATH1 = BASE_DIR / "custom_nodesns_2.xml"
+CUSTOM_NODES_NS_XML_PATH2 = BASE_DIR / "custom_nodesns_3.xml"
+CUSTOM_NODES_NS_XML_PATH3 = BASE_DIR / "custom_nodesns_4.xml"
 CUSTOM_REQ_XML_PASS_PATH = BASE_DIR / "test_requirement_pass.xml"
 CUSTOM_REQ_XML_FAIL_PATH = BASE_DIR / "test_requirement_fail.xml"
 
@@ -47,9 +50,8 @@ async def test_xml_import(opc):
     input_arg = (await o.read_data_value()).Value.Value[0]
     assert "Context" == input_arg.Name
     await opc.opc.delete_nodes([v])
-    n = []
-    [n.append(opc.opc.get_node(node)) for node in nodes]
-    await opc.opc.delete_nodes(n)
+    for nodeid in nodes:
+        await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
 
 
 async def test_xml_import_additional_ns(opc):
@@ -57,7 +59,7 @@ async def test_xml_import_additional_ns(opc):
     await opc.server.register_namespace("http://placeholder.toincrease.nsindex")
     # "tests/custom_nodes.xml" isn't created with namespaces in mind, provide new test file
     # the ns=1 in to file now should be mapped to ns=2
-    await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)
+    z = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)
     ns = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/")
     o = opc.opc.nodes.objects
     o2 = await o.get_child([f"{ns}:MyBaseObject"])
@@ -68,8 +70,31 @@ async def test_xml_import_additional_ns(opc):
     assert ns == r1.NodeId.NamespaceIndex
     r3 = (await v1.get_references(refs=ua.ObjectIds.HasComponent))[0]
     assert ns == r3.NodeId.NamespaceIndex
-    await opc.opc.delete_nodes([o2, v1])
+    for nodeid in z:
+        await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
 
+
+async def test_xml_import_ns_dependencies(opc):
+    a = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)
+    b = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH1)
+    c = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH2)
+    d = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH3)
+    ns = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/")
+    ns2 = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/xmlfile_1/")
+    ns3 = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/xmlfile_2/")
+    ns4 = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/xmlfile_3/")
+    o = opc.opc.nodes.objects
+    o2 = await o.get_child([f"{ns}:MyBaseObject"])
+    assert o2 is not None
+    o3 = await o2.get_child([f"{ns2}:MySecondLevel"])
+    assert o3 is not None
+    o4 = await o3.get_child([f"{ns3}:MyThirdLevel"])
+    assert o4 is not None
+    o5 = await o4.get_child([f"{ns4}:MyForthLevel"])
+    assert o4 is not None
+    for imported_nodes in [a, b, c, d]:
+        for nodeid in imported_nodes:
+            await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
 
 async def test_xml_method(opc, tmpdir):
     await opc.opc.register_namespace("foo")
