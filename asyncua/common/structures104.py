@@ -235,7 +235,11 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False):
     else:
         code = make_structure_code(data_type, name, sdef)
     logger.debug("Executing code: %s", code)
-    exec(code, env)
+    try:
+        exec(code, env)
+    except Exception:
+        logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
+        raise
     return env
 
 
