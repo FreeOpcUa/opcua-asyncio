@@ -214,7 +214,7 @@ class XmlImporter:
         new_nodes = []
         for node_datum in node_data:
             node_datum.nodeid = self._to_migrated_nodeid(node_datum.nodeid)
-            node_datum.browsename = ua.QualifiedName.from_string(node_datum.browsename)
+            node_datum.browsename = self._migrate_ns(ua.QualifiedName.from_string(node_datum.browsename))
             if node_datum.parent:
                 node_datum.parent = self._to_migrated_nodeid(node_datum.parent)
             if node_datum.parentlink:
