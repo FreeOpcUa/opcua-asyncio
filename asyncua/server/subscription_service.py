@@ -18,9 +18,8 @@ class SubscriptionService:
     There is one `SubscriptionService` instance for every `Server`/`InternalServer`.
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, aspace: AddressSpace):
+    def __init__(self, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
-        self.loop: asyncio.AbstractEventLoop = loop
         self.aspace: AddressSpace = aspace
         self.subscriptions: Dict[int, InternalSubscription] = {}
         self._sub_id_counter = 77
@@ -37,7 +36,7 @@ class SubscriptionService:
         result.RevisedMaxKeepAliveCount = params.RequestedMaxKeepAliveCount
         self._sub_id_counter += 1
         result.SubscriptionId = self._sub_id_counter
-        internal_sub = InternalSubscription(self.loop, result, self.aspace, callback=callback, no_acks=not external)
+        internal_sub = InternalSubscription(result, self.aspace, callback=callback, no_acks=not external)
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub
         return result

@@ -244,7 +244,7 @@ class Server:
             self.tloop = ThreadLoop()
             self.tloop.start()
             self.close_tloop = True
-        self.aio_obj = server.Server(loop=self.tloop.loop)
+        self.aio_obj = server.Server()
         self.tloop.post(self.aio_obj.init(shelf_file))
         self.nodes = Shortcuts(self.tloop, self.aio_obj.iserver.isession)
 

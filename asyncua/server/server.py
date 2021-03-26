@@ -73,8 +73,7 @@ class Server:
     :ivar nodes: shortcuts to common nodes - `Shortcuts` instance
     """
 
-    def __init__(self, iserver: InternalServer = None, loop: asyncio.AbstractEventLoop = None, user_manager=None):
-        self.loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
+    def __init__(self, iserver: InternalServer = None, user_manager=None):
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
         self.product_uri = "urn:freeopcua.github.io:python:server"
@@ -82,7 +81,7 @@ class Server:
         self.manufacturer_name = "FreeOpcUa"
         self.application_type = ua.ApplicationType.ClientAndServer
         self.default_timeout: int = 60 * 60 * 1000
-        self.iserver = iserver if iserver else InternalServer(self.loop, user_manager=user_manager)
+        self.iserver = iserver if iserver else InternalServer(user_manager=user_manager)
         self.bserver: Optional[BinaryServer] = None
         self._discovery_clients = {}
         self._discovery_period = 60
@@ -113,25 +112,25 @@ class Server:
 
     async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
                              build_number, build_date):
-        
+
         if not all(isinstance(arg, str) for arg in [
-            product_uri, 
-            manufacturer_name, 
-            product_name, 
-            software_version, 
+            product_uri,
+            manufacturer_name,
+            product_name,
+            software_version,
             build_number
             ]):
-            raise TypeError(f"""Expected all str got 
-                product_uri: {type(product_uri)}, 
-                manufacturer_name: {type(manufacturer_name)}, 
-                product_name: {type(product_name)}, 
-                software_version: {type(software_version)}, 
+            raise TypeError(f"""Expected all str got
+                product_uri: {type(product_uri)},
+                manufacturer_name: {type(manufacturer_name)},
+                product_name: {type(product_name)},
+                software_version: {type(software_version)},
                 build_number: {type(build_number)}
                 instead!""")
-        
+
         if not isinstance(build_date, datetime):
             raise TypeError(f"Expected datetime got {type(build_date)} instead!")
-        
+
         status_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus))
         build_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo))
 
@@ -240,7 +239,7 @@ class Server:
         await self._discovery_clients[url].register_server(self)
         self._discovery_period = period
         if period:
-            self.loop.call_soon(self._schedule_renew_registration)
+            asyncio.get_running_loop().call_soon(self._schedule_renew_registration)
 
     async def unregister_to_discovery(self, url: str = "opc.tcp://localhost:4840"):
         """
@@ -253,8 +252,8 @@ class Server:
             self._discovery_handle.cancel()
 
     def _schedule_renew_registration(self):
-        self.loop.create_task(self._renew_registration())
-        self._discovery_handle = self.loop.call_later(self._discovery_period, self._schedule_renew_registration)
+        asyncio.create_task(self._renew_registration())
+        self._discovery_handle = asyncio.get_running_loop().call_later(self._discovery_period, self._schedule_renew_registration)
 
     async def _renew_registration(self):
         for client in self._discovery_clients.values():
