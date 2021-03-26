@@ -123,7 +123,7 @@ class XMLParser:
         if xmlstring:
             self.root = ET.fromstring(xmlstring)
         else:
-            tree = await asyncio.get_event_loop().run_in_executor(None, ET.parse, xmlpath)
+            tree = await asyncio.get_running_loop().run_in_executor(None, ET.parse, xmlpath)
             self.root = tree.getroot()
 
     def parse_sync(self, xmlpath=None, xmlstring=None):

@@ -29,7 +29,7 @@ class Client:
     use UaClient object, available as self.uaclient
     which offers the raw OPC-UA services interface.
     """
-    def __init__(self, url: str, timeout: int = 4, loop=None):
+    def __init__(self, url: str, timeout: int = 4):
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -41,7 +41,6 @@ class Client:
         attributes on the constructed object:
         See the source code for the exhaustive list.
         """
-        self.loop = loop or asyncio.get_event_loop()
         self.server_url = urlparse(url)
         # take initial username and password from the url
         self._username = self.server_url.username
@@ -55,7 +54,7 @@ class Client:
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
         self._policy_ids = []
-        self.uaclient: UaClient = UaClient(timeout, loop=self.loop)
+        self.uaclient: UaClient = UaClient(timeout)
         self.user_certificate = None
         self.user_private_key = None
         self._server_nonce = None
@@ -381,7 +380,7 @@ class Client:
         if self.session_timeout != response.RevisedSessionTimeout:
             _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
             self.session_timeout = response.RevisedSessionTimeout
-        self._renew_channel_task = self.loop.create_task(self._renew_channel_loop())
+        self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
         return response
 
     async def _renew_channel_loop(self):

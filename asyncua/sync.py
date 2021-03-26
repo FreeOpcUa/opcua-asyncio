@@ -161,7 +161,7 @@ class Client:
             self.tloop = ThreadLoop()
             self.tloop.start()
             self.close_tloop = True
-        self.aio_obj = client.Client(url, timeout, loop=self.tloop.loop)
+        self.aio_obj = client.Client(url, timeout)
         self.nodes = Shortcuts(self.tloop, self.aio_obj.uaclient)
 
     def __str__(self):

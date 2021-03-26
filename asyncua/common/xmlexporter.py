@@ -3,6 +3,7 @@ from a list of nodes in the address space, build an XML file
 format is the one from opc-ua specification
 """
 import logging
+import asyncio
 import functools
 from collections import OrderedDict
 import xml.etree.ElementTree as Et
@@ -123,7 +124,7 @@ class XmlExporter:
         if pretty:
             indent(self.etree.getroot())
         func = functools.partial(self.etree.write, xmlpath, encoding='utf-8', xml_declaration=True)
-        await self.server.loop.run_in_executor(None, func)
+        await asyncio.get_running_loop().run_in_executor(None, func)
 
     def dump_etree(self):
         """

@@ -20,14 +20,12 @@ class UASocketProtocol(asyncio.Protocol):
     OPEN = 'open'
     CLOSED = 'closed'
 
-    def __init__(self, timeout=1, security_policy=ua.SecurityPolicy(), loop=None):
+    def __init__(self, timeout=1, security_policy=ua.SecurityPolicy()):
         """
         :param timeout: Timeout in seconds
         :param security_policy: Security policy (optional)
-        :param loop: Event loop (optional)
         """
         self.logger = logging.getLogger(f"{__name__}.UASocketProtocol")
-        self.loop = loop or asyncio.get_event_loop()
         self.transport = None
         self.receive_buffer: Optional[bytes] = None
         self.is_receiving = False
@@ -125,7 +123,7 @@ class UASocketProtocol(asyncio.Protocol):
             self._request_handle -= 1
             raise
         self._request_id += 1
-        future = self.loop.create_future()
+        future = asyncio.get_running_loop().create_future()
         self._callbackmap[self._request_id] = future
 
         # Change to the new security token if the connection has been renewed.
@@ -243,13 +241,11 @@ class UaClient:
     In this Python implementation  most of the structures are defined in
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
-    def __init__(self, timeout=1, loop=None):
+    def __init__(self, timeout=1):
         """
         :param timeout: Timout in seconds
-        :param loop: Event loop (optional)
         """
         self.logger = logging.getLogger(f'{__name__}.UaClient')
-        self.loop = loop or asyncio.get_event_loop()
         self._subscription_callbacks = {}
         self._timeout = timeout
         self.security_policy = ua.SecurityPolicy()
@@ -260,14 +256,14 @@ class UaClient:
         self.security_policy = policy
 
     def _make_protocol(self):
-        self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy, loop=self.loop)
+        self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
         return self.protocol
 
     async def connect_socket(self, host: str, port: int):
         """Connect to server socket."""
         self.logger.info("opening connection")
         # Timeout the connection when the server isn't available
-        await asyncio.wait_for(self.loop.create_connection(self._make_protocol, host, port), self._timeout)
+        await asyncio.wait_for(asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout)
 
     def disconnect_socket(self):
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
@@ -458,7 +454,7 @@ class UaClient:
             # The current strategy is to have only one open publish request per UaClient. This might not be enough
             # in high latency networks or in case many subscriptions are created. A Set of Tasks of `_publish_loop`
             # could be used if necessary.
-            self._publish_task = self.loop.create_task(self._publish_loop())
+            self._publish_task = asyncio.create_task(self._publish_loop())
         return response.Parameters
 
     async def delete_subscriptions(self, subscription_ids):
