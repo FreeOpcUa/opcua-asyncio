@@ -89,6 +89,7 @@ class {self.name}:
             if uatype == 'List[ua.Char]':
                 uatype = 'String'
             code += f"    {sfield.name}:{uatype} = {sfield.value}\n"
+        print(code)
         return code
 
 
@@ -276,7 +277,11 @@ def _generate_python_class(model, env=None):
     # generate classes one by one and add them to dict
     for element in model:
         code = element.get_code()
-        exec(code, env)
+        try:
+            exec(code, env)
+        except Exception:
+            _logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
+            raise
     return env
 
 
