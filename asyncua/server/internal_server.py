@@ -69,6 +69,8 @@ class InternalServer:
         self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal",
                                         user=User(role=UserRole.Admin))
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
+        self.time_task = None
+        self._time_task_stop = False
 
     async def init(self, shelffile=None):
         await self.load_standard_address_space(shelffile)
@@ -165,17 +167,21 @@ class InternalServer:
                                                                                                  ua.VariantType.Int32)
         await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.utcnow())
         if not self.disabled_clock:
-            self._set_current_time()
+            self.time_task = asyncio.create_task(self._set_current_time_loop())
 
     async def stop(self):
         self.logger.info('stopping internal server')
+        if self.time_task:
+            self._time_task_stop = True
+            await self.time_task
         self.method_service.stop()
         await self.isession.close_session()
         await self.history_manager.stop()
 
-    def _set_current_time(self):
-        asyncio.create_task(self.current_time_node.write_value(datetime.utcnow()))
-        asyncio.get_running_loop().call_later(1, self._set_current_time)
+    async def _set_current_time_loop(self):
+        while not self._time_task_stop:
+            await self.current_time_node.write_value(datetime.utcnow())
+            await asyncio.sleep(1)
 
     def get_new_channel_id(self):
         self._channel_id_counter += 1
