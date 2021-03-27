@@ -53,9 +53,8 @@ class Reconciliator:
     def __init__(self, timer: int, ha_client: "HaClient") -> None:
         self.timer = timer
         self.ha_client = ha_client
-        self.loop = ha_client.loop
         self.is_running = False
-        self.stop_event = asyncio.Event(loop=self.loop)
+        self.stop_event = asyncio.Event(loop=asyncio.get_running_loop())
 
         self.real_map: Dict[str, SortedDict] = {}
         for url in self.ha_client.urls:
@@ -185,7 +184,7 @@ class Reconciliator:
             _logger.info(f"Removing {len(sub_to_del)} subscriptions")
         for sub_name in sub_to_del:
             sub_handle = self.name_to_subscription[url][sub_name]
-            task = self.loop.create_task(sub_handle.delete())
+            task = asyncio.create_task(sub_handle.delete())
             task.add_done_callback(
                 partial(self.del_from_map, url, Method.DEL_SUB, sub_name=sub_name)
             )
@@ -202,7 +201,7 @@ class Reconciliator:
         client = self.ha_client.get_client_by_url(url)
         for sub_name in sub_to_add:
             vs = ideal_map[url][sub_name]
-            task = self.loop.create_task(
+            task = asyncio.create_task(
                 client.create_subscription(
                     vs.period, vs.handler, publishing=vs.publishing
                 )
@@ -269,7 +268,7 @@ class Reconciliator:
         for node_attr, nodes_obj in attr_to_nodes.items():
             # some servers are sensitive to the number of MI per request
             for batch_nodes_obj in batch(nodes_obj, self.BATCH_MI_SIZE):
-                task = self.loop.create_task(
+                task = asyncio.create_task(
                     real_sub.subscribe_data_change(
                         batch_nodes_obj,
                         *astuple(node_attr),
@@ -308,7 +307,7 @@ class Reconciliator:
             _logger.info(f"Removing {len(node_to_del)} Nodes")
             for batch_nodes in batch(node_to_del, self.BATCH_MI_SIZE):
                 node_handles = [self.node_to_handle[url][node] for node in batch_nodes]
-                task = self.loop.create_task(real_sub.unsubscribe(node_handles))
+                task = asyncio.create_task(real_sub.unsubscribe(node_handles))
                 task.add_done_callback(
                     partial(
                         self.del_from_map,
@@ -349,7 +348,7 @@ class Reconciliator:
                     if ideal_val != real_val:
                         _logger.info(f"Changing {attr} for {sub_name} to {ideal_val}")
                         set_func = getattr(real_sub, func)
-                        task = self.loop.create_task(set_func(ideal_val))
+                        task = asyncio.create_task(set_func(ideal_val))
                         task.add_done_callback(
                             partial(
                                 self.change_mode,
