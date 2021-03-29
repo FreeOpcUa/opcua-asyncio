@@ -706,7 +706,7 @@ class AddressSpace:
         if attval is None:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
 
-        if value.Value.VariantType is not attval.value.Value.VariantType and (nodeid.NamespaceIndex == 0 and nodeid.Identifier not in (
+        if (value.Value.VariantType != attval.value.Value.VariantType) and not (nodeid.NamespaceIndex == 0 and nodeid.Identifier in (
                     ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
                     ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadData,
                     ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadEvents,
@@ -733,9 +733,12 @@ class AddressSpace:
                     ua.ObjectIds.Server_ServerStatus_StartTime,
                     ua.ObjectIds.Server_ServerStatus_CurrentTime,
                     ua.ObjectIds.Server_NamespaceArray)):
+            logging.error("Wrong type or writing is not allowed - Expected Type: {}, got Type: {} with value {}".format(
+                                  attval.value.Value.VariantType,
+                                  value.Value.VariantType,
+                                  value.Value.Value))
             return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
 
-            #return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
         old = attval.value
         attval.value = value
         cbs = []
