@@ -308,10 +308,6 @@ class Server:
         pass
 
     @syncmethod
-    def export_xml_by_ns(self, path=None, namespaces=None):
-        pass
-
-    @syncmethod
     def get_namespace_index(self, url):
         pass
 
