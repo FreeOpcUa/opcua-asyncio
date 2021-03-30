@@ -669,3 +669,9 @@ class Server:
         so it is a little faster
         """
         return await self.iserver.write_attribute_value(nodeid, datavalue, attr)
+
+    async def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
+        """
+        directly read datavalue of the Attribute
+        """
+        return await self.iserver.read_attribute_value(nodeid, attr)

@@ -291,6 +291,13 @@ class InternalServer:
         """
         await self.aspace.write_attribute_value(nodeid, attr, datavalue)
 
+    async def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
+        """
+        directly read datavalue of the Attribute
+        """
+        await asyncio.sleep(0)  
+        return self.aspace.read_attribute_value(nodeid, attr)  
+
     def set_user_manager(self, user_manager):
         """
         set up a function which that will check for authorize users. Input function takes username
