@@ -3,6 +3,7 @@ Usefull method and classes not belonging anywhere and depending on asyncua libra
 """
 
 from dateutil import parser
+from datetime import datetime
 from enum import Enum, IntEnum
 import uuid
 import logging
