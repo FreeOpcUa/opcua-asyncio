@@ -3,7 +3,6 @@ Usefull method and classes not belonging anywhere and depending on asyncua libra
 """
 
 from dateutil import parser
-from datetime import datetime
 from enum import Enum, IntEnum
 import uuid
 import logging
@@ -21,10 +20,10 @@ def value_to_datavalue(val, varianttype=None):
         datavalue = val
     elif isinstance(val, ua.Variant):
         datavalue = ua.DataValue(val)
-        datavalue.SourceTimestamp = datetime.utcnow()
+        datavalue.SourceTimestamp = ua.DateTime.utcnow()
     else:
         datavalue = ua.DataValue(ua.Variant(val, varianttype))
-        datavalue.SourceTimestamp = datetime.utcnow()
+        datavalue.SourceTimestamp = ua.DateTime.utcnow()
     return datavalue
 
 
