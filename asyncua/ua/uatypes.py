@@ -90,7 +90,7 @@ class Bytes(bytes):
     pass
 
 
-class ByteString(bytes):  # what is the ifference between Byte and ByteString??
+class ByteString(bytes):  # what is the difference between Bytes and ByteString??
     pass
 
 
