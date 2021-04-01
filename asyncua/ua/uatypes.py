@@ -943,8 +943,8 @@ class DataValue:
     Value: Optional[Variant] = None
     StatusCode_: Optional[StatusCode] = field(default_factory=StatusCode)
     SourceTimestamp: Optional[DateTime] = None
-    SourcePicoseconds: Optional[UInt16] = None
     ServerTimestamp: Optional[DateTime] = None
+    SourcePicoseconds: Optional[UInt16] = None
     ServerPicoseconds: Optional[UInt16] = None
 
     def __post_init__(
