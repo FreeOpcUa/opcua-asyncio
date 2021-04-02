@@ -675,7 +675,7 @@ class LocalizedText:
         return LocalizedText(string)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(frozen=True)
 class ExtensionObject:
     """
     Any UA object packed as an ExtensionObject
@@ -779,7 +779,7 @@ class VariantTypeCustom:
         return self.value == other.value
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(frozen=True)
 class Variant:
     """
     Create an OPC-UA Variant object.
@@ -806,15 +806,14 @@ class Variant:
     def __post_init__(self):
         if self.is_array is None:
             if isinstance(self.Value, (list, tuple)):
-                self.is_array = True
+                object.__setattr__(self, "is_array", True)
             else:
-                self.is_array = False
-        self._freeze = True
+                object.__setattr__(self, "is_array", False)
         if isinstance(self.Value, Variant):
-            self.VariantType = self.Value.VariantType
-            self.Value = self.Value.Value
+            object.__setattr__(self, "VariantType", self.Value.VariantType)
+            object.__setattr__(self, "Value", self.Value.Value)
         if self.VariantType is None:
-            self.VariantType = self._guess_type(self.Value)
+            object.__setattr__(self, "VariantType", self._guess_type(self.Value))
         if (
             self.Value is None
             and not self.is_array
@@ -827,7 +826,7 @@ class Variant:
             )
         ):
             if self.Value is None and self.VariantType == VariantType.NodeId:
-                self.Value = NodeId(0, 0)
+                object.__setattr__(self, "Value", NodeId(0, 0))
             else:
                 raise UaError(
                     f"Non array Variant of type {self.VariantType} cannot have value None"
@@ -835,7 +834,7 @@ class Variant:
         if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
             dims = get_shape(self.Value)
             if len(dims) > 1:
-                self.Dimensions = dims
+                object.__setattr__(self, "Dimensions", dims)
 
     def __eq__(self, other):
         if (
@@ -958,7 +957,7 @@ class DataValue:
         return self.StatusCode_
 
 
-@dataclass
+@dataclass(frozen=True)
 class DiagnosticInfo:
     """
     A recursive structure containing diagnostic information associated with a status code.

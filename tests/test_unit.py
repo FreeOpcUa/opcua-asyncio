@@ -464,9 +464,11 @@ def test_extension_object():
 
 
 def test_unknown_extension_object():
-    obj = ua.ExtensionObject()
-    obj.Body = b'example of data in custom format'
-    obj.TypeId = ua.NodeId.from_string('ns=3;i=42')
+    obj = ua.ExtensionObject(
+            Body=b'example of data in custom format',
+            TypeId = ua.NodeId.from_string('ns=3;i=42'),
+            )
+
     data = ua.utils.Buffer(extensionobject_to_binary(obj))
     obj2 = extensionobject_from_binary(data)
     assert type(obj2) == ua.ExtensionObject
