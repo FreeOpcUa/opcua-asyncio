@@ -143,7 +143,7 @@ class Node:
         get node class attribute of node
         """
         result = await self.read_attribute(ua.AttributeIds.NodeClass)
-        return result.Value.Value
+        return ua.NodeClass(result.Value.Value)
 
     async def read_data_type_definition(self):
         """
@@ -215,7 +215,7 @@ class Node:
         Read and return ArrayDimensions attribute of node
         """
         res = await self.read_attribute(ua.AttributeIds.ValueRank)
-        return res.Value.Value
+        return ua.ValueRank(res.Value.Value)
 
     async def write_value(self, value, varianttype=None):
         """
@@ -249,14 +249,14 @@ class Node:
             await self.unset_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.CurrentWrite)
 
     async def set_attr_bit(self, attr, bit):
-        val = await self.read_attribute(attr)
-        val.Value.Value = ua.ua_binary.set_bit(val.Value.Value, bit)
-        await self.write_attribute(attr, val)
+        dv = await self.read_attribute(attr)
+        val = ua.ua_binary.set_bit(dv.Value.Value, bit)
+        await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
     async def unset_attr_bit(self, attr, bit):
-        val = await self.read_attribute(attr)
-        val.Value.Value = ua.ua_binary.unset_bit(val.Value.Value, bit)
-        await self.write_attribute(attr, val)
+        dv = await self.read_attribute(attr)
+        val = ua.ua_binary.unset_bit(dv.Value.Value, bit)
+        await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
     def set_read_only(self):
         """

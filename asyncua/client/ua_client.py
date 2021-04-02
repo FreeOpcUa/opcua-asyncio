@@ -358,16 +358,6 @@ class UaClient:
         response = struct_from_binary(ua.ReadResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
-        # cast to Enum attributes that need to
-        for idx, rv in enumerate(parameters.NodesToRead):
-            if rv.AttributeId == ua.AttributeIds.NodeClass:
-                dv = response.Results[idx]
-                if dv.StatusCode.is_good():
-                    dv.Value.Value = ua.NodeClass(dv.Value.Value)
-            elif rv.AttributeId == ua.AttributeIds.ValueRank:
-                dv = response.Results[idx]
-                if dv.StatusCode.is_good() and dv.Value.Value in (-3, -2, -1, 0, 1, 2, 3, 4):
-                    dv.Value.Value = ua.ValueRank(dv.Value.Value)
         return response.Results
 
     async def write(self, params):

@@ -260,8 +260,10 @@ def to_binary(uatype, val):
         return list_to_binary(type_from_list(uatype), val)
     if hasattr(Primitives, uatype.__name__):
         return getattr(Primitives, uatype.__name__).pack(val)
-    if isinstance(val, (IntEnum, Enum)):
-        return Primitives.UInt32.pack(val.value)
+    if issubclass(uatype, Enum):
+        if isinstance(val, (IntEnum, Enum)):
+            return Primitives.UInt32.pack(val.value)
+        return Primitives.UInt32.pack(val)
     if hasattr(ua.VariantType, uatype.__name__):
         vtype = getattr(ua.VariantType, uatype.__name__)
         return pack_uatype(vtype, val)
@@ -356,7 +358,6 @@ def variant_to_binary(var):
     b = []
     encoding = var.VariantType.value & 0b111111
     if var.is_array or isinstance(var.Value, (list, tuple)):
-        var.is_array = True
         encoding = set_bit(encoding, 7)
         if var.Dimensions is not None:
             encoding = set_bit(encoding, 6)
@@ -424,11 +425,14 @@ def extensionobject_from_binary(data):
         if body is None:
             raise UaError(f'parsing ExtensionObject {cls.__name__} without data')
         return from_binary(cls, body)
-    e = ua.ExtensionObject()
-    e.TypeId = typeid
-    e.Encoding = encoding
     if body is not None:
-        e.Body = body.read(len(body))
+        body_data = body.read(len(body))
+    else:
+        body_data = None
+    e = ua.ExtensionObject(
+            TypeId=typeid,
+            Body=body_data,
+            )
     return e
 
 

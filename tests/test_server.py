@@ -104,8 +104,7 @@ async def test_register_use_namespace(server):
 
 async def test_server_method(server):
     def func(parent, variant):
-        variant.Value *= 2
-        return [variant]
+        return [ua.Variant(variant.Value * 2, variant.VariantType)]
 
     o = server.nodes.objects
     v = await o.add_method(3, 'Method1', func, [ua.VariantType.Int64], [ua.VariantType.Int64])
@@ -438,7 +437,7 @@ async def test_eventgenerator_custom_event_with_variables(server):
                   ('PropertyString', ua.VariantType.String)]
     variables = [('VariableString', ua.VariantType.String),
                  ('MyEnumVar', ua.VariantType.Int32, ua.NodeId(ua.ObjectIds.ApplicationType))]
-    etype = await server.create_custom_object_type(2, 'MyEvent33', ua.ObjectIds.BaseEventType, 
+    etype = await server.create_custom_object_type(2, 'MyEvent33', ua.ObjectIds.BaseEventType,
                                                        properties, variables)
     evgen = await server.get_event_generator(etype, ua.ObjectIds.Server)
     check_eventgenerator_custom_event(evgen, etype, server)
