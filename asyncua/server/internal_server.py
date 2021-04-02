@@ -66,8 +66,9 @@ class InternalServer:
             user_manager = PermissiveUserManager()
         self.user_manager = user_manager
         # create a session to use on server side
-        self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal",
-                                        user=User(role=UserRole.Admin))
+        self.isession = InternalSession(
+            self, self.aspace, self.subscription_service, "Internal", user=User(role=UserRole.Admin)
+        )
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         self.time_task = None
         self._time_task_stop = False
@@ -87,31 +88,37 @@ class InternalServer:
         await ns_node.write_value(uries)
 
         params = ua.WriteParameters()
-        for nodeid in (ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadData,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadEvents,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerWrite,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryUpdateData,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryUpdateEvents,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerMethodCall,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerBrowse,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRegisterNodes,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerTranslateBrowsePathsToNodeIds,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerNodeManagement,
-                       ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxMonitoredItemsPerCall):
+        for nodeid in (
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadData,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryReadEvents,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerWrite,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryUpdateData,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerHistoryUpdateEvents,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerMethodCall,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerBrowse,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRegisterNodes,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerTranslateBrowsePathsToNodeIds,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerNodeManagement,
+            ua.ObjectIds.Server_ServerCapabilities_OperationLimits_MaxMonitoredItemsPerCall,
+        ):
             attr = ua.WriteValue()
             attr.NodeId = ua.NodeId(nodeid)
             attr.AttributeId = ua.AttributeIds.Value
-            attr.Value = ua.DataValue(ua.Variant(10000, ua.VariantType.UInt32), ua.StatusCode(ua.StatusCodes.Good))
-            attr.Value.ServerTimestamp = datetime.utcnow()
+            attr.Value = ua.DataValue(
+                ua.Variant(10000, ua.VariantType.UInt32),
+                StatusCode_=ua.StatusCode(ua.StatusCodes.Good),
+                ServerTimestamp=datetime.utcnow(),
+            )
             params.NodesToWrite.append(attr)
         result = await self.isession.write(params)
         result[0].check()
 
     async def load_standard_address_space(self, shelf_file=None):
         if shelf_file:
-            is_file = (await asyncio.get_running_loop().run_in_executor(None, os.path.isfile, shelf_file)
-                       or await asyncio.get_running_loop().run_in_executor(None, os.path.isfile, f'{shelf_file}.db'))
+            is_file = await asyncio.get_running_loop().run_in_executor(
+                None, os.path.isfile, shelf_file
+            ) or await asyncio.get_running_loop().run_in_executor(None, os.path.isfile, f'{shelf_file}.db')
             if is_file:
                 # import address space from shelf
                 await asyncio.get_running_loop().run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
@@ -163,8 +170,9 @@ class InternalServer:
         self.logger.info('starting internal server')
         for edp in self.endpoints:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(ua.ServerState.Running,
-                                                                                                 ua.VariantType.Int32)
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(
+            ua.ServerState.Running, ua.VariantType.Int32
+        )
         await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.utcnow())
         if not self.disabled_clock:
             self.time_task = asyncio.create_task(self._set_current_time_loop())
@@ -212,7 +220,7 @@ class InternalServer:
             serv_uri = serv.Server.ApplicationUri.split(':')
             for uri in params.ServerUris:
                 uri = uri.split(':')
-                if serv_uri[:len(uri)] == uri:
+                if serv_uri[: len(uri)] == uri:
                     servers.append(serv.Server)
                     break
         return servers
@@ -333,7 +341,7 @@ class InternalServer:
                     # raise  # Should I raise a significant exception?
                     return user_name, password
                 length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
-                password = raw_pw[4:4 + length]
+                password = raw_pw[4 : 4 + length]
                 password = password.decode('utf-8')
             except Exception:
                 self.logger.exception("Unable to decrypt password")

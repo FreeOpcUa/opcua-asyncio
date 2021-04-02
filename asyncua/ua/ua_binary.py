@@ -233,13 +233,11 @@ def struct_to_binary(obj):
             if getattr(obj, field.name) is not None:
                 enc = enc | 1 << enc_count
             enc_count += 1
-    if hasattr(obj, "Encoding"):
-        setattr(obj, "Encoding", enc)
 
     for field in fields(obj):
         uatype = field.type
         if field.name == "Encoding":
-            packet.append(Primitives.Byte.pack(obj.Encoding))
+            packet.append(Primitives.Byte.pack(enc))
             continue
         val = getattr(obj, field.name)
         if type_is_union(uatype):
@@ -488,18 +486,21 @@ def struct_from_binary(objtype, data):
         objtype = getattr(ua, objtype)
     if issubclass(objtype, Enum):
         return objtype(Primitives.UInt32.unpack(data))
-    obj = objtype()
     enc_count = -1
-    for field in fields(obj):
+    kwargs = {}
+    enc = 0
+    for field in fields(objtype):
         # if our member has a switch and it is not set we skip it
         if type_is_union(field.type):
             enc_count += 1
-            val = getattr(obj, "Encoding")
-            if not test_bit(val, enc_count):
+            if not test_bit(enc, enc_count):
                 continue
         val = from_binary(field.type, data)
-        setattr(obj, field.name, val)
-    return obj
+        if field.name == "Encoding":  # Rmq: all code written assuming encoding is called Encoding
+            enc = val
+        else:
+            kwargs[field.name] = val
+    return objtype(**kwargs)
 
 
 def header_to_binary(hdr):

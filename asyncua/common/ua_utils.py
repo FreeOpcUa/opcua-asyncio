@@ -18,14 +18,10 @@ def value_to_datavalue(val, varianttype=None):
     convert anyting to a DataValue using varianttype
     """
     if isinstance(val, ua.DataValue):
-        datavalue = val
-    elif isinstance(val, ua.Variant):
-        datavalue = ua.DataValue(val)
-        datavalue.SourceTimestamp = datetime.utcnow()
-    else:
-        datavalue = ua.DataValue(ua.Variant(val, varianttype))
-        datavalue.SourceTimestamp = datetime.utcnow()
-    return datavalue
+        return val
+    if isinstance(val, ua.Variant):
+        datavalue = ua.DataValue(val, SourceTimestamp=datetime.utcnow())
+    return ua.DataValue(ua.Variant(val, varianttype), SourceTimestamp=datetime.utcnow())
 
 
 def val_to_string(val, truncate=False):

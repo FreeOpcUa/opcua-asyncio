@@ -552,13 +552,12 @@ def test_qualified_name():
 
 
 def test_datavalue():
-    dv = ua.DataValue(123)
+    dv = ua.DataValue(123, SourceTimestamp=datetime.utcnow())
     assert dv.Value == ua.Variant(123)
     assert type(dv.Value) == ua.Variant
-    dv = ua.DataValue('abc')
+    dv = ua.DataValue('abc', SourceTimestamp=datetime.utcnow())
     assert dv.Value == ua.Variant('abc')
-    now = datetime.utcnow()
-    dv.SourceTimestamp = now
+    assert isinstance(dv.SourceTimestamp, datetime)
 
 
 def test_variant():
@@ -795,4 +794,3 @@ def test_struct_104():
     data = struct_to_binary(m)
     m2 = struct_from_binary(MyStruct, ua.utils.Buffer(data))
     assert m == m2
-
