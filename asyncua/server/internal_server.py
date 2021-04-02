@@ -295,8 +295,6 @@ class InternalServer:
         """
         directly read datavalue of the Attribute
         """
-        # https://github.com/FreeOpcUa/opcua-asyncio/pull/524
-        await asyncio.sleep(0)  
         return self.aspace.read_attribute_value(nodeid, attr)  
 
     def set_user_manager(self, user_manager):
