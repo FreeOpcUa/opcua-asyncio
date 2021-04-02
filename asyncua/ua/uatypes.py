@@ -917,7 +917,7 @@ def get_shape(mylist):
     return dims
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(frozen=True)
 class DataValue:
     """
     A value with an associated timestamp, and quality.
@@ -951,15 +951,11 @@ class DataValue:
         self,
     ):
         if not isinstance(self.Value, Variant):
-            self.Value = Variant(self.Value)
+            object.__setattr__(self, "Value", Variant(self.Value))
 
     @property
     def StatusCode(self):
         return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
 
 
 @dataclass
