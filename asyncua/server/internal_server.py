@@ -291,7 +291,7 @@ class InternalServer:
         """
         await self.aspace.write_attribute_value(nodeid, attr, datavalue)
 
-    async def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
+    def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
         """
         directly read datavalue of the Attribute
         """
