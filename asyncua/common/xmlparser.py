@@ -5,12 +5,12 @@ import re
 import asyncio
 import base64
 import logging
-from pytz import utc
-
 import xml.etree.ElementTree as ET
 
-from .ua_utils import string_to_val
+from pytz import utc
 from asyncua import ua
+
+from .ua_utils import string_to_val
 
 
 def ua_type_to_python(val, uatype_as_str):
