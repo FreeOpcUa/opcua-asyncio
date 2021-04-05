@@ -275,7 +275,7 @@ class CodeGenerator:
                     for k2, v2 in v:
                         val2 = _to_val([extobj.objname, k], k2, v2)
                         #self.writecode(indent, f'    {k}.{k2}={val2},')
-                        self.writecode(indent, f'    {k}={val2},')
+                        self.writecode(indent, f'    {k}=LocalizedText(Text={val2}),')
         self.writecode(indent, '    ),')
 
     def make_variable_code(self, obj):

@@ -564,15 +564,18 @@ async def test_load_enum_strings(server):
 
 async def test_load_enum_values(server):
     dt = await server.nodes.enum_data_type.add_data_type(0, "MyValuesEnum")
-    v1 = ua.EnumValueType()
-    v1.DisplayName.Text = "v1"
-    v1.Value = 2
-    v2 = ua.EnumValueType()
-    v2.DisplayName.Text = "v2"
-    v2.Value = 3
-    v3 = ua.EnumValueType()
-    v3.DisplayName.Text = "v 3 "
-    v3.Value = 4
+    v1 = ua.EnumValueType(
+            DisplayName=ua.LocalizedText("v1"),
+            Value=2,
+            )
+    v2 = ua.EnumValueType(
+            DisplayName=ua.LocalizedText("v2"),
+            Value=3,
+            )
+    v3 = ua.EnumValueType(
+            DisplayName=ua.LocalizedText("v 3 "),
+            Value=4.
+            )
     await dt.add_property(0, "EnumValues", [v1, v2, v3])
     await server.load_enums()
     e = getattr(ua, "MyValuesEnum")

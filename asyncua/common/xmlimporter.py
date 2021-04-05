@@ -8,7 +8,7 @@ from typing import Union, Dict
 from dataclasses import fields, is_dataclass
 
 from asyncua import ua
-from asyncua.ua.uatypes import type_string_from_type
+from asyncua.ua.uatypes import type_string_from_type, type_is_union, type_from_union, type_is_list, type_from_list
 from .xmlparser import XMLParser, ua_type_to_python
 from ..ua.uaerrors import UaError
 
@@ -114,8 +114,8 @@ class XmlImporter:
         await self._add_references(remaining_refs)
         missing_nodes = await self._add_missing_reverse_references(nodes)
         if missing_nodes:
-            _logger.warning(f"The following references exist, but the Nodes are missing: {missing_nodes}")
-        if len(self.refs):
+            _logger.warning(f"The following references exist, but the Nodes are missing: %s", missing_nodes)
+        if self.refs:
             _logger.warning(
                 "The following references could not be imported and are probably broken: %s",
                 self.refs,
@@ -196,12 +196,10 @@ class XmlImporter:
             raise ValueError(f"Not implemented node type: {nodedata.nodetype} ")
         return node
 
-
     def _get_server(self):
         if hasattr(self.server, "iserver"):
             return self.server.iserver.isession
-        else:
-            return self.server.uaclient
+        return self.server.uaclient
 
     async def _add_references(self, refs):
         res = await self._get_server().add_references(refs)
@@ -359,7 +357,8 @@ class XmlImporter:
             raise Exception("Error no alias found for extension class", name)
 
     def _make_ext_obj(self, obj):
-        ext = self._get_ext_class(obj.objname)()
+        extclass = self._get_ext_class(obj.objname)
+        args = {}
         for name, val in obj.body:
             if not isinstance(val, list):
                 raise Exception(
@@ -368,46 +367,55 @@ class XmlImporter:
                     type(val),
                     val,
                 )
-            else:
-                for attname, v in val:
-                    self._set_attr(ext, attname, v)
-        return ext
+            for attname, v in val:
+                atttype = self._get_val_type(extclass, attname)
+                self._set_attr(atttype, args, attname, v)
+        return extclass(**args)
 
-    def _get_val_type(self, obj, attname: str):
-        for field in fields(obj):
+    def _get_val_type(self, objclass, attname: str):
+        for field in fields(objclass):
             if field.name == attname:
-                return type_string_from_type(field.type)
-        raise UaError(f"Attribute '{attname}' defined in xml is not found in object '{obj}'")
+                return field.type
+                #return type_string_from_type(field.type)
+        raise UaError(f"Attribute '{attname}' defined in xml is not found in object '{objclass}'")
 
-    def _set_attr(self, obj, attname: str, val):
+    def _set_attr(self, atttype, fargs, attname: str, val):
         # tow possible values:
         # either we get value directly
         # or a dict if it s an object or a list
+        if type_is_union(atttype):
+            atttype = type_from_union(atttype)
         if isinstance(val, str):
-            pval = ua_type_to_python(val, self._get_val_type(obj, attname))
-            setattr(obj, attname, pval)
+            pval = ua_type_to_python(val, atttype.__name__)
+            fargs[attname] = pval
+            return
+        # so we have either an object or a list...
+        if type_is_list(atttype):
+            atttype = type_from_list(atttype)
+            my_list = []
+            for vtype, v2 in val:
+                my_list.append(ua_type_to_python(v2, vtype))
+            fargs[attname] = my_list
+
+        elif issubclass(atttype, ua.NodeId):  # NodeId representation does not follow common rules!!
+            for attname2, v2 in val:
+                if attname2 == "Identifier":
+                    if hasattr(ua.ObjectIds, v2):
+                        obj2 = ua.NodeId(getattr(ua.ObjectIds, v2))
+                    else:
+                        obj2 = ua.NodeId.from_string(v2)
+                    fargs[attname] = self._migrate_ns(obj2)
+                    break
+        elif is_dataclass(atttype):
+            subargs = {}
+            for attname2, v2 in val:
+                sub_atttype = self._get_val_type(atttype, attname2)
+                self._set_attr(sub_atttype, subargs, attname2, v2)
+            if "Encoding" in subargs:
+                del(subargs["Encoding"])
+            fargs[attname] = atttype(**subargs)
         else:
-            # so we have either an object or a list...
-            obj2 = getattr(obj, attname)
-            if isinstance(obj2, ua.NodeId):  # NodeId representation does not follow common rules!!
-                for attname2, v2 in val:
-                    if attname2 == "Identifier":
-                        if hasattr(ua.ObjectIds, v2):
-                            obj2 = ua.NodeId(getattr(ua.ObjectIds, v2))
-                        else:
-                            obj2 = ua.NodeId.from_string(v2)
-                        setattr(obj, attname, self._migrate_ns(obj2))
-                        break
-            elif not is_dataclass(obj2):
-                # we probably have a list
-                my_list = []
-                for vtype, v2 in val:
-                    my_list.append(ua_type_to_python(v2, vtype))
-                setattr(obj, attname, my_list)
-            else:
-                for attname2, v2 in val:
-                    self._set_attr(obj2, attname2, v2)
-                setattr(obj, attname, obj2)
+            raise RuntimeError(f"Could not handle type {attype} of type {type(attype)}")
 
     def _add_variable_value(self, obj):
         """
@@ -427,7 +435,7 @@ class XmlImporter:
             if hasattr(ua.ua_binary.Primitives, vtype):
                 return ua.Variant(obj.value, getattr(ua.VariantType, vtype))
             elif vtype == "LocalizedText":
-                return ua.Variant([getattr(ua, vtype)(Text=item["Text"], Locale=item["Locale"]) for item in obj.value])
+                return ua.Variant([ua.LocalizedText(Text=item["Text"], Locale=item["Locale"]) for item in obj.value])
             else:
                 return ua.Variant([getattr(ua, vtype)(v) for v in obj.value])
         elif obj.valuetype == "ExtensionObject":
@@ -436,18 +444,10 @@ class XmlImporter:
         elif obj.valuetype == "Guid":
             return ua.Variant(uuid.UUID(obj.value), getattr(ua.VariantType, obj.valuetype))
         elif obj.valuetype == "LocalizedText":
-            ltext = ua.LocalizedText()
-            for name, val in obj.value:
-                if name == "Text":
-                    ltext.Text = val
-                elif name == "Locale":
-                    ltext.Locale = val
-                else:
-                    _logger.warning(
-                        "While parsing localizedText value, unkown element: %s with val: %s",
-                        name,
-                        val,
-                    )
+            myargs = dict(obj.value)
+            if "Encoding" in myargs:
+                del myargs["Encoding"]
+            ltext = ua.LocalizedText(**dict(obj.value))
             return ua.Variant(ltext, ua.VariantType.LocalizedText)
         elif obj.valuetype == "NodeId":
             return ua.Variant(ua.NodeId.from_string(obj.value))

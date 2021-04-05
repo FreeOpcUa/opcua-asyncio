@@ -15,7 +15,7 @@ except ImportError:
 logger = logging.getLogger('asyncua.uaprotocol')
 
 
-class MessageChunk(ua.FrozenClass):
+class MessageChunk:
     """
     Message Chunk, as described in OPC UA specs Part 6, 6.7.2.
     """

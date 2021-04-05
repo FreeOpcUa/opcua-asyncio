@@ -446,6 +446,7 @@ async def _test_xml_var_type(opc, tmpdir, node: Node, typename: str, test_equali
     assert dtype == await node2.read_data_type()
     if test_equality:
         logger.debug(node, dv, node2, await node2.read_value())
+        dv2 = await node2.read_value()
         assert dv.Value == (await node2.read_data_value()).Value
     assert rank == await node2.read_value_rank()
     assert dim == await node2.read_array_dimensions()
