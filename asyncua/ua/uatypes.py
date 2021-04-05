@@ -187,7 +187,6 @@ def win_epoch_to_datetime(epch):
 
 
 FROZEN = False
-FrozenClass = object
 
 
 class ValueRank(IntEnum):
@@ -308,7 +307,7 @@ class EventNotifier(_MaskEnum):
     HistoryWrite = 3
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(frozen=True)
 class StatusCode:
     """
     :ivar value:
@@ -323,7 +322,7 @@ class StatusCode:
 
     def __post_init__(self):
         if isinstance(self.value, str):
-            self.value = getattr(status_codes.StatusCodes, self.value)
+            object.__setattr__(self, "value", getattr(status_codes.StatusCodes, self.value))
 
     def check(self):
         """
@@ -597,7 +596,7 @@ class ExpandedNodeId(NodeId):
         return ";".join(string)
 
 
-@dataclass(frozen=FROZEN, order=True)
+@dataclass(frozen=True, init=False, order=True)
 class QualifiedName:
     """
     A string qualified with a namespace index.
@@ -607,8 +606,8 @@ class QualifiedName:
     Name: String = ""
 
     def __init__(self, Name=None, NamespaceIndex=0):
-        self.Name = Name
-        self.NamespaceIndex = NamespaceIndex
+        object.__setattr__(self, "Name", Name)
+        object.__setattr__(self, "NamespaceIndex", NamespaceIndex)
         if isinstance(self.NamespaceIndex, str) and isinstance(self.Name, int):
             # originally the order or argument was inversed, try to support it
             logger.warning("QualifiedName are str, int, while int, str is expected, swithcing")
@@ -633,7 +632,7 @@ class QualifiedName:
         return QualifiedName(Name=name, NamespaceIndex=idx)
 
 
-@dataclass(frozen=FROZEN, init=False)
+@dataclass(frozen=True, init=False)
 class LocalizedText:
     """
     A string qualified with a namespace index.
@@ -645,8 +644,8 @@ class LocalizedText:
 
     def __init__(self, Text=None, Locale=None):
         # need to write init method since args ar inverted in original implementataion
-        self.Text = Text
-        self.Locale = Locale
+        object.__setattr__(self, "Text", Text)
+        object.__setattr__(self, "Locale", Locale)
 
         if self.Text is not None:
             if not isinstance(self.Text, str):

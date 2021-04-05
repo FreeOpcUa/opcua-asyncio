@@ -435,6 +435,8 @@ class XmlExporter:
     async def _all_fields_to_etree(self, struct_el, val):
         for field in fields(val):
             # FIXME; what happend if we have a custom type which is not part of ObjectIds???
+            if field.name == "Encoding":
+                continue
             type_name = type_string_from_type(field.type)
             await self.member_to_etree(struct_el, field.name, ua.NodeId(getattr(ua.ObjectIds, type_name)), getattr(val, field.name))
 
