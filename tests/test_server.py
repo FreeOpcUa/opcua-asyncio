@@ -653,6 +653,15 @@ async def check_custom_type(ntype, base_type, server: Server, node_class=None):
     assert await ntype.get_child("2:PropertyString") in properties
     assert (await(await ntype.get_child("2:PropertyString")).read_data_value()).Value.VariantType == ua.VariantType.String
 
+async def test_server_read_write_attribute_value(server: Server):
+    node = await server.get_objects_node().add_variable(0, "0:TestVar", 0, varianttype=ua.VariantType.Int64)
+    dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value.Value == 0
+    dv = ua.DataValue(Value=ua.Variant(Value=5, VariantType=ua.VariantType.Int64))
+    await server.write_attribute_value(node.nodeid, dv, attr=ua.AttributeIds.Value)
+    dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value.Value == 5
+    await server.delete_nodes([node])
 
 """
 class TestServerCaching(unittest.TestCase):
