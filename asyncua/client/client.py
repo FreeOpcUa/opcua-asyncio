@@ -508,11 +508,14 @@ class Client:
         """
         Close session
         """
-        self._renew_channel_task.cancel()
-        try:
-            await self._renew_channel_task
-        except Exception:
-            _logger.exception("Error while closing secure channel loop")
+        if self._renew_channel_task is not None:
+            self._renew_channel_task.cancel()
+            try:
+                await self._renew_channel_task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                _logger.exception("Error while closing secure channel loop")
         return await self.uaclient.close_session(True)
 
     def get_root_node(self):
