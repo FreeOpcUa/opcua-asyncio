@@ -535,7 +535,7 @@ class Client:
             except Exception:
                 _logger.exception("Error while closing secure channel loop")
             finally:
-                self._publish_task = None
+                self._renew_channel_task = None
         return await self.uaclient.close_session(True)
 
     def get_root_node(self):

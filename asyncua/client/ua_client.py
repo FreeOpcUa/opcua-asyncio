@@ -190,8 +190,6 @@ class UASocketProtocol(asyncio.Protocol):
         self.logger.info("Request to close socket received")
         if self.transport:
             self.transport.close()
-            self.state = self.CLOSED
-            self.transport = None
         else:
             self.logger.warning("disconnect_socket was called but transport is None")
 
@@ -272,9 +270,7 @@ class UaClient:
             self.logger.warning("disconnect_socket was called but connection is closed")
             return
         self.protocol.disconnect_socket()
-        # removing the protocol will result in a fail in the ha_test. IMO returning to the initial state of None
-        # and allowing garbage collection would be a good idea.
-        # self.protocol = None
+        self.protocol = None
 
     async def send_hello(self, url, max_messagesize=0, max_chunkcount=0):
         await self.protocol.send_hello(url, max_messagesize, max_chunkcount)

@@ -60,7 +60,7 @@ class TestHaClient:
             assert srv_info.url == client.server_url.geturl()
 
         await ha_client.stop()
-        await wait_clients_socket(ha_client, UASocketProtocol.CLOSED)
+        await wait_clients_socket(ha_client, None)
 
     @pytest.mark.asyncio
     async def test_all_tasks_running(self, ha_client):

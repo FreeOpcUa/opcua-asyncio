@@ -128,13 +128,12 @@ async def test_cancelling_connection_establishment():
     async def connect():
         await client.connect() # timeout
     
-    task1 = asyncio.create_task(connect())
+    task = asyncio.create_task(connect())
     await asyncio.sleep(1)
     assert client._connect_task is not None # connection establishment is ongoing
     await client.disconnect()
     assert client._connect_task is None # connection establishment is interrupted
-    # This conflicts with the ha_test check for state == CLOSED.
-    # assert client.uaclient.protocol is None
-    await task1
+    assert client.uaclient.protocol is None
+    await task
     
     

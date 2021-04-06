@@ -372,10 +372,16 @@ async def ha_client(ha_config, ha_servers):
 async def wait_clients_socket(ha_client, state):
     for client in ha_client.get_clients():
         for _ in range(RETRY):
-            if client.uaclient.protocol and client.uaclient.protocol.state == state:
-                break
+            try:
+                result = state is None and client.uaclient.protocol is None or \
+                        client.uaclient.protocol.state is state
+                if result:
+                    break
+            except AttributeError: # protocol doesn't exist yet (connection attempt ongoing), but target is not None
+                pass
             await sleep(SLEEP)
-        assert client.uaclient.protocol.state == state
+        assert result
+                
 
 
 async def wait_sub_in_real_map(ha_client, sub, negation=False):
