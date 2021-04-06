@@ -27,14 +27,13 @@ def _check_results(results, reqlen=1):
 def _to_nodeid(nodeid):
     if isinstance(nodeid, int):
         return ua.TwoByteNodeId(nodeid)
-    elif isinstance(nodeid, Node):
+    if isinstance(nodeid, Node):
         return nodeid.nodeid
-    elif isinstance(nodeid, ua.NodeId):
+    if isinstance(nodeid, ua.NodeId):
         return nodeid
-    elif type(nodeid) in (str, bytes):
+    if type(nodeid) in (str, bytes):
         return ua.NodeId.from_string(nodeid)
-    else:
-        raise ua.UaError(f"Could not resolve '{nodeid}' to a type id")
+    raise ua.UaError(f"Could not resolve '{nodeid}' to a type id")
 
 
 class Node:
@@ -478,8 +477,7 @@ class Node:
         refs = await self.get_references(refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse)
         if len(refs) > 0:
             return Node(self.server, refs[0].NodeId)
-        else:
-            return None
+        return None
 
     async def get_child(self, path):
         """

@@ -3,9 +3,9 @@ Low level binary client
 """
 import asyncio
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
+
 from asyncua import ua
-from typing import Optional
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, UaStructParsingError
 from ..common.connection import SecureConnection
@@ -165,8 +165,8 @@ class UASocketProtocol(asyncio.Protocol):
     def _call_callback(self, request_id, body):
         try:
             self._callbackmap[request_id].set_result(body)
-        except KeyError:
-            raise ua.UaError(f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}, body was {body}")
+        except KeyError as ex:
+            raise ua.UaError(f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}, body was {body}") from ex
         except asyncio.InvalidStateError:
             if not self.closed:
                 self.logger.warning("Future for request id %s is already done", request_id)
@@ -470,9 +470,9 @@ class UaClient:
         self.protocol.check_answer(data, "while waiting for publish response")
         try:
             response = struct_from_binary(ua.PublishResponse, data)
-        except Exception:
+        except Exception as ex:
             self.logger.exception("Error parsing notification from server")
-            raise UaStructParsingError
+            raise UaStructParsingError from ex
         return response
 
     async def _publish_loop(self):
