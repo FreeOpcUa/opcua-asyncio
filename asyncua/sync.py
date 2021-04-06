@@ -193,6 +193,10 @@ class Client:
         pass
 
     @syncmethod
+    def get_namespace_array(self):
+        pass
+
+    @syncmethod
     def set_security(self):
         pass
 
@@ -462,6 +466,10 @@ class SyncNode:
         pass
 
     @syncmethod
+    def add_variable_type(self, ns, name, datatype):
+        pass
+
+    @syncmethod
     def add_folder(self, ns, name):
         pass
 
@@ -515,6 +523,10 @@ class SyncNode:
         nodeclassmask=ua.NodeClass.Unspecified,
         includesubtypes=True,
     ):
+        pass
+
+    @syncmethod
+    def add_reference(self, target, reftype, forward=True, bidirectional=True):
         pass
 
     @syncmethod
