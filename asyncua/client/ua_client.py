@@ -190,6 +190,8 @@ class UASocketProtocol(asyncio.Protocol):
         self.logger.info("Request to close socket received")
         if self.transport:
             self.transport.close()
+            self.state = self.CLOSED
+            self.transport = None
         else:
             self.logger.warning("disconnect_socket was called but transport is None")
 
@@ -268,8 +270,11 @@ class UaClient:
     def disconnect_socket(self):
         if self.protocol is None or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("disconnect_socket was called but connection is closed")
-            return None
-        return self.protocol.disconnect_socket()
+            return
+        self.protocol.disconnect_socket()
+        # removing the protocol will result in a fail in the ha_test. IMO returning to the initial state of None
+        # and allowing garbage collection would be a good idea.
+        # self.protocol = None
 
     async def send_hello(self, url, max_messagesize=0, max_chunkcount=0):
         await self.protocol.send_hello(url, max_messagesize, max_chunkcount)
@@ -317,12 +322,12 @@ class UaClient:
                 await self._publish_task
             except asyncio.CancelledError:
                 pass
-        if self.protocol is None:
-            return
-        self.protocol.closed = True
-        if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
+            finally:
+                self._publish_task = None
+        if self.protocol is None or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("close_session was called but connection is closed")
             return
+        self.protocol.closed = True
         request = ua.CloseSessionRequest()
         request.DeleteSubscriptions = delete_subscriptions
         data = await self.protocol.send_request(request)
