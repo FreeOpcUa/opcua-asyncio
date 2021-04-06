@@ -5,7 +5,14 @@ implement ua datatypes
 import sys
 from typing import Optional, Any, Union, Generic
 import collections
-
+import logging
+from enum import Enum, IntEnum
+from calendar import timegm
+import uuid
+import re
+import itertools
+from datetime import datetime, timedelta, MAXYEAR, tzinfo
+from dataclasses import dataclass, field
 
 # hack to support python < 3.8
 if sys.version_info.minor < 10:
@@ -26,14 +33,6 @@ if sys.version_info.minor < 10:
 else:
     from typing import get_origin, get_args
 
-import logging
-from enum import Enum, IntEnum
-from calendar import timegm
-import uuid
-import re
-import itertools
-from datetime import datetime, timedelta, MAXYEAR, tzinfo
-from dataclasses import dataclass, field
 
 from asyncua.ua import status_codes
 from .uaerrors import UaError, UaStatusCodeError, UaStringParsingError
@@ -896,7 +895,7 @@ def flatten_and_get_shape(mylist):
 def flatten(mylist):
     if mylist is None:
         return None
-    elif len(mylist) == 0:
+    if len(mylist) == 0:
         return mylist
     while isinstance(mylist[0], (list, tuple)):
         mylist = [item for sublist in mylist for item in sublist]
@@ -1004,8 +1003,7 @@ def datatype_to_varianttype(int_type):
 
     if int_type <= 25:
         return VariantType(int_type)
-    else:
-        return VariantTypeCustom(int_type)
+    return VariantTypeCustom(int_type)
 
 
 def get_default_value(vtype):
@@ -1014,42 +1012,41 @@ def get_default_value(vtype):
     """
     if vtype == VariantType.Null:
         return None
-    elif vtype == VariantType.Boolean:
+    if vtype == VariantType.Boolean:
         return False
-    elif vtype in (VariantType.SByte, VariantType.Byte):
+    if vtype in (VariantType.SByte, VariantType.Byte):
         return 0
-    elif vtype == VariantType.ByteString:
+    if vtype == VariantType.ByteString:
         return b""
-    elif 4 <= vtype.value <= 9:
+    if 4 <= vtype.value <= 9:
         return 0
-    elif vtype in (VariantType.Float, VariantType.Double):
+    if vtype in (VariantType.Float, VariantType.Double):
         return 0.0
-    elif vtype == VariantType.String:
+    if vtype == VariantType.String:
         return None  # a string can be null
-    elif vtype == VariantType.DateTime:
+    if vtype == VariantType.DateTime:
         return datetime.utcnow()
-    elif vtype == VariantType.Guid:
+    if vtype == VariantType.Guid:
         return uuid.uuid4()
-    elif vtype == VariantType.XmlElement:
+    if vtype == VariantType.XmlElement:
         return None  # Not sure this is correct
-    elif vtype == VariantType.NodeId:
+    if vtype == VariantType.NodeId:
         return NodeId()
-    elif vtype == VariantType.ExpandedNodeId:
-        return NodeId()
-    elif vtype == VariantType.StatusCode:
+    if vtype == VariantType.ExpandedNodeId:
+        return ExpandedNodeId()
+    if vtype == VariantType.StatusCode:
         return StatusCode()
-    elif vtype == VariantType.QualifiedName:
+    if vtype == VariantType.QualifiedName:
         return QualifiedName()
-    elif vtype == VariantType.LocalizedText:
+    if vtype == VariantType.LocalizedText:
         return LocalizedText()
-    elif vtype == VariantType.ExtensionObject:
+    if vtype == VariantType.ExtensionObject:
         return ExtensionObject()
-    elif vtype == VariantType.DataValue:
+    if vtype == VariantType.DataValue:
         return DataValue()
-    elif vtype == VariantType.Variant:
+    if vtype == VariantType.Variant:
         return Variant()
-    else:
-        raise RuntimeError(f"function take a uatype as argument, got: {vtype}")
+    raise RuntimeError(f"function take a uatype as argument, got: {vtype}")
 
 
 # register of custom enums (Those loaded with load_enums())

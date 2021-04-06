@@ -2,7 +2,7 @@ from ..ua import ObjectIds
 from .node import Node
 
 
-class Shortcuts(object):
+class Shortcuts:
     """
     This object contains Node objects to some commonly used nodes
     """
