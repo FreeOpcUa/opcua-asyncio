@@ -266,7 +266,7 @@ class UaClient:
         await asyncio.wait_for(asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout)
 
     def disconnect_socket(self):
-        if self.protocol and self.protocol.state == UASocketProtocol.CLOSED or self.protocol is None:
+        if self.protocol is None or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("disconnect_socket was called but connection is closed")
             return None
         return self.protocol.disconnect_socket()
@@ -282,7 +282,7 @@ class UaClient:
         close secure channel. It seems to trigger a shutdown of socket
         in most servers, so be prepare to reconnect
         """
-        if self.protocol and self.protocol.state == UASocketProtocol.CLOSED or self.protocol is None:
+        if self.protocol is None or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("close_secure_channel was called but connection is closed")
             return
         return await self.protocol.close_secure_channel()
@@ -311,7 +311,7 @@ class UaClient:
 
     async def close_session(self, delete_subscriptions):
         self.logger.info("close_session")
-        if self._publish_task and not self._publish_task.done() or self._publish_task is not None:
+        if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
             try:
                 await self._publish_task
