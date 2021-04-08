@@ -224,6 +224,14 @@ class Client:
     def connect_and_get_server_endpoints(self):
         pass
 
+    @syncmethod
+    def read_values(self, nodes):
+        pass
+
+    @syncmethod
+    def write_values(self, nodes, values):
+        pass
+
     def __enter__(self):
         self.connect()
         return self
