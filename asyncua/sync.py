@@ -225,11 +225,11 @@ class Client:
         pass
 
     @syncmethod
-    def write_values(self):
+    def read_values(self, nodes):
         pass
-    
+
     @syncmethod
-    def read_values(self):
+    def write_values(self, nodes, values):
         pass
 
     def __enter__(self):
