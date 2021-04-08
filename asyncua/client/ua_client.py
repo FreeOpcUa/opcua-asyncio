@@ -157,7 +157,7 @@ class UASocketProtocol(asyncio.Protocol):
         typeid = nodeid_from_binary(data)
         if typeid == ua.FourByteNodeId(ua.ObjectIds.ServiceFault_Encoding_DefaultBinary):
             hdr = struct_from_binary(ua.ResponseHeader, data)
-            self.logger.warning("ServiceFault (%s) from server received %s", hdr.ServiceResult.name, context)
+            self.logger.warning("ServiceFault (%s, diagnostics: %s) from server received %s", hdr.ServiceResult.name, hdr.ServiceDiagnostics, context)
             hdr.ServiceResult.check()
             return False
         return True
