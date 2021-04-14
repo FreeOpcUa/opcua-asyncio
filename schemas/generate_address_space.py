@@ -315,7 +315,6 @@ class CodeGenerator:
     def make_reference_code(self, obj):
         indent = "   "
         self.writecode()
-        self.make_node_code(obj, indent)
         self.writecode(indent, 'attrs = ua.ReferenceTypeAttributes(')
         if obj.desc:
             self.writecode(indent, '    Description=LocalizedText("{0}"),'.format(obj.desc))
@@ -327,7 +326,7 @@ class CodeGenerator:
         if obj.symmetric:
             self.writecode(indent, f'    Symmetric={obj.symmetric},')
         self.writecode(indent, '    )')
-        self.writecode(indent, 'node.NodeAttributes = attrs')
+        self.make_node_code(obj, indent)
         self.make_refs_code(obj, indent)
 
     def make_datatype_code(self, obj):
