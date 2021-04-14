@@ -4,6 +4,7 @@ import sys
 import subprocess
 import concurrent.futures
 import signal
+from .test_common import retry
 
 from asyncua.tools import uaread, uals, uawrite, uahistoryread, uaclient, uadiscover, uacall
 
@@ -11,6 +12,18 @@ pytestmark = pytest.mark.asyncio
 
 ROOT_NODE = "i=85"
 RW_NODE = "i=3078"
+
+
+@retry(times=5, sleep=1, exceptions=[AssertionError])
+def run_in_executor(executor, tool):
+    """
+    retry as the server running in a different thread
+    might not be ready to accept the first connections
+    """
+    result = executor.submit(tool)
+    future = next(concurrent.futures.as_completed([result]))
+    str_excp = repr(future.exception())
+    assert str_excp == "SystemExit(0)"
 
 
 async def test_cli_tools(running_server):
@@ -37,12 +50,7 @@ async def test_cli_tools(running_server):
         # It's necessary to mock argv, else the tool is invoked with *pytest's* argv
         with patch.object(sys, 'argv', tool_opts[tool]):
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                result = executor.submit(tool)
-                for future in concurrent.futures.as_completed([result]):
-                    exception = future.exception()
-                    # py3.6 returns SystemExit(0,)
-                    str_exp = repr(exception).replace(",", "")
-                    assert str_exp == "SystemExit(0)"
+                run_in_executor(executor, tool)
 
 
 async def test_cli_tools_which_require_sigint(running_server):

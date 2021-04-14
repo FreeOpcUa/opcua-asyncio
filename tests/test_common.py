@@ -10,6 +10,7 @@ import asyncio
 from datetime import datetime
 from datetime import timedelta
 import math
+import time
 
 import pytest
 
@@ -1375,3 +1376,21 @@ async def test_custom_method_with_struct(opc):
     result = await opc.opc.nodes.objects.call_method(methodid, mystruct)
 
     assert result.MyUInt32 == [78, 79, 100]
+
+
+def retry(times, sleep, exceptions):
+    def wrapper(func):
+        def fn(*args, **kwargs):
+            attempt = 0
+            while attempt < times:
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if type(e) not in exceptions:
+                        raise e
+                    print(f"Failed with {e}, retry attempt {attempt}")
+                    attempt += 1
+                    time.sleep(sleep)
+            return func(*args, **kwargs)
+        return fn
+    return wrapper
