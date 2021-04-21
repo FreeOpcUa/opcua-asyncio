@@ -465,26 +465,32 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
     def encrypt_asymmetric(pubkey, data):
         return uacrypto.encrypt_rsa15(pubkey, data)
 
-    def __init__(self, server_cert, client_cert, client_pk, mode):
+    def __init__(self, peer_cert, host_cert, client_pk, mode,
+                 permission_ruleset=None):
         logger.warning("DEPRECATED! Do not use SecurityPolicyBasic128Rsa15 anymore!")
 
         require_cryptography(self)
-        if isinstance(server_cert, bytes):
-            server_cert = uacrypto.x509_from_der(server_cert)
+        if isinstance(peer_cert, bytes):
+            peer_cert = uacrypto.x509_from_der(peer_cert)
         # even in Sign mode we need to asymmetrically encrypt secrets
         # transmitted in OpenSecureChannel. So SignAndEncrypt here
         self.asymmetric_cryptography = Cryptography(
             MessageSecurityMode.SignAndEncrypt)
         self.asymmetric_cryptography.Signer = SignerRsa(client_pk)
-        self.asymmetric_cryptography.Verifier = VerifierRsa(server_cert)
+        self.asymmetric_cryptography.Verifier = VerifierRsa(peer_cert)
         self.asymmetric_cryptography.Encryptor = EncryptorRsa(
-            server_cert, uacrypto.encrypt_rsa15, 11)
+            peer_cert, uacrypto.encrypt_rsa15, 11)
         self.asymmetric_cryptography.Decryptor = DecryptorRsa(
             client_pk, uacrypto.decrypt_rsa15, 11)
         self.symmetric_cryptography = Cryptography(mode)
         self.Mode = mode
-        self.server_certificate = uacrypto.der_from_x509(server_cert)
-        self.client_certificate = uacrypto.der_from_x509(client_cert)
+        self.peer_certificate = uacrypto.der_from_x509(peer_cert)
+        self.host_certificate = uacrypto.der_from_x509(host_cert)
+        if permission_ruleset is None:
+            from asyncua.crypto.permission_rules import SimpleRoleRuleset
+            permission_ruleset = SimpleRoleRuleset()
+        
+        self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):
         key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
@@ -546,26 +552,32 @@ class SecurityPolicyBasic256(SecurityPolicy):
     def encrypt_asymmetric(pubkey, data):
         return uacrypto.encrypt_rsa_oaep(pubkey, data)
 
-    def __init__(self, server_cert, client_cert, client_pk, mode):
+    def __init__(self, peer_cert, host_cert, client_pk, mode,
+                 permission_ruleset=None):
         logger.warning("DEPRECATED! Do not use SecurityPolicyBasic256 anymore!")
 
         require_cryptography(self)
-        if isinstance(server_cert, bytes):
-            server_cert = uacrypto.x509_from_der(server_cert)
+        if isinstance(peer_cert, bytes):
+            peer_cert = uacrypto.x509_from_der(peer_cert)
         # even in Sign mode we need to asymmetrically encrypt secrets
         # transmitted in OpenSecureChannel. So SignAndEncrypt here
         self.asymmetric_cryptography = Cryptography(
             MessageSecurityMode.SignAndEncrypt)
         self.asymmetric_cryptography.Signer = SignerRsa(client_pk)
-        self.asymmetric_cryptography.Verifier = VerifierRsa(server_cert)
+        self.asymmetric_cryptography.Verifier = VerifierRsa(peer_cert)
         self.asymmetric_cryptography.Encryptor = EncryptorRsa(
-            server_cert, uacrypto.encrypt_rsa_oaep, 42)
+            peer_cert, uacrypto.encrypt_rsa_oaep, 42)
         self.asymmetric_cryptography.Decryptor = DecryptorRsa(
             client_pk, uacrypto.decrypt_rsa_oaep, 42)
         self.symmetric_cryptography = Cryptography(mode)
         self.Mode = mode
-        self.server_certificate = uacrypto.der_from_x509(server_cert)
-        self.client_certificate = uacrypto.der_from_x509(client_cert)
+        self.peer_certificate = uacrypto.der_from_x509(peer_cert)
+        self.host_certificate = uacrypto.der_from_x509(host_cert)
+        if permission_ruleset is None:
+            from asyncua.crypto.permission_rules import SimpleRoleRuleset
+            permission_ruleset = SimpleRoleRuleset()
+        
+        self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):
         # specs part 6, 6.7.5
