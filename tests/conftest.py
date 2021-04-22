@@ -3,21 +3,22 @@ import pytest
 import operator
 import os
 import socket
-
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Process, Condition, Event
 from collections import namedtuple
+from asyncio import get_event_loop_policy, sleep
+from contextlib import closing
+
 from asyncua import Client
+from asyncua import Server, ua
 from asyncua.client.ha.ha_client import HaClient, HaConfig, HaMode
 from asyncua.server.history import HistoryDict
 from asyncua.server.history_sql import HistorySQLite
 
 from .test_common import add_server_methods
 from .util_enum_struct import add_server_custom_enum_struct
-from threading import Thread
 
-from asyncio import get_event_loop_policy, sleep
-from contextlib import closing
 
-from asyncua import Server, ua
 
 
 
@@ -64,38 +65,54 @@ def event_loop(request):
     loop.close()
 
 
+class ServerProcess(Process):
+    def __init__(self):
+        super().__init__()
+        self.url = f"opc.tcp://127.0.0.1:{port_num}"
+        self.cond = Condition()
+        self.stop_ev = Event()
+
+    async def run_server(self, url):
+        srv = Server()
+        srv.set_endpoint(url)
+        await srv.init()
+        await add_server_methods(srv)
+        await add_server_custom_enum_struct(srv)
+        async with srv:
+            with self.cond:
+                self.cond.notify_all()
+            while not self.stop_ev.is_set():
+                await asyncio.sleep(1)
+        await srv.stop()
+
+    def stop(self):
+        self.stop_ev.set()
+
+    async def wait_for_start(self):
+        with ThreadPoolExecutor() as pool:
+            result = await asyncio.get_running_loop().run_in_executor(pool, self.wait_for_start_sync)
+
+    def wait_for_start_sync(self):
+        with self.cond:
+            self.cond.wait()
+
+    def run(self):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.run_server(self.url))
+
+
 @pytest.fixture(scope='module')
 async def running_server(request):
     """
-    Spawn a server in a separate thread
+    Spawn a server in a separate process
     which can handle OPCUA requests
     """
-
-    def wrapper(url):
-        async def server(url):
-            srv = Server()
-            srv.set_endpoint(url)
-            await srv.init()
-            await add_server_methods(srv)
-            await add_server_custom_enum_struct(srv)
-            async with srv:
-                while t.do_run:
-                    await asyncio.sleep(1)
-            await srv.stop()
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(server(url))
-
-    url = f"opc.tcp://127.0.0.1:{port_num}"
-    t = Thread(target=wrapper, args=(url,))
-    t.do_run = True
-    t.start()
-    await asyncio.sleep(3)
-    yield url
-
-    def fin():
-        t.do_run = False
-        t.join()
-    request.addfinalizer(fin)
+    process = ServerProcess()
+    process.start()
+    await process.wait_for_start()
+    yield process.url
+    process.stop()
+    process.join()
 
 
 @pytest.fixture(scope='module')
