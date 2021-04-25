@@ -4,3 +4,9 @@ coverage
 pytest-cov
 pytest-mock
 asynctest
+python-dateutil
+pytz
+aiofiles
+cryptography
+sortedcontainers
+aiosqlite
