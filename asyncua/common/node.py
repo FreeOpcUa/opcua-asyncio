@@ -514,7 +514,7 @@ class Node:
             rpath.Elements.append(el)
         return rpath
 
-    async def read_raw_history(self, starttime=None, endtime=None, numvalues=0):
+    async def read_raw_history(self, starttime=None, endtime=None, numvalues=0, return_bounds=True, recursive=False):
         """
         Read raw history of a node
         result code from server is checked and an exception is raised in case of error
@@ -532,12 +532,26 @@ class Node:
         else:
             details.EndTime = ua.get_win_epoch()
         details.NumValuesPerNode = numvalues
-        details.ReturnBounds = True
-        result = await self.history_read(details)
-        result.StatusCode.check()
-        return result.HistoryData.DataValues
+        details.ReturnBounds = return_bounds
+        if not recursive:
+            result = await self.history_read(details)
+            result.StatusCode.check()
+            return result.HistoryData.DataValues
 
-    async def history_read(self, details):
+        history = []
+        continuation_point = None
+        while True:
+            result = await self.history_read(details, continuation_point)
+            result.StatusCode.check()
+            continuation_point = result.ContinuationPoint
+            history.extend(result.HistoryData.DataValues)
+            # No more data available
+            if continuation_point is None:
+                break
+        
+        return history
+
+    async def history_read(self, details, continuation_point=None):
         """
         Read raw history of a node, low-level function
         result code from server is checked and an exception is raised in case of error
@@ -545,6 +559,7 @@ class Node:
         valueid = ua.HistoryReadValueId()
         valueid.NodeId = self.nodeid
         valueid.IndexRange = ''
+        valueid.ContinuationPoint = continuation_point
         params = ua.HistoryReadParameters()
         params.HistoryReadDetails = details
         params.TimestampsToReturn = ua.TimestampsToReturn.Both
