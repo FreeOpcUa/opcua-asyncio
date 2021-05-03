@@ -20,6 +20,8 @@ class HistoryStorageInterface:
     Interface of a history backend.
     Must be implemented by backends
     """
+    def __init__(self, max_history_data_response_size=10000):
+        self.max_history_data_response_size = max_history_data_response_size
 
     async def init(self):
         """
@@ -89,7 +91,8 @@ class HistoryDict(HistoryStorageInterface):
     Very minimal history backend storing data in memory using a Python dictionary
     """
 
-    def __init__(self):
+    def __init__(self, max_history_data_response_size=10000):
+        self.max_history_data_response_size = max_history_data_response_size
         self._datachanges = {}
         self._datachanges_period = {}
         self._events = {}
@@ -144,9 +147,13 @@ class HistoryDict(HistoryStorageInterface):
                 results = [
                     dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp <= end
                 ]
+
             if nb_values and len(results) > nb_values:
-                cont = results[nb_values + 1].SourceTimestamp
                 results = results[:nb_values]
+
+            if len(results) > self.max_history_data_response_size:
+                cont = results[self.max_history_data_response_size + 1].SourceTimestamp
+                results = results[:self.max_history_data_response_size]
             return results, cont
 
     async def new_historized_event(self, source_id, evtypes, period, count=0):
@@ -190,9 +197,13 @@ class HistoryDict(HistoryStorageInterface):
 
             else:
                 results = [ev for ev in self._events[source_id] if start <= ev.Time <= end]
+
             if nb_values and len(results) > nb_values:
-                cont = results[nb_values + 1].Time
                 results = results[:nb_values]
+
+            if len(results) > self.max_history_data_response_size:
+                cont = results[self.max_history_data_response_size + 1].Time
+                results = results[:self.max_history_data_response_size]
             return results, cont
 
     async def stop(self):

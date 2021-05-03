@@ -4,7 +4,6 @@ import sqlite3
 from typing import Iterable
 from datetime import timedelta
 from datetime import datetime
-from asyncio import get_event_loop
 
 from asyncua import ua
 from ..ua.ua_binary import variant_from_binary, variant_to_binary
@@ -21,16 +20,16 @@ class HistorySQLite(HistoryStorageInterface):
     note that PARSE_DECLTYPES is active so certain data types (such as datetime) will not be BLOBs
     """
 
-    def __init__(self, path="history.db", loop=None):
+    def __init__(self, path="history.db", max_history_data_response_size=10000):
+        self.max_history_data_response_size = max_history_data_response_size
         self.logger = logging.getLogger(__name__)
         self._datachanges_period = {}
         self._db_file = path
         self._event_fields = {}
         self._db: aiosqlite.Connection = None
-        self._loop = loop or get_event_loop()
 
     async def init(self):
-        self._db = await aiosqlite.connect(self._db_file, loop=self._loop, detect_types=sqlite3.PARSE_DECLTYPES)
+        self._db = await aiosqlite.connect(self._db_file, detect_types=sqlite3.PARSE_DECLTYPES)
 
     async def stop(self):
         await self._db.close()
@@ -123,10 +122,9 @@ class HistorySQLite(HistoryStorageInterface):
                     results.append(dv)
         except aiosqlite.Error as e:
             self.logger.error("Historizing SQL Read Error for %s: %s", node_id, e)
-        if nb_values:
-            if len(results) > nb_values:
-                cont = results[nb_values].SourceTimestamp
-            results = results[:nb_values]
+        if len(results) > self.max_history_data_response_size:
+            cont = results[self.max_history_data_response_size].SourceTimestamp
+        results = results[:self.max_history_data_response_size]
         return results, cont
 
     async def new_historized_event(self, source_id, evtypes, period, count=0):
@@ -199,10 +197,9 @@ class HistorySQLite(HistoryStorageInterface):
                     results.append(Event.from_field_dict(fdict))
         except aiosqlite.Error as e:
             self.logger.error("Historizing SQL Read Error events for node %s: %s", source_id, e)
-        if nb_values:
-            if len(results) > nb_values:  # start > ua.get_win_epoch() and
-                cont = cont_timestamps[nb_values]
-            results = results[:nb_values]
+        if len(results) > self.max_history_data_response_size:  # start > ua.get_win_epoch() and
+            cont = cont_timestamps[self.max_history_data_response_size]
+        results = results[:self.max_history_data_response_size]
         return results, cont
 
     def _get_table_name(self, node_id):
@@ -241,7 +238,7 @@ class HistorySQLite(HistoryStorageInterface):
             start_time = end.isoformat(" ")
             end_time = start.isoformat(" ")
         if nb_values:
-            limit = nb_values + 1  # add 1 to the number of values for retrieving a continuation point
+            limit = nb_values
         else:
             limit = -1  # in SQLite a LIMIT of -1 returns all results
         return start_time, end_time, order, limit
