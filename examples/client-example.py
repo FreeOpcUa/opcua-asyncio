@@ -3,7 +3,6 @@ import logging
 
 from asyncua import Client
 
-logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger('asyncua')
 
 
@@ -64,4 +63,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
