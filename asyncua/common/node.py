@@ -514,7 +514,7 @@ class Node:
             rpath.Elements.append(el)
         return rpath
 
-    async def read_raw_history(self, starttime=None, endtime=None, numvalues=0, return_bounds=True, recursive=False):
+    async def read_raw_history(self, starttime=None, endtime=None, numvalues=0, return_bounds=True):
         """
         Read raw history of a node
         result code from server is checked and an exception is raised in case of error
@@ -533,11 +533,6 @@ class Node:
             details.EndTime = ua.get_win_epoch()
         details.NumValuesPerNode = numvalues
         details.ReturnBounds = return_bounds
-        if not recursive:
-            result = await self.history_read(details)
-            result.StatusCode.check()
-            return result.HistoryData.DataValues
-
         history = []
         continuation_point = None
         while True:
