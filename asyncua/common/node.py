@@ -286,14 +286,17 @@ class Node:
         result = await self.server.write(params)
         return result
 
-    async def read_attribute(self, attr):
+    async def read_attribute(self, attr, indexrange=None):
         """
         Read one attribute of a node
+        attributeid is a member of ua.AttributeIds
+        indexrange is a NumericRange (a string; e.g. "1" or "1:3".
         result code from server is checked and an exception is raised in case of error
         """
         rv = ua.ReadValueId()
         rv.NodeId = self.nodeid
         rv.AttributeId = attr
+        rv.IndexRange = indexrange
         params = ua.ReadParameters()
         params.NodesToRead.append(rv)
         result = await self.server.read(params)
