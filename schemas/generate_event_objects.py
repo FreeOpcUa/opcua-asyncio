@@ -126,7 +126,7 @@ class {event.browseName}({parent_event_browse_name[0]}):""")
             self.write('"""')
             self.write("def __init__(self, sourcenode=None, message=None, severity=1):")
             self.iidx += 1
-            self.write("super({0}, self).__init__(sourcenode, message, severity)".format(event.browseName))
+            self.write("super().__init__(sourcenode, message, severity)")
             self.write("self.EventType = ua.NodeId(ua.ObjectIds.{0}Type)".format(event.browseName))
             self.add_properties_and_variables(event)
         self.iidx -= 2

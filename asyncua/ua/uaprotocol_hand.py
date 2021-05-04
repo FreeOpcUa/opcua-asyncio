@@ -4,13 +4,13 @@ from dataclasses import dataclass, field
 from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
 from asyncua.common import utils
-from asyncua.ua.uatypes import AccessLevel, FrozenClass
+from asyncua.ua.uatypes import AccessLevel
 
 OPC_TCP_SCHEME = 'opc.tcp'
 
 
 @dataclass
-class Hello(uatypes.FrozenClass):
+class Hello:
     ProtocolVersion: uatypes.UInt32 = 0
     # the following values couldbe set to 0 (meaning no limits)
     # unfortunaltely many servers do not support it
@@ -43,7 +43,7 @@ class ChunkType:
 
 
 @dataclass
-class Header(uatypes.FrozenClass):
+class Header:
     MessageType: MessageType = None
     ChunkType: ChunkType = None
     ChannelId: int = 0
@@ -60,13 +60,13 @@ class Header(uatypes.FrozenClass):
 
 
 @dataclass
-class ErrorMessage(uatypes.FrozenClass):
+class ErrorMessage:
     Error: uatypes.StatusCode = uatypes.StatusCode()
     Reason: uatypes.String = ""
 
 
 @dataclass
-class Acknowledge(uatypes.FrozenClass):
+class Acknowledge:
     ProtocolVersion: uatypes.UInt32 = 0
     ReceiveBufferSize: uatypes.UInt32 = 65536
     SendBufferSize: uatypes.UInt32 = 65536
@@ -75,7 +75,7 @@ class Acknowledge(uatypes.FrozenClass):
 
 
 @dataclass
-class AsymmetricAlgorithmHeader(uatypes.FrozenClass):
+class AsymmetricAlgorithmHeader:
     SecurityPolicyURI: uatypes.String = 'http://opcfoundation.org/UA/SecurityPolicy#None'
     SenderCertificate: uatypes.ByteString = None
     ReceiverCertificateThumbPrint: uatypes.ByteString = None
@@ -90,7 +90,7 @@ class AsymmetricAlgorithmHeader(uatypes.FrozenClass):
 
 
 @dataclass
-class SymmetricAlgorithmHeader(uatypes.FrozenClass):
+class SymmetricAlgorithmHeader:
     TokenId: uatypes.UInt32 = 0
 
     @staticmethod
@@ -99,7 +99,7 @@ class SymmetricAlgorithmHeader(uatypes.FrozenClass):
 
 
 @dataclass
-class SequenceHeader(uatypes.FrozenClass):
+class SequenceHeader:
     SequenceNumber: uatypes.UInt32 = None
     RequestId: uatypes.UInt32 = None
 
@@ -303,7 +303,7 @@ class Argument(auto.Argument):
 
 
 @dataclass
-class XmlElement(FrozenClass):
+class XmlElement:
     """
     An XML element encoded as a UTF-8 string.
     :ivar Value:

@@ -353,7 +353,8 @@ async def create_encoding(parent, nodeid, bname):
     or namespace index, name
     """
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
-    qname.NamespaceIndex = 0  # encoding bname idx must be 0
+    if qname.NamespaceIndex != 0:
+        raise ua.UaError("Encoding QualigiedName index must be 0")
     return make_node(parent.server, await _create_encoding(parent.server, parent.nodeid, nodeid, qname))
 
 

@@ -13,9 +13,9 @@ from enum import Enum
 
 from asyncua import ua
 from asyncua.ua.uatypes import type_string_from_type
+from asyncua.ua.uaerrors import UaError
 from ..ua import object_ids as o_ids
 from .ua_utils import get_base_data_type
-from asyncua.ua.uaerrors import UaError
 
 
 class XmlExporter:
@@ -298,13 +298,13 @@ class XmlExporter:
             sdef_el = Et.SubElement(obj_el, 'Definition')
             sdef_el.attrib['Name'] = bname.Name
             if isinstance(sdef, ua.StructureDefinition):
-                self._structure_fields_to_etree(bname, sdef_el, sdef)
+                self._structure_fields_to_etree(sdef_el, sdef)
             elif isinstance(sdef, ua.EnumDefinition):
-                self._enum_fields_to_etree(bname, sdef_el, sdef)
+                self._enum_fields_to_etree(sdef_el, sdef)
             else:
                 self.logger.warning("Unknown DataTypeSpecification elemnt: %s", sdef)
 
-    def _structure_fields_to_etree(self, bname, sdef_el, sdef):
+    def _structure_fields_to_etree(self, sdef_el, sdef):
         for field in sdef.Fields:
             field_el = Et.SubElement(sdef_el, 'Field')
             field_el.attrib['Name'] = field.Name
@@ -316,7 +316,7 @@ class XmlExporter:
             if field.IsOptional:
                 field_el.attrib['IsOptional'] = "true"
 
-    def _enum_fields_to_etree(self, bname, sdef_el, sdef):
+    def _enum_fields_to_etree(self, sdef_el, sdef):
         for field in sdef.Fields:
             field_el = Et.SubElement(sdef_el, 'Field')
             field_el.attrib['Name'] = field.Name
@@ -435,6 +435,8 @@ class XmlExporter:
     async def _all_fields_to_etree(self, struct_el, val):
         for field in fields(val):
             # FIXME; what happend if we have a custom type which is not part of ObjectIds???
+            if field.name == "Encoding":
+                continue
             type_name = type_string_from_type(field.type)
             await self.member_to_etree(struct_el, field.name, ua.NodeId(getattr(ua.ObjectIds, type_name)), getattr(val, field.name))
 
@@ -446,7 +448,7 @@ def indent(elem, level=0):
     printed in a nice way
     """
     i = "\n" + level * "  "
-    if len(elem):
+    if elem:
         if not elem.text or not elem.text.strip():
             elem.text = i + "  "
         if not elem.tail or not elem.tail.strip():

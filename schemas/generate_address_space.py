@@ -157,20 +157,25 @@ class CodeGenerator:
             f'''from asyncua.ua import NodeClass, LocalizedText\n'''
             f'''\n'''
             f'''\n'''
-            f'''def create_standard_address_space_{self.part!s}(server):\n''')
+            f'''def create_standard_address_space_{self.part!s}(server):''')
 
     def make_node_code(self, obj, indent):
         self.writecode(
-            f'''    node = ua.AddNodesItem()\n'''
-            f'''    node.RequestedNewNodeId = {nodeid_code(obj.nodeid)}\n'''
-            f'''    node.BrowseName = {bname_code(obj.browsename)}\n'''
-            f'''    node.NodeClass = NodeClass.{obj.nodetype[2:]}''')
+            f'''    node = ua.AddNodesItem(\n'''
+            f'''        RequestedNewNodeId={nodeid_code(obj.nodeid)},\n'''
+            f'''        BrowseName={bname_code(obj.browsename)},\n'''
+            f'''        NodeClass_=NodeClass.{obj.nodetype[2:]},'''
+            )
         if obj.parent and obj.parentlink:
             self.writecode(
-                f'''    node.ParentNodeId = {nodeid_code(obj.parent)}\n'''
-                f'''    node.ReferenceTypeId = {self.to_ref_type(obj.parentlink)}''')
+                f'''        ParentNodeId={nodeid_code(obj.parent)},\n'''
+                f'''        ReferenceTypeId={self.to_ref_type(obj.parentlink)},''')
         if obj.typedef:
-            self.writecode(indent, 'node.TypeDefinition = {}'.format(nodeid_code(obj.typedef)))
+            self.writecode(indent, '    TypeDefinition={},'.format(nodeid_code(obj.typedef)))
+        self.writecode(
+            '        NodeAttributes=attrs,\n'
+            '    )\n'
+            f'    server.add_nodes([node])')
 
     @staticmethod
     def to_data_type(nodeid):
@@ -188,158 +193,153 @@ class CodeGenerator:
 
     def make_object_code(self, obj):
         indent = "   "
-        self.writecode(indent)
-        self.make_node_code(obj, indent)
-        self.writecode(indent, 'attrs = ua.ObjectAttributes()')
+        self.writecode()
+        self.writecode(indent, 'attrs = ua.ObjectAttributes(')
         if obj.desc:
-            self.writecode(indent, 'attrs.Description = LocalizedText("{0}")'.format(obj.desc))
+            self.writecode(indent, '    Description=LocalizedText("{0}"),'.format(obj.desc))
         self.writecode(
-            f'''    attrs.DisplayName = LocalizedText("{obj.displayname}")\n'''
-            f'''    attrs.EventNotifier = {obj.eventnotifier}\n'''
-            f'''    node.NodeAttributes = attrs\n'''
-            f'''    server.add_nodes([node])''')
+            f'''        DisplayName=LocalizedText("{obj.displayname}"),\n'''
+            f'''        EventNotifier={obj.eventnotifier},\n'''
+            f'''        )'''
+            )
+        self.make_node_code(obj, indent)
         self.make_refs_code(obj, indent)
 
     def make_object_type_code(self, obj):
         indent = "   "
-        self.writecode(indent)
-        self.make_node_code(obj, indent)
-        self.writecode(indent, 'attrs = ua.ObjectTypeAttributes()')
+        self.writecode()
+        self.writecode(indent, 'attrs = ua.ObjectTypeAttributes(')
         if obj.desc:
-            self.writecode(indent, 'attrs.Description = LocalizedText("{0}")'.format(obj.desc))
+            self.writecode(indent, '   Description=LocalizedText("{0}"),'.format(obj.desc))
         self.writecode(
-            f'''    attrs.DisplayName = LocalizedText("{obj.displayname}")\n'''
-            f'''    attrs.IsAbstract = {obj.abstract}\n'''
-            f'''    node.NodeAttributes = attrs\n'''
-            f'''    server.add_nodes([node])''')
+            f'''        DisplayName=LocalizedText("{obj.displayname}"),\n'''
+            f'''        IsAbstract={obj.abstract},\n'''
+            '''        )'''
+            )
+        self.make_node_code(obj, indent)
         self.make_refs_code(obj, indent)
 
     def make_common_variable_code(self, indent, obj):
         if obj.desc:
-            self.writecode(indent, 'attrs.Description = LocalizedText("{0}")'.format(obj.desc))
-        self.writecode(indent, 'attrs.DisplayName = LocalizedText("{0}")'.format(obj.displayname))
-        self.writecode(indent, 'attrs.DataType = {0}'.format(self.to_data_type(obj.datatype)))
+            self.writecode(indent, '    Description=LocalizedText("{0}"),'.format(obj.desc))
+        self.writecode(indent, '    DisplayName=LocalizedText("{0}"),'.format(obj.displayname))
+        self.writecode(indent, '    DataType={0},'.format(self.to_data_type(obj.datatype)))
         if obj.value is not None:
             if obj.valuetype == "ListOfExtensionObject":
-                self.writecode(indent, 'value = []')
+                self.writecode(indent, '    Value=ua.Variant([')
                 for ext in obj.value:
-                    self.make_ext_obj_code(indent, ext)
-                    self.writecode(indent, 'value.append(extobj)')
-                self.writecode(indent, 'attrs.Value = ua.Variant(value, ua.VariantType.ExtensionObject)')
+                    self.make_ext_obj_code(indent + "        ", ext)
+                self.writecode(indent, '        ],')
+                self.writecode(indent, '        ua.VariantType.ExtensionObject),')
             elif obj.valuetype == "ExtensionObject":
-                self.make_ext_obj_code(indent, obj.value)
-                self.writecode(indent, 'value = extobj')
-                self.writecode(indent, 'attrs.Value = ua.Variant(value, ua.VariantType.ExtensionObject)')
+                self.writecode(indent, '    Value=ua.Variant(')
+                self.make_ext_obj_code(indent + "    ", obj.value)
+                self.writecode(indent, '    ua.VariantType.ExtensionObject),')
             elif obj.valuetype == "ListOfLocalizedText":
                 value = ['LocalizedText({0})'.format(repr(d['Text'])) for d in obj.value]
-                self.writecode(indent, 'attrs.Value = [{}]'.format(', '.join(value)))
+                self.writecode(indent, '    Value=[{}],'.format(', '.join(value)))
             elif obj.valuetype == "LocalizedText":
-                self.writecode(indent, 'attrs.Value = ua.Variant(LocalizedText("{0}"),'
-                                       ' ua.VariantType.LocalizedText)'.format(obj.value[1][1]))
+                self.writecode(indent, '    Value=ua.Variant(LocalizedText("{0}"),'
+                                       ' ua.VariantType.LocalizedText),'.format(obj.value[1][1]))
             else:
                 if obj.valuetype.startswith("ListOf"):
                     obj.valuetype = obj.valuetype[6:]
                 self.writecode(
                     indent,
-                    f'attrs.Value = ua.Variant({obj.value!r}, ua.VariantType.{obj.valuetype})'
+                    f'    Value=ua.Variant({obj.value!r}, ua.VariantType.{obj.valuetype}),'
                 )
         if obj.rank:
-            self.writecode(indent, f'attrs.ValueRank = {obj.rank}')
+            self.writecode(indent, f'    ValueRank={obj.rank},')
         if obj.accesslevel:
-            self.writecode(indent, f'attrs.AccessLevel = {obj.accesslevel}')
+            self.writecode(indent, f'    AccessLevel={obj.accesslevel},')
         if obj.useraccesslevel:
-            self.writecode(indent, f'attrs.UserAccessLevel = {obj.useraccesslevel}')
+            self.writecode(indent, f'    UserAccessLevel={obj.useraccesslevel},')
         if obj.dimensions:
-            self.writecode(indent, f'attrs.ArrayDimensions = {obj.dimensions}')
+            self.writecode(indent, f'    ArrayDimensions={obj.dimensions},')
+        self.writecode(indent, '    )')
 
-    def make_ext_obj_code(self, indent, extobj):
-        self.writecode(indent, f'extobj = ua.{extobj.objname}()')
+    def make_ext_obj_code(self, indent, extobj, prefix=""):
+        self.writecode(indent, f'{prefix}ua.{extobj.objname}(')
         for name, val in extobj.body:
             for k, v in val:
                 if type(v) is str:
                     val = _to_val([extobj.objname], k, v)
-                    self.writecode(indent, f'extobj.{k} = {val}')
+                    self.writecode(indent, f'    {k}={val},')
                 else:
                     if k == "DataType":  # hack for strange nodeid xml format
-                        self.writecode(indent, 'extobj.{0} = {1}'.format(k, nodeid_code(v[0][1])))
+                        self.writecode(indent, '    {0}={1},'.format(k, nodeid_code(v[0][1])))
                         continue
                     if k == "ArrayDimensions":  # hack for v1.04 - Ignore UInt32 tag?
-                        self.writecode(indent, 'extobj.ArrayDimensions = [{0}]'.format(v[0][1]))
+                        self.writecode(indent, '    ArrayDimensions=[{0}],'.format(v[0][1]))
                         continue
                     for k2, v2 in v:
                         val2 = _to_val([extobj.objname, k], k2, v2)
-                        self.writecode(indent, f'extobj.{k}.{k2} = {val2}')
+                        #self.writecode(indent, f'    {k}.{k2}={val2},')
+                        self.writecode(indent, f'    {k}=LocalizedText(Text={val2}),')
+        self.writecode(indent, '    ),')
 
     def make_variable_code(self, obj):
         indent = "   "
-        self.writecode(indent)
-        self.make_node_code(obj, indent)
-        self.writecode(indent, 'attrs = ua.VariableAttributes()')
+        self.writecode()
+        self.writecode(indent, 'attrs = ua.VariableAttributes(')
         if obj.minsample:
-            self.writecode(indent, f'attrs.MinimumSamplingInterval = {obj.minsample}')
+            self.writecode(indent, f'    MinimumSamplingInterval={obj.minsample},')
         self.make_common_variable_code(indent, obj)
-        self.writecode(indent, 'node.NodeAttributes = attrs')
-        self.writecode(indent, 'server.add_nodes([node])')
+        self.make_node_code(obj, indent)
         self.make_refs_code(obj, indent)
 
     def make_variable_type_code(self, obj):
         indent = "   "
-        self.writecode(indent)
-        self.make_node_code(obj, indent)
-        self.writecode(indent, 'attrs = ua.VariableTypeAttributes()')
+        self.writecode()
+        self.writecode(indent, 'attrs = ua.VariableTypeAttributes(')
         if obj.desc:
-            self.writecode(indent, 'attrs.Description = LocalizedText("{0}")'.format(obj.desc))
-        self.writecode(indent, 'attrs.DisplayName = LocalizedText("{0}")'.format(obj.displayname))
+            self.writecode(indent, '   Description=LocalizedText("{0}"),'.format(obj.desc))
         if obj.abstract:
-            self.writecode(indent, f'attrs.IsAbstract = {obj.abstract}')
+            self.writecode(indent, f'    IsAbstract={obj.abstract},')
         self.make_common_variable_code(indent, obj)
-        self.writecode(indent, 'node.NodeAttributes = attrs')
-        self.writecode(indent, 'server.add_nodes([node])')
+        self.make_node_code(obj, indent)
         self.make_refs_code(obj, indent)
 
     def make_method_code(self, obj):
         indent = "   "
-        self.writecode(indent)
-        self.make_node_code(obj, indent)
-        self.writecode(indent, 'attrs = ua.MethodAttributes()')
+        self.writecode()
+        self.writecode(indent, 'attrs = ua.MethodAttributes(')
         if obj.desc:
-            self.writecode(indent, 'attrs.Description = LocalizedText("{0}")'.format(obj.desc))
+            self.writecode(indent, '    Description=LocalizedText("{0}"),'.format(obj.desc))
         self.writecode(
-            f'''    attrs.DisplayName = LocalizedText("{obj.displayname}")\n'''
-            f'''    node.NodeAttributes = attrs\n'''
-            f'''    server.add_nodes([node])''')
+            f'        DisplayName=LocalizedText("{obj.displayname}"),\n'
+            '    )')
+        self.make_node_code(obj, indent)
         self.make_refs_code(obj, indent)
 
     def make_reference_code(self, obj):
         indent = "   "
-        self.writecode(indent)
-        self.make_node_code(obj, indent)
-        self.writecode(indent, 'attrs = ua.ReferenceTypeAttributes()')
+        self.writecode()
+        self.writecode(indent, 'attrs = ua.ReferenceTypeAttributes(')
         if obj.desc:
-            self.writecode(indent, 'attrs.Description = LocalizedText("{0}")'.format(obj.desc))
-        self.writecode(indent, 'attrs.DisplayName = LocalizedText("{0}")'.format(obj.displayname))
+            self.writecode(indent, '    Description=LocalizedText("{0}"),'.format(obj.desc))
+        self.writecode(indent, '    DisplayName=LocalizedText("{0}"),'.format(obj.displayname))
         if obj.inversename:
-            self.writecode(indent, 'attrs.InverseName = LocalizedText("{0}")'.format(obj.inversename))
+            self.writecode(indent, '    InverseName=LocalizedText("{0}"),'.format(obj.inversename))
         if obj.abstract:
-            self.writecode(indent, f'attrs.IsAbstract = {obj.abstract}')
+            self.writecode(indent, f'    IsAbstract={obj.abstract},')
         if obj.symmetric:
-            self.writecode(indent, f'attrs.Symmetric = {obj.symmetric}')
-        self.writecode(indent, 'node.NodeAttributes = attrs')
-        self.writecode(indent, 'server.add_nodes([node])')
+            self.writecode(indent, f'    Symmetric={obj.symmetric},')
+        self.writecode(indent, '    )')
+        self.make_node_code(obj, indent)
         self.make_refs_code(obj, indent)
 
     def make_datatype_code(self, obj):
         indent = "   "
-        self.writecode(indent)
-        self.make_node_code(obj, indent)
-        self.writecode(indent, 'attrs = ua.DataTypeAttributes()')
+        self.writecode()
+        self.writecode(indent, 'attrs = ua.DataTypeAttributes(')
         if obj.desc:
-            self.writecode(indent, u'attrs.Description = LocalizedText("{0}")'.format(obj.desc))
-        self.writecode(indent, 'attrs.DisplayName = LocalizedText("{0}")'.format(obj.displayname))
+            self.writecode(indent, u'    Description=LocalizedText("{0}"),'.format(obj.desc))
+        self.writecode(indent, '    DisplayName=LocalizedText("{0}"),'.format(obj.displayname))
         if obj.abstract:
-            self.writecode(indent, f'attrs.IsAbstract = {obj.abstract}')
-        self.writecode(indent, 'node.NodeAttributes = attrs')
-        self.writecode(indent, 'server.add_nodes([node])')
+            self.writecode(indent, f'    IsAbstract={obj.abstract},')
+        self.writecode(indent, '    )')
+        self.make_node_code(obj, indent)
         self.make_refs_code(obj, indent)
 
     def make_refs_code(self, obj, indent):
@@ -348,12 +348,13 @@ class CodeGenerator:
         self.writecode(indent, "refs = []")
         for ref in obj.refs:
             self.writecode(
-                f'''    ref = ua.AddReferencesItem()\n'''
-                f'''    ref.IsForward = {ref.forward}\n'''
-                f'''    ref.ReferenceTypeId = {self.to_ref_type(ref.reftype)}\n'''
-                f'''    ref.SourceNodeId = {nodeid_code(obj.nodeid)}\n'''
-                f'''    ref.TargetNodeClass = NodeClass.DataType\n'''
-                f'''    ref.TargetNodeId = {nodeid_code(ref.target)}\n'''
+                f'''    ref = ua.AddReferencesItem(\n'''
+                f'''        IsForward={ref.forward},\n'''
+                f'''        ReferenceTypeId={self.to_ref_type(ref.reftype)},\n'''
+                f'''        SourceNodeId={nodeid_code(obj.nodeid)},\n'''
+                f'''        TargetNodeClass=NodeClass.DataType,\n'''
+                f'''        TargetNodeId={nodeid_code(ref.target)},\n'''
+                f'''        )\n'''
                 f'''    refs.append(ref)''')
         self.writecode(indent, 'server.add_references(refs)')
 

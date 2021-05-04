@@ -5,7 +5,14 @@ implement ua datatypes
 import sys
 from typing import Optional, Any, Union, Generic
 import collections
-
+import logging
+from enum import Enum, IntEnum
+from calendar import timegm
+import uuid
+import re
+import itertools
+from datetime import datetime, timedelta, MAXYEAR, tzinfo
+from dataclasses import dataclass, field
 
 # hack to support python < 3.8
 if sys.version_info.minor < 10:
@@ -26,14 +33,6 @@ if sys.version_info.minor < 10:
 else:
     from typing import get_origin, get_args
 
-import logging
-from enum import Enum, IntEnum
-from calendar import timegm
-import uuid
-import re
-import itertools
-from datetime import datetime, timedelta, MAXYEAR, tzinfo
-from dataclasses import dataclass, field
 
 from asyncua.ua import status_codes
 from .uaerrors import UaError, UaStatusCodeError, UaStringParsingError
@@ -90,7 +89,7 @@ class Bytes(bytes):
     pass
 
 
-class ByteString(bytes):  # what is the ifference between Byte and ByteString??
+class ByteString(bytes):  # what is the difference between Bytes and ByteString??
     pass
 
 
@@ -187,7 +186,6 @@ def win_epoch_to_datetime(epch):
 
 
 FROZEN = False
-FrozenClass = object
 
 
 class ValueRank(IntEnum):
@@ -308,7 +306,7 @@ class EventNotifier(_MaskEnum):
     HistoryWrite = 3
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(frozen=True)
 class StatusCode:
     """
     :ivar value:
@@ -323,7 +321,7 @@ class StatusCode:
 
     def __post_init__(self):
         if isinstance(self.value, str):
-            self.value = getattr(status_codes.StatusCodes, self.value)
+            object.__setattr__(self, "value", getattr(status_codes.StatusCodes, self.value))
 
     def check(self):
         """
@@ -597,7 +595,7 @@ class ExpandedNodeId(NodeId):
         return ";".join(string)
 
 
-@dataclass(frozen=FROZEN, order=True)
+@dataclass(frozen=True, init=False, order=True)
 class QualifiedName:
     """
     A string qualified with a namespace index.
@@ -607,8 +605,8 @@ class QualifiedName:
     Name: String = ""
 
     def __init__(self, Name=None, NamespaceIndex=0):
-        self.Name = Name
-        self.NamespaceIndex = NamespaceIndex
+        object.__setattr__(self, "Name", Name)
+        object.__setattr__(self, "NamespaceIndex", NamespaceIndex)
         if isinstance(self.NamespaceIndex, str) and isinstance(self.Name, int):
             # originally the order or argument was inversed, try to support it
             logger.warning("QualifiedName are str, int, while int, str is expected, swithcing")
@@ -633,7 +631,7 @@ class QualifiedName:
         return QualifiedName(Name=name, NamespaceIndex=idx)
 
 
-@dataclass(frozen=FROZEN, init=False)
+@dataclass(frozen=True, init=False)
 class LocalizedText:
     """
     A string qualified with a namespace index.
@@ -645,8 +643,8 @@ class LocalizedText:
 
     def __init__(self, Text=None, Locale=None):
         # need to write init method since args ar inverted in original implementataion
-        self.Text = Text
-        self.Locale = Locale
+        object.__setattr__(self, "Text", Text)
+        object.__setattr__(self, "Locale", Locale)
 
         if self.Text is not None:
             if not isinstance(self.Text, str):
@@ -675,7 +673,7 @@ class LocalizedText:
         return LocalizedText(string)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(frozen=True)
 class ExtensionObject:
     """
     Any UA object packed as an ExtensionObject
@@ -779,7 +777,7 @@ class VariantTypeCustom:
         return self.value == other.value
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(frozen=True)
 class Variant:
     """
     Create an OPC-UA Variant object.
@@ -806,15 +804,14 @@ class Variant:
     def __post_init__(self):
         if self.is_array is None:
             if isinstance(self.Value, (list, tuple)):
-                self.is_array = True
+                object.__setattr__(self, "is_array", True)
             else:
-                self.is_array = False
-        self._freeze = True
+                object.__setattr__(self, "is_array", False)
         if isinstance(self.Value, Variant):
-            self.VariantType = self.Value.VariantType
-            self.Value = self.Value.Value
+            object.__setattr__(self, "VariantType", self.Value.VariantType)
+            object.__setattr__(self, "Value", self.Value.Value)
         if self.VariantType is None:
-            self.VariantType = self._guess_type(self.Value)
+            object.__setattr__(self, "VariantType", self._guess_type(self.Value))
         if (
             self.Value is None
             and not self.is_array
@@ -827,7 +824,7 @@ class Variant:
             )
         ):
             if self.Value is None and self.VariantType == VariantType.NodeId:
-                self.Value = NodeId(0, 0)
+                object.__setattr__(self, "Value", NodeId(0, 0))
             else:
                 raise UaError(
                     f"Non array Variant of type {self.VariantType} cannot have value None"
@@ -835,7 +832,7 @@ class Variant:
         if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
             dims = get_shape(self.Value)
             if len(dims) > 1:
-                self.Dimensions = dims
+                object.__setattr__(self, "Dimensions", dims)
 
     def __eq__(self, other):
         if (
@@ -898,7 +895,7 @@ def flatten_and_get_shape(mylist):
 def flatten(mylist):
     if mylist is None:
         return None
-    elif len(mylist) == 0:
+    if len(mylist) == 0:
         return mylist
     while isinstance(mylist[0], (list, tuple)):
         mylist = [item for sublist in mylist for item in sublist]
@@ -917,7 +914,7 @@ def get_shape(mylist):
     return dims
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(frozen=True)
 class DataValue:
     """
     A value with an associated timestamp, and quality.
@@ -943,26 +940,22 @@ class DataValue:
     Value: Optional[Variant] = None
     StatusCode_: Optional[StatusCode] = field(default_factory=StatusCode)
     SourceTimestamp: Optional[DateTime] = None
-    SourcePicoseconds: Optional[UInt16] = None
     ServerTimestamp: Optional[DateTime] = None
+    SourcePicoseconds: Optional[UInt16] = None
     ServerPicoseconds: Optional[UInt16] = None
 
     def __post_init__(
         self,
     ):
         if not isinstance(self.Value, Variant):
-            self.Value = Variant(self.Value)
+            object.__setattr__(self, "Value", Variant(self.Value))
 
     @property
     def StatusCode(self):
         return self.StatusCode_
 
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
 
-
-@dataclass
+@dataclass(frozen=True)
 class DiagnosticInfo:
     """
     A recursive structure containing diagnostic information associated with a status code.
@@ -1010,8 +1003,7 @@ def datatype_to_varianttype(int_type):
 
     if int_type <= 25:
         return VariantType(int_type)
-    else:
-        return VariantTypeCustom(int_type)
+    return VariantTypeCustom(int_type)
 
 
 def get_default_value(vtype):
@@ -1020,42 +1012,41 @@ def get_default_value(vtype):
     """
     if vtype == VariantType.Null:
         return None
-    elif vtype == VariantType.Boolean:
+    if vtype == VariantType.Boolean:
         return False
-    elif vtype in (VariantType.SByte, VariantType.Byte):
+    if vtype in (VariantType.SByte, VariantType.Byte):
         return 0
-    elif vtype == VariantType.ByteString:
+    if vtype == VariantType.ByteString:
         return b""
-    elif 4 <= vtype.value <= 9:
+    if 4 <= vtype.value <= 9:
         return 0
-    elif vtype in (VariantType.Float, VariantType.Double):
+    if vtype in (VariantType.Float, VariantType.Double):
         return 0.0
-    elif vtype == VariantType.String:
+    if vtype == VariantType.String:
         return None  # a string can be null
-    elif vtype == VariantType.DateTime:
+    if vtype == VariantType.DateTime:
         return datetime.utcnow()
-    elif vtype == VariantType.Guid:
+    if vtype == VariantType.Guid:
         return uuid.uuid4()
-    elif vtype == VariantType.XmlElement:
+    if vtype == VariantType.XmlElement:
         return None  # Not sure this is correct
-    elif vtype == VariantType.NodeId:
+    if vtype == VariantType.NodeId:
         return NodeId()
-    elif vtype == VariantType.ExpandedNodeId:
-        return NodeId()
-    elif vtype == VariantType.StatusCode:
+    if vtype == VariantType.ExpandedNodeId:
+        return ExpandedNodeId()
+    if vtype == VariantType.StatusCode:
         return StatusCode()
-    elif vtype == VariantType.QualifiedName:
+    if vtype == VariantType.QualifiedName:
         return QualifiedName()
-    elif vtype == VariantType.LocalizedText:
+    if vtype == VariantType.LocalizedText:
         return LocalizedText()
-    elif vtype == VariantType.ExtensionObject:
+    if vtype == VariantType.ExtensionObject:
         return ExtensionObject()
-    elif vtype == VariantType.DataValue:
+    if vtype == VariantType.DataValue:
         return DataValue()
-    elif vtype == VariantType.Variant:
+    if vtype == VariantType.Variant:
         return Variant()
-    else:
-        raise RuntimeError(f"function take a uatype as argument, got: {vtype}")
+    raise RuntimeError(f"function take a uatype as argument, got: {vtype}")
 
 
 # register of custom enums (Those loaded with load_enums())

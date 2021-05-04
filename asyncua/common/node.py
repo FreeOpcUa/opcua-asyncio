@@ -27,14 +27,13 @@ def _check_results(results, reqlen=1):
 def _to_nodeid(nodeid):
     if isinstance(nodeid, int):
         return ua.TwoByteNodeId(nodeid)
-    elif isinstance(nodeid, Node):
+    if isinstance(nodeid, Node):
         return nodeid.nodeid
-    elif isinstance(nodeid, ua.NodeId):
+    if isinstance(nodeid, ua.NodeId):
         return nodeid
-    elif type(nodeid) in (str, bytes):
+    if type(nodeid) in (str, bytes):
         return ua.NodeId.from_string(nodeid)
-    else:
-        raise ua.UaError(f"Could not resolve '{nodeid}' to a type id")
+    raise ua.UaError(f"Could not resolve '{nodeid}' to a type id")
 
 
 class Node:
@@ -143,7 +142,7 @@ class Node:
         get node class attribute of node
         """
         result = await self.read_attribute(ua.AttributeIds.NodeClass)
-        return result.Value.Value
+        return ua.NodeClass(result.Value.Value)
 
     async def read_data_type_definition(self):
         """
@@ -215,7 +214,7 @@ class Node:
         Read and return ArrayDimensions attribute of node
         """
         res = await self.read_attribute(ua.AttributeIds.ValueRank)
-        return res.Value.Value
+        return ua.ValueRank(res.Value.Value)
 
     async def write_value(self, value, varianttype=None):
         """
@@ -249,14 +248,14 @@ class Node:
             await self.unset_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.CurrentWrite)
 
     async def set_attr_bit(self, attr, bit):
-        val = await self.read_attribute(attr)
-        val.Value.Value = ua.ua_binary.set_bit(val.Value.Value, bit)
-        await self.write_attribute(attr, val)
+        dv = await self.read_attribute(attr)
+        val = ua.ua_binary.set_bit(dv.Value.Value, bit)
+        await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
     async def unset_attr_bit(self, attr, bit):
-        val = await self.read_attribute(attr)
-        val.Value.Value = ua.ua_binary.unset_bit(val.Value.Value, bit)
-        await self.write_attribute(attr, val)
+        dv = await self.read_attribute(attr)
+        val = ua.ua_binary.unset_bit(dv.Value.Value, bit)
+        await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
     def set_read_only(self):
         """
@@ -478,8 +477,7 @@ class Node:
         refs = await self.get_references(refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse)
         if len(refs) > 0:
             return Node(self.server, refs[0].NodeId)
-        else:
-            return None
+        return None
 
     async def get_child(self, path):
         """
@@ -516,7 +514,7 @@ class Node:
             rpath.Elements.append(el)
         return rpath
 
-    async def read_raw_history(self, starttime=None, endtime=None, numvalues=0):
+    async def read_raw_history(self, starttime=None, endtime=None, numvalues=0, return_bounds=True):
         """
         Read raw history of a node
         result code from server is checked and an exception is raised in case of error
@@ -534,12 +532,21 @@ class Node:
         else:
             details.EndTime = ua.get_win_epoch()
         details.NumValuesPerNode = numvalues
-        details.ReturnBounds = True
-        result = await self.history_read(details)
-        result.StatusCode.check()
-        return result.HistoryData.DataValues
+        details.ReturnBounds = return_bounds
+        history = []
+        continuation_point = None
+        while True:
+            result = await self.history_read(details, continuation_point)
+            result.StatusCode.check()
+            continuation_point = result.ContinuationPoint
+            history.extend(result.HistoryData.DataValues)
+            # No more data available
+            if continuation_point is None:
+                break
 
-    async def history_read(self, details):
+        return history
+
+    async def history_read(self, details, continuation_point=None):
         """
         Read raw history of a node, low-level function
         result code from server is checked and an exception is raised in case of error
@@ -547,6 +554,7 @@ class Node:
         valueid = ua.HistoryReadValueId()
         valueid.NodeId = self.nodeid
         valueid.IndexRange = ''
+        valueid.ContinuationPoint = continuation_point
         params = ua.HistoryReadParameters()
         params.HistoryReadDetails = details
         params.TimestampsToReturn = ua.TimestampsToReturn.Both

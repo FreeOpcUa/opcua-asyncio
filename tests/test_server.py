@@ -104,8 +104,7 @@ async def test_register_use_namespace(server):
 
 async def test_server_method(server):
     def func(parent, variant):
-        variant.Value *= 2
-        return [variant]
+        return [ua.Variant(variant.Value * 2, variant.VariantType)]
 
     o = server.nodes.objects
     v = await o.add_method(3, 'Method1', func, [ua.VariantType.Int64], [ua.VariantType.Int64])
@@ -438,7 +437,7 @@ async def test_eventgenerator_custom_event_with_variables(server):
                   ('PropertyString', ua.VariantType.String)]
     variables = [('VariableString', ua.VariantType.String),
                  ('MyEnumVar', ua.VariantType.Int32, ua.NodeId(ua.ObjectIds.ApplicationType))]
-    etype = await server.create_custom_object_type(2, 'MyEvent33', ua.ObjectIds.BaseEventType, 
+    etype = await server.create_custom_object_type(2, 'MyEvent33', ua.ObjectIds.BaseEventType,
                                                        properties, variables)
     evgen = await server.get_event_generator(etype, ua.ObjectIds.Server)
     check_eventgenerator_custom_event(evgen, etype, server)
@@ -565,15 +564,18 @@ async def test_load_enum_strings(server):
 
 async def test_load_enum_values(server):
     dt = await server.nodes.enum_data_type.add_data_type(0, "MyValuesEnum")
-    v1 = ua.EnumValueType()
-    v1.DisplayName.Text = "v1"
-    v1.Value = 2
-    v2 = ua.EnumValueType()
-    v2.DisplayName.Text = "v2"
-    v2.Value = 3
-    v3 = ua.EnumValueType()
-    v3.DisplayName.Text = "v 3 "
-    v3.Value = 4
+    v1 = ua.EnumValueType(
+            DisplayName=ua.LocalizedText("v1"),
+            Value=2,
+            )
+    v2 = ua.EnumValueType(
+            DisplayName=ua.LocalizedText("v2"),
+            Value=3,
+            )
+    v3 = ua.EnumValueType(
+            DisplayName=ua.LocalizedText("v 3 "),
+            Value=4.
+            )
     await dt.add_property(0, "EnumValues", [v1, v2, v3])
     await server.load_enums()
     e = getattr(ua, "MyValuesEnum")
@@ -653,6 +655,15 @@ async def check_custom_type(ntype, base_type, server: Server, node_class=None):
     assert await ntype.get_child("2:PropertyString") in properties
     assert (await(await ntype.get_child("2:PropertyString")).read_data_value()).Value.VariantType == ua.VariantType.String
 
+async def test_server_read_write_attribute_value(server: Server):
+    node = await server.get_objects_node().add_variable(0, "0:TestVar", 0, varianttype=ua.VariantType.Int64)
+    dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value.Value == 0
+    dv = ua.DataValue(Value=ua.Variant(Value=5, VariantType=ua.VariantType.Int64))
+    await server.write_attribute_value(node.nodeid, dv, attr=ua.AttributeIds.Value)
+    dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value.Value == 5
+    await server.delete_nodes([node])
 
 """
 class TestServerCaching(unittest.TestCase):

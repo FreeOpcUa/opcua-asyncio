@@ -193,6 +193,10 @@ class Client:
         pass
 
     @syncmethod
+    def get_namespace_array(self):
+        pass
+
+    @syncmethod
     def set_security(self):
         pass
 
@@ -218,6 +222,14 @@ class Client:
 
     @syncmethod
     def connect_and_get_server_endpoints(self):
+        pass
+
+    @syncmethod
+    def read_values(self, nodes):
+        pass
+
+    @syncmethod
+    def write_values(self, nodes, values):
         pass
 
     def __enter__(self):
@@ -462,6 +474,10 @@ class SyncNode:
         pass
 
     @syncmethod
+    def add_variable_type(self, ns, name, datatype):
+        pass
+
+    @syncmethod
     def add_folder(self, ns, name):
         pass
 
@@ -515,6 +531,10 @@ class SyncNode:
         nodeclassmask=ua.NodeClass.Unspecified,
         includesubtypes=True,
     ):
+        pass
+
+    @syncmethod
+    def add_reference(self, target, reftype, forward=True, bidirectional=True):
         pass
 
     @syncmethod
