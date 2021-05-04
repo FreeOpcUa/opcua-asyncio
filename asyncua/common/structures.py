@@ -220,32 +220,46 @@ async def load_type_definitions(server, nodes=None):
         generators.append(generator)
         generator.make_model_from_string(xml)
         # generate and execute new code on the fly
-        generator.get_python_classes(structs_dict)
-        # same but using a file that is imported. This can be usefull for debugging library
-        # name = node.read_browse_name().Name
-        # Make sure structure names do not contain charaters that cannot be used in Python class file names
-        # name = clean_name(name)
-        # name = "structures_" + node.read_browse_name().Name
-        # generator.save_and_import(name + ".py", append_to=structs_dict)
+        
+        have_missing_data_types = True
+        prev_num_failed_codes = -1
+        while have_missing_data_types:
+            structs_dict, failed_codes = generator.get_python_classes(structs_dict)
 
-        # register classes
-        # every children of our node should represent a class
-        for ndesc in await node.get_children_descriptions():
-            ndesc_node = server.get_node(ndesc.NodeId)
-            ref_desc_list = await ndesc_node.get_references(refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse)
-            if ref_desc_list:  # some server put extra things here
-                name = clean_name(ndesc.BrowseName.Name)
-                if name not in structs_dict:
-                    _logger.warning("%s is found as child of binary definition node but is not found in xml", name)
-                    continue
-                nodeid = ref_desc_list[0].NodeId
-                ua.register_extension_object(name, nodeid, structs_dict[name])
-                # save the typeid if user want to create static file for type definitnion
-                generator.set_typeid(name, nodeid.to_string())
+            if len(failed_codes) > 0:
+                if prev_num_failed_codes > 0 and len(failed_codes) >= prev_num_failed_codes:
+                    raise Exception("The previous number of missing data types is the same after retry.")
+            else:
+                # all parsed
+                have_missing_data_types = False
+            
+            prev_num_failed_codes = len(failed_codes)
 
-        for key, val in structs_dict.items():
-            if isinstance(val, EnumMeta) and key != "IntEnum":
-                setattr(ua, key, val)
+            # same but using a file that is imported. This can be usefull for debugging library
+            # name = node.read_browse_name().Name
+            # Make sure structure names do not contain charaters that cannot be used in Python class file names
+            # name = clean_name(name)
+            # name = "structures_" + node.read_browse_name().Name
+            # generator.save_and_import(name + ".py", append_to=structs_dict)
+
+            # register classes
+            # every children of our node should represent a class
+            for ndesc in await node.get_children_descriptions():
+                ndesc_node = server.get_node(ndesc.NodeId)
+                ref_desc_list = await ndesc_node.get_references(refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse)
+                if ref_desc_list:  # some server put extra things here
+                    name = clean_name(ndesc.BrowseName.Name)
+                    if name not in structs_dict:
+                        _logger.warning("%s is found as child of binary definition node but is not found in xml", name)
+                        continue
+                    nodeid = ref_desc_list[0].NodeId
+                    ua.register_extension_object(name, nodeid, structs_dict[name])
+                    # save the typeid if user want to create static file for type definitnion
+                    generator.set_typeid(name, nodeid.to_string())
+
+            for key, val in structs_dict.items():
+                if isinstance(val, EnumMeta) and key != "IntEnum":
+                    setattr(ua, key, val)
 
     return generators, structs_dict
 
@@ -275,14 +289,23 @@ def _generate_python_class(model, env=None):
     if "List" not in env:
         env['List'] = List
     # generate classes one by one and add them to dict
+    failed_codes = []
     for element in model:
         code = element.get_code()
         try:
             exec(code, env)
         except Exception:
-            _logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
-            raise
-    return env
+            failed_codes.append(code)
+            #_logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
+            continue
+    # env['ua'] = ua
+    # for failed_code in failed_codes:
+    #     try:
+    #         exec(failed_code, env)
+    #     except Exception:
+    #         _logger.exception("Failed to execute auto-generated code from UA datatype: %s", failed_code)
+    #         continue
+    return env, failed_codes
 
 
 async def load_enums(server, env=None, force=False):
