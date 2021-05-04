@@ -1,10 +1,8 @@
-
+import asyncio
 import logging
-import pytest
 
-from asyncua import Client
-from asyncua import ua
-from asyncua import Node
+import pytest
+from asyncua import Client, Node, ua
 
 _logger = logging.getLogger(__name__)
 pytestmark = pytest.mark.asyncio
@@ -123,5 +121,19 @@ async def test_browse_nodes(server, client):
     assert isinstance(results[1][0], Node)
     assert isinstance(results[0][1], ua.BrowseResult)
     assert isinstance(results[1][1], ua.BrowseResult)
+
+async def test_cancelling_connection_establishment():
+    client = Client('opc.tcp://8.8.8.8:12345')
+
+    async def connect():
+        await client.connect() # timeout
+    
+    task = asyncio.create_task(connect())
+    await asyncio.sleep(1)
+    assert client._connect_task is not None # connection establishment is ongoing
+    await client.disconnect()
+    assert client._connect_task is None # connection establishment is interrupted
+    assert client.uaclient.protocol is None
+    await task
     
     

@@ -63,6 +63,7 @@ class Client:
         self.max_messagesize = 0  # No limits
         self.max_chunkcount = 0  # No limits
         self._renew_channel_task = None
+        self._connect_task = None
 
     async def __aenter__(self):
         await self.connect()
@@ -229,8 +230,17 @@ class Client:
         finally:
             self.disconnect_socket()
         return servers
-
+    
     async def connect(self):
+        self._connect_task = asyncio.create_task(self._connect())
+        try:
+            await self._connect_task
+        except asyncio.CancelledError:
+            pass
+        finally:
+            self._connect_task = None
+
+    async def _connect(self):
         """
         High level method
         Connect, create and activate session
@@ -253,6 +263,14 @@ class Client:
         Close session, secure channel and socket
         """
         _logger.info("disconnect")
+        if self._connect_task and not self._connect_task.done():
+            self._connect_task.cancel()
+            try:
+                await self._connect_task
+            except asyncio.CancelledError:
+                pass
+            finally:
+                self._connect_task = None
         try:
             await self.close_session()
             await self.close_secure_channel()
@@ -508,11 +526,16 @@ class Client:
         """
         Close session
         """
-        self._renew_channel_task.cancel()
-        try:
-            await self._renew_channel_task
-        except Exception:
-            _logger.exception("Error while closing secure channel loop")
+        if self._renew_channel_task is not None:
+            self._renew_channel_task.cancel()
+            try:
+                await self._renew_channel_task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                _logger.exception("Error while closing secure channel loop")
+            finally:
+                self._renew_channel_task = None
         return await self.uaclient.close_session(True)
 
     def get_root_node(self):
