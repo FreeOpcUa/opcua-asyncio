@@ -224,6 +224,12 @@ async def load_type_definitions(server, nodes=None):
         have_missing_data_types = True
         prev_num_failed_codes = -1
         while have_missing_data_types:
+            # currently the 'get_python_classes' makes a single run on the data types from the information
+            # model being loaded; if a certain DataType depends on a DataType that is defined 'later' on
+            # the information model(s) it will fail because it makes use of an yet undefined Python class.
+            # So for solving this without changing deeply the current implementation of 'get_python_classes'
+            # we get get how many DataTypes failed to be converted to Python classes and repeat until the failed
+            # conversions is zero or not lower than the previous iteration.
             structs_dict, failed_codes = generator.get_python_classes(structs_dict)
 
             if len(failed_codes) > 0:
@@ -295,16 +301,12 @@ def _generate_python_class(model, env=None):
         try:
             exec(code, env)
         except Exception:
+            # the conversion of the DataType failed, append the code of the failed DataType
+            # and continue to the next; it may have failed because a referenced DataType
+            # was not yet converted to python class; the client may try to load python classes
             failed_codes.append(code)
-            #_logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
+            _logger.info("Failed to execute auto-generated code from UA datatype: %s", code)
             continue
-    # env['ua'] = ua
-    # for failed_code in failed_codes:
-    #     try:
-    #         exec(failed_code, env)
-    #     except Exception:
-    #         _logger.exception("Failed to execute auto-generated code from UA datatype: %s", failed_code)
-    #         continue
     return env, failed_codes
 
 
