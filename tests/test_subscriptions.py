@@ -357,29 +357,27 @@ async def test_subscription_data_change_many(opc):
     await sub.delete()
     await opc.opc.delete_nodes([v1, v2])
 
-async def test_subscription_keepalive_count(mocker):
+def test_get_keepalive_count(mocker):
     """
     Check the subscription parameter MaxKeepAliveCount value
     with various publishInterval and session_timeout values.
     """
 
-    mock_subscription = mocker.patch("asyncua.common.subscription.Subscription.init", new=CoroutineMock())
     c = Client("opc.tcp://fake")
     # session timeout < publish_interval
-    c.session_timeout = 30000 # ms
     publish_interval = 1000 # ms
-    handler = 123
-    sub = await c.create_subscription(publish_interval, handler)
-    assert sub.parameters.RequestedMaxKeepAliveCount == 22
+    c.session_timeout = 30000 # ms
+    keepalive_count = c.get_keepalive_count(publish_interval)
+    assert keepalive_count == 22
     # session_timeout > publish_interval
-    c.session_timeout = 30000
     publish_interval = 75000
-    sub = await c.create_subscription(publish_interval, handler)
-    assert sub.parameters.RequestedMaxKeepAliveCount == 0
+    c.session_timeout = 30000
+    keepalive_count = c.get_keepalive_count(publish_interval)
+    assert keepalive_count == 0
     # RequestedPublishingInterval == 0
     publish_interval = 0
-    sub = await c.create_subscription(publish_interval, handler)
-    assert sub.parameters.RequestedMaxKeepAliveCount == 22
+    keepalive_count = c.get_keepalive_count(publish_interval)
+    assert keepalive_count == 22
 
 
 async def test_subscribe_server_time(opc):
@@ -863,3 +861,62 @@ async def test_internal_server_subscription(opc):
     # Check that the results are not left un-acknowledged on internal Server Subscriptions.
     assert len(internal_sub._not_acknowledged_results) == 0
     await opc.opc.delete_nodes([sub_obj])
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_maxkeepalive_count(opc, mocker):
+    sub_handler = MySubHandler()
+    client, server = opc
+
+    period = 1
+    max_keepalive_count = client.get_keepalive_count(period)
+    mock_period = 500
+    mock_max_keepalive_count = client.get_keepalive_count(mock_period)
+
+    mock_response = ua.CreateSubscriptionResult(
+        SubscriptionId=78,
+        RevisedPublishingInterval=mock_period,
+        RevisedLifetimeCount=10000,
+        RevisedMaxKeepAliveCount=2700
+    )
+    mock_create_subscription = mocker.patch.object(
+        client.uaclient,
+        "create_subscription",
+        new=CoroutineMock(return_value=mock_response)
+    )
+    mock_update_subscription = mocker.patch.object(
+        client.uaclient,
+        "update_subscription",
+        new=CoroutineMock()
+    )
+
+    sub = await client.create_subscription(period, sub_handler)
+    assert sub.parameters.RequestedMaxKeepAliveCount == mock_max_keepalive_count
+    assert mock_max_keepalive_count != max_keepalive_count
+    # mock point to the object at its finale state,
+    # here the subscription params have already been updated
+    mock_create_subscription.assert_awaited_with(
+        ua.CreateSubscriptionParameters(
+            RequestedPublishingInterval=mock_period,
+            RequestedLifetimeCount=10000,
+            RequestedMaxKeepAliveCount=mock_max_keepalive_count,
+            MaxNotificationsPerPublish=10000,
+            PublishingEnabled=True,
+            Priority=0
+        ),
+        callback=mocker.ANY
+    )
+    mock_update_subscription.assert_awaited_with(
+        ua.ModifySubscriptionParameters(
+            SubscriptionId=78,
+            RequestedPublishingInterval=mock_period,
+            RequestedLifetimeCount=10000,
+            RequestedMaxKeepAliveCount=mock_max_keepalive_count,
+            MaxNotificationsPerPublish=10000
+        )
+    )
+
+    # we don't update when sub params == revised params
+    mock_update_subscription.reset_mock()
+    mock_create_subscription.reset_mock()
+    sub = await client.create_subscription(mock_period, sub_handler)
+    mock_update_subscription.assert_not_called()
