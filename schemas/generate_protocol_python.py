@@ -178,7 +178,7 @@ class CodeGenerator:
         if dtype == 'Boolean':
             return 'True'
         if dtype == 'DateTime':
-            return 'field(default_factory=datetime.now)'
+            return 'field(default_factory=datetime.utcnow)'
         if dtype in ('Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'Double', 'Float', 'Byte'):
             return 0
         if dtype in 'ExtensionObject':
