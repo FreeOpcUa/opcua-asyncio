@@ -430,7 +430,9 @@ class UaClient:
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def create_subscription(self, params, callback):
+    async def create_subscription(
+        self, params, callback
+    ) -> ua.CreateSubscriptionResult:
         self.logger.debug("create_subscription")
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
@@ -438,13 +440,30 @@ class UaClient:
         response = struct_from_binary(ua.CreateSubscriptionResponse, data)
         response.ResponseHeader.ServiceResult.check()
         self._subscription_callbacks[response.Parameters.SubscriptionId] = callback
-        self.logger.info("create_subscription success SubscriptionId %s", response.Parameters.SubscriptionId)
+        self.logger.info(
+            "create_subscription success SubscriptionId %s",
+            response.Parameters.SubscriptionId
+        )
         if not self._publish_task or self._publish_task.done():
             # Start the publish loop if it is not yet running
             # The current strategy is to have only one open publish request per UaClient. This might not be enough
             # in high latency networks or in case many subscriptions are created. A Set of Tasks of `_publish_loop`
             # could be used if necessary.
             self._publish_task = asyncio.create_task(self._publish_loop())
+        return response.Parameters
+
+    async def update_subscription(
+        self, params: ua.ModifySubscriptionParameters
+    ) -> ua.ModifySubscriptionResult:
+        request = ua.ModifySubscriptionRequest()
+        request.Parameters = params
+        data = await self.protocol.send_request(request)
+        response = struct_from_binary(ua.ModifySubscriptionResponse, data)
+        response.ResponseHeader.ServiceResult.check()
+        self.logger.info(
+            "update_subscription success SubscriptionId %s",
+            params.SubscriptionId
+        )
         return response.Parameters
 
     async def delete_subscriptions(self, subscription_ids):

@@ -4,7 +4,8 @@ high level interface to subscriptions
 import asyncio
 import logging
 import collections.abc
-from typing import Union, List, Iterable
+from typing import Union, List, Iterable, Optional
+from asyncua.common.ua_utils import copy_dataclass_attr
 
 from asyncua import ua
 from .events import Event, get_filter_from_event_type
@@ -80,12 +81,24 @@ class Subscription:
         self._handler: SubHandler = handler
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items = {}
-        self.subscription_id = None
+        self.subscription_id: Optional[int] = None
 
-    async def init(self):
-        response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
+    async def init(self) -> ua.CreateSubscriptionResult:
+        response = await self.server.create_subscription(
+            self.parameters, callback=self.publish_callback
+        )
         self.subscription_id = response.SubscriptionId  # move to data class
-        self.logger.info('Subscription created %s', self.subscription_id)
+        self.logger.info("Subscription created %s", self.subscription_id)
+        return response
+
+    async def update(
+        self, params: ua.ModifySubscriptionParameters
+    ) -> ua.ModifySubscriptionResponse:
+        response = await self.server.update_subscription(params)
+        self.logger.info('Subscription updated %s', params.SubscriptionId)
+        # update the self.parameters attr with the updated values
+        copy_dataclass_attr(params, self.parameters)
+        return response
 
     async def publish_callback(self, publish_result: ua.PublishResult):
         """
