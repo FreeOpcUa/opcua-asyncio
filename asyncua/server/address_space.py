@@ -706,6 +706,13 @@ class AddressSpace:
         if attval is None:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
 
+        if value.Value.VariantType != attval.value.Value.VariantType:
+            if value.Value.VariantType == ua.VariantType.Null or  attval.value.Value.VariantType == ua.VariantType.Null:
+                pass
+            else:
+                _logger.critical("Write refused: Variant: %s with type %s does not have expected type: %s", value.Value, value.Value.VariantType, attval.value.Value.VariantType)
+                return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
+
         old = attval.value
         attval.value = value
         cbs = []

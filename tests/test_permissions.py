@@ -91,7 +91,7 @@ async def test_permissions_admin(srv_crypto_one_cert):
         objects = clt.nodes.objects
         child = await objects.get_child(['0:MyObject', '0:MyVariable'])
         await child.read_value()
-        await child.set_value(42)
+        await child.set_value(42.0)
 
 
 async def test_permissions_user(srv_crypto_one_cert):
