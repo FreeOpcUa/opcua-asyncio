@@ -538,7 +538,7 @@ async def test_add_exception(opc):
 
 async def test_negative_value(opc):
     o = opc.opc.nodes.objects
-    v = await o.add_variable(3, 'VariableNegativeValue', 4)
+    v = await o.add_variable(3, 'VariableNegativeValue', 4.0)
     await v.write_value(-4.54)
     assert -4.54 == await v.read_value()
     await opc.opc.delete_nodes([v])
