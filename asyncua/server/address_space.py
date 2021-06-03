@@ -706,12 +706,8 @@ class AddressSpace:
         if attval is None:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
 
-        if value.Value.VariantType != attval.value.Value.VariantType:
-            if value.Value.VariantType == ua.VariantType.Null or  attval.value.Value.VariantType == ua.VariantType.Null:
-                pass
-            else:
-                _logger.critical("Write refused: Variant: %s with type %s does not have expected type: %s", value.Value, value.Value.VariantType, attval.value.Value.VariantType)
-                return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
+        if not self._is_expected_variant_type(value, attval, node):
+            return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
 
         old = attval.value
         attval.value = value
@@ -727,6 +723,27 @@ class AddressSpace:
                 self.logger.exception("Error calling datachange callback %s, %s, %s", k, v, ex)
 
         return ua.StatusCode()
+
+    def _is_expected_variant_type(self, value, attval, node):
+        if value.Value.VariantType == ua.VariantType.Null:
+            # we accept overwrite with Null, not sure if this is OK in spec...
+            return True
+        vtype = attval.value.Value.VariantType
+        if vtype == ua.VariantType.Null:
+            # Node had a null value, many nodes are initialized with that value
+            # we should check what the real type is
+            dtype = node.attributes[ua.AttributeIds.DataType].value.Value.Value
+            if dtype.NamespaceIndex == 0 and dtype.Identifier <= 25:
+                vtype = ua.VariantType(dtype.Identifier)
+            else:
+                # FIXME: should find the correct variant type given data type but
+                # this is a bit complicaed so trusting the first write
+                return True
+        if value.Value.VariantType == vtype:
+            return True
+        _logger.critical("Write refused: Variant: %s with type %s does not have expected type: %s",
+                value.Value, value.Value.VariantType, attval.value.Value.VariantType)
+        return False
 
     def add_datachange_callback(self, nodeid, attr, callback):
         self.logger.debug("set attr callback: %s %s %s", nodeid, attr, callback)
