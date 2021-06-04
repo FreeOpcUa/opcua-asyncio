@@ -297,3 +297,11 @@ def data_type_to_string(dtype):
     else:
         string = dtype.to_string()
     return string
+
+def copy_dataclass_attr(dc_source, dc_dest) -> None:
+    """
+    Copy the common attributes of dc_source to dc_dest
+    """
+    common_params = set(vars(dc_source)) & set(vars(dc_dest))
+    for c in common_params:
+        setattr(dc_dest, c, getattr(dc_source, c))
