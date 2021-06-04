@@ -594,9 +594,6 @@ class Client:
             modified_params.RequestedPublishingInterval = (
                 results.RevisedPublishingInterval
             )
-            modified_params.RequestedPublishingInterval = (
-                results.RevisedPublishingInterval
-            )
             # update LifetimeCount but chances are it will be re-revised again
             modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
             return modified_params
