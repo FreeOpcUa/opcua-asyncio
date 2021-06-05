@@ -365,32 +365,9 @@ _NodeIdType = NodeIdType  # ugly hack
 
 
 @dataclass(frozen=True, eq=False, order=False)
-class NodeId:
-    """
-    NodeId Object
+class BaseNodeId:
 
-    Args:
-        identifier: The identifier might be an int, a string, bytes or a Guid
-        namespaceidx(int): The index of the namespace
-        nodeidtype(NodeIdType): The type of the nodeid if it cannot be guess or you want something
-        special like twobyte nodeid or fourbytenodeid
-
-
-    :ivar Identifier:
-    :vartype Identifier: NodeId
-    :ivar NamespaceIndex:
-    :vartype NamespaceIndex: Int
-    :ivar NamespaceUri:
-    :vartype NamespaceUri: String
-    :ivar ServerIndex:
-    :vartype ServerIndex: Int
-    """
-
-    Identifier: Union[Int32, String, Guid, ByteString] = 0
-    NamespaceIndex: Int16 = 0
-    NodeIdType: _NodeIdType = None
-
-    def __post_init__(self):
+    def post_init(self):
         if self.NodeIdType is None:
             if isinstance(self.Identifier, int):
                 if self.Identifier < 255 and self.NamespaceIndex == 0:
@@ -456,7 +433,7 @@ class NodeId:
     @staticmethod
     def from_string(string):
         try:
-            return NodeId._from_string(string)
+            return BaseNodeId._from_string(string)
         except ValueError as ex:
             raise UaStringParsingError(f"Error parsing string {string}", ex) from ex
 
@@ -495,9 +472,42 @@ class NodeId:
         if identifier is None:
             raise UaStringParsingError(f"Could not find identifier in string: {string}")
         if nsu is not None or srv is not None:
-            return ExpandedNodeId(identifier, namespace, ntype, NamespaceUri=nsu, ServerIndex=srv)
+            '''
+            ServerIndex: Int32 = field(default=0, compare=True)
+            NamespaceUri: Optional[String] = field(default=None, compare=True) 
+            NamespaceIndex: Int16 = 0
+            NodeIdType: _NodeIdType = None
+            Identifier: Union[Int32, String, Guid, ByteString] = 0
+            '''
+            return ExpandedNodeId(srv, nsu, namespace, ntype, identifier)
         return NodeId(identifier, namespace, ntype)
 
+
+@dataclass(frozen=True, eq=False, order=False)
+class NodeId(BaseNodeId):
+    """
+    NodeId Object
+
+    Args:
+        identifier: The identifier might be an int, a string, bytes or a Guid
+        namespaceidx(int): The index of the namespace
+        nodeidtype(NodeIdType): The type of the nodeid if it cannot be guess or you want something
+        special like twobyte nodeid or fourbytenodeid
+
+
+    :ivar Identifier:
+    :vartype Identifier: NodeId
+    :ivar NamespaceIndex:
+    :vartype NamespaceIndex: Int
+    """
+
+    Identifier: Union[Int32, String, Guid, ByteString] = 0
+    NamespaceIndex: Int16 = 0
+    NodeIdType: _NodeIdType = None
+
+    def __post_init__(self):
+        self.post_init() # is there a better way?
+    
     def to_string(self):
         string = []
         if self.NamespaceIndex != 0:
@@ -517,7 +527,7 @@ class NodeId:
             ntype = "b"
         string.append(f"{ntype}={self.Identifier}")
         return ";".join(string)
-
+    
     def to_binary(self):
         import asyncua
 
@@ -581,7 +591,27 @@ class StringNodeId(NodeId):
 
 
 @dataclass(frozen=True, eq=False, order=False)
-class ExpandedNodeId:
+class ExpandedNodeId(BaseNodeId):
+    """
+    ExpandedNodeId Object
+
+    Args:
+        identifier: The identifier might be an int, a string, bytes or a Guid
+        namespaceidx(int): The index of the namespace
+        nodeidtype(NodeIdType): The type of the nodeid if it cannot be guess or you want something
+        special like twobyte nodeid or fourbytenodeid
+
+
+    :ivar Identifier:
+    :vartype Identifier: NodeId
+    :ivar NamespaceIndex:
+    :vartype NamespaceIndex: Int
+    :ivar NamespaceUri:
+    :vartype NamespaceUri: String
+    :ivar ServerIndex:
+    :vartype ServerIndex: Int
+    """
+
     ServerIndex: Int32 = field(default=0, compare=True)
     NamespaceUri: Optional[String] = field(default=None, compare=True) 
     NamespaceIndex: Int16 = 0
@@ -589,144 +619,32 @@ class ExpandedNodeId:
     Identifier: Union[Int32, String, Guid, ByteString] = 0
 
     def __post_init__(self):
-        if self.NodeIdType is None:
-            if isinstance(self.Identifier, int):
-                if self.Identifier < 255 and self.NamespaceIndex == 0:
-                    object.__setattr__(self, "NodeIdType", NodeIdType.TwoByte)
-                elif self.Identifier < 2 ** 16 and self.NamespaceIndex < 255:
-                    object.__setattr__(self, "NodeIdType", NodeIdType.FourByte)
-                else:
-                    object.__setattr__(self, "NodeIdType", NodeIdType.Numeric)
-            elif isinstance(self.Identifier, str):
-                object.__setattr__(self, "NodeIdType", NodeIdType.String)
-            elif isinstance(self.Identifier, bytes):
-                object.__setattr__(self, "NodeIdType", NodeIdType.ByteString)
-            elif isinstance(self.Identifier, uuid.UUID):
-                object.__setattr__(self, "NodeIdType", NodeIdType.Guid)
-            else:
-                raise UaError("NodeId: Could not guess type of NodeId, set NodeIdType")
-        else:
-            self.check_identifier_type_compatibility()
+        self.post_init() # is there a better way?
 
-    def check_identifier_type_compatibility(self):
-        """
-        Check whether the given identifier can be interpreted as the given node identifier type.
-        """
-        valid_type_combinations = [
-            (int, [NodeIdType.Numeric, NodeIdType.TwoByte, NodeIdType.FourByte]),
-            (str, [NodeIdType.String, NodeIdType.ByteString]),
-            (bytes, [NodeIdType.ByteString, NodeIdType.TwoByte, NodeIdType.FourByte]),
-            (uuid.UUID, [NodeIdType.Guid]),
-        ]
-        for identifier, valid_node_types in valid_type_combinations:
-            if isinstance(self.Identifier, identifier) and self.NodeIdType in valid_node_types:
-                return
-        raise UaError(
-            f"NodeId of type {self.NodeIdType.name} has an incompatible identifier {self.Identifier} of type {type(self.Identifier)}"
-        )
-
-    def __eq__(self, node):
-        return isinstance(node, NodeId) and self.NamespaceIndex == node.NamespaceIndex and self.Identifier == node.Identifier
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return hash((self.NamespaceIndex, self.Identifier))
-
-    def __lt__(self, other):
-        if not isinstance(other, NodeId):
-            raise AttributeError("Can only compare to NodeId")
-        return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (other.NodeIdType, other.NamespaceIndex, other.Identifier)
-
-    def is_null(self):
-        if self.NamespaceIndex != 0:
-            return False
-        return self.has_null_identifier()
-
-    def has_null_identifier(self):
-        if not self.Identifier:
-            return True
-        if self.NodeIdType is NodeIdType.Guid and self.Identifier.int == 0:
-            return True
-        return False
-
-    @staticmethod
-    def from_string(string):
-        try:
-            return NodeId._from_string(string)
-        except ValueError as ex:
-            raise UaStringParsingError(f"Error parsing string {string}", ex) from ex
-
-    @staticmethod
-    def _from_string(string):
-        elements = string.split(";")
-        identifier = None
-        namespace = 0
+    def to_string(self):
+        string = []
+        if self.NamespaceUri:
+            string.append(f"nsu={self.NamespaceUri}")
         ntype = None
-        srv = None
-        nsu = None
-        for el in elements:
-            if not el:
-                continue
-            k, v = el.split("=", 1)
-            k = k.strip()
-            v = v.strip()
-            if k == "ns":
-                namespace = int(v)
-            elif k == "i":
-                ntype = NodeIdType.Numeric
-                identifier = int(v)
-            elif k == "s":
-                ntype = NodeIdType.String
-                identifier = v
-            elif k == "g":
-                ntype = NodeIdType.Guid
-                identifier = uuid.UUID(f"urn:uuid:{v}")
-            elif k == "b":
-                ntype = NodeIdType.ByteString
-                identifier = v
-            elif k == "srv":
-                srv = int(v)
-            elif k == "nsu":
-                nsu = v
-        if identifier is None:
-            raise UaStringParsingError(f"Could not find identifier in string: {string}")
-        return ExpandedNodeId(identifier, namespace, ntype, NamespaceUri=nsu, ServerIndex=srv)
-
-    # def to_string(self):
-    #     string = []
-    #     if self.NamespaceIndex != 0:
-    #         string.append(f"ns={self.NamespaceIndex}")
-    #     ntype = None
-    #     if self.NodeIdType == NodeIdType.Numeric:
-    #         ntype = "i"
-    #     elif self.NodeIdType == NodeIdType.String:
-    #         ntype = "s"
-    #     elif self.NodeIdType == NodeIdType.TwoByte:
-    #         ntype = "i"
-    #     elif self.NodeIdType == NodeIdType.FourByte:
-    #         ntype = "i"
-    #     elif self.NodeIdType == NodeIdType.Guid:
-    #         ntype = "g"
-    #     elif self.NodeIdType == NodeIdType.ByteString:
-    #         ntype = "b"
-    #     string.append(f"{ntype}={self.Identifier}")
-    #     return ";".join(string)
+        if self.NodeIdType == NodeIdType.Numeric:
+            ntype = "i"
+        elif self.NodeIdType == NodeIdType.String:
+            ntype = "s"
+        elif self.NodeIdType == NodeIdType.TwoByte:
+            ntype = "i"
+        elif self.NodeIdType == NodeIdType.FourByte:
+            ntype = "i"
+        elif self.NodeIdType == NodeIdType.Guid:
+            ntype = "g"
+        elif self.NodeIdType == NodeIdType.ByteString:
+            ntype = "b"
+        string.append(f"{ntype}={self.Identifier}")
+        return ";".join(string)
 
     def to_binary(self):
         import asyncua
 
-        return asyncua.ua.ua_binary.nodeid_to_binary(self)
-
-    def to_string(self):
-        string = NodeId.to_string(self)
-        string = [string]
-        if self.ServerIndex:
-            string.append(f"srv={self.ServerIndex}")
-        if self.NamespaceUri:
-            string.append(f"nsu={self.NamespaceUri}")
-        return ";".join(string)
+        return asyncua.ua.ua_binary.expanded_nodeid_to_binary(self)
 
 
 @dataclass(frozen=True, init=False, order=True)
