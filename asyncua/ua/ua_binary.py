@@ -289,6 +289,7 @@ def list_to_binary(uatype, val):
 
 
 def nodeid_to_binary(nodeid):
+    print(nodeid)
     if nodeid.NodeIdType == ua.NodeIdType.TwoByte:
         data = struct.pack('<BB', nodeid.NodeIdType.value, nodeid.Identifier)
     elif nodeid.NodeIdType == ua.NodeIdType.FourByte:
@@ -306,47 +307,17 @@ def nodeid_to_binary(nodeid):
             Primitives.Guid.pack(nodeid.Identifier)
     else:
         raise UaError(f'Unknown NodeIdType: {nodeid.NodeIdType} for NodeId: {nodeid}')
-    # # Add NamespaceUri and ServerIndex in case we have an ExpandedNodeId
-    # if hasattr(nodeid, "NamespaceUri") and nodeid.NamespaceUri:
-    #     data = bytearray(data)
-    #     data[0] = set_bit(data[0], 7)
-    #     data.extend(Primitives.String.pack(nodeid.NamespaceUri))
-    # if hasattr(nodeid, "ServerIndex") and nodeid.ServerIndex:
-    #     if not isinstance(data, bytearray):
-    #         data = bytearray(data)
-    #     data[0] = set_bit(data[0], 6)
-    #     data.extend(Primitives.UInt32.pack(nodeid.ServerIndex))
-    return data
-
-def expanded_nodeid_to_binary(nodeid):
-    data = bytearray(data)
-
-    data[0] = set_bit(data[0], 6)
-    data.extend(Primitives.UInt32.pack(nodeid.ServerIndex))
-
-    data[0] = set_bit(data[0], 7)
-    data.extend(Primitives.String.pack(nodeid.NamespaceUri))
-
-    print("Fixme!")
-
-    # TODO: Fix this:
-    if nodeid.NodeIdType == ua.NodeIdType.TwoByte:
-        data = struct.pack('<BB', nodeid.NodeIdType.value, nodeid.Identifier)
-    elif nodeid.NodeIdType == ua.NodeIdType.FourByte:
-        data = struct.pack('<BBH', nodeid.NodeIdType.value, nodeid.NamespaceIndex, nodeid.Identifier)
-    elif nodeid.NodeIdType == ua.NodeIdType.Numeric:
-        data = struct.pack('<BHI', nodeid.NodeIdType.value, nodeid.NamespaceIndex, nodeid.Identifier)
-    elif nodeid.NodeIdType == ua.NodeIdType.String:
-        data = struct.pack('<BH', nodeid.NodeIdType.value, nodeid.NamespaceIndex) + \
-            Primitives.String.pack(nodeid.Identifier)
-    elif nodeid.NodeIdType == ua.NodeIdType.ByteString:
-        data = struct.pack('<BH', nodeid.NodeIdType.value, nodeid.NamespaceIndex) + \
-            Primitives.Bytes.pack(nodeid.Identifier)
-    elif nodeid.NodeIdType == ua.NodeIdType.Guid:
-        data = struct.pack('<BH', nodeid.NodeIdType.value, nodeid.NamespaceIndex) + \
-            Primitives.Guid.pack(nodeid.Identifier)
-    else:
-        raise UaError(f'Unknown NodeIdType: {nodeid.NodeIdType} for NodeId: {nodeid}')
+    # Add NamespaceUri and ServerIndex in case we have an ExpandedNodeId
+    if hasattr(nodeid, "NamespaceUri") and nodeid.NamespaceUri:
+        data = bytearray(data)
+        data[0] = set_bit(data[0], 7)
+        data.extend(Primitives.String.pack(nodeid.NamespaceUri))
+    if hasattr(nodeid, "ServerIndex") and nodeid.ServerIndex is not 0:
+        if not isinstance(data, bytearray):
+            data = bytearray(data)
+        data[0] = set_bit(data[0], 6)
+        data.extend(Primitives.UInt32.pack(nodeid.ServerIndex))
+    print(data)
     return data
 
 

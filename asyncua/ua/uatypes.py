@@ -443,7 +443,7 @@ class BaseNodeId:
         identifier = None
         namespace = 0
         ntype = None
-        srv = None
+        srv = 0
         nsu = None
         for el in elements:
             if not el:
@@ -471,7 +471,7 @@ class BaseNodeId:
                 nsu = v
         if identifier is None:
             raise UaStringParsingError(f"Could not find identifier in string: {string}")
-        if nsu is not None or srv is not None:
+        if nsu is not None or srv is not 0:
             '''
             ServerIndex: Int32 = field(default=0, compare=True)
             NamespaceUri: Optional[String] = field(default=None, compare=True) 
@@ -481,6 +481,11 @@ class BaseNodeId:
             '''
             return ExpandedNodeId(srv, nsu, namespace, ntype, identifier)
         return NodeId(identifier, namespace, ntype)
+
+    def to_binary(self):
+        import asyncua
+
+        return asyncua.ua.ua_binary.nodeid_to_binary(self)
 
 
 @dataclass(frozen=True, eq=False, order=False)
@@ -506,7 +511,7 @@ class NodeId(BaseNodeId):
     NodeIdType: _NodeIdType = None
 
     def __post_init__(self):
-        self.post_init() # is there a better way?
+        self.post_init()
     
     def to_string(self):
         string = []
@@ -527,11 +532,6 @@ class NodeId(BaseNodeId):
             ntype = "b"
         string.append(f"{ntype}={self.Identifier}")
         return ";".join(string)
-    
-    def to_binary(self):
-        import asyncua
-
-        return asyncua.ua.ua_binary.nodeid_to_binary(self)
 
 
 @dataclass(frozen=True, eq=False, order=False)
@@ -619,7 +619,7 @@ class ExpandedNodeId(BaseNodeId):
     Identifier: Union[Int32, String, Guid, ByteString] = 0
 
     def __post_init__(self):
-        self.post_init() # is there a better way?
+        self.post_init()
 
     def to_string(self):
         string = []
@@ -640,11 +640,6 @@ class ExpandedNodeId(BaseNodeId):
             ntype = "b"
         string.append(f"{ntype}={self.Identifier}")
         return ";".join(string)
-
-    def to_binary(self):
-        import asyncua
-
-        return asyncua.ua.ua_binary.expanded_nodeid_to_binary(self)
 
 
 @dataclass(frozen=True, init=False, order=True)
