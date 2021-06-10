@@ -439,7 +439,7 @@ async def test_utf8(opc):
 async def test_null_variable(opc):
     objects = opc.opc.nodes.objects
     var = await objects.add_variable(3, 'nullstring', "a string")
-    await var.write_value(None)
+    await var.write_value(ua.Variant(None, ua.VariantType.String))
     val = await var.read_value()
     assert val is None
     await var.write_value("")
