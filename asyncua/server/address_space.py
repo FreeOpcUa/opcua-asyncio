@@ -725,9 +725,6 @@ class AddressSpace:
         return ua.StatusCode()
 
     def _is_expected_variant_type(self, value, attval, node):
-        if value.Value.VariantType == ua.VariantType.Null:
-            # we accept overwrite with Null, not sure if this is OK in spec...
-            return True
         vtype = attval.value.Value.VariantType
         if vtype == ua.VariantType.Null:
             # Node had a null value, many nodes are initialized with that value
