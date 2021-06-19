@@ -94,6 +94,7 @@ async def main():
     mydtvar = await myobj.add_variable(idx, "MyDateTimeVar", datetime.utcnow())
     await mydtvar.set_writable()    # Set MyVariable to be writable by clients
     myarrayvar = await myobj.add_variable(idx, "myarrayvar", [6.7, 7.9])
+    myuintvar = await myobj.add_variable(idx, "myuintvar", ua.UInt16(4))
     await myobj.add_variable(idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32))
     await myarrayvar.set_writable(True)
     myprop = await myobj.add_property(idx, "myproperty", "I am a property")

@@ -31,7 +31,7 @@ async def add_server_methods(srv):
     o = srv.nodes.objects
     await o.add_method(
         ua.NodeId("ServerMethod", 2), ua.QualifiedName('ServerMethod', 2),
-        func, [ua.VariantType.Int64], [ua.VariantType.Int64]
+        func, [ua.Int64], [ua.Int64]
     )
 
     @uamethod
@@ -58,7 +58,7 @@ async def add_server_methods(srv):
     o = srv.nodes.objects
     await o.add_method(
         ua.NodeId("ServerMethodArray2", 2), ua.QualifiedName('ServerMethodArray2', 2), func3,
-        [ua.VariantType.Int64], [ua.VariantType.Int64]
+        [ua.VariantType.Int64], [ua.Int64]
     )
 
     @uamethod
@@ -131,6 +131,22 @@ async def test_delete_nodes(opc):
     childs = await fold.get_children()
     assert var not in childs
     await opc.opc.delete_nodes([fold])
+
+
+async def test_add_node_using_builtin(opc):
+    obj = opc.opc.nodes.objects
+    fold = await obj.add_folder(2, "FolderBuiltin")
+    var = await fold.add_variable(2, "VarBuiltin", ua.UInt16(9))
+    dv = await var.read_data_value()
+    assert dv.Value.VariantType == ua.VariantType.UInt16
+    data_type = await var.read_data_type()
+    assert data_type.Identifier == ua.VariantType.UInt16.value == ua.ObjectIds.UInt16
+    assert data_type.NamespaceIndex == 0
+    await var.write_value(ua.UInt16(6))
+    dv = await var.read_data_value()
+    assert dv.Value.VariantType == ua.VariantType.UInt16
+    assert dv.Value.Value == 6
+    assert (await var.read_value()) == 6
 
 
 async def test_delete_nodes_with_inverse_references(opc):
@@ -564,7 +580,7 @@ async def test_bad_node(opc):
 
 async def test_value(opc):
     o = opc.opc.nodes.objects
-    var = ua.Variant(1.98, ua.VariantType.Double)
+    var = ua.Variant(ua.Double(1.98))
     v = await o.add_variable(3, 'VariableValue', var)
     assert 1.98 == await v.read_value()
     dvar = ua.DataValue(var)

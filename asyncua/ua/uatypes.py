@@ -117,7 +117,7 @@ class UInt64(int):
     pass
 
 
-class Boolean:
+class Boolean:  # Boolean(bool) is not supported in Python
     pass
 
 
@@ -129,11 +129,11 @@ class Float(float):
     pass
 
 
-class Null:
+class Null:  # Null(NoneType) is not supported in Python
     pass
 
 
-class String(str):
+class String:  # Passing None as arg will result in unepected behaviour so disabling
     pass
 
 
@@ -810,8 +810,14 @@ class Variant:
         if isinstance(self.Value, Variant):
             object.__setattr__(self, "VariantType", self.Value.VariantType)
             object.__setattr__(self, "Value", self.Value.Value)
-        if self.VariantType is None:
-            object.__setattr__(self, "VariantType", self._guess_type(self.Value))
+        if not isinstance(self.VariantType, (VariantType, VariantTypeCustom)):
+            if self.VariantType is None:
+                object.__setattr__(self, "VariantType", self._guess_type(self.Value))
+            else:
+                if hasattr(VariantType, self.VariantType.__name__):
+                    object.__setattr__(self, "VariantType", VariantType[self.VariantType.__name__])
+                else:
+                    raise ValueError("VariantType argument must be an instance of VariantType")
         if (
             self.Value is None
             and not self.is_array
@@ -854,6 +860,11 @@ class Variant:
             if len(val) == 0:
                 raise UaError(f"could not guess UA type of variable {error_val}")
             val = val[0]
+        # now check if this is one our buildin types
+        type_name = type(val).__name__
+        if hasattr(VariantType, type_name):
+            return VariantType[type_name]
+        # nope so guess the type
         if val is None:
             return VariantType.Null
         if isinstance(val, bool):
