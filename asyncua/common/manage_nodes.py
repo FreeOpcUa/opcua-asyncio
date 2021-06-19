@@ -427,6 +427,8 @@ def _vtype_to_argument(vtype):
         arg.DataType = vtype.data_type
     elif isinstance(vtype, ua.VariantType):
         arg.DataType = ua.NodeId(vtype.value)
+    elif hasattr(ua.VariantType, vtype.__name__):
+        arg.DataType = ua.NodeId(ua.VariantType[vtype.__name__].value)
     else:
         arg.DataType = ua.NodeId(vtype)
     return arg
