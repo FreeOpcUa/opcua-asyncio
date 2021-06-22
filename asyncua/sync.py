@@ -550,7 +550,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def read_attributes(self):
+    def read_attributes(self, attrs):
         pass
 
 
