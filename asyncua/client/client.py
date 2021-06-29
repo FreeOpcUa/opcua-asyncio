@@ -14,7 +14,7 @@ from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
 from ..common.structures104 import load_data_type_definitions
 from ..common.utils import create_nonce
-from ..common.ua_utils import value_to_datavalue
+from ..common.ua_utils import value_to_datavalue, copy_dataclass_attr
 from ..crypto import uacrypto, security_policies
 
 _logger = logging.getLogger(__name__)
@@ -531,7 +531,9 @@ class Client:
         """
         return Node(self.uaclient, nodeid)
 
-    async def create_subscription(self, period, handler, publishing=True):
+    async def create_subscription(
+        self, period, handler, publishing=True
+    ) -> Subscription:
         """
         Create a subscription.
         Returns a Subscription object which allows to subscribe to events or data changes on server.
@@ -551,8 +553,50 @@ class Client:
             params.PublishingEnabled = publishing
             params.Priority = 0
         subscription = Subscription(self.uaclient, params, handler)
-        await subscription.init()
+        results = await subscription.init()
+        new_params = self.get_subscription_revised_params(params, results)
+        if new_params:
+            results = await subscription.update(new_params)
+            _logger.info(f"Result from subscription update: {results}")
         return subscription
+
+    def get_subscription_revised_params(
+        self,
+        params: ua.CreateSubscriptionParameters,
+        results: ua.CreateSubscriptionResult,
+    ) -> None:
+        if (
+            results.RevisedPublishingInterval == params.RequestedPublishingInterval
+            and results.RevisedLifetimeCount == params.RequestedLifetimeCount
+            and results.RevisedMaxKeepAliveCount == params.RequestedMaxKeepAliveCount
+        ):
+            return
+        _logger.warning(
+            f"Revised values returned differ from subscription values: {results}"
+        )
+        revised_interval = results.RevisedPublishingInterval
+        # Adjust the MaxKeepAliveCount based on the RevisedPublishInterval when necessary
+        new_keepalive_count = self.get_keepalive_count(revised_interval)
+        if (
+            revised_interval != params.RequestedPublishingInterval
+            and new_keepalive_count != params.RequestedMaxKeepAliveCount
+        ):
+            _logger.info(
+                f"KeepAliveCount will be updated to {new_keepalive_count} "
+                f"for consistency with RevisedPublishInterval"
+            )
+            modified_params = ua.ModifySubscriptionParameters()
+            # copy the existing subscription parameters
+            copy_dataclass_attr(params, modified_params)
+            # then override with the revised values
+            modified_params.RequestedMaxKeepAliveCount = new_keepalive_count
+            modified_params.SubscriptionId = results.SubscriptionId
+            modified_params.RequestedPublishingInterval = (
+                results.RevisedPublishingInterval
+            )
+            # update LifetimeCount but chances are it will be re-revised again
+            modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
+            return modified_params
 
     def get_keepalive_count(self, period) -> int:
         """

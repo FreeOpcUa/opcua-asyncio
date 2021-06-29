@@ -796,3 +796,21 @@ def test_struct_104():
     data = struct_to_binary(m)
     m2 = struct_from_binary(MyStruct, ua.utils.Buffer(data))
     assert m == m2
+
+
+def test_builtin_type_variant():
+    v = ua.Variant(ua.Int16(4))
+    assert v.VariantType == ua.VariantType.Int16
+    v = ua.Variant(ua.UInt64(4))
+    assert v.VariantType == ua.VariantType.UInt64
+    b = variant_to_binary(v)
+    v2 = variant_from_binary(ua.utils.Buffer(b))
+    assert v == v2
+    v = ua.Variant(ua.Byte(4))
+    assert v.VariantType == ua.VariantType.Byte
+    v = ua.Variant(ua.ByteString(b"hj"))
+    assert v.VariantType == ua.VariantType.ByteString
+    v = ua.Variant(4, ua.Byte)
+    assert v.VariantType == ua.VariantType.Byte
+    v = ua.Variant(None, ua.String)
+    assert v.VariantType == ua.VariantType.String
