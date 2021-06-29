@@ -260,7 +260,7 @@ class NodeManagementService:
                     ]
                     and ref.IsForward
                 ):
-                    if item.BrowseName.Name == ref.BrowseName.Name:
+                    if item.BrowseName.Name == ref.BrowseName.Name and item.BrowseName.NamespaceIndex == ref.BrowseName.NamespaceIndex:
                         self.logger.warning(
                             f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
                             f" already exists in Parent Node. ParentID:{item.ParentNodeId} --- "
