@@ -175,7 +175,7 @@ class CodeGenerator:
         self.writecode(
             '        NodeAttributes=attrs,\n'
             '    )\n'
-            f'    server.add_nodes([node])')
+            f'    await server.add_nodes([node])')
 
     @staticmethod
     def to_data_type(nodeid):
@@ -358,10 +358,10 @@ class CodeGenerator:
                 f'''        TargetNodeId={nodeid_code(ref.target)},\n'''
                 f'''        )\n'''
                 f'''    refs.append(ref)''')
-        self.writecode(indent, 'server.add_references(refs)')
+        self.writecode(indent, 'await server.add_references(refs)')
 
 
-def save_aspace_to_disk():
+async def save_aspace_to_disk():
     path = BASE_DIR / 'asyncua' / 'binary_address_space.pickle'
     print('Saving standard address space to:', path)
     sys.path.append('..')

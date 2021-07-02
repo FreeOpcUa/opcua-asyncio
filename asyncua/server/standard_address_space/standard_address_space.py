@@ -14,9 +14,8 @@ class PostponeReferences:
 
     async def add_references(self, refs):
         async for ref in self.server.try_add_references(refs):
-        #g = self.server.try_add_references(refs)
             self.postponed_refs.append(ref)
-            # no return
+        # no return
 
     async def __aenter__(self):
         self.postponed_refs = []
