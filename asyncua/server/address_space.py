@@ -692,7 +692,7 @@ class AddressSpace:
             return dv
         attval = node.attributes[attr]
         if attval.value_callback:
-            if asyncio.iscoroutinefunction(attval.value_callback):
+            if asyncio.iscoroutinefunction(attval.value_callback.func):
                 await attval.value_callback()
             else:
                 return attval.value_callback()
