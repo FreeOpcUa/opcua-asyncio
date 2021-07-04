@@ -482,7 +482,7 @@ class Node:
             return Node(self.server, refs[0].NodeId)
         return None
 
-    async def get_child(self, path):
+    async def get_child(self, path, return_all=False):
         """
         get a child specified by its path from this node.
         A path might be:
@@ -500,7 +500,8 @@ class Node:
         result = await self.server.translate_browsepaths_to_nodeids([bpath])
         result = result[0]
         result.StatusCode.check()
-        # FIXME: seems this method may return several nodes
+        if return_all:
+            return [Node(self.server, target.TargetId) for target in result.Targets]
         return Node(self.server, result.Targets[0].TargetId)
 
     def _make_relative_path(self, path):

@@ -517,6 +517,20 @@ async def test_add_find_node_(opc):
     await opc.opc.delete_nodes([o, o2])
 
 
+async def test_same_browse_name(opc):
+    objects = opc.opc.nodes.objects
+    f = await objects.add_folder('ns=2;i=201;', '2:MyBNameFolder')
+    o = await f.add_object('ns=2;i=202;', '2:MyBName')
+    v = await o.add_variable('ns=2;i=203;', '2:MyBNameTarget', 2.0)
+    o2 = await f.add_object('ns=2;i=204;', '2:MyBName')
+    v2 = await o2.add_variable('ns=2;i=205;', '2:MyBNameTarget', 2.0)
+    nodes = await objects.get_child(['2:MyBNameFolder', '2:MyBName', '2:MyBNameTarget'], return_all=True)
+    assert len(nodes) == 2
+    assert nodes[0] == v
+    assert nodes[1] == v2
+    await opc.opc.delete_nodes([f, o, o2, v, v2])
+
+
 async def test_node_path(opc):
     objects = opc.opc.nodes.objects
     o = await objects.add_object('ns=2;i=105;', '2:NodePathObject')
