@@ -21,6 +21,7 @@ class XmlImporter:
         self.server = server
         self.namespaces: Dict[int, int] = {}  # Dict[IndexInXml, IndexInServer]
         self.aliases: Dict[str, ua.NodeId] = {}
+        self._unmigrated_aliases: Dict[str, str] = {} # Dict[name, nodeId string]
         self.refs = None
 
     async def _map_namespaces(self):
@@ -96,7 +97,8 @@ class XmlImporter:
         await self.parser.parse(xmlpath, xmlstring)
         self.namespaces = await self._map_namespaces()
         _logger.info("namespace map: %s", self.namespaces)
-        self.aliases = self._map_aliases(self.parser.get_aliases())
+        self._unmigrated_aliases = self.parser.get_aliases()        # these nodeids are not migrated to server namespace indexes
+        self.aliases = self._map_aliases(self._unmigrated_aliases)  # these nodeids are already migrated to server namespace indexes
         self.refs = []
         dnodes = self.parser.get_node_datas()
         dnodes = self.make_objects(dnodes)
@@ -286,8 +288,8 @@ class XmlImporter:
             return ua.NodeId.from_string(nodeid)
         if hasattr(ua.ObjectIds, nodeid):
             return ua.NodeId(getattr(ua.ObjectIds, nodeid))
-        if nodeid in self.aliases:
-            return self.aliases[nodeid]
+        if nodeid in self._unmigrated_aliases:
+            return ua.NodeId.from_string(self._unmigrated_aliases[nodeid])
         return ua.NodeId(getattr(ua.ObjectIds, nodeid))
 
     async def add_object(self, obj, no_namespace_migration=False):
