@@ -162,21 +162,34 @@ class ViewService(object):
         if path.StartingNode not in self._aspace:
             res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdInvalid)
             return res
-        current = path.StartingNode
-        for el in path.RelativePath.Elements:
-            nodeid = self._find_element_in_node(el, current)
-            if not nodeid:
-                res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNoMatch)
-                return res
-            current = nodeid
-        target = ua.BrowsePathTarget()
-        target.TargetId = current
-        target.RemainingPathIndex = 4294967295
-        res.Targets = [target]
+        target_nodeids = self._navigate(path.StartingNode, path.RelativePath.Elements)
+        if not target_nodeids:
+            res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNoMatch)
+            return res
+        for nodeid in target_nodeids:
+            target = ua.BrowsePathTarget()
+            target.TargetId = nodeid
+            target.RemainingPathIndex = 4294967295
+            res.Targets.append(target)
+        # FIXME: might need to order these one way or another
         return res
 
-    def _find_element_in_node(self, el, nodeid):
+    def _navigate(self, start_nodeid, elements):
+        current_nodeids = [start_nodeid]
+        for el in elements:
+            new_currents = []
+            for nodeid in current_nodeids:
+                tmp_nodeids = self._find_elements_in_node(el, nodeid)
+                new_currents.extend(tmp_nodeids)
+            if not new_currents:
+                self.logger.info("element %s was not found as child of node %s", el, current_nodeids)
+                return []
+            current_nodeids = new_currents
+        return current_nodeids
+
+    def _find_elements_in_node(self, el, nodeid):
         nodedata = self._aspace[nodeid]
+        nodeids = []
         for ref in nodedata.references:
             if ref.BrowseName != el.TargetName:
                 continue
@@ -187,9 +200,8 @@ class ViewService(object):
             elif el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
                 if ref.ReferenceTypeId not in self._get_sub_ref(el.ReferenceTypeId):
                     continue
-            return ref.NodeId
-        self.logger.info("element %s was not found in node %s", el, nodeid)
-        return None
+            nodeids.append(ref.NodeId)
+        return nodeids
 
 
 class NodeManagementService:
@@ -260,7 +272,7 @@ class NodeManagementService:
                     ]
                     and ref.IsForward
                 ):
-                    if item.BrowseName.Name == ref.BrowseName.Name:
+                    if item.BrowseName == ref.BrowseName:
                         self.logger.warning(
                             f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
                             f" already exists in Parent Node. ParentID:{item.ParentNodeId} --- "
