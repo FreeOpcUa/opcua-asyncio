@@ -1130,25 +1130,13 @@ async def test_import_xml_enum_data_type_definition(opc):
     await opc.opc.delete_nodes(n)
 
 
-async def test_duplicated_browsenames_same_ns(opc):
+async def test_duplicated_browsenames_same_ns_protperties(opc):
     parentfolder = await opc.opc.nodes.objects.add_folder(2, "parent_folder")
-    childfolder = await parentfolder.add_folder(2, "child_folder")
+    childproperty = await parentfolder.add_property(2, "Myproperty1", 123)
     try:
-        childfolder2 = await parentfolder.add_folder(2, "child_folder")
+        childproperty2 = await parentfolder.add_property(2, "Myproperty", 456)
         await opc.opc.delete_nodes([parentfolder])
-        pytest.fail("Childfolder2 should never be created!")
-    except:
-        await opc.opc.delete_nodes([parentfolder])
-        return
-
-
-async def test_duplicated_browsenames_different_ns(opc):
-    parentfolder = await opc.opc.nodes.objects.add_folder(2, "parent_folder")
-    childfolder = await parentfolder.add_folder(2, "child_folder")
-    try:
-        childfolder2 = await parentfolder.add_folder(3, "child_folder")
-        await opc.opc.delete_nodes([parentfolder])
-        pytest.fail("Childfolder2 should never be created!")
+        pytest.fail("childproperty2 should never be created!")
     except:
         await opc.opc.delete_nodes([parentfolder])
         return
@@ -1273,21 +1261,6 @@ async def test_custom_struct_with_enum(opc):
     var = await opc.opc.nodes.objects.add_variable(idx, "my_struct2", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
     assert val.MyEnum == ua.MyCustEnum2.tutu
-
-
-async def test_two_times_enum(opc):
-    idx = 4
-
-    await new_enum(opc.opc, idx, "MyCustEnum5", [
-        "titi",
-        "toto",
-        "tutu",
-    ])
-
-    with pytest.raises(ua.uaerrors.BadBrowseNameDuplicated):
-        await new_enum(opc.opc, idx, "MyCustEnum5", [
-            "titi",
-        ])
 
 
 async def test_custom_struct_export(opc):
