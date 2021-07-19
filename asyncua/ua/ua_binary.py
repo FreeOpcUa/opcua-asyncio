@@ -262,8 +262,8 @@ def to_binary(uatype, val):
         return getattr(Primitives, uatype.__name__).pack(val)
     if issubclass(uatype, Enum):
         if isinstance(val, (IntEnum, Enum)):
-            return Primitives.UInt32.pack(val.value)
-        return Primitives.UInt32.pack(val)
+            return Primitives.Int32.pack(val.value)
+        return Primitives.Int32.pack(val)
     if hasattr(ua.VariantType, uatype.__name__):
         vtype = getattr(ua.VariantType, uatype.__name__)
         return pack_uatype(vtype, val)
@@ -489,7 +489,7 @@ def struct_from_binary(objtype, data):
     if isinstance(objtype, str):
         objtype = getattr(ua, objtype)
     if issubclass(objtype, Enum):
-        return objtype(Primitives.UInt32.unpack(data))
+        return objtype(Primitives.Int32.unpack(data))
     enc_count = -1
     kwargs = {}
     enc = 0
