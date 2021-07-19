@@ -71,7 +71,7 @@ class _String:
         b = _Bytes.unpack(data)
         if b is None:
             return b
-        return b.decode('utf-8')
+        return b.decode('utf-8', errors="replace")  # not need to be strict here, this is user data
 
 
 class _Null:
