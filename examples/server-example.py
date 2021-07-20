@@ -4,8 +4,6 @@ import logging
 from datetime import datetime
 import time
 from math import sin
-import sys
-sys.path.insert(0, "..")
 
 
 from asyncua import ua, uamethod, Server
