@@ -4,8 +4,6 @@ import logging
 from asyncua import Client, Node, ua
 from asyncua.common.structures104 import load_custom_struct
 
-logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger('asyncua')
 
 
 async def main():
@@ -16,7 +14,8 @@ async def main():
         idx = await client.register_namespace(uri)
         await client.load_data_type_definitions()
         my_enum = await client.nodes.objects.get_child(f"{idx}:my_enum")
-        print("ENUM", await my_enum.get_value())
+        val = await my_enum.get_value()
+        print("ENUM", val, type(val), val == ua.MyEnum.toto)  # enums are int32 in UA, we do not convert them back to IntEnum yet
         my_struct = await client.nodes.objects.get_child(f"{idx}:my_struct")
         print("STRUCT", await my_struct.read_value())
         my_struct_opt = await client.nodes.objects.get_child(f"{idx}:my_struct_optional")
@@ -27,4 +26,6 @@ async def main():
         my_type = await load_custom_struct(mystructnode)
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.WARNING)
+    _logger = logging.getLogger('asyncua')
     asyncio.run(main())
