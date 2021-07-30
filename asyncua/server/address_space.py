@@ -1,4 +1,6 @@
 import asyncio
+import typing
+from asyncua.ua.uatypes import DataValue, NodeId, Variant
 import pickle
 import shelve
 import logging
@@ -47,7 +49,7 @@ class AttributeService:
         # self.logger.debug("read %s", params)
         res = []
         for readvalue in params.NodesToRead:
-            res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
+            res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId, readvalue.IndexRange))
         return res
 
     async def write(self, params, user=User(role=UserRole.Admin)):
@@ -686,7 +688,7 @@ class AddressSpace:
 
         self._nodes = LazyLoadingDict(shelve.open(path, "r"))
 
-    def read_attribute_value(self, nodeid, attr):
+    def read_attribute_value(self, nodeid:NodeId, attr:ua.AttributeIds, index_range: typing.Optional[str] = None) -> DataValue:
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
         if nodeid not in self._nodes:
             dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
@@ -696,9 +698,29 @@ class AddressSpace:
             dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
             return dv
         attval = node.attributes[attr]
+        value = ua.DataValue()
         if attval.value_callback:
-            return attval.value_callback()
-        return attval.value
+            value = attval.value_callback()
+        else:
+            value = attval.value
+        if not index_range is None:
+            index_range_list = index_range.split(':')
+            try:
+                low_idx = int(index_range_list[0])
+                if len(index_range_list) == 1:
+                    high_idx = int(index_range_list[0])+1
+                elif len(index_range_list) == 2:
+                    high_idx = int(index_range_list[1])+1 # python List[n:n] -> empty list, List[n:n+k] -> list of k elements; OPC UA see https://reference.opcfoundation.org/v104/Core/docs/Part4/7.22/
+                else:
+                    self.logger.info(f'Read with bad index range: {index_range}')
+                    dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadIndexRangeInvalid))
+                    return dv
+                value = DataValue(Variant(value.Value.Value[low_idx:high_idx]))
+            except Exception as ex:
+                self.logger.warning(f'Read index range failed. IndexRange = {index_range}; Ex: {ex}')
+                dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadIndexRangeInvalid))
+                return dv
+        return value
 
     async def write_attribute_value(self, nodeid, attr, value):
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
