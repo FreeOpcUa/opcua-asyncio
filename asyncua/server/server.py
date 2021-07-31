@@ -3,6 +3,7 @@ High level interface to pure python OPC-UA server
 """
 
 import asyncio
+from asyncua.ua.uatypes import DataValue, StatusCode
 import logging
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
@@ -663,15 +664,15 @@ class Server:
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_enums(self)
 
-    async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+    async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value, index_range:Optional[str]=None)->StatusCode:
         """
         directly write datavalue to the Attribute, bypasing some checks and structure creation
         so it is a little faster
         """
-        return await self.iserver.write_attribute_value(nodeid, datavalue, attr)
+        return await self.iserver.write_attribute_value(nodeid, datavalue, attr, index_range)
 
-    def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
+    def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value, index_range:Optional[str]=None)->DataValue:
         """
         directly read datavalue of the Attribute
         """
-        return self.iserver.read_attribute_value(nodeid, attr)
+        return self.iserver.read_attribute_value(nodeid, attr, index_range)

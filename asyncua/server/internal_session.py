@@ -1,6 +1,9 @@
+from asyncua.ua.uaprotocol_auto import ReadParameters, WriteParameters, WriteValue
+from asyncua.ua.uatypes import DataValue, NodeId, StatusCode
+from asyncua.ua.attribute_ids import AttributeIds
 import logging
 from enum import Enum
-from typing import Coroutine, Iterable, Optional
+from typing import Coroutine, Iterable, List, Optional
 
 from asyncua import ua
 from ..common.callback import CallbackType, ServerItemCallback
@@ -102,14 +105,25 @@ class InternalSession:
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)
         return result
 
-    async def read(self, params):
+    async def read(self, params:ReadParameters)->List[DataValue]:
+        """Reads a set of nodes to read
+
+        Args:
+            params (ReadParameters): Parameters with nodes to be read
+
+        Returns:
+            List[DataValue]: List of values read
+        """
         if self.user is None:
             user = User()
         else:
             user = self.user
         await self.iserver.callback_service.dispatch(CallbackType.PreRead,
                                                      ServerItemCallback(params, None, user))
-        results = self.iserver.attribute_service.read(params)
+        results = [
+                    self.iserver.read_attribute_value(node_to_read.NodeId, node_to_read.AttributeId, node_to_read.IndexRange)
+                    for node_to_read in params.NodesToRead
+                ]
         await self.iserver.callback_service.dispatch(CallbackType.PostRead,
                                                      ServerItemCallback(params, results, user))
         return results
@@ -117,14 +131,52 @@ class InternalSession:
     async def history_read(self, params) -> Coroutine:
         return await self.iserver.history_manager.read_history(params)
 
-    async def write(self, params):
+    def check_user_access_to_node_to_write(self, user:User, node_to_write:WriteValue)->bool:
+        """Checks if the given user has the access permissions for the WriteValue
+
+        Args:
+            user (User): The user making the access request
+            node_to_write (WriteValue): Value to write
+
+        Returns:
+            bool: True when the user has the permissions
+        """
+        if user.role != UserRole.Admin:
+            if node_to_write.AttributeId != ua.AttributeIds.Value:
+                return False
+            al = self.iserver.read_attribute_value(node_to_write.NodeId, ua.AttributeIds.AccessLevel)
+            ual = self.iserver.read_attribute_value(node_to_write.NodeId, ua.AttributeIds.UserAccessLevel)
+            if (
+                not al.StatusCode.is_good()
+                or not ua.ua_binary.test_bit(al.Value.Value, ua.AccessLevel.CurrentWrite)
+                or not ua.ua_binary.test_bit(ual.Value.Value, ua.AccessLevel.CurrentWrite)
+            ):
+                return False
+        return True
+
+    async def write(self, params:WriteParameters)->List[StatusCode]:
+        """Writes a set of Nodes to write
+
+        Args:
+            params (WriteParameters): Parameters with nodes to be written
+
+        Returns:
+            List[StatusCode]: Status codes of the write operation of each of the nodes
+        """
         if self.user is None:
             user = User()
         else:
             user = self.user
         await self.iserver.callback_service.dispatch(CallbackType.PreWrite,
                                                      ServerItemCallback(params, None, user))
-        write_result = await self.iserver.attribute_service.write(params, user=user)
+        write_result = []
+        for node_to_write in params.NodesToWrite:
+            if not self.check_user_access_to_node_to_write(user, node_to_write):
+                write_result.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
+            else:
+                write_result.append(
+                    await self.iserver.write_attribute_value(node_to_write.NodeId, node_to_write.Value, node_to_write.AttributeId, node_to_write.IndexRange)
+                )
         await self.iserver.callback_service.dispatch(CallbackType.PostWrite,
                                                      ServerItemCallback(params, write_result, user))
         return write_result

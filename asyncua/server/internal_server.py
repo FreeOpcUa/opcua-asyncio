@@ -4,13 +4,15 @@ Can be used on server side or to implement binary/https opc-ua servers
 """
 
 import asyncio
+from asyncua.ua.uatypes import DataValue, NodeId, StatusCode
+from asyncua.common.ua_utils import ua_index_range_to_list_slice
 from datetime import datetime, timedelta
 from copy import copy
 from struct import unpack_from
 import os
 import logging
 from urllib.parse import urlparse
-from typing import Coroutine
+from typing import Coroutine, Optional, Tuple
 
 from asyncua import ua
 from .user_managers import PermissiveUserManager, UserManager
@@ -292,18 +294,34 @@ class InternalServer:
         """
         self.callback_service.removeListener(event, handle)
 
-    async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+    async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value, index_range:Optional[str]=None)->StatusCode:
         """
         directly write datavalue to the Attribute, bypassing some checks and structure creation
         so it is a little faster
         """
-        await self.aspace.write_attribute_value(nodeid, attr, datavalue)
+        if not index_range is None:
+            try:
+                py_list_index_range = ua_index_range_to_list_slice(index_range)
+            except Exception as ex:
+                self.logger.warning(f'Parse index range failed. IndexRange = {index_range}; Ex: {ex}')
+                return ua.StatusCode(ua.StatusCodes.BadIndexRangeInvalid)
+        else:
+            py_list_index_range = None
+        return await self.aspace.write_attribute_value(nodeid, attr, datavalue, py_list_index_range)
 
-    def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
+    def read_attribute_value(self, nodeid:NodeId, attr=ua.AttributeIds.Value, index_range:Optional[str]=None)->DataValue:
         """
         directly read datavalue of the Attribute
         """
-        return self.aspace.read_attribute_value(nodeid, attr)  
+        if not index_range is None:
+            try:
+                py_list_index_range = ua_index_range_to_list_slice(index_range)
+            except Exception as ex:
+                self.logger.warning(f'Parse index range failed. IndexRange = {index_range}; Ex: {ex}')
+                return ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadIndexRangeInvalid))
+        else:
+            py_list_index_range = None
+        return self.aspace.read_attribute_value(nodeid, attr, py_list_index_range)  
 
     def set_user_manager(self, user_manager):
         """

@@ -2,6 +2,7 @@
 Usefull method and classes not belonging anywhere and depending on asyncua library
 """
 
+from typing import Tuple
 import uuid
 import logging
 from datetime import datetime
@@ -12,6 +13,26 @@ from dateutil import parser
 from asyncua import ua
 
 logger = logging.getLogger('__name__')
+
+
+def ua_index_range_to_list_slice(ua_index_range:str) -> Tuple[int,int]:
+    """Converts an OPC UA NumericRange into a python tuple for list slicing
+    see: https://reference.opcfoundation.org/v104/Core/docs/Part4/7.22/
+    Args:
+        ua_index_range (str): The OPC UA NumericRange
+
+    Returns:
+        Tuple[int,int]: Equivalent python list slicing tuple with low and high bounds
+    """
+    index_range_list = ua_index_range.split(':')
+    low_idx = int(index_range_list[0])
+    if len(index_range_list) == 1:
+        high_idx = int(index_range_list[0])+1
+    elif len(index_range_list) == 2:
+        high_idx = int(index_range_list[1])+1 # python List[n:n] -> empty list, List[n:n+k] -> list of k elements; OPC UA see https://reference.opcfoundation.org/v104/Core/docs/Part4/7.22/
+    else:
+        raise Exception(f'Read with bad index range: {ua_index_range}')
+    return (low_idx,high_idx)
 
 
 def value_to_datavalue(val, varianttype=None):
