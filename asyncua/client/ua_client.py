@@ -266,10 +266,11 @@ class UaClient:
         await asyncio.wait_for(asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout)
 
     def disconnect_socket(self):
-        if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
+        if self.protocol is None or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("disconnect_socket was called but connection is closed")
-            return None
-        return self.protocol.disconnect_socket()
+            return
+        self.protocol.disconnect_socket()
+        self.protocol = None
 
     async def send_hello(self, url, max_messagesize=0, max_chunkcount=0):
         await self.protocol.send_hello(url, max_messagesize, max_chunkcount)
@@ -282,7 +283,7 @@ class UaClient:
         close secure channel. It seems to trigger a shutdown of socket
         in most servers, so be prepare to reconnect
         """
-        if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
+        if self.protocol is None or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("close_secure_channel was called but connection is closed")
             return
         return await self.protocol.close_secure_channel()
@@ -311,12 +312,18 @@ class UaClient:
 
     async def close_session(self, delete_subscriptions):
         self.logger.info("close_session")
-        self.protocol.closed = True
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
-        if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
+            try:
+                await self._publish_task
+            except asyncio.CancelledError:
+                pass
+            finally:
+                self._publish_task = None
+        if self.protocol is None or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("close_session was called but connection is closed")
             return
+        self.protocol.closed = True
         request = ua.CloseSessionRequest()
         request.DeleteSubscriptions = delete_subscriptions
         data = await self.protocol.send_request(request)
