@@ -1,4 +1,5 @@
 
+from asyncua.ua.uatypes import DataValue, Variant
 import logging
 import pytest
 
@@ -123,5 +124,77 @@ async def test_browse_nodes(server, client):
     assert isinstance(results[1][0], Node)
     assert isinstance(results[0][1], ua.BrowseResult)
     assert isinstance(results[1][1], ua.BrowseResult)
-    
-    
+
+
+async def test_read_attribute_value_without_index_range_reads_full_array(server, admin_client, client):
+    objects = admin_client.nodes.objects
+    array_data = [i for i in range(100)]
+    v = await objects.add_variable(3, 'MyArray', array_data)
+    await v.write_value(array_data)
+    v_client = client.get_node(v.nodeid)
+
+    # calling read_attribute without giving an index range must read the full array
+    array_data_read = (await v_client.read_attribute(ua.AttributeIds.Value)).Value.Value
+    assert len(set(array_data).intersection(array_data_read)) == len(array_data)
+
+
+async def test_read_attribute_value_with_index_range_reads_subarray(server, admin_client, client):
+    objects = admin_client.nodes.objects
+    array_data = [i for i in range(100)]
+    v = await objects.add_variable(3, 'MyArray', array_data)
+    await v.write_value(array_data)
+    v_client = client.get_node(v.nodeid)
+
+    # calling read_attribute giving an index range must read the sub array,
+    # in this case 10th element until 19th element, meaning 10 elements
+    array_data_read = (await v_client.read_attribute(ua.AttributeIds.Value, '10:19')).Value.Value
+    assert len(set(array_data).intersection(array_data_read)) == 10
+
+async def test_read_attribute_value_with_single_value_in_index_range_reads_subarray(server, admin_client, client):
+    objects = admin_client.nodes.objects
+    array_data = [i for i in range(100)]
+    v = await objects.add_variable(3, 'MyArray', array_data)
+    await v.write_value(array_data)
+    v_client = client.get_node(v.nodeid)
+
+    # calling read_attribute giving an index range must read the sub array,
+    # in this case 10th element until 19th element, meaning 10 elements
+    array_data_read = (await v_client.read_attribute(ua.AttributeIds.Value, '30')).Value.Value
+    assert len(array_data_read) == 1
+    assert array_data[30] == array_data_read[0]
+
+
+async def test_write_attribute_value_without_index_range_writes_full_array(server, admin_client, client):
+    objects = admin_client.nodes.objects
+    array_data = [i for i in range(100)]
+    v = await objects.add_variable(3, 'MyArray', array_data)
+    await v.set_writable()
+    await v.write_value(array_data)
+    v_ro = client.get_node(v.nodeid)
+
+    # calling write_attribute without giving an index range must read the full array
+    array_data_write = [i+100 for i in range(100)]
+    await v_ro.write_attribute(ua.AttributeIds.Value, DataValue(Variant(array_data_write)))
+    array_data_read = (await v_ro.read_attribute(ua.AttributeIds.Value)).Value.Value
+    assert len(set(array_data_write).intersection(array_data_read)) == len(array_data_write)
+
+
+async def test_write_attribute_value_with_index_range_writes_sub_array(server, admin_client, client):
+    objects = admin_client.nodes.objects
+    array_data = [i for i in range(100)]
+    v = await objects.add_variable(3, 'MyArray', array_data)
+    await v.set_writable()
+    await v.write_value(array_data)
+    v_ro = client.get_node(v.nodeid)
+
+    # calling write_attribute with an index range and an array os same length must write the sub array in 
+    # the position specified by the index range
+    array_data_write = [i+100 for i in range(9)]
+    await v_ro.write_attribute(ua.AttributeIds.Value, DataValue(Variant(array_data_write)), '10:20')
+    array_data_read = (await v_ro.read_attribute(ua.AttributeIds.Value)).Value.Value
+    # assert the sub array was written
+    assert len(set(array_data_write).intersection(array_data_read)) == len(array_data_write)
+
+    # it was written in the correct location
+    sub_array = array_data_read[10:21]
+    assert len(set(array_data_write).intersection(sub_array)) == len(array_data_write)
