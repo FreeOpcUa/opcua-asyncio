@@ -71,7 +71,6 @@ class InternalServer:
         )
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         self.time_task = None
-        self._time_task_stop = False
 
     async def init(self, shelffile=None):
         await self.load_standard_address_space(shelffile)
@@ -180,14 +179,13 @@ class InternalServer:
     async def stop(self):
         self.logger.info('stopping internal server')
         if self.time_task:
-            self._time_task_stop = True
-            await self.time_task
+            self.time_task.cancel()
         self.method_service.stop()
         await self.isession.close_session()
         await self.history_manager.stop()
 
     async def _set_current_time_loop(self):
-        while not self._time_task_stop:
+        while True:
             await self.current_time_node.write_value(datetime.utcnow())
             await asyncio.sleep(1)
 
