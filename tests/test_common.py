@@ -35,6 +35,16 @@ async def add_server_methods(srv):
     )
 
     @uamethod
+    def func_no_arg(parent):
+        return 13
+
+    o = srv.nodes.objects
+    await o.add_method(
+        ua.NodeId("ServerMethodNoArg", 2), ua.QualifiedName('ServerMethodNoArg', 2),
+        func_no_arg
+    )
+
+    @uamethod
     def func2(parent, methodname, value):
         if methodname == "panic":
             return ua.StatusCode(ua.StatusCodes.BadOutOfMemory)
@@ -670,6 +680,16 @@ async def test_method(opc):
         await o.call_method("2:ServerMethod", 2.1, 89, 9)
     with pytest.raises(ua.UaStatusCodeError):
         await o.call_method(ua.NodeId(999), 2.1)  # non existing method
+
+
+async def test_method_no_arg(opc):
+    o = opc.opc.nodes.objects
+    v = await o.get_child("2:ServerMethodNoArg")
+    result = await o.call_method("2:ServerMethodNoArg")
+    assert 13 == result
+    with pytest.raises(ua.UaStatusCodeError):
+        # FIXME: we should raise a more precise exception
+        await o.call_method("2:ServerMethodNoArg", 2.1, 89, 9)
 
 
 async def test_method_array(opc):
