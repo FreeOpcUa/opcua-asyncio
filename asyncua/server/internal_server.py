@@ -124,7 +124,7 @@ class InternalServer:
                 await asyncio.get_running_loop().run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
                 return
         # import address space from code generated from xml
-        standard_address_space.fill_address_space(self.node_mgt_service)
+        await standard_address_space.fill_address_space(self.node_mgt_service)
         # import address space directly from xml, this has performance impact so disabled
         # importer = xmlimporter.XmlImporter(self.node_mgt_service)
         # importer.import_xml("/path/to/python-asyncua/schemas/Opc.Ua.NodeSet2.xml", self)
@@ -299,11 +299,11 @@ class InternalServer:
         """
         await self.aspace.write_attribute_value(nodeid, attr, datavalue)
 
-    def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
+    async def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
         """
         directly read datavalue of the Attribute
         """
-        return self.aspace.read_attribute_value(nodeid, attr)  
+        return await self.aspace.read_attribute_value(nodeid, attr)
 
     def set_user_manager(self, user_manager):
         """

@@ -286,7 +286,7 @@ async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
             assert await clt.get_objects_node().get_children()
 
 async def test_secure_channel_key_expiration(srv_crypto_one_cert, mocker):
-    timeout = 1
+    timeout = 2
     _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
     clt.secure_channel_timeout = timeout * 1000
