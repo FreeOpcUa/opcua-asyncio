@@ -174,9 +174,11 @@ class Client:
         pass
 
     def disconnect(self):
-        self.tloop.post(self.aio_obj.disconnect())
-        if self.close_tloop:
-            self.tloop.stop()
+        try:
+            self.tloop.post(self.aio_obj.disconnect())
+        finally:
+            if self.close_tloop:
+                self.tloop.stop()
 
     def set_user(self, username: str):
         self.aio_obj.set_user(username)
