@@ -37,7 +37,7 @@ class Callback(object):
 
 
 class ServerItemCallback(Callback):
-    def __init__(self, request_params, response_params, is_internal=False, user=None):
+    def __init__(self, request_params, response_params, user=None, is_internal=False):
         self.request_params = request_params
         self.response_params = response_params
         self.event_comes_from_internal_session = is_internal
