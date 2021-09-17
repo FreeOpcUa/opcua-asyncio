@@ -1,4 +1,7 @@
 import asyncio
+import typing
+from typing import Tuple
+from asyncua.ua.uatypes import DataValue, NodeId, StatusCode, Variant
 import pickle
 import shelve
 import logging
@@ -47,7 +50,7 @@ class AttributeService:
         # self.logger.debug("read %s", params)
         res = []
         for readvalue in params.NodesToRead:
-            res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
+            res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId, readvalue.IndexRange))
         return res
 
     async def write(self, params, user=User(role=UserRole.Admin)):
@@ -686,7 +689,18 @@ class AddressSpace:
 
         self._nodes = LazyLoadingDict(shelve.open(path, "r"))
 
-    def read_attribute_value(self, nodeid, attr):
+    def read_attribute_value(self, nodeid:NodeId, attr:ua.AttributeIds, index_range: typing.Optional[Tuple[int,int]] = None) -> DataValue:
+        """Reads the Value of the requested Attribute of the given Node ID.
+
+        Args:
+            nodeid (NodeId): The NodeID from which the Attribute's value is to be read
+            attr (ua.AttributeIds): The attribute that is to be read
+            index_range (typing.Optional[Tuple[int,int]], optional): In case the Attribute's value is an array,
+                the range of the array that is actual to be returned. Defaults to None.
+
+        Returns:
+            DataValue: Value of the requested Attribute on the specified NodeID
+        """
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
         if nodeid not in self._nodes:
             dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
@@ -696,11 +710,35 @@ class AddressSpace:
             dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
             return dv
         attval = node.attributes[attr]
+        value = ua.DataValue()
         if attval.value_callback:
-            return attval.value_callback()
-        return attval.value
+            value = attval.value_callback()
+        else:
+            value = attval.value
+        if not index_range is None:
+            if not attval.value.Value.is_array:
+                return ua.StatusCode(ua.StatusCodes.BadWriteNotSupported)
+            try:
+                value = DataValue(Variant(value.Value.Value[index_range[0]:index_range[1]]))
+            except Exception as ex:
+                self.logger.warning(f'Read index range failed. IndexRange = {index_range}; Ex: {ex}')
+                dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadIndexRangeInvalid))
+                return dv
+        return value
 
-    async def write_attribute_value(self, nodeid, attr, value):
+    async def write_attribute_value(self, nodeid:NodeId, attr:ua.AttributeIds, value:DataValue, index_range: typing.Optional[Tuple[int,int]] = None) -> StatusCode:
+        """Writes the Value of the requested Attribute of the given Node ID
+
+        Args:
+            nodeid (NodeId): The NodeID from which the Attribute's value is to be written
+            attr (ua.AttributeIds): The attribute that is to be written
+            value (DataValue): Value to write
+            index_range (typing.Optional[Tuple[int,int]], optional): In case the Attribute's value is an array,
+                the range of the array that is actual to be written. Defaults to None.
+
+        Returns:
+            StatusCode: StatusCode of the write operation
+        """
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
         node = self._nodes.get(nodeid, None)
         if node is None:
@@ -713,7 +751,12 @@ class AddressSpace:
             return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
 
         old = attval.value
-        attval.value = value
+        if index_range is None:
+            attval.value = value
+        else:
+            if not attval.value.Value.is_array:
+                return ua.StatusCode(ua.StatusCodes.BadWriteNotSupported)
+            attval.value.Value.Value[index_range[0]:index_range[1]] = value.Value.Value
         cbs = []
         # only send call callback when a value or status code change has happened
         if (old.Value != value.Value) or (old.StatusCode != value.StatusCode):
