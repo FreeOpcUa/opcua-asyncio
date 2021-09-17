@@ -196,6 +196,63 @@ from asyncua import ua
                 struct.typeid = typeid
                 return
 
+async def register_node_children_as_python_classes(server, node, generator):
+    """ Registers in 'ua' all children of a Node
+    server: Server
+        OPC UA server
+    node: Node
+        The node to be processed
+    generator: StructGenerator
+        Struct generator from Node
+    Return dict of the registered structures
+    """
+    have_missing_data_types = True
+    prev_num_failed_codes = -1
+    structs_dict = {}
+    while have_missing_data_types:
+        # currently the 'get_python_classes' makes a single run on the data types from the information
+        # model being loaded; if a certain DataType depends on a DataType that is defined 'later' on
+        # the information model(s) it will fail because it makes use of an yet undefined Python class.
+        # So for solving this without changing deeply the current implementation of 'get_python_classes'
+        # we get get how many DataTypes failed to be converted to Python classes and repeat until the failed
+        # conversions is zero or not lower than the previous iteration.
+        structs_dict, failed_codes = generator.get_python_classes(structs_dict)
+
+        if len(failed_codes) > 0:
+            if prev_num_failed_codes > 0 and len(failed_codes) >= prev_num_failed_codes:
+                raise Exception("The previous number of missing data types is the same after retry.")
+        else:
+            # all parsed
+            have_missing_data_types = False
+
+        prev_num_failed_codes = len(failed_codes)
+        # same but using a file that is imported. This can be usefull for debugging library
+        # name = node.read_browse_name().Name
+        # Make sure structure names do not contain charaters that cannot be used in Python class file names
+        # name = clean_name(name)
+        # name = "structures_" + node.read_browse_name().Name
+        # generator.save_and_import(name + ".py", append_to=structs_dict)
+
+        # register classes
+        # every children of our node should represent a class
+        for ndesc in await node.get_children_descriptions():
+            ndesc_node = server.get_node(ndesc.NodeId)
+            ref_desc_list = await ndesc_node.get_references(refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse)
+            if ref_desc_list:  # some server put extra things here
+                name = clean_name(ndesc.BrowseName.Name)
+                if name not in structs_dict:
+                    _logger.warning("%s is found as child of binary definition node but is not found in xml", name)
+                    continue
+                nodeid = ref_desc_list[0].NodeId
+                ua.register_extension_object(name, nodeid, structs_dict[name])
+                # save the typeid if user want to create static file for type definition
+                generator.set_typeid(name, nodeid.to_string())
+
+        for key, val in structs_dict.items():
+            if isinstance(val, EnumMeta) and key != "IntEnum":
+                setattr(ua, key, val)
+
+    return structs_dict
 
 async def load_type_definitions(server, nodes=None):
     """
@@ -220,32 +277,7 @@ async def load_type_definitions(server, nodes=None):
         generators.append(generator)
         generator.make_model_from_string(xml)
         # generate and execute new code on the fly
-        generator.get_python_classes(structs_dict)
-        # same but using a file that is imported. This can be usefull for debugging library
-        # name = node.read_browse_name().Name
-        # Make sure structure names do not contain charaters that cannot be used in Python class file names
-        # name = clean_name(name)
-        # name = "structures_" + node.read_browse_name().Name
-        # generator.save_and_import(name + ".py", append_to=structs_dict)
-
-        # register classes
-        # every children of our node should represent a class
-        for ndesc in await node.get_children_descriptions():
-            ndesc_node = server.get_node(ndesc.NodeId)
-            ref_desc_list = await ndesc_node.get_references(refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse)
-            if ref_desc_list:  # some server put extra things here
-                name = clean_name(ndesc.BrowseName.Name)
-                if name not in structs_dict:
-                    _logger.warning("%s is found as child of binary definition node but is not found in xml", name)
-                    continue
-                nodeid = ref_desc_list[0].NodeId
-                ua.register_extension_object(name, nodeid, structs_dict[name])
-                # save the typeid if user want to create static file for type definitnion
-                generator.set_typeid(name, nodeid.to_string())
-
-        for key, val in structs_dict.items():
-            if isinstance(val, EnumMeta) and key != "IntEnum":
-                setattr(ua, key, val)
+        structs_dict.update(await register_node_children_as_python_classes(server, node, generator))
 
     return generators, structs_dict
 
@@ -275,14 +307,19 @@ def _generate_python_class(model, env=None):
     if "List" not in env:
         env['List'] = List
     # generate classes one by one and add them to dict
+    failed_codes = []
     for element in model:
         code = element.get_code()
         try:
             exec(code, env)
         except Exception:
-            _logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
-            raise
-    return env
+            # the conversion of the DataType failed, append the code of the failed DataType
+            # and continue to the next; it may have failed because a referenced DataType
+            # was not yet converted to python class; the client may try to load python classes
+            failed_codes.append(code)
+            _logger.info("Failed to execute auto-generated code from UA datatype: %s", code)
+            continue
+    return env, failed_codes
 
 
 async def load_enums(server, env=None, force=False):
