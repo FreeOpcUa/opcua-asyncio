@@ -40,7 +40,7 @@ class Node:
     """
     High level node object, to access node attribute,
     browse and populate address space.
-    Node objects are usefull as-is but they do not expose the entire
+    Node objects are useful as-is but they do not expose the entire
     OPC-UA protocol. Feel free to look at the code of this class and call
     directly UA services methods to optimize your code
     """
