@@ -331,7 +331,7 @@ async def _read_data_type_definition(server, desc: ua.BrowseDescription, read_ex
     # FIXME: this is fishy, we may have same name in different Namespaces
     if not read_existing and hasattr(ua, desc.BrowseName.Name):
         return None
-    logger.info("Registring data type %s %s", desc.NodeId, desc.BrowseName)
+    logger.info("Registering data type %s %s", desc.NodeId, desc.BrowseName)
     node = server.get_node(desc.NodeId)
     try:
         sdef = await node.read_data_type_definition()
