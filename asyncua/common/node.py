@@ -222,7 +222,7 @@ class Node:
         An exception will be generated for other node types.
         value argument is either:
         * a python built-in type, converted to opc-ua
-        optionnaly using the variantype argument.
+        optionally using the variantype argument.
         * a ua.Variant, varianttype is then ignored
         * a ua.DataValue, you then have full control over data send to server
         WARNING: On server side, ref to object is directly saved in our UA db, if this is a mutable object
