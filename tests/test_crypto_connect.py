@@ -252,6 +252,10 @@ async def test_certificate_handling_failure(srv_crypto_one_cert):
         async with clt:
             assert await clt.get_objects_node().get_children()
 
+    with pytest.raises(ua.uaerrors.BadUserAccessDenied):
+        # disconnect manually to close the event loop and appease pytest
+        await clt.disconnect()
+
 
 async def test_encrypted_private_key_handling_failure(srv_crypto_one_cert):
     _, cert = srv_crypto_one_cert
@@ -268,6 +272,10 @@ async def test_encrypted_private_key_handling_failure(srv_crypto_one_cert):
         )
         async with clt:
             assert await clt.get_objects_node().get_children()
+
+    with pytest.raises(ua.uaerrors.BadUserAccessDenied):
+        # disconnect manually to close the event loop and appease pytest
+        await clt.disconnect()
 
 
 async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
@@ -330,3 +338,52 @@ async def test_secure_channel_key_expiration(srv_crypto_one_cert, mocker):
         assert mock_verif_reset.call_count == 1
         assert clt.uaclient.security_policy.symmetric_cryptography.Prev_Verifier is None
         assert clt.uaclient.security_policy.symmetric_cryptography.Prev_Decryptor is None
+
+async def test_always_catch_new_cert_on_set_security():
+    """
+    Test client reconnection after server cert update.
+    This could be useful when we prefer to keep a unique
+    client instance (i.e HaClient).
+    """
+    # Client connecting with encryption to server
+    srv = Server()
+    await srv.init()
+    srv.set_endpoint(uri_crypto_cert)
+    srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt])
+    key, cert = srv_crypto_params[0]
+    await srv.load_certificate(cert)
+    await srv.load_private_key(key)
+    await srv.start()
+    clt = Client(uri_crypto_cert)
+    peer_cert = peer_creds["certificate"]
+    peer_key = peer_creds["private_key"]
+    security_string = f"Basic256Sha256,SignAndEncrypt,{peer_cert},{peer_key}"
+    await clt.set_security_string(security_string)
+    assert await clt.connect_and_get_server_endpoints()
+    srv_original_cert = clt.security_policy.peer_certificate
+    await srv.stop()
+
+    # Simulation of a server cert renewal
+    srv = Server()
+    await srv.init()
+    srv.set_endpoint(uri_crypto_cert)
+    srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt])
+    key, cert = srv_crypto_params[1]
+    await srv.load_certificate(cert)
+    await srv.load_private_key(key)
+    await srv.start()
+    # The same client instance fails to open a SecureChannel because the
+    # security_policy contains the previous SecurityMode and server certificate.
+    with pytest.raises(TimeoutError):
+        await clt.connect_and_get_server_endpoints()
+
+    assert clt.security_policy == clt.uaclient.security_policy
+    assert clt.security_policy.peer_certificate == srv_original_cert
+
+    # If the server cert isn't passed to set_security we clear the security_policy
+    await clt.set_security_string(security_string)
+    assert await clt.connect_and_get_server_endpoints()
+    assert clt.security_policy == clt.uaclient.security_policy
+    assert clt.security_policy.peer_certificate
+    assert clt.security_policy.peer_certificate != srv_original_cert
+    await srv.stop()
