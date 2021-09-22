@@ -257,6 +257,13 @@ class TestHaClient:
                 assert isinstance(client.uaclient.security_policy, ua.SecurityPolicy)
                 assert client.security_policy.Mode == security_mode
                 assert client.security_policy.peer_certificate
+
+                # security policy should be cleared once reconnect is called
+                policy = client.security_policy
+                await ha_client.reconnect(client)
+                assert client.security_policy != policy
+                assert client.security_policy.Mode == security_mode
+                assert client.security_policy.peer_certificate
             await ha_client.stop()
 
     @pytest.mark.asyncio

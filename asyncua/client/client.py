@@ -144,6 +144,10 @@ class Client:
         Call this before connect()
         """
         if server_certificate is None:
+            # Force unencrypted/unsigned SecureChannel to list the endpoints
+            new_policy = ua.SecurityPolicy()
+            self.security_policy = new_policy
+            self.uaclient.security_policy = new_policy
             # load certificate from server's list of endpoints
             endpoints = await self.connect_and_get_server_endpoints()
             endpoint = Client.find_endpoint(endpoints, mode, policy.URI)
