@@ -646,7 +646,7 @@ class Client:
     async def register_namespace(self, uri):
         """
         Register a new namespace. Nodes should in custom namespace, not 0.
-        This method is mainly implemented for symetry with server
+        This method is mainly implemented for symmetry with server
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
         uries = await ns_node.read_value()
