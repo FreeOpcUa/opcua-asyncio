@@ -414,7 +414,7 @@ class Node:
     async def get_referenced_nodes(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
         """
         returns referenced nodes based on specific filter
-        Paramters are the same as for get_references
+        Parameters are the same as for get_references
 
         """
         references = await self.get_references(refs, direction, nodeclassmask, includesubtypes)
