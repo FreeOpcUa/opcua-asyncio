@@ -607,7 +607,7 @@ class Client:
         """
         We request the server to send a Keepalive notification when
         no notification has been received for 75% of the session lifetime.
-        This is especially useful to keep the sesssion up
+        This is especially useful to keep the session up
         when self.session_timeout < self.secure_channel_timeout.
 
         Part4 5.13.2: If the requested value is 0, the Server
