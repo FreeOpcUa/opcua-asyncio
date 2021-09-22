@@ -667,7 +667,7 @@ class Node:
         """
         Add a modelling rule reference to Node.
         When creating a new object type, its variable and child nodes will not
-        be instanciated if they do not have modelling rule
+        be instantiated if they do not have modelling rule
         if mandatory is None, the modelling rule is removed
         """
         # remove all existing modelling rule
