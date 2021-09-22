@@ -226,7 +226,7 @@ class Node:
         * a ua.Variant, varianttype is then ignored
         * a ua.DataValue, you then have full control over data send to server
         WARNING: On server side, ref to object is directly saved in our UA db, if this is a mutable object
-        and you modfy it afterward, then the object in db will be modified without any
+        and you modify it afterward, then the object in db will be modified without any
         data change event generated
         """
         dv = value_to_datavalue(value, varianttype)
