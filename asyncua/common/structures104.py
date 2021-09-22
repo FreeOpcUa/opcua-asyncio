@@ -336,7 +336,7 @@ async def _read_data_type_definition(server, desc: ua.BrowseDescription, read_ex
     try:
         sdef = await node.read_data_type_definition()
     except ua.uaerrors.BadAttributeIdInvalid:
-        logger.debug("%s has no DataTypeDefinition atttribute", node)
+        logger.debug("%s has no DataTypeDefinition attribute", node)
         return None
     except Exception:
         logger.exception("Error getting datatype for node %s", node)
@@ -346,7 +346,7 @@ async def _read_data_type_definition(server, desc: ua.BrowseDescription, read_ex
 
 def make_enum_code(name, edef):
     """
-    if node has a DataTypeDefinition arttribute, generate enum code
+    if node has a DataTypeDefinition attribute, generate enum code
     """
     code = f"""
 
