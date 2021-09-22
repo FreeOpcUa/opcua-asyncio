@@ -357,14 +357,14 @@ class Node:
     def get_variables(self):
         """
         return variables of node.
-        properties are child nodes with a reference of type HasComponent and a NodeClass of Variable
+        variables are child nodes with a reference of type HasComponent and a NodeClass of Variable
         """
         return self.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Variable)
 
     def get_methods(self):
         """
         return methods of node.
-        properties are child nodes with a reference of type HasComponent and a NodeClass of Method
+        methods are child nodes with a reference of type HasComponent and a NodeClass of Method
         """
         return self.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Method)
 
