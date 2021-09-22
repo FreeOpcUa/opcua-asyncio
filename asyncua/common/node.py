@@ -204,14 +204,14 @@ class Node:
 
     async def write_value_rank(self, value):
         """
-        Set attribute ArrayDimensions of node
+        Set attribute ValueRank of node
         """
         v = ua.Variant(value, ua.VariantType.Int32)
         await self.write_attribute(ua.AttributeIds.ValueRank, ua.DataValue(v))
 
     async def read_value_rank(self):
         """
-        Read and return ArrayDimensions attribute of node
+        Read and return ValueRank attribute of node
         """
         res = await self.read_attribute(ua.AttributeIds.ValueRank)
         return ua.ValueRank(res.Value.Value)
