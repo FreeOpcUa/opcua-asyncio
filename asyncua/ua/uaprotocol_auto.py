@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2021-06-03 15:58:52.995576
+Date:2021-09-26 21:37:26.526364
 """
 
 from datetime import datetime
@@ -1604,7 +1604,7 @@ class FieldMetaData:
     ValueRank: Int32 = 0
     ArrayDimensions: List[UInt32] = field(default_factory=list)
     MaxStringLength: UInt32 = 0
-    DataSetFieldId: Guid = field(default_factory=Guid)
+    DataSetFieldId: Guid = Guid(int=0)
     Properties: List[KeyValuePair] = field(default_factory=list)
 
 
@@ -1884,7 +1884,7 @@ class FieldTargetDataType:
 
     data_type = NodeId(ObjectIds.FieldTargetDataType)
 
-    DataSetFieldId: Guid = field(default_factory=Guid)
+    DataSetFieldId: Guid = Guid(int=0)
     ReceiverIndexRange: NumericRange = None
     TargetNodeId: NodeId = field(default_factory=NodeId)
     AttributeId: IntegerId = 0
@@ -1994,7 +1994,7 @@ class UadpDataSetReaderMessageDataType:
     GroupVersion: VersionTime = 0
     NetworkMessageNumber: UInt16 = 0
     DataSetOffset: UInt16 = 0
-    DataSetClassId: Guid = field(default_factory=Guid)
+    DataSetClassId: Guid = Guid(int=0)
     NetworkMessageContentMask: UadpNetworkMessageContentMask = UadpNetworkMessageContentMask.PublisherId
     DataSetMessageContentMask: UadpDataSetMessageContentMask = UadpDataSetMessageContentMask.Timestamp
     PublishingInterval: Duration = 0
@@ -2528,7 +2528,7 @@ class DataSetMetaDataType:
     Name: String = None
     Description: LocalizedText = field(default_factory=LocalizedText)
     Fields: List[FieldMetaData] = field(default_factory=list)
-    DataSetClassId: Guid = field(default_factory=Guid)
+    DataSetClassId: Guid = Guid(int=0)
     ConfigurationVersion: ConfigurationVersionDataType = field(default_factory=ConfigurationVersionDataType)
 
 
