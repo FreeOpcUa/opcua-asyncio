@@ -525,8 +525,9 @@ def application_to_strings(app):
     for (n, v) in optionals:
         if v:
             result.append((n, v))
-    for url in app.DiscoveryUrls:
-        result.append(("Discovery URL", url))
+    if app.DiscoveryUrls:
+        for url in app.DiscoveryUrls:
+            result.append(("Discovery URL", url))
     return result  # ['{}: {}'.format(n, v) for (n, v) in result]
 
 
