@@ -266,6 +266,8 @@ class UaClient:
         await asyncio.wait_for(asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout)
 
     def disconnect_socket(self):
+        if not self.protocol:
+            return
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("disconnect_socket was called but connection is closed")
             return None

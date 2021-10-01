@@ -53,7 +53,10 @@ class InternalSubscription:
         if self._task:
             self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
             self._task.cancel()
-            await self._task
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
             self._task = None
         self.monitored_item_srv.delete_all_monitored_items()
 

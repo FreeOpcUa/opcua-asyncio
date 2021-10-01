@@ -270,7 +270,8 @@ class Client:
         await self.uaclient.connect_socket(self.server_url.hostname, self.server_url.port)
 
     def disconnect_socket(self):
-        self.uaclient.disconnect_socket()
+        if self.uaclient:
+            self.uaclient.disconnect_socket()
 
     async def send_hello(self):
         """
