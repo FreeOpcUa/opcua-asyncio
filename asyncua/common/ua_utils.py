@@ -5,7 +5,7 @@ Usefull method and classes not belonging anywhere and depending on asyncua libra
 import uuid
 import logging
 from datetime import datetime
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, IntFlag
 
 from dateutil import parser
 
@@ -44,7 +44,7 @@ def val_to_string(val, truncate=False):
         val = val.to_string()
     elif isinstance(val, ua.StatusCode):
         val = val.name
-    elif isinstance(val, (Enum, IntEnum)):
+    elif isinstance(val, (Enum, IntEnum, IntFlag)):
         val = val.name
     elif isinstance(val, ua.DataValue):
         val = variant_to_string(val.Value)

@@ -1,10 +1,10 @@
 """
 Autogenerate code from xml spec
-Date:2021-09-26 21:37:26.526364
+Date:2021-09-27 17:52:37.105224
 """
 
 from datetime import datetime
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 from typing import Union, List, Optional
 from dataclasses import dataclass, field
 
@@ -187,39 +187,39 @@ class PubSubState(IntEnum):
     Error = 3
 
 
-class DataSetFieldFlags(IntEnum):
+class DataSetFieldFlags(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part14/6.2.2/#6.2.2.1.4
 
     :ivar PromotedField:
-    :vartype PromotedField: 0
+    :vartype PromotedField: Bit: 0
     """
-    PromotedField = 0
+    PromotedField = 1<<0
 
 
-class DataSetFieldContentMask(IntEnum):
+class DataSetFieldContentMask(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part14/6.2.3/#6.2.3.2
 
     :ivar StatusCode:
-    :vartype StatusCode: 0
+    :vartype StatusCode: Bit: 0
     :ivar SourceTimestamp:
-    :vartype SourceTimestamp: 1
+    :vartype SourceTimestamp: Bit: 1
     :ivar ServerTimestamp:
-    :vartype ServerTimestamp: 2
+    :vartype ServerTimestamp: Bit: 2
     :ivar SourcePicoSeconds:
-    :vartype SourcePicoSeconds: 3
+    :vartype SourcePicoSeconds: Bit: 3
     :ivar ServerPicoSeconds:
-    :vartype ServerPicoSeconds: 4
+    :vartype ServerPicoSeconds: Bit: 4
     :ivar RawData:
-    :vartype RawData: 5
+    :vartype RawData: Bit: 5
     """
-    StatusCode = 0
-    SourceTimestamp = 1
-    ServerTimestamp = 2
-    SourcePicoSeconds = 3
-    ServerPicoSeconds = 4
-    RawData = 5
+    StatusCode = 1<<0
+    SourceTimestamp = 1<<1
+    ServerTimestamp = 1<<2
+    SourcePicoSeconds = 1<<3
+    ServerPicoSeconds = 1<<4
+    RawData = 1<<5
 
 
 class OverrideValueHandling(IntEnum):
@@ -254,116 +254,116 @@ class DataSetOrderingType(IntEnum):
     AscendingWriterIdSingle = 2
 
 
-class UadpNetworkMessageContentMask(IntEnum):
+class UadpNetworkMessageContentMask(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part14/6.3.1/#6.3.1.1.4
 
     :ivar PublisherId:
-    :vartype PublisherId: 0
+    :vartype PublisherId: Bit: 0
     :ivar GroupHeader:
-    :vartype GroupHeader: 1
+    :vartype GroupHeader: Bit: 1
     :ivar WriterGroupId:
-    :vartype WriterGroupId: 2
+    :vartype WriterGroupId: Bit: 2
     :ivar GroupVersion:
-    :vartype GroupVersion: 3
+    :vartype GroupVersion: Bit: 3
     :ivar NetworkMessageNumber:
-    :vartype NetworkMessageNumber: 4
+    :vartype NetworkMessageNumber: Bit: 4
     :ivar SequenceNumber:
-    :vartype SequenceNumber: 5
+    :vartype SequenceNumber: Bit: 5
     :ivar PayloadHeader:
-    :vartype PayloadHeader: 6
+    :vartype PayloadHeader: Bit: 6
     :ivar Timestamp:
-    :vartype Timestamp: 7
+    :vartype Timestamp: Bit: 7
     :ivar PicoSeconds:
-    :vartype PicoSeconds: 8
+    :vartype PicoSeconds: Bit: 8
     :ivar DataSetClassId:
-    :vartype DataSetClassId: 9
+    :vartype DataSetClassId: Bit: 9
     :ivar PromotedFields:
-    :vartype PromotedFields: 10
+    :vartype PromotedFields: Bit: 10
     """
-    PublisherId = 0
-    GroupHeader = 1
-    WriterGroupId = 2
-    GroupVersion = 3
-    NetworkMessageNumber = 4
-    SequenceNumber = 5
-    PayloadHeader = 6
-    Timestamp = 7
-    PicoSeconds = 8
-    DataSetClassId = 9
-    PromotedFields = 10
+    PublisherId = 1<<0
+    GroupHeader = 1<<1
+    WriterGroupId = 1<<2
+    GroupVersion = 1<<3
+    NetworkMessageNumber = 1<<4
+    SequenceNumber = 1<<5
+    PayloadHeader = 1<<6
+    Timestamp = 1<<7
+    PicoSeconds = 1<<8
+    DataSetClassId = 1<<9
+    PromotedFields = 1<<10
 
 
-class UadpDataSetMessageContentMask(IntEnum):
+class UadpDataSetMessageContentMask(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part14/6.3.1/#6.3.1.2.2
 
     :ivar Timestamp:
-    :vartype Timestamp: 0
+    :vartype Timestamp: Bit: 0
     :ivar PicoSeconds:
-    :vartype PicoSeconds: 1
+    :vartype PicoSeconds: Bit: 1
     :ivar Status:
-    :vartype Status: 2
+    :vartype Status: Bit: 2
     :ivar MajorVersion:
-    :vartype MajorVersion: 3
+    :vartype MajorVersion: Bit: 3
     :ivar MinorVersion:
-    :vartype MinorVersion: 4
+    :vartype MinorVersion: Bit: 4
     :ivar SequenceNumber:
-    :vartype SequenceNumber: 5
+    :vartype SequenceNumber: Bit: 5
     """
-    Timestamp = 0
-    PicoSeconds = 1
-    Status = 2
-    MajorVersion = 3
-    MinorVersion = 4
-    SequenceNumber = 5
+    Timestamp = 1<<0
+    PicoSeconds = 1<<1
+    Status = 1<<2
+    MajorVersion = 1<<3
+    MinorVersion = 1<<4
+    SequenceNumber = 1<<5
 
 
-class JsonNetworkMessageContentMask(IntEnum):
+class JsonNetworkMessageContentMask(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part14/6.3.2/#6.3.2.1.1
 
     :ivar NetworkMessageHeader:
-    :vartype NetworkMessageHeader: 0
+    :vartype NetworkMessageHeader: Bit: 0
     :ivar DataSetMessageHeader:
-    :vartype DataSetMessageHeader: 1
+    :vartype DataSetMessageHeader: Bit: 1
     :ivar SingleDataSetMessage:
-    :vartype SingleDataSetMessage: 2
+    :vartype SingleDataSetMessage: Bit: 2
     :ivar PublisherId:
-    :vartype PublisherId: 3
+    :vartype PublisherId: Bit: 3
     :ivar DataSetClassId:
-    :vartype DataSetClassId: 4
+    :vartype DataSetClassId: Bit: 4
     :ivar ReplyTo:
-    :vartype ReplyTo: 5
+    :vartype ReplyTo: Bit: 5
     """
-    NetworkMessageHeader = 0
-    DataSetMessageHeader = 1
-    SingleDataSetMessage = 2
-    PublisherId = 3
-    DataSetClassId = 4
-    ReplyTo = 5
+    NetworkMessageHeader = 1<<0
+    DataSetMessageHeader = 1<<1
+    SingleDataSetMessage = 1<<2
+    PublisherId = 1<<3
+    DataSetClassId = 1<<4
+    ReplyTo = 1<<5
 
 
-class JsonDataSetMessageContentMask(IntEnum):
+class JsonDataSetMessageContentMask(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part14/6.3.2/#6.3.2.2.1
 
     :ivar DataSetWriterId:
-    :vartype DataSetWriterId: 0
+    :vartype DataSetWriterId: Bit: 0
     :ivar MetaDataVersion:
-    :vartype MetaDataVersion: 1
+    :vartype MetaDataVersion: Bit: 1
     :ivar SequenceNumber:
-    :vartype SequenceNumber: 2
+    :vartype SequenceNumber: Bit: 2
     :ivar Timestamp:
-    :vartype Timestamp: 3
+    :vartype Timestamp: Bit: 3
     :ivar Status:
-    :vartype Status: 4
+    :vartype Status: Bit: 4
     """
-    DataSetWriterId = 0
-    MetaDataVersion = 1
-    SequenceNumber = 2
-    Timestamp = 3
-    Status = 4
+    DataSetWriterId = 1<<0
+    MetaDataVersion = 1<<1
+    SequenceNumber = 1<<2
+    Timestamp = 1<<3
+    Status = 1<<4
 
 
 class BrokerTransportQualityOfService(IntEnum):
@@ -476,163 +476,163 @@ class NodeClass(IntEnum):
     View = 128
 
 
-class PermissionType(IntEnum):
+class PermissionType(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part3/8.55
 
     :ivar Browse:
-    :vartype Browse: 0
+    :vartype Browse: Bit: 0
     :ivar ReadRolePermissions:
-    :vartype ReadRolePermissions: 1
+    :vartype ReadRolePermissions: Bit: 1
     :ivar WriteAttribute:
-    :vartype WriteAttribute: 2
+    :vartype WriteAttribute: Bit: 2
     :ivar WriteRolePermissions:
-    :vartype WriteRolePermissions: 3
+    :vartype WriteRolePermissions: Bit: 3
     :ivar WriteHistorizing:
-    :vartype WriteHistorizing: 4
+    :vartype WriteHistorizing: Bit: 4
     :ivar Read:
-    :vartype Read: 5
+    :vartype Read: Bit: 5
     :ivar Write:
-    :vartype Write: 6
+    :vartype Write: Bit: 6
     :ivar ReadHistory:
-    :vartype ReadHistory: 7
+    :vartype ReadHistory: Bit: 7
     :ivar InsertHistory:
-    :vartype InsertHistory: 8
+    :vartype InsertHistory: Bit: 8
     :ivar ModifyHistory:
-    :vartype ModifyHistory: 9
+    :vartype ModifyHistory: Bit: 9
     :ivar DeleteHistory:
-    :vartype DeleteHistory: 10
+    :vartype DeleteHistory: Bit: 10
     :ivar ReceiveEvents:
-    :vartype ReceiveEvents: 11
+    :vartype ReceiveEvents: Bit: 11
     :ivar Call:
-    :vartype Call: 12
+    :vartype Call: Bit: 12
     :ivar AddReference:
-    :vartype AddReference: 13
+    :vartype AddReference: Bit: 13
     :ivar RemoveReference:
-    :vartype RemoveReference: 14
+    :vartype RemoveReference: Bit: 14
     :ivar DeleteNode:
-    :vartype DeleteNode: 15
+    :vartype DeleteNode: Bit: 15
     :ivar AddNode:
-    :vartype AddNode: 16
+    :vartype AddNode: Bit: 16
     """
-    Browse = 0
-    ReadRolePermissions = 1
-    WriteAttribute = 2
-    WriteRolePermissions = 3
-    WriteHistorizing = 4
-    Read = 5
-    Write = 6
-    ReadHistory = 7
-    InsertHistory = 8
-    ModifyHistory = 9
-    DeleteHistory = 10
-    ReceiveEvents = 11
-    Call = 12
-    AddReference = 13
-    RemoveReference = 14
-    DeleteNode = 15
-    AddNode = 16
+    Browse = 1<<0
+    ReadRolePermissions = 1<<1
+    WriteAttribute = 1<<2
+    WriteRolePermissions = 1<<3
+    WriteHistorizing = 1<<4
+    Read = 1<<5
+    Write = 1<<6
+    ReadHistory = 1<<7
+    InsertHistory = 1<<8
+    ModifyHistory = 1<<9
+    DeleteHistory = 1<<10
+    ReceiveEvents = 1<<11
+    Call = 1<<12
+    AddReference = 1<<13
+    RemoveReference = 1<<14
+    DeleteNode = 1<<15
+    AddNode = 1<<16
 
 
-class AccessLevelType(IntEnum):
+class AccessLevelType(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part3/8.57
 
     :ivar CurrentRead:
-    :vartype CurrentRead: 0
+    :vartype CurrentRead: Bit: 0
     :ivar CurrentWrite:
-    :vartype CurrentWrite: 1
+    :vartype CurrentWrite: Bit: 1
     :ivar HistoryRead:
-    :vartype HistoryRead: 2
+    :vartype HistoryRead: Bit: 2
     :ivar HistoryWrite:
-    :vartype HistoryWrite: 3
+    :vartype HistoryWrite: Bit: 3
     :ivar SemanticChange:
-    :vartype SemanticChange: 4
+    :vartype SemanticChange: Bit: 4
     :ivar StatusWrite:
-    :vartype StatusWrite: 5
+    :vartype StatusWrite: Bit: 5
     :ivar TimestampWrite:
-    :vartype TimestampWrite: 6
+    :vartype TimestampWrite: Bit: 6
     """
-    CurrentRead = 0
-    CurrentWrite = 1
-    HistoryRead = 2
-    HistoryWrite = 3
-    SemanticChange = 4
-    StatusWrite = 5
-    TimestampWrite = 6
+    CurrentRead = 1<<0
+    CurrentWrite = 1<<1
+    HistoryRead = 1<<2
+    HistoryWrite = 1<<3
+    SemanticChange = 1<<4
+    StatusWrite = 1<<5
+    TimestampWrite = 1<<6
 
 
-class AccessLevelExType(IntEnum):
+class AccessLevelExType(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part3/8.58
 
     :ivar CurrentRead:
-    :vartype CurrentRead: 0
+    :vartype CurrentRead: Bit: 0
     :ivar CurrentWrite:
-    :vartype CurrentWrite: 1
+    :vartype CurrentWrite: Bit: 1
     :ivar HistoryRead:
-    :vartype HistoryRead: 2
+    :vartype HistoryRead: Bit: 2
     :ivar HistoryWrite:
-    :vartype HistoryWrite: 3
+    :vartype HistoryWrite: Bit: 3
     :ivar SemanticChange:
-    :vartype SemanticChange: 4
+    :vartype SemanticChange: Bit: 4
     :ivar StatusWrite:
-    :vartype StatusWrite: 5
+    :vartype StatusWrite: Bit: 5
     :ivar TimestampWrite:
-    :vartype TimestampWrite: 6
+    :vartype TimestampWrite: Bit: 6
     :ivar NonatomicRead:
-    :vartype NonatomicRead: 8
+    :vartype NonatomicRead: Bit: 8
     :ivar NonatomicWrite:
-    :vartype NonatomicWrite: 9
+    :vartype NonatomicWrite: Bit: 9
     :ivar WriteFullArrayOnly:
-    :vartype WriteFullArrayOnly: 10
+    :vartype WriteFullArrayOnly: Bit: 10
     :ivar NoSubDataTypes:
-    :vartype NoSubDataTypes: 11
+    :vartype NoSubDataTypes: Bit: 11
     """
-    CurrentRead = 0
-    CurrentWrite = 1
-    HistoryRead = 2
-    HistoryWrite = 3
-    SemanticChange = 4
-    StatusWrite = 5
-    TimestampWrite = 6
-    NonatomicRead = 8
-    NonatomicWrite = 9
-    WriteFullArrayOnly = 10
-    NoSubDataTypes = 11
+    CurrentRead = 1<<0
+    CurrentWrite = 1<<1
+    HistoryRead = 1<<2
+    HistoryWrite = 1<<3
+    SemanticChange = 1<<4
+    StatusWrite = 1<<5
+    TimestampWrite = 1<<6
+    NonatomicRead = 1<<8
+    NonatomicWrite = 1<<9
+    WriteFullArrayOnly = 1<<10
+    NoSubDataTypes = 1<<11
 
 
-class EventNotifierType(IntEnum):
+class EventNotifierType(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part3/8.59
 
     :ivar SubscribeToEvents:
-    :vartype SubscribeToEvents: 0
+    :vartype SubscribeToEvents: Bit: 0
     :ivar HistoryRead:
-    :vartype HistoryRead: 2
+    :vartype HistoryRead: Bit: 2
     :ivar HistoryWrite:
-    :vartype HistoryWrite: 3
+    :vartype HistoryWrite: Bit: 3
     """
-    SubscribeToEvents = 0
-    HistoryRead = 2
-    HistoryWrite = 3
+    SubscribeToEvents = 1<<0
+    HistoryRead = 1<<2
+    HistoryWrite = 1<<3
 
 
-class AccessRestrictionType(IntEnum):
+class AccessRestrictionType(IntFlag):
     """
     :ivar SigningRequired:
-    :vartype SigningRequired: 0
+    :vartype SigningRequired: Bit: 0
     :ivar EncryptionRequired:
-    :vartype EncryptionRequired: 1
+    :vartype EncryptionRequired: Bit: 1
     :ivar SessionRequired:
-    :vartype SessionRequired: 2
+    :vartype SessionRequired: Bit: 2
     :ivar ApplyRestrictionsToBrowse:
-    :vartype ApplyRestrictionsToBrowse: 3
+    :vartype ApplyRestrictionsToBrowse: Bit: 3
     """
-    SigningRequired = 0
-    EncryptionRequired = 1
-    SessionRequired = 2
-    ApplyRestrictionsToBrowse = 3
+    SigningRequired = 1<<0
+    EncryptionRequired = 1<<1
+    SessionRequired = 1<<2
+    ApplyRestrictionsToBrowse = 1<<3
 
 
 class StructureType(IntEnum):
@@ -829,89 +829,89 @@ class NodeAttributesMask(IntEnum):
     View = 26501356
 
 
-class AttributeWriteMask(IntEnum):
+class AttributeWriteMask(IntFlag):
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part3/8.60
 
     :ivar AccessLevel:
-    :vartype AccessLevel: 0
+    :vartype AccessLevel: Bit: 0
     :ivar ArrayDimensions:
-    :vartype ArrayDimensions: 1
+    :vartype ArrayDimensions: Bit: 1
     :ivar BrowseName:
-    :vartype BrowseName: 2
+    :vartype BrowseName: Bit: 2
     :ivar ContainsNoLoops:
-    :vartype ContainsNoLoops: 3
+    :vartype ContainsNoLoops: Bit: 3
     :ivar DataType:
-    :vartype DataType: 4
+    :vartype DataType: Bit: 4
     :ivar Description:
-    :vartype Description: 5
+    :vartype Description: Bit: 5
     :ivar DisplayName:
-    :vartype DisplayName: 6
+    :vartype DisplayName: Bit: 6
     :ivar EventNotifier:
-    :vartype EventNotifier: 7
+    :vartype EventNotifier: Bit: 7
     :ivar Executable:
-    :vartype Executable: 8
+    :vartype Executable: Bit: 8
     :ivar Historizing:
-    :vartype Historizing: 9
+    :vartype Historizing: Bit: 9
     :ivar InverseName:
-    :vartype InverseName: 10
+    :vartype InverseName: Bit: 10
     :ivar IsAbstract:
-    :vartype IsAbstract: 11
+    :vartype IsAbstract: Bit: 11
     :ivar MinimumSamplingInterval:
-    :vartype MinimumSamplingInterval: 12
+    :vartype MinimumSamplingInterval: Bit: 12
     :ivar NodeClass:
-    :vartype NodeClass: 13
+    :vartype NodeClass: Bit: 13
     :ivar NodeId:
-    :vartype NodeId: 14
+    :vartype NodeId: Bit: 14
     :ivar Symmetric:
-    :vartype Symmetric: 15
+    :vartype Symmetric: Bit: 15
     :ivar UserAccessLevel:
-    :vartype UserAccessLevel: 16
+    :vartype UserAccessLevel: Bit: 16
     :ivar UserExecutable:
-    :vartype UserExecutable: 17
+    :vartype UserExecutable: Bit: 17
     :ivar UserWriteMask:
-    :vartype UserWriteMask: 18
+    :vartype UserWriteMask: Bit: 18
     :ivar ValueRank:
-    :vartype ValueRank: 19
+    :vartype ValueRank: Bit: 19
     :ivar WriteMask:
-    :vartype WriteMask: 20
+    :vartype WriteMask: Bit: 20
     :ivar ValueForVariableType:
-    :vartype ValueForVariableType: 21
+    :vartype ValueForVariableType: Bit: 21
     :ivar DataTypeDefinition:
-    :vartype DataTypeDefinition: 22
+    :vartype DataTypeDefinition: Bit: 22
     :ivar RolePermissions:
-    :vartype RolePermissions: 23
+    :vartype RolePermissions: Bit: 23
     :ivar AccessRestrictions:
-    :vartype AccessRestrictions: 24
+    :vartype AccessRestrictions: Bit: 24
     :ivar AccessLevelEx:
-    :vartype AccessLevelEx: 25
+    :vartype AccessLevelEx: Bit: 25
     """
-    AccessLevel = 0
-    ArrayDimensions = 1
-    BrowseName = 2
-    ContainsNoLoops = 3
-    DataType = 4
-    Description = 5
-    DisplayName = 6
-    EventNotifier = 7
-    Executable = 8
-    Historizing = 9
-    InverseName = 10
-    IsAbstract = 11
-    MinimumSamplingInterval = 12
-    NodeClass = 13
-    NodeId = 14
-    Symmetric = 15
-    UserAccessLevel = 16
-    UserExecutable = 17
-    UserWriteMask = 18
-    ValueRank = 19
-    WriteMask = 20
-    ValueForVariableType = 21
-    DataTypeDefinition = 22
-    RolePermissions = 23
-    AccessRestrictions = 24
-    AccessLevelEx = 25
+    AccessLevel = 1<<0
+    ArrayDimensions = 1<<1
+    BrowseName = 1<<2
+    ContainsNoLoops = 1<<3
+    DataType = 1<<4
+    Description = 1<<5
+    DisplayName = 1<<6
+    EventNotifier = 1<<7
+    Executable = 1<<8
+    Historizing = 1<<9
+    InverseName = 1<<10
+    IsAbstract = 1<<11
+    MinimumSamplingInterval = 1<<12
+    NodeClass = 1<<13
+    NodeId = 1<<14
+    Symmetric = 1<<15
+    UserAccessLevel = 1<<16
+    UserExecutable = 1<<17
+    UserWriteMask = 1<<18
+    ValueRank = 1<<19
+    WriteMask = 1<<20
+    ValueForVariableType = 1<<21
+    DataTypeDefinition = 1<<22
+    RolePermissions = 1<<23
+    AccessRestrictions = 1<<24
+    AccessLevelEx = 1<<25
 
 
 class BrowseDirection(IntEnum):

@@ -5,7 +5,7 @@ Binary protocol specific functions and constants
 import struct
 import logging
 import uuid
-from enum import IntEnum, Enum
+from enum import IntEnum, Enum, IntFlag
 from dataclasses import is_dataclass, fields
 
 from asyncua import ua
@@ -261,7 +261,7 @@ def to_binary(uatype, val):
     if hasattr(Primitives, uatype.__name__):
         return getattr(Primitives, uatype.__name__).pack(val)
     if issubclass(uatype, Enum):
-        if isinstance(val, (IntEnum, Enum)):
+        if isinstance(val, (IntEnum, Enum, IntFlag)):
             return Primitives.Int32.pack(val.value)
         return Primitives.Int32.pack(val)
     if hasattr(ua.VariantType, uatype.__name__):

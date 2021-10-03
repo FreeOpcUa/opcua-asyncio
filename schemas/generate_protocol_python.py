@@ -60,7 +60,7 @@ class CodeGenerator:
         self.write('"""')
         self.write('')
         self.write('from datetime import datetime')
-        self.write('from enum import IntEnum')
+        self.write('from enum import IntEnum, IntFlag')
         self.write('from typing import Union, List, Optional')
         self.write('from dataclasses import dataclass, field')
         self.write('')
@@ -76,19 +76,34 @@ class CodeGenerator:
     def generate_enum_code(self, enum):
         self.write('')
         self.write('')
-        self.write(f'class {enum.name}(IntEnum):')
-        self.iidx = 1
-        self.write('"""')
-        if enum.doc:
-            self.write(enum.doc)
-            self.write("")
-        for val in enum.fields:
-            self.write(f':ivar {val.name}:')
-            self.write(f':vartype {val.name}: {val.value}')
-        self.write('"""')
-        for val in enum.fields:
-            self.write(f'{val.name} = {val.value}')
-        self.iidx = 0
+        if enum.is_option_set:
+            self.write(f'class {enum.name}(IntFlag):')
+            self.iidx = 1
+            self.write('"""')
+            if enum.doc:
+                self.write(enum.doc)
+                self.write("")
+            for val in enum.fields:
+                self.write(f':ivar {val.name}:')
+                self.write(f':vartype {val.name}: Bit: {val.value}')
+            self.write('"""')
+            for val in enum.fields:
+                self.write(f'{val.name} = 1<<{val.value}')
+            self.iidx = 0
+        else:
+            self.write(f'class {enum.name}(IntEnum):')
+            self.iidx = 1
+            self.write('"""')
+            if enum.doc:
+                self.write(enum.doc)
+                self.write("")
+            for val in enum.fields:
+                self.write(f':ivar {val.name}:')
+                self.write(f':vartype {val.name}: {val.value}')
+            self.write('"""')
+            for val in enum.fields:
+                self.write(f'{val.name} = {val.value}')
+            self.iidx = 0
 
     def generate_struct_code(self, obj):
         self.write('')
