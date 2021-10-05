@@ -428,7 +428,7 @@ async def _lsprint_long(pnode, depth, indent=""):
         )
         print("")
     for node in await pnode.get_children():
-        attrs = node.read_attributes(
+        attrs = await node.read_attributes(
             [
                 ua.AttributeIds.DisplayName,
                 ua.AttributeIds.BrowseName,
