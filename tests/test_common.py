@@ -143,6 +143,13 @@ async def test_delete_nodes(opc):
     await opc.opc.delete_nodes([fold])
 
 
+async def test_node_bytestring(opc):
+    obj = opc.opc.nodes.objects
+    var = await obj.add_variable(ua.ByteStringNodeId(b"VarByteString", 2), ua.QualifiedName("toto", 2), ua.UInt16(9))
+    node = opc.opc.get_node("ns=2;b=VarByteString")
+    assert node == var
+
+
 async def test_add_node_using_builtin(opc):
     obj = opc.opc.nodes.objects
     fold = await obj.add_folder(2, "FolderBuiltin")
