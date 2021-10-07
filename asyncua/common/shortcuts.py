@@ -16,6 +16,7 @@ class Shortcuts:
         self.base_variable_type = Node(server, ObjectIds.BaseVariableType)
         self.folder_type = Node(server, ObjectIds.FolderType)
         self.enum_data_type = Node(server, ObjectIds.Enumeration)
+        self.option_set_type = Node(server, ObjectIds.OptionSet)
         self.types = Node(server, ObjectIds.TypesFolder)
         self.data_types = Node(server, ObjectIds.DataTypesFolder)
         self.event_types = Node(server, ObjectIds.EventTypesFolder)

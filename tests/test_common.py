@@ -1184,6 +1184,16 @@ async def test_custom_enum_x(opc):
     assert val == 1
 
 
+async def test_custom_option_set(opc):
+    idx = 4
+    await new_enum(opc.opc, idx, "MyOptionSet", ["tata", "titi", "toto", "None"], True)
+    await opc.opc.load_data_type_definitions()
+    assert ua.MyOptionSet.toto | ua.MyOptionSet.titi == ua.MyOptionSet((1 << 2) | (1 << 1))
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_option", ua.MyOptionSet.toto | ua.MyOptionSet.titi)
+    val = await var.read_value()
+    assert val == (1 << 2) | (1 << 1)
+
+
 async def test_custom_struct_(opc):
     idx = 4
 

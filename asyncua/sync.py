@@ -646,6 +646,7 @@ def new_enum(
     idx: Union[int, ua.NodeId],
     name: Union[int, ua.QualifiedName],
     values: List[str],
+    optional: bool = False
 ) -> SyncNode:
     pass
 
