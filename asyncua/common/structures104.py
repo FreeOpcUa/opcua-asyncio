@@ -336,12 +336,12 @@ async def _read_data_type_definition(server, desc: ua.BrowseDescription, read_ex
     # FIXME: this is fishy, we may have same name in different Namespaces
     if not read_existing and hasattr(ua, desc.BrowseName.Name):
         return None
-    logger.info("Registring data type %s %s", desc.NodeId, desc.BrowseName)
+    logger.info("Registering data type %s %s", desc.NodeId, desc.BrowseName)
     node = server.get_node(desc.NodeId)
     try:
         sdef = await node.read_data_type_definition()
     except ua.uaerrors.BadAttributeIdInvalid:
-        logger.debug("%s has no DataTypeDefinition atttribute", node)
+        logger.debug("%s has no DataTypeDefinition attribute", node)
         return None
     except Exception:
         logger.exception("Error getting datatype for node %s", node)
@@ -351,7 +351,7 @@ async def _read_data_type_definition(server, desc: ua.BrowseDescription, read_ex
 
 def make_enum_code(name, edef, option_set):
     """
-    if node has a DataTypeDefinition arttribute, generate enum code
+    if node has a DataTypeDefinition attribute, generate enum code
     """
     enum_type = "IntEnum" if not option_set else "IntFlag"
     code = f"""

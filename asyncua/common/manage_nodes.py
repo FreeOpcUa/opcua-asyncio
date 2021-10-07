@@ -140,7 +140,7 @@ async def create_reference_type(parent, nodeid, bname, symmetric=True, inversena
 
 async def create_object_type(parent, nodeid, bname):
     """
-    Create a new object type to be instanciated in address space.
+    Create a new object type to be instantiated in address space.
     arguments are nodeid, browsename
     or namespace index, name
     """
@@ -327,7 +327,7 @@ async def create_data_type(parent, nodeid, bname, description=None):
     attrs.DisplayName = ua.LocalizedText(qname.Name)
     attrs.WriteMask = 0
     attrs.UserWriteMask = 0
-    attrs.IsAbstract = False  # True mean they cannot be instanciated
+    attrs.IsAbstract = False  # True mean they cannot be instantiated
     addnode.NodeAttributes = attrs
     results = await parent.server.add_nodes([addnode])
     results[0].StatusCode.check()
@@ -348,7 +348,7 @@ async def create_data_type(parent, nodeid, bname, description=None):
 
 async def create_encoding(parent, nodeid, bname):
     """
-    Create a new encoding object to be instanciated in address space.
+    Create a new encoding object to be instantiated in address space.
     arguments are nodeid, browsename
     or namespace index, name
     """

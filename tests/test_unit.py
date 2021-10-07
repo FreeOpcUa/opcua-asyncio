@@ -337,7 +337,15 @@ def test_nodeid_guid_string():
     s = n.to_string()
     n2 = ua.NodeId.from_string(s)
     s2 = n2.to_string()
-    print(n, n2, s, s2)
+    assert n == n2
+    assert s == s2
+
+
+def test_nodeid_bytestring():
+    n = ua.ByteStringNodeId(Identifier=b"qwerty", NamespaceIndex=1)
+    s = n.to_string()
+    n2 = ua.NodeId.from_string(s)
+    s2 = n2.to_string()
     assert n == n2
     assert s == s2
 

@@ -607,7 +607,7 @@ class Client:
         """
         We request the server to send a Keepalive notification when
         no notification has been received for 75% of the session lifetime.
-        This is especially useful to keep the sesssion up
+        This is especially useful to keep the session up
         when self.session_timeout < self.secure_channel_timeout.
 
         Part4 5.13.2: If the requested value is 0, the Server
@@ -646,7 +646,7 @@ class Client:
     async def register_namespace(self, uri):
         """
         Register a new namespace. Nodes should in custom namespace, not 0.
-        This method is mainly implemented for symetry with server
+        This method is mainly implemented for symmetry with server
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
         uries = await ns_node.read_value()

@@ -487,7 +487,7 @@ class NodeId:
                 identifier = uuid.UUID(f"urn:uuid:{v}")
             elif k == "b":
                 ntype = NodeIdType.ByteString
-                identifier = v
+                identifier = bytes(v, 'utf-8')
             elif k == "srv":
                 srv = int(v)
             elif k == "nsu":
@@ -502,6 +502,7 @@ class NodeId:
         string = []
         if self.NamespaceIndex != 0:
             string.append(f"ns={self.NamespaceIndex}")
+        identifier = self.Identifier
         ntype = None
         if self.NodeIdType == NodeIdType.Numeric:
             ntype = "i"
@@ -515,7 +516,8 @@ class NodeId:
             ntype = "g"
         elif self.NodeIdType == NodeIdType.ByteString:
             ntype = "b"
-        string.append(f"{ntype}={self.Identifier}")
+            identifier = identifier.decode()
+        string.append(f"{ntype}={identifier}")
         return ";".join(string)
 
     def to_binary(self):

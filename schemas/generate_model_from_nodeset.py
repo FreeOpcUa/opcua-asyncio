@@ -123,6 +123,8 @@ class Enum:
     data_type: str = None
     fields: List[Field] = field(default_factory=list)
     doc: str = ""
+    is_option_set: bool = False 
+
 
 
 @dataclass
@@ -366,6 +368,7 @@ class Parser:
             name=name,
             data_type=el.get("NodeId"),
             doc=doc,
+            is_option_set=el.find("./{*}Definition/[@IsOptionSet]")
         )
         for f in el.findall("./{*}Definition/{*}Field"):
             efield = EnumField(name=f.get("Name"), value=int(f.get("Value")))

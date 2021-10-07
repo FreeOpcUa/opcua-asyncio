@@ -40,7 +40,7 @@ class Node:
     """
     High level node object, to access node attribute,
     browse and populate address space.
-    Node objects are usefull as-is but they do not expose the entire
+    Node objects are useful as-is but they do not expose the entire
     OPC-UA protocol. Feel free to look at the code of this class and call
     directly UA services methods to optimize your code
     """
@@ -147,7 +147,7 @@ class Node:
     async def read_data_type_definition(self):
         """
         read data type definition attribute of node
-        only DataType nodes following spec >= 1.04 have that atttribute
+        only DataType nodes following spec >= 1.04 have that attribute
         """
         result = await self.read_attribute(ua.AttributeIds.DataTypeDefinition)
         return result.Value.Value
@@ -155,7 +155,7 @@ class Node:
     async def write_data_type_definition(self, sdef: ua.DataTypeDefinition):
         """
         write data type definition attribute of node
-        only DataType nodes following spec >= 1.04 have that atttribute
+        only DataType nodes following spec >= 1.04 have that attribute
         """
         v = ua.Variant(sdef, ua.VariantType.ExtensionObject)
         await self.write_attribute(ua.AttributeIds.DataTypeDefinition, ua.DataValue(v))
@@ -204,14 +204,14 @@ class Node:
 
     async def write_value_rank(self, value):
         """
-        Set attribute ArrayDimensions of node
+        Set attribute ValueRank of node
         """
         v = ua.Variant(value, ua.VariantType.Int32)
         await self.write_attribute(ua.AttributeIds.ValueRank, ua.DataValue(v))
 
     async def read_value_rank(self):
         """
-        Read and return ArrayDimensions attribute of node
+        Read and return ValueRank attribute of node
         """
         res = await self.read_attribute(ua.AttributeIds.ValueRank)
         return ua.ValueRank(res.Value.Value)
@@ -222,11 +222,11 @@ class Node:
         An exception will be generated for other node types.
         value argument is either:
         * a python built-in type, converted to opc-ua
-        optionnaly using the variantype argument.
+        optionally using the variantype argument.
         * a ua.Variant, varianttype is then ignored
         * a ua.DataValue, you then have full control over data send to server
         WARNING: On server side, ref to object is directly saved in our UA db, if this is a mutable object
-        and you modfy it afterward, then the object in db will be modified without any
+        and you modify it afterward, then the object in db will be modified without any
         data change event generated
         """
         dv = value_to_datavalue(value, varianttype)
@@ -357,14 +357,14 @@ class Node:
     def get_variables(self):
         """
         return variables of node.
-        properties are child nodes with a reference of type HasComponent and a NodeClass of Variable
+        variables are child nodes with a reference of type HasComponent and a NodeClass of Variable
         """
         return self.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Variable)
 
     def get_methods(self):
         """
         return methods of node.
-        properties are child nodes with a reference of type HasComponent and a NodeClass of Method
+        methods are child nodes with a reference of type HasComponent and a NodeClass of Method
         """
         return self.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Method)
 
@@ -414,7 +414,7 @@ class Node:
     async def get_referenced_nodes(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
         """
         returns referenced nodes based on specific filter
-        Paramters are the same as for get_references
+        Parameters are the same as for get_references
 
         """
         references = await self.get_references(refs, direction, nodeclassmask, includesubtypes)
@@ -667,7 +667,7 @@ class Node:
         """
         Add a modelling rule reference to Node.
         When creating a new object type, its variable and child nodes will not
-        be instanciated if they do not have modelling rule
+        be instantiated if they do not have modelling rule
         if mandatory is None, the modelling rule is removed
         """
         # remove all existing modelling rule

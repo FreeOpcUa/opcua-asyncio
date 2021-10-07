@@ -221,7 +221,7 @@ async def load_type_definitions(server, nodes=None):
         generator.make_model_from_string(xml)
         # generate and execute new code on the fly
         generator.get_python_classes(structs_dict)
-        # same but using a file that is imported. This can be usefull for debugging library
+        # same but using a file that is imported. This can be useful for debugging library
         # name = node.read_browse_name().Name
         # Make sure structure names do not contain charaters that cannot be used in Python class file names
         # name = clean_name(name)
