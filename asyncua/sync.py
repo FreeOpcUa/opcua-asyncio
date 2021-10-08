@@ -4,7 +4,7 @@ sync API of asyncua
 import asyncio
 from threading import Thread, Condition
 import logging
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 from asyncua import ua
 from asyncua import client
@@ -121,11 +121,6 @@ def syncfunc(aio_func):
     return decorator
 
 
-@syncfunc(aio_func=common.methods.call_method)
-async def call_method(parent, methodid, *args):
-    pass
-
-
 @syncfunc(aio_func=common.methods.call_method_full)
 def call_method_full(parent, methodid, *args):
     pass
@@ -173,6 +168,14 @@ class Client:
         return "Sync" + self.aio_obj.__str__()
 
     __repr__ = __str__
+    
+    @property
+    def application_uri(self):
+        return self.aio_obj.application_uri
+
+    @application_uri.setter
+    def application_uri(self, value):
+        self.aio_obj.application_uri = value
 
     @syncmethod
     def connect(self):
@@ -190,6 +193,14 @@ class Client:
 
     def set_password(self, pwd: str):
         self.aio_obj.set_password(pwd)
+        
+    @syncmethod
+    async def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
+        pass
+
+    @syncmethod
+    async def load_client_certificate(self, path: str, extension: Optional[str] = None):
+        pass
 
     @syncmethod
     def load_type_definitions(self, nodes=None):
