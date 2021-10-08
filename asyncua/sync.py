@@ -121,6 +121,11 @@ def syncfunc(aio_func):
     return decorator
 
 
+@syncfunc(aio_func=common.methods.call_method)
+async def call_method(parent, methodid, *args):
+    pass
+
+
 @syncfunc(aio_func=common.methods.call_method_full)
 def call_method_full(parent, methodid, *args):
     pass
