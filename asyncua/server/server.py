@@ -6,7 +6,7 @@ import asyncio
 import logging
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
-from typing import Coroutine, Optional
+from typing import Coroutine, Optional, Tuple
 
 from asyncua import ua
 from .binary_server_asyncio import BinaryServer
@@ -71,6 +71,7 @@ class Server:
     :ivar iserver: `InternalServer` instance
     :ivar bserver: binary protocol server `BinaryServer`
     :ivar nodes: shortcuts to common nodes - `Shortcuts` instance
+    :ivar bind_socket_description: A tuple describing the listen server socket
     """
 
     def __init__(self, iserver: InternalServer = None, user_manager=None):
@@ -83,6 +84,7 @@ class Server:
         self.default_timeout: int = 60 * 60 * 1000
         self.iserver = iserver if iserver else InternalServer(user_manager=user_manager)
         self.bserver: Optional[BinaryServer] = None
+        self.bind_socket_description: Optional[Tuple[str, int]] = None
         self._discovery_clients = {}
         self._discovery_period = 60
         self._discovery_handle = None
@@ -109,6 +111,9 @@ class Server:
         await sl_node.write_value(ua.Variant(255, ua.VariantType.Byte))
 
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
+
+    def set_match_discovery_client_ip(self, match_discovery_client_ip: bool):
+        self.iserver.match_discovery_source_ip = match_discovery_client_ip
 
     async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
                              build_number, build_date):
@@ -387,7 +392,8 @@ class Server:
         await self._setup_server_nodes()
         await self.iserver.start()
         try:
-            self.bserver = BinaryServer(self.iserver, self.endpoint.hostname, self.endpoint.port)
+            ipaddress, port = self._get_bind_socket_info()
+            self.bserver = BinaryServer(self.iserver, ipaddress, port)
             self.bserver.set_policies(self._policies)
             await self.bserver.start()
         except Exception as exp:
@@ -396,6 +402,12 @@ class Server:
             raise exp
         else:
             _logger.debug("%s server started", self)
+
+    def _get_bind_socket_info(self) -> Tuple[str, int]:
+        if self.bind_socket_description is not None:
+            return self.bind_socket_description
+        else:
+            return self.endpoint.hostname, self.endpoint.port
 
     async def stop(self):
         """
