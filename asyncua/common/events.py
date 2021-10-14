@@ -14,7 +14,7 @@ class Event:
     Events are used to trigger events on server side and are
     sent to clients for every events from server
 
-    Developper Warning:
+    Developer Warning:
     On server side the data type of attributes should be known, thus
     add properties using the add_property method!!!
     """
