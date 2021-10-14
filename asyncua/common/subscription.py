@@ -263,7 +263,7 @@ class Subscription:
                         ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Private low level method for subscribing.
-        :param nodes: One Node or an Iterable og Nodes.
+        :param nodes: One Node or an Iterable of Nodes.
         :param attr: ua.AttributeId
         :param mfilter: MonitoringFilter
         :param queuesize: queue size
