@@ -458,7 +458,7 @@ class NodeManagementService:
     def _add_node_attr(self, item, nodedata, name, vtype=None, add_timestamps=False, is_array=False):
         if item.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
             dv = ua.DataValue(
-                ua.Variant(getattr(item, name), vtype, is_array=is_array),
+                ua.Variant(getattr(item, name), vtype, Dimensions=[0] if is_array else None),
                 SourceTimestamp=datetime.utcnow() if add_timestamps else None,
             )
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
