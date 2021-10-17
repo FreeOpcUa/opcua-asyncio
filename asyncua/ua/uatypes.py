@@ -801,7 +801,7 @@ class Variant:
     Value: Any = None
     VariantType: VariantType = None
     Dimensions: Optional[Int32] = None
-    is_array: bool = False
+    is_array: bool = None
 
     def __post_init__(self):
         if self.is_array is None:
@@ -839,8 +839,9 @@ class Variant:
                 )
         if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
             dims = get_shape(self.Value)
-            if len(dims) > 1:
+            if len(dims) >= 1:
                 object.__setattr__(self, "Dimensions", dims)
+                object.__setattr__(self, "is_array", True)
 
     def __eq__(self, other):
         if (
