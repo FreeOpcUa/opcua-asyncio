@@ -793,25 +793,21 @@ class Variant:
     :vartype VariantType: VariantType
     :ivar Dimension:
     :vartype Dimensions: The length of each dimensions. Usually guessed from value.
-    :ivar is_array:
-    :vartype is_array: If the variant is an array. Usually guessed from value.
     """
 
-    # FIXME: typing is wrong here
     Value: Any = None
     VariantType: VariantType = None
     Dimensions: Optional[Int32] = None
-    is_array: bool = False
 
     def __post_init__(self):
-        if self.is_array is None:
-            if isinstance(self.Value, (list, tuple)):
-                object.__setattr__(self, "is_array", True)
-            else:
-                object.__setattr__(self, "is_array", False)
         if isinstance(self.Value, Variant):
             object.__setattr__(self, "VariantType", self.Value.VariantType)
             object.__setattr__(self, "Value", self.Value.Value)
+
+        if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
+            dims = get_shape(self.Value)
+            object.__setattr__(self, "Dimensions", dims)
+
         if not isinstance(self.VariantType, (VariantType, VariantTypeCustom)):
             if self.VariantType is None:
                 object.__setattr__(self, "VariantType", self._guess_type(self.Value))
@@ -820,6 +816,7 @@ class Variant:
                     object.__setattr__(self, "VariantType", VariantType[self.VariantType.__name__])
                 else:
                     raise ValueError("VariantType argument must be an instance of VariantType")
+
         if (
             self.Value is None
             and not self.is_array
@@ -837,10 +834,10 @@ class Variant:
                 raise UaError(
                     f"Non array Variant of type {self.VariantType} cannot have value None"
                 )
-        if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
-            dims = get_shape(self.Value)
-            if len(dims) > 1:
-                object.__setattr__(self, "Dimensions", dims)
+
+    @property
+    def is_array(self):
+        return self.Dimensions is not None
 
     def __eq__(self, other):
         if (
