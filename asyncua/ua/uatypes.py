@@ -792,7 +792,7 @@ class Variant:
     :ivar VariantType:
     :vartype VariantType: VariantType
     :ivar Dimension:
-    :vartype Dimensions: The length of each dimensions. Usually guessed from value.
+    :vartype Dimensions: The length of each dimensions. Usually guessed from value. [0] mean 1D array without length limit
     """
 
     Value: Any = None
@@ -817,20 +817,17 @@ class Variant:
                 else:
                     raise ValueError("VariantType argument must be an instance of VariantType")
 
-        if (
-            self.Value is None
-            and not self.is_array
-            and self.VariantType
-            not in (
-                VariantType.Null,
-                VariantType.String,
-                VariantType.DateTime,
-                VariantType.ExtensionObject,
-            )
-        ):
-            if self.Value is None and self.VariantType == VariantType.NodeId:
+        if self.Value is None and not self.is_array:
+            # only some types of Variants can be NULL when not in an array
+            if self.VariantType == VariantType.NodeId:
+                # why do we rewrite this case and not the others?
                 object.__setattr__(self, "Value", NodeId(0, 0))
-            else:
+            elif self.VariantType not in (
+                    VariantType.Null,
+                    VariantType.String,
+                    VariantType.DateTime,
+                    VariantType.ExtensionObject,
+                    ):
                 raise UaError(
                     f"Non array Variant of type {self.VariantType} cannot have value None"
                 )
