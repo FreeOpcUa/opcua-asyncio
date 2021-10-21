@@ -29,7 +29,7 @@ class Client:
     use UaClient object, available as self.uaclient
     which offers the raw OPC-UA services interface.
     """
-    def __init__(self, url: str, timeout: int = 4):
+    def __init__(self, url: str, timeout: float = 4):
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
