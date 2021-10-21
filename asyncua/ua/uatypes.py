@@ -185,7 +185,7 @@ def win_epoch_to_datetime(epch):
         return datetime(MAXYEAR, 12, 31, 23, 59, 59, 999999)
 
 
-FROZEN = False
+FROZEN: bool = False
 
 
 class ValueRank(IntEnum):
