@@ -2,6 +2,9 @@
 High level functions to create nodes
 """
 import logging
+from enum import Enum
+import inspect
+
 from asyncua import ua
 from .instantiate_util import instantiate
 from .node_factory import make_node
@@ -425,9 +428,15 @@ def _vtype_to_argument(vtype):
     arg = ua.Argument()
     if hasattr(vtype, "data_type"):
         arg.DataType = vtype.data_type
+    elif inspect.isclass(vtype) and issubclass(vtype, Enum):
+        arg.DataType = ua.enums_datatypes[vtype]
     elif isinstance(vtype, ua.VariantType):
         arg.DataType = ua.NodeId(vtype.value)
-    elif hasattr(ua.VariantType, vtype.__name__):
+    elif isinstance(vtype, ua.NodeId):
+        arg.DataType = vtype
+    elif hasattr(vtype, "nodeid"):  # NodeId case but we cannot import Node object here
+        arg.DataType = vtype.nodeid
+    elif hasattr(vtype, "__name__") and hasattr(ua.VariantType, vtype.__name__):
         arg.DataType = ua.NodeId(ua.VariantType[vtype.__name__].value)
     else:
         arg.DataType = ua.NodeId(vtype)
