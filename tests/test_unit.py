@@ -30,21 +30,31 @@ EXAMPLE_BSD_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "exam
 
 
 def test_variant_array_none():
-    v = ua.Variant(None, VariantType=ua.VariantType.Int32, is_array=True)
+    v = ua.Variant(None, VariantType=ua.VariantType.Int32, Dimensions=[0])
     data = variant_to_binary(v)
     v2 = variant_from_binary(ua.utils.Buffer(data))
     assert v == v2
     assert v2.is_array
+    assert v2.Dimensions == [0]
 
-    v = ua.Variant(None, VariantType=ua.VariantType.Null, is_array=True)
+    v = ua.Variant(None, VariantType=ua.VariantType.Null, Dimensions=[0])
     data = variant_to_binary(v)
     v2 = variant_from_binary(ua.utils.Buffer(data))
     assert v == v2
     assert v2.is_array
+    assert v2.Dimensions == [0]
+
+    v = ua.Variant(None, VariantType=ua.VariantType.Null, Dimensions=None)
+    data = variant_to_binary(v)
+    v2 = variant_from_binary(ua.utils.Buffer(data))
+    assert v == v2
+    assert not v2.is_array
+    assert v2.Dimensions == None
+
 
 
 def test_variant_empty_list():
-    v = ua.Variant([], VariantType=ua.VariantType.Int32, is_array=True)
+    v = ua.Variant([], VariantType=ua.VariantType.Int32, Dimensions=[0])
     data = variant_to_binary(v)
     v2 = variant_from_binary(ua.utils.Buffer(data))
     assert v == v2
