@@ -71,7 +71,11 @@ class Server:
     :ivar iserver: `InternalServer` instance
     :ivar bserver: binary protocol server `BinaryServer`
     :ivar nodes: shortcuts to common nodes - `Shortcuts` instance
-    :ivar bind_socket_description: A tuple describing the listen server socket
+    :ivar socket_address:
+        A tuple of IP address and port describing the server socket address. Used when the IP address of the network
+        interface is different from the endpoint IP offered to the client during discovery. Helpful when the server
+        is running behind NAT or inside a Docker container, where the client connects to an external IP, while the
+        server listens on some internal IP.
     """
 
     def __init__(self, iserver: InternalServer = None, user_manager=None):
@@ -84,7 +88,7 @@ class Server:
         self.default_timeout: int = 60 * 60 * 1000
         self.iserver = iserver if iserver else InternalServer(user_manager=user_manager)
         self.bserver: Optional[BinaryServer] = None
-        self.bind_socket_description: Optional[Tuple[str, int]] = None
+        self.socket_address: Optional[Tuple[str, int]] = None
         self._discovery_clients = {}
         self._discovery_period = 60
         self._discovery_handle = None
@@ -113,6 +117,14 @@ class Server:
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
 
     def set_match_discovery_client_ip(self, match_discovery_client_ip: bool):
+        """
+        Enables or disables the matching of an endpoint IP to a client IP during discovery.
+
+        When True (default), the IP address of endpoints sent during the discovery is modified to an IP address
+        of the server network interface used to communicate with the client. Disabling comes handy when the real
+        client IP is different from the client IP that the server sees (e.g., behind NAT or inside Docker container).
+        Do not call unless you know what you are doing.
+        """
         self.iserver.match_discovery_source_ip = match_discovery_client_ip
 
     async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
@@ -404,8 +416,8 @@ class Server:
             _logger.debug("%s server started", self)
 
     def _get_bind_socket_info(self) -> Tuple[str, int]:
-        if self.bind_socket_description is not None:
-            return self.bind_socket_description
+        if self.socket_address is not None:
+            return self.socket_address
         else:
             return self.endpoint.hostname, self.endpoint.port
 

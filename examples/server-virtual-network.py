@@ -33,7 +33,7 @@ async def main():
     idx = await server.register_namespace(uri)
 
     # setting the network properties
-    server.bind_socket_description = ("0.0.0.0", 4840)
+    server.socket_address = ("0.0.0.0", 4840)
     server.set_match_discovery_client_ip(False)
 
     # populating our address space
