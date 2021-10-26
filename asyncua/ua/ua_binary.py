@@ -169,6 +169,7 @@ class Primitives(Primitives1):
     Guid = _Guid()
 
 
+@functools.lru_cache(maxsize=None)
 def create_uatype_serializer(vtype):
     if hasattr(Primitives, vtype.name):
         return getattr(Primitives, vtype.name).pack
@@ -205,15 +206,23 @@ def unpack_uatype(vtype, data):
     raise UaError(f'Cannot unpack unknown variant type {vtype}')
 
 
-def pack_uatype_array(vtype, array):
+@functools.lru_cache(maxsize=None)
+def create_uatype_array_serializer(vtype):
     if hasattr(Primitives1, vtype.name):
         data_type = getattr(Primitives1, vtype.name)
-        return data_type.pack_array(array)
-    if array is None:
-        return b'\xff\xff\xff\xff'
+        return data_type.pack_array
     serializer = create_uatype_serializer(vtype)
-    return Primitives.Int32.pack(len(array)) + \
-        b"".join(serializer(val) for val in array)
+
+    def serialize(array):
+        if array is None:
+            return b'\xff\xff\xff\xff'
+        length = Primitives.Int32.pack(len(array))
+        return length + b"".join(serializer(val) for val in array)
+    return serialize
+
+
+def pack_uatype_array(vtype, array):
+    return create_uatype_array_serializer(vtype)(array)
 
 
 def unpack_uatype_array(vtype, data):
@@ -302,6 +311,7 @@ def create_type_serializer(uatype):
 
 def to_binary(uatype, val):
     return create_type_serializer(uatype)(val)
+
 
 @functools.lru_cache(maxsize=None)
 def create_list_serializer(uatype) -> Callable[[Any], bytes]:
