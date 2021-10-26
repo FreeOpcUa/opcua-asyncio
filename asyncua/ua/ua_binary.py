@@ -2,12 +2,13 @@
 Binary protocol specific functions and constants
 """
 
+import functools
 import struct
 import logging
+from typing import Any, Callable
 import uuid
 from enum import IntEnum, Enum, IntFlag
-from dataclasses import is_dataclass, fields
-
+from dataclasses import is_dataclass, fields, Field
 from asyncua import ua
 from .uaerrors import UaError
 from ..common.utils import Buffer
@@ -168,18 +169,22 @@ class Primitives(Primitives1):
     Guid = _Guid()
 
 
-def pack_uatype(vtype, value):
+def create_uatype_serializer(vtype):
     if hasattr(Primitives, vtype.name):
-        return getattr(Primitives, vtype.name).pack(value)
+        return getattr(Primitives, vtype.name).pack
     if vtype.value > 25:
-        return Primitives.Bytes.pack(value)
+        return Primitives.Bytes.pack
     if vtype == ua.VariantType.ExtensionObject:
-        return extensionobject_to_binary(value)
+        return extensionobject_to_binary
     if vtype in (ua.VariantType.NodeId, ua.VariantType.ExpandedNodeId):
-        return nodeid_to_binary(value)
+        return nodeid_to_binary
     if vtype == ua.VariantType.Variant:
-        return variant_to_binary(value)
-    return struct_to_binary(value)
+        return variant_to_binary
+    return struct_to_binary
+
+
+def pack_uatype(vtype, value):
+    return create_uatype_serializer(vtype)(value)
 
 
 def unpack_uatype(vtype, data):
@@ -206,10 +211,9 @@ def pack_uatype_array(vtype, array):
         return data_type.pack_array(array)
     if array is None:
         return b'\xff\xff\xff\xff'
-    length = len(array)
-    b = [pack_uatype(vtype, val) for val in array]
-    b.insert(0, Primitives.Int32.pack(length))
-    return b"".join(b)
+    serializer = create_uatype_serializer(vtype)
+    return Primitives.Int32.pack(len(array)) + \
+        b"".join(serializer(val) for val in array)
 
 
 def unpack_uatype_array(vtype, data):
@@ -224,68 +228,103 @@ def unpack_uatype_array(vtype, data):
     return [unpack_uatype(vtype, data) for _ in range(length)]
 
 
-def struct_to_binary(obj):
-    packet = []
-    enc_count = 0
-    enc = 0
-    for field in fields(obj):
-        if type_is_union(field.type):
-            if getattr(obj, field.name) is not None:
-                enc = enc | 1 << enc_count
-            enc_count += 1
-
-    for field in fields(obj):
-        uatype = field.type
-        if field.name == "Encoding":
-            packet.append(Primitives.Byte.pack(enc))
-            continue
-        val = getattr(obj, field.name)
-        if type_is_union(uatype):
-            uatype = type_from_union(uatype)
-        if type_is_list(uatype):
-            packet.append(list_to_binary(type_from_list(uatype), val))
+def field_serializer(field: Field) -> Callable[[Any], bytes]:
+    is_optional = type_is_union(field.type)
+    uatype = field.type
+    if is_optional:
+        uatype = type_from_union(uatype)
+    if type_is_list(uatype):
+        return create_list_serializer(type_from_list(uatype))
+    else:
+        serializer = create_type_serializer(uatype)
+        if is_optional:
+            return lambda val: b'' if val is None else serializer(val)
         else:
-            if val is None and type_is_union(field.type):
-                pass
-            else:
-                packet.append(to_binary(uatype, val))
-    return b''.join(packet)
+            return serializer
+
+
+@functools.lru_cache(maxsize=None)
+def create_dataclass_serializer(dataclazz):
+    """Given a dataclass, return a function that serializes instances of this dataclass"""
+    data_fields = fields(dataclazz)
+    union_fields_encodings = [  # Name and binary encoding of optional fields
+        (field.name, 1 << enc_count)
+        for enc_count, field
+        in enumerate(filter(lambda f: type_is_union(f.type), data_fields))
+    ]
+
+    def serialize_encoding(obj):
+        enc = 0
+        for name, enc_val in union_fields_encodings:
+            if obj.__dict__[name] is not None:
+                enc |= enc_val
+        return Primitives.Byte.pack(enc)
+
+    encoding_functions = [(f.name, field_serializer(f)) for f in data_fields]
+
+    def serialize(obj):
+        return b''.join(
+            serialize_encoding(obj) if name == 'Encoding'
+            else serializer(obj.__dict__[name])
+            for name, serializer in encoding_functions
+        )
+
+    return serialize
+
+
+def struct_to_binary(obj):
+    serializer = create_dataclass_serializer(obj.__class__)
+    return serializer(obj)
+
+
+@functools.lru_cache(maxsize=None)
+def create_type_serializer(uatype):
+    """Create a binary serialization function for the given UA type"""
+    if type_is_list(uatype):
+        return create_list_serializer(type_from_list(uatype))
+    if hasattr(Primitives, uatype.__name__):
+        return getattr(Primitives, uatype.__name__).pack
+    if issubclass(uatype, Enum):
+        return lambda val: \
+            Primitives.Int32.pack(val.value) if isinstance(val, (IntEnum, Enum, IntFlag)) \
+            else Primitives.Int32.pack(val)
+    if hasattr(ua.VariantType, uatype.__name__):
+        vtype = getattr(ua.VariantType, uatype.__name__)
+        return create_uatype_serializer(vtype)
+    if issubclass(uatype, ua.NodeId):
+        return nodeid_to_binary
+    if issubclass(uatype, ua.Variant):
+        return variant_to_binary
+    if is_dataclass(uatype):
+        return create_dataclass_serializer(uatype)
+    raise UaError(f'No known way to pack value of type {uatype} to ua binary')
 
 
 def to_binary(uatype, val):
+    return create_type_serializer(uatype)(val)
+
+@functools.lru_cache(maxsize=None)
+def create_list_serializer(uatype) -> Callable[[Any], bytes]:
     """
-    Pack a python object to binary given a type hint
+    Given a type, return a function that takes a list of instances
+    of that type and serializes it.
     """
-    if type_is_list(uatype):
-        return list_to_binary(type_from_list(uatype), val)
-    if hasattr(Primitives, uatype.__name__):
-        return getattr(Primitives, uatype.__name__).pack(val)
-    if issubclass(uatype, Enum):
-        if isinstance(val, (IntEnum, Enum, IntFlag)):
-            return Primitives.Int32.pack(val.value)
-        return Primitives.Int32.pack(val)
-    if hasattr(ua.VariantType, uatype.__name__):
-        vtype = getattr(ua.VariantType, uatype.__name__)
-        return pack_uatype(vtype, val)
-    if isinstance(val, ua.NodeId):
-        return nodeid_to_binary(val)
-    if isinstance(val, ua.Variant):
-        return variant_to_binary(val)
-    if is_dataclass(val):
-        return struct_to_binary(val)
-    raise UaError(f'No known way to pack {val} of type {uatype} to ua binary')
+    if hasattr(Primitives1, uatype.__name__):
+        data_type = getattr(Primitives1, uatype.__name__)
+        return data_type.pack_array
+    type_serializer = create_type_serializer(uatype)
+    none_val = Primitives.Int32.pack(-1)
+
+    def serialize(val):
+        if val is None:
+            return none_val
+        data_size = Primitives.Int32.pack(len(val))
+        return data_size + b''.join(type_serializer(el) for el in val)
+    return serialize
 
 
 def list_to_binary(uatype, val):
-    if val is None:
-        return Primitives.Int32.pack(-1)
-    if hasattr(Primitives1, uatype.__name__):
-        data_type = getattr(Primitives1, uatype.__name__)
-        return data_type.pack_array(val)
-    data_size = Primitives.Int32.pack(len(val))
-    pack = [to_binary(uatype, el) for el in val]
-    pack.insert(0, data_size)
-    return b''.join(pack)
+    return create_list_serializer(uatype)(val)
 
 
 def nodeid_to_binary(nodeid):
@@ -430,9 +469,9 @@ def extensionobject_from_binary(data):
     else:
         body_data = None
     e = ua.ExtensionObject(
-            TypeId=typeid,
-            Body=body_data,
-            )
+        TypeId=typeid,
+        Body=body_data,
+    )
     return e
 
 
