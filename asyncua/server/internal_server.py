@@ -72,6 +72,7 @@ class InternalServer:
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         self.time_task = None
         self._time_task_stop = False
+        self.match_discovery_source_ip: bool = True 
 
     async def init(self, shelffile=None):
         await self.load_standard_address_space(shelffile)
@@ -206,7 +207,8 @@ class InternalServer:
             for edp in self.endpoints:
                 edp1 = copy(edp)
                 url = urlparse(edp1.EndpointUrl)
-                url = url._replace(netloc=sockname[0] + ':' + str(sockname[1]))
+                if self.match_discovery_source_ip:
+                    url = url._replace(netloc=sockname[0] + ':' + str(sockname[1]))
                 edp1.EndpointUrl = url.geturl()
                 edps.append(edp1)
             return edps
