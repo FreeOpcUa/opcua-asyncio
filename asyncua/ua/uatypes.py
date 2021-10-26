@@ -758,7 +758,7 @@ class VariantTypeCustom:
     """
     Looks like sometime we get variant with other values than those
     defined in VariantType.
-    FIXME: We should not need this class, as far as I iunderstand the spec
+    FIXME: We should not need this class, as far as I understand the spec
     variants can only be of VariantType
     """
 
@@ -776,7 +776,10 @@ class VariantTypeCustom:
     __repr__ = __str__
 
     def __eq__(self, other):
-        return self.value == other.value
+        return isinstance(other, type(self)) and self.value == other.value
+    
+    def __hash__(self) -> int:
+        return self.value.__hash__()
 
 
 @dataclass(frozen=True)
