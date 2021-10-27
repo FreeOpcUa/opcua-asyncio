@@ -1405,7 +1405,7 @@ async def test_custom_method_with_struct(opc):
         ua.NodeId("ServerMethodWithStruct", 10),
         ua.QualifiedName('ServerMethodWithStruct', 10),
         func, [ua.MyStructArg], [ua.MyStructArg]
-        )
+    )
 
     mystruct = ua.MyStructArg()
     mystruct.MyUInt32 = [78, 79]
@@ -1415,3 +1415,28 @@ async def test_custom_method_with_struct(opc):
     result = await opc.opc.nodes.objects.call_method(methodid, mystruct)
 
     assert result.MyUInt32 == [78, 79, 100]
+
+
+async def test_custom_method_with_enum(opc):
+    idx = 4
+    enum_node = await new_enum(opc.opc, idx, "MyCustEnumForMethod", [
+        "titi",
+        "toto",
+    ])
+
+    await opc.opc.load_data_type_definitions()
+
+    @uamethod
+    def func(parent, myenum1, myenum2, myenum3):
+        assert myenum1 == ua.MyCustEnumForMethod.titi
+        return ua.MyCustEnumForMethod.toto
+
+    methodid = await opc.server.nodes.objects.add_method(
+        ua.NodeId("servermethodwithenum", 10),
+        ua.QualifiedName('servermethodwithenum', 10),
+        func, [ua.MyCustEnumForMethod, enum_node, enum_node.nodeid], [ua.MyCustEnumForMethod]
+    )
+
+    result = await opc.opc.nodes.objects.call_method(methodid, ua.MyCustEnumForMethod.titi, ua.MyCustEnumForMethod.titi, ua.MyCustEnumForMethod.titi)
+
+    assert result == ua.MyCustEnumForMethod.toto

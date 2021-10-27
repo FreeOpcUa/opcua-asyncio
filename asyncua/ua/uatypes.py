@@ -185,7 +185,7 @@ def win_epoch_to_datetime(epch):
         return datetime(MAXYEAR, 12, 31, 23, 59, 59, 999999)
 
 
-FROZEN = False
+FROZEN: bool = False
 
 
 class ValueRank(IntEnum):
@@ -758,7 +758,7 @@ class VariantTypeCustom:
     """
     Looks like sometime we get variant with other values than those
     defined in VariantType.
-    FIXME: We should not need this class, as far as I iunderstand the spec
+    FIXME: We should not need this class, as far as I understand the spec
     variants can only be of VariantType
     """
 
@@ -776,7 +776,10 @@ class VariantTypeCustom:
     __repr__ = __str__
 
     def __eq__(self, other):
-        return self.value == other.value
+        return isinstance(other, type(self)) and self.value == other.value
+    
+    def __hash__(self) -> int:
+        return self.value.__hash__()
 
 
 @dataclass(frozen=True)
@@ -792,26 +795,22 @@ class Variant:
     :ivar VariantType:
     :vartype VariantType: VariantType
     :ivar Dimension:
-    :vartype Dimensions: The length of each dimensions. Usually guessed from value.
-    :ivar is_array:
-    :vartype is_array: If the variant is an array. Usually guessed from value.
+    :vartype Dimensions: The length of each dimensions. Usually guessed from value. [0] mean 1D array without length limit
     """
 
-    # FIXME: typing is wrong here
     Value: Any = None
     VariantType: VariantType = None
     Dimensions: Optional[Int32] = None
-    is_array: bool = False
 
     def __post_init__(self):
-        if self.is_array is None:
-            if isinstance(self.Value, (list, tuple)):
-                object.__setattr__(self, "is_array", True)
-            else:
-                object.__setattr__(self, "is_array", False)
         if isinstance(self.Value, Variant):
             object.__setattr__(self, "VariantType", self.Value.VariantType)
             object.__setattr__(self, "Value", self.Value.Value)
+
+        if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
+            dims = get_shape(self.Value)
+            object.__setattr__(self, "Dimensions", dims)
+
         if not isinstance(self.VariantType, (VariantType, VariantTypeCustom)):
             if self.VariantType is None:
                 object.__setattr__(self, "VariantType", self._guess_type(self.Value))
@@ -820,27 +819,25 @@ class Variant:
                     object.__setattr__(self, "VariantType", VariantType[self.VariantType.__name__])
                 else:
                     raise ValueError("VariantType argument must be an instance of VariantType")
-        if (
-            self.Value is None
-            and not self.is_array
-            and self.VariantType
-            not in (
-                VariantType.Null,
-                VariantType.String,
-                VariantType.DateTime,
-                VariantType.ExtensionObject,
-            )
-        ):
-            if self.Value is None and self.VariantType == VariantType.NodeId:
+
+        if self.Value is None and not self.is_array:
+            # only some types of Variants can be NULL when not in an array
+            if self.VariantType == VariantType.NodeId:
+                # why do we rewrite this case and not the others?
                 object.__setattr__(self, "Value", NodeId(0, 0))
-            else:
+            elif self.VariantType not in (
+                    VariantType.Null,
+                    VariantType.String,
+                    VariantType.DateTime,
+                    VariantType.ExtensionObject,
+                    ):
                 raise UaError(
                     f"Non array Variant of type {self.VariantType} cannot have value None"
                 )
-        if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
-            dims = get_shape(self.Value)
-            if len(dims) > 1:
-                object.__setattr__(self, "Dimensions", dims)
+
+    @property
+    def is_array(self):
+        return self.Dimensions is not None
 
     def __eq__(self, other):
         if (

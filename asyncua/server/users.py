@@ -4,6 +4,7 @@ Implement user management here.
 
 from enum import Enum
 from dataclasses import dataclass
+from typing import Optional
 
 
 class UserRole(Enum):
@@ -18,4 +19,4 @@ class UserRole(Enum):
 @dataclass
 class User:
     role: UserRole = UserRole.Anonymous
-    name: str = None
+    name: Optional[str] = None
