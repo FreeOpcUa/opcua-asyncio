@@ -10,6 +10,9 @@ import asyncio
 from datetime import datetime
 from datetime import timedelta
 import math
+import tempfile
+import os
+import contextlib
 
 import pytest
 
@@ -408,7 +411,7 @@ async def test_datetime_write_value(opc):
 async def test_variant_array_dim(opc):
     objects = opc.opc.nodes.objects
     l = [[[1.0, 1.0, 1.0, 1.0], [2.0, 2.0, 2.0, 2.0], [3.0, 3.0, 3.0, 3.0]],
-         [[5.0, 5.0, 5.0, 5.0], [7.0, 8.0, 9.0, 01.0], [1.0, 1.0, 1.0, 1.0]]]
+         [[5.0, 5.0, 5.0, 5.0], [7.0, 8.0, 9.0, 1.0], [1.0, 1.0, 1.0, 1.0]]]
     v = await objects.add_variable(3, 'variableWithDims', l)
 
     await v.write_array_dimensions([0, 0, 0])
@@ -1300,6 +1303,13 @@ async def test_custom_struct_with_enum(opc):
     assert val.MyEnum == ua.MyCustEnum2.tutu
 
 
+@contextlib.contextmanager
+def expect_file_creation(filename:str):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = os.path.join(tmpdir, filename)
+        yield path
+        assert os.path.isfile(path), f"File {path} should have been created"
+
 async def test_custom_struct_export(opc):
     idx = 4
 
@@ -1307,8 +1317,8 @@ async def test_custom_struct_export(opc):
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
     ])
-
-    await opc.opc.export_xml([dtype, *encs], "custom_struct_export.xml")
+    with expect_file_creation("custom_struct_export.xml") as path:
+        await opc.opc.export_xml([dtype, *encs], path)
 
 
 async def test_custom_enum_export(opc):
@@ -1319,8 +1329,8 @@ async def test_custom_enum_export(opc):
         "toto",
         "tutu",
     ])
-    path = "custom_enum_export.xml"
-    await opc.opc.export_xml([dtype], path )
+    with expect_file_creation("custom_enum_export.xml") as path:
+        await opc.opc.export_xml([dtype], path)
 
 
 async def test_custom_enum_import(opc):
@@ -1329,7 +1339,8 @@ async def test_custom_enum_import(opc):
     node = nodes[0]
     sdef = await node.read_data_type_definition()
     assert sdef.Fields[0].Name == "titi"
-    await opc.opc.export_xml(nodes, "tests/custom_enum_v2.xml")
+    with expect_file_creation("custom_enum_v2.xml") as path:
+        await opc.opc.export_xml(nodes, path)
 
 
 async def test_custom_struct_import(opc):
@@ -1339,8 +1350,8 @@ async def test_custom_struct_import(opc):
     sdef = await node.read_data_type_definition()
     assert sdef.StructureType == ua.StructureType.Structure
     assert sdef.Fields[0].Name == "MyBool"
-
-    await opc.opc.export_xml(nodes, "tests/custom_struct_v2.xml")
+    with expect_file_creation("custom_enum_v2.xml") as path:
+        await opc.opc.export_xml(nodes, path)
 
 
 async def test_enum_string_identifier_and_spaces(opc):
