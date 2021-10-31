@@ -159,7 +159,7 @@ class Cryptography(CryptographyNone):
             rem = block_size - rem
         data = bytes(bytearray([rem % 256])) * (rem + 1)
         if self.Encryptor.encrypted_block_size() > 256:
-            data = data + bytes(bytearray([rem >> 8]))
+            data += bytes(bytearray([rem >> 8]))
         return data
 
     def min_padding_size(self):
@@ -599,7 +599,7 @@ class SecurityPolicyBasic256(SecurityPolicy):
             self.symmetric_cryptography.prev_key_expiration = self.symmetric_cryptography.key_expiration
 
         # convert lifetime to seconds and add the 25% extra-margin (Part4/5.5.2)
-        lifetime = lifetime * 1.25 * 0.001
+        lifetime *= 1.25 * 0.001
         self.symmetric_cryptography.key_expiration = time.time() + lifetime
         self.symmetric_cryptography.Verifier = VerifierAesCbc(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
