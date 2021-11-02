@@ -3,10 +3,7 @@ Low level implementation of OPC UA File Transfer.
 This module contains the mandatory functionality specified
 by the OPC Foundation.
 
-The Read() and Write() functions only support files up to about 16MB in size.
-Larger files must be transferred in several 'pieces'.
-
-See:
+See also:
 OPC 10000-5: OPC Unified Architecture V1.04
 Part 5: Information Model - Annex C (normative) File Transfer
 https://reference.opcfoundation.org/Core/docs/Part5/C.1/
@@ -44,7 +41,7 @@ class UaFile:
         :param open_mode: Open mode defined in C.2.1.
         :return: The file handle.
         """
-        _logger.debug(f"Request to open file {self._file_node} in mode:  {OpenFileMode}")
+        _logger.debug("Request to open file %s in mode: %s", self._file_node, OpenFileMode)
         open_node = await self._file_node.get_child("Open")
         arg1_mode = Variant(open_mode or self._open_mode, VariantType.Byte)
         self._file_handle = await self._file_node.call_method(open_node, arg1_mode)
@@ -54,7 +51,7 @@ class UaFile:
         Close is used to close a file represented by a FileType.
         When a client closes a file the handle becomes invalid.
         """
-        _logger.debug(f"Request to close file {self._file_node}")
+        _logger.debug("Request to close file %s", self._file_node)
         read_node = await self._file_node.get_child("Close")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
         await self._file_node.call_method(read_node, arg1_file_handle)
@@ -66,7 +63,7 @@ class UaFile:
         :return: Contains the returned data of the file.
         If the ByteString is empty it indicates that the end of the file is reached.
         """
-        _logger.debug(f"Request to read from file {self._file_node}")
+        _logger.debug("Request to read from file %s", self._file_node)
         size = await self.get_size()
         read_node = await self._file_node.get_child("Read")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
@@ -80,9 +77,10 @@ class UaFile:
         :param data: Contains the data to be written at the position of the file.
         It is server-dependent whether the written data are persistently
         stored if the session is ended without calling the Close Method with the fileHandle.
-        Writing an empty or null ByteString returns a Good result code without any affect on the file.
+        Writing an empty or null ByteString returns a Good result code without any
+        affect on the file.
         """
-        _logger.debug(f"Request to write to file {self._file_node}")
+        _logger.debug("Request to write to file %s", self._file_node)
         write_node = await self._file_node.get_child("Write")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
         arg2_data = Variant(data, VariantType.ByteString)
@@ -94,7 +92,7 @@ class UaFile:
         :return: The position of the fileHandle in the file.
         If a Read or Write is called it starts at that position.
         """
-        _logger.debug(f"Request to get position from file {self._file_node}")
+        _logger.debug("Request to get position from file %s", self._file_node)
         get_position_node = await self._file_node.get_child("GetPosition")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
         return await self._file_node.call_method(get_position_node, arg1_file_handle)
@@ -106,7 +104,7 @@ class UaFile:
         If a Read or Write is called it starts at that position.
         If the position is higher than the file size the position is set to the end of the file.
         """
-        _logger.debug(f"Request to set position in file {self._file_node}")
+        _logger.debug("Request to set position in file %s", self._file_node)
         set_position_node = await self._file_node.get_child("SetPosition")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
         arg2_position = Variant(position, VariantType.UInt64)
@@ -118,7 +116,7 @@ class UaFile:
         When a file is opened for write the size might not be accurate.
         :return: The size of the file in Bytes.
         """
-        _logger.debug(f"Request to get size of file {self._file_node}")
+        _logger.debug("Request to get size of file %s", self._file_node)
         size_node = await self._file_node.get_child("Size")
         return await size_node.read_value()
 
@@ -131,7 +129,7 @@ class UaFile:
         opened for writing by another client and thus currently locked and not writable by others.
         :return:
         """
-        _logger.debug(f"Request to get writable of file {self._file_node}")
+        _logger.debug("Request to get writable of file %s", self._file_node)
         writable_node = await self._file_node.get_child("Writable")
         return await writable_node.read_value()
 
@@ -142,7 +140,7 @@ class UaFile:
         for writing by another client and thus currently locked and not writable by others.
         :return: Indicates whether the file is writable taking user access rights into account
         """
-        _logger.debug(f"Request to get user writable of file {self._file_node}")
+        _logger.debug("Request to get user writable of file %s", self._file_node)
         user_writable_node = await self._file_node.get_child("UserWritable")
         return await user_writable_node.read_value()
 
@@ -151,7 +149,7 @@ class UaFile:
         OpenCount indicates the number of currently valid file handles on the file.
         :return: Amount of currently valid file handles on the file
         """
-        _logger.debug(f"Request to get open count of file {self._file_node}")
+        _logger.debug("Request to get open count of file %s", self._file_node)
         open_count_node = await self._file_node.get_child("OpenCount")
         return await open_count_node.read_value()
 
@@ -175,7 +173,7 @@ class UaDirectory:
         The locale part is Server specific.
         :return: The NodeId of the created directory Object.
         """
-        _logger.debug(f"Request to create directory {directory_name} in {self._directory_node}")
+        _logger.debug("Request to create directory %s in %s", directory_name, self._directory_node)
         create_directory_node = await self._directory_node.get_child("CreateDirectory")
         arg1_directory_name = Variant(directory_name, VariantType.String)
         return await self._directory_node.call_method(create_directory_node, arg1_directory_name)
@@ -201,12 +199,14 @@ class UaDirectory:
         If requestFileOpen is set to False, the returned value shall be 0
         and shall be ignored by the caller.
         """
-        _logger.debug(f"Request to create file {file_name} in {self._directory_node}")
+        _logger.debug("Request to create file %s in %s", file_name, self._directory_node)
         print(f"Request to create file {file_name} in {self._directory_node}")
         create_file_node = await self._directory_node.get_child("CreateFile")
         arg1_file_name = Variant(file_name, VariantType.String)
         arg2_request_file_open = Variant(request_file_open, VariantType.Boolean)
-        return await self._directory_node.call_method(create_file_node, arg1_file_name, arg2_request_file_open)
+        return await self._directory_node.call_method(create_file_node,
+                                                      arg1_file_name,
+                                                      arg2_request_file_open)
 
     async def delete(self, object_to_delete: NodeId) -> None:
         """
@@ -215,7 +215,7 @@ class UaDirectory:
         In the case of a directory, all file and directory Objects below the
         directory to delete are deleted recursively.
         """
-        _logger.debug(f"Request to delete file {object_to_delete} from {self._directory_node}")
+        _logger.debug("Request to delete file %s from %s", object_to_delete, self._directory_node)
         delete_node = await self._directory_node.get_child("Delete")
         await self._directory_node.call_method(delete_node, object_to_delete)
 
@@ -238,10 +238,13 @@ class UaDirectory:
         :return: The NodeId of the moved or copied object. Even if the Object is moved,
         the Server may return a new NodeId.
         """
-        _logger.debug(f"Request to {'' if create_copy else 'move'}{'copy' if create_copy else ''} "
-                     f"file system object {object_to_move_or_copy} "
-                     f"from {self._directory_node} to {target_directory} "
-                     f", new name={new_name}")
+        _logger.debug("Request to %s%s file system object %s from %s to %s, new name=%s",
+                      '' if create_copy else 'move',
+                      'copy' if create_copy else '',
+                      object_to_move_or_copy,
+                      self._directory_node,
+                      target_directory,
+                      new_name)
         move_or_copy_node = await self._directory_node.get_child("MoveOrCopy")
         arg3_create_copy = Variant(create_copy, VariantType.Boolean)
         arg4_new_name = Variant(new_name, VariantType.String)
