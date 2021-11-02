@@ -242,7 +242,7 @@ class _MaskEnum(IntEnum):
         while n:
             if n & 0x1:
                 yield pos
-            n = n // 2
+            n //= 2
             pos += 1
 
 
