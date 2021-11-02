@@ -27,6 +27,9 @@ _logger = logging.getLogger("asyncua")
 
 
 async def task():
+    """All communication takes place within this task.
+    For the sake of simplicity, all (OPC UA) calls are executed purely sequentially.
+    """
     url = "opc.tcp://localhost:4840/freeopcua/server/"
 
     async with Client(url=url) as client:
@@ -41,6 +44,8 @@ async def task():
         remote_file_content = None
         async with UaFile(remote_file_node, OpenFileMode.Read.value) as remote_file:
             remote_file_content = await remote_file.read()
+        print("File content:")
+        print(remote_file_content, end="\n\n")
 
         # Create file on server
         new_file_name = "new_file.txt"
@@ -48,7 +53,7 @@ async def task():
         try:
             await ua_dir.create_file(new_file_name, False)
         except uaerrors.BadBrowseNameDuplicated:
-            _logger.warning(f"=> File '{new_file_name}' already exists on server.")
+            _logger.warning("=> File '%s' already exists on server.", new_file_name)
 
         # Write to file on server
         file_content = ("I am a random file\n" * 3).encode('utf-8')
@@ -56,13 +61,15 @@ async def task():
         remote_file_node = await remote_file_system.get_child(f"{uri}:{new_file_name}")
         # In order to write to a file, you need the OpenFileModes "Write"
         # and one of the following "Append" or "EraseExisting". (OPC UA typical too)
-        async with UaFile(remote_file_node, OpenFileMode.Write + OpenFileMode.EraseExisting) as remote_file:
+        async with UaFile(remote_file_node,
+                          OpenFileMode.Write + OpenFileMode.EraseExisting) as remote_file:
             await remote_file.write(file_content)
 
         # Append to file on server
         file_content = ("I am appended text\n" * 3).encode('utf-8')
         remote_file_node = await remote_file_system.get_child(f"{uri}:{new_file_name}")
-        async with UaFile(remote_file_node, OpenFileMode.Write + OpenFileMode.Append) as remote_file:
+        async with UaFile(remote_file_node,
+                          OpenFileMode.Write + OpenFileMode.Append) as remote_file:
             await remote_file.write(file_content)
 
         # Get size of remote file
@@ -73,7 +80,7 @@ async def task():
         try:
             await ua_dir.delete(remote_file_node.nodeid)
         except uaerrors.BadNotFound:
-            _logger.warning(f"File {remote_file_node} not found on server.")
+            _logger.warning("File %s not found on server.", remote_file_node)
 
 
 if __name__ == "__main__":
