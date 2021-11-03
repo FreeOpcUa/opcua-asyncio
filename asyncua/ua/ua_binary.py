@@ -404,21 +404,21 @@ def nodeid_from_binary(data):
 
 
 def variant_to_binary(var):
-    b = []
     encoding = var.VariantType.value & 0b111111
     if var.is_array or isinstance(var.Value, (list, tuple)):
         encoding = set_bit(encoding, 7)
         if var.Dimensions is not None:
             encoding = set_bit(encoding, 6)
-        b.append(Primitives.Byte.pack(encoding))
-        b.append(pack_uatype_array(var.VariantType, ua.flatten(var.Value)))
-        if var.Dimensions is not None:
-            b.append(pack_uatype_array(ua.VariantType.Int32, var.Dimensions))
+        return (
+            Primitives.Byte.pack(encoding) +
+            pack_uatype_array(var.VariantType, ua.flatten(var.Value)) +
+            (b'' if var.Dimensions is None else pack_uatype_array(ua.VariantType.Int32, var.Dimensions))
+        )
     else:
-        b.append(Primitives.Byte.pack(encoding))
-        b.append(pack_uatype(var.VariantType, var.Value))
-
-    return b"".join(b)
+        return (
+            Primitives.Byte.pack(encoding) +
+            pack_uatype(var.VariantType, var.Value)
+        )
 
 
 def variant_from_binary(data):
