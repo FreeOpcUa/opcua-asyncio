@@ -118,7 +118,8 @@ class HaClient:
 
         # The locks must be created in async method!
         # caling get_running_loop just to make sure we crash if not called in async method
-        self._url_to_reset_lock = asyncio.Lock(loop=asyncio.get_running_loop())
+        _ = asyncio.get_running_loop()
+        self._url_to_reset_lock = asyncio.Lock()
         self._ideal_map_lock: asyncio.Lock = asyncio.Lock()
         self._client_lock: asyncio.Lock = asyncio.Lock()
 
