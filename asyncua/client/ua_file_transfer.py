@@ -10,8 +10,8 @@ https://reference.opcfoundation.org/Core/docs/Part5/C.1/
 """
 import logging
 
-from asyncua.ua import OpenFileMode, Variant, VariantType, NodeId
 from asyncua.common.node import Node
+from asyncua.ua import NodeId, OpenFileMode, Variant, VariantType 
 
 _logger = logging.getLogger(__name__)
 
@@ -21,9 +21,19 @@ class UaFile:
     Provides the functionality to work with "C.2 FileType".
     """
     def __init__(self, file_node: Node, open_mode: OpenFileMode = OpenFileMode.Read.value):
+        """
+        Initializes a new instance of the UaFile class.
+        :param file_node: The node of the file to open.
+        :param open_mode: The open mode, see: asyncua.ua.OpenFileMode.
+        """
         self._file_node = file_node
         self._open_mode = open_mode
+        
         self._file_handle = None
+        self._read_node = None
+        self._write_node = None
+        self._get_position_node = None
+        self._set_position_node = None
 
     async def __aenter__(self):
         await self.open(self._open_mode)
@@ -65,10 +75,11 @@ class UaFile:
         """
         _logger.debug("Request to read from file %s", self._file_node)
         size = await self.get_size()
-        read_node = await self._file_node.get_child("Read")
+        if self._read_node is None:
+            self._read_node = await self._file_node.get_child("Read")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
         arg2_length = Variant(size, VariantType.Int32)
-        return await self._file_node.call_method(read_node, arg1_file_handle, arg2_length)
+        return await self._file_node.call_method(self._read_node, arg1_file_handle, arg2_length)
 
     async def write(self, data: bytes) -> None:
         """
@@ -81,10 +92,11 @@ class UaFile:
         affect on the file.
         """
         _logger.debug("Request to write to file %s", self._file_node)
-        write_node = await self._file_node.get_child("Write")
+        if self._write_node is None:
+            self._write_node = await self._file_node.get_child("Write")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
         arg2_data = Variant(data, VariantType.ByteString)
-        await self._file_node.call_method(write_node, arg1_file_handle, arg2_data)
+        await self._file_node.call_method(self._write_node, arg1_file_handle, arg2_data)
 
     async def get_position(self) -> int:
         """
@@ -93,9 +105,10 @@ class UaFile:
         If a Read or Write is called it starts at that position.
         """
         _logger.debug("Request to get position from file %s", self._file_node)
-        get_position_node = await self._file_node.get_child("GetPosition")
+        if self._get_position_node is None:
+            self._get_position_node = await self._file_node.get_child("GetPosition")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
-        return await self._file_node.call_method(get_position_node, arg1_file_handle)
+        return await self._file_node.call_method(self._get_position_node, arg1_file_handle)
 
     async def set_position(self, position: int) -> None:
         """
@@ -105,10 +118,13 @@ class UaFile:
         If the position is higher than the file size the position is set to the end of the file.
         """
         _logger.debug("Request to set position in file %s", self._file_node)
-        set_position_node = await self._file_node.get_child("SetPosition")
+        if self._set_position_node is None:
+            self._set_position_node = await self._file_node.get_child("SetPosition")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
         arg2_position = Variant(position, VariantType.UInt64)
-        return await self._file_node.call_method(set_position_node, arg1_file_handle, arg2_position)
+        return await self._file_node.call_method(self._set_position_node,
+                                                 arg1_file_handle,
+                                                 arg2_position)
 
     async def get_size(self) -> int:
         """
