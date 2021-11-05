@@ -11,7 +11,7 @@ https://reference.opcfoundation.org/Core/docs/Part5/C.1/
 import logging
 
 from asyncua.common.node import Node
-from asyncua.ua import NodeId, OpenFileMode, Variant, VariantType, 
+from asyncua.ua import NodeId, OpenFileMode, Variant, VariantType 
 
 _logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ class UaFile:
         if self._get_position_node is None:
             self._get_position_node = await self._file_node.get_child("GetPosition")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
-       return await self._file_node.call_method(self._get_position_node, arg1_file_handle)
+        return await self._file_node.call_method(self._get_position_node, arg1_file_handle)
 
     async def set_position(self, position: int) -> None:
         """
