@@ -7,11 +7,10 @@ from typing import Optional, Any, Union, Generic
 import collections
 import logging
 from enum import Enum, IntEnum
-from calendar import timegm
 import uuid
 import re
 import itertools
-from datetime import datetime, timedelta, MAXYEAR, tzinfo
+from datetime import datetime, timedelta, MAXYEAR, timezone
 from dataclasses import dataclass, field
 
 # hack to support python < 3.8
@@ -43,6 +42,7 @@ logger = logging.getLogger(__name__)
 EPOCH_AS_FILETIME = 116444736000000000  # January 1, 1970 as MS file time
 HUNDREDS_OF_NANOSECONDS = 10000000
 FILETIME_EPOCH_AS_DATETIME = datetime(1601, 1, 1)
+FILETIME_EPOCH_AS_UTC_DATETIME = FILETIME_EPOCH_AS_DATETIME.replace(tzinfo=timezone.utc)
 
 
 def type_is_union(uatype):
@@ -149,27 +149,12 @@ class Guid(uuid.UUID):
     pass
 
 
-class UTC(tzinfo):
-    """
-    UTC
-    """
-
-    def utcoffset(self, dt):
-        return timedelta(0)
-
-    def tzname(self, dt):
-        return "UTC"
-
-    def dst(self, dt):
-        return timedelta(0)
+_microsecond = timedelta(microseconds=1)
 
 
 def datetime_to_win_epoch(dt: datetime):
-    """method copied from David Buxton <david@gasmark6.com> sample code"""
-    if (dt.tzinfo is None) or (dt.tzinfo.utcoffset(dt) is None):
-        dt = dt.replace(tzinfo=UTC())
-    ft = EPOCH_AS_FILETIME + (timegm(dt.timetuple()) * HUNDREDS_OF_NANOSECONDS)
-    return ft + (dt.microsecond * 10)
+    ref = FILETIME_EPOCH_AS_DATETIME if dt.tzinfo is None else FILETIME_EPOCH_AS_UTC_DATETIME
+    return 10 * ((dt - ref) // _microsecond)
 
 
 def get_win_epoch():
@@ -777,7 +762,7 @@ class VariantTypeCustom:
 
     def __eq__(self, other):
         return isinstance(other, type(self)) and self.value == other.value
-    
+
     def __hash__(self) -> int:
         return self.value.__hash__()
 
@@ -830,7 +815,7 @@ class Variant:
                     VariantType.String,
                     VariantType.DateTime,
                     VariantType.ExtensionObject,
-                    ):
+            ):
                 raise UaError(
                     f"Non array Variant of type {self.VariantType} cannot have value None"
                 )
