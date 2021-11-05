@@ -54,7 +54,8 @@ class Reconciliator:
         self.timer = timer
         self.ha_client = ha_client
         self.is_running = False
-        self.stop_event = asyncio.Event(loop=asyncio.get_running_loop())
+        _ = asyncio.get_running_loop()  # jsut to ensure we are inside async method
+        self.stop_event = asyncio.Event()
 
         self.real_map: Dict[str, SortedDict] = {}
         for url in self.ha_client.urls:
