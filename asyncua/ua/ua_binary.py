@@ -188,22 +188,26 @@ def pack_uatype(vtype, value):
     return create_uatype_serializer(vtype)(value)
 
 
-def unpack_uatype(vtype, data):
+@functools.lru_cache(maxsize=None)
+def _create_uatype_deserializer(vtype):
     if hasattr(Primitives, vtype.name):
-        st = getattr(Primitives, vtype.name)
-        return st.unpack(data)
+        return getattr(Primitives, vtype.name).unpack
     if vtype.value > 25:
-        return Primitives.Bytes.unpack(data)
+        return Primitives.Bytes.unpack
     if vtype == ua.VariantType.ExtensionObject:
-        return extensionobject_from_binary(data)
+        return extensionobject_from_binary
     if vtype in (ua.VariantType.NodeId, ua.VariantType.ExpandedNodeId):
-        return nodeid_from_binary(data)
+        return nodeid_from_binary
     if vtype == ua.VariantType.Variant:
-        return variant_from_binary(data)
+        return variant_from_binary
     if hasattr(ua, vtype.name):
         cls = getattr(ua, vtype.name)
-        return struct_from_binary(cls, data)
+        return _create_dataclass_deserializer(cls)
     raise UaError(f'Cannot unpack unknown variant type {vtype}')
+
+
+def unpack_uatype(vtype, data):
+    return _create_uatype_deserializer(vtype)(data)
 
 
 @functools.lru_cache(maxsize=None)
@@ -226,15 +230,26 @@ def pack_uatype_array(vtype, array):
 
 
 def unpack_uatype_array(vtype, data):
-    length = Primitives.Int32.unpack(data)
-    if length == -1:
-        return None
-    if hasattr(Primitives1, vtype.name):
-        data_type = getattr(Primitives1, vtype.name)
+    return _create_uatype_array_deserializer(vtype)(data)
+
+
+@functools.lru_cache(maxsize=None)
+def _create_uatype_array_deserializer(vtype):
+    if hasattr(Primitives1, vtype.name):  # Fast primitive array deserializer
+        unpack_array = getattr(Primitives1, vtype.name).unpack_array
+    else:  # Revert to slow serial unpacking.
+        deserialize_element = _create_uatype_deserializer(vtype)
+
+        def unpack_array(data, length):
+            return (deserialize_element(data) for _ in range(length))
+
+    def deserialize(data):
+        length = Primitives.Int32.unpack(data)
+        if length == -1:
+            return None
         # Remark: works without tuple conversion to list.
-        return list(data_type.unpack_array(data, length))
-    # Revert to slow serial unpacking.
-    return [unpack_uatype(vtype, data) for _ in range(length)]
+        return list(unpack_array(data, length))
+    return deserialize
 
 
 def field_serializer(field: Field) -> Callable[[Any], bytes]:
@@ -404,21 +419,17 @@ def nodeid_from_binary(data):
 
 
 def variant_to_binary(var):
-    b = []
-    encoding = var.VariantType.value & 0b111111
+    encoding = var.VariantType.value & 0b0011_1111
     if var.is_array or isinstance(var.Value, (list, tuple)):
-        encoding = set_bit(encoding, 7)
-        if var.Dimensions is not None:
-            encoding = set_bit(encoding, 6)
-        b.append(Primitives.Byte.pack(encoding))
-        b.append(pack_uatype_array(var.VariantType, ua.flatten(var.Value)))
-        if var.Dimensions is not None:
-            b.append(pack_uatype_array(ua.VariantType.Int32, var.Dimensions))
+        body = pack_uatype_array(var.VariantType, ua.flatten(var.Value))
+        if var.Dimensions is None:
+            encoding |= 0b1000_0000
+        else:
+            encoding |= 0b1100_0000
+            body += pack_uatype_array(ua.VariantType.Int32, var.Dimensions)
     else:
-        b.append(Primitives.Byte.pack(encoding))
-        b.append(pack_uatype(var.VariantType, var.Value))
-
-    return b"".join(b)
+        body = pack_uatype(var.VariantType, var.Value)
+    return Primitives.Byte.pack(encoding) + body
 
 
 def variant_from_binary(data):
@@ -510,50 +521,75 @@ def extensionobject_to_binary(obj):
     return b''.join(packet)
 
 
-def from_binary(uatype, data):
-    """
-    unpack data given an uatype as a string or a python dataclass using ua types
-    """
+def _create_list_deserializer(uatype):
+    element_deserializer = _create_type_deserializer(uatype)
+
+    def _deserialize(data):
+        size = Primitives.Int32.unpack(data)
+        return [element_deserializer(data) for _ in range(size)]
+    return _deserialize
+
+
+@functools.lru_cache(maxsize=None)
+def _create_type_deserializer(uatype):
     if type_is_union(uatype):
-        uatype = type_from_union(uatype)
+        return _create_type_deserializer(type_from_union(uatype))
     if type_is_list(uatype):
         utype = type_from_list(uatype)
         if hasattr(ua.VariantType, utype.__name__):
             vtype = getattr(ua.VariantType, utype.__name__)
-            return unpack_uatype_array(vtype, data)
-        size = Primitives.Int32.unpack(data)
-        return [from_binary(utype, data) for _ in range(size)]
+            return _create_uatype_array_deserializer(vtype)
+        else:
+            return _create_list_deserializer(utype)
     if hasattr(ua.VariantType, uatype.__name__):
         vtype = getattr(ua.VariantType, uatype.__name__)
-        return unpack_uatype(vtype, data)
+        return _create_uatype_deserializer(vtype)
     if hasattr(Primitives, uatype.__name__):
-        return getattr(Primitives, uatype.__name__).unpack(data)
-    return struct_from_binary(uatype, data)
+        return getattr(Primitives, uatype.__name__).unpack
+    return _create_dataclass_deserializer(uatype)
+
+
+def from_binary(uatype, data):
+    """
+    unpack data given an uatype as a string or a python dataclass using ua types
+    """
+    return _create_type_deserializer(uatype)(data)
+
+
+@functools.lru_cache(maxsize=None)
+def _create_dataclass_deserializer(objtype):
+    if isinstance(objtype, str):
+        objtype = getattr(ua, objtype)
+    if issubclass(objtype, Enum):
+        return lambda data: objtype(Primitives.Int32.unpack(data))
+    enc_count = 0
+    field_deserializers = []
+    for field in fields(objtype):
+        optional_enc_bit = 0
+        # if our member has a switch and it is not set we will need to skip it
+        if type_is_union(field.type):
+            optional_enc_bit = 1 << enc_count
+            enc_count += 1
+        deserialize_field = _create_type_deserializer(field.type)
+        field_deserializers.append((field, optional_enc_bit, deserialize_field))
+
+    def decode(data):
+        kwargs = {}
+        enc = 0
+        for field, optional_enc_bit, deserialize_field in field_deserializers:
+            if field.name == "Encoding":
+                enc = deserialize_field(data)
+            elif optional_enc_bit == 0 or enc & optional_enc_bit:
+                kwargs[field.name] = deserialize_field(data)
+        return objtype(**kwargs)
+    return decode
 
 
 def struct_from_binary(objtype, data):
     """
-    unpack an ua struct. Arguments are an objtype as Python class or string
+    unpack an ua struct. Arguments are an objtype as Python dataclass or string
     """
-    if isinstance(objtype, str):
-        objtype = getattr(ua, objtype)
-    if issubclass(objtype, Enum):
-        return objtype(Primitives.Int32.unpack(data))
-    enc_count = -1
-    kwargs = {}
-    enc = 0
-    for field in fields(objtype):
-        # if our member has a switch and it is not set we skip it
-        if type_is_union(field.type):
-            enc_count += 1
-            if not test_bit(enc, enc_count):
-                continue
-        val = from_binary(field.type, data)
-        if field.name == "Encoding":  # Rmq: all code written assuming encoding is called Encoding
-            enc = val
-        else:
-            kwargs[field.name] = val
-    return objtype(**kwargs)
+    return _create_dataclass_deserializer(objtype)(data)
 
 
 def header_to_binary(hdr):
