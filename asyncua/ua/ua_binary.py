@@ -8,11 +8,11 @@ import logging
 from typing import Any, Callable
 import uuid
 from enum import IntEnum, Enum, IntFlag
-from dataclasses import is_dataclass, fields, Field, MISSING
+from dataclasses import is_dataclass, fields, Field
 from asyncua import ua
 from .uaerrors import UaError
 from ..common.utils import Buffer
-from .uatypes import Byte, type_is_list, type_is_union, type_from_list, type_from_union
+from .uatypes import type_is_list, type_is_union, type_from_list, type_from_union
 
 logger = logging.getLogger('__name__')
 
