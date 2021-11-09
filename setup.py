@@ -20,7 +20,7 @@ setup(
     author="Olivier Roulet-Dubonnet",
     author_email="olivier.roulet@gmail.com",
     url='http://freeopcua.github.io/',
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests"]),
     provides=["asyncua"],
     license="GNU Lesser General Public License v3 or later",
     install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", "cryptography", "sortedcontainers"],

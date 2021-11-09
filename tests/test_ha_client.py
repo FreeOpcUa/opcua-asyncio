@@ -6,7 +6,7 @@ from asyncua.client.ua_client import UASocketProtocol
 from asyncua.common.subscription import Subscription
 from asyncua.crypto import security_policies
 from asyncua.ua.uaerrors import BadSessionClosed
-from asyncua.client.ha.ha_client import (
+from asyncua.client.ha import (
     ConnectionStates,
     HaClient,
     HaMode,
@@ -336,6 +336,7 @@ class TestKeepAlive:
         await ha_client.start()
         for client in ha_client.get_clients():
             await wait_for_status_change(ha_client, client, ConnectionStates.NO_DATA)
+        await ha_client.stop()
 
 
 class TestHaManager:
