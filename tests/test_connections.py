@@ -23,3 +23,7 @@ async def test_max_connections_1(opc):
                 async with Client(f'opc.tcp://127.0.0.1:{port}'):
                     pass
     opc.server.iserver.isession.__class__.max_connections = 1000
+
+async def safe_disconnect():
+    c = Client(url="opc.tcp://example:4840")
+    await c.disconnect()
