@@ -284,7 +284,7 @@ class UaClient:
         close secure channel. It seems to trigger a shutdown of socket
         in most servers, so be prepare to reconnect
         """
-        if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
+        if not self.protocol or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("close_secure_channel was called but connection is closed")
             return
         return await self.protocol.close_secure_channel()
@@ -313,6 +313,9 @@ class UaClient:
 
     async def close_session(self, delete_subscriptions):
         self.logger.info("close_session")
+        if not self.protocol:
+            self.logger.warning("close_session but connection wasn't established")
+            return
         self.protocol.closed = True
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
