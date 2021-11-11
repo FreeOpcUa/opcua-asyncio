@@ -3,7 +3,7 @@ implement ua datatypes
 """
 
 import sys
-from typing import Optional, Any, Union, Generic
+from typing import Optional, Any, Union, Generic, List
 import collections
 import logging
 from enum import Enum, IntEnum
@@ -780,21 +780,28 @@ class Variant:
     :ivar VariantType:
     :vartype VariantType: VariantType
     :ivar Dimension:
-    :vartype Dimensions: The length of each dimensions. Usually guessed from value. [0] mean 1D array without length limit
+    :vartype Dimensions: The length of each dimensions. Make the variant a Matrix
+    :ivar is_array:
+    :vartype is_array: If the variant is an array. Always True if Dimension is specificied
     """
 
+    # FIXME: typing is wrong here
     Value: Any = None
     VariantType: VariantType = None
-    Dimensions: Optional[Int32] = None
+    Dimensions: Optional[List[Int32]] = None
+    is_array: Optional[bool] = None
 
     def __post_init__(self):
+
+        if self.is_array is None:
+            if isinstance(self.Value, (list, tuple)) or self.Dimensions :
+                object.__setattr__(self, "is_array", True)
+            else:
+                object.__setattr__(self, "is_array", False)
+
         if isinstance(self.Value, Variant):
             object.__setattr__(self, "VariantType", self.Value.VariantType)
             object.__setattr__(self, "Value", self.Value.Value)
-
-        if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
-            dims = get_shape(self.Value)
-            object.__setattr__(self, "Dimensions", dims)
 
         if not isinstance(self.VariantType, (VariantType, VariantTypeCustom)):
             if self.VariantType is None:
@@ -820,9 +827,10 @@ class Variant:
                     f"Non array Variant of type {self.VariantType} cannot have value None"
                 )
 
-    @property
-    def is_array(self):
-        return self.Dimensions is not None
+        if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
+            dims = get_shape(self.Value)
+            if len(dims) > 1:
+                object.__setattr__(self, "Dimensions", dims)
 
     def __eq__(self, other):
         if (

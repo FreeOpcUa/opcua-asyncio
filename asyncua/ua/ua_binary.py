@@ -434,19 +434,20 @@ def variant_to_binary(var):
 
 def variant_from_binary(data):
     dimensions = None
+    array = False
     encoding = ord(data.read(1))
     int_type = encoding & 0b00111111
     vtype = ua.datatype_to_varianttype(int_type)
     if test_bit(encoding, 7):
         value = unpack_uatype_array(vtype, data)
-        dimensions = [0]
+        array = True
     else:
         value = unpack_uatype(vtype, data)
     if test_bit(encoding, 6):
         dimensions = unpack_uatype_array(ua.VariantType.Int32, data)
         if value is not None:
             value = _reshape(value, dimensions)
-    return ua.Variant(value, vtype, dimensions)
+    return ua.Variant(value, vtype, dimensions, is_array=array)
 
 
 def _reshape(flat, dims):

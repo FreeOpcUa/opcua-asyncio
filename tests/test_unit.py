@@ -30,35 +30,44 @@ EXAMPLE_BSD_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "exam
 
 
 def test_variant_array_none():
-    v = ua.Variant(None, VariantType=ua.VariantType.Int32, Dimensions=[0])
+    v = ua.Variant(None, VariantType=ua.VariantType.Int32, is_array=True)
     data = variant_to_binary(v)
     v2 = variant_from_binary(ua.utils.Buffer(data))
     assert v == v2
     assert v2.is_array
-    assert v2.Dimensions == [0]
+    assert v2.Dimensions is None
 
-    v = ua.Variant(None, VariantType=ua.VariantType.Null, Dimensions=[0])
+    v = ua.Variant(None, VariantType=ua.VariantType.Null, is_array=True)
     data = variant_to_binary(v)
     v2 = variant_from_binary(ua.utils.Buffer(data))
     assert v == v2
     assert v2.is_array
-    assert v2.Dimensions == [0]
+    assert v2.Dimensions is None
 
-    v = ua.Variant(None, VariantType=ua.VariantType.Null, Dimensions=None)
+    v = ua.Variant(None, VariantType=ua.VariantType.Null, Dimensions=[0, 0])
     data = variant_to_binary(v)
     v2 = variant_from_binary(ua.utils.Buffer(data))
     assert v == v2
-    assert not v2.is_array
-    assert v2.Dimensions == None
+    assert v2.is_array
+    assert v2.Dimensions == [0, 0]
 
 
 
 def test_variant_empty_list():
-    v = ua.Variant([], VariantType=ua.VariantType.Int32, Dimensions=[0])
+    v = ua.Variant([], VariantType=ua.VariantType.Int32, is_array=True)
     data = variant_to_binary(v)
     v2 = variant_from_binary(ua.utils.Buffer(data))
     assert v == v2
     assert v2.is_array
+    assert v2.Dimensions is None
+
+    v = ua.Variant([], VariantType=ua.VariantType.Int32, is_array=True, Dimensions=[0])
+    data = variant_to_binary(v)
+    v2 = variant_from_binary(ua.utils.Buffer(data))
+    assert v == v2
+    assert v2.is_array
+    assert v2.Dimensions == [0]
+
 
 
 def test_custom_structs(tmpdir):
@@ -602,6 +611,7 @@ def test_variant_array():
     v2 = variant_from_binary(ua.utils.Buffer(variant_to_binary(v)))
     assert v.Value == v2.Value
     assert v.VariantType == v2.VariantType
+    assert v2.Dimensions is None
 
     now = datetime.utcnow()
     v = ua.Variant([now])
@@ -610,12 +620,16 @@ def test_variant_array():
     v2 = variant_from_binary(ua.utils.Buffer(variant_to_binary(v)))
     assert v.Value == v2.Value
     assert v.VariantType == v2.VariantType
+    assert v2.Dimensions is None
 
 
 def test_variant_array_dim():
     v = ua.Variant([1, 2, 3, 4, 5, 6], Dimensions=[2, 3])
     assert v.Value[1] == 2
+    assert v.Dimensions == [2, 3]
+
     v2 = variant_from_binary(ua.utils.Buffer(variant_to_binary(v)))
+
     assert _reshape(v.Value, (2, 3)) == v2.Value
     assert v.VariantType == v2.VariantType
     assert v.Dimensions == v2.Dimensions
