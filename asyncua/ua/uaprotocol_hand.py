@@ -1,5 +1,6 @@
 import struct
 from dataclasses import dataclass, field
+from typing import List
 
 from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
@@ -247,16 +248,11 @@ class ObjectTypeAttributes(auto.ObjectTypeAttributes):
 
 @dataclass
 class VariableAttributes(auto.VariableAttributes):
-    def __post_init__(self):
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Value | ana.DataType | ana.ValueRank | ana.ArrayDimensions | ana.AccessLevel | ana.UserAccessLevel | ana.MinimumSamplingInterval | ana.Historizing
-        #FIXME: following lines are very bad, we overwrite what user specified
-        self.Historizing = False
-        # force read access for all
-        self.AccessLevel = AccessLevel.CurrentRead.mask if self.AccessLevel == 0 else self.AccessLevel
-        self.UserAccessLevel = AccessLevel.CurrentRead.mask if self.UserAccessLevel == 0 else self.UserAccessLevel
-        # remove [] as default array dimensions. Spec says it should be None
-        if self.ArrayDimensions is not None and not self.ArrayDimensions:
-            self.ArrayDimensions = None
+    ArrayDimensions: List[uatypes.UInt32] = None
+    Historizing: uatypes.Boolean = True
+    AccessLevel: uatypes.Byte = auto.AccessLevel.CurrentRead.mask
+    UserAccessLevel: uatypes.Byte = auto.AccessLevel.CurrentRead.mask
+    SpecifiedAttributes: uatypes.UInt32 = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Value | ana.DataType | ana.ValueRank | ana.ArrayDimensions | ana.AccessLevel | ana.UserAccessLevel | ana.MinimumSamplingInterval | ana.Historizing
 
 
 @dataclass
@@ -302,8 +298,7 @@ class ViewAttributes(auto.ViewAttributes):
 
 @dataclass
 class Argument(auto.Argument):
-    def __post_init__(self):
-        self.ValueRank = -2
+    ValueRank: auto.Int32 = -1
 
 
 @dataclass
