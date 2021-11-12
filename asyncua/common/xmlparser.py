@@ -17,7 +17,10 @@ def ua_type_to_python(val, uatype_as_str):
     """
     Converts a string value to a python value according to ua_utils.
     """
-    return string_to_val(val, getattr(ua.VariantType, uatype_as_str))
+    try:
+        return string_to_val(val, getattr(ua.VariantType, uatype_as_str))
+    except:
+        return string_to_val(val, getattr(ua, uatype_as_str))
 
 
 def _to_bool(val):
