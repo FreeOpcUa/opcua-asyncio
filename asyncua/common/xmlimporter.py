@@ -326,7 +326,7 @@ class XmlImporter:
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
         attrs.DataType = obj.datatype
         if obj.value is not None:
-            attrs.Value = self._add_variable_value(obj, )
+            attrs.Value = await self._add_variable_value(obj, )
         if obj.rank:
             attrs.ValueRank = obj.rank
         if obj.accesslevel:
@@ -354,8 +354,12 @@ class XmlImporter:
             raise Exception("Error no extension class registered ", name, nodeid)
         raise Exception("Error no alias found for extension class", name)
 
-    def _make_ext_obj(self, obj):
-        extclass = self._get_ext_class(obj.objname)
+    async def _make_ext_obj(self, obj):
+        try:
+            extclass = self._get_ext_class(obj.objname)
+        except Exception:
+            await self.server.load_data_type_definitions()      # load new data type definitions since a customn class should be created
+            extclass = self._get_ext_class(obj.objname)
         args = {}
         for name, val in obj.body:
             if not isinstance(val, list):
@@ -414,7 +418,7 @@ class XmlImporter:
         else:
             raise RuntimeError(f"Could not handle type {atttype} of type {type(atttype)}")
 
-    def _add_variable_value(self, obj):
+    async def _add_variable_value(self, obj):
         """
         Returns the value for a Variable based on the objects value type.
         """
@@ -422,7 +426,7 @@ class XmlImporter:
         if obj.valuetype == "ListOfExtensionObject":
             values = []
             for ext in obj.value:
-                extobj = self._make_ext_obj(ext)
+                extobj = await self._make_ext_obj(ext)
                 values.append(extobj)
             return ua.Variant(values, ua.VariantType.ExtensionObject)
         if obj.valuetype == "ListOfGuid":
@@ -435,7 +439,7 @@ class XmlImporter:
                 return ua.Variant([ua.LocalizedText(Text=item["Text"], Locale=item["Locale"]) for item in obj.value])
             return ua.Variant([getattr(ua, vtype)(v) for v in obj.value])
         if obj.valuetype == "ExtensionObject":
-            extobj = self._make_ext_obj(obj.value)
+            extobj = await self._make_ext_obj(obj.value)
             return ua.Variant(extobj, getattr(ua.VariantType, obj.valuetype))
         if obj.valuetype == "Guid":
             return ua.Variant(uuid.UUID(obj.value), getattr(ua.VariantType, obj.valuetype))
