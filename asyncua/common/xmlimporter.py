@@ -355,7 +355,11 @@ class XmlImporter:
         raise Exception("Error no alias found for extension class", name)
 
     def _make_ext_obj(self, obj):
-        extclass = self._get_ext_class(obj.objname)
+        try:
+            extclass = self._get_ext_class(obj.objname)
+        except Exception:
+            await self.server.load_data_type_definitions()      # load new data type definitions since a customn class should be created
+            extclass = self._get_ext_class(obj.objname)
         args = {}
         for name, val in obj.body:
             if not isinstance(val, list):
