@@ -570,14 +570,14 @@ class Server:
             if len(prop) > 2:
                 datatype = prop[2]
             prop_node = await custom_t.add_property(
-                idx, prop[0], ua.get_default_value(prop[1].VariantType), varianttype=prop[1].VariantType, datatype=datatype)
+                idx, prop[0], prop[1].Value, varianttype=prop[1].VariantType, datatype=datatype)
             await prop_node.set_modelling_rule(True)
         for variable in variables:
             datatype = None
             if len(variable) > 2:
                 datatype = variable[2]
             var_node = await custom_t.add_variable(
-                idx, variable[0], ua.get_default_value(variable[1].VariantType), varianttype=variable[1].VariantType, datatype=datatype)
+                idx, variable[0], variable[1].Value, varianttype=variable[1].VariantType, datatype=datatype)
             await var_node.set_modelling_rule(True)
         for method in methods:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
