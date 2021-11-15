@@ -566,13 +566,13 @@ class Server:
             if len(prop) > 2:
                 datatype = prop[2]
             await custom_t.add_property(
-                idx, prop[0], ua.get_default_value(prop[1]), varianttype=prop[1], datatype=datatype)
+                idx, prop[0], ua.get_default_value(prop[1].VariantType), varianttype=prop[1].VariantType, datatype=datatype)
         for variable in variables:
             datatype = None
             if len(variable) > 2:
                 datatype = variable[2]
             await custom_t.add_variable(
-                idx, variable[0], ua.get_default_value(variable[1]), varianttype=variable[1], datatype=datatype)
+                idx, variable[0], ua.get_default_value(variable[1].VariantType), varianttype=variable[1].VariantType, datatype=datatype)
         for method in methods:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
