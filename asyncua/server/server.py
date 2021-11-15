@@ -532,6 +532,10 @@ class Server:
                                         properties=None,
                                         variables=None,
                                         methods=None) -> Coroutine:
+        """
+        properties: [iterable(<name>, <ua.Variant>, <datatype>), ...]
+        variables: [iterable(<name>, <ua.Variant>, <datatype>), ...]
+        """
         if properties is None:
             properties = []
         if variables is None:
