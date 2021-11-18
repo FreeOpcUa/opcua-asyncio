@@ -235,6 +235,15 @@ class Client:
     def get_namespace_index(self, url):
         pass
 
+    def get_root_node(self):
+        return SyncNode(self.tloop, self.aio_obj.get_root_node())
+
+    def get_objects_node(self):
+        return SyncNode(self.tloop, self.aio_obj.get_objects_node())
+
+    def get_server_node(self):
+        return SyncNode(self.tloop, self.aio_obj.get_server_node())
+
     def get_node(self, nodeid):
         return SyncNode(self.tloop, self.aio_obj.get_node(nodeid))
 
