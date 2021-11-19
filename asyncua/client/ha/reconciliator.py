@@ -54,7 +54,8 @@ class Reconciliator:
         self.timer = timer
         self.ha_client = ha_client
         self.is_running = False
-        _ = asyncio.get_running_loop()  # jsut to ensure we are inside async method
+
+        # An event loop must be set in the current thread
         self.stop_event = asyncio.Event()
 
         self.real_map: Dict[str, SortedDict] = {}

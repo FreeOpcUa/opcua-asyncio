@@ -116,9 +116,7 @@ class HaClient:
         self._reconciliator_task: Dict[Reconciliator, asyncio.Task] = {}
         self._gen_sub: Generator[str, None, None] = self.generate_sub_name()
 
-        # The locks must be created in async method!
-        # caling get_running_loop just to make sure we crash if not called in async method
-        _ = asyncio.get_running_loop()
+        # An event loop must be set in the current thread
         self._url_to_reset_lock = asyncio.Lock()
         self._ideal_map_lock: asyncio.Lock = asyncio.Lock()
         self._client_lock: asyncio.Lock = asyncio.Lock()
