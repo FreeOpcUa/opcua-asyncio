@@ -508,7 +508,7 @@ async def _uasubscribe():
             await sub.subscribe_events(node)
         print("Type Ctr-C to exit")
         while True:
-            time.sleep(1)
+            await asyncio.sleep(1)
     finally:
         await client.disconnect()
 
