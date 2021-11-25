@@ -275,12 +275,12 @@ class XMLParser:
                 mytext = val_el.text.encode()
                 mytext = base64.b64decode(mytext)
             obj.value = mytext
-        elif ntag == "String":
+        elif ntag == "String" or ntag == "XmlElement":
+            # String and XMLElement are identical only type is different
             mytext = val_el.text
             if mytext is None:
                 # Support importing null strings.
                 mytext = ""
-            # mytext = mytext.replace('\n', '').replace('\r', '')
             obj.value = mytext
         elif ntag == "Guid":
             self._parse_contained_value(val_el, obj)
@@ -306,9 +306,12 @@ class XMLParser:
                 tmp = NodeData()
                 self._parse_value(val_el, tmp)
                 obj.value.append(tmp.value)
+        elif ntag == "ExpandedNodeId":
+            id_el = val_el.find("uax:Identifier", self.ns)
+            if id_el is not None:
+                obj.value = ua.NodeId.from_string(id_el.text)
         else:
-            # Missing according to string_to_val: XmlElement, ExpandedNodeId,
-            # QualifiedName, StatusCode.
+            # Missing according to string_to_val: QualifiedName, StatusCode.
             # Missing according to ua.VariantType (also missing in string_to_val):
             # DataValue, Variant, DiagnosticInfo.
             self.logger.warning("Parsing value of type '%s' not implemented", ntag)
