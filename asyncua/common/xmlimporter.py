@@ -437,6 +437,8 @@ class XmlImporter:
                 return ua.Variant(obj.value, getattr(ua.VariantType, vtype))
             if vtype == "LocalizedText":
                 return ua.Variant([ua.LocalizedText(Text=item["Text"], Locale=item["Locale"]) for item in obj.value])
+            if vtype in ["ExpandedNodeId", "QualifiedName", "XmlElement", "StatusCode"]:
+                return ua.Variant(obj.value)
             return ua.Variant([getattr(ua, vtype)(v) for v in obj.value])
         if obj.valuetype == "ExtensionObject":
             extobj = await self._make_ext_obj(obj.value)

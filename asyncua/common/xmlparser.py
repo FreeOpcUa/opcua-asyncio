@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 
 from pytz import utc
 from asyncua import ua
+from asyncua.ua.uatypes import ExpandedNodeId, NodeId, QualifiedName
 
 from .ua_utils import string_to_val
 
@@ -281,7 +282,10 @@ class XMLParser:
             if mytext is None:
                 # Support importing null strings.
                 mytext = ""
-            obj.value = mytext
+            if ntag == "XmlElement":
+                obj.value = ua.XmlElement(mytext)
+            else:
+                obj.value = mytext
         elif ntag == "Guid":
             self._parse_contained_value(val_el, obj)
             # Override parsed string type to guid.
@@ -290,6 +294,12 @@ class XMLParser:
             id_el = val_el.find("uax:Identifier", self.ns)
             if id_el is not None:
                 obj.value = id_el.text
+        elif ntag == "ExpandedNodeId":
+            id_el = val_el.find("uax:Identifier", self.ns)
+            if id_el is not None:
+                obj.value = ua.NodeId.from_string(id_el.text)
+                if not isinstance(obj.value, ua.ExpandedNodeId):
+                    obj.value = ua.ExpandedNodeId(obj.value.Identifier, obj.value.NamespaceIndex)
         elif ntag == "ExtensionObject":
             obj.value = self._parse_ext_obj(val_el)
         elif ntag == "LocalizedText":
@@ -298,6 +308,12 @@ class XMLParser:
             obj.value = self._parse_list_of_localized_text(val_el)
         elif ntag == "ListOfExtensionObject":
             obj.value = self._parse_list_of_extension_object(val_el)
+        elif ntag == "StatusCode":
+            code_el = val_el.find("uax:Code", self.ns)
+            val = code_el.text if code_el is not None else "0"
+            obj.value = ua.StatusCode(string_to_val(val, ua.VariantType.UInt32))
+        elif ntag == "QualifiedName":
+            obj.value = self._parse_qualifed_name(val_el)
         elif ntag.startswith("ListOf"):
             # Default case for "ListOf" types.
             # Should stay after particular cases (e.g.: "ListOfLocalizedText").
@@ -306,12 +322,7 @@ class XMLParser:
                 tmp = NodeData()
                 self._parse_value(val_el, tmp)
                 obj.value.append(tmp.value)
-        elif ntag == "ExpandedNodeId":
-            id_el = val_el.find("uax:Identifier", self.ns)
-            if id_el is not None:
-                obj.value = ua.NodeId.from_string(id_el.text)
         else:
-            # Missing according to string_to_val: QualifiedName, StatusCode.
             # Missing according to ua.VariantType (also missing in string_to_val):
             # DataValue, Variant, DiagnosticInfo.
             self.logger.warning("Parsing value of type '%s' not implemented", ntag)
@@ -369,6 +380,19 @@ class XMLParser:
             if val:
                 body.append((otag, val))
         return body
+
+    def _parse_qualifed_name(self, el):
+        name = None
+        ns = 0
+        nval = el.find("uax:Name", self.ns)
+        if nval is not None:
+            name = nval.text
+        nsval = el.find("uax:NamespaceIndex", self.ns)
+        if nsval is not None:
+            ns = string_to_val(nsval.text, ua.VariantType.UInt16)
+        v = QualifiedName(name, ns)
+        self.logger.error(f"qn: {v}")
+        return v
 
     def _parse_refs(self, el, obj):
         parent, parentlink = obj.parent, None
