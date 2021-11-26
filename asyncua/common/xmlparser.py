@@ -9,7 +9,6 @@ import xml.etree.ElementTree as ET
 
 from pytz import utc
 from asyncua import ua
-from asyncua.ua.uatypes import ExpandedNodeId, NodeId, QualifiedName
 
 from .ua_utils import string_to_val
 
@@ -390,7 +389,7 @@ class XMLParser:
         nsval = el.find("uax:NamespaceIndex", self.ns)
         if nsval is not None:
             ns = string_to_val(nsval.text, ua.VariantType.UInt16)
-        v = QualifiedName(name, ns)
+        v = ua.QualifiedName(name, ns)
         self.logger.error(f"qn: {v}")
         return v
 
