@@ -274,30 +274,36 @@ async def test_xml_qualifiedname(opc, tmpdir):
     await _test_xml_var_type(opc, tmpdir, o, "qualified_name")
     await opc.opc.delete_nodes([o])
 
+
 async def test_xml_qualifiedname_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array", [ua.QualifiedName("erert", 5), ua.QualifiedName("erert33", 6)])
     await _test_xml_var_type(opc, tmpdir, o, "qualified_name_array")
     await opc.opc.delete_nodes([o])
+
 
 async def test_xml_xmlelement(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmllxmlelement", ua.XmlElement("XMLElem"))
     await _test_xml_var_type(opc, tmpdir, o, "xmlelement")
     await opc.opc.delete_nodes([o])
 
+
 async def test_xml_xmlelement_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmllxmlelement_array", [ua.XmlElement("XMLElem1"), ua.XmlElement("XMLElem2")], ua.VariantType.XmlElement)
     await _test_xml_var_type(opc, tmpdir, o, "xmlelement_array")
     await opc.opc.delete_nodes([o])
+
 
 async def test_xml_expanded_nodeid(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmllexpandednodeid", ua.ExpandedNodeId(32, 1, None, "urn://testxml", 1))
     await _test_xml_var_type(opc, tmpdir, o, "expanded_nodeid")
     await opc.opc.delete_nodes([o])
 
+
 async def test_xml_expanded_nodeid_array(opc, tmpdir):
-    o = await opc.opc.nodes.objects.add_variable(2, "xmllexpandednodeid_array", [ ua.ExpandedNodeId(32, 1, None, "urn://testxml", 1),  ua.ExpandedNodeId(33, 5, None, "urn://testxml2", 2)])
+    o = await opc.opc.nodes.objects.add_variable(2, "xmllexpandednodeid_array", [ua.ExpandedNodeId(32, 1, None, "urn://testxml", 1), ua.ExpandedNodeId(33, 5, None, "urn://testxml2", 2)])
     await _test_xml_var_type(opc, tmpdir, o, "expanded_nodeid_array")
     await opc.opc.delete_nodes([o])
+
 
 async def test_xml_bytestring(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlltext", "mytext".encode("utf8"), ua.VariantType.ByteString)
@@ -310,10 +316,12 @@ async def test_xml_statuscode(opc, tmpdir):
     await _test_xml_var_type(opc, tmpdir, o, "statuscode")
     await opc.opc.delete_nodes([o])
 
+
 async def test_xml_statuscode_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmllstatuscode_array", [ua.StatusCode(value=ua.StatusCodes.BadNodeIdInvalid), ua.StatusCode(value=ua.StatusCodes.BadNodeIdExists)])
     await _test_xml_var_type(opc, tmpdir, o, "statuscode_array")
     await opc.opc.delete_nodes([o])
+
 
 async def test_xml_bytestring_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array",

@@ -364,7 +364,7 @@ class XmlExporter:
             await self._val_to_etree(member_el, dtype, val)
 
     async def _val_to_etree(self, el, dtype, val):
-        if dtype == ua.NodeId(ua.ObjectIds.NodeId) or  dtype == ua.NodeId(ua.ObjectIds.ExpandedNodeId):
+        if dtype == ua.NodeId(ua.ObjectIds.NodeId) or dtype == ua.NodeId(ua.ObjectIds.ExpandedNodeId):
             id_el = Et.SubElement(el, "uax:Identifier")
             id_el.text = val.to_string()
         elif dtype == ua.NodeId(ua.ObjectIds.Guid):
