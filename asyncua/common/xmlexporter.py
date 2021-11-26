@@ -364,7 +364,7 @@ class XmlExporter:
             await self._val_to_etree(member_el, dtype, val)
 
     async def _val_to_etree(self, el, dtype, val):
-        if dtype == ua.NodeId(ua.ObjectIds.NodeId):
+        if dtype == ua.NodeId(ua.ObjectIds.NodeId) or  dtype == ua.NodeId(ua.ObjectIds.ExpandedNodeId):
             id_el = Et.SubElement(el, "uax:Identifier")
             id_el.text = val.to_string()
         elif dtype == ua.NodeId(ua.ObjectIds.Guid):
@@ -372,11 +372,25 @@ class XmlExporter:
             id_el.text = str(val)
         elif dtype == ua.NodeId(ua.ObjectIds.Boolean):
             el.text = 'true' if val else 'false'
+        elif dtype == ua.NodeId(ua.ObjectIds.XmlElement):
+            if val.Value is None:
+                val = ""
+            el.text = val.Value
         elif dtype == ua.NodeId(ua.ObjectIds.ByteString):
             if val is None:
                 val = b""
             data = base64.b64encode(val)
             el.text = data.decode("utf-8")
+        elif dtype == ua.NodeId(ua.ObjectIds.QualifiedName):
+            if val.Name is not None:
+                name_el = Et.SubElement(el, "uax:Name")
+                name_el.text = val.Name
+            if val.NamespaceIndex != 0:
+                ns = Et.SubElement(el, "uax:NamespaceIndex")
+                ns.text = str(val.NamespaceIndex)
+        elif dtype == ua.NodeId(ua.ObjectIds.StatusCode):
+            code_el = Et.SubElement(el, "uax:Code")
+            code_el.text = str(val.value)
         elif not is_dataclass(val):
             if isinstance(val, bytes):
                 # FIXME: should we also encode this (localized text I guess) using base64??
