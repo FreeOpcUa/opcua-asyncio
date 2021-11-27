@@ -532,6 +532,12 @@ class SyncNode:
     get_value = read_value  # legacy
 
     @syncmethod
+    def read_data_value(self):
+        pass
+
+    get_data_value = read_data_value  # legacy
+
+    @syncmethod
     def read_data_type_as_variant_type(self):
         pass
 
