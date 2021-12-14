@@ -121,7 +121,7 @@ def encrypt_rsa15(public_key, data):
 
 def decrypt_rsa_oaep(private_key, data):
     text = private_key.decrypt(
-        data,
+        bytes(data),
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA1()),
             algorithm=hashes.SHA1(),
