@@ -368,7 +368,6 @@ class {name}({enum_type}):
         name = clean_name(sfield.Name)
         value = sfield.Value if not option_set else (1 << sfield.Value)
         code += f"    {name} = {value}\n"
-    logger.error(f"{name} - {sfield} {option_set} {code}")
     return code
 
 
