@@ -5019,7 +5019,7 @@ class ReferenceDescription:
     data_type = NodeId(ObjectIds.ReferenceDescription)
 
     ReferenceTypeId: NodeId = field(default_factory=NodeId)
-    IsForward: Boolean = True
+    IsForward: Boolean = True # FIXME This should be bool, right? We cannot work with Boolean because this raises linter errors and the solution Boolean(True) is unaccetable
     NodeId: ExpandedNodeId = field(default_factory=ExpandedNodeId)
     BrowseName: QualifiedName = field(default_factory=QualifiedName)
     DisplayName: LocalizedText = field(default_factory=LocalizedText)

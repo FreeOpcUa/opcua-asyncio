@@ -11,14 +11,15 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 from asyncua.ua.attribute_ids import AttributeIds
+from asyncua.ua.uaprotocol_auto import Index
 
 if TYPE_CHECKING:
     from typing import Callable, Dict, List, Union
-    from asyncua.ua.uaprotocol_auto import AddNodesItem
     from asyncua.ua.uatypes import ExtensionObject, NodeId, DataValue
     from asyncua.ua.uaprotocol_auto import (
-        BrowsePath, BrowseParameters, RelativePathElement, BrowseResult,
-        BrowseDescription, ReadParameters, WriteParameters, ReferenceDescription
+        AddNodesItem, BrowsePath, BrowseParameters, RelativePathElement, BrowseResult,
+        BrowseDescription, ReadParameters, WriteParameters, ReferenceDescription,
+        BrowsePathResult, DeleteNodesParameters
     )
 
 from asyncua import ua
@@ -119,7 +120,7 @@ class ViewService(object):
         if desc.NodeId not in self._aspace:
             res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdInvalid)
             return res
-        node = self._aspace[desc.NodeId] # Fixme type access to self._aspace
+        node = self._aspace[desc.NodeId]
         for ref in node.references:
             if not self._is_suitable_ref(desc, ref):
                 continue
@@ -172,14 +173,14 @@ class ViewService(object):
             return True
         return False
 
-    def translate_browsepaths_to_nodeids(self, browsepaths: List[BrowsePath]):
+    def translate_browsepaths_to_nodeids(self, browsepaths: List[BrowsePath]) -> List[BrowsePathResult]:
         # self.logger.debug("translate browsepath: %s", browsepaths)
-        results = []
+        results: List[BrowsePathResult] = []
         for path in browsepaths:
             results.append(self._translate_browsepath_to_nodeid(path))
         return results
 
-    def _translate_browsepath_to_nodeid(self, path: BrowsePath):
+    def _translate_browsepath_to_nodeid(self, path: BrowsePath) -> ua.BrowsePathResult:
         # self.logger.debug("looking at path: %s", path)
         res = ua.BrowsePathResult()
         if not path.RelativePath.Elements[-1].TargetName:
@@ -196,8 +197,8 @@ class ViewService(object):
             return res
         for nodeid in target_nodeids:
             target = ua.BrowsePathTarget()
-            target.TargetId = nodeid
-            target.RemainingPathIndex = 4294967295
+            target.TargetId = nodeid # FIXME <<<< Type conflict
+            target.RemainingPathIndex = Index(4294967295) # FIXME: magic number, why not Index.MAX?
             res.Targets.append(target)
         # FIXME: might need to order these one way or another
         return res
@@ -215,9 +216,9 @@ class ViewService(object):
             current_nodeids = new_currents
         return current_nodeids
 
-    def _find_elements_in_node(self, el: RelativePathElement, nodeid: NodeId):
+    def _find_elements_in_node(self, el: RelativePathElement, nodeid: NodeId) -> List[NodeId]:
         nodedata: NodeData = self._aspace[nodeid]
-        nodeids = []
+        nodeids: List[NodeId] = []
         for ref in nodedata.references:
             if ref.BrowseName != el.TargetName:
                 continue
@@ -233,13 +234,20 @@ class ViewService(object):
 
 
 class NodeManagementService:
-    # FIXME: What is the purpose of this class?
+    """
+    This class implements the node management service set of the opc ua standard.
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.1/
+    """
     def __init__(self, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
         self._aspace: AddressSpace = aspace
 
-    def add_nodes(self, addnodeitems: List[ua.AddNodesItem], user: User = User(role=UserRole.Admin)):
-        results = []
+    def add_nodes(
+        self,
+        addnodeitems: List[ua.AddNodesItem],
+        user: User = User(role=UserRole.Admin)
+    ) -> List[ua.AddNodesResult]:
+        results: List[ua.AddNodesResult] = []
         for item in addnodeitems:
             results.append(self._add_node(item, user))
         return results
@@ -250,7 +258,7 @@ class NodeManagementService:
             if not ret.StatusCode.is_good():
                 yield item
 
-    def _add_node(self, item: ua.AddNodesItem, user: User, check: bool = True):
+    def _add_node(self, item: ua.AddNodesItem, user: User, check: bool = True) -> ua.AddNodesResult:
         # self.logger.debug("Adding node %s %s", item.RequestedNewNodeId, item.BrowseName)
         result = ua.AddNodesResult()
 
@@ -263,7 +271,7 @@ class NodeManagementService:
             # the namespace of the nodeid, this is an extention of the spec to allow
             # to requests the server to generate a new nodeid in a specified namespace
             # self.logger.debug("RequestedNewNodeId has null identifier, generating Identifier")
-            item.RequestedNewNodeId = self._aspace.generate_nodeid(item.RequestedNewNodeId.NamespaceIndex)
+            item.RequestedNewNodeId = self._aspace.generate_nodeid(item.RequestedNewNodeId.NamespaceIndex) # FIXME type conflict
         else:
             if item.RequestedNewNodeId in self._aspace:
                 self.logger.warning("AddNodesItem: Requested NodeId %s already exists", item.RequestedNewNodeId)
@@ -354,28 +362,28 @@ class NodeManagementService:
         desc.BrowseName = item.BrowseName
         desc.DisplayName = item.NodeAttributes.DisplayName
         desc.TypeDefinition = item.TypeDefinition
-        desc.IsForward = True
-        self._add_unique_reference(parentdata, desc)
+        desc.IsForward = True # FIXME in uaprotocol_auto.py
+        self._add_unique_reference(parentdata, desc) # FIXME return StatusCode is not evaluated
 
-    def _add_ref_to_parent(self, nodedata, item, parentdata):
+    def _add_ref_to_parent(self, nodedata: NodeData, item: ua.AddNodesItem, parentdata: NodeData):
         addref = ua.AddReferencesItem()
         addref.ReferenceTypeId = item.ReferenceTypeId
         addref.SourceNodeId = nodedata.nodeid
         addref.TargetNodeId = item.ParentNodeId
         addref.TargetNodeClass = parentdata.attributes[ua.AttributeIds.NodeClass].value.Value.Value
-        addref.IsForward = False
-        self._add_reference_no_check(nodedata, addref)
+        addref.IsForward = False # FIXME in uaprotocol_auto.py
+        self._add_reference_no_check(nodedata, addref) # FIXME return StatusCode is not evaluated
 
     def _add_type_definition(self, nodedata: NodeData, item: ua.AddNodesItem):
         addref = ua.AddReferencesItem()
         addref.SourceNodeId = nodedata.nodeid
-        addref.IsForward = True
+        addref.IsForward = True # FIXME in uaprotocol_auto.py
         addref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasTypeDefinition)
         addref.TargetNodeId = item.TypeDefinition
         addref.TargetNodeClass = ua.NodeClass.DataType
-        self._add_reference_no_check(nodedata, addref)
+        self._add_reference_no_check(nodedata, addref) # FIXME return StatusCode is not evaluated
 
-    def delete_nodes(self, deletenodeitems, user=User(role=UserRole.Admin)):
+    def delete_nodes(self, deletenodeitems: DeleteNodesParameters, user=User(role=UserRole.Admin)):
         results = []
         for item in deletenodeitems.NodesToDelete:
             results.append(self._delete_node(item, user))
