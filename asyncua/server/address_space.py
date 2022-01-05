@@ -27,7 +27,9 @@ _logger = logging.getLogger(__name__)
 
 
 class AttributeValue(object):
-    # FIXME: What is the purpose of this class?
+    """
+    This class implements the value of an attribute.
+    """
     def __init__(self, value: DataValue):
         self.value = value
         self.value_callback: Union[Callable[[], None], None] = None
@@ -40,7 +42,9 @@ class AttributeValue(object):
 
 
 class NodeData:
-    # FIXME: What is the purpose of this class?
+    """
+    This class implements a node in the address space.
+    """
     def __init__(self, nodeid: NodeId):
         self.nodeid = nodeid
         self.attributes: Dict[AttributeIds, AttributeValue] = {}
@@ -93,7 +97,10 @@ class AttributeService:
 
 
 class ViewService(object):
-    # FIXME: What is the purpose of this class?
+    """
+    This class implements the view service set of the opc ua standard.
+    https://reference.opcfoundation.org/v104/Core/docs/Part4/5.8.1/
+    """
     def __init__(self, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
         self._aspace: AddressSpace = aspace
