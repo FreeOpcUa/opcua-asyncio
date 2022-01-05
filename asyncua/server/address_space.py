@@ -54,7 +54,10 @@ class NodeData:
 
 
 class AttributeService:
-    # FIXME: What is the purpose of this class?
+    """
+    This class implements the attribute service set defined in the opc ua standard.
+    https://reference.opcfoundation.org/v104/Core/docs/Part4/5.10.1/
+    """
     def __init__(self, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
         self._aspace: AddressSpace = aspace
