@@ -15,7 +15,7 @@ from asyncua.ua.attribute_ids import AttributeIds
 if TYPE_CHECKING:
     from typing import Callable, Dict, List, Union
     from asyncua.ua.uaprotocol_auto import AddNodesItem
-    from asyncua.ua.uatypes import ExtensionObject, NodeId, DataValue, NumericNodeId
+    from asyncua.ua.uatypes import ExtensionObject, NodeId, DataValue
     from asyncua.ua.uaprotocol_auto import (
         BrowsePath, BrowseParameters, RelativePathElement, BrowseResult,
         BrowseDescription, ReadParameters, WriteParameters, ReferenceDescription
@@ -153,14 +153,14 @@ class ViewService(object):
             oktypes.remove(ua.NodeId(ua.ObjectIds.HasSubtype))
         return ref2 in oktypes
 
-    def _get_sub_ref(self, ref: NodeId):
-        res = []
+    def _get_sub_ref(self, ref: NodeId) -> List[NodeId]:
+        res: List[NodeId] = []
         nodedata = self._aspace[ref]
         if nodedata is not None:
-            for ref in nodedata.references:
-                if ref.ReferenceTypeId.Identifier == ua.ObjectIds.HasSubtype and ref.IsForward:
-                    res.append(ref.NodeId)
-                    res += self._get_sub_ref(ref.NodeId)
+            for ref_desc in nodedata.references:
+                if ref_desc.ReferenceTypeId.Identifier == ua.ObjectIds.HasSubtype and ref_desc.IsForward:
+                    res.append(ref_desc.NodeId)
+                    res += self._get_sub_ref(ref_desc.NodeId)
         return res
 
     def _suitable_direction(self, direction: ua.BrowseDirection, isforward: bool) -> bool:
@@ -577,28 +577,28 @@ class AddressSpace:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self._nodes: Dict[NumericNodeId, NodeData] = {}
+        self._nodes: Dict[NodeId, NodeData] = {}
         self._datachange_callback_counter = 200
         self._handle_to_attribute_map = {}
         self._default_idx = 2
         self._nodeid_counter = {0: 20000, 1: 2000}
 
-    def __getitem__(self, nodeid: NumericNodeId) -> NodeData:
+    def __getitem__(self, nodeid: NodeId) -> NodeData:
         return self._nodes.__getitem__(nodeid)
 
-    def get(self, nodeid: NumericNodeId) -> Union[NodeData, None]:
+    def get(self, nodeid: NodeId) -> Union[NodeData, None]:
         return self._nodes.get(nodeid, None) # Fixme This is another behaviour than __getitem__ where an exception is thrown, right?
 
-    def __setitem__(self, nodeid: NumericNodeId, value: NodeData):
+    def __setitem__(self, nodeid: NodeId, value: NodeData):
         return self._nodes.__setitem__(nodeid, value)
 
-    def __contains__(self, nodeid: NumericNodeId) -> bool:
+    def __contains__(self, nodeid: NodeId) -> bool:
         return self._nodes.__contains__(nodeid)
 
-    def __delitem__(self, nodeid: NumericNodeId):
+    def __delitem__(self, nodeid: NodeId):
         self._nodes.__delitem__(nodeid)
 
-    def generate_nodeid(self, idx: Union[int, None] = None):
+    def generate_nodeid(self, idx: Union[int, None] = None) -> NodeId:
         if idx is None:
             idx = self._default_idx
         if idx in self._nodeid_counter:
