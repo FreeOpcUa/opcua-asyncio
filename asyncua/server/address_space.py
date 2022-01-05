@@ -11,13 +11,15 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 from asyncua.ua.attribute_ids import AttributeIds
-from asyncua.ua.uaprotocol_auto import RelativePathElement
 
 if TYPE_CHECKING:
     from typing import Callable, Dict, List, Union
     from asyncua.ua.uaprotocol_auto import AddNodesItem
-    from asyncua.ua.uatypes import ExtensionObject, NodeId, DataValue
-    from asyncua.ua.uaprotocol_auto import BrowsePath
+    from asyncua.ua.uatypes import ExtensionObject, NodeId, DataValue, NumericNodeId
+    from asyncua.ua.uaprotocol_auto import (
+        BrowsePath, BrowseParameters, RelativePathElement, BrowseResult,
+        BrowseDescription, ReadParameters, WriteParameters, ReferenceDescription
+    )
 
 from asyncua import ua
 
@@ -35,7 +37,7 @@ class AttributeValue(object):
         self.value_callback: Union[Callable[[], None], None] = None
         self.datachange_callbacks = {}
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"AttributeValue({self.value})"
 
     __repr__ = __str__
@@ -51,7 +53,7 @@ class NodeData:
         self.references: List[ua.ReferenceDescription] = []
         self.call = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"NodeData(id:{self.nodeid}, attrs:{self.attributes}, refs:{self.references})"
 
     __repr__ = __str__
@@ -66,16 +68,16 @@ class AttributeService:
         self.logger = logging.getLogger(__name__)
         self._aspace: AddressSpace = aspace
 
-    def read(self, params) -> List[DataValue]:
+    def read(self, params: ReadParameters) -> List[DataValue]:
         # self.logger.debug("read %s", params)
         res: List[DataValue] = []
         for readvalue in params.NodesToRead:
             res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
         return res
 
-    async def write(self, params, user: User = User(role=UserRole.Admin)):
+    async def write(self, params: WriteParameters, user: User = User(role=UserRole.Admin)) -> List[ua.StatusCode]:
         # self.logger.debug("write %s as user %s", params, user)
-        res = []
+        res: List[ua.StatusCode] = []
         for writevalue in params.NodesToWrite:
             if user.role != UserRole.Admin:
                 if writevalue.AttributeId != ua.AttributeIds.Value:
@@ -105,26 +107,26 @@ class ViewService(object):
         self.logger = logging.getLogger(__name__)
         self._aspace: AddressSpace = aspace
 
-    def browse(self, params): # fixme: What type is 'params'?
+    def browse(self, params: BrowseParameters) -> List[BrowseResult]:
         # self.logger.debug("browse %s", params)
-        res = []
+        res: List[BrowseResult] = []
         for desc in params.NodesToBrowse:
             res.append(self._browse(desc))
         return res
 
-    def _browse(self, desc):
+    def _browse(self, desc: BrowseDescription) -> BrowseResult:
         res = ua.BrowseResult()
         if desc.NodeId not in self._aspace:
             res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdInvalid)
             return res
-        node = self._aspace[desc.NodeId]
+        node = self._aspace[desc.NodeId] # Fixme type access to self._aspace
         for ref in node.references:
             if not self._is_suitable_ref(desc, ref):
                 continue
             res.References.append(ref)
         return res
 
-    def _is_suitable_ref(self, desc, ref):
+    def _is_suitable_ref(self, desc: BrowseDescription, ref: ReferenceDescription) -> bool:
         if not self._suitable_direction(desc.BrowseDirection, ref.IsForward):
             # self.logger.debug("%s is not suitable due to direction", ref)
             return False
@@ -137,7 +139,7 @@ class ViewService(object):
         # self.logger.debug("%s is a suitable ref for desc %s", ref, desc)
         return True
 
-    def _suitable_reftype(self, ref1, ref2, subtypes):
+    def _suitable_reftype(self, ref1: NodeId, ref2: NodeId, subtypes: bool) -> bool:
         if ref1 == ua.NodeId(ua.ObjectIds.Null):
             # If ReferenceTypeId is not specified in the BrowseDescription,
             # all References are returned and includeSubtypes is ignored.
@@ -151,7 +153,7 @@ class ViewService(object):
             oktypes.remove(ua.NodeId(ua.ObjectIds.HasSubtype))
         return ref2 in oktypes
 
-    def _get_sub_ref(self, ref):
+    def _get_sub_ref(self, ref: NodeId):
         res = []
         nodedata = self._aspace[ref]
         if nodedata is not None:
@@ -161,7 +163,7 @@ class ViewService(object):
                     res += self._get_sub_ref(ref.NodeId)
         return res
 
-    def _suitable_direction(self, direction, isforward):
+    def _suitable_direction(self, direction: ua.BrowseDirection, isforward: bool) -> bool:
         if direction == ua.BrowseDirection.Both:
             return True
         if direction == ua.BrowseDirection.Forward and isforward:
@@ -575,28 +577,28 @@ class AddressSpace:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self._nodes = {}
+        self._nodes: Dict[NumericNodeId, NodeData] = {}
         self._datachange_callback_counter = 200
         self._handle_to_attribute_map = {}
         self._default_idx = 2
         self._nodeid_counter = {0: 20000, 1: 2000}
 
-    def __getitem__(self, nodeid): # question: Why do we use this 'fancy' python stuff? - It looks pretty complicated and is confusing for me.
+    def __getitem__(self, nodeid: NumericNodeId) -> NodeData:
         return self._nodes.__getitem__(nodeid)
 
-    def get(self, nodeid):
-        return self._nodes.get(nodeid, None)
+    def get(self, nodeid: NumericNodeId) -> Union[NodeData, None]:
+        return self._nodes.get(nodeid, None) # Fixme This is another behaviour than __getitem__ where an exception is thrown, right?
 
-    def __setitem__(self, nodeid, value):
+    def __setitem__(self, nodeid: NumericNodeId, value: NodeData):
         return self._nodes.__setitem__(nodeid, value)
 
-    def __contains__(self, nodeid):
+    def __contains__(self, nodeid: NumericNodeId) -> bool:
         return self._nodes.__contains__(nodeid)
 
-    def __delitem__(self, nodeid):
+    def __delitem__(self, nodeid: NumericNodeId):
         self._nodes.__delitem__(nodeid)
 
-    def generate_nodeid(self, idx=None):
+    def generate_nodeid(self, idx: Union[int, None] = None):
         if idx is None:
             idx = self._default_idx
         if idx in self._nodeid_counter:
@@ -733,7 +735,7 @@ class AddressSpace:
             return attval.value_callback()
         return attval.value
 
-    async def write_attribute_value(self, nodeid, attr, value):
+    async def write_attribute_value(self, nodeid, attr, value) -> ua.StatusCode:
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
         node = self._nodes.get(nodeid, None)
         if node is None:
