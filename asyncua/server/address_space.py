@@ -97,7 +97,10 @@ class AttributeService:
                 al = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
                 ual = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
                 if (
-                    not al.StatusCode.is_good() # FIXME Check al and ual for None or prevent them from being None
+                    al.StatusCode is None
+                    or al.Value is None
+                    or ual.Value is None
+                    or not al.StatusCode.is_good()
                     or not ua.ua_binary.test_bit(al.Value.Value, ua.AccessLevel.CurrentWrite)
                     or not ua.ua_binary.test_bit(ual.Value.Value, ua.AccessLevel.CurrentWrite)
                 ):
