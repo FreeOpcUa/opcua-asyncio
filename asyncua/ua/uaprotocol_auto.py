@@ -5300,7 +5300,7 @@ class BrowsePathTarget:
 
     data_type = NodeId(ObjectIds.BrowsePathTarget)
 
-    TargetId: ExpandedNodeId = field(default_factory=ExpandedNodeId)
+    TargetId: ExpandedNodeId = field(default_factory=ExpandedNodeId) # FIXME: ExpandedNodeId raises type hinting errors because we assign the parent class NodeId and childs to this attribute.
     RemainingPathIndex: Index = 0
 
 

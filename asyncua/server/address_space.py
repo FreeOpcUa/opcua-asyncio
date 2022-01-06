@@ -15,12 +15,22 @@ from asyncua.ua.uaprotocol_auto import Index
 
 if TYPE_CHECKING:
     from typing import Callable, Dict, List, Union
-    from asyncua.ua.uatypes import ExtensionObject, NodeId, DataValue
+    from asyncua.ua.uatypes import NodeId, DataValue, VariantType
     from asyncua.ua.uaprotocol_auto import (
         AddNodesItem, BrowsePath, BrowseParameters, RelativePathElement, BrowseResult,
         BrowseDescription, ReadParameters, WriteParameters, ReferenceDescription,
-        BrowsePathResult, DeleteNodesParameters
+        BrowsePathResult, DeleteNodesParameters, DeleteNodesItem, AddReferencesItem,
+        DeleteReferencesItem, ObjectAttributes, DataTypeAttributes, ReferenceTypeAttributes,
+        VariableTypeAttributes, VariableAttributes, ObjectTypeAttributes
     )
+    __TYPE_ATTRIBUTES = Union[    
+        DataTypeAttributes,
+        ReferenceTypeAttributes,
+        VariableTypeAttributes,
+        VariableAttributes,
+        ObjectTypeAttributes,
+        ObjectAttributes
+    ] # FIXME Check, if there are missing attribute types. Another way to solves this would a base class for all attribute classes in uaprotocol_auto.py
 
 from asyncua import ua
 
@@ -31,7 +41,7 @@ _logger = logging.getLogger(__name__)
 
 class AttributeValue(object):
     """
-    This class implements the value of an attribute.
+    The class holds the value(s) of an attribute and callbacks.
     """
     def __init__(self, value: DataValue):
         self.value = value
@@ -46,7 +56,7 @@ class AttributeValue(object):
 
 class NodeData:
     """
-    This class implements a node in the address space.
+    The class is internal to asyncua and holds all the information about a Node.
     """
     def __init__(self, nodeid: NodeId):
         self.nodeid = nodeid
@@ -87,7 +97,7 @@ class AttributeService:
                 al = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
                 ual = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
                 if (
-                    not al.StatusCode.is_good()
+                    not al.StatusCode.is_good() # FIXME Check al and ual for None or prevent them from being None
                     or not ua.ua_binary.test_bit(al.Value.Value, ua.AccessLevel.CurrentWrite)
                     or not ua.ua_binary.test_bit(ual.Value.Value, ua.AccessLevel.CurrentWrite)
                 ):
@@ -101,7 +111,7 @@ class AttributeService:
 
 class ViewService(object):
     """
-    This class implements the view service set of the opc ua standard.
+    This class implements the view service set defined in the opc ua standard.
     https://reference.opcfoundation.org/v104/Core/docs/Part4/5.8.1/
     """
     def __init__(self, aspace: AddressSpace):
@@ -235,7 +245,7 @@ class ViewService(object):
 
 class NodeManagementService:
     """
-    This class implements the node management service set of the opc ua standard.
+    This class implements the node management service set defined in the opc ua standard.
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.1/
     """
     def __init__(self, aspace: AddressSpace):
@@ -383,13 +393,17 @@ class NodeManagementService:
         addref.TargetNodeClass = ua.NodeClass.DataType
         self._add_reference_no_check(nodedata, addref) # FIXME return StatusCode is not evaluated
 
-    def delete_nodes(self, deletenodeitems: DeleteNodesParameters, user=User(role=UserRole.Admin)):
-        results = []
+    def delete_nodes(
+        self,
+        deletenodeitems: DeleteNodesParameters,
+        user: User = User(role=UserRole.Admin)
+    ) -> List[ua.StatusCode]:
+        results: List[ua.StatusCode] = []
         for item in deletenodeitems.NodesToDelete:
             results.append(self._delete_node(item, user))
         return results
 
-    def _delete_node(self, item, user):
+    def _delete_node(self, item: DeleteNodesItem, user: User) -> ua.StatusCode:
         if user.role != UserRole.Admin:
             return ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)
 
@@ -409,7 +423,7 @@ class NodeManagementService:
 
         return ua.StatusCode()
 
-    def _delete_node_callbacks(self, nodedata):
+    def _delete_node_callbacks(self, nodedata: NodeData):
         if ua.AttributeIds.Value in nodedata.attributes:
             for handle, callback in list(nodedata.attributes[ua.AttributeIds.Value].datachange_callbacks.items()):
                 try:
@@ -420,18 +434,18 @@ class NodeManagementService:
                         "Error calling delete node callback callback %s, %s, %s", nodedata, ua.AttributeIds.Value, ex
                     )
 
-    def add_references(self, refs, user=User(role=UserRole.Admin)):
+    def add_references(self, refs: AddReferencesItem, user: User = User(role=UserRole.Admin)):
         result = []
         for ref in refs:
             result.append(self._add_reference(ref, user))
         return result
 
-    def try_add_references(self, refs, user=User(role=UserRole.Admin)):
+    def try_add_references(self, refs: AddReferencesItem, user: User = User(role=UserRole.Admin)):
         for ref in refs:
             if not self._add_reference(ref, user).is_good():
                 yield ref
 
-    def _add_reference(self, addref, user):
+    def _add_reference(self, addref: AddReferencesItem, user: User) -> ua.StatusCode:
         sourcedata = self._aspace.get(addref.SourceNodeId)
         if sourcedata is None:
             return ua.StatusCode(ua.StatusCodes.BadSourceNodeIdInvalid)
@@ -441,7 +455,7 @@ class NodeManagementService:
             return ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)
         return self._add_reference_no_check(sourcedata, addref)
 
-    def _add_reference_no_check(self, sourcedata: NodeData, addref: ua.AddReferencesItem):
+    def _add_reference_no_check(self, sourcedata: NodeData, addref: ua.AddReferencesItem) -> ua.StatusCode:
         rdesc = ua.ReferenceDescription()
         rdesc.ReferenceTypeId = addref.ReferenceTypeId
         rdesc.IsForward = addref.IsForward
@@ -460,13 +474,13 @@ class NodeManagementService:
             rdesc.DisplayName = dname
         return self._add_unique_reference(sourcedata, rdesc)
 
-    def delete_references(self, refs, user=User(role=UserRole.Admin)):
-        result = []
+    def delete_references(self, refs: List[DeleteReferencesItem], user: User = User(role=UserRole.Admin)) -> List[ua.StatusCode]:
+        result: List[ua.StatusCode] = []
         for ref in refs:
             result.append(self._delete_reference(ref, user))
         return result
 
-    def _delete_unique_reference(self, item, invert=False):
+    def _delete_unique_reference(self, item: DeleteReferencesItem, invert: bool = False) -> ua.StatusCode:
         if invert:
             source, target, forward = item.TargetNodeId, item.SourceNodeId, not item.IsForward
         else:
@@ -478,7 +492,7 @@ class NodeManagementService:
                     return ua.StatusCode()
         return ua.StatusCode(ua.StatusCodes.BadNotFound)
 
-    def _delete_reference(self, item, user):
+    def _delete_reference(self, item: DeleteReferencesItem, user: User) -> ua.StatusCode:
         if item.SourceNodeId not in self._aspace:
             return ua.StatusCode(ua.StatusCodes.BadSourceNodeIdInvalid)
         if item.TargetNodeId not in self._aspace:
@@ -492,7 +506,15 @@ class NodeManagementService:
             self._delete_unique_reference(item, True)
         return self._delete_unique_reference(item)
 
-    def _add_node_attr(self, item, nodedata, name, vtype=None, add_timestamps=False, is_array=False):
+    def _add_node_attr(
+        self,
+        item: __TYPE_ATTRIBUTES,
+        nodedata: NodeData,
+        name: str,
+        vtype: VariantType = None,
+        add_timestamps: bool = False,
+        is_array: bool = False
+    ):
         if item.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
             dv = ua.DataValue(
                 ua.Variant(getattr(item, name), vtype, is_array=is_array),
@@ -500,7 +522,12 @@ class NodeManagementService:
             )
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
 
-    def _add_nodeattributes(self, node_attributes: ExtensionObject, nodedata: NodeData, add_timestamps: bool):
+    def _add_nodeattributes(
+        self,
+        node_attributes: __TYPE_ATTRIBUTES,
+        nodedata: NodeData,
+        add_timestamps: bool
+    ):
         self._add_node_attr(node_attributes, nodedata, "AccessLevel", ua.VariantType.Byte)
         self._add_node_attr(node_attributes, nodedata, "ArrayDimensions", ua.VariantType.UInt32, is_array=True)
         self._add_node_attr(node_attributes, nodedata, "BrowseName", ua.VariantType.QualifiedName)
@@ -528,9 +555,13 @@ class NodeManagementService:
 
 
 class MethodService:
-    def __init__(self, aspace: "AddressSpace"):
+    """
+    This class implements the method service set defined in the opc ua standard.
+    https://reference.opcfoundation.org/v104/Core/docs/Part4/5.11.1/
+    """
+    def __init__(self, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
-        self._aspace: "AddressSpace" = aspace
+        self._aspace: AddressSpace = aspace
         self._pool = ThreadPoolExecutor()
 
     def stop(self):
@@ -581,6 +612,8 @@ class AddressSpace:
     """
     The address space object stores all the nodes of the OPC-UA server and helper methods.
     The methods are thread safe
+
+    https://reference.opcfoundation.org/Core/docs/Part3/
     """
 
     def __init__(self):
@@ -595,7 +628,7 @@ class AddressSpace:
         return self._nodes.__getitem__(nodeid)
 
     def get(self, nodeid: NodeId) -> Union[NodeData, None]:
-        return self._nodes.get(nodeid, None) # Fixme This is another behaviour than __getitem__ where an exception is thrown, right?
+        return self._nodes.get(nodeid, None) # Fixme This is another behaviour than __getitem__ where an KeyError exception is thrown, right?
 
     def __setitem__(self, nodeid: NodeId, value: NodeData):
         return self._nodes.__setitem__(nodeid, value)
