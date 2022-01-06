@@ -508,16 +508,16 @@ class NodeManagementService:
 
     def _add_node_attr(
         self,
-        item: __TYPE_ATTRIBUTES,
+        attributes: __TYPE_ATTRIBUTES,
         nodedata: NodeData,
         name: str,
         vtype: VariantType = None,
         add_timestamps: bool = False,
         is_array: bool = False
     ):
-        if item.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
+        if attributes.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
             dv = ua.DataValue(
-                ua.Variant(getattr(item, name), vtype, is_array=is_array),
+                ua.Variant(getattr(attributes, name), vtype, is_array=is_array),
                 SourceTimestamp=datetime.utcnow() if add_timestamps else None,
             )
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
