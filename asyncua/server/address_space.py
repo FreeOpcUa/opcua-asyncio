@@ -14,7 +14,7 @@ from asyncua.ua.attribute_ids import AttributeIds
 from asyncua.ua.uaprotocol_auto import Index
 
 if TYPE_CHECKING:
-    from typing import Callable, Dict, List, Union
+    from typing import Callable, Dict, List, Union, Tuple
     from asyncua.ua.uatypes import NodeId, DataValue, VariantType
     from asyncua.ua.uaprotocol_auto import (
         AddNodesItem, BrowsePath, BrowseParameters, RelativePathElement, BrowseResult,
@@ -45,7 +45,7 @@ class AttributeValue(object):
     """
     def __init__(self, value: DataValue):
         self.value = value
-        self.value_callback: Union[Callable[[], None], None] = None
+        self.value_callback: Union[Callable[[], ua.DataValue], None] = None
         self.datachange_callbacks = {}
 
     def __str__(self) -> str:
@@ -434,7 +434,7 @@ class NodeManagementService:
                         "Error calling delete node callback callback %s, %s, %s", nodedata, ua.AttributeIds.Value, ex
                     )
 
-    def add_references(self, refs: AddReferencesItem, user: User = User(role=UserRole.Admin)):
+    def add_references(self, refs: AddReferencesItem, user: User = User(role=UserRole.Admin)): # FIXME return type
         result = []
         for ref in refs:
             result.append(self._add_reference(ref, user))
@@ -620,7 +620,7 @@ class AddressSpace:
         self.logger = logging.getLogger(__name__)
         self._nodes: Dict[NodeId, NodeData] = {}
         self._datachange_callback_counter = 200
-        self._handle_to_attribute_map = {}
+        self._handle_to_attribute_map: Dict[int, Tuple[NodeId, AttributeIds]] = {}
         self._default_idx = 2
         self._nodeid_counter = {0: 20000, 1: 2000}
 
@@ -762,7 +762,7 @@ class AddressSpace:
 
         self._nodes = LazyLoadingDict(shelve.open(path, "r"))
 
-    def read_attribute_value(self, nodeid, attr):
+    def read_attribute_value(self, nodeid: NodeId, attr: AttributeIds) -> ua.DataValue:
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
         if nodeid not in self._nodes:
             dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
@@ -776,7 +776,7 @@ class AddressSpace:
             return attval.value_callback()
         return attval.value
 
-    async def write_attribute_value(self, nodeid, attr, value) -> ua.StatusCode:
+    async def write_attribute_value(self, nodeid: NodeId, attr: AttributeIds, value: DataValue) -> ua.StatusCode:
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
         node = self._nodes.get(nodeid, None)
         if node is None:
@@ -803,8 +803,8 @@ class AddressSpace:
 
         return ua.StatusCode()
 
-    def _is_expected_variant_type(self, value, attval, node):
-        vtype = attval.value.Value.VariantType
+    def _is_expected_variant_type(self, value: DataValue, attval: AttributeValue, node: NodeData) -> bool:
+        vtype = attval.value.Value.VariantType # FIXME Type hinting reveals that it is possible that Value (Optional) is None which would raise an exception
         if vtype == ua.VariantType.Null:
             # Node had a null value, many nodes are initialized with that value
             # we should check what the real type is
@@ -821,8 +821,8 @@ class AddressSpace:
                 value.Value, value.Value.VariantType, attval.value.Value.VariantType)
         return False
 
-    def add_datachange_callback(self, nodeid, attr, callback):
-        self.logger.debug("set attr callback: %s %s %s", nodeid, attr, callback)
+    def add_datachange_callback(self, nodeid: NodeId, attr: AttributeIds, callback: Callable) -> Tuple[ua.StatusCode, int]:
+        # self.logger.debug("set attr callback: %s %s %s", nodeid, attr, callback)
         if nodeid not in self._nodes:
             return ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown), 0
         node = self._nodes[nodeid]
@@ -835,11 +835,11 @@ class AddressSpace:
         self._handle_to_attribute_map[handle] = (nodeid, attr)
         return ua.StatusCode(), handle
 
-    def delete_datachange_callback(self, handle):
+    def delete_datachange_callback(self, handle: int):
         if handle in self._handle_to_attribute_map:
             nodeid, attr = self._handle_to_attribute_map.pop(handle)
             self._nodes[nodeid].attributes[attr].datachange_callbacks.pop(handle)
 
-    def add_method_callback(self, methodid, callback):
+    def add_method_callback(self, methodid: NodeId, callback: Callable):
         node = self._nodes[methodid]
         node.call = callback
