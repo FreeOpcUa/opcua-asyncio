@@ -10,17 +10,10 @@ from datetime import datetime
 from functools import partial
 from typing import TYPE_CHECKING
 
-from asyncua.ua.attribute_ids import AttributeIds
-from asyncua.ua.uaprotocol_auto import Index
-
 if TYPE_CHECKING:
     from typing import Callable, Dict, List, Union, Tuple
-    from asyncua.ua.uatypes import NodeId, DataValue, VariantType
     from asyncua.ua.uaprotocol_auto import (
-        AddNodesItem, BrowsePath, BrowseParameters, RelativePathElement, BrowseResult,
-        BrowseDescription, ReadParameters, WriteParameters, ReferenceDescription,
-        BrowsePathResult, DeleteNodesParameters, DeleteNodesItem, AddReferencesItem,
-        DeleteReferencesItem, ObjectAttributes, DataTypeAttributes, ReferenceTypeAttributes,
+        ObjectAttributes, DataTypeAttributes, ReferenceTypeAttributes,
         VariableTypeAttributes, VariableAttributes, ObjectTypeAttributes
     )
     __TYPE_ATTRIBUTES = Union[    
@@ -30,7 +23,7 @@ if TYPE_CHECKING:
         VariableAttributes,
         ObjectTypeAttributes,
         ObjectAttributes
-    ] # FIXME Check, if there are missing attribute types. Another way to solves this would a base class for all attribute classes in uaprotocol_auto.py
+    ] # FIXME Check, if there are missing attribute types.
 
 from asyncua import ua
 
@@ -43,7 +36,7 @@ class AttributeValue(object):
     """
     The class holds the value(s) of an attribute and callbacks.
     """
-    def __init__(self, value: DataValue):
+    def __init__(self, value: ua.DataValue):
         self.value = value
         self.value_callback: Union[Callable[[], ua.DataValue], None] = None
         self.datachange_callbacks = {}
@@ -58,9 +51,9 @@ class NodeData:
     """
     The class is internal to asyncua and holds all the information about a Node.
     """
-    def __init__(self, nodeid: NodeId):
+    def __init__(self, nodeid: ua.NodeId):
         self.nodeid = nodeid
-        self.attributes: Dict[AttributeIds, AttributeValue] = {}
+        self.attributes: Dict[ua.AttributeIds, AttributeValue] = {}
         self.references: List[ua.ReferenceDescription] = []
         self.call = None
 
@@ -79,14 +72,14 @@ class AttributeService:
         self.logger = logging.getLogger(__name__)
         self._aspace: AddressSpace = aspace
 
-    def read(self, params: ReadParameters) -> List[DataValue]:
+    def read(self, params: ua.ReadParameters) -> List[ua.DataValue]:
         # self.logger.debug("read %s", params)
-        res: List[DataValue] = []
+        res: List[ua.DataValue] = []
         for readvalue in params.NodesToRead:
             res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
         return res
 
-    async def write(self, params: WriteParameters, user: User = User(role=UserRole.Admin)) -> List[ua.StatusCode]:
+    async def write(self, params: ua.WriteParameters, user: User = User(role=UserRole.Admin)) -> List[ua.StatusCode]:
         # self.logger.debug("write %s as user %s", params, user)
         res: List[ua.StatusCode] = []
         for writevalue in params.NodesToWrite:
@@ -121,14 +114,14 @@ class ViewService(object):
         self.logger = logging.getLogger(__name__)
         self._aspace: AddressSpace = aspace
 
-    def browse(self, params: BrowseParameters) -> List[BrowseResult]:
+    def browse(self, params: ua.BrowseParameters) -> List[ua.BrowseResult]:
         # self.logger.debug("browse %s", params)
-        res: List[BrowseResult] = []
+        res: List[ua.BrowseResult] = []
         for desc in params.NodesToBrowse:
             res.append(self._browse(desc))
         return res
 
-    def _browse(self, desc: BrowseDescription) -> BrowseResult:
+    def _browse(self, desc: ua.BrowseDescription) -> ua.BrowseResult:
         res = ua.BrowseResult()
         if desc.NodeId not in self._aspace:
             res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdInvalid)
@@ -140,7 +133,7 @@ class ViewService(object):
             res.References.append(ref)
         return res
 
-    def _is_suitable_ref(self, desc: BrowseDescription, ref: ReferenceDescription) -> bool:
+    def _is_suitable_ref(self, desc: ua.BrowseDescription, ref: ua.ReferenceDescription) -> bool:
         if not self._suitable_direction(desc.BrowseDirection, ref.IsForward):
             # self.logger.debug("%s is not suitable due to direction", ref)
             return False
@@ -153,7 +146,7 @@ class ViewService(object):
         # self.logger.debug("%s is a suitable ref for desc %s", ref, desc)
         return True
 
-    def _suitable_reftype(self, ref1: NodeId, ref2: NodeId, subtypes: bool) -> bool:
+    def _suitable_reftype(self, ref1: ua.NodeId, ref2: ua.NodeId, subtypes: bool) -> bool:
         if ref1 == ua.NodeId(ua.ObjectIds.Null):
             # If ReferenceTypeId is not specified in the BrowseDescription,
             # all References are returned and includeSubtypes is ignored.
@@ -167,8 +160,8 @@ class ViewService(object):
             oktypes.remove(ua.NodeId(ua.ObjectIds.HasSubtype))
         return ref2 in oktypes
 
-    def _get_sub_ref(self, ref: NodeId) -> List[NodeId]:
-        res: List[NodeId] = []
+    def _get_sub_ref(self, ref: ua.NodeId) -> List[ua.NodeId]:
+        res: List[ua.NodeId] = []
         nodedata = self._aspace[ref]
         if nodedata is not None:
             for ref_desc in nodedata.references:
@@ -186,14 +179,14 @@ class ViewService(object):
             return True
         return False
 
-    def translate_browsepaths_to_nodeids(self, browsepaths: List[BrowsePath]) -> List[BrowsePathResult]:
+    def translate_browsepaths_to_nodeids(self, browsepaths: List[ua.BrowsePath]) -> List[ua.BrowsePathResult]:
         # self.logger.debug("translate browsepath: %s", browsepaths)
-        results: List[BrowsePathResult] = []
+        results: List[ua.BrowsePathResult] = []
         for path in browsepaths:
             results.append(self._translate_browsepath_to_nodeid(path))
         return results
 
-    def _translate_browsepath_to_nodeid(self, path: BrowsePath) -> ua.BrowsePathResult:
+    def _translate_browsepath_to_nodeid(self, path: ua.BrowsePath) -> ua.BrowsePathResult:
         # self.logger.debug("looking at path: %s", path)
         res = ua.BrowsePathResult()
         if not path.RelativePath.Elements[-1].TargetName:
@@ -211,12 +204,12 @@ class ViewService(object):
         for nodeid in target_nodeids:
             target = ua.BrowsePathTarget()
             target.TargetId = nodeid # FIXME <<<< Type conflict
-            target.RemainingPathIndex = Index(4294967295) # FIXME: magic number, why not Index.MAX?
+            target.RemainingPathIndex = ua.Index(4294967295) # FIXME: magic number, why not Index.MAX?
             res.Targets.append(target)
         # FIXME: might need to order these one way or another
         return res
 
-    def _navigate(self, start_nodeid: NodeId, elements: List[RelativePathElement]) -> List[NodeId]:
+    def _navigate(self, start_nodeid: ua.NodeId, elements: List[ua.RelativePathElement]) -> List[ua.NodeId]:
         current_nodeids = [start_nodeid]
         for el in elements:
             new_currents = []
@@ -229,9 +222,9 @@ class ViewService(object):
             current_nodeids = new_currents
         return current_nodeids
 
-    def _find_elements_in_node(self, el: RelativePathElement, nodeid: NodeId) -> List[NodeId]:
+    def _find_elements_in_node(self, el: ua.RelativePathElement, nodeid: ua.NodeId) -> List[ua.NodeId]:
         nodedata: NodeData = self._aspace[nodeid]
-        nodeids: List[NodeId] = []
+        nodeids: List[ua.NodeId] = []
         for ref in nodedata.references:
             if ref.BrowseName != el.TargetName:
                 continue
@@ -342,7 +335,7 @@ class NodeManagementService:
 
         return result
 
-    def _add_node_attributes(self, nodedata: NodeData, item: AddNodesItem, add_timestamps: bool):
+    def _add_node_attributes(self, nodedata: NodeData, item: ua.AddNodesItem, add_timestamps: bool):
         # add common attrs
         nodedata.attributes[ua.AttributeIds.NodeId] = AttributeValue(
             ua.DataValue(ua.Variant(nodedata.nodeid, ua.VariantType.NodeId))
@@ -398,7 +391,7 @@ class NodeManagementService:
 
     def delete_nodes(
         self,
-        deletenodeitems: DeleteNodesParameters,
+        deletenodeitems: ua.DeleteNodesParameters,
         user: User = User(role=UserRole.Admin)
     ) -> List[ua.StatusCode]:
         results: List[ua.StatusCode] = []
@@ -406,7 +399,7 @@ class NodeManagementService:
             results.append(self._delete_node(item, user))
         return results
 
-    def _delete_node(self, item: DeleteNodesItem, user: User) -> ua.StatusCode:
+    def _delete_node(self, item: ua.DeleteNodesItem, user: User) -> ua.StatusCode:
         if user.role != UserRole.Admin:
             return ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)
 
@@ -437,18 +430,18 @@ class NodeManagementService:
                         "Error calling delete node callback callback %s, %s, %s", nodedata, ua.AttributeIds.Value, ex
                     )
 
-    def add_references(self, refs: AddReferencesItem, user: User = User(role=UserRole.Admin)): # FIXME return type
+    def add_references(self, refs: ua.AddReferencesItem, user: User = User(role=UserRole.Admin)): # FIXME return type
         result = []
         for ref in refs:
             result.append(self._add_reference(ref, user))
         return result
 
-    def try_add_references(self, refs: AddReferencesItem, user: User = User(role=UserRole.Admin)):
+    def try_add_references(self, refs: ua.AddReferencesItem, user: User = User(role=UserRole.Admin)):
         for ref in refs:
             if not self._add_reference(ref, user).is_good():
                 yield ref
 
-    def _add_reference(self, addref: AddReferencesItem, user: User) -> ua.StatusCode:
+    def _add_reference(self, addref: ua.AddReferencesItem, user: User) -> ua.StatusCode:
         sourcedata = self._aspace.get(addref.SourceNodeId)
         if sourcedata is None:
             return ua.StatusCode(ua.StatusCodes.BadSourceNodeIdInvalid)
@@ -477,13 +470,13 @@ class NodeManagementService:
             rdesc.DisplayName = dname
         return self._add_unique_reference(sourcedata, rdesc)
 
-    def delete_references(self, refs: List[DeleteReferencesItem], user: User = User(role=UserRole.Admin)) -> List[ua.StatusCode]:
+    def delete_references(self, refs: List[ua.DeleteReferencesItem], user: User = User(role=UserRole.Admin)) -> List[ua.StatusCode]:
         result: List[ua.StatusCode] = []
         for ref in refs:
             result.append(self._delete_reference(ref, user))
         return result
 
-    def _delete_unique_reference(self, item: DeleteReferencesItem, invert: bool = False) -> ua.StatusCode:
+    def _delete_unique_reference(self, item: ua.DeleteReferencesItem, invert: bool = False) -> ua.StatusCode:
         if invert:
             source, target, forward = item.TargetNodeId, item.SourceNodeId, not item.IsForward
         else:
@@ -495,7 +488,7 @@ class NodeManagementService:
                     return ua.StatusCode()
         return ua.StatusCode(ua.StatusCodes.BadNotFound)
 
-    def _delete_reference(self, item: DeleteReferencesItem, user: User) -> ua.StatusCode:
+    def _delete_reference(self, item: ua.DeleteReferencesItem, user: User) -> ua.StatusCode:
         if item.SourceNodeId not in self._aspace:
             return ua.StatusCode(ua.StatusCodes.BadSourceNodeIdInvalid)
         if item.TargetNodeId not in self._aspace:
@@ -514,7 +507,7 @@ class NodeManagementService:
         attributes: __TYPE_ATTRIBUTES,
         nodedata: NodeData,
         name: str,
-        vtype: VariantType = None,
+        vtype: ua.VariantType = None,
         add_timestamps: bool = False,
         is_array: bool = False
     ):
@@ -621,28 +614,28 @@ class AddressSpace:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self._nodes: Dict[NodeId, NodeData] = {}
+        self._nodes: Dict[ua.NodeId, NodeData] = {}
         self._datachange_callback_counter = 200
-        self._handle_to_attribute_map: Dict[int, Tuple[NodeId, AttributeIds]] = {}
+        self._handle_to_attribute_map: Dict[int, Tuple[ua.NodeId, ua.AttributeIds]] = {}
         self._default_idx = 2
         self._nodeid_counter = {0: 20000, 1: 2000}
 
-    def __getitem__(self, nodeid: NodeId) -> NodeData:
+    def __getitem__(self, nodeid: ua.NodeId) -> NodeData:
         return self._nodes.__getitem__(nodeid)
 
-    def get(self, nodeid: NodeId) -> Union[NodeData, None]:
+    def get(self, nodeid: ua.NodeId) -> Union[NodeData, None]:
         return self._nodes.get(nodeid, None) # Fixme This is another behaviour than __getitem__ where an KeyError exception is thrown, right?
 
-    def __setitem__(self, nodeid: NodeId, value: NodeData):
+    def __setitem__(self, nodeid: ua.NodeId, value: NodeData):
         return self._nodes.__setitem__(nodeid, value)
 
-    def __contains__(self, nodeid: NodeId) -> bool:
+    def __contains__(self, nodeid: ua.NodeId) -> bool:
         return self._nodes.__contains__(nodeid)
 
-    def __delitem__(self, nodeid: NodeId):
+    def __delitem__(self, nodeid: ua.NodeId):
         self._nodes.__delitem__(nodeid)
 
-    def generate_nodeid(self, idx: Union[int, None] = None) -> NodeId:
+    def generate_nodeid(self, idx: Union[int, None] = None) -> ua.NodeId:
         if idx is None:
             idx = self._default_idx
         if idx in self._nodeid_counter:
@@ -765,7 +758,7 @@ class AddressSpace:
 
         self._nodes = LazyLoadingDict(shelve.open(path, "r"))
 
-    def read_attribute_value(self, nodeid: NodeId, attr: AttributeIds) -> ua.DataValue:
+    def read_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds) -> ua.DataValue:
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
         if nodeid not in self._nodes:
             dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
@@ -779,7 +772,7 @@ class AddressSpace:
             return attval.value_callback()
         return attval.value
 
-    async def write_attribute_value(self, nodeid: NodeId, attr: AttributeIds, value: DataValue) -> ua.StatusCode:
+    async def write_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds, value: ua.DataValue) -> ua.StatusCode:
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
         node = self._nodes.get(nodeid, None)
         if node is None:
@@ -806,7 +799,7 @@ class AddressSpace:
 
         return ua.StatusCode()
 
-    def _is_expected_variant_type(self, value: DataValue, attval: AttributeValue, node: NodeData) -> bool:
+    def _is_expected_variant_type(self, value: ua.DataValue, attval: AttributeValue, node: NodeData) -> bool:
         vtype = attval.value.Value.VariantType # FIXME Type hinting reveals that it is possible that Value (Optional) is None which would raise an exception
         if vtype == ua.VariantType.Null:
             # Node had a null value, many nodes are initialized with that value
@@ -824,7 +817,7 @@ class AddressSpace:
                 value.Value, value.Value.VariantType, attval.value.Value.VariantType)
         return False
 
-    def add_datachange_callback(self, nodeid: NodeId, attr: AttributeIds, callback: Callable) -> Tuple[ua.StatusCode, int]:
+    def add_datachange_callback(self, nodeid: ua.NodeId, attr: ua.AttributeIds, callback: Callable) -> Tuple[ua.StatusCode, int]:
         # self.logger.debug("set attr callback: %s %s %s", nodeid, attr, callback)
         if nodeid not in self._nodes:
             return ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown), 0
@@ -843,6 +836,6 @@ class AddressSpace:
             nodeid, attr = self._handle_to_attribute_map.pop(handle)
             self._nodes[nodeid].attributes[attr].datachange_callbacks.pop(handle)
 
-    def add_method_callback(self, methodid: NodeId, callback: Callable):
+    def add_method_callback(self, methodid: ua.NodeId, callback: Callable):
         node = self._nodes[methodid]
         node.call = callback
