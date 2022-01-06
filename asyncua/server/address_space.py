@@ -671,7 +671,7 @@ class AddressSpace:
     def keys(self):
         return self._nodes.keys()
 
-    def clear(self): # FIXME: missleading name empty, better clear or reset, but could be braking change
+    def clear(self):
         """Delete all nodes in address space"""
         self._nodes.clear()
 
