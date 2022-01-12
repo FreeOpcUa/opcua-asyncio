@@ -277,18 +277,18 @@ def create_dataclass_serializer(dataclazz):
         in enumerate(filter(lambda f: type_is_union(f.type), data_fields))
     ]
 
-    def serialize_encoding(obj):
+    def enc_value(obj):
         enc = 0
         for name, enc_val in union_fields_encodings:
             if obj.__dict__[name] is not None:
                 enc |= enc_val
-        return Primitives.Byte.pack(enc)
+        return enc
 
     encoding_functions = [(f.name, field_serializer(f)) for f in data_fields]
 
     def serialize(obj):
         return b''.join(
-            serialize_encoding(obj) if name == 'Encoding'
+            serializer(enc_value(obj)) if name == 'Encoding'
             else serializer(obj.__dict__[name])
             for name, serializer in encoding_functions
         )
