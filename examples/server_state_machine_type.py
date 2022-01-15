@@ -6,6 +6,7 @@ import logging
 from typing import Union
 from asyncua import ua, Server, Node
 from asyncua.common.statemachine import ProgramStateMachine
+from asyncua.common.parameter_set import ParameterSet
 
 import datetime
 _logger = logging.getLogger(__name__)
@@ -18,6 +19,10 @@ class ExampleStateMachine(ProgramStateMachine):
         self._index = 0
         self._max = max
 
+    async def install(self): 
+        await super().install()
+        self.result = self.FinalResultDataSet.Result 
+
     async def on_entry_ready(self):
         self._index = 0 
 
@@ -27,8 +32,10 @@ class ExampleStateMachine(ProgramStateMachine):
             print(f'Executing the Running state {self._index}/{self._max}')
             await asyncio.sleep(1)
         
-        if self._index == self._max: 
-            await self.change_state(self.Ready, event_msg='Execution successfully finished.')
+        if self._index == self._max and self.result.value: 
+            await self.change_state(self.Ready, event_msg=f'Execution successfully finished. Result: {self.result.value}')
+        else: 
+            await self.change_state(self.Halted, event_msg=f'Execution failed. Result: {self.result.value}')
 
     async def on_entry_running(self): 
         self._running = True 
@@ -45,13 +52,21 @@ async def main():
     al = logging.getLogger('asyncua.common.statemachine')
     al.setLevel(logging.DEBUG)
     await server.init()
+
     await server.import_xml(os.path.join('examples','StateMachine.Example.NodeSet2.xml'))
     idx = await server.get_namespace_index('/StateMachine/Example/')
     state_machine_id = ua.NodeId(Identifier=5002, NamespaceIndex=idx)
     state_machine_node = server.get_node(state_machine_id)
-    esm = ExampleStateMachine(server, node=state_machine_node)
+
+    esm = ExampleStateMachine(server, node=state_machine_node, max=10)
     await esm.install()
     await esm.set_initial_state(esm.Ready)
+
+    await esm.FinalResultDataSet.print_parameter_list()
+    await esm.FinalResultDataSet.set_value('Result', True)
+    print(esm.FinalResultDataSet.Result.value)
+    
+    #await esm.FinalResultDataSet.update_subscription_interval(50)
 
     async with server:
         while True:

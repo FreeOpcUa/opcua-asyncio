@@ -18,6 +18,7 @@ import logging
 import datetime
 
 from asyncua import Server, ua, Node
+from asyncua.common.parameter_set import ParameterSet
 from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
 from typing import Union, List
 
@@ -408,30 +409,28 @@ class StateMachine(object):
 
         :param id: node id of the transition node
         """
-        try: 
-            node = self._server.get_node(id)
-            name = (await node.read_browse_name()).Name
-            transition = Transition(id, node=node)
-            await transition.init()
-            setattr(self, name, transition)
-            self.transitions.append(transition)
 
-            from_state = (await transition.node.get_referenced_nodes(refs=ua.ObjectIds.FromState))[0]
-            to_state = (await transition.node.get_referenced_nodes(refs=ua.ObjectIds.ToState))[0]
-            cause = await transition.node.get_referenced_nodes(refs=ua.ObjectIds.HasCause)
-            transition.from_state = self.get_state_by_id(from_state.nodeid)
-            transition.to_state = self.get_state_by_id(to_state.nodeid)  
+        node = self._server.get_node(id)
+        name = (await node.read_browse_name()).Name
+        transition = Transition(id, node=node)
+        await transition.init()
+        setattr(self, name, transition)
+        self.transitions.append(transition)
 
-            # Not all transitions have a cause reference 
-            if cause: 
-                await self._add_cause(cause[0], transition)
-                _logger.debug(f'Added cause {cause[0].name} to transition {name}.')
-    
-            _logger.debug(f'Added transition {name} to {self.name} ({self._state_machine_node}).')
+        from_state = (await transition.node.get_referenced_nodes(refs=ua.ObjectIds.FromState))[0]
+        to_state = (await transition.node.get_referenced_nodes(refs=ua.ObjectIds.ToState))[0]
+        cause = await transition.node.get_referenced_nodes(refs=ua.ObjectIds.HasCause)
+        transition.from_state = self.get_state_by_id(from_state.nodeid)
+        transition.to_state = self.get_state_by_id(to_state.nodeid)  
 
-        except Exception as e: 
-            _logger.warning(f'Failed to add transition {name}. {e}')
+        # Not all transitions have a cause reference 
+        if cause: 
+            await self._add_cause(cause[0], transition)
+            _logger.debug(f'Added cause {self.causes[-1].name} to transition {name}.')
 
+        _logger.debug(f'Added transition {name} to {self.name} ({self._state_machine_node}).')
+
+ 
     async def _add_cause(self, id: ua.NodeId, transition: Transition): 
         """
         Creating a new cause object and adding it to the transition and state machine 
@@ -619,10 +618,13 @@ class ProgramStateMachine(FiniteStateMachine):
         self.Resume: Cause = None 
         self.Halt: Cause = None  
 
+        self.FinalResultDataSet = None
+
+
     async def install(self): 
         await super().install()
 
-        self.FinalResultDataSet = None 
+        await self._add_parameter_set()
 
         self.Ready.on_entry = self.on_entry_ready
         self.Ready.on_exit = self.on_exit_ready
@@ -637,6 +639,15 @@ class ProgramStateMachine(FiniteStateMachine):
         self.Halted.on_exit = self.on_exit_halted 
         #self.Halted.execute = self.execute_halted 
         
+    async def _add_parameter_set(self): 
+        try: 
+            final_result_data_node = await self._state_machine_node.get_child(['FinalResultData'])
+            if final_result_data_node: 
+                self.FinalResultDataSet = ParameterSet(final_result_data_node, subscribe=True, source=self._server)
+                await self.FinalResultDataSet.init()
+        except Exception as e: 
+            _logger.debug(f'ProgramStateMachine {self._state_machine_node} has nod FinalResultData set. {e}')
+
     async def on_entry_ready(self): 
         _logger.debug(f'Entering the Ready state of {self.name} ({self._state_machine_node}).')
 
