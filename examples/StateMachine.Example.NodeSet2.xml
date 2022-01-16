@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<UANodeSet LastModified="2022-01-16T10:08:53.440Z" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd" xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd" xmlns:si="http://www.siemens.com/OPCUA/2017/SimaticNodeSetExtensions" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<UANodeSet LastModified="2022-01-16T12:50:44.743Z" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd" xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd" xmlns:si="http://www.siemens.com/OPCUA/2017/SimaticNodeSetExtensions" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
     <NamespaceUris>
         <Uri>/StateMachine/Example/</Uri>
     </NamespaceUris>
@@ -10,6 +10,7 @@
     </Models>
     <Aliases>
         <Alias Alias="Boolean">i=1</Alias>
+        <Alias Alias="UInt16">i=5</Alias>
         <Alias Alias="Int32">i=6</Alias>
         <Alias Alias="UInt32">i=7</Alias>
         <Alias Alias="DateTime">i=13</Alias>
@@ -27,7 +28,7 @@
             <si:Generator Product="SiOME" Edition="Standard" Version="2.3.6"/>
         </Extension>
         <Extension>
-            <si:GeneratorExtension Hash="95663f8bc0bd312cc55d60fe5128e4f7"/>
+            <si:GeneratorExtension Hash="cf3f6b738af3d24fae0beee4601710d0"/>
         </Extension>
     </Extensions>
     <UAObject SymbolicName="S_StateMachine_Example_" NodeId="ns=1;i=5000" BrowseName="1:/StateMachine/Example/" ParentNodeId="i=11715">
@@ -102,8 +103,8 @@
             <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
         </References>
     </UAVariable>
-    <UAObject NodeId="ns=1;i=5001" BrowseName="1:Example" ParentNodeId="i=85">
-        <DisplayName>Example</DisplayName>
+    <UAObject NodeId="ns=1;i=5001" BrowseName="1:StateMachineExample" ParentNodeId="i=85">
+        <DisplayName>State Machine Example</DisplayName>
         <References>
             <Reference ReferenceType="Organizes" IsForward="false">i=85</Reference>
             <Reference ReferenceType="HasTypeDefinition">i=58</Reference>
@@ -287,6 +288,12 @@
             <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=6083</Reference>
             <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
         </References>
+        <Value>
+            <uax:QualifiedName>
+                <uax:NamespaceIndex>0</uax:NamespaceIndex>
+                <uax:Name>None</uax:Name>
+            </uax:QualifiedName>
+        </Value>
     </UAVariable>
     <UAVariable DataType="UInt32" NodeId="ns=1;i=6086" BrowseName="Number" ParentNodeId="ns=1;i=6083">
         <DisplayName>Number</DisplayName>
@@ -301,5 +308,32 @@
             <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=6083</Reference>
             <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
         </References>
+    </UAVariable>
+    <UAObject NodeId="ns=1;i=5013" BrowseName="1:ExampleParameterSet" ParentNodeId="ns=1;i=5001">
+        <DisplayName>ExampleParameterSet</DisplayName>
+        <References>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5001</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=58</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="UInt16" NodeId="ns=1;i=6090" BrowseName="1:MaxProgramIterationsCount" ParentNodeId="ns=1;i=5013" UserAccessLevel="3" AccessLevel="3">
+        <DisplayName>MaxProgramIterationsCount</DisplayName>
+        <References>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5013</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+        </References>
+        <Value>
+            <uax:UInt16>10</uax:UInt16>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="UInt16" NodeId="ns=1;i=6091" BrowseName="1:CurrentProgramIterationsCount" ParentNodeId="ns=1;i=5013" UserAccessLevel="3" AccessLevel="3">
+        <DisplayName>CurrentProgramIterationsCount</DisplayName>
+        <References>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5013</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+        </References>
+        <Value>
+            <uax:UInt16>0</uax:UInt16>
+        </Value>
     </UAVariable>
 </UANodeSet>

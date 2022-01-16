@@ -16,6 +16,7 @@ Events - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.5/
 '''
 import logging
 import datetime
+from msilib.schema import Property
 from re import A
 
 from asyncua import Server, ua, Node
@@ -287,8 +288,21 @@ class StateMachine(object):
             _logger.debug(f'Invalid transition for leaving the {self._current_state.name} state in {self._name} ({self._state_machine_node}).')
             return ua.StatusCode(ua.StatusCodes.BadInvalidState)
 
-    def get_current_state(self): 
+    @property
+    def current_state(self): 
         return self._current_state
+
+    @property
+    def current_state_id(self): 
+        return self._current_state.id
+    
+    @property
+    def current_state_number(self): 
+        return self._current_state.number 
+    
+    @property
+    def current_state_name(self): 
+        return self._current_state.name
 
     def get_state_by_name(self, name: str): 
         for state in self.states: 
@@ -457,7 +471,7 @@ class StateMachine(object):
             if self._current_state_id_node:
                 await self._current_state_id_node.write_value(state.node.nodeid, varianttype=ua.VariantType.NodeId)
             if self._current_state_name_node and state.name:
-                await self._current_state_name_node.write_value(state.name, ua.VariantType.QualifiedName)
+                await self._current_state_name_node.write_value(ua.QualifiedName(state.name, state.node.nodeid.NamespaceIndex), ua.VariantType.QualifiedName)
             if self._current_state_number_node and state.number:
                 await self._current_state_number_node.write_value(state.number, ua.VariantType.UInt32)
             if self._current_state_effective_display_name_node and state.effectivedisplayname:
@@ -476,7 +490,7 @@ class StateMachine(object):
             if self._last_transition_id_node:
                 await self._last_transition_id_node.write_value(transition.node.nodeid, varianttype=ua.VariantType.NodeId)
             if self._last_transition_name_node and transition.name:
-                await self._last_transition_name_node.write_value(ua.QualifiedName(transition.name, self._idx), ua.VariantType.QualifiedName)
+                await self._last_transition_name_node.write_value(ua.QualifiedName(transition.name, transition.node.nodeid.NamespaceIndex), ua.VariantType.QualifiedName)
             if self._last_transition_number_node and transition.number:
                 await self._last_transition_number_node.write_value(transition.number, ua.VariantType.UInt32)
             if self._last_transition_transitiontime_node and transition._transitiontime:
@@ -714,8 +728,14 @@ class ProgramStateMachine(FiniteStateMachine):
         self.Resume: Cause = None 
         self.Halt: Cause = None  
 
-        self.FinalResultDataSet = None
+        self.FinalResultData: ParameterSet = None
 
+        self._auto_delete_node: Node = None # ua.Boolean
+        self._deletable_node: Node = None # ua.Boolean
+        self._program_diagnostics_node: Node = None # ua.ProgramDiagnostic2DataType 
+        self._max_instance_count_node: Node = None # ua.UInt32
+        self._max_recycle_count_node: Node = None # ua.UInt32
+        self._instance_count_node: Node = None # ua.UInt32
 
     async def install(self): 
         await super().install()
@@ -739,8 +759,8 @@ class ProgramStateMachine(FiniteStateMachine):
         try: 
             final_result_data_node = await self._state_machine_node.get_child(['FinalResultData'])
             if final_result_data_node: 
-                self.FinalResultDataSet = ParameterSet(final_result_data_node, subscribe=True, source=self._server)
-                await self.FinalResultDataSet.init()
+                self.FinalResultData = ParameterSet(final_result_data_node, subscribe=True, source=self._server)
+                await self.FinalResultData.init()
         except Exception as e: 
             _logger.debug(f'ProgramStateMachine {self._state_machine_node} has no FinalResultData set. {e}')
 
