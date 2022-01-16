@@ -1,15 +1,8 @@
 import os 
 import asyncio
-from copy import copy
-
 import logging
-from typing import Union
 from asyncua import ua, Server, Node
-from asyncua.common.statemachine import ProgramStateMachine
-from asyncua.common.parameter_set import ParameterSet
-
-import datetime
-_logger = logging.getLogger(__name__)
+from asyncua.common.statemachine import ProgramStateMachine, ExclusiveLimitStateMachine
 
 class ExampleStateMachine(ProgramStateMachine): 
     def __init__(self, server: Server, node: Node, max=3): 
@@ -58,6 +51,7 @@ async def main():
     state_machine_id = ua.NodeId(Identifier=5002, NamespaceIndex=idx)
     state_machine_node = server.get_node(state_machine_id)
 
+    # Example ProgramStateMachine
     esm = ExampleStateMachine(server, node=state_machine_node, max=10)
     await esm.install()
     await esm.set_initial_state(esm.Ready)
@@ -65,11 +59,31 @@ async def main():
     await esm.FinalResultDataSet.print_parameter_list()
     await esm.FinalResultDataSet.set_value('Result', True)
     print(esm.FinalResultDataSet.Result.value)
-    
     #await esm.FinalResultDataSet.update_subscription_interval(50)
 
+    # ExclusiveLimitStateMachine
+    limit_state_machine_id = ua.NodeId(Identifier=5012, NamespaceIndex=idx)
+    limit_state_machine_node = server.get_node(limit_state_machine_id)
+    limit_sm = ExclusiveLimitStateMachine(server, limit_state_machine_node)
+    await limit_sm.install(optionals=False) 
+    await limit_sm.set_initial_state(limit_sm.Low)
+
+    val = 0
     async with server:
         while True:
+            if val == 5: 
+                await limit_sm.change_state(limit_sm.LowLow, event_msg='Now its freezing cold.')
+            elif val == 10: 
+                await limit_sm.change_state(limit_sm.Low, event_msg='Temperature is to low.')
+            elif val == 12: 
+                res = await limit_sm.change_state(limit_sm.High, event_msg='Temperature is to hot')
+                print(f'Changeing to high failed. {res}')
+
+            val += 1
+
+            if val > 12: 
+                val = 0
+
             await asyncio.sleep(1)
 
 if __name__ == "__main__": 

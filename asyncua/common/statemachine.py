@@ -16,10 +16,11 @@ Events - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.5/
 '''
 import logging
 import datetime
+from re import A
 
 from asyncua import Server, ua, Node
 from asyncua.common.parameter_set import ParameterSet
-from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
+from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent, AlarmCondition
 from typing import Union, List
 
 _logger = logging.getLogger(__name__)
@@ -190,9 +191,7 @@ class StateMachine(object):
             children = await self._state_machine_node.get_children() 
             await self._add_methods(children)        
         else: 
-            raise ValueError(f"""Failed to set up state machine {self._state_machine_node}. 
-                    A parent node is needed to create a new state machine node. If the node already exists
-                    in the server its node should be provided.""" ) 
+            raise ValueError(f"Failed to set up state machine {self._state_machine_node}." ) 
 
         if self._optionals:
             self._last_transition_node = await self._state_machine_node.get_child(["LastTransition"])
@@ -250,9 +249,6 @@ class StateMachine(object):
         '''
         Triggering a transition to change the state 
 
-        Provide either a state or a transition to provide a target state information. 
-        If an `event_msg` is passed, also the transition event will be triggered. 
-
         :param state: target state
         :param transition: transition to trigger 
         :param event_msg: "LocalizedText" optional
@@ -267,7 +263,8 @@ class StateMachine(object):
                 _logger.debug(f"Transitioning from state {self._current_state.name} to state {transition.to_state.name}.")
                 self._current_state = transition.to_state
                 await self._write_state(transition.to_state)
-                await self._write_transition(transition)
+                if self._optionals: 
+                    await self._write_transition(transition)
 
                 if event_msg:
                     if isinstance(event_msg, str):
@@ -286,6 +283,9 @@ class StateMachine(object):
                 return ua.StatusCode(ua.StatusCodes.Good)
             else: 
                 return ua.StatusCode(ua.StatusCodes.BadUnexpectedError)
+        else: 
+            _logger.debug(f'Invalid transition for leaving the {self._current_state.name} state in {self._name} ({self._state_machine_node}).')
+            return ua.StatusCode(ua.StatusCodes.BadInvalidState)
 
     def get_current_state(self): 
         return self._current_state
@@ -564,13 +564,33 @@ class FiniteStateMachine(StateMachine):
 class ExclusiveLimitStateMachine(FiniteStateMachine):
     '''
     NOT IMPLEMENTED "ExclusiveLimitStateMachineType"
+    https://reference.opcfoundation.org/v104/Core/docs/Part9/5.8.12/
     '''
-    def __init__(self, server=None, parent=None, idx=None, name=None):
-        super().__init__(server, parent, idx, name)
+    def __init__(self, server=None, node=None, parent=None, idx=None, name=None):
+        super().__init__(server, node, parent, idx, name)
         if name is None:
             name = "ExclusiveLimitStateMachine"
         self._state_machine_type = ua.NodeId(9318, 0)
-        raise NotImplementedError
+
+        self.evtype = TransitionEvent()#AlarmCondition() 
+
+        self.High: State = None 
+        self.HighHigh: State = None 
+        self.Low: State = None 
+        self.LowLow: State = None 
+
+        self.HighHighToHigh: Transition = None 
+        self.HighToHighHigh: Transition = None 
+        self.LowLowToLow: Transition = None 
+        self.LowToLowLow: Transition = None 
+
+        # TODO: Needs to be implemented by an alarm. With the information from the type definition 
+        # it is only possible to switch between either, High<->HighHigh or Low<->LowLow, since there 
+        # are not other valid transitions. 
+        #raise NotImplementedError('This is not ready to use. Needs to be part of an miltilevel Alarm.')
+
+    async def install(self, optionals=True): 
+        await super().install(optionals) 
 
 
 class FileTransferStateMachine(FiniteStateMachine):
@@ -584,7 +604,83 @@ class FileTransferStateMachine(FiniteStateMachine):
         if name is None:
             name = "FileTransferStateMachine"
         self._state_machine_type = ua.NodeId(15803, 0)
-        raise NotImplementedError
+        #raise NotImplementedError
+
+        self.ApplyWrite: State = None 
+        self.Error: State = None 
+        self.Idle: State = None
+        self.ReadPrepare: State = None 
+        self.ReadTransfer: State = None 
+
+        self.ApplyWriteToError: Transition = None 
+        self.ApplyWriteToIdle: Transition = None 
+        self.ErrorToIdle: Transition = None 
+        self.IdleToApplyWrite: Transition = None 
+        self.IdleToReadPrepare: Transition = None 
+        self.ReadPrepareToError: Transition = None 
+        self.ReadPrepareToReadTransfer: Transition = None 
+        self.ReadTransferToError: Transition = None 
+        self.ReadTransferToIdle: Transition = None 
+
+        self.Reset: Cause = None 
+
+        # Needs to resolve the missing HasCause references
+        raise NotImplementedError('Needs to be implemented by a TemporaryFileTransfer object.')
+    
+    async def install(self): 
+        await super().install()
+
+        self.ApplyWrite.on_entry = self.on_entry_apply_write
+        self.ApplyWrite.on_exit = self.on_exit_apply_write 
+        self.Error.on_entry = self.on_entry_error
+        self.Error.on_exit = self.on_exit_error 
+        self.Idle.on_entry = self.on_entry_idle 
+        self.Idle.on_exit = self.on_exit_idle
+        self.ReadPrepare.on_entry = self.on_entry_read_prepare
+        self.ReadPrepare.on_exit = self.on_exit_read_prepare
+        self.ReadTransfer.on_entry = self.on_entry_read_transfer
+        self.ReadTransfer.on_exit = self.on_exit_read_transfer
+
+        await self._add_reset_cause() 
+
+    async def on_entry_apply_write(self): 
+        _logger.debug(f'Entering the ApplyWrite state of {self.name} ({self._state_machine_node}).')
+
+    async def on_exit_apply_write(self): 
+        _logger.debug(f'Leaving the ApplyWrite state of {self.name} ({self._state_machine_node}).')
+
+    async def on_entry_error(self): 
+        _logger.debug(f'Entering the Error state of {self.name} ({self._state_machine_node}).')
+
+    async def on_exit_error(self):
+        _logger.debug(f'Leaving the Error state of {self.name} ({self._state_machine_node}).')
+
+    async def on_entry_idle(self): 
+        _logger.debug(f'Entering the Idle state of {self.name} ({self._state_machine_node}).')
+
+    async def on_exit_idle(self): 
+        _logger.debug(f'Leaving the Idle state of {self.name} ({self._state_machine_node}).')
+
+    async def on_entry_read_prepare(self): 
+        _logger.debug(f'Entering the ReadPrepare state of {self.name} ({self._state_machine_node}).')
+
+    async def on_exit_read_prepare(self): 
+        _logger.debug(f'Leaving the ReadPrepare state of {self.name} ({self._state_machine_node}).')
+
+    async def on_entry_read_transfer(self): 
+        _logger.debug(f'Entering the ReadTransfer state of {self.name} ({self._state_machine_node}).')
+
+    async def on_exit_read_transfer(self): 
+        _logger.debug(f'Leaving the ReadTransfer state of {self.name} ({self._state_machine_node}).')
+
+    async def _add_causes(self): 
+        #TODO:It seems the ErrorToIdle transition has no HasCause reference in the type definition. So we add it here.
+        # Also additional cause references are defined by the instance not within the type definition. These 
+        # have to come from the methods of an TemporaryFileTransfer object. 
+        pass 
+
+    async def reset(self, msg=''): 
+        return await self.change_state(self.Idle, event_msg=msg)
 
 
 class ProgramStateMachine(FiniteStateMachine): 
@@ -624,8 +720,6 @@ class ProgramStateMachine(FiniteStateMachine):
     async def install(self): 
         await super().install()
 
-        await self._add_parameter_set()
-
         self.Ready.on_entry = self.on_entry_ready
         self.Ready.on_exit = self.on_exit_ready
         #self.Ready.execute = self.execute_ready
@@ -639,14 +733,16 @@ class ProgramStateMachine(FiniteStateMachine):
         self.Halted.on_exit = self.on_exit_halted 
         #self.Halted.execute = self.execute_halted 
         
-    async def _add_parameter_set(self): 
+        await self._add_final_result_data_set()
+
+    async def _add_final_result_data_set(self): 
         try: 
             final_result_data_node = await self._state_machine_node.get_child(['FinalResultData'])
             if final_result_data_node: 
                 self.FinalResultDataSet = ParameterSet(final_result_data_node, subscribe=True, source=self._server)
                 await self.FinalResultDataSet.init()
         except Exception as e: 
-            _logger.debug(f'ProgramStateMachine {self._state_machine_node} has nod FinalResultData set. {e}')
+            _logger.debug(f'ProgramStateMachine {self._state_machine_node} has no FinalResultData set. {e}')
 
     async def on_entry_ready(self): 
         _logger.debug(f'Entering the Ready state of {self.name} ({self._state_machine_node}).')
@@ -684,6 +780,8 @@ class ProgramStateMachine(FiniteStateMachine):
     async def halt(self, msg=''): 
         return await self.change_state(self.Halted, event_msg=msg)
 
+    async def reset(self, msg=''): 
+        return await self.change_state(self.Ready, event_msg=msg)
 
 class ShelvedStateMachine(FiniteStateMachine):
     '''
