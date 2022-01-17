@@ -42,10 +42,8 @@ class ExampleStateMachine(ProgramStateMachine):
             await asyncio.sleep(1)
         
         if self._index.value == self.max and self._result.value: 
-            await self.change_state(self.Ready, event_msg=f'Execution successfully finished. Result: {self.result}')
-        else: 
-            await self.change_state(self.Halted, event_msg=f'Execution failed. Result: {self.result}')
-
+            await self.change_state(self.Ready, event_msg=f'Execution successfully finished. Result: {self._result.value}')
+     
     async def on_entry_running(self): 
         if not self._running: 
             self._running = True
@@ -53,8 +51,8 @@ class ExampleStateMachine(ProgramStateMachine):
 
     async def on_exit_running(self): 
         if self._running: 
-            self._task_running.cancel()
-            self._running = False  
+            #self._task_running.cancel()
+            self._running = False 
 
 async def main(): 
     logging.basicConfig(level=logging.FATAL)
@@ -66,7 +64,8 @@ async def main():
     server = Server()
     await server.init()
 
-    await server.import_xml(os.path.join('examples','StateMachine.Example.NodeSet2.xml'))
+    nodeset_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'StateMachine.Example.NodeSet2.xml')
+    await server.import_xml(nodeset_path)
     idx = await server.get_namespace_index('/StateMachine/Example/')
 
     # Example ParameterSet
@@ -105,7 +104,7 @@ async def main():
                 await limit_sm.change_state(limit_sm.Low, event_msg='Temperature is to low.')
             elif val == 12: 
                 # Since there is no valid transition defined by the type to go from Low to High it will fail here
-                res = await limit_sm.change_state(limit_sm.High, event_msg='Temperature is to hot')
+                res = await limit_sm.change_state(limit_sm.High, event_msg='Temperature is to high.')
                 if not res.is_good():          
                     print(f'Changeing to high failed. {res.name}')
 
@@ -115,9 +114,6 @@ async def main():
         
             if esm.current_state_name == 'Suspended':
                 print('The example state machine is now paused.') 
-                await asyncio.sleep(1)
-                print('Going back to running without an event.')
-                await esm.change_state(esm.Running)
 
             if eps.CurrentProgramIterationsCountValue == 5: 
                 print('Program count reached 5')
