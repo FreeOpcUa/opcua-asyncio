@@ -49,7 +49,7 @@ class Buffer:
 
     def __bytes__(self):
         """Return remains of buffer as bytes."""
-        return self._data[self._cur_pos:]
+        return bytes(self._data[self._cur_pos:])
 
     def read(self, size):
         """
