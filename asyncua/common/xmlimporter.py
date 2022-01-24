@@ -596,7 +596,7 @@ class XmlImporter:
             f.IsOptional = field.optional
             if f.IsOptional:
                 optional = True
-            if field.arraydim == "" or field.arraydim is None:
+            if field.arraydim is None:
                 f.ArrayDimensions = field.arraydim
             else:
                 f.ArrayDimensions = [int(i) for i in field.arraydim.split(",")]
