@@ -596,10 +596,11 @@ class XmlImporter:
             f.IsOptional = field.optional
             if f.IsOptional:
                 optional = True
-            if field.arraydim is None:
+            try:
+                dimensions_list = [int(i) for i in field.arraydim.split(",")]
+                f.ArrayDimensions = dimensions_list
+            except Exception:
                 f.ArrayDimensions = field.arraydim
-            else:
-                f.ArrayDimensions = [int(i) for i in field.arraydim.split(",")]
             f.Description = ua.LocalizedText(Text=field.desc)
             sdef.Fields.append(f)
         if optional:
