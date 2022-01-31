@@ -10,7 +10,6 @@ from asyncua import ua
 from .monitored_item_service import MonitoredItemService
 from .address_space import AddressSpace
 
-
 class InternalSubscription:
     """
     Server internal subscription.
@@ -34,6 +33,7 @@ class InternalSubscription:
         self._triggered_events: Dict[int, List[ua.EventFieldList]] = {}
         self._triggered_statuschanges: list = []
         self._notification_seq = 1
+        self._no_acks_limit = 500
         self._not_acknowledged_results: Dict[int, ua.PublishResult] = {}
         self._startup = True
         self._keep_alive_count = 0
@@ -131,6 +131,8 @@ class InternalSubscription:
             # Acknowledgement is only expected when the Subscription is for a client.
             self._notification_seq += 1
             self._not_acknowledged_results[result.NotificationMessage.SequenceNumber] = result
+            if len(self._not_acknowledged_results) > self._no_acks_limit:
+                self._not_acknowledged_results.popitem()
         result.MoreNotifications = False
         result.AvailableSequenceNumbers = list(self._not_acknowledged_results.keys())
         return result
