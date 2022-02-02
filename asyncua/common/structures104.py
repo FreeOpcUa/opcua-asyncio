@@ -6,7 +6,7 @@ import logging
 import re
 import keyword
 from typing import Union, List, TYPE_CHECKING, Tuple, Optional, Any, Dict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from asyncua import ua
 from asyncua import Node
@@ -62,11 +62,11 @@ async def new_struct(
     simple way to create a new structure
     return the created data type node and the list of encoding nodes
     """
-    
+
     type_name = server.nodes.base_structure_type
     if is_union:
         type_name = server.nodes.base_union_type
-    
+
     dtype = await create_data_type(type_name, idx, name)
 
     if isinstance(idx, ua.NodeId):
@@ -129,6 +129,14 @@ def clean_name(name):
     newname = re.sub(r'^[0-9]+', r'_\g<0>', newname)
     logger.warning("renamed %s to %s due to Python syntax", name, newname)
     return newname
+
+
+def clean_string_identifier(name):
+    """
+    remove character that will break parsing if inside double quotes or quotes
+    """
+    name = re.sub(r'(["\'])', r'\\\1', name)
+    return name
 
 
 def get_default_value(uatype, enums=None):
@@ -310,8 +318,12 @@ class DataTypeSorter:
 
 
 async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_existing=False):
-    ch = await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype)
-    for desc in ch:
+    for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
+        if desc.NodeId.NodeIdType == ua.NodeIdType.String:
+            # Some PLC create names not compatible with Python syntax
+            new_id = clean_string_identifier(desc.NodeId.Identifier)
+            if new_id != desc.NodeId.Identifier:
+                desc = replace(desc, NodeId=replace(desc.NodeId, Identifier=new_id))
         sdef = await _read_data_type_definition(server, desc, read_existing=add_existing)
         if sdef:
             name = clean_name(desc.BrowseName.Name)
