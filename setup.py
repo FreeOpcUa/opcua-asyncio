@@ -13,11 +13,11 @@ pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 setup(
     name="asyncua",
-    version="0.9.92",
-    description="Pure Python OPC-UA client and server library",
+    version="0.9.92-kuz",
+    description="Pure Python OPC-UA client and server library modified by KUZ MSR-Members",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    author="Olivier Roulet-Dubonnet",
+    author="Olivier Roulet-Dubonnet, Artur Jurk",
     author_email="olivier.roulet@gmail.com",
     url='http://freeopcua.github.io/',
     packages=find_packages(exclude=["tests"]),
