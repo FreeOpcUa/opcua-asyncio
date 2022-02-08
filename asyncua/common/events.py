@@ -14,7 +14,7 @@ class Event:
     Events are used to trigger events on server side and are
     sent to clients for every events from server
 
-    Developer Warning:
+    Developper Warning:
     On server side the data type of attributes should be known, thus
     add properties using the add_property method!!!
     """
@@ -151,6 +151,7 @@ async def append_new_attribute_to_select_clauses(attribute, select_clauses, alre
     if string_path not in already_selected:
         already_selected[string_path] = string_path
         op = ua.SimpleAttributeOperand()
+        # op.TypeDefinitionId =
         op.AttributeId = ua.AttributeIds.Value
         op.BrowsePath = browse_path
         select_clauses.append(op)    
@@ -160,12 +161,29 @@ async def select_clauses_from_evtype(evtypes):
     select_clauses = []
     already_selected = {}
     for evtype in evtypes:
+        # for property in await get_event_properties_from_type_node(evtype):
+        #     await append_new_attribute_to_select_clauses(property, select_clauses, already_selected, None)
+        # for variable in await get_event_variables_from_type_node(evtype):
+        #     await append_new_attribute_to_select_clauses(variable, select_clauses, already_selected, None)
+        #     for subproperty in await variable.get_properties():
+        #         await append_new_attribute_to_select_clauses(subproperty, select_clauses, already_selected, variable)
+
+        selected_clauses_part = []  #byme
         for property in await get_event_properties_from_type_node(evtype):
-            await append_new_attribute_to_select_clauses(property, select_clauses, already_selected, None)
+            await append_new_attribute_to_select_clauses(property, selected_clauses_part, already_selected, None)
         for variable in await get_event_variables_from_type_node(evtype):
-            await append_new_attribute_to_select_clauses(variable, select_clauses, already_selected, None)
+            await append_new_attribute_to_select_clauses(variable, selected_clauses_part, already_selected, None)
             for subproperty in await variable.get_properties():
-                await append_new_attribute_to_select_clauses(subproperty, select_clauses, already_selected, variable)
+                await append_new_attribute_to_select_clauses(subproperty, selected_clauses_part, already_selected,
+                                                             variable)
+        #byme :BEGIN: BEWARE self coded (monkeypatch)  # byme critical point for subtypes -> Namespace and Index were set to 0 !
+        #                                               -> Request of MonitoredItems with false TypeId
+        for clause in selected_clauses_part:
+            clause.TypeDefinitionId = evtype.nodeid
+
+        select_clauses += selected_clauses_part
+        #byme :END:
+
     return select_clauses
 
 
@@ -178,7 +196,14 @@ async def where_clause_from_evtype(evtypes):
 
     # the first operand is the attribute event type
     op = ua.SimpleAttributeOperand()
-    # op.TypeDefinitionId = evtype.nodeid
+    # op.TypeDefinitionId = evtype.nodeid  # byme critical point for subtypes -> Namespace and Index were set to 0 !
+    #                                       -> Request of MonitoredItems with false TypeId
+    # byme
+    if isinstance(evtypes, list):
+        op.TypeDefinitionId = evtypes[0].nodeid
+    else:
+        op.TypeDefinitionId = evtypes.nodeid
+    # byme
     op.BrowsePath.append(ua.QualifiedName("EventType", 0))
     op.AttributeId = ua.AttributeIds.Value
     el.FilterOperands.append(op)
