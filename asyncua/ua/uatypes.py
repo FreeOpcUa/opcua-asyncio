@@ -77,11 +77,11 @@ def type_string_from_type(uatype):
     return uatype.__name__
 
 
-class SByte(bytes):
+class SByte(int):
     pass
 
 
-class Byte(bytes):
+class Byte(int):
     pass
 
 
