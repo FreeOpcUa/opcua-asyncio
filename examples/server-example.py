@@ -113,8 +113,8 @@ async def main():
         print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
         # enable following if you want to subscribe to nodes on server side
         #handler = SubHandler()
-        #sub = server.create_subscription(500, handler)
-        #handle = sub.subscribe_data_change(myvar)
+        #sub = await server.create_subscription(500, handler)
+        #handle = await sub.subscribe_data_change(myvar)
         # trigger event, all subscribed clients wil receive it
         var = await myarrayvar.read_value()  # return a ref to value in db server side! not a copy!
         var = copy.copy(var)  # WARNING: we need to copy before writting again otherwise no data change event will be generated
