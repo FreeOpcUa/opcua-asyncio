@@ -5,7 +5,7 @@ import asyncua
 from ..ua.uaerrors import UaError
 from .ua_utils import get_node_subtypes
 
-#byme
+# byme
 import json
 
 
@@ -39,6 +39,7 @@ class Event:
         return "{0}({1})".format(
             self.__class__.__name__,
             [str(k) + ":" + str(v) for k, v in self.__dict__.items() if k not in self.internal_properties])
+
     __repr__ = __str__
 
     def add_property(self, name, val, datatype):
@@ -94,11 +95,11 @@ class Event:
         return a field list using a select clause and the object properties
         """
         fields = []
-        for sattr in select_clauses:           
-            if len(sattr.BrowsePath) == 0:                  
+        for sattr in select_clauses:
+            if len(sattr.BrowsePath) == 0:
                 name = ua.AttributeIds(sattr.AttributeId).name
             else:
-                name = self.browse_path_to_attribute_name(sattr.BrowsePath)               
+                name = self.browse_path_to_attribute_name(sattr.BrowsePath)
             try:
                 val = getattr(self, name)
             except AttributeError:
@@ -119,27 +120,27 @@ class Event:
         ev = Event()
         ev.select_clauses = select_clauses
         ev.event_fields = fields
-        for idx, sattr in enumerate(select_clauses):           
+        for idx, sattr in enumerate(select_clauses):
             if len(sattr.BrowsePath) == 0:
-                name = sattr.AttributeId.name               
+                name = sattr.AttributeId.name
             else:
                 name = Event.browse_path_to_attribute_name(sattr.BrowsePath)
             ev.add_property(name, fields[idx].Value, fields[idx].VariantType)
         return ev
 
     @staticmethod
-    def browse_path_to_attribute_name(browsePath):  
+    def browse_path_to_attribute_name(browsePath):
         name = browsePath[0].Name
         # Append the sub-property of a VariableType with '/'
         iter_paths = iter(browsePath)
-        next(iter_paths)                
+        next(iter_paths)
         for path in iter_paths:
             name += '/' + path.Name
         return name
 
 
-#byme :BEGIN:
-#TODO should go to .common.ua_utils
+# byme :BEGIN:
+# TODO should go to .common.ua_utils
 async def get_node_objects(node, nodes=None):
     if nodes is None:
         nodes = [node]
@@ -147,39 +148,48 @@ async def get_node_objects(node, nodes=None):
         nodes.append(child)
         await get_node_objects(child, nodes)
     return nodes
-#byme :END:
+
+
+# byme :END:
 
 
 async def get_filter_from_event_type(eventtypes):
     evfilter = ua.EventFilter()
     evfilter.SelectClauses = await select_clauses_from_evtype(eventtypes)
 
-    #byme :BEGIN:
+    # byme :BEGIN:
     with open('select_clause_SimpleAttributeOperands.json', 'w+') as sel_file:
         json_obj = {}
         for i, op in enumerate(evfilter.SelectClauses):
-            json_obj['SimpleAttributeOperand' + str(i+1)] = {
+            json_obj['SimpleAttributeOperand' + str(i + 1)] = {
                 "TypeDefinitionId": str(op.TypeDefinitionId),
                 "BrowsePath": str(op.BrowsePath),
                 "AttributeId": str(op.AttributeId),
                 "IndexRange": str(op.IndexRange)
             }
         json.dump(json_obj, sel_file, indent=2)
-    #byme :END:
+    # byme :END:
 
     evfilter.WhereClause = await where_clause_from_evtype(eventtypes)
-    #with open('where_clause_SimpleAttributeOperands.json', 'w+'):
+    # with open('where_clause_SimpleAttributeOperands.json', 'w+'):
     return evfilter
 
 
-#byme :BEGIN:
-#TODO Browse paths for Objects are messy see LocalCycleEvent_monitored_items_request.txt
-# there are gaps in path
-#byme :END:
-async def append_new_attribute_to_select_clauses(attribute, select_clauses, already_selected, parent_variable):
+# byme :BEGIN:
+# TODO Browse paths for Objects are messy see LocalCycleEvent_monitored_items_request.txt
+# Backpressure inserted twice
+# byme :END:
+async def append_new_attribute_to_select_clauses(attribute, select_clauses, already_selected,
+                                                 parent_browse_path):  # parent_variable):
+
+    # byme
     browse_path = []
-    if parent_variable:
-        browse_path.append(await parent_variable.read_browse_name())
+    if parent_browse_path:
+        browse_path = parent_browse_path.copy()
+
+    # browse_path = []
+    # if parent_variable:
+    #     browse_path.append(await parent_variable.read_browse_name())
     browse_path.append(await attribute.read_browse_name())
     string_path = '/'.join(map(str, browse_path))
     if string_path not in already_selected:
@@ -201,51 +211,65 @@ async def select_clauses_from_evtype(evtypes):
         #     for subproperty in await variable.get_properties():
         #         await append_new_attribute_to_select_clauses(subproperty, select_clauses, already_selected, variable)
 
-        selected_clauses_part = []  #byme
+        selected_clauses_part = []  # byme
         for property in await get_event_properties_from_type_node(evtype):
             await append_new_attribute_to_select_clauses(property, selected_clauses_part, already_selected, None)
         for variable in await get_event_variables_from_type_node(evtype):
             await append_new_attribute_to_select_clauses(variable, selected_clauses_part, already_selected, None)
             for subproperty in await variable.get_properties():
+                variable_browse_name = await variable.read_browse_name()
                 await append_new_attribute_to_select_clauses(subproperty, selected_clauses_part, already_selected,
-                                                             variable)
-        #byme :BEGIN: BEWARE self coded (monkeypatch)  # byme critical point for subtypes -> Namespace and Index were set to 0 !
+                                                             [variable_browse_name])  # byme here was just variable
+        # byme :BEGIN: BEWARE self coded (monkeypatch)  # byme critical point for subtypes -> Namespace and Index were set to 0 !
         #                                               -> Request of MonitoredItems with false TypeId
 
-        # set the TypeDefinitionId to evtype's NodeId
-        for clause in selected_clauses_part:
-            clause.TypeDefinitionId = evtype.nodeid
+        # # set the TypeDefinitionId to evtype's NodeId
+        # for clause in selected_clauses_part:
+        #     clause.TypeDefinitionId = evtype.nodeid
 
         select_clauses += selected_clauses_part
 
         # byme :BEGIN: append all properties and variables of a evtype's object and its subobjects
-        async def append_from_evtype_object(obj, parent):
+        async def append_from_evtype_object(obj, parent_browse_path):
             selected_clauses_obj = []
-            evtype_object_properties = await get_event_properties_from_type_node(obj)
-            for property in evtype_object_properties:
-                await append_new_attribute_to_select_clauses(property, selected_clauses_obj, already_selected, parent)
+            obj_browse_path = parent_browse_path.copy()
+            obj_browse_path.append(await obj.read_browse_name())
+
+            for property in await get_event_properties_from_type_node(obj):
+                await append_new_attribute_to_select_clauses(property, selected_clauses_obj, already_selected,
+                                                             obj_browse_path)
             for variable in await get_event_variables_from_type_node(obj):
-                await append_new_attribute_to_select_clauses(variable, selected_clauses_obj, already_selected, parent)
+                await append_new_attribute_to_select_clauses(variable, selected_clauses_obj, already_selected,
+                                                             obj_browse_path)
                 for subproperty in await variable.get_properties():
+                    variable_browse_name = await variable.read_browse_name()
+                    variable_browse_path = obj_browse_path.copy()
+                    variable_browse_path.append(variable_browse_name)
                     await append_new_attribute_to_select_clauses(subproperty, selected_clauses_obj, already_selected,
-                                                                 variable)
+                                                                 variable_browse_path)
 
             # set the TypeDefinitionId to Objects NodeId
             for subclause in selected_clauses_obj:
                 subclause.TypeDefinitionId = obj.nodeid
 
+            # object can have objects as attributes
             for subobj in await get_event_objects_from_type_node(obj):
-                selected_clauses_obj += await append_from_evtype_object(subobj, obj)
+                selected_clauses_obj += await append_from_evtype_object(subobj, obj_browse_path)
 
             return selected_clauses_obj
 
         # byme :END:
 
-        # evtype can have Objects
+        # evtype can have objects
         for evtype_object in await get_event_objects_from_type_node(evtype):
-            select_clauses += await append_from_evtype_object(evtype_object, evtype)
+            # evtype_browse_name = await evtype.read_browse_name()
+            select_clauses += await append_from_evtype_object(evtype_object, [])
 
-        #byme :END:
+        # set the TypeDefinitionId to evtype's NodeId
+        for clause in select_clauses:
+            clause.TypeDefinitionId = evtype.nodeid
+
+        # byme :END:
 
     return select_clauses
 
@@ -283,10 +307,10 @@ async def where_clause_from_evtype(evtypes):
         op.Value = ua.Variant(subtypeid)
         el.FilterOperands.append(op)
 
-    #byme :BEGIN:
+    # byme :BEGIN:
     # now create a list of all objects we want to accept
 
-    #FIXME this is probably wrong
+    # FIXME this is probably wrong
     # objects = []
     # for evtype in evtypes:
     #     for st in await get_node_objects(evtype):
@@ -298,7 +322,7 @@ async def where_clause_from_evtype(evtypes):
     #     op = ua.LiteralOperand()
     #     op.Value = ua.Variant(objectid)
     #     el.FilterOperands.append(op)
-    #byme :END:
+    # byme :END:
 
     el.FilterOperator = ua.FilterOperator.InList
     cf.Elements.append(el)
@@ -317,7 +341,7 @@ async def select_event_attributes_from_type_node(node, attributeSelector):
         )
         # byme :BEGIN: objects of EventTypes have no HasSubtype reference
         #  -> identify parent with ref = HasComponent; nodeclass = Object
-        if len(parents) != 1:  # EventType is not a Subtype but a ObjectType
+        if len(parents) != 1:  # curr_node is not a Subtype but a ObjectType or Object
             parents = await curr_node.get_referenced_nodes(
                 refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.ObjectType + ua.NodeClass.Object,
                 direction=ua.BrowseDirection.Inverse, includesubtypes=True
@@ -325,7 +349,9 @@ async def select_event_attributes_from_type_node(node, attributeSelector):
             if len(parents) != 1:  # Something went wrong
                 return None
 
-            # don't browse further backwards for ObjectTypes and Objects of EventType
+            # don't browse further backwards for ObjectTypes and Objects of a EventType
+            # adding attributes of objects is handled moving down the tree in
+            # select_clauses_from_evtype()
             break
         # byme :END:
 
@@ -341,13 +367,17 @@ async def get_event_variables_from_type_node(node):
     return await select_event_attributes_from_type_node(node, lambda n: n.get_variables())
 
 
-#byme :BEGIN: fix selecting Variables and properties of a EventType wrapped in an object
+# byme :BEGIN: fix selecting Variables and properties of a EventType wrapped in an object
 async def get_event_objects_from_type_node(node):
     # ObjectType not included, because we are subscibing to it
     # TODO possibly there are usecases where ObjectTypes should get included here too
-    return await select_event_attributes_from_type_node(node, lambda n: n.get_children(refs=ua.ObjectIds.HasComponent,
-                                                                                       nodeclassmask=ua.NodeClass.Object))
-#byme :END:
+    #  (but this could be subtypes, which are already handled, so maybe not worth mentioning)
+    return await select_event_attributes_from_type_node(
+        node, lambda n: n.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Object)
+    )
+
+
+# byme :END:
 
 
 async def get_event_obj_from_type_node(node):
@@ -409,9 +439,10 @@ async def _find_parent_eventtype(node):
     parents = await node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse,
                                               includesubtypes=True)
 
-    if len(parents) != 1:   # Something went wrong
+    if len(parents) != 1:  # Something went wrong
         raise UaError("Parent of event type could not be found")
     if parents[0].nodeid.NamespaceIndex == 0:
         if parents[0].nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
-            return parents[0].nodeid.Identifier, asyncua.common.event_objects.IMPLEMENTED_EVENTS[parents[0].nodeid.Identifier]
+            return parents[0].nodeid.Identifier, asyncua.common.event_objects.IMPLEMENTED_EVENTS[
+                parents[0].nodeid.Identifier]
     return await _find_parent_eventtype(parents[0])
