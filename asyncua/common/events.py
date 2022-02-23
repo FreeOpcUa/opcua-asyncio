@@ -139,9 +139,9 @@ class Event:
         return name
 
 
-async def get_filter_from_event_type(eventtypes):
+async def get_filter_from_event_type(eventtypes, objectslist=[]):
     evfilter = ua.EventFilter()
-    evfilter.SelectClauses = await select_clauses_from_evtype(eventtypes)
+    evfilter.SelectClauses = await select_clauses_from_evtype(eventtypes, objectslist)
 
     # byme :BEGIN: Debug SelectClause
     with open('select_clause_SimpleAttributeOperands.json', 'w+') as sel_file:
@@ -182,7 +182,7 @@ async def append_new_attribute_to_select_clauses(attribute, select_clauses, alre
         select_clauses.append(op)
 
 
-async def select_clauses_from_evtype(evtypes):
+async def select_clauses_from_evtype(evtypes, objectslist):
     select_clauses = []
     already_selected = {}
     for evtype in evtypes:
@@ -225,14 +225,28 @@ async def select_clauses_from_evtype(evtypes):
 
             # object can have objects as attributes
             for subobj in await get_event_objects_from_type_node(obj):
-                selected_clauses_obj += await append_from_evtype_object(subobj, obj_browse_path)
+                if objectslist:
+                    # add if the object is specified in list
+                    subobj_browse_name = await subobj.read_browse_name()
+                    if subobj_browse_name.to_string() in objectslist:
+                        selected_clauses_obj += await append_from_evtype_object(subobj, obj_browse_path)
+                else:
+                    # add all
+                    selected_clauses_obj += await append_from_evtype_object(subobj, obj_browse_path)
+
 
             return selected_clauses_obj
 
         # evtype can have objects
         for evtype_object in await get_event_objects_from_type_node(evtype):
-            # evtype_browse_name = await evtype.read_browse_name()
-            select_clauses += await append_from_evtype_object(evtype_object, [])
+            if objectslist:
+                # add if the object is specified in list
+                obj_browse_name = await evtype_object.read_browse_name()
+                if obj_browse_name.to_string() in objectslist:
+                    select_clauses += await append_from_evtype_object(evtype_object, [])
+            else:
+                # add all
+                select_clauses += await append_from_evtype_object(evtype_object, [])
 
         # set the TypeDefinitionId to evtype's NodeId
         for clause in select_clauses:
@@ -327,8 +341,6 @@ async def get_event_objects_from_type_node(node):
     return await select_event_attributes_from_type_node(
         node, lambda n: n.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Object)
     )
-
-
 # byme :END:
 
 

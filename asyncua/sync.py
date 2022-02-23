@@ -2,6 +2,7 @@
 sync API of asyncua
 """
 import asyncio
+import json
 from threading import Thread, Condition
 import logging
 from typing import List, Tuple, Union, Optional
@@ -139,6 +140,13 @@ def copy_node(parent, node, nodeid=None, recursive=True):
 @syncfunc(aio_func=common.instantiate_util.instantiate)
 def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, idx=0, instantiate_optional=True):
     pass
+
+
+# byme :BEGIN:
+@syncfunc(aio_func=common.events.get_filter_from_event_type)
+def get_filter_from_event_type(evtypes, objectslist=[]):
+    pass
+# byme :END:
 
 
 class _SubHandler:
