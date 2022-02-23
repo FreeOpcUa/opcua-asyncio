@@ -139,25 +139,11 @@ class Event:
         return name
 
 
-# byme :BEGIN:
-# TODO should go to .common.ua_utils
-async def get_node_objects(node, nodes=None):
-    if nodes is None:
-        nodes = [node]
-    for child in await node.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Object):
-        nodes.append(child)
-        await get_node_objects(child, nodes)
-    return nodes
-
-
-# byme :END:
-
-
 async def get_filter_from_event_type(eventtypes):
     evfilter = ua.EventFilter()
     evfilter.SelectClauses = await select_clauses_from_evtype(eventtypes)
 
-    # byme :BEGIN:
+    # byme :BEGIN: Debug SelectClause
     with open('select_clause_SimpleAttributeOperands.json', 'w+') as sel_file:
         json_obj = {}
         for i, op in enumerate(evfilter.SelectClauses):
@@ -175,10 +161,6 @@ async def get_filter_from_event_type(eventtypes):
     return evfilter
 
 
-# byme :BEGIN:
-# TODO Browse paths for Objects are messy see LocalCycleEvent_monitored_items_request.txt
-# Backpressure inserted twice
-# byme :END:
 async def append_new_attribute_to_select_clauses(attribute, select_clauses, already_selected,
                                                  parent_browse_path):  # parent_variable):
 
@@ -204,13 +186,6 @@ async def select_clauses_from_evtype(evtypes):
     select_clauses = []
     already_selected = {}
     for evtype in evtypes:
-        # for property in await get_event_properties_from_type_node(evtype):
-        #     await append_new_attribute_to_select_clauses(property, select_clauses, already_selected, None)
-        # for variable in await get_event_variables_from_type_node(evtype):
-        #     await append_new_attribute_to_select_clauses(variable, select_clauses, already_selected, None)
-        #     for subproperty in await variable.get_properties():
-        #         await append_new_attribute_to_select_clauses(subproperty, select_clauses, already_selected, variable)
-
         selected_clauses_part = []  # byme
         for property in await get_event_properties_from_type_node(evtype):
             await append_new_attribute_to_select_clauses(property, selected_clauses_part, already_selected, None)
@@ -223,13 +198,9 @@ async def select_clauses_from_evtype(evtypes):
         # byme :BEGIN: BEWARE self coded (monkeypatch)  # byme critical point for subtypes -> Namespace and Index were set to 0 !
         #                                               -> Request of MonitoredItems with false TypeId
 
-        # # set the TypeDefinitionId to evtype's NodeId
-        # for clause in selected_clauses_part:
-        #     clause.TypeDefinitionId = evtype.nodeid
-
         select_clauses += selected_clauses_part
 
-        # byme :BEGIN: append all properties and variables of a evtype's object and its subobjects
+        # append all properties and variables of a evtype's object and its subobjects
         async def append_from_evtype_object(obj, parent_browse_path):
             selected_clauses_obj = []
             obj_browse_path = parent_browse_path.copy()
@@ -257,8 +228,6 @@ async def select_clauses_from_evtype(evtypes):
                 selected_clauses_obj += await append_from_evtype_object(subobj, obj_browse_path)
 
             return selected_clauses_obj
-
-        # byme :END:
 
         # evtype can have objects
         for evtype_object in await get_event_objects_from_type_node(evtype):
@@ -306,23 +275,6 @@ async def where_clause_from_evtype(evtypes):
         op = ua.LiteralOperand()
         op.Value = ua.Variant(subtypeid)
         el.FilterOperands.append(op)
-
-    # byme :BEGIN:
-    # now create a list of all objects we want to accept
-
-    # FIXME this is probably wrong
-    # objects = []
-    # for evtype in evtypes:
-    #     for st in await get_node_objects(evtype):
-    #         objects.append(st.nodeid)
-    #
-    # # FIXME maybe bad for different objects with same attribute names
-    # objects = list(set(objects))  # remove duplicates
-    # for objectid in objects:
-    #     op = ua.LiteralOperand()
-    #     op.Value = ua.Variant(objectid)
-    #     el.FilterOperands.append(op)
-    # byme :END:
 
     el.FilterOperator = ua.FilterOperator.InList
     cf.Elements.append(el)
