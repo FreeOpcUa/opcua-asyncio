@@ -127,7 +127,7 @@ class StateMachine(object):
                 self._last_transition_transitiontime_node = await self._last_transition_node.add_property(
                     0, 
                     "TransitionTime", 
-                    ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
+                    ua.Variant(datetime.datetime.utcnow(), VariantType=ua.VariantType.DateTime)
                     )
             else:
                 self._last_transition_transitiontime_node = await self._last_transition_node.get_child("TransitionTime")
