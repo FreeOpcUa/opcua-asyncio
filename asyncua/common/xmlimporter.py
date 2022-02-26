@@ -8,7 +8,7 @@ from typing import Union, Dict
 from dataclasses import fields, is_dataclass
 
 from asyncua import ua
-from asyncua.ua.uatypes import type_is_union, type_from_union, type_is_list, type_from_list
+from asyncua.ua.uatypes import type_is_union, types_from_union, type_is_list, type_from_list
 from .xmlparser import XMLParser, ua_type_to_python
 from ..ua.uaerrors import UaError
 
@@ -385,7 +385,7 @@ class XmlImporter:
         # either we get value directly
         # or a dict if it s an object or a list
         if type_is_union(atttype):
-            atttype = type_from_union(atttype)
+            atttype = types_from_union(atttype)[0]
         if isinstance(val, str):
             pval = ua_type_to_python(val, atttype.__name__)
             fargs[attname] = pval
