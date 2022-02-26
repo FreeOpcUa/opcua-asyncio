@@ -8,11 +8,11 @@ import logging
 from typing import Any, Callable
 import uuid
 from enum import IntEnum, Enum, IntFlag
-from dataclasses import is_dataclass, fields, Field
+from dataclasses import is_dataclass, fields
 from asyncua import ua
 from .uaerrors import UaError
 from ..common.utils import Buffer
-from .uatypes import type_is_list, type_is_union, type_from_list, type_from_union
+from .uatypes import type_is_list, type_is_union, type_from_list, types_from_union
 
 logger = logging.getLogger('__name__')
 
@@ -252,11 +252,11 @@ def _create_uatype_array_deserializer(vtype):
     return deserialize
 
 
-def field_serializer(field: Field) -> Callable[[Any], bytes]:
-    is_optional = type_is_union(field.type)
-    uatype = field.type
+def field_serializer(ftype) -> Callable[[Any], bytes]:
+    is_optional = type_is_union(ftype)
+    uatype = ftype
     if is_optional:
-        uatype = type_from_union(uatype)
+        uatype = types_from_union(uatype)[0]
     if type_is_list(uatype):
         return create_list_serializer(type_from_list(uatype))
     else:
@@ -271,7 +271,23 @@ def field_serializer(field: Field) -> Callable[[Any], bytes]:
 def create_dataclass_serializer(dataclazz):
     """Given a dataclass, return a function that serializes instances of this dataclass"""
     data_fields = fields(dataclazz)
-    union_fields_encodings = [  # Name and binary encoding of optional fields
+
+    if issubclass(dataclazz, ua.UaUnion):
+        # Union is a class with Encoding and Value field
+        # the value is depended of encoding
+        union_field = next(filter(lambda f: type_is_union(f.type), data_fields))
+        encoding_funcs = [field_serializer(types) for types in types_from_union(union_field.type)]
+
+        def union_serialize(obj):
+            bin = Primitives.Byte.pack(obj.Encoding)
+            # 0 => None
+            # 1.. => union fields
+            if obj.Encoding > 0 and obj.Encoding <= len(encoding_funcs):
+                serialize = encoding_funcs[obj.Encoding - 1]
+                return b"".join([bin, serialize(obj.Value)])
+            return bin
+        return union_serialize
+    option_fields_encodings = [  # Name and binary encoding of optional fields
         (field.name, 1 << enc_count)
         for enc_count, field
         in enumerate(filter(lambda f: type_is_union(f.type), data_fields))
@@ -279,12 +295,12 @@ def create_dataclass_serializer(dataclazz):
 
     def enc_value(obj):
         enc = 0
-        for name, enc_val in union_fields_encodings:
+        for name, enc_val in option_fields_encodings:
             if obj.__dict__[name] is not None:
                 enc |= enc_val
         return enc
 
-    encoding_functions = [(f.name, field_serializer(f)) for f in data_fields]
+    encoding_functions = [(f.name, field_serializer(f.type)) for f in data_fields]
 
     def serialize(obj):
         return b''.join(
@@ -534,7 +550,7 @@ def _create_list_deserializer(uatype):
 @functools.lru_cache(maxsize=None)
 def _create_type_deserializer(uatype):
     if type_is_union(uatype):
-        return _create_type_deserializer(type_from_union(uatype))
+        return _create_type_deserializer(types_from_union(uatype)[0])
     if type_is_list(uatype):
         utype = type_from_list(uatype)
         if hasattr(ua.VariantType, utype.__name__):
@@ -563,6 +579,26 @@ def _create_dataclass_deserializer(objtype):
         objtype = getattr(ua, objtype)
     if issubclass(objtype, Enum):
         return lambda data: objtype(Primitives.Int32.unpack(data))
+    if issubclass(objtype, ua.UaUnion):
+        # unions are just objects with encoding and value field
+        typefields = fields(objtype)
+        union_types = next(types_from_union(f.type) for f in typefields if f.name == "Value")
+        field_deserializers = [_create_type_deserializer(type) for type in union_types]
+        byte_decode = next(_create_type_deserializer(f.type) for f in typefields if f.name == "Encoding")
+
+        def decode_union(data):
+            enc = byte_decode(data)
+            obj = objtype()
+            obj.Encoding = enc
+            # encoding value
+            # 0 => empty union
+            # 1..union_fiels => index of the
+            if enc > 0 and enc <= len(field_deserializers):
+                obj.Value = field_deserializers[enc - 1](data)
+            else:
+                obj.Value = None
+            return obj
+        return decode_union
     enc_count = 0
     field_deserializers = []
     for field in fields(objtype):

@@ -1219,7 +1219,8 @@ async def test_custom_struct_with_optional_fields(opc):
     await new_struct(opc.opc, idx, "MyOptionalStruct", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32", ua.VariantType.UInt32),
-        new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
+        new_struct_field("MyString", ua.VariantType.String, optional=True),
+        new_struct_field("MyInt64", ua.VariantType.Int64, optional=True)
     ])
 
     await opc.opc.load_data_type_definitions()
@@ -1232,6 +1233,37 @@ async def test_custom_struct_with_optional_fields(opc):
     val = await var.read_value()
     assert val.MyUInt32 == 45
     assert val.MyInt64 == -67
+    assert val.MyString is None
+
+    my_struct_optional = ua.MyOptionalStruct()
+    my_struct_optional.MyUInt32 = 45
+    my_struct_optional.MyInt64 = -67
+    my_struct_optional.MyString = 'abc'
+    await var.write_value(my_struct_optional)
+    val = await var.read_value()
+    assert val.MyUInt32 == 45
+    assert val.MyInt64 == -67
+    assert val.MyString == 'abc'
+
+
+async def test_custom_struct_union(opc):
+    idx = 4
+    await new_struct(opc.opc, idx, "MyUnionStruct", [
+        new_struct_field("MyString", ua.VariantType.String),
+        new_struct_field("MyInt64", ua.VariantType.Int64),
+    ], is_union=True)
+    await opc.opc.load_data_type_definitions()
+    my_union = ua.MyUnionStruct()
+    my_union.MyInt64 = 555
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_union_struct", ua.Variant(my_union, ua.VariantType.ExtensionObject))
+    val = await var.read_value()
+    assert val.MyInt64 == 555
+    assert val.MyString is None
+    my_union.MyString = '1234'
+    await var.write_value(my_union)
+    val = await var.read_value()
+    assert val.MyInt64 is None
+    assert val.MyString == '1234'
 
 
 async def test_custom_struct_of_struct(opc):
