@@ -297,11 +297,11 @@ class XmlExporter:
             bname = bname.Value.Value
             sdef_el = Et.SubElement(obj_el, 'Definition')
             sdef_el.attrib['Name'] = bname.Name
-            if sdef.StructureType == ua.StructureType.Union:
-                sdef_el.attrib['IsUnion'] = 'true'
-            elif sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-                sdef_el.attrib['IsOptional'] = 'true'
             if isinstance(sdef, ua.StructureDefinition):
+                if sdef.StructureType == ua.StructureType.Union:
+                    sdef_el.attrib['IsUnion'] = 'true'
+                elif sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
+                    sdef_el.attrib['IsOptional'] = 'true'
                 self._structure_fields_to_etree(sdef_el, sdef)
             elif isinstance(sdef, ua.EnumDefinition):
                 self._enum_fields_to_etree(sdef_el, sdef)
