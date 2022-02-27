@@ -65,6 +65,7 @@ class NodeData:
 
         # datatype
         self.definitions = []
+        self.struct_type = ""
 
     def __str__(self):
         return f"NodeData(nodeid:{self.nodeid})"
@@ -232,6 +233,10 @@ class XMLParser:
         elif tag == "InverseName":
             obj.inversename = el.text
         elif tag == "Definition":
+            if el.attrib.get("IsUnion", False):
+                obj.struct_type = "IsUnion"
+            elif el.attrib.get("IsOptional", False):
+                obj.struct_type = "IsOptional"
             for field in el:
                 field = self._parse_field(field)
                 obj.definitions.append(field)
