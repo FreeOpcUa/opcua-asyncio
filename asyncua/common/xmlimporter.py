@@ -602,7 +602,9 @@ class XmlImporter:
                 f.ArrayDimensions = [int(i) for i in field.arraydim.split(",")]
             f.Description = ua.LocalizedText(Text=field.desc)
             sdef.Fields.append(f)
-        if optional:
+        if obj.struct_type == "IsUnion":
+            sdef.StructureType = ua.StructureType.Union
+        elif optional or obj.struct_type == "IsOptional":
             sdef.StructureType = ua.StructureType.StructureWithOptionalFields
         else:
             sdef.StructureType = ua.StructureType.Structure

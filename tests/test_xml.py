@@ -7,6 +7,7 @@ import pytest
 from pytz import timezone
 
 from asyncua import ua, Node, uamethod
+from asyncua.common.structures104 import new_struct, new_struct_field
 from asyncua.ua import uaerrors
 
 logger = logging.getLogger("asyncua.common.xmlimporter")
@@ -507,6 +508,43 @@ async def test_xml_byte(opc, tmpdir):
     assert dtype == await o2.read_data_type()
     assert dv.Value == (await o2.read_data_value()).Value
     await opc.opc.delete_nodes([o2])
+
+async def test_xml_union(opc, tmpdir):
+    idx = 4
+    o, _ = await new_struct(opc.opc, idx, "MyUnionStruct2", [
+        new_struct_field("MyString", ua.VariantType.String),
+        new_struct_field("MyInt64", ua.VariantType.Int64),
+    ], is_union=True)
+    tmp_path = tmpdir.join("export-union.xml").strpath
+    await opc.opc.export_xml([o], tmp_path)
+    await opc.opc.delete_nodes([o])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    o2 = opc.opc.get_node(new_nodes[0])
+    assert o == o2
+    await opc.opc.load_data_type_definitions()
+    t = ua.MyUnionStruct2()
+    t.MyString = "abc"
+    assert t.MyString == "abc"
+    assert t.MyInt64 is None
+
+
+async def test_xml_struct_optional(opc, tmpdir):
+    idx = 4
+    o, _ = await new_struct(opc.opc, idx, "MyOptionalStruct2", [
+        new_struct_field("MyString", ua.VariantType.String, optional=True),
+        new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
+    ])
+    tmp_path = tmpdir.join("export-union.xml").strpath
+    await opc.opc.export_xml([o], tmp_path)
+    await opc.opc.delete_nodes([o])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    o2 = opc.opc.get_node(new_nodes[0])
+    assert o == o2
+    await opc.opc.load_data_type_definitions()
+    t = ua.MyOptionalStruct2()
+    t.MyInt64 = 5
+    assert t.MyString is None
+    assert t.MyInt64 == 5
 
 
 async def test_xml_required_models_fail(opc):
