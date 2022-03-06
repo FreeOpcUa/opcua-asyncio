@@ -2575,7 +2575,7 @@ class OptionSet:
     ValidBits: ByteString = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(frozen=FROZEN)  # type: ignore
 class Union:  # type: ignore
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part3/8.42
