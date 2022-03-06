@@ -5,7 +5,7 @@ import uuid
 import logging
 import re
 import keyword
-from typing import Union, List, TYPE_CHECKING, Tuple, Optional, Any
+from typing import Union, List, TYPE_CHECKING, Tuple, Optional, Any, Dict
 from dataclasses import dataclass, field
 
 from asyncua import ua
@@ -44,7 +44,7 @@ def new_struct_field(
         raise ValueError(f"DataType of a field must be a NodeId, not {dtype} of type {type(dtype)}")
     if array:
         field.ValueRank = ua.ValueRank.OneOrMoreDimensions
-        field.ArrayDimensions = [1]
+        field.ArrayDimensions = [1]  # type: ignore
     else:
         field.ValueRank = ua.ValueRank.Scalar
         field.ArrayDimensions = None
@@ -339,7 +339,7 @@ async def load_custom_struct(node: Node) -> Any:
     return env[name]
 
 
-async def load_data_type_definitions(server: Union["Server", "Client"], base_node: Node = None, overwrite_existing=False) -> None:
+async def load_data_type_definitions(server: Union["Server", "Client"], base_node: Node = None, overwrite_existing=False) -> Dict:
     """
     Read DataTypeDefition attribute on all Structure  and Enumeration  defined
     on server and generate Python objects in ua namespace to be used to talk with server
@@ -355,7 +355,7 @@ async def load_data_type_definitions(server: Union["Server", "Client"], base_nod
         try:
             env = await _generate_object(dts.name, dts.sdef, data_type=dts.data_type)
             ua.register_extension_object(dts.name, dts.encoding_id, env[dts.name], dts.data_type)
-            new_objects[dts.name] = env[dts.name]
+            new_objects[dts.name] = env[dts.name]  # type: ignore
         except NotImplementedError:
             logger.exception("Structure type %s not implemented", dts.sdef)
     return new_objects
@@ -403,7 +403,7 @@ class {name}({enum_type}):
     return code
 
 
-async def load_enums(server: Union["Server", "Client"], base_node: Node = None, option_set: bool = False) -> None:
+async def load_enums(server: Union["Server", "Client"], base_node: Node = None, option_set: bool = False) -> Dict:
     if base_node is None:
         base_node = server.nodes.enum_data_type
     new_enums = {}

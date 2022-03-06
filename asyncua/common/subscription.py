@@ -221,7 +221,7 @@ class Subscription:
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
             evfilter = await self._create_eventfilter(evtypes)
-        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
+        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)  # type: ignore
 
     async def subscribe_alarms_and_conditions(self,
                                               sourcenode: Node = ua.ObjectIds.Server,
@@ -252,7 +252,7 @@ class Subscription:
             conditionIdOperand.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)
             conditionIdOperand.AttributeId = ua.AttributeIds.NodeId
             evfilter.SelectClauses.append(conditionIdOperand)
-        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
+        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)  # type: ignore
 
     async def _subscribe(self,
                          nodes: Union[Node, Iterable[Node]],
@@ -291,7 +291,7 @@ class Subscription:
         # Check and return result for single node (raise `UaStatusCodeError` if subscription failed)
         if type(mids[0]) == ua.StatusCode:
             mids[0].check()
-        return mids[0]
+        return mids[0]  # type: ignore
 
     def _make_monitored_item_request(self,
                                      node: Node,
@@ -463,7 +463,7 @@ class Subscription:
         """
         self.logger.info("set_publishing_mode")
         params = ua.SetPublishingModeParameters()
-        params.SubscriptionIds = [self.subscription_id]
+        params.SubscriptionIds = [self.subscription_id]  # type: ignore
         params.PublishingEnabled = publishing
         result = await self.server.set_publishing_mode(params)
         if result[0].is_good():
