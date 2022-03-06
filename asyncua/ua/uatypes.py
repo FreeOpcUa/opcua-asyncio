@@ -30,7 +30,7 @@ if sys.version_info.minor < 10:
             return res
         return ()
 else:
-    from typing import get_origin, get_args
+    from typing import get_origin, get_args  # type: ignore
 
 
 from asyncua.ua import status_codes
