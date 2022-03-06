@@ -417,7 +417,7 @@ class Server:
         else:
             _logger.debug("%s server started", self)
 
-    def _get_bind_socket_info(self) -> Tuple[str, int]:
+    def _get_bind_socket_info(self) -> Tuple[Optional[str], Optional[int]]:
         if self.socket_address is not None:
             return self.socket_address
         else:

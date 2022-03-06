@@ -2576,7 +2576,7 @@ class OptionSet:
 
 
 @dataclass(frozen=FROZEN)
-class Union:
+class Union:  # type: ignore
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part3/8.42
 
@@ -8539,11 +8539,11 @@ class BuildInfo:
 
     data_type = NodeId(ObjectIds.BuildInfo)
 
-    ProductUri: String = None
-    ManufacturerName: String = None
-    ProductName: String = None
-    SoftwareVersion: String = None
-    BuildNumber: String = None
+    ProductUri: String = None  # type: ignore
+    ManufacturerName: String = None  # type: ignore
+    ProductName: String = None  # type: ignore
+    SoftwareVersion: String = None  # type: ignore
+    BuildNumber: String = None  # type: ignore
     BuildDate: UtcTime = field(default_factory=datetime.utcnow)
 
 

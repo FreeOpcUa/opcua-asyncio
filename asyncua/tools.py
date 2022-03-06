@@ -8,7 +8,7 @@ import time
 import concurrent.futures
 
 try:
-    from IPython import embed
+    from IPython import embed  # type: ignore
 except ImportError:
     import code
 

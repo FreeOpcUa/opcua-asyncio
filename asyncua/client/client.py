@@ -177,7 +177,7 @@ class Client:
             private_key.password,
             private_key.extension,
         )
-        self.security_policy = policy(server_cert, cert, pk, mode)
+        self.security_policy = policy(server_cert, cert, pk, mode)  # type: ignore
         self.uaclient.set_security(self.security_policy)
 
     async def load_client_certificate(self, path: str, extension: Optional[str] = None):
@@ -570,13 +570,13 @@ class Client:
         self,
         params: ua.CreateSubscriptionParameters,
         results: ua.CreateSubscriptionResult,
-    ) -> None:
+    ) -> Optional[ua.ModifySubscriptionParameters]:
         if (
             results.RevisedPublishingInterval == params.RequestedPublishingInterval
             and results.RevisedLifetimeCount == params.RequestedLifetimeCount
             and results.RevisedMaxKeepAliveCount == params.RequestedMaxKeepAliveCount
         ):
-            return
+            return None
         _logger.warning(
             f"Revised values returned differ from subscription values: {results}"
         )
@@ -603,6 +603,7 @@ class Client:
             # update LifetimeCount but chances are it will be re-revised again
             modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
             return modified_params
+        return None
 
     def get_keepalive_count(self, period) -> int:
         """

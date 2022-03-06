@@ -210,7 +210,7 @@ class HistoryDict(HistoryStorageInterface):
         pass
 
 
-class SubHandler(SubHandler):
+class SubHandler(SubHandler):  # type: ignore
     def __init__(self, storage):
         self.storage = storage
 
