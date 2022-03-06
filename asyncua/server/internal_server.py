@@ -133,7 +133,7 @@ class InternalServer:
             # path was supplied, but file doesn't exist - create one for next start up
             await asyncio.get_running_loop().run_in_executor(None, self.aspace.make_aspace_shelf, shelf_file)
 
-    async def _address_space_fixes(self) -> Coroutine:
+    async def _address_space_fixes(self) -> Coroutine:  # type: ignore
         """
         Looks like the xml definition of address space has some error. This is a good place to fix them
         """

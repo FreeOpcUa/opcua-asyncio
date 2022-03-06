@@ -275,7 +275,7 @@ class XmlImporter:
             node.RequestedNewNodeId)
         return node
 
-    def _to_migrated_nodeid(self, nodeid: Union[ua.NodeId, None, str]) -> ua.NodeId:
+    def _to_migrated_nodeid(self, nodeid: Union[ua.NodeId, None, str]) -> Union[ua.NodeId, ua.QualifiedName]:
         nodeid = self._to_nodeid(nodeid)
         return self._migrate_ns(nodeid)
 

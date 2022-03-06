@@ -9,7 +9,7 @@ from ..ua.ua_binary import struct_from_binary, struct_to_binary, header_from_bin
 try:
     from ..crypto.uacrypto import InvalidSignature
 except ImportError:
-    class InvalidSignature(Exception):
+    class InvalidSignature(Exception):  # type: ignore
         pass
 
 logger = logging.getLogger('asyncua.uaprotocol')

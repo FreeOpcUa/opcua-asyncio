@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from functools import partial
 from itertools import chain
-from sortedcontainers import SortedDict
+from sortedcontainers import SortedDict  # type: ignore
 from asyncua import Node, ua, Client
 from asyncua.client.ua_client import UASocketProtocol
 from asyncua.ua.uaerrors import BadSessionClosed, BadSessionNotActivated

@@ -642,7 +642,7 @@ class AddressSpace:
             self._nodeid_counter[idx] += 1
         else:
             # get the biggest identifier number from the existed nodes in address space
-            identifier_list = sorted(
+            identifier_list = sorted(  # type: ignore
                 [
                     nodeid.Identifier
                     for nodeid in self._nodes.keys()
