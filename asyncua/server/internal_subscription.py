@@ -4,6 +4,7 @@ server side implementation of a subscription object
 
 import logging
 import asyncio
+import time
 
 from typing import Union, Iterable, Dict, List
 from asyncua import ua
@@ -72,9 +73,15 @@ class InternalSubscription:
         """
         Start the publication loop running at the RevisedPublishingInterval.
         """
+        ts = time.time()
+        period = self.data.RevisedPublishingInterval / 1000.0
         try:
+            await self.publish_results()
             while True:
-                await asyncio.sleep(self.data.RevisedPublishingInterval / 1000.0)
+                next_ts = ts + period
+                sleep_time = next_ts - time.time()
+                ts = next_ts
+                await asyncio.sleep(max(sleep_time, 0))
                 await self.publish_results()
         except asyncio.CancelledError:
             self.logger.info('exiting _subscription_loop for %s', self.data.SubscriptionId)
