@@ -566,7 +566,7 @@ class Client:
             _logger.info(f"Result from subscription update: {results}")
         return subscription
 
-    def get_subscription_revised_params(
+    def get_subscription_revised_params(  # type: ignore
         self,
         params: ua.CreateSubscriptionParameters,
         results: ua.CreateSubscriptionResult,
@@ -576,7 +576,7 @@ class Client:
             and results.RevisedLifetimeCount == params.RequestedLifetimeCount
             and results.RevisedMaxKeepAliveCount == params.RequestedMaxKeepAliveCount
         ):
-            return None
+            return  # type: ignore
         _logger.warning(
             f"Revised values returned differ from subscription values: {results}"
         )
@@ -603,7 +603,6 @@ class Client:
             # update LifetimeCount but chances are it will be re-revised again
             modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
             return modified_params
-        return None
 
     def get_keepalive_count(self, period) -> int:
         """
