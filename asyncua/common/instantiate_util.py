@@ -10,7 +10,7 @@ from asyncua import ua
 from .ua_utils import get_node_supertypes, is_child_present
 from .copy_node_util import _rdesc_from_node, _read_and_copy_attrs
 from .node_factory import make_node
-from asyncua.common import Node
+from .node import Node
 
 logger = logging.getLogger(__name__)
 
