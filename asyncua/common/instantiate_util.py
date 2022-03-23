@@ -19,6 +19,7 @@ async def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, id
     If they exists children of the node type, such as components, variables and
     properties are also instantiated
     """
+    #TODO check if nodetype is abstract!
     rdesc = await _rdesc_from_node(parent, node_type)
     rdesc.TypeDefinition = node_type.nodeid
 
