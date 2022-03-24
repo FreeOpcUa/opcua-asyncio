@@ -10,17 +10,16 @@ from asyncua import ua
 from .ua_utils import get_node_supertypes, is_child_present
 from .copy_node_util import _rdesc_from_node, _read_and_copy_attrs
 from .node_factory import make_node
-from .node import Node
 
 logger = logging.getLogger(__name__)
 
 
-async def is_abstract(node_type: Node) -> bool:
+async def is_abstract(node_type) -> bool:
     result = await node_type.read_attribute(ua.AttributeIds.IsAbstract)
     return result.Value.Value
 
 
-async def instantiate(parent: Node, node_type: Node, nodeid: ua.NodeId=None, bname: Union[str, ua.QualifiedName]=None, dname: ua.LocalizedText=None, idx: int=0, instantiate_optional: bool=True):
+async def instantiate(parent, node_type, nodeid: ua.NodeId=None, bname: Union[str, ua.QualifiedName]=None, dname: ua.LocalizedText=None, idx: int=0, instantiate_optional: bool=True):
     """
     instantiate a node type under a parent node.
     nodeid and browse name of new node can be specified, or just namespace index
