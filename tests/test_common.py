@@ -1010,6 +1010,12 @@ async def test_instantiate_string_nodeid(opc):
     await opc.opc.delete_nodes([dev_t])
 
 
+async def test_instantiate_abstract(opc):
+    finit_statemachine_type = opc.opc.get_node("ns=0;i=2771")  # IsAbstract=True
+    with pytest.raises(ua.UaError):
+        node = await instantiate(opc.opc.nodes.objects, finit_statemachine_type, bname="2:TestFiniteStateMachine")
+        
+
 async def test_variable_with_datatype(opc):
     v1 = await opc.opc.nodes.objects.add_variable(
         3, 'VariableEnumType1', ua.ApplicationType.ClientAndServer, datatype=ua.NodeId(ua.ObjectIds.ApplicationType)
