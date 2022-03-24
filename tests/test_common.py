@@ -1011,11 +1011,11 @@ async def test_instantiate_string_nodeid(opc):
 
 
 async def test_instantiate_abstract(opc):
-    finit_statemachine_type = opc.opc.get_node("ns=0;i=2771")
+    finit_statemachine_type = opc.opc.get_node("ns=0;i=2771")  # IsAbstract=True
     try:
         node = await instantiate(opc.opc.nodes.objects, finit_statemachine_type, bname="2:TestFiniteStateMachine")
     except Exception as e:
-        if isinstance(e, ValueError):
+        if isinstance(e, ua.UaError):
             assert 1
             return
     assert 0

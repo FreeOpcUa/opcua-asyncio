@@ -28,7 +28,7 @@ async def instantiate(parent, node_type, nodeid: ua.NodeId=None, bname: Union[st
     """
     abstract = await is_abstract(node_type)
     if abstract:
-        raise ValueError(f"Abstract Type with NodeId: {node_type.nodeid} cant be instantiated!")
+        raise ua.UaError(f"InstantiationError NodeId: {node_type.nodeid} is abstract and cant be instantiated!")
 
     rdesc = await _rdesc_from_node(parent, node_type)
     rdesc.TypeDefinition = node_type.nodeid
