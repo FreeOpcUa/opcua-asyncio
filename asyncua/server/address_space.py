@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-import collections
+import collections.abc
 import logging
 import pickle
 import shelve
@@ -718,7 +718,7 @@ class AddressSpace:
         raise NotImplementedError
 
         # ToDo: async friendly implementation - load all at once?
-        class LazyLoadingDict(collections.MutableMapping):
+        class LazyLoadingDict(collections.abc.MutableMapping):
             """
             Special dict that only loads nodes as they are accessed. If a node is accessed it gets copied from the
             shelve to the cache dict. All user nodes are saved in the cache ONLY. Saving data back to the shelf
