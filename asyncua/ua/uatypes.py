@@ -318,7 +318,8 @@ class StatusCode:
         """
         Raises an exception if the status code is anything else than 0 (good).
 
-        Use the is_good() method if you do not want an exception.
+        Set no_read_status_check_throw on the node object if you do not want
+        this check to be performed while calling read_attribute functions.
         """
         if not self.is_good():
             raise UaStatusCodeError(self.value)

@@ -47,6 +47,8 @@ class Node:
     def __init__(self, server, nodeid):
         self.server = server
         self.nodeid = None
+        # this flag indicates that an exception should not be raised when an attribute is read.
+        self.no_read_status_check_throw = False
         if isinstance(nodeid, Node):
             self.nodeid = nodeid.nodeid
         elif isinstance(nodeid, ua.NodeId):
@@ -300,7 +302,8 @@ class Node:
         params = ua.ReadParameters()
         params.NodesToRead.append(rv)
         result = await self.server.read(params)
-        result[0].StatusCode.check()
+        if not self.no_read_status_check_throw:
+            result[0].StatusCode.check()
         return result[0]
 
     async def read_attributes(self, attrs):

@@ -109,6 +109,36 @@ async def test_multiple_read_and_write_value(server, client):
     with pytest.raises(ua.uaerrors.BadUserAccessDenied):
         await client.write_values([v1, v2, v_ro], [4, 5, 6])
 
+async def test_read_and_write_status_check(server, client):
+    f = await server.nodes.objects.add_folder(3, 'read_and_write_status_check')
+    v1 = await f.add_variable(3, "a", 1)
+    await v1.set_writable()
+
+    testValue = 1
+    testStatusCode = ua.StatusCode(ua.StatusCodes.Bad)
+
+    # set value StatusCode to Bad
+    variant = ua.Variant(testValue, ua.VariantType.Int64)
+    dataValue = ua.DataValue(variant, StatusCode_=testStatusCode)
+    await v1.set_value(dataValue)
+
+    # check that reading the value generates an error
+    with pytest.raises(ua.UaStatusCodeError):
+        val = await v1.read_data_value()
+
+    # check that reading the value does not generate an error
+    v1.no_read_status_check_throw = True
+    val = await v1.read_data_value()
+    assert val.Value.Value == testValue, "Value expected " \
+        + str(val) + ", but instead got " + str(testValue)
+    assert val.StatusCode_ == testStatusCode, "StatusCode expected " \
+        + str(val.StatusCode_) + ", but instead got " + str(testStatusCode)
+
+    # check that reading the value generates an error
+    v1.no_read_status_check_throw = False
+    with pytest.raises(ua.UaStatusCodeError):
+        val = await v1.read_data_value()
+
 async def test_browse_nodes(server, client):
     nodes = [
         client.get_node("ns=0;i=2267"),
@@ -123,5 +153,5 @@ async def test_browse_nodes(server, client):
     assert isinstance(results[1][0], Node)
     assert isinstance(results[0][1], ua.BrowseResult)
     assert isinstance(results[1][1], ua.BrowseResult)
-    
-    
+
+
