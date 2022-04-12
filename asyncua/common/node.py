@@ -47,8 +47,6 @@ class Node:
     def __init__(self, server, nodeid):
         self.server = server
         self.nodeid = None
-        # this flag indicates that an exception should not be raised when an attribute is read.
-        self.no_read_status_check_throw = False
         if isinstance(nodeid, Node):
             self.nodeid = nodeid.nodeid
         elif isinstance(nodeid, ua.NodeId):
@@ -186,8 +184,9 @@ class Node:
         Get value of a node as a DataValue object. Only variables (and properties) have values.
         An exception will be generated for other node types.
         DataValue contain a variable value as a variant as well as server and source timestamps
+        Contrarily to most other methds, an exception is not raise in case of bad status code.
         """
-        return await self.read_attribute(ua.AttributeIds.Value)
+        return await self.read_attribute(ua.AttributeIds.Value, raise_on_status=False)
 
     async def write_array_dimensions(self, value):
         """
@@ -288,12 +287,13 @@ class Node:
         result = await self.server.write(params)
         return result
 
-    async def read_attribute(self, attr, indexrange=None):
+    async def read_attribute(self, attr, indexrange=None, raise_on_status=True):
         """
         Read one attribute of a node
         attributeid is a member of ua.AttributeIds
         indexrange is a NumericRange (a string; e.g. "1" or "1:3".
-        result code from server is checked and an exception is raised in case of error
+        if raise_on_status == True then result code from server is
+        checked and an exception is raised in case status is not 'Good'"
         """
         rv = ua.ReadValueId()
         rv.NodeId = self.nodeid
@@ -302,7 +302,7 @@ class Node:
         params = ua.ReadParameters()
         params.NodesToRead.append(rv)
         result = await self.server.read(params)
-        if not self.no_read_status_check_throw:
+        if raise_on_status:
             result[0].StatusCode.check()
         return result[0]
 
