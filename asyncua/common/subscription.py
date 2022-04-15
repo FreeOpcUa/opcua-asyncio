@@ -4,7 +4,7 @@ high level interface to subscriptions
 import asyncio
 import logging
 import collections.abc
-from typing import Union, List, Iterable, Optional
+from typing import Tuple, Union, List, Iterable, Optional
 from asyncua.common.ua_utils import copy_dataclass_attr
 
 from asyncua import ua
@@ -124,22 +124,27 @@ class Subscription:
         results[0].check()
 
     async def _call_datachange(self, datachange: ua.DataChangeNotification):
+        if not hasattr(self._handler, "datachange_notification"):
+            self.logger.error("DataChange subscription created but handler has no datachange_notification method")
+            return
+
+        known_handles_args: List[Tuple] = []
         for item in datachange.MonitoredItems:
             if item.ClientHandle not in self._monitored_items:
                 self.logger.warning("Received a notification for unknown handle: %s", item.ClientHandle)
                 continue
             data = self._monitored_items[item.ClientHandle]
-            if hasattr(self._handler, "datachange_notification"):
-                event_data = DataChangeNotif(data, item)
-                try:
-                    if asyncio.iscoroutinefunction(self._handler.datachange_notification):
-                        await self._handler.datachange_notification(data.node, item.Value.Value.Value, event_data)
-                    else:
-                        self._handler.datachange_notification(data.node, item.Value.Value.Value, event_data)
-                except Exception:
-                    self.logger.exception("Exception calling data change handler")
-            else:
-                self.logger.error("DataChange subscription created but handler has no datachange_notification method")
+            event_data = DataChangeNotif(data, item)
+            known_handles_args.append((data.node, item.Value.Value.Value, event_data))
+
+        try:
+            tasks = [
+                self._handler.datachange_notification(*args) for args in known_handles_args
+            ]
+            if asyncio.iscoroutinefunction(self._handler.datachange_notification):  
+                await asyncio.gather(*tasks)
+        except Exception as ex:
+            self.logger.exception("Exception calling data change handler. Error: %s", ex)
 
     async def _call_event(self, eventlist: ua.EventNotificationList):
         for event in eventlist.Events:
