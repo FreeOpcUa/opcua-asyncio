@@ -5,7 +5,7 @@ import uuid
 import logging
 import re
 import keyword
-from typing import Union, List, TYPE_CHECKING, Tuple, Optional, Any, Dict
+from typing import Union, List, TYPE_CHECKING, Tuple, Optional, Any, Dict, Set
 from dataclasses import dataclass, field
 
 from asyncua import ua
@@ -290,7 +290,11 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False, opt
 
 
 class DataTypeSorter:
-    def __init__(self, data_type, name, desc, sdef):
+    dtype_index: Dict[ua.NodeId, 'DataTypeSorter'] = {}
+    referenced_dtypes: Set[ua.NodeId] = set()
+
+    def __init__(self, data_type: ua.NodeId, name: str,
+                 desc: ua.ReferenceDescription, sdef: ua.StructureDefinition):
         self.data_type = data_type
         self.name = name
         self.desc = desc
@@ -298,15 +302,28 @@ class DataTypeSorter:
         self.encoding_id = self.sdef.DefaultEncodingId
         self.deps = [field.DataType for field in self.sdef.Fields]
 
-    def __lt__(self, other):
-        if self.desc.NodeId in other.deps:
+        self.dtype_index[self.desc.NodeId] = self
+        self.referenced_dtypes.update(self.deps)
+
+    def depends_on(self, other: 'DataTypeSorter'):
+        if other.desc.NodeId in self.deps:
             return True
+        for dep_nodeid in self.deps:
+            if dep_nodeid not in self.dtype_index:
+                continue
+            dep = self.dtype_index[dep_nodeid]
+            if dep.depends_on(other):
+                return True
         return False
 
-    def __str__(self):
+    def __lt__(self, other: 'DataTypeSorter'):
+        return other.depends_on(self)
+
+    def __repr__(self):
         return f"{self.__class__.__name__}({self.desc.NodeId, self.deps, self.encoding_id})"
 
-    __repr__ = __str__
+    def __str__(self):
+        return f"<{self.__class__.__name__}: {self.name!r}>"
 
 
 async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_existing=False):
