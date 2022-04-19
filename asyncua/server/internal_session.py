@@ -90,6 +90,9 @@ class InternalSession:
         if self.iserver.user_manager is not None:
             if isinstance(id_token, ua.UserNameIdentityToken):
                 username, password = self.iserver.check_user_token(self, id_token)
+            elif isinstance(id_token, ua.X509IdentityToken):
+                peer_certificate = id_token.CertificateData
+                username, password = None, None
             else:
                 username, password = None, None
 
