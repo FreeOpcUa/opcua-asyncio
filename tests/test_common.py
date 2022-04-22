@@ -642,6 +642,18 @@ async def test_write_value(opc):
     await opc.opc.delete_nodes([v])
 
 
+async def test_write_value_statuscode_bad(opc):
+    o = opc.opc.nodes.objects
+    var = ua.Variant('Some value that should not be set!')
+    dvar = ua.DataValue(var, StatusCode_=ua.StatusCode(ua.StatusCodes.BadDeviceFailure))
+    v = await o.add_variable(3, 'VariableValueBad', var)
+    await v.write_value(dvar)
+    with pytest.raises(ua.UaStatusCodeError) as error_read:
+        await v.read_data_value()
+    assert error_read.type.code == dvar.StatusCode.value
+    await opc.opc.delete_nodes([v])
+
+
 async def test_array_value(opc):
     o = opc.opc.nodes.objects
     v = await o.add_variable(3, 'VariableArrayValue', [1, 2, 3])
@@ -1014,7 +1026,7 @@ async def test_instantiate_abstract(opc):
     finit_statemachine_type = opc.opc.get_node("ns=0;i=2771")  # IsAbstract=True
     with pytest.raises(ua.UaError):
         node = await instantiate(opc.opc.nodes.objects, finit_statemachine_type, bname="2:TestFiniteStateMachine")
-        
+
 
 async def test_variable_with_datatype(opc):
     v1 = await opc.opc.nodes.objects.add_variable(
