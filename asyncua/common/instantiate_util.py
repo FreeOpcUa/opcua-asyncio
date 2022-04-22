@@ -26,13 +26,13 @@ async def instantiate(parent, node_type, nodeid: ua.NodeId=None, bname: Union[st
     If they exists children of the node type, such as components, variables and
     properties are also instantiated
     """
-    abstract = await is_abstract(node_type)
-    if abstract:
-        raise ua.UaError(f"InstantiationError NodeId: {node_type.nodeid} is abstract and cant be instantiated!")
-
     rdesc = await _rdesc_from_node(parent, node_type)
     rdesc.TypeDefinition = node_type.nodeid
-
+    if rdesc.NodeClass in (ua.NodeClass.DataType, ua.NodeClass.ReferenceType, ua.NodeClass.ObjectType, ua.NodeClass.ReferenceType):
+        # Only some nodes can be abstract
+        abstract = await is_abstract(node_type)
+        if abstract:
+            raise ua.UaError(f"InstantiationError NodeId: {node_type.nodeid} is abstract and cant be instantiated!")
     if nodeid is None:
         nodeid = ua.NodeId(NamespaceIndex=idx)  # will trigger automatic node generation in namespace idx
     if bname is None:
