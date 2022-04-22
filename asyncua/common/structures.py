@@ -89,7 +89,6 @@ class {self.name}:
             if uatype == 'List[ua.Char]':
                 uatype = 'String'
             code += f"    {sfield.name}:{uatype} = {sfield.value}\n"
-        print(code)
         return code
 
 
