@@ -387,3 +387,35 @@ async def test_always_catch_new_cert_on_set_security():
     assert clt.security_policy.peer_certificate
     assert clt.security_policy.peer_certificate != srv_original_cert
     await srv.stop()
+
+
+async def test_anonymous_rejection():
+    peer_certificate = peer_creds["certificate"]
+    user_manager = CertificateUserManager()
+    key, cert =  srv_crypto_params[0]
+    await user_manager.add_admin(peer_certificate, 'test1')
+
+    srv = Server(user_manager=user_manager)
+
+    await srv.init()
+    srv.set_endpoint(uri_crypto_cert)
+    srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt])
+    srv.set_security_IDs(["Username", "Basic256Sha256"])
+    await srv.load_certificate(cert)
+    await srv.load_private_key(key)
+    await srv.start()
+    clt = Client(uri_crypto_cert)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        peer_creds['certificate'],
+        peer_creds['private_key'],
+        None,
+        cert,
+        mode=ua.MessageSecurityMode.SignAndEncrypt
+    )
+    with pytest.raises(ua.UaStatusCodeError) as exc_info:
+        await clt.connect()
+        await clt.disconnect()
+    assert ua.StatusCodes.BadIdentityTokenRejected == exc_info.type.code
+    await srv.stop()
+
