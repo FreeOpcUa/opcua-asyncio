@@ -190,6 +190,7 @@ from datetime import datetime
 import uuid
 from dataclasses import dataclass, field
 from typing import List, Union
+from enum import IntEnum
 
 from asyncua import ua
 """)
