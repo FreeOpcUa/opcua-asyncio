@@ -10,7 +10,7 @@ from struct import unpack_from
 import os
 import logging
 from urllib.parse import urlparse
-from typing import Coroutine
+from typing import Coroutine, Tuple
 
 from asyncua import ua
 from .user_managers import PermissiveUserManager, UserManager
@@ -72,7 +72,8 @@ class InternalServer:
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         self.time_task = None
         self._time_task_stop = False
-        self.match_discovery_source_ip: bool = True 
+        self.match_discovery_source_ip: bool = True
+        self.supported_tokens = []
 
     async def init(self, shelffile=None):
         await self.load_standard_address_space(shelffile)
@@ -352,3 +353,9 @@ class InternalServer:
             password = password.decode('utf-8')
 
         return user_name, password
+
+    def get_supported_tokens(self) -> Tuple[type]:
+        return self._supported_tokens
+
+    def set_supported_tokens(self, token_classes: Tuple[type]) -> None:
+        self._supported_tokens = token_classes
