@@ -6,6 +6,7 @@ import functools
 import struct
 import logging
 from typing import Any, Callable
+import typing
 import uuid
 from enum import IntEnum, Enum, IntFlag
 from dataclasses import is_dataclass, fields
@@ -271,6 +272,11 @@ def field_serializer(ftype) -> Callable[[Any], bytes]:
 def create_dataclass_serializer(dataclazz):
     """Given a dataclass, return a function that serializes instances of this dataclass"""
     data_fields = fields(dataclazz)
+    # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
+    #       its possible that the type annotations also refere to classes defined in other modules.
+    resolved_fieldtypes = typing.get_type_hints(dataclazz, {'ua': ua})
+    for f in data_fields:
+        f.type = resolved_fieldtypes[f.name]
 
     if issubclass(dataclazz, ua.UaUnion):
         # Union is a class with Encoding and Value field
@@ -601,13 +607,17 @@ def _create_dataclass_deserializer(objtype):
         return decode_union
     enc_count = 0
     field_deserializers = []
+    # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
+    #       its possible that the type annotations also refere to classes defined in other modules.
+    resolved_fieldtypes = typing.get_type_hints(objtype, {'ua': ua})
     for field in fields(objtype):
         optional_enc_bit = 0
+        field_type = resolved_fieldtypes[field.name]
         # if our member has a switch and it is not set we will need to skip it
-        if type_is_union(field.type):
+        if type_is_union(field_type):
             optional_enc_bit = 1 << enc_count
             enc_count += 1
-        deserialize_field = _create_type_deserializer(field.type)
+        deserialize_field = _create_type_deserializer(field_type)
         field_deserializers.append((field, optional_enc_bit, deserialize_field))
 
     def decode(data):
