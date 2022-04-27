@@ -317,8 +317,6 @@ class StatusCode:
     def check(self):
         """
         Raises an exception if the status code is anything else than 0 (good).
-
-        Use the is_good() method if you do not want an exception.
         """
         if not self.is_good():
             raise UaStatusCodeError(self.value)

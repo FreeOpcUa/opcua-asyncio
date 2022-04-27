@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import pytest
 from copy import copy
@@ -88,6 +89,9 @@ async def test_subscription_failure(opc):
 
 @pytest.mark.parametrize("handler_class", [MySubHandlerCounter, MySubHandlerCounterAsync])
 async def test_subscription_overload(opc, handler_class):
+    if sys.version_info.major == 3 and sys.version_info.minor == 7:
+        pytest.skip("this test seems to be hanging in version 3.7.x")
+
     nb = 10
     myhandler = handler_class()
     o = opc.opc.nodes.objects
@@ -656,7 +660,7 @@ async def test_events_CustomEvent_CustomFilter(opc):
                                                       ('PropertyString', ua.VariantType.String)])
     # Create Custom Event filter including AttributeId.NodeId
     efilter = ua.EventFilter()
-    browsePathes = [[ua.uatypes.QualifiedName("PropertyString", 2)], 
+    browsePathes = [[ua.uatypes.QualifiedName("PropertyString", 2)],
                     [ua.uatypes.QualifiedName("Transition"), ua.uatypes.QualifiedName("Id")],
                     [ua.uatypes.QualifiedName("Message")],
                     [ua.uatypes.QualifiedName("EventType")]]
@@ -665,13 +669,13 @@ async def test_events_CustomEvent_CustomFilter(opc):
         op = ua.SimpleAttributeOperand()
         op.AttributeId = ua.AttributeIds.Value
         op.BrowsePath = bp
-        efilter.SelectClauses.append(op) 
+        efilter.SelectClauses.append(op)
     op = ua.SimpleAttributeOperand()  # For NodeId
     op.AttributeId = ua.AttributeIds.NodeId
-    op.TypeDefinitionId = ua.NodeId(ua.ObjectIds.BaseEventType) 
-    efilter.SelectClauses.append(op) 
+    op.TypeDefinitionId = ua.NodeId(ua.ObjectIds.BaseEventType)
+    efilter.SelectClauses.append(op)
     # WhereClause
-    el = ua.ContentFilterElement()  
+    el = ua.ContentFilterElement()
     el.FilterOperator = ua.FilterOperator.OfType
     op = ua.LiteralOperand()
     op.Value = ua.Variant(etype.nodeid) # Define type
