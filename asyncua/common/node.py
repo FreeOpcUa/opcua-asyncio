@@ -179,13 +179,13 @@ class Node:
 
     get_value = read_value  # legacy compatibility
 
-    async def read_data_value(self):
+    async def read_data_value(self, raise_on_bad_status=True):
         """
         Get value of a node as a DataValue object. Only variables (and properties) have values.
         An exception will be generated for other node types.
         DataValue contain a variable value as a variant as well as server and source timestamps
         """
-        return await self.read_attribute(ua.AttributeIds.Value)
+        return await self.read_attribute(ua.AttributeIds.Value, None, raise_on_bad_status)
 
     async def write_array_dimensions(self, value):
         """
@@ -286,7 +286,7 @@ class Node:
         result = await self.server.write(params)
         return result
 
-    async def read_attribute(self, attr, indexrange=None):
+    async def read_attribute(self, attr, indexrange=None, raise_on_bad_status=True):
         """
         Read one attribute of a node
         attributeid is a member of ua.AttributeIds
@@ -300,7 +300,8 @@ class Node:
         params = ua.ReadParameters()
         params.NodesToRead.append(rv)
         result = await self.server.read(params)
-        result[0].StatusCode.check()
+        if raise_on_bad_status:
+            result[0].StatusCode.check()
         return result[0]
 
     async def read_attributes(self, attrs):
