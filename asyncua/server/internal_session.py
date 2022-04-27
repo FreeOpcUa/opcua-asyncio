@@ -88,7 +88,7 @@ class InternalSession:
         InternalSession._current_connections += 1
         id_token = params.UserIdentityToken
         # Check if security policy is supported
-        if not isinstance(id_token, self.iserver.get_supported_tokens()):
+        if not isinstance(id_token, self.iserver.supported_tokens):
             self.logger.error('Rejected active session UserIdentityToken not supported')
             raise ServiceError(ua.StatusCodes.BadIdentityTokenRejected)
         if self.iserver.user_manager is not None:

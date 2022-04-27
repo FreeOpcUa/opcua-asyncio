@@ -399,7 +399,7 @@ class Server:
         edp.TransportProfileUri = "http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary"
         edp.SecurityLevel = 0
         self.iserver.add_endpoint(edp)
-        self.iserver.set_supported_tokens(tuple(supported_token_classes))
+        self.iserver.supported_tokens = tuple(supported_token_classes)
 
     def set_server_name(self, name):
         self.name = name
