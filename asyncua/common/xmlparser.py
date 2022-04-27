@@ -209,7 +209,7 @@ class XMLParser:
         elif key == "ArrayDimensions":
             obj.dimensions = [int(i) for i in val.split(",")]
         elif key == "MinimumSamplingInterval":
-            obj.minsample = int(val)
+            obj.minsample = float(val)
         elif key == "AccessLevel":
             obj.accesslevel = int(val)
         elif key == "UserAccessLevel":
