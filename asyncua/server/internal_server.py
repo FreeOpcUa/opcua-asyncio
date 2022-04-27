@@ -353,9 +353,3 @@ class InternalServer:
             password = password.decode('utf-8')
 
         return user_name, password
-
-    def get_supported_tokens(self) -> Tuple[type]:
-        return self._supported_tokens
-
-    def set_supported_tokens(self, token_classes: Tuple[type]) -> None:
-        self._supported_tokens = token_classes
