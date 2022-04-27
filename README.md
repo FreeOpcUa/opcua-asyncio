@@ -196,11 +196,21 @@ All protocol code is under opcua directory
 ## Running tests:
 
 ```
+python -m pip install -r requirements.txt
+python -m pip install -r dev_requirements.txt
 pytest -v -s
+```
+Or
+```
+./run-test.sh -v -s
 ```
 
 ## Coverage
 
 ```
 pytest -v -s --cov asyncua --cov-report=html
+```
+Or
+```
+./run-test.sh -v -s --cov asyncua --cov-report=html
 ```
