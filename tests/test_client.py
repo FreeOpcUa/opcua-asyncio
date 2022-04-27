@@ -130,8 +130,7 @@ async def test_read_and_write_status_check(server, client):
     # check that reading the value does not generate an error
     # with raise_on_bad_status set to False
     val = await v1.read_data_value(False)
-    assert val.Value.Value == testValue, "Value expected " \
-        + str(val) + ", but instead got " + str(testValue)
+    assert type(val.Value.Value) is ua.Null, "Value should be Null if StatusCode is Bad"
     assert val.StatusCode_ == testStatusCode, "StatusCode expected " \
         + str(val.StatusCode_) + ", but instead got " + str(testStatusCode)
 
