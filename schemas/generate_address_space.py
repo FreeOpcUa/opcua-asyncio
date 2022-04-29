@@ -272,10 +272,11 @@ class CodeGenerator:
                     if k == "ArrayDimensions":  # hack for v1.04 - Ignore UInt32 tag?
                         self.writecode(indent, '    ArrayDimensions=[{0}],'.format(v[0][1]))
                         continue
-                    for k2, v2 in v:
-                        val2 = _to_val([extobj.objname, k], k2, v2)
-                        #self.writecode(indent, f'    {k}.{k2}={val2},')
-                        self.writecode(indent, f'    {k}=LocalizedText(Text={val2}),')
+                    # hack for Locale
+                    dic = { k2: _to_val([extobj.objname, k], k2, v2)  for k2, v2 in v}
+                    text = dic.get("Text", "''")
+                    locale = dic.get("Locale", None)
+                    self.writecode(indent, f'    {k}=LocalizedText(Text={text}, Locale={locale}),')
         self.writecode(indent, '    ),')
 
     def make_variable_code(self, obj):
