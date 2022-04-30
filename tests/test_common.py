@@ -1501,3 +1501,12 @@ async def test_custom_method_with_enum(opc):
     result = await opc.opc.nodes.objects.call_method(methodid, ua.MyCustEnumForMethod.titi, ua.MyCustEnumForMethod.titi, ua.MyCustEnumForMethod.titi)
 
     assert result == ua.MyCustEnumForMethod.toto
+
+async def test_sub_class(opc):
+    idx = 4
+    struct_with_sub = ua.PublishedDataSetDataType('Test', [''], ua.DataSetMetaDataType(), [], ua.PublishedEventsDataType(ua.NodeId(NamespaceIndex=1), [], ua.ContentFilter([])))
+    var = await opc.opc.nodes.objects.add_variable(idx, "struct with sub", struct_with_sub, datatype=struct_with_sub.data_type)
+    await var.write_value(struct_with_sub)
+    val = await var.read_value()
+    assert val == struct_with_sub
+    assert val.DataSetSource == struct_with_sub.DataSetSource
