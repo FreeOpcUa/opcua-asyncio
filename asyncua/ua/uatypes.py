@@ -52,6 +52,8 @@ def type_is_union(uatype):
 def type_is_list(uatype):
     return get_origin(uatype) == list
 
+def type_allow_subclass(uatype):
+    return get_origin(uatype) not in [Union, list, None]
 
 def types_from_union(uatype, origin=None):
     if origin is None:
@@ -68,12 +70,16 @@ def types_from_union(uatype, origin=None):
 def type_from_list(uatype):
     return get_args(uatype)[0]
 
+def type_from_allow_subtype(uatype):
+    return get_args(uatype)[0]
 
 def type_string_from_type(uatype):
     if type_is_union(uatype):
         uatype = types_from_union(uatype)[0]
     elif type_is_list(uatype):
         uatype = type_from_list(uatype)
+    elif type_allow_subclass(uatype):
+        uatype = type_from_allow_subtype(uatype)
     return uatype.__name__
 
 
