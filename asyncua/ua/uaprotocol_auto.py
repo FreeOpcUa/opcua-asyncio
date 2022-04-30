@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2022-04-30 15:47:39.947843
+Date:2022-04-30 21:16:30.572704
 """
 
 from datetime import datetime
@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from asyncua.ua.uatypes import FROZEN
 from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32
 from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid
-from asyncua.ua.uatypes import AccessLevel, EventNotifier
+from asyncua.ua.uatypes import AccessLevel, EventNotifier  
 from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue
 from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo
 from asyncua.ua.uatypes import extension_object_typeids, extension_objects_by_typeid
@@ -2845,16 +2845,6 @@ class OptionSet:
 
     Value: ByteString = None
     ValidBits: ByteString = None
-
-
-@dataclass(frozen=FROZEN)  # type: ignore
-class Union:  # type: ignore
-    """
-    https://reference.opcfoundation.org/v104/Core/docs/Part3/8.42
-
-    """
-
-    data_type = NodeId(ObjectIds.Union)
 
 
 @dataclass(frozen=FROZEN)
@@ -8821,11 +8811,11 @@ class BuildInfo:
 
     data_type = NodeId(ObjectIds.BuildInfo)
 
-    ProductUri: String = None  # type: ignore
-    ManufacturerName: String = None  # type: ignore
-    ProductName: String = None  # type: ignore
-    SoftwareVersion: String = None  # type: ignore
-    BuildNumber: String = None  # type: ignore
+    ProductUri: String = None
+    ManufacturerName: String = None
+    ProductName: String = None
+    SoftwareVersion: String = None
+    BuildNumber: String = None
     BuildDate: UtcTime = field(default_factory=datetime.utcnow)
 
 
