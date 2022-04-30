@@ -4,7 +4,7 @@ format is the one from opc-ua specification
 """
 import logging
 import uuid
-from typing import Union, Dict
+from typing import Union, Dict, List
 from dataclasses import fields, is_dataclass
 
 from asyncua import ua
@@ -14,6 +14,8 @@ from ..ua.uaerrors import UaError
 
 _logger = logging.getLogger(__name__)
 
+def _parse_version(version_string: str) -> List[int]:
+    return [int(v) for v in version_string.split('.')]
 
 class XmlImporter:
     def __init__(self, server):
@@ -70,7 +72,7 @@ class XmlImporter:
             for req_model in req_models:
                 if (model["ModelUri"] == req_model["ModelUri"] and model["PublicationDate"] >= req_model["PublicationDate"]):
                     if "Version" in model and "Version" in req_model:
-                        if model["Version"] >= req_model["Version"]:
+                        if _parse_version(model["Version"]) >= _parse_version(req_model["Version"]):
                             req_models.remove(req_model)
                     else:
                         req_models.remove(req_model)
