@@ -4,7 +4,7 @@ import datetime
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IgnoredEnums = ["NodeIdType"]
-IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "FilterOperand", "Variant", "DataValue",
+IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "Variant", "DataValue",
                   "ExtensionObject", "XmlElement", "LocalizedText"]
 
 
@@ -61,7 +61,7 @@ class CodeGenerator:
         self.write('')
         self.write('from datetime import datetime')
         self.write('from enum import IntEnum, IntFlag')
-        self.write('from typing import Union, List, Optional')
+        self.write('from typing import Union, List, Optional, Type')
         self.write('from dataclasses import dataclass, field')
         self.write('')
         self.write('from asyncua.ua.uatypes import FROZEN')
@@ -110,7 +110,10 @@ class CodeGenerator:
         self.write('')
         self.iidx = 0
         self.write('@dataclass(frozen=FROZEN)')
-        self.write(f'class {obj.name}:')
+        if obj.basetype:
+            self.write(f'class {obj.name}({obj.basetype}):')
+        else:
+            self.write(f'class {obj.name}:')
         self.iidx += 1
         self.write('"""')
         if obj.doc:
@@ -141,7 +144,8 @@ class CodeGenerator:
                 typestring = f"List[{typestring}]"
             if field.is_optional:
                 typestring = f"Optional[{typestring}]"
-
+            if field.allow_subtypes:
+                typestring = f"Type[{typestring}]"
             if field.name == field.data_type:
                 # variable name and type name are the same. Dataclass do not like it
                 hack_names.append(field.name)
