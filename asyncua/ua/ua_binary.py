@@ -13,7 +13,7 @@ from dataclasses import is_dataclass, fields
 from asyncua import ua
 from .uaerrors import UaError
 from ..common.utils import Buffer
-from .uatypes import ExtensionObject, type_is_list, type_is_union, type_from_list, types_from_union, type_allow_subclass
+from .uatypes import type_is_list, type_is_union, type_from_list, types_from_union, type_allow_subclass
 
 logger = logging.getLogger('__name__')
 
@@ -620,13 +620,16 @@ def _create_dataclass_deserializer(objtype):
         if type_is_union(field_type):
             optional_enc_bit = 1 << enc_count
             enc_count += 1
-        deserialize_field = _create_type_deserializer(field_type)
+        if subtypes:
+            deserialize_field = extensionobject_to_binary
+        else:
+            deserialize_field = _create_type_deserializer(field_type)
         field_deserializers.append((field, optional_enc_bit, deserialize_field))
 
     def decode(data):
         kwargs = {}
         enc = 0
-        for field, optional_enc_bit, deserialize_field, subtypes in field_deserializers:
+        for field, optional_enc_bit, deserialize_field in field_deserializers:
             if field.name == "Encoding":
                 enc = deserialize_field(data)
             elif optional_enc_bit == 0 or enc & optional_enc_bit:
