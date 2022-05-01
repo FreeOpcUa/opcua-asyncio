@@ -8,7 +8,7 @@ import logging
 from typing import Any, Callable
 import typing
 import uuid
-from enum import IntEnum, Enum, IntFlag
+from enum import Enum, IntFlag
 from dataclasses import is_dataclass, fields
 from asyncua import ua
 from .uaerrors import UaError
@@ -324,15 +324,14 @@ def struct_to_binary(obj):
 
 
 def create_enum_serializer(uatype):
-    if isinstance(uatype, IntFlag):
+    if issubclass(uatype, IntFlag):
         typename = 'UInt32'
         if hasattr(uatype, 'datatype'):
-            typename = uatype.get_base_type()
-        func = getattr(Primitives, typename).pack
-        return lambda val: func(val.value)
-    elif isinstance(uatype, (IntEnum, Enum)):
+            typename = uatype.datatype()
+        return getattr(Primitives, typename).pack
+    elif isinstance(uatype, Enum):
         return lambda val: Primitives.Int32.pack(val.value)
-    return lambda val: Primitives.Int32.pack(val)
+    return Primitives.Int32.pack
 
 
 @functools.lru_cache(maxsize=None)
@@ -584,6 +583,17 @@ def _create_type_deserializer(uatype):
     return _create_dataclass_deserializer(uatype)
 
 
+def create_enum_deserializer(uatype):
+    if issubclass(uatype, IntFlag):
+        typename = 'UInt32'
+        if hasattr(uatype, 'datatype'):
+            typename = uatype.datatype()
+        return getattr(Primitives, typename).unpack
+    elif isinstance(uatype, Enum):
+        return lambda val: Primitives.Int32.unpack(val.value)
+    return Primitives.Int32.unpack
+
+
 def from_binary(uatype, data):
     """
     unpack data given an uatype as a string or a python dataclass using ua types
@@ -596,7 +606,7 @@ def _create_dataclass_deserializer(objtype):
     if isinstance(objtype, str):
         objtype = getattr(ua, objtype)
     if issubclass(objtype, Enum):
-        return lambda data: objtype(Primitives.Int32.unpack(data))
+        return create_enum_deserializer(objtype)
     if issubclass(objtype, ua.UaUnion):
         # unions are just objects with encoding and value field
         typefields = fields(objtype)
