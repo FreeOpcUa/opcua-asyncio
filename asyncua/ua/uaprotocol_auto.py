@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2022-05-01 10:41:03.370927
+Date:2022-05-01 11:52:18.724161
 """
 
 from datetime import datetime
@@ -208,6 +208,10 @@ class DataSetFieldFlags(IntFlag):
     """
     PromotedField = 1<<0
 
+    @staticmethod
+    def datatype() -> str:
+        return "UInt16"
+
 
 class DataSetFieldContentMask(IntFlag):
     """
@@ -232,6 +236,10 @@ class DataSetFieldContentMask(IntFlag):
     SourcePicoSeconds = 1<<3
     ServerPicoSeconds = 1<<4
     RawData = 1<<5
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
 
 
 class OverrideValueHandling(IntEnum):
@@ -305,6 +313,10 @@ class UadpNetworkMessageContentMask(IntFlag):
     DataSetClassId = 1<<9
     PromotedFields = 1<<10
 
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
+
 
 class UadpDataSetMessageContentMask(IntFlag):
     """
@@ -329,6 +341,10 @@ class UadpDataSetMessageContentMask(IntFlag):
     MajorVersion = 1<<3
     MinorVersion = 1<<4
     SequenceNumber = 1<<5
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
 
 
 class JsonNetworkMessageContentMask(IntFlag):
@@ -355,6 +371,10 @@ class JsonNetworkMessageContentMask(IntFlag):
     DataSetClassId = 1<<4
     ReplyTo = 1<<5
 
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
+
 
 class JsonDataSetMessageContentMask(IntFlag):
     """
@@ -379,6 +399,10 @@ class JsonDataSetMessageContentMask(IntFlag):
     Timestamp = 1<<3
     Status = 1<<4
     MessageType = 1<<5
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
 
 
 class BrokerTransportQualityOfService(IntEnum):
@@ -772,6 +796,10 @@ class PermissionType(IntFlag):
     DeleteNode = 1<<15
     AddNode = 1<<16
 
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
+
 
 class AccessLevelType(IntFlag):
     """
@@ -799,6 +827,10 @@ class AccessLevelType(IntFlag):
     SemanticChange = 1<<4
     StatusWrite = 1<<5
     TimestampWrite = 1<<6
+
+    @staticmethod
+    def datatype() -> str:
+        return "Byte"
 
 
 class AccessLevelExType(IntFlag):
@@ -840,6 +872,10 @@ class AccessLevelExType(IntFlag):
     WriteFullArrayOnly = 1<<10
     NoSubDataTypes = 1<<11
 
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
+
 
 class EventNotifierType(IntFlag):
     """
@@ -855,6 +891,10 @@ class EventNotifierType(IntFlag):
     SubscribeToEvents = 1<<0
     HistoryRead = 1<<2
     HistoryWrite = 1<<3
+
+    @staticmethod
+    def datatype() -> str:
+        return "Byte"
 
 
 class AccessRestrictionType(IntFlag):
@@ -872,6 +912,10 @@ class AccessRestrictionType(IntFlag):
     EncryptionRequired = 1<<1
     SessionRequired = 1<<2
     ApplyRestrictionsToBrowse = 1<<3
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt16"
 
 
 class StructureType(IntEnum):
@@ -1157,6 +1201,10 @@ class AttributeWriteMask(IntFlag):
     RolePermissions = 1<<23
     AccessRestrictions = 1<<24
     AccessLevelEx = 1<<25
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
 
 
 class BrowseDirection(IntEnum):

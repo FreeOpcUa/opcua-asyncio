@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 from asyncua import ua
+from asyncua.ua import ua_binary
 from asyncua.ua.ua_binary import extensionobject_from_binary
 from asyncua.ua.ua_binary import extensionobject_to_binary
 from asyncua.ua.ua_binary import nodeid_to_binary, variant_to_binary, _reshape, variant_from_binary, nodeid_from_binary
@@ -846,3 +847,12 @@ def test_builtin_type_variant():
     assert v.VariantType == ua.VariantType.Byte
     v = ua.Variant(None, ua.String)
     assert v.VariantType == ua.VariantType.String
+
+
+def test_option_set_size():
+    # Test if DataSetFieldFlags is 2 bytes instead of 4 bytes of all other flagfields
+    val = ua.DataSetFieldFlags.PromotedField
+    binary = ua_binary.to_binary(ua.DataSetFieldFlags, val)
+    assert len(binary) == 2
+    val_2 = ua_binary.from_binary(ua.DataSetFieldFlags, ua.utils.Buffer(binary))
+    assert val == val_2

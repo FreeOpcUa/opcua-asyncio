@@ -90,6 +90,10 @@ class CodeGenerator:
             self.write('"""')
             for val in enum.fields:
                 self.write(f'{val.name} = 1<<{val.value}')
+            self.write('')
+            self.write('@staticmethod')
+            self.write('def datatype() -> str:')
+            self.write(f'    return "{enum.base_type}"')
             self.iidx = 0
         else:
             self.write(f'class {enum.name}(IntEnum):')
@@ -186,6 +190,8 @@ class CodeGenerator:
         dtype = field.data_type
         if dtype in self.model.enum_list:
             enum = self.model.get_enum(dtype)
+            if enum.is_option_set:
+                return f'field(default_factory=lambda:{enum.name}(0))'
             return f'{enum.name}.{enum.fields[0].name}'
 
         al = self.model.get_alias(dtype)
