@@ -323,6 +323,18 @@ def struct_to_binary(obj):
     return serializer(obj)
 
 
+def create_enum_serializer(uatype):
+    if isinstance(uatype, IntFlag):
+        typename = 'UInt32'
+        if hasattr(uatype, 'datatype'):
+            typename = uatype.get_base_type()
+        func = getattr(Primitives, typename).pack
+        return lambda val: func(val.value)
+    elif isinstance(uatype, (IntEnum, Enum)):
+        return lambda val: Primitives.Int32.pack(val.value)
+    return lambda val: Primitives.Int32.pack(val)
+
+
 @functools.lru_cache(maxsize=None)
 def create_type_serializer(uatype):
     """Create a binary serialization function for the given UA type"""
@@ -333,9 +345,7 @@ def create_type_serializer(uatype):
     if hasattr(Primitives, uatype.__name__):
         return getattr(Primitives, uatype.__name__).pack
     if issubclass(uatype, Enum):
-        return lambda val: \
-            Primitives.Int32.pack(val.value) if isinstance(val, (IntEnum, Enum, IntFlag)) \
-            else Primitives.Int32.pack(val)
+        return create_enum_serializer(uatype)
     if hasattr(ua.VariantType, uatype.__name__):
         vtype = getattr(ua.VariantType, uatype.__name__)
         return create_uatype_serializer(vtype)
@@ -621,7 +631,7 @@ def _create_dataclass_deserializer(objtype):
             optional_enc_bit = 1 << enc_count
             enc_count += 1
         if subtypes:
-            deserialize_field = extensionobject_to_binary
+            deserialize_field = extensionobject_from_binary
         else:
             deserialize_field = _create_type_deserializer(field_type)
         field_deserializers.append((field, optional_enc_bit, deserialize_field))
