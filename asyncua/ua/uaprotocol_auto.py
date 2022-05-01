@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2022-04-30 21:16:30.572704
+Date:2022-05-01 10:41:03.370927
 """
 
 from datetime import datetime
@@ -1494,8 +1494,8 @@ class ExceptionDeviationFormat(IntEnum):
     Unknown = 4
 
 
-@dataclass(frozen=FROZEN)
-class Union:
+@dataclass(frozen=FROZEN) # type: ignore
+class Union: # type: ignore
     """
     https://reference.opcfoundation.org/v104/Core/docs/Part3/8.42
 
