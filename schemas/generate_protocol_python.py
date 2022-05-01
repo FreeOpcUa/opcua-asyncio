@@ -6,6 +6,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IgnoredEnums = ["NodeIdType"]
 IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "Variant", "DataValue",
                   "ExtensionObject", "XmlElement", "LocalizedText"]
+MyPyIgnoredStructs = ["Union"]
 
 
 class CodeGenerator:
@@ -109,11 +110,12 @@ class CodeGenerator:
         self.write('')
         self.write('')
         self.iidx = 0
-        self.write('@dataclass(frozen=FROZEN)')
+        ignore = ' # type: ignore' if obj.name in MyPyIgnoredStructs else ''
+        self.write('@dataclass(frozen=FROZEN)' + ignore)
         if obj.basetype:
-            self.write(f'class {obj.name}({obj.basetype}):')
+            self.write(f'class {obj.name}({obj.basetype}):{ignore}')
         else:
-            self.write(f'class {obj.name}:')
+            self.write(f'class {obj.name}:{ignore}')
         self.iidx += 1
         self.write('"""')
         if obj.doc:
