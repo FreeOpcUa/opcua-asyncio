@@ -26,7 +26,7 @@ class UASocketProtocol(asyncio.Protocol):
         :param security_policy: Security policy (optional)
         """
         self.logger = logging.getLogger(f"{__name__}.UASocketProtocol")
-        self.transport = None
+        self.transport: Optional[asyncio.Transport] = None
         self.receive_buffer: Optional[bytes] = None
         self.is_receiving = False
         self.timeout = timeout
@@ -39,7 +39,7 @@ class UASocketProtocol(asyncio.Protocol):
         self.closed: bool = False
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
         # passing back the processed response to the request so that it can return it.
-        self._open_secure_channel_exchange = None
+        self._open_secure_channel_exchange: Optional[ua.OpenSecureChannelResponse] = None
 
     def connection_made(self, transport: asyncio.Transport):  # type: ignore
         self.state = self.OPEN
