@@ -41,11 +41,11 @@ class UASocketProtocol(asyncio.Protocol):
         # passing back the processed response to the request so that it can return it.
         self._open_secure_channel_exchange = None
 
-    def connection_made(self, transport: asyncio.Transport):
+    def connection_made(self, transport: asyncio.Transport):  # type: ignore
         self.state = self.OPEN
         self.transport = transport
 
-    def connection_lost(self, exc: Exception):
+    def connection_lost(self, exc: Optional[Exception]):
         self.logger.info("Socket has closed connection")
         self.state = self.CLOSED
         self.transport = None
