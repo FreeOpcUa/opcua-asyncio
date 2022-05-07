@@ -19,7 +19,8 @@ import datetime
 
 from asyncua import Server, ua, Node
 from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
-from typing import Union, List
+from asyncua.server.event_generator import EventGenerator
+from typing import Optional, Union, List
 
 _logger = logging.getLogger(__name__)
 
@@ -87,22 +88,22 @@ class StateMachine(object):
         self.locale = "en-US"
         self._server = server
         self._parent = parent
-        self._state_machine_node = None
+        self._state_machine_node: Optional[Node] = None
         self._state_machine_type = ua.NodeId(2299, 0) #StateMachineType
         self._name = name
         self._idx = idx
         self._optionals = False
-        self._current_state_node = None
+        self._current_state_node: Optional[Node] = None
         self._current_state_id_node = None
         self._current_state_name_node = None
         self._current_state_number_node = None
         self._current_state_effective_display_name_node = None
-        self._last_transition_node = None
+        self._last_transition_node: Optional[Node] = None
         self._last_transition_id_node = None
         self._last_transition_name_node = None
         self._last_transition_number_node = None
         self._last_transition_transitiontime_node = None
-        self._evgen = None
+        self._evgen: Optional[EventGenerator] = None
         self.evtype = TransitionEvent()
         self._current_state = State(None)
 
@@ -286,8 +287,8 @@ class FiniteStateMachine(StateMachine):
         if name is None:
             self._name = "FiniteStateMachine"
         self._state_machine_type = ua.NodeId(2771, 0)
-        self._available_states_node = None
-        self._available_transitions_node = None
+        self._available_states_node: Optional[Node] = None
+        self._available_transitions_node: Optional[Node] = None
 
     async def set_available_states(self, states: List[ua.NodeId]):
         if not self._available_states_node:

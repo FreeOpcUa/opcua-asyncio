@@ -431,13 +431,11 @@ class NodeManagementService:
                         "Error calling delete node callback callback %s, %s, %s", nodedata, ua.AttributeIds.Value, ex
                     )
 
-    def add_references(self, refs: ua.AddReferencesItem, user: User = User(role=UserRole.Admin)): # FIXME return type
-        result = []
-        for ref in refs:
-            result.append(self._add_reference(ref, user))
+    def add_references(self, refs: List[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)): # FIXME return type
+        result = [self._add_reference(ref, user) for ref in refs]
         return result
 
-    def try_add_references(self, refs: ua.AddReferencesItem, user: User = User(role=UserRole.Admin)):
+    def try_add_references(self, refs: List[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)):
         for ref in refs:
             if not self._add_reference(ref, user).is_good():
                 yield ref
