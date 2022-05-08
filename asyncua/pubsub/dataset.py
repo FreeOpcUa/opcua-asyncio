@@ -458,7 +458,6 @@ class TargetVariable:
     :ivar Promoted: Value should be prompoted
     :vartype Promoted: Bool
     """
-
     Name: String = None
     SourceNode: NodeId = None
     ValueRank: ua.ValueRank = ua.ValueRank.Scalar
