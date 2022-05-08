@@ -82,7 +82,7 @@ CFG = {
 }
 
 
-def create_published_dataset() -> PublishedDataSet:
+async def create_published_dataset() -> PublishedDataSet:
     dataset = DataSetMeta.Create("Simple")
     dataset.add_field(pubsub.DataSetField.CreateScalar("Int32", VariantType.Int32))
     dataset.add_field(pubsub.DataSetField.CreateScalar("String", VariantType.String))

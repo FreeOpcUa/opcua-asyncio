@@ -21,12 +21,10 @@ CFG = PubSubCFG()
 
 def create_meta_data():
     dataset = pubsub.DataSetMeta.Create("Simple")
-    dataset.add_field(pubsub.DataSetField.CreateScalar("Int32", ua.VariantType.Int32))
-    dataset.add_field(pubsub.DataSetField.CreateScalar("String", ua.VariantType.String))
-    dataset.add_field(pubsub.DataSetField.CreateScalar("Bool", ua.ObjectIds.Boolean))
-    dataset.add_field(
-        pubsub.DataSetField.CreateArray("ArrayInt16", ua.ObjectIds.Double)
-    )
+    dataset.add_scalar("Int32", ua.VariantType.Int32)
+    dataset.add_scalar("String", ua.VariantType.String)
+    dataset.add_scalar("Bool", ua.ObjectIds.Boolean)
+    dataset.add_array("ArrayInt16", ua.ObjectIds.Int16)
     return dataset
 
 
@@ -101,7 +99,7 @@ async def main():
     # setup our own namespace, not really necessary but should as spec
     uri = "http://examples.freeopcua.github.io"
     idx = await server.register_namespace(uri)
-    nodes = await create_variables(server.nodes.root, idx)
+    nodes = await create_variables(server.nodes.objects, idx)
     ps = await server.get_pubsub()
     async with server:
         connection = await init_pubsub_connection(server, nodes)

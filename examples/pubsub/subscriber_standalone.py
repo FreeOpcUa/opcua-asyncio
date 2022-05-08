@@ -23,12 +23,10 @@ CFG = PubSubCFG()
 def create_meta_data():
     # This is the description of the incoming data
     dataset = pubsub.DataSetMeta.Create("Simple")
-    dataset.add_field(pubsub.DataSetField.CreateScalar("Int32", ua.VariantType.Int32))
-    dataset.add_field(pubsub.DataSetField.CreateScalar("String", ua.VariantType.String))
-    dataset.add_field(pubsub.DataSetField.CreateScalar("Bool", ua.ObjectIds.Boolean))
-    dataset.add_field(
-        pubsub.DataSetField.CreateArray("ArrayInt16", ua.ObjectIds.Double)
-    )
+    dataset.add_scalar("Int32", ua.VariantType.Int32)
+    dataset.add_scalar("String", ua.VariantType.String)
+    dataset.add_scalar("Bool", ua.ObjectIds.Boolean)
+    dataset.add_array("ArrayInt16", ua.ObjectIds.Double)
     return dataset
 
 

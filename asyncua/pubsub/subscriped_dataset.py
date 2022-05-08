@@ -1,4 +1,4 @@
-'''
+"""
     Links PubSub recived DataSets to the addresspace
 """
 from __future__ import annotations
@@ -32,7 +32,8 @@ logger = logging.getLogger(__name__)
 
 
 class SubscribedDataSetMirror:
-    ''' Mirrors DataSet Varaibles in the addresspace, needs a parent node where the variables are inserts '''
+    """Mirrors DataSet Varaibles in the addresspace, needs a parent node where the variables are inserts"""
+
     def __init__(self, cfg: SubscribedDataSetMirrorDataType, node: Node):
         self._cfg = cfg
         self._parent = node
@@ -40,18 +41,27 @@ class SubscribedDataSetMirror:
         self._nodes = {}
 
     async def _create_and_set_node(self, f: FieldMetaData):
-        n = await self._node.add_variable(NodeId(NamespaceIndex=1), "1:" + f.Name, Variant(), datatype=f.DataType)
+        n = await self._node.add_variable(
+            NodeId(NamespaceIndex=1), "1:" + f.Name, Variant(), datatype=f.DataType
+        )
         await n.write_attribute(AttributeIds.Description, f.Description)
         await n.write_attribute(AttributeIds.ValueRank, f.ValueRank)
         await n.write_attribute(AttributeIds.ArrayDimensions, f.ArrayDimensions)
         return n
 
     async def on_state_change(self, meta: DataSetMeta, state: PubSubState) -> None:
-        ''' Called when a DataSet state changes '''
+        """Called when a DataSet state changes"""
         if state == PubSubState.Operational:
             if self._node is None:
-                self._node = await self._parent.add_object(NodeId(NamespaceIndex=1), bname="1:" + self._cfg.ParentNodeName, dname=LocalizedText(self._cfg.ParentNodeName))
-            self.nodes = {f.DataSetFieldId: await self._create_and_set_node(f) for f in meta.get_config().Fields}
+                self._node = await self._parent.add_object(
+                    NodeId(NamespaceIndex=1),
+                    bname="1:" + self._cfg.ParentNodeName,
+                    dname=LocalizedText(self._cfg.ParentNodeName),
+                )
+            self.nodes = {
+                f.DataSetFieldId: await self._create_and_set_node(f)
+                for f in meta.get_config().Fields
+            }
 
     def get_subscribed_dataset(self) -> ExtensionObject:
         return ExtensionObject(self._cfg.data_type, Body=struct_to_binary(self._cfg))
@@ -63,18 +73,23 @@ class FieldTargets:
 
     @classmethod
     def createTarget(cls, field: DataSetField, nodeid: NodeId):
-        '''
-            Helper to create a target from a DataSetField and an NodeId
-        '''
-        cfg = FieldTargetDataType(DataSetFieldId=field.DataSetFieldId,
-                                  TargetNodeId=nodeid,
-                                  AttributeId=AttributeIds.Value)
+        """
+        Helper to create a target from a DataSetField and an NodeId
+        """
+        cfg = FieldTargetDataType(
+            DataSetFieldId=field.DataSetFieldId,
+            TargetNodeId=nodeid,
+            AttributeId=AttributeIds.Value,
+        )
         return cls(cfg)
 
 
 class SubScripedTargetVariables:
-    ''' Maps the values to targeted variables in the addresspace '''
-    def __init__(self, server: Server, cfg: Union[TargetVariablesDataType, List[FieldTargets]]):
+    """Maps the values to targeted variables in the addresspace"""
+
+    def __init__(
+        self, server: Server, cfg: Union[TargetVariablesDataType, List[FieldTargets]]
+    ):
         if isinstance(cfg, TargetVariablesDataType):
             self._cfg = cfg
             self._fields = [FieldTargets(f) for f in cfg.TargetVariables]
@@ -84,8 +99,10 @@ class SubScripedTargetVariables:
         self.server = server
         self.nodes = {}
 
-    async def on_dataset_recived(self, meta: DataSetMeta, fields: List[DataSetValue]) -> None:
-        ''' Called when a published dataset recived an update '''
+    async def on_dataset_recived(
+        self, meta: DataSetMeta, fields: List[DataSetValue]
+    ) -> None:
+        """Called when a published dataset recived an update"""
         for field in fields:
             try:
                 node, cfg = self.nodes[field.Meta.DataSetFieldId]
@@ -111,9 +128,12 @@ class SubScripedTargetVariables:
                 pass
 
     async def on_state_change(self, meta: DataSetMeta, state: PubSubState) -> None:
-        ''' Called when a DataSet state changes '''
+        """Called when a DataSet state changes"""
         if state == PubSubState.Operational:
-            self.nodes = {f._cfg.DataSetFieldId: (self.server.get_node(f._cfg.TargetNodeId), f) for f in self._fields}
+            self.nodes = {
+                f._cfg.DataSetFieldId: (self.server.get_node(f._cfg.TargetNodeId), f)
+                for f in self._fields
+            }
 
     def get_subscribed_dataset(self) -> ExtensionObject:
         return ExtensionObject(self._cfg.data_type, Body=struct_to_binary(self._cfg))

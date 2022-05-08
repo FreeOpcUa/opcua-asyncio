@@ -1,10 +1,13 @@
-'''
+"""
     NetworkLayer for udp
-'''
+"""
 
 from urllib.parse import urlparse
 from asyncua.ua.ua_binary import struct_from_binary
-from asyncua.ua.uaprotocol_auto import NetworkAddressUrlDataType, PubSubConnectionDataType
+from asyncua.ua.uaprotocol_auto import (
+    NetworkAddressUrlDataType,
+    PubSubConnectionDataType,
+)
 from .connection import PubSubReciver
 from asyncua.ua import KeyValuePair
 import asyncio
@@ -13,7 +16,16 @@ from ipaddress import ip_address
 import socket
 from typing import List, Optional, Tuple, Union
 import struct
-from asyncua.ua.uatypes import Byte, QualifiedName, String, UInt16, UInt32, UInt64, Variant, VariantType
+from asyncua.ua.uatypes import (
+    Byte,
+    QualifiedName,
+    String,
+    UInt16,
+    UInt32,
+    UInt64,
+    Variant,
+    VariantType,
+)
 from asyncua.common.utils import Buffer
 import logging
 from .uadp import UadpNetworkMessage
@@ -31,9 +43,10 @@ def _get_address_adatper(address: NetworkAddressUrlDataType):
 
 @dataclass
 class UdpSettings:
-    '''
-        settings for the udp layer
-    '''
+    """
+    settings for the udp layer
+    """
+
     Addr: Tuple[str, int] = None  # Address, Port
     Reuse: bool = True  # Resuse Port
     TTL: Optional[int] = None  # Sets the time to live for UDP
@@ -51,13 +64,18 @@ class UdpSettings:
 
     @classmethod
     def from_cfg(cls, cfg: PubSubConnectionDataType):
-        addr, adpater = _get_address_adatper(struct_from_binary(NetworkAddressUrlDataType, Buffer(cfg.Address.Body)))
+        addr, adpater = _get_address_adatper(
+            struct_from_binary(NetworkAddressUrlDataType, Buffer(cfg.Address.Body))
+        )
         s = cls(addr, Adapter=(adpater, addr[1]))
         s.set_key_value(cfg.ConnectionProperties)
         return s
 
     def get_address(self) -> NetworkAddressUrlDataType:
-        return NetworkAddressUrlDataType(self.Adapter[0], f"opc.udp://{self.Addr[0]}:{self.Addr[1]}")
+        adapter = "" if self.Adapter[0] is None else self.Adapter[0]
+        return NetworkAddressUrlDataType(
+            adapter, f"opc.udp://{self.Addr[0]}:{self.Addr[1]}"
+        )
 
     def set_key_value(self, kvs: Optional[List[KeyValuePair]]) -> None:
         if kvs is not None:
@@ -80,7 +98,9 @@ class UdpSettings:
         return kvs
 
     def create_socket(self) -> Tuple[socket.socket, Tuple[str, int], Tuple[str, int]]:
-        family, type, proto, _, addr = socket.getaddrinfo(self.Addr[0], self.Addr[1], 0, socket.SOCK_DGRAM)[0]
+        family, type, proto, _, addr = socket.getaddrinfo(
+            self.Addr[0], self.Addr[1], 0, socket.SOCK_DGRAM
+        )[0]
         sock = socket.socket(family, type, proto)
         if self.Reuse:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -90,12 +110,16 @@ class UdpSettings:
             else:
                 local = self.Adapter
             if self.Loopback:
-                sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, self.Loopback)
+                sock.setsockopt(
+                    socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, self.Loopback
+                )
             if self.TTL is not None:
                 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, self.TTL)
             try:
                 if ip_address(addr[0]).is_multicast:
-                    req = struct.pack("=4sl", socket.inet_aton(addr[0]), socket.INADDR_ANY)
+                    req = struct.pack(
+                        "=4sl", socket.inet_aton(addr[0]), socket.INADDR_ANY
+                    )
                     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, req)
             except ValueError:
                 # Invalid IPAddress => no multicast
@@ -106,12 +130,18 @@ class UdpSettings:
             else:
                 local = self.Adapter
             if self.Loopback:
-                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, int(self.Loopback))
+                sock.setsockopt(
+                    socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, int(self.Loopback)
+                )
             if self.TTL is not None:
-                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, self.TTL)
+                sock.setsockopt(
+                    socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, self.TTL
+                )
             try:
                 if ip_address(addr[0]).is_multicast:
-                    req = struct.pack("=16si", socket.inet_pton(socket.AF_INET6, addr[0]), 0)
+                    req = struct.pack(
+                        "=16si", socket.inet_pton(socket.AF_INET6, addr[0]), 0
+                    )
                     sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, req)
             except ValueError:
                 # Invalid IPAddress => no multicast
@@ -154,7 +184,7 @@ class OpcUdp(asyncio.DatagramProtocol):
         self.reciver = reciver
 
     def get_publisher_id(self) -> Union[Byte, UInt16, UInt32, UInt64, String]:
-        '''
+        """
         Returns the publisher id for creating messages
-        '''
+        """
         return self.publisher_id

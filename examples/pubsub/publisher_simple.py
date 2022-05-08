@@ -4,7 +4,7 @@ Example creating a publisher that sends an Int32, String, Bool and ArrayInt16 fr
 import asyncio
 import logging
 from typing import List
-from asyncua import pubsub, ua, Server
+from asyncua import ua, pubsub, Server
 from asyncua.common.node import Node
 
 
@@ -59,7 +59,7 @@ async def main():
     # setup our own namespace, not really necessary but should as spec
     uri = "http://examples.freeopcua.github.io"
     idx = await server.register_namespace(uri)
-    nodes = await create_variables(server.nodes.root, idx)
+    nodes = await create_variables(server.nodes.objects, idx)
     ps = await server.get_pubsub()
     async with server:
         pds = await create_published_dataset(server, nodes)

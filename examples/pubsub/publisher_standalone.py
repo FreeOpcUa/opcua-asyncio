@@ -16,12 +16,10 @@ PDSNAME = "SimpleDataSet"
 def create_published_dataset() -> pubsub.PublishedDataSet:
     # Create a Published Dataset containing a Int32, String, Bool and List[Int16]
     dataset = pubsub.DataSetMeta.Create("Simple")
-    dataset.add_field(pubsub.DataSetField.CreateScalar("Int32", ua.VariantType.Int32))
-    dataset.add_field(pubsub.DataSetField.CreateScalar("String", ua.VariantType.String))
-    dataset.add_field(pubsub.DataSetField.CreateScalar("Bool", ua.ObjectIds.Boolean))
-    dataset.add_field(
-        pubsub.DataSetField.CreateArray("ArrayInt16", ua.ObjectIds.Double)
-    )
+    dataset.add_scalar("Int32", ua.VariantType.Int32)
+    dataset.add_scalar("String", ua.VariantType.String)
+    dataset.add_scalar("Bool", ua.ObjectIds.Boolean)
+    dataset.add_array("ArrayInt16", ua.ObjectIds.Int16)
     return pubsub.PublishedDataSet.Create(PDSNAME, dataset)
 
 
