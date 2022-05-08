@@ -152,6 +152,37 @@ async def test_read_and_write_status_check(server, client):
         val = await v1.read_data_value(True)
 
 
+async def test_read_and_write_status_check(server, client):
+    f = await server.nodes.objects.add_folder(3, 'read_and_write_status_check')
+    v1 = await f.add_variable(3, "a", 1)
+    await v1.set_writable()
+
+    testValue = 1
+    testStatusCode = ua.StatusCode(ua.StatusCodes.Bad)
+
+    # set value StatusCode to Bad
+    variant = ua.Variant(testValue, ua.VariantType.Int64)
+    dataValue = ua.DataValue(variant, StatusCode_=testStatusCode)
+    await v1.set_value(dataValue)
+
+    # check that reading the value generates an error
+    # with raise_on_bad_status set to True as default
+    with pytest.raises(ua.UaStatusCodeError):
+        val = await v1.read_data_value()
+
+    # check that reading the value does not generate an error
+    # with raise_on_bad_status set to False
+    val = await v1.read_data_value(False)
+    assert val.Value.Value == testValue, "Value expected " \
+        + str(val) + ", but instead got " + str(testValue)
+    assert val.StatusCode_ == testStatusCode, "StatusCode expected " \
+        + str(val.StatusCode_) + ", but instead got " + str(testStatusCode)
+
+    # check that reading the value generates an error
+    # with raise_on_bad_status set to True
+    with pytest.raises(ua.UaStatusCodeError):
+        val = await v1.read_data_value(True)
+
 async def test_browse_nodes(server, client):
     nodes = [
         client.get_node("ns=0;i=2267"),
