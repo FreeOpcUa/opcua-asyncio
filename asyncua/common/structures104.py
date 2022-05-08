@@ -431,7 +431,7 @@ async def load_data_type_definitions(server: Union["Server", "Client"], base_nod
     return new_objects
 
 
-async def _read_data_type_definition(server, desc: ua.BrowseDescription, read_existing: bool = False):
+async def _read_data_type_definition(server, desc: ua.ReferenceDescription, read_existing: bool = False):
     if desc.BrowseName.Name == "FilterOperand":
         # FIXME: find out why that one is not in ua namespace...
         return None
