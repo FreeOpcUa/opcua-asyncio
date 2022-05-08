@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 from typing import Coroutine, Optional, Tuple
 
 from asyncua import ua
+from ..pubsub.pubsub import PubSub
 from .binary_server_asyncio import BinaryServer
 from .internal_server import InternalServer
 from .event_generator import EventGenerator
@@ -103,6 +104,7 @@ class Server:
         self._permission_ruleset = None
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
         self.certificate = None
+        self._pubsub = None
 
     async def init(self, shelf_file=None):
         await self.iserver.init(shelf_file)
@@ -431,6 +433,8 @@ class Server:
             await asyncio.wait([client.disconnect() for client in self._discovery_clients.values()])
         await self.bserver.stop()
         await self.iserver.stop()
+        if self._pubsub is not None:
+            await self._pubsub.stop()
         _logger.debug("%s Internal server stopped, everything closed", self)
 
     def get_root_node(self):
@@ -699,3 +703,12 @@ class Server:
         directly read datavalue of the Attribute
         """
         return self.iserver.read_attribute_value(nodeid, attr)
+
+    async def get_pubsub(self) -> PubSub:
+        """
+        gets the pubsub model
+        """
+        if self._pubsub is None:
+            self._pubsub = PubSub(server=self)
+            await self._pubsub.init_information_model()
+        return self._pubsub
