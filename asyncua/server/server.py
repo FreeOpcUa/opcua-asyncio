@@ -104,7 +104,7 @@ class Server:
         self._permission_ruleset = None
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
         self.certificate = None
-        self._pubsub = None
+        self._pubsub: Optional[PubSub] = None
 
     async def init(self, shelf_file=None):
         await self.iserver.init(shelf_file)

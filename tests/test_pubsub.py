@@ -1,4 +1,5 @@
 import asyncio
+import io
 from typing import List, Tuple
 from asyncua import pubsub
 from asyncua.common.node import Node
@@ -15,6 +16,8 @@ from asyncua.ua.uaprotocol_auto import DataSetReaderDataType, ReaderGroupDataTyp
 from asyncua.ua.uatypes import Byte, DataValue, DateTime, ExtensionObject, Int16, Int32, NodeId, StatusCode, UInt16, UInt32, UInt64, Variant, VariantType
 import logging
 import pytest
+
+from tests.test_common import expect_file_creation
 _logger = logging.getLogger(__name__)
 
 
@@ -159,6 +162,7 @@ async def pusbsub_src_nodes(server) -> List[NodeId]:
         await n.set_writable()
     return nodes
 
+
 @pytest.fixture
 async def pubsub_dest_nodes(server) -> List[NodeId]:
     node = server.nodes.objects
@@ -177,6 +181,7 @@ async def pubsub_dest_nodes(server) -> List[NodeId]:
     for n in destnodes:
         await n.set_writable()
     return destnodes
+
 
 async def test_datasource_and_subscriped_dataset(server: Server, pubsub_dest_nodes: List[Node], pusbsub_src_nodes: List[Node]):
     ps = await server.get_pubsub()
@@ -241,3 +246,35 @@ async def test_datasource_and_subscriped_dataset(server: Server, pubsub_dest_nod
             await asyncio.sleep(0.200)
             for dest, src in zip(pubsub_dest_nodes, pusbsub_src_nodes):
                 assert await dest.read_value() == await src.read_value()
+
+
+async def test_load_save_ua_binary_publisher(server: Server, tmpdir_factory):
+    ps = await server.get_pubsub()
+    in_file = 'tests/check_publisher_configuration.bin'
+    out_file = tmpdir_factory.mktemp("pubsub") / 'check_publisher_configuration.bin'
+    await ps.load_binary_file(in_file)
+    assert len(ps._con) == 1
+    con = ps.get_connection('UADP Connection 1')
+    assert con is not None
+    assert len(con._writer_groups) == 1
+    wgr = con.get_writer_group('Demo WriterGroup')
+    assert wgr is not None
+    assert len(wgr._writer) == 1
+    dsw = wgr.get_writer('Demo DataSetWriter')
+    assert dsw is not None
+    await ps.save_binary_file(out_file)
+
+    ps = pubsub.PubSub(None, server)
+    in_file = 'tests/check_publisher_configuration.bin'
+    out_file = tmpdir_factory.mktemp("pubsub") / 'check_publisher_configuration.bin'
+    await ps.load_binary_file(in_file)
+    assert len(ps._con) == 1
+    con = ps.get_connection('UADP Connection 1')
+    assert con is not None
+    assert len(con._writer_groups) == 1
+    wgr = con.get_writer_group('Demo WriterGroup')
+    assert wgr is not None
+    assert len(wgr._writer) == 1
+    dsw = wgr.get_writer('Demo DataSetWriter')
+    assert dsw is not None
+

@@ -3,7 +3,6 @@
 """
 
 from urllib.parse import urlparse
-from asyncua.ua.ua_binary import struct_from_binary
 from asyncua.ua.uaprotocol_auto import (
     NetworkAddressUrlDataType,
     PubSubConnectionDataType,
@@ -37,7 +36,7 @@ def _get_address_adatper(address: NetworkAddressUrlDataType):
     addr = None
     if address.NetworkInterface is not None:
         addr = address.NetworkInterface
-    url = urlparse(address.Url)
+    url = urlparse(str(address.Url))
     return (url.hostname, url.port), addr
 
 
@@ -64,9 +63,7 @@ class UdpSettings:
 
     @classmethod
     def from_cfg(cls, cfg: PubSubConnectionDataType):
-        addr, adpater = _get_address_adatper(
-            struct_from_binary(NetworkAddressUrlDataType, Buffer(cfg.Address.Body))
-        )
+        addr, adpater = _get_address_adatper(cfg.Address)
         s = cls(addr, Adapter=(adpater, addr[1]))
         s.set_key_value(cfg.ConnectionProperties)
         return s
@@ -97,7 +94,7 @@ class UdpSettings:
         kvs.append(KeyValuePair(QualifiedName("Loopback"), Variant(self.Loopback)))
         return kvs
 
-    def create_socket(self) -> Tuple[socket.socket, Tuple[str, int], Tuple[str, int]]:
+    def create_socket(self) -> Tuple[socket.socket, Union[Tuple[str, int], Tuple[str, int, int, int]], Tuple[str, int]]:
         family, type, proto, _, addr = socket.getaddrinfo(
             self.Addr[0], self.Addr[1], 0, socket.SOCK_DGRAM
         )[0]
@@ -162,12 +159,12 @@ class OpcUdp(asyncio.DatagramProtocol):
         self.reciver = reciver
         self.publisher_id = publisher_id.Value
 
-    def connection_made(self, transport: asyncio.transports.DatagramTransport) -> None:
-        self.transport = transport
+    def connection_made(self, transport: asyncio.transports.BaseTransport) -> None:
+        self.transport: asyncio.transports.DatagramTransport = transport
 
     def datagram_received(self, data: bytes, source: Tuple[str, int]) -> None:
         try:
-            logger.debug(f"Recived Datagramm from {source} - {data}")
+            logger.debug(f"Recived Datagramm from {source} - {str(data)}")
             buffer = Buffer(data)
             msg = UadpNetworkMessage.from_binary(buffer)
             logger.debug(msg)

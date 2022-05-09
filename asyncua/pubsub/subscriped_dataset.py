@@ -8,7 +8,6 @@ from asyncua.common.node import Node
 from asyncua.pubsub.dataset import DataSetField, DataSetMeta, DataSetValue
 from asyncua.ua import TargetVariablesDataType, SubscribedDataSetMirrorDataType
 from asyncua.ua.attribute_ids import AttributeIds
-from asyncua.ua.ua_binary import struct_to_binary
 from asyncua.ua.uaprotocol_auto import (
     FieldMetaData,
     FieldTargetDataType,
@@ -16,13 +15,9 @@ from asyncua.ua.uaprotocol_auto import (
     PubSubState,
 )
 from asyncua.ua.uatypes import (
-    DataValue,
-    ExtensionObject,
     LocalizedText,
     NodeId,
-    Null,
     Variant,
-    VariantType,
 )
 
 if TYPE_CHECKING:
@@ -42,7 +37,7 @@ class SubscribedDataSetMirror:
 
     async def _create_and_set_node(self, f: FieldMetaData):
         n = await self._node.add_variable(
-            NodeId(NamespaceIndex=1), "1:" + f.Name, Variant(), datatype=f.DataType
+            NodeId(NamespaceIndex=1), "1:" + str(f.Name), Variant(), datatype=f.DataType
         )
         await n.write_attribute(AttributeIds.Description, f.Description)
         await n.write_attribute(AttributeIds.ValueRank, f.ValueRank)
@@ -55,16 +50,15 @@ class SubscribedDataSetMirror:
             if self._node is None:
                 self._node = await self._parent.add_object(
                     NodeId(NamespaceIndex=1),
-                    bname="1:" + self._cfg.ParentNodeName,
-                    dname=LocalizedText(self._cfg.ParentNodeName),
+                    bname="1:" + str(self._cfg.ParentNodeName),
                 )
             self.nodes = {
                 f.DataSetFieldId: await self._create_and_set_node(f)
                 for f in meta.get_config().Fields
             }
 
-    def get_subscribed_dataset(self) -> ExtensionObject:
-        return ExtensionObject(self._cfg.data_type, Body=struct_to_binary(self._cfg))
+    def get_subscribed_dataset(self) -> SubscribedDataSetMirrorDataType:
+        return self._cfg
 
 
 class FieldTargets:
@@ -135,5 +129,5 @@ class SubScripedTargetVariables:
                 for f in self._fields
             }
 
-    def get_subscribed_dataset(self) -> ExtensionObject:
-        return ExtensionObject(self._cfg.data_type, Body=struct_to_binary(self._cfg))
+    def get_subscribed_dataset(self) -> TargetVariablesDataType:
+        return self._cfg

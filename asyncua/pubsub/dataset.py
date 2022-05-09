@@ -2,15 +2,13 @@
     A DataSet (ds) descripes the data of pubsub
 """
 from __future__ import annotations
-from ast import alias
 from asyncua.common.methods import uamethod
 from asyncua.ua import uaerrors
 from ..common import instantiate_util
 from ..common.node import Node
-from ..common.utils import Buffer
 from ..pubsub.information_model import PubSubInformationModel
 from ..ua.attribute_ids import AttributeIds
-from ..ua.ua_binary import struct_from_binary, struct_to_binary, to_binary
+from ..ua.ua_binary import pack_uatype
 from ..ua import DataSetMetaDataType, String, LocalizedText, FieldMetaData, ObjectIds
 from ..ua.status_codes import StatusCodes
 from .untils import version_time_now
@@ -21,7 +19,6 @@ from ..ua.uatypes import (
     Guid,
     Int32,
     NodeId,
-    NodeIdType,
     StatusCode,
     UInt32,
     Byte,
@@ -47,7 +44,7 @@ if TYPE_CHECKING:
 
 def _get_datatype_or_build_in(
     datatype: Union[NodeId, ObjectIds, VariantType, int]
-) -> Tuple[NodeId, Byte]:
+) -> Tuple[NodeId, int]:
     """
     Returns the DataType NodeId and the corresponding BuildIn number if
     possible to determine.
@@ -59,7 +56,7 @@ def _get_datatype_or_build_in(
     if isinstance(datatype, NodeId):
         if (
             datatype.NamespaceIndex == 0
-            and datatype.NodeIdType == NodeIdType.Numeric
+            and isinstance(datatype.Identifier, int)
             and datatype.Identifier < 24
         ):
             dt = NodeId()
@@ -70,8 +67,8 @@ def _get_datatype_or_build_in(
     else:
         id = int(datatype.value)
         dt = NodeId(id)
-        build_in = Byte(id)
-    return dt, build_in
+        build_in = id
+    return (dt, build_in)
 
 
 class DataSetField:
@@ -249,7 +246,7 @@ class PubSubDataSource:
     Baseclass for all DataSources
     """
 
-    async def get_variant(self) -> Tuple[List[Variant], StatusCode, DateTime]:
+    async def get_variant(self) -> Tuple[List[Optional[Variant]], StatusCode, DateTime]:
         """
         return all variants for a dataset as Variant
         """
@@ -260,7 +257,7 @@ class PubSubDataSource:
         for v in vars:
             if v.StatusCode is not None and not v.StatusCode.is_good():
                 st = v.StatusCode
-        return ret, st, dt
+        return (ret, st, dt)
 
     async def get_value(
         self, status: bool, server_timestamp: bool, source_timestamp: bool
@@ -284,7 +281,7 @@ class PubSubDataSource:
         """
         dt = DateTime.utcnow()
         vars = await self.on_get_value()
-        ret = [to_binary(v.Value) for v in vars]
+        ret = [ pack_uatype(v.VariantType, v.Value) for v in vars]
         st = StatusCode(StatusCodes.Good)
         for v in vars:
             if v.StatusCode is not None and not v.StatusCode.is_good():
@@ -353,10 +350,10 @@ class PubSubDataSourceServer(PubSubDataSource):
                 and pd.SubstituteValue.VariantType != VariantType.Null
             ):
                 dv = DataValue(
-                    pd.SubstituteValue(),
+                    pd.SubstituteValue,
                     SourceTimestamp=DateTime.utcnow(),
                     ServerTimestamp=DateTime.utcnow(),
-                    StatusCodes=StatusCodes.UncertainSubstituteValue,
+                    StatusCode_=StatusCodes.UncertainSubstituteValue,
                 )
             ret.append(dv)
         return ret
@@ -485,9 +482,7 @@ class PublishedDataItems(PubSubInformationModel):
             self._data.DataSetMetaData = dataset.get_config()
         else:
             self.dataset = DataSetMeta(self._data.DataSetMetaData)
-        self._published_data: PublishedDataItemsDataType = struct_from_binary(
-            PublishedDataItemsDataType, Buffer(self._data.DataSetSource.Body)
-        )
+        self._published_data: PublishedDataItemsDataType = self._data.DataSetSource
         self._source = PubSubDataSourceServer(
             server, self.dataset, self._published_data
         )
@@ -543,7 +538,7 @@ class PublishedDataItems(PubSubInformationModel):
     @uamethod
     async def _add_variables(
         self,
-        config_version: ua.ConfiguratonVersionDataType,
+        config_version: ConfigurationVersionDataType,
         field_name_aliases: List[String],
         promoted_fields: List[Boolean],
         published_variable_data_type: List[PublishedVariableDataType],
@@ -567,7 +562,7 @@ class PublishedDataItems(PubSubInformationModel):
     @uamethod
     async def _remove_variables(
         self,
-        config_version: ua.ConfiguratonVersionDataType,
+        config_version: ConfigurationVersionDataType,
         variables_to_remove: List[UInt32],
     ) -> Tuple[ConfigurationVersionDataType, List[StatusCodes]]:
         if self._data.DataSetMetaData.ConfigurationVersion != config_version:
@@ -606,15 +601,12 @@ class PublishedDataItems(PubSubInformationModel):
                 datatype = await server.get_node(v.SourceNode).read_data_type()
             meta.DataType, meta.BuiltInType = _get_datatype_or_build_in(datatype)
             fields.append(DataSetField(meta))
-        source = ua.ExtensionObject(
-            TypeId=items.data_type, Body=struct_to_binary(items)
-        )
         meta = DataSetMetaDataType(
             Name=name, Fields=fields, DataSetClassId=uuid.uuid4()
         )
         s = cls(
             PublishedDataSetDataType(
-                Name=name, DataSetSource=source, DataSetMetaData=meta
+                Name=name, DataSetSource=items, DataSetMetaData=meta
             ),
             server,
         )

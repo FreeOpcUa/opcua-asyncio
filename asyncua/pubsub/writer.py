@@ -7,7 +7,7 @@
         DataSetWriter: implement state
 """
 from __future__ import annotations
-from typing import Optional, Tuple, List, TYPE_CHECKING
+from typing import Optional, Tuple, List, TYPE_CHECKING, Type, Union
 import asyncio
 from asyncua.common.node import Node
 from asyncua.common import instantiate_util
@@ -17,12 +17,10 @@ if TYPE_CHECKING:
     from asyncua.server.server import Server
 from asyncua.ua.object_ids import ObjectIds
 from .dataset import PublishedDataSet
-from asyncua.ua.ua_binary import struct_from_binary, struct_to_binary
 from asyncua.ua.uatypes import (
     Boolean,
     DataValue,
     DateTime,
-    ExtensionObject,
     LocalizedText,
     NodeId,
     StatusCode,
@@ -47,6 +45,7 @@ from asyncua.ua.uaprotocol_auto import (
     DataSetOrderingType,
     DataSetWriterDataType,
     Duration,
+    JsonWriterGroupMessageDataType,
     PubSubState,
     UadpDataSetMessageContentMask,
     UadpDataSetWriterMessageDataType,
@@ -55,7 +54,6 @@ from asyncua.ua.uaprotocol_auto import (
     Variant,
 )
 from asyncua.ua import WriterGroupDataType, status_codes
-from asyncua.common.utils import Buffer
 import logging
 
 logger = logging.getLogger(__name__)
@@ -118,10 +116,7 @@ class DataSetWriter(PubSubInformationModel):
                 | UadpDataSetMessageContentMask.Timestamp
             )
             mask = DataSetFieldContentMask(0)
-        cfg = UadpDataSetWriterMessageDataType(DataSetMessageContentMask=msg_mask)
-        message_settings = ExtensionObject(
-            TypeId=cfg.data_type, Body=struct_to_binary(cfg)
-        )
+        message_settings = UadpDataSetWriterMessageDataType(DataSetMessageContentMask=msg_mask)
         dsw_cfg = DataSetWriterDataType(
             Name=name,
             Enabled=True,
@@ -138,9 +133,7 @@ class DataSetWriter(PubSubInformationModel):
         pass
 
     async def generate_uadp_dataset(self, pds: PublishedDataSet) -> UadpDataSetMessage:
-        msg_cfg: UadpDataSetWriterMessageDataType = struct_from_binary(
-            UadpDataSetWriterMessageDataType, Buffer(self._cfg.MessageSettings.Body)
-        )
+        msg_cfg: UadpDataSetWriterMessageDataType = self._cfg.MessageSettings
         header = UadpDataSetMessageHeader(Valid=True)
         self._seq_no += 1
         if (
@@ -223,32 +216,32 @@ class DataSetWriter(PubSubInformationModel):
         # @TODO await self.set_node_value("0:TransportSettings")
         #      await self.set_node_value("0:Enabled", self._cfg.Enabled)
         # UadpDataSetWriterMessageType
-        object_type_id = NodeId(ObjectIds.UadpDataSetWriterMessageType, 0)
-        nodes = await instantiate_util.instantiate(
-            dsw_obj,
-            server.get_node(object_type_id),
-            idx=1,
-            bname="0:MessageSettings",
-            dname=LocalizedText("MessageSettings"),
-        )
-        msg_settings = nodes[0]
-        msg_cfg: UadpDataSetWriterMessageDataType = struct_from_binary(
-            UadpDataSetWriterMessageDataType, Buffer(self._cfg.MessageSettings.Body)
-        )
-        n = await msg_settings.get_child("0:ConfiguredSize")
-        await n.set_data_value(
-            DataValue(Variant(msg_cfg.ConfiguredSize, VariantType.UInt16))
-        )
-        n = await msg_settings.get_child("0:DataSetMessageContentMask")
-        await n.set_data_value(DataValue(msg_cfg.DataSetMessageContentMask))
-        n = await msg_settings.get_child("0:DataSetOffset")
-        await n.set_data_value(
-            DataValue(Variant(msg_cfg.DataSetOffset, VariantType.UInt16))
-        )
-        n = await msg_settings.get_child("0:NetworkMessageNumber")
-        await n.set_data_value(
-            DataValue(Variant(msg_cfg.NetworkMessageNumber, VariantType.UInt16))
-        )
+
+        msg_cfg: Union[UadpDataSetWriterMessageDataType, None] = self._cfg.MessageSettings
+        if isinstance(msg_cfg, UadpDataSetWriterMessageDataType):
+            object_type_id = NodeId(ObjectIds.UadpDataSetWriterMessageType, 0)
+            nodes = await instantiate_util.instantiate(
+                dsw_obj,
+                server.get_node(object_type_id),
+                idx=1,
+                bname="0:MessageSettings",
+                dname=LocalizedText("MessageSettings"),
+            )
+            msg_settings = nodes[0]
+            n = await msg_settings.get_child("0:ConfiguredSize")
+            await n.set_data_value(
+                DataValue(Variant(msg_cfg.ConfiguredSize, VariantType.UInt16))
+            )
+            n = await msg_settings.get_child("0:DataSetMessageContentMask")
+            await n.set_data_value(DataValue(msg_cfg.DataSetMessageContentMask))
+            n = await msg_settings.get_child("0:DataSetOffset")
+            await n.set_data_value(
+                DataValue(Variant(msg_cfg.DataSetOffset, VariantType.UInt16))
+            )
+            n = await msg_settings.get_child("0:NetworkMessageNumber")
+            await n.set_data_value(
+                DataValue(Variant(msg_cfg.NetworkMessageNumber, VariantType.UInt16))
+            )
 
 
 class WriterGroup(PubSubInformationModel):
@@ -303,9 +296,7 @@ class WriterGroup(PubSubInformationModel):
             NetworkMessageContentMask=mask,
             DataSetOrdering=DataSetOrderingType.AscendingWriterId,
         )
-        message_settings = ExtensionObject(
-            TypeId=cfg.data_type, Body=struct_to_binary(cfg)
-        )
+        message_settings = cfg
         cfg = WriterGroupDataType(
             Name=name,
             Enabled=enabled,
@@ -325,8 +316,10 @@ class WriterGroup(PubSubInformationModel):
         self._writer.append(writer)
         self._cfg.DataSetWriters.append(writer._cfg)
         if self.model_is_init():
-            # @TODO get pubsubapp from somewhere
             await writer._init_information_model(self._node, self._server, self._app)
+
+    def get_writer(self, name: String) -> Optional[DataSetWriter]:
+        return next((c for c in self._writer if c._cfg.Name == name), None)
 
     def _init_msg(
         self, sender: PubSubSender, msg_cfg: UadpWriterGroupMessageDataType, msg_no: int
@@ -441,10 +434,12 @@ class WriterGroup(PubSubInformationModel):
             await self._set_state(PubSubState.Error)
             raise
 
-    def get_msg_cfg(self) -> UadpWriterGroupMessageDataType:
-        return struct_from_binary(
-            UadpWriterGroupMessageDataType, Buffer(self._cfg.MessageSettings.Body)
-        )
+    def get_msg_cfg(self) -> Union[UadpWriterGroupMessageDataType, JsonWriterGroupMessageDataType]:
+        if isinstance(self._cfg.MessageSettings, UadpWriterGroupMessageDataType):
+            return self._cfg.MessageSettings
+        if isinstance(self._cfg.MessageSettings, JsonWriterGroupMessageDataType):
+            return self._cfg.MessageSettings
+        raise Exception('Configuration error')
 
     async def _init_information_model(
         self, parent: Node, server: Server, pubsub: IPubSub

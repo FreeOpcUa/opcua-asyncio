@@ -11,11 +11,8 @@ if TYPE_CHECKING:
     from ..server.server import Server
 from ..pubsub.information_model import PubSubInformationModel
 from ..ua import (
-    AttributeIds,
     ObjectIds,
     Byte,
-    DataValue,
-    ExtensionObject,
     LocalizedText,
     NodeId,
     UInt16,
@@ -28,7 +25,6 @@ from ..ua import (
     PubSubState,
 )
 from ..common.methods import uamethod
-from ..ua.ua_binary import struct_to_binary
 from ..ua.uaerrors import UaError
 from ..common.instantiate_util import instantiate
 from .reader import DataSetReader, ReaderGroup
@@ -107,9 +103,6 @@ class PubSubConnection(PubSubInformationModel):
         else:
             raise UaError(f"No valid publisher_id: {publisher_id}")
         address = network_cfg.get_address()
-        address = ExtensionObject(
-            TypeId=address.data_type, Body=struct_to_binary(address)
-        )
         properties = network_cfg.get_key_value()
         cfg = PubSubConnectionDataType(
             Name=name,
@@ -159,7 +152,7 @@ class PubSubConnection(PubSubInformationModel):
         """
         Returns a writer group via name, if found.
         """
-        return next((w for w in self._writer_groups if w.get_name() == name), None)
+        return next((w for w in self._writer_groups if w._cfg.Name == name), None)
 
     def get_reader_group(self, name: String) -> Optional[DataSetReader]:
         """
@@ -272,11 +265,11 @@ class PubSubConnection(PubSubInformationModel):
     async def _remove_group(self, nid: NodeId) -> None:
         for r in self._reader_groups:
             if r._node.nodeid == nid:
-                self.remove_reader_group(r)
+                await self.remove_reader_group(r)
                 return
         for w in self._writer_groups:
             if w._node.nodeid == nid:
-                self.remove_writer_group(w)
+                await self.remove_writer_group(w)
                 return
         raise uaerrors.UaStatusCodeError(StatusCodes.BadNodeIdUnknown)
 
@@ -306,7 +299,7 @@ class PubSubConnection(PubSubInformationModel):
             "0:TransportProfileUri", self._cfg.TransportProfileUri
         )
         await self.set_node_value(
-            "0:ConnectionProperties", self._cfg.ConnectionProperties
+            "0:ConnectionProperties", Variant(Value=self._cfg.ConnectionProperties, VariantType=VariantType.ExtensionObject),
         )
         addr = await self._node.get_child("0:Address")
         await addr.delete()

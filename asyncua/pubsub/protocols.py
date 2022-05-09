@@ -12,7 +12,7 @@ try:
 except ImportError:
     # Protocol is only supported in Python >= 3.8
     # if mypy support is needed we should add typing extension as requirement
-    class Protocol:
+    class Protocol:  # type: ignore
         pass
 
 

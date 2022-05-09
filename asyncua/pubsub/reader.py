@@ -14,7 +14,7 @@ unimplemented:
         - all @TODO
 """
 from __future__ import annotations
-from typing import List, Optional, TYPE_CHECKING
+from typing import Iterable, List, Optional, TYPE_CHECKING
 import asyncio
 from asyncua.common import instantiate_util
 from asyncua.common.node import Node
@@ -28,9 +28,8 @@ from asyncua.pubsub.subscriped_dataset import (
 if TYPE_CHECKING:
     from asyncua.server.server import Server
 from asyncua.ua import uaerrors
-from asyncua.ua.attribute_ids import AttributeIds
 from asyncua.ua.object_ids import ObjectIds
-from asyncua.ua.ua_binary import from_binary, struct_from_binary
+from asyncua.ua.ua_binary import from_binary
 from ..ua.uatypes import (
     DataValue,
     LocalizedText,
@@ -108,7 +107,7 @@ class DataSetReader(PubSubInformationModel):
         enabled: Optional[bool] = False,
         subscriped: Optional[SubscripedDataSet] = None,
     ):
-        if name == None:
+        if name is None:
             name = f"Reader{cls.__reader_cnt}"
             cls.__reader_cnt += 1
         cfg = DataSetReaderDataType(
@@ -173,7 +172,7 @@ class DataSetReader(PubSubInformationModel):
 
     def _datavalues_from_raw(
         self, data: UadpDataSetRaw, header: UadpDataSetMessageHeader
-    ) -> DataValue:
+    ) -> List[DataValue]:
         """Converts Raw dataset to Datavalue"""
         buf = Buffer(data.Data)
         values = []
@@ -212,7 +211,7 @@ class DataSetReader(PubSubInformationModel):
                     logger.warn(f"{self._cfg.Name}: Timed out")
                     await self._set_state(PubSubState.Error)
                     if self._subscriped:
-                        self._subscriped.on_state_change(self._cfg, PubSubState.Error)
+                        await self._subscriped.on_state_change(self._cfg, PubSubState.Error)
 
     async def start(self) -> None:
         self.timeout_ev = asyncio.Event()
@@ -277,22 +276,14 @@ class DataSetReader(PubSubInformationModel):
         """
         if self._subscriped is not None:
             if (
-                self._cfg.SubscribedDataSet.TypeId
-                == SubscribedDataSetMirrorDataType.data_type
+                self._cfg.SubscribedDataSet.data_type == SubscribedDataSetMirrorDataType.data_type
             ):
-                subdataset_cfg = struct_from_binary(
-                    SubscribedDataSetMirrorDataType,
-                    Buffer(self._cfg.SubscribedDataSet.Body),
-                )
-                self._subscriped = SubscribedDataSetMirror(subdataset_cfg, self._node)
+                self._subscriped = SubscribedDataSetMirror(self._cfg.SubscribedDataSet, self._node)
             elif (
-                self._cfg.SubscribedDataSet.TypeId == TargetVariablesDataType.data_type
+                self._cfg.SubscribedDataSet.data_type == TargetVariablesDataType.data_type
             ):
-                subdataset_cfg = struct_from_binary(
-                    TargetVariablesDataType, Buffer(self._cfg.SubscribedDataSet.Body)
-                )
                 self._subscriped = SubScripedTargetVariables(
-                    self._server, subdataset_cfg
+                    self._server, self._cfg.SubscribedDataSet
                 )
         if self._subscriped is not None:
             if isinstance(self._subscriped, SubScripedTargetVariables):
@@ -347,7 +338,7 @@ class ReaderGroup(PubSubInformationModel):
         if name is not None:
             obj._cfg.Name = name
         else:
-            obj._cfg.Name = "Reader" + int(cls.__reader_cnt)
+            obj._cfg.Name = "Reader" + str(cls.__reader_cnt)
             cls.__reader_cnt += 1
         obj._cfg.Enabled = enable
         return obj
@@ -374,6 +365,7 @@ class ReaderGroup(PubSubInformationModel):
         else:
             writer_id_groupe = None
         found_reader = False
+        assert isinstance(msg.Payload, Iterable)
         for reader in self._reader:
             # Check if the message is for this reader WriterGroupId = 0 and DatSetWriterId = 0 are wildcards
             if reader._cfg.Enabled:

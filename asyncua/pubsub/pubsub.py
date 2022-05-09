@@ -3,17 +3,24 @@
 """
 from __future__ import annotations
 import asyncio
-from typing import List, Optional, TYPE_CHECKING
+from pathlib import Path
+from typing import List, Optional, TYPE_CHECKING, Union
+from asyncua.common.utils import Buffer
 from asyncua.pubsub.information_model import PubSubInformationModel
+import aiofiles
 
+from asyncua.ua.ua_binary import extensionobject_from_binary, from_binary, to_binary
 if TYPE_CHECKING:
     from asyncua.server.server import Server
-from asyncua.ua import String, PubSubConfigurationDataType
+from asyncua.ua import String, PubSubConfigurationDataType, uaerrors
 from asyncua.ua.object_ids import ObjectIds
-from asyncua.ua.uaprotocol_auto import PubSubState
-from asyncua.ua.uatypes import NodeId
+from asyncua.ua.uaprotocol_auto import PubSubState, UABinaryFileDataType
+from asyncua.ua.uatypes import NodeId, Variant
 from .dataset import PublishedDataSet
 from .connection import PubSubConnection
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PubSub(PubSubInformationModel):
@@ -84,6 +91,7 @@ class PubSub(PubSubInformationModel):
             await con._init_information_model(self._server)
 
     def get_connection(self, name: String) -> Optional[PubSubConnection]:
+        print([c._cfg.Name for c in self._con])
         return next((c for c in self._con if c._cfg.Name == name), None)
 
     def get_published_dataset(self, name: String) -> Optional[PublishedDataSet]:
@@ -132,3 +140,29 @@ class PubSub(PubSubInformationModel):
 
     async def __aexit__(self, exc_type, exc, tb) -> None:
         await self.stop()
+
+    async def load_binary_file(self, file: Union[str, Path]) -> None:
+        async with aiofiles.open(file, mode='rb') as f:
+            buf = Buffer(await f.read())
+        # ex_obj = extensionobject_from_binary(buf)
+        ex_obj: UABinaryFileDataType = extensionobject_from_binary(buf)
+        if ex_obj.data_type == UABinaryFileDataType.data_type:
+            ex_obj = ex_obj.Body.Value
+            if isinstance(ex_obj, PubSubConfigurationDataType):
+                cfg: PubSubConfigurationDataType = ex_obj
+                for ds in cfg.PublishedDataSets:
+                    await self.add_published_dataset(PublishedDataSet(ds))
+                for con in cfg.Connections:
+                    await self.add_connection(PubSubConnection(con))
+                return
+            else:
+                logger.error(f'File has Body of type: {ex_obj} instead of PubSubConfigurationDataType')
+        else:
+            logger.error(f'File has ExtensionObject of type: {ex_obj} instead of UABinaryFileDataType')
+        raise uaerrors.UaError(uaerrors.BadInvalidArgument)
+
+    async def save_binary_file(self, file: Union[str, Path]) -> None:        # @TODO save structs and enums, namespaces
+        cfg = PubSubConfigurationDataType([pds._data for pds in self._pds], [con._cfg for con in self._con], self._enabled)
+        data = to_binary(UABinaryFileDataType, UABinaryFileDataType(Body=Variant(cfg)))
+        async with aiofiles.open(file, mode='wb') as f:
+            await f.write(data)

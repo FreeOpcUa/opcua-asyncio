@@ -43,7 +43,7 @@ try:
 except ImportError:
     # Protocol is only supported in Python >= 3.8
     # if mypy support is needed we should add typing_extension as requirement
-    class Protocol:
+    class Protocol:  # type: ignore
         pass
 
 
@@ -207,7 +207,7 @@ class UadpChunk:
 
     @staticmethod
     def from_binary(data) -> UadpChunk:
-        chunk = UadpChunk
+        chunk = UadpChunk()
         chunk.MessageSequenceNo = Primitives.UInt16.unpack(data)
         chunk.ChunkOffset = Primitives.UInt32.unpack(data)
         chunk.TotalSize = Primitives.UInt32.unpack(data)
@@ -561,53 +561,52 @@ class UadpDataSetMessage(Protocol):
     ) -> UadpDataSetMessage:
         raise NotImplementedError("UadpDataSetMessage is a abstract class")
 
-    @staticmethod
-    def pack_payload(msgs: List[UadpDataSetMessage]) -> bytes:
-        b = []
-        if len(msgs) > 1:
-            b.append(Primitives.UInt16.pack(len(msgs)))
-        for msg in msgs:
-            b.append(msg.message_to_binary())
-        return b"".join(b)
 
-    @staticmethod
-    def unpack_payload(data, payload_size: Optional[int]) -> List[UadpDataSetMessage]:
-        payload = []
-        if payload_size is None:
-            sz = 1
-        elif payload_size == 1:
-            sz = 1
-        else:
-            sz = Primitives.UInt16.unpack(data)
-        for _ in range(0, sz):
-            flags, header = UadpDataSetMessageHeader.from_binary(data)
-            if MessageDataSetFlags.KEEP_ALIVE in flags:
-                payload.append(UadpDataSetKeepAlive.message_from_binary(header, data))
-            elif MessageDataSetFlags.RAW_DATA in flags:
-                if MessageDataSetFlags.DELTA_FRAME in flags:
-                    payload.append(
-                        UadpDataSetDeltaRaw.message_from_binary(header, data)
-                    )
-                else:
-                    payload.append(UadpDataSetRaw.message_from_binary(header, data))
-            elif MessageDataSetFlags.DATA_VALUE in flags:
-                if MessageDataSetFlags.DELTA_FRAME in flags:
-                    payload.append(
-                        UadpDataSetDeltaDataValue.message_from_binary(header, data)
-                    )
-                else:
-                    payload.append(
-                        UadpDataSetDataValue.message_from_binary(header, data)
-                    )
+def _pack_payload(msgs: List[UadpDataSetMessage]) -> bytes:
+    b = []
+    if len(msgs) > 1:
+        b.append(Primitives.UInt16.pack(len(msgs)))
+    for msg in msgs:
+        b.append(msg.message_to_binary())
+    return b"".join(b)
+
+
+def _unpack_payload(data, payload_size: Optional[int]) -> List[UadpDataSetMessage]:
+    payload = []
+    if payload_size is None:
+        sz = 1
+    elif payload_size == 1:
+        sz = 1
+    else:
+        sz = Primitives.UInt16.unpack(data)
+    for _ in range(0, sz):
+        flags, header = UadpDataSetMessageHeader.from_binary(data)
+        if MessageDataSetFlags.KEEP_ALIVE in flags:
+            payload.append(UadpDataSetKeepAlive.message_from_binary(header, data))
+        elif MessageDataSetFlags.RAW_DATA in flags:
+            if MessageDataSetFlags.DELTA_FRAME in flags:
+                payload.append(
+                    UadpDataSetDeltaRaw.message_from_binary(header, data)
+                )
             else:
-                if MessageDataSetFlags.DELTA_FRAME in flags:
-                    payload.append(
-                        UadpDataSetDeltaVariant.message_from_binary(header, data)
-                    )
-                else:
-                    payload.append(UadpDataSetVariant.message_from_binary(header, data))
-        return payload
-
+                payload.append(UadpDataSetRaw.message_from_binary(header, data))
+        elif MessageDataSetFlags.DATA_VALUE in flags:
+            if MessageDataSetFlags.DELTA_FRAME in flags:
+                payload.append(
+                    UadpDataSetDeltaDataValue.message_from_binary(header, data)
+                )
+            else:
+                payload.append(
+                    UadpDataSetDataValue.message_from_binary(header, data)
+                )
+        else:
+            if MessageDataSetFlags.DELTA_FRAME in flags:
+                payload.append(
+                    UadpDataSetDeltaVariant.message_from_binary(header, data)
+                )
+            else:
+                payload.append(UadpDataSetVariant.message_from_binary(header, data))
+    return payload
 
 @dataclass
 class UadpNetworkMessage:
@@ -666,7 +665,7 @@ class UadpNetworkMessage:
         elif isinstance(self.Payload, UadpChunk):
             b.append(self.Payload.to_binary())
         else:
-            b.append(UadpDataSetMessage.pack_payload(self.Payload))
+            b.append(_pack_payload(self.Payload))
         return b"".join(b)
 
     @staticmethod
@@ -700,5 +699,5 @@ class UadpNetworkMessage:
                 sz = None
             else:
                 sz = len(msg.DataSetPayloadHeader)
-            msg.Payload = UadpDataSetMessage.unpack_payload(data, sz)
+            msg.Payload = _unpack_payload(data, sz)
         return msg
