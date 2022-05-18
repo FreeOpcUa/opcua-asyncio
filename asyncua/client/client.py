@@ -106,8 +106,8 @@ class Client:
 
     def set_locale(self, locale: List[str]) -> None:
         """
-        Sets the prefred locales of the client, the client chooses which locale he can provide.
-        Normaly the first matching locale in the list will be chossen.
+        Sets the prefred locales of the client, the server chooses which locale he can provide.
+        Normaly the first matching locale in the list will be chossen, by the server.
         Call this before connect()
         """
         self._locale = locale
