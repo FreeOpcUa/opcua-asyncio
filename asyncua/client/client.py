@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Union, Coroutine, Optional
+from typing import List, Union, Coroutine, Optional
 from urllib.parse import urlparse
 
 from asyncua import ua
@@ -63,6 +63,7 @@ class Client:
         self.max_messagesize = 0  # No limits
         self.max_chunkcount = 0  # No limits
         self._renew_channel_task = None
+        self._locale = ["en"]
 
     async def __aenter__(self):
         await self.connect()
@@ -102,6 +103,14 @@ class Client:
         if not isinstance(pwd, str):
             raise TypeError(f"Password must be a string, got {pwd} of type {type(pwd)}")
         self._password = pwd
+
+    def set_locale(self, locale: List[str]) -> None:
+        """
+        Sets the prefred locales of the client, the client chooses which locale he can provide.
+        Normaly the first matching locale in the list will be chossen.
+        Call this before connect()
+        """
+        self._locale = locale
 
     async def set_security_string(self, string: str):
         """
@@ -449,7 +458,7 @@ class Client:
         else:
             params.ClientSignature.Algorithm = (security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI)
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
-        params.LocaleIds.append("en")
+        params.LocaleIds = self._locale
         if not username and not certificate:
             self._add_anonymous_auth(params)
         elif certificate:
