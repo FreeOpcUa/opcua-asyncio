@@ -168,7 +168,7 @@ class Client:
         return "Sync" + self.aio_obj.__str__()
 
     __repr__ = __str__
-    
+
     @property
     def application_uri(self):
         return self.aio_obj.application_uri
@@ -193,7 +193,7 @@ class Client:
 
     def set_password(self, pwd: str):
         self.aio_obj.set_password(pwd)
-        
+
     @syncmethod
     async def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
         pass
@@ -352,6 +352,12 @@ class Server:
     @syncmethod
     def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         pass
+
+    def create_subscription(self, period, handler):
+        coro = self.aio_obj.create_subscription(period, _SubHandler(self.tloop, handler))
+        aio_sub = self.tloop.post(coro)
+        return Subscription(self.tloop, aio_sub)
+
 
 
 class EventGenerator:
