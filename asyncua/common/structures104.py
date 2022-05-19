@@ -198,7 +198,7 @@ class {struct_name}{base_class}:
             # maybe we can use ua_utils.get_base_data_type()
             raise RuntimeError(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
 
-        if sfield.ValueRank >= 1:
+        if sfield.ValueRank >= 0:
             default_value = "field(default_factory=list)"
         else:
             default_value = get_default_value(uatype)
