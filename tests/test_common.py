@@ -1356,7 +1356,7 @@ async def test_custom_struct_with_enum(opc):
 async def test_nested_struct_arrays(opc):
     idx = 4
 
-    snode1, _ = await new_struct(opc.opc, idx, "MyStruct", [
+    snode1, _ = await new_struct(opc.opc, idx, "MyStruct4", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32List", ua.VariantType.UInt32, array=True),
     ])
@@ -1368,7 +1368,7 @@ async def test_nested_struct_arrays(opc):
     await opc.opc.load_data_type_definitions()
 
     mystruct = ua.MyNestedStruct()
-    mystruct.MyStructArray = [ua.MyStruct(), ua.MyStruct()]
+    mystruct.MyStructArray = [ua.MyStruct4(), ua.MyStruct4()]
     var = await opc.opc.nodes.objects.add_variable(idx, "nested", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
     assert len(val.MyStructArray) == 2
