@@ -1353,6 +1353,28 @@ async def test_custom_struct_with_enum(opc):
     assert val.MyEnum == ua.MyCustEnum2.tutu
 
 
+async def test_nested_struct_arrays(opc):
+    idx = 4
+
+    snode1, _ = await new_struct(opc.opc, idx, "MyStruct", [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyUInt32List", ua.VariantType.UInt32, array=True),
+    ])
+
+    snode2, _ = await new_struct(opc.opc, idx, "MyNestedStruct", [
+        new_struct_field("MyStructArray", snode1, array=True),
+    ])
+
+    await opc.opc.load_data_type_definitions()
+
+    mystruct = ua.MyNestedStruct()
+    mystruct.MyStructArray = [ua.MyStruct(), ua.MyStruct()]
+    var = await opc.opc.nodes.objects.add_variable(idx, "nested", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    val = await var.read_value()
+    assert len(val.MyStructArray) == 2
+    assert mystruct.MyStructArray == val.MyStructArray
+
+
 @contextlib.contextmanager
 def expect_file_creation(filename:str):
     with tempfile.TemporaryDirectory() as tmpdir:
