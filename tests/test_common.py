@@ -1351,6 +1351,7 @@ async def test_custom_struct_with_enum(opc):
     var = await opc.opc.nodes.objects.add_variable(idx, "my_struct2", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
     assert val.MyEnum == ua.MyCustEnum2.tutu
+    assert isinstance(val.MyEnum, ua.MyCustEnum2)
 
 
 @contextlib.contextmanager
