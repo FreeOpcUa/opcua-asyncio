@@ -4,7 +4,7 @@ format is the one from opc-ua specification
 """
 import logging
 import uuid
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Tuple
 from dataclasses import fields, is_dataclass
 
 from asyncua import ua
@@ -138,27 +138,43 @@ class XmlImporter:
                                   ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType,
                                   ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType,
                                   ua.ObjectIds.StateType, ua.ObjectIds.TransitionType,
-                                  ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
-        dangling_refs_to_missing_nodes = set()
+                                  ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface,
+                                  ua.ObjectIds.HasTypeDefinition, ua.ObjectIds.HasComponent}
+        dangling_refs_to_missing_nodes = set(new_nodes)
+
+        RefSpecKey = Tuple[ua.NodeId, ua.NodeId, ua.NodeId] # (source_node_id, target_node_id, ref_type_id)
+        node_reference_map: Dict[RefSpecKey, ua.ReferenceDescription] = {}
+
         for new_node_id in new_nodes:
-            new_n = self.server.get_node(new_node_id)
-            new_n_refs = await new_n.get_references()
-            if len(new_n_refs) == 0:
-                _logger.warning("Node %s has no references, so it does not exist in Server!", new_node_id)
-                continue
-            for ref in new_n_refs:
-                if ref.ReferenceTypeId not in __unidirectional_types:
-                    n = self.server.get_node(ref.NodeId)
-                    n_refs = await n.get_references()
-                    if len(n_refs) == 0:
-                        _logger.warning("Node %s has no references, so it does not exist in Server!", ref.NodeId)
-                        dangling_refs_to_missing_nodes.add(ref.NodeId)
-                        continue
-                    for n_ref in n_refs:
-                        if new_node_id == n_ref.NodeId and n_ref.ReferenceTypeId == ref.ReferenceTypeId:
-                            break
-                    else:
-                        await n.add_reference(new_node_id, ref.ReferenceTypeId, not ref.IsForward)
+            node = self.server.get_node(new_node_id)
+            node_ref_list: List[ua.ReferenceDescription] = await node.get_references()
+
+            for ref in node_ref_list:
+                if ref.ReferenceTypeId.Identifier in __unidirectional_types:
+                    continue
+                ref_key = (new_node_id, ref.NodeId, ref.ReferenceTypeId)
+                node_reference_map[ref_key] = ref
+
+                dangling_refs_to_missing_nodes.discard(new_node_id)
+                dangling_refs_to_missing_nodes.discard(ref.NodeId)
+
+        for node in dangling_refs_to_missing_nodes:
+            _logger.warning("Node %s has no references, so it does not exist in Server!", node)
+
+        reference_fixes = []
+
+        for ref_spec, ref in node_reference_map.items():
+            source_node_id, target_node_id, ref_type = ref_spec
+            reverse_ref_spec = (target_node_id, source_node_id, ref_type)
+            if reverse_ref_spec not in node_reference_map:
+
+                _logger.debug("Adding missing reference: %s <-> %s (%s)", target_node_id, source_node_id, ref.ReferenceTypeId)
+
+                new_ref = ua.AddReferencesItem(SourceNodeId=target_node_id, TargetNodeId=source_node_id,
+                    ReferenceTypeId=ref_type, IsForward=(not ref.IsForward))
+                reference_fixes.append(new_ref)
+        await self._add_references(reference_fixes)
+
         return dangling_refs_to_missing_nodes
 
     def _add_missing_parents(self, dnodes):
@@ -629,19 +645,19 @@ class XmlImporter:
         """
 
         sorted_ndatas = []
-        sorted_nodes_ids = []
-        all_node_ids = [data.nodeid for data in ndatas]
-        while ndatas:
-            for ndata in ndatas[:]:
-                if (ndata.nodeid.NamespaceIndex not in self.namespaces.values() or ndata.parent is None or ndata.parent not in all_node_ids):
+        sorted_nodes_ids = set()
+        all_node_ids = set(data.nodeid for data in ndatas)
+        while len(sorted_nodes_ids) < len(ndatas):
+            for ndata in ndatas:
+                if ndata.nodeid in sorted_nodes_ids:
+                    continue
+                elif (ndata.parent is None or ndata.parent not in all_node_ids):
                     sorted_ndatas.append(ndata)
-                    sorted_nodes_ids.append(ndata.nodeid)
-                    ndatas.remove(ndata)
+                    sorted_nodes_ids.add(ndata.nodeid)
                 else:
                     # Check if the nodes parent is already in the list of
                     # inserted nodes
                     if ndata.parent in sorted_nodes_ids:
                         sorted_ndatas.append(ndata)
-                        sorted_nodes_ids.append(ndata.nodeid)
-                        ndatas.remove(ndata)
+                        sorted_nodes_ids.add(ndata.nodeid)
         return sorted_ndatas
