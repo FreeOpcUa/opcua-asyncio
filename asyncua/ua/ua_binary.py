@@ -588,10 +588,9 @@ def create_enum_deserializer(uatype):
         typename = 'UInt32'
         if hasattr(uatype, 'datatype'):
             typename = uatype.datatype()
-        return getattr(Primitives, typename).unpack
-    elif isinstance(uatype, Enum):
-        return lambda val: Primitives.Int32.unpack(val.value)
-    return Primitives.Int32.unpack
+        unpack = getattr(Primitives, typename).unpack
+        return lambda val: uatype(unpack(val))
+    return lambda val: uatype(Primitives.Int32.unpack(val))
 
 
 def from_binary(uatype, data):
