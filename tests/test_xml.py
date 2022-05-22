@@ -534,7 +534,7 @@ async def test_xml_struct_optional(opc, tmpdir):
         new_struct_field("MyString", ua.VariantType.String, optional=True),
         new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
     ])
-    tmp_path = tmpdir.join("export-union.xml").strpath
+    tmp_path = tmpdir.join("export-optional.xml").strpath
     await opc.opc.export_xml([o], tmp_path)
     await opc.opc.delete_nodes([o])
     new_nodes = await opc.opc.import_xml(tmp_path)
@@ -547,9 +547,18 @@ async def test_xml_struct_optional(opc, tmpdir):
     assert t.MyInt64 == 5
 
 
+async def test_basetype_alias(opc):
+    idx = 4
+    # Alias double
+    _ = await opc.opc.get_node(ua.NodeId(11)).add_data_type(ua.NodeId(NamespaceIndex=idx), '4:MyDouble')
+    await opc.opc.load_data_type_definitions()
+    assert ua.MyDouble(4.0) == ua.Double(4.0)
+
+
 async def test_xml_required_models_fail(opc):
     with pytest.raises(ValueError):
         await opc.opc.import_xml(CUSTOM_REQ_XML_FAIL_PATH)
+
 
 async def test_xml_required_models_pass(opc):
     await opc.opc.import_xml(CUSTOM_REQ_XML_PASS_PATH)
