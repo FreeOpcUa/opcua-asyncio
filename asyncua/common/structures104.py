@@ -312,12 +312,15 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_exis
             # Union don't contain a type defintion but there could be subtypes
             await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef, add_existing=add_existing)
         elif sdef is not None:
-            name = clean_name(desc.BrowseName.Name)
-            if parent_sdef:
-                for sfield in reversed(parent_sdef.Fields):
-                    sdef.Fields.insert(0, sfield)
-            dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
-            await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef, add_existing=add_existing)
+            if sdef:
+                name = clean_name(desc.BrowseName.Name)
+                if parent_sdef:
+                    for sfield in reversed(parent_sdef.Fields):
+                        sdef.Fields.insert(0, sfield)
+                dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
+                await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef, add_existing=add_existing)
+            else:
+                await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef, add_existing=add_existing)
 
 
 async def _get_parent_types(node: Node):
@@ -353,7 +356,7 @@ async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new
             # Don't insert Number alias, they should be allready insert because they have to be basetypes allready
             if not hasattr(ua, name):
                 env = make_basetype_code(name, parent_datatype)
-                ua.register_basetype(name, desc.NodeId, parent_datatype)
+                ua.register_basetype(name, desc.NodeId, env[name])
                 new_alias[name] = env[name]
         await _recursive_parse_basedatatypes(server, server.get_node(desc.NodeId), name, new_alias)
 
@@ -368,6 +371,7 @@ def make_basetype_code(name, parent_datatype):
     env = {}
     env['ua'] = ua
     logger.debug("Executing code: %s", code)
+    print(code)
     try:
         exec(code, env)
     except Exception:
