@@ -100,7 +100,7 @@ class {self.name}:
                 code += f"""
     @property
     def {name}(self) -> bool:
-        return self.{src_field} >> {bit_no} != 0
+        return (self.{src_field} & (1<<{bit_no})) != 0
 
     @{name}.setter
     def {name}(self, value: bool) -> None:
