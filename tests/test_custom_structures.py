@@ -3,6 +3,7 @@ import xml.etree.ElementTree as Et
 import pytest
 
 from asyncua import ua
+from asyncua.common.structures import EnumType, StructGenerator, Struct
 import asyncua.common.type_dictionary_builder
 from asyncua.common.type_dictionary_builder import OPCTypeDictionaryBuilder, DataTypeDictionaryBuilder
 from asyncua.common.type_dictionary_builder import get_ua_class, StructNode
@@ -389,3 +390,33 @@ async def test_functional_advance(srv):
     nested_result = await nested_var.read_value()
     assert nested_result == nested_msg
     await srv.srv.delete_nodes([basic_var, nested_var])
+
+
+async def test_bitfields(srv):
+    # We use a bsd file from a server dict, because we only provide bitsets for backwards compatibility
+    xmlpath = "tests/custom_extension_with_optional_fields.xml"
+    structs_dict = {}
+    c = StructGenerator()
+    c.make_model_from_file(xmlpath)
+    c.get_python_classes(structs_dict)
+    for m in c.model:
+        if type(m) in (Struct, EnumType):
+            m.typeid = ua.NodeId(m.name, 1)
+            ua.register_extension_object(m.name, m.typeid, structs_dict[m.name])
+            c.set_typeid(m.name, m.typeid.to_string())
+    await srv.dict_builder.set_dict_byte_string()
+    await srv.srv.load_type_definitions()
+    v = ua.ProcessValueType(name='XXX')
+    v.cavityId = False
+    v.description = True
+    bitfield_var = await srv.srv.nodes.objects.add_variable(
+        ua.NodeId(NamespaceIndex=srv.idx), 'BitFieldSetsTest',
+        ua.Variant(None, ua.VariantType.ExtensionObject),
+        datatype=ua.NodeId('ProcessValueType', 1)
+    )
+    await bitfield_var.write_value(v)
+    bit_res = await bitfield_var.read_value()
+    assert v.name == 'XXX'
+    assert not v.cavityId
+    assert v.description
+    assert v == bit_res
