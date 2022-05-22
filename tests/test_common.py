@@ -923,7 +923,7 @@ async def test_get_endpoints(opc):
 
 
 async def test_copy_node(opc):
-    dev_t = await opc.opc.nodes.base_data_type.add_object_type(0, "MyDevice")
+    dev_t = await opc.opc.nodes.base_structure_type.add_object_type(0, "MyDevice")
     v_t = await dev_t.add_variable(0, "sensor", 1.0)
     p_t = await dev_t.add_property(0, "sensor_id", "0340")
     ctrl_t = await dev_t.add_object(0, "controller")
