@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 from enum import IntEnum, EnumMeta
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Tuple, Union
 
 
 from xml.etree import ElementTree as ET
@@ -65,6 +65,7 @@ class Struct:
         self.name = clean_name(name)
         self.fields = []
         self.typeid = None
+        self.bit_mapping = {}
 
     def __str__(self):
         return f"Struct(name={self.name}, fields={self.fields}"
@@ -92,6 +93,22 @@ class {self.name}:
             if isinstance(uavalue, str) and uavalue.startswith("ua."):
                 uavalue = f"field(default_factory=lambda: {uavalue})"
             code += f"    {sfield.name}:{uatype} = {uavalue}\n"
+        for name, encode_tuple in self.bit_mapping.items():
+            src_field, bit_no, _ = encode_tuple
+            # Skip Reserved fields they are only for padding
+            if not name.startswith('Reserved'):
+                code += f"""
+    @property
+    def {name}(self) -> bool:
+        return self.{src_field} >> {bit_no} != 0
+
+    @{name}.setter
+    def {name}(self, value: bool) -> None:
+        if value:
+            self.{src_field} |= (1<<{bit_no})
+        else:
+            self.{src_field} &= ~(1<<{bit_no})
+"""
         return code
 
 
@@ -106,6 +123,38 @@ class Field(object):
         return f"Field(name={self.name}, uatype={self.uatype})"
 
     __repr__ = __str__
+
+
+class BitFieldState:
+    def __init__(self):
+        self.encoding_field: Union[Field, None] = None
+        self.bit_size = 0
+        self.bit_offset = 0
+        self.encoding_field_counter = 0
+
+    def add_bit(self, length: int) -> Union[Field, None]:
+        """ Returns field if a new one was added. Else None """
+        if not self.encoding_field:
+            return self.reset_encoding_field()
+        else:
+            if self.bit_size + length > 32:
+                return self.reset_encoding_field()
+            else:
+                self.bit_size += length
+                self.bit_offset += 1
+                return None
+
+    def reset_encoding_field(self) -> Field:
+        field = Field(f"BitEncoding{self.encoding_field_counter}")
+        field.uatype = "UInt32"
+        self.encoding_field = field
+        self.bit_offset = 0
+        self.encoding_field_counter += 1
+        return field
+
+    def get_bit_info(self) -> Tuple[str, int]:
+        """ With the field name and bit offset, we can extract the bit later."""
+        return self.encoding_field.name, self.bit_offset
 
 
 class StructGenerator(object):
@@ -137,26 +186,37 @@ class StructGenerator(object):
 
         for child in root:
             if child.tag.endswith("StructuredType"):
+                bit_state = BitFieldState()
                 struct = Struct(child.get("Name"))
                 array = False
                 # these lines can be reduced in >= Python3.8 with root.iterfind("{*}Field") and similar
                 for xmlfield in child:
                     if xmlfield.tag.endswith("Field"):
                         name = xmlfield.get("Name")
+                        _clean_name = clean_name(name)
                         if name.startswith("NoOf"):
                             array = True
                             continue
-                        field = Field(clean_name(name))
-                        field.uatype = xmlfield.get("TypeName")
-                        if ":" in field.uatype:
-                            field.uatype = field.uatype.split(":")[1]
-                        field.uatype = clean_name(field.uatype)
-                        field.value = get_default_value(field.uatype, enums)
-                        if array:
-                            field.array = True
-                            field.value = "field(default_factory=list)"
-                            array = False
-                        struct.fields.append(field)
+                        _type = xmlfield.get("TypeName")
+                        if ":" in _type:
+                            _type = _type.split(":")[1]
+                        if _type == 'Bit':
+                            # Bit is smaller than 1Byte so we need to chain mutlitple bit fields together
+                            # as one byte
+                            bit_length = int(xmlfield.get("Length", 1))
+                            field = bit_state.add_bit(bit_length)
+                            # Whether or not a new encoding field was added, we want to store the current one.
+                            struct.bit_mapping[name] = (bit_state.encoding_field.name, bit_state.bit_offset, bit_length)
+                        else:
+                            field = Field(_clean_name)
+                            field.uatype = clean_name(_type)
+                        if field:
+                            field.value = get_default_value(field.uatype, enums)
+                            if array:
+                                field.array = True
+                                field.value = "field(default_factory=list)"
+                                array = False
+                            struct.fields.append(field)
                 self.model.append(struct)
 
     def save_to_file(self, path, register=False):

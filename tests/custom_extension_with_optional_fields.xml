@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opc:TypeDictionary xmlns:opc="http://opcfoundation.org/BinarySchema/" xmlns:tns="http://example.com/example" xmlns:ua="http://opcfoundation.org/UA/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" DefaultByteOrder="LittleEndian" TargetNamespace="http://example.com/example">
+      <opc:Import Namespace="http://opcfoundation.org/UA/" />
+   <opc:StructuredType BaseType="ua:ExtensionObject" Name="ChannelIdDataType">
+            <opc:Field TypeName="opc:Int16" Name="Id" />
+            <opc:Field TypeName="tns:ChannelType" Name="Type" />
+    </opc:StructuredType>
+      <opc:StructuredType BaseType="ua:ExtensionObject" Name="CurveDataType">
+            <opc:Field TypeName="opc:Bit" Name="DescriptionSpecified" />
+            <opc:Field Length="31" TypeName="opc:Bit" Name="Reserved1" />
+            <opc:Field TypeName="tns:ChannelIdDataType" Name="ChannelId" />
+            <opc:Field TypeName="opc:Int32" Name="NoOfData" />
+            <opc:Field LengthField="NoOfData" TypeName="tns:CurvePointDataType" Name="Data" />
+            <opc:Field SwitchField="DescriptionSpecified" TypeName="opc:CharArray" Name="Description" />
+         </opc:StructuredType>
+      <opc:StructuredType BaseType="ua:ExtensionObject" Name="CurvePointDataType">
+            <opc:Field TypeName="opc:Double" Name="Time" />
+            <opc:Field TypeName="opc:Double" Name="Data" />
+         </opc:StructuredType>
+      <opc:StructuredType BaseType="ua:ExtensionObject" Name="DigitalSignalChangeDataType">
+            <opc:Field TypeName="tns:InputSignalIdDataType" Name="Id" />
+            <opc:Field TypeName="opc:Double" Name="Time" />
+         </opc:StructuredType>
+      <opc:StructuredType BaseType="ua:ExtensionObject" Name="InputSignalIdDataType">
+            <opc:Field TypeName="tns:InputSignalCategory" Name="Category" />
+            <opc:Field TypeName="tns:SignalSubIdDataType" Name="SubId" />
+         </opc:StructuredType>
+      <opc:StructuredType BaseType="ua:ExtensionObject" Name="ProcessValueType">
+            <opc:Field TypeName="opc:Bit" Name="cavityIdSpecified" />
+            <opc:Field TypeName="opc:Bit" Name="descriptionSpecified" />
+            <opc:Field Length="30" TypeName="opc:Bit" Name="Reserved1" />
+            <opc:Field TypeName="opc:CharArray" Name="name" />
+            <opc:Field TypeName="opc:Double" Name="value" />
+            <opc:Field TypeName="opc:UInt32" Name="assignment" />
+            <opc:Field TypeName="opc:UInt32" Name="source" />
+            <opc:Field SwitchField="cavityIdSpecified" TypeName="opc:UInt32" Name="cavityId" />
+            <opc:Field TypeName="opc:CharArray" Name="id" />
+            <opc:Field SwitchField="descriptionSpecified" TypeName="opc:CharArray" Name="description" />
+         </opc:StructuredType>
+      <opc:StructuredType BaseType="ua:ExtensionObject" Name="SignalSubIdDataType">
+            <opc:Field TypeName="opc:Byte" Name="Number" />
+            <opc:Field TypeName="opc:Byte" Name="Number2" />
+            <opc:Field TypeName="opc:Byte" Name="Letter" />
+         </opc:StructuredType>
+      <opc:EnumeratedType LengthInBits="32" Name="ChannelType">
+            <opc:EnumeratedValue Name="Universal" Value="0" />
+            <opc:EnumeratedValue Name="Pressure" Value="1" />
+            <opc:EnumeratedValue Name="Customizable" Value="2" />
+         </opc:EnumeratedType>
+      <opc:EnumeratedType LengthInBits="32" Name="InputSignalCategory">
+            <opc:EnumeratedValue Name="Unassigned" Value="0" />
+            <opc:EnumeratedValue Name="MeasuringStart" Value="1" />
+            <opc:EnumeratedValue Name="MeasuringStop" Value="2" />
+            <opc:EnumeratedValue Name="CycleEnd" Value="3" />
+            <opc:EnumeratedValue Name="SwitchOverPoint" Value="4" />
+            <opc:EnumeratedValue Name="CycleEvent" Value="5" />
+         </opc:EnumeratedType>
+      <opc:EnumeratedType LengthInBits="32" Name="MoldTypeEnumeration">
+            <opc:Documentation>Mold type</opc:Documentation>
+            <opc:EnumeratedValue Name="NormalMold" Value="0" />
+            <opc:EnumeratedValue Name="MultiComponentMold" Value="1" />
+            <opc:EnumeratedValue Name="RTMMold" Value="2" />
+         </opc:EnumeratedType>
+      <opc:EnumeratedType LengthInBits="32" Name="SetupChangeType">
+            <opc:EnumeratedValue Name="SetupLoaded" Value="0" />
+            <opc:EnumeratedValue Name="SetupChanged" Value="1" />
+            <opc:EnumeratedValue Name="SetupCreated" Value="2" />
+            <opc:EnumeratedValue Name="SetupUnloaded" Value="3" />
+            <opc:EnumeratedValue Name="SetupImported" Value="4" />
+         </opc:EnumeratedType>
+      <opc:EnumeratedType LengthInBits="32" Name="StopConditionType">
+            <opc:Documentation>Type of measurement stop condition</opc:Documentation>
+            <opc:EnumeratedValue Name="Time" Value="0" />
+            <opc:EnumeratedValue Name="StartSignal" Value="1" />
+            <opc:EnumeratedValue Name="StopSignal" Value="2" />
+         </opc:EnumeratedType>
+   </opc:TypeDictionary>
