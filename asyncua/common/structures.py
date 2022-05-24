@@ -162,13 +162,12 @@ class StructGenerator(object):
                         if _type == 'Bit':
                             # Bits are used for bit fields and filler ignore
                             continue
-                        else:
-                            field = Field(_clean_name)
-                            field.uatype = clean_name(_type)
-                            if xmlfield.get("SwitchField", '') != '':
-                                # Optional Field
-                                field.is_optional = True
-                                struct.option_counter += 1
+                        field = Field(_clean_name)
+                        field.uatype = clean_name(_type)
+                        if xmlfield.get("SwitchField", '') != '':
+                            # Optional Field
+                            field.is_optional = True
+                            struct.option_counter += 1
                         field.value = get_default_value(field.uatype, enums)
                         if array:
                             field.array = True
