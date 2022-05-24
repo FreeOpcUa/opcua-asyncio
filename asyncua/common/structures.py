@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 from enum import IntEnum, EnumMeta
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional
 
 
 from xml.etree import ElementTree as ET
@@ -65,6 +65,7 @@ class Struct:
         self.name = clean_name(name)
         self.fields = []
         self.typeid = None
+        self.option_counter = 0
 
     def __str__(self):
         return f"Struct(name={self.name}, fields={self.fields}"
@@ -82,6 +83,10 @@ class {self.name}:
     '''
 
 """
+        if self.option_counter > 0:
+            field = Field("Encoding")
+            field.uatype = "UInt32"
+            self.fields = [field] + self.fields
         for sfield in self.fields:
             uatype = f"'ua.{sfield.uatype}'"
             if sfield.array:
@@ -110,37 +115,6 @@ class Field(object):
         return f"Field(name={self.name}, uatype={self.uatype})"
 
     __repr__ = __str__
-
-
-class BitFieldState:
-    def __init__(self):
-        self.encoding_field: Union[Field, None] = None
-        self.bit_size = 0
-        self.bit_offset = 0
-
-    def add_bit(self, length: int) -> Union[Field, None]:
-        """ Returns field if a new one was added. Else None """
-        if self.bit_size > 32:
-            raise RuntimeError("Can't add more than 32 Switch Field on a Field!")
-        if not self.encoding_field:
-            return self.reset_encoding_field()
-        else:
-            if self.bit_size + length > 32:
-                return self.reset_encoding_field()
-            else:
-                self.bit_size += length
-                self.bit_offset += 1
-                return None
-
-    def reset_encoding_field(self) -> Field:
-        field = Field(f"Encoding")
-        field.uatype = "UInt32"
-        self.encoding_field = field
-        return field
-
-    def get_bit_info(self) -> Tuple[str, int]:
-        """ With the field name and bit offset, we can extract the bit later."""
-        return self.encoding_field.name, self.bit_offset
 
 
 class StructGenerator(object):
@@ -172,7 +146,6 @@ class StructGenerator(object):
 
         for child in root:
             if child.tag.endswith("StructuredType"):
-                bit_state = BitFieldState()
                 struct = Struct(child.get("Name"))
                 array = False
                 # these lines can be reduced in >= Python3.8 with root.iterfind("{*}Field") and similar
@@ -187,21 +160,21 @@ class StructGenerator(object):
                         if ":" in _type:
                             _type = _type.split(":")[1]
                         if _type == 'Bit':
-                            # Bit is smaller than 1Byte so we need to chain mutlitple bit fields together
-                            # as one byte
-                            bit_length = int(xmlfield.get("Length", 1))
-                            field = bit_state.add_bit(bit_length)
+                            # Bits are used for bit fields and filler ignore
+                            continue
                         else:
                             field = Field(_clean_name)
                             field.uatype = clean_name(_type)
-                            field.is_optional = xmlfield.get("SwitchField", '') != ''
-                        if field:
-                            field.value = get_default_value(field.uatype, enums)
-                            if array:
-                                field.array = True
-                                field.value = "field(default_factory=list)"
-                                array = False
-                            struct.fields.append(field)
+                            if xmlfield.get("SwitchField", '') != '':
+                                # Optional Field
+                                field.is_optional = True
+                                struct.option_counter += 1
+                        field.value = get_default_value(field.uatype, enums)
+                        if array:
+                            field.array = True
+                            field.value = "field(default_factory=list)"
+                            array = False
+                        struct.fields.append(field)
                 self.model.append(struct)
 
     def save_to_file(self, path, register=False):
