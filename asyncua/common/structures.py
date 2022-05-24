@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 from enum import IntEnum, EnumMeta
 from dataclasses import dataclass, field
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 
 from xml.etree import ElementTree as ET
@@ -65,7 +65,6 @@ class Struct:
         self.name = clean_name(name)
         self.fields = []
         self.typeid = None
-        self.bit_mapping = {}
 
     def __str__(self):
         return f"Struct(name={self.name}, fields={self.fields}"
@@ -89,26 +88,13 @@ class {self.name}:
                 uatype = f"List[{uatype}]"
             if uatype == 'List[ua.Char]':
                 uatype = 'String'
-            uavalue = sfield.value
-            if isinstance(uavalue, str) and uavalue.startswith("ua."):
-                uavalue = f"field(default_factory=lambda: {uavalue})"
-            code += f"    {sfield.name}:{uatype} = {uavalue}\n"
-        for name, encode_tuple in self.bit_mapping.items():
-            src_field, bit_no, _ = encode_tuple
-            # Skip Reserved fields they are only for padding
-            if not name.startswith('Reserved'):
-                code += f"""
-    @property
-    def {name}(self) -> bool:
-        return (self.{src_field} & (1<<{bit_no})) != 0
-
-    @{name}.setter
-    def {name}(self, value: bool) -> None:
-        if value:
-            self.{src_field} |= (1<<{bit_no})
-        else:
-            self.{src_field} &= ~(1<<{bit_no})
-"""
+            if sfield.is_optional:
+                code += f"    {sfield.name}: Optional[{uatype}] = None\n"
+            else:
+                uavalue = sfield.value
+                if isinstance(uavalue, str) and uavalue.startswith("ua."):
+                    uavalue = f"field(default_factory=lambda: {uavalue})"
+                code += f"    {sfield.name}:{uatype} = {uavalue}\n"
         return code
 
 
@@ -118,6 +104,7 @@ class Field(object):
         self.uatype = None
         self.value = None
         self.array = False
+        self.is_optional = False
 
     def __str__(self):
         return f"Field(name={self.name}, uatype={self.uatype})"
@@ -130,10 +117,11 @@ class BitFieldState:
         self.encoding_field: Union[Field, None] = None
         self.bit_size = 0
         self.bit_offset = 0
-        self.encoding_field_counter = 0
 
     def add_bit(self, length: int) -> Union[Field, None]:
         """ Returns field if a new one was added. Else None """
+        if self.bit_size > 32:
+            raise RuntimeError("Can't add more than 32 Switch Field on a Field!")
         if not self.encoding_field:
             return self.reset_encoding_field()
         else:
@@ -145,11 +133,9 @@ class BitFieldState:
                 return None
 
     def reset_encoding_field(self) -> Field:
-        field = Field(f"BitEncoding{self.encoding_field_counter}")
+        field = Field(f"Encoding")
         field.uatype = "UInt32"
         self.encoding_field = field
-        self.bit_offset = 0
-        self.encoding_field_counter += 1
         return field
 
     def get_bit_info(self) -> Tuple[str, int]:
@@ -205,11 +191,10 @@ class StructGenerator(object):
                             # as one byte
                             bit_length = int(xmlfield.get("Length", 1))
                             field = bit_state.add_bit(bit_length)
-                            # Whether or not a new encoding field was added, we want to store the current one.
-                            struct.bit_mapping[name] = (bit_state.encoding_field.name, bit_state.bit_offset, bit_length)
                         else:
                             field = Field(_clean_name)
                             field.uatype = clean_name(_type)
+                            field.is_optional = xmlfield.get("SwitchField", '') != ''
                         if field:
                             field.value = get_default_value(field.uatype, enums)
                             if array:
@@ -339,6 +324,8 @@ def _generate_python_class(model, env=None):
         env['field'] = field
     if "List" not in env:
         env['List'] = List
+    if 'Optional' not in env:
+        env['Optional'] = Optional
     # generate classes one by one and add them to dict
     for element in model:
         code = element.get_code()

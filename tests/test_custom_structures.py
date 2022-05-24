@@ -407,8 +407,6 @@ async def test_bitfields(srv):
     await srv.dict_builder.set_dict_byte_string()
     await srv.srv.load_type_definitions()
     v = ua.ProcessValueType(name='XXX')
-    v.cavityId = False
-    v.description = True
     bitfield_var = await srv.srv.nodes.objects.add_variable(
         ua.NodeId(NamespaceIndex=srv.idx), 'BitFieldSetsTest',
         ua.Variant(None, ua.VariantType.ExtensionObject),
@@ -416,7 +414,26 @@ async def test_bitfields(srv):
     )
     await bitfield_var.write_value(v)
     bit_res = await bitfield_var.read_value()
-    assert v.name == 'XXX'
-    assert not v.cavityId
-    assert v.description
+    assert v.cavityId is None
+    assert v.description is None
     assert v == bit_res
+    v.cavityId = ua.UInt16(123)
+    await bitfield_var.write_value(v)
+    bit_res = await bitfield_var.read_value()
+    assert v == bit_res
+    assert bit_res.description is None
+    assert bit_res.cavityId is not None
+    v.description = '1234'
+    v.cavityId = None
+    await bitfield_var.write_value(v)
+    bit_res = await bitfield_var.read_value()
+    assert v == bit_res
+    assert bit_res.description is not None
+    assert bit_res.cavityId is None
+    v.description = 'test'
+    v.cavityId = ua.UInt16(44)
+    await bitfield_var.write_value(v)
+    bit_res = await bitfield_var.read_value()
+    assert v == bit_res
+    assert bit_res.description is not None
+    assert bit_res.cavityId is not None
