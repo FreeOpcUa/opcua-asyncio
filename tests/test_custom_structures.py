@@ -392,8 +392,8 @@ async def test_functional_advance(srv):
     await srv.srv.delete_nodes([basic_var, nested_var])
 
 
-async def test_bitfields(srv):
-    # We use a bsd file from a server dict, because we only provide bitsets for backwards compatibility
+async def test_optionsets(srv):
+    # We use a bsd file from a server dict, because we only provide optionsets for backwards compatibility
     xmlpath = "tests/custom_extension_with_optional_fields.xml"
     structs_dict = {}
     c = StructGenerator()
@@ -406,7 +406,7 @@ async def test_bitfields(srv):
             c.set_typeid(m.name, m.typeid.to_string())
     await srv.dict_builder.set_dict_byte_string()
     await srv.srv.load_type_definitions()
-    v = ua.ProcessValueType(name='XXX')
+    v = ua.ProcessValueType(name='XXX', id='YYY')
     bitfield_var = await srv.srv.nodes.objects.add_variable(
         ua.NodeId(NamespaceIndex=srv.idx), 'BitFieldSetsTest',
         ua.Variant(None, ua.VariantType.ExtensionObject),
@@ -437,3 +437,24 @@ async def test_bitfields(srv):
     assert v == bit_res
     assert bit_res.description is not None
     assert bit_res.cavityId is not None
+
+    curved = ua.CurveDataType(
+        Data = [ua.CurvePointDataType(0.1, 0.2), ua.CurvePointDataType(0.1, 0.2)]
+    )
+    curved_var = await srv.srv.nodes.objects.add_variable(
+        ua.NodeId(NamespaceIndex=srv.idx), 'CurvePointDataType',
+        ua.Variant(None, ua.VariantType.ExtensionObject),
+        datatype=ua.NodeId('CurvePointDataType', 1)
+    )
+    await curved_var.write_value(curved)
+    curved_res = await curved_var.read_value()
+    assert curved_res == curved
+    assert len(curved_res.Data) == 2
+    assert curved_res.Description is None
+    curved.Description = "ABC"
+    await curved_var.write_value(curved)
+    curved_res = await curved_var.read_value()
+    assert curved_res == curved
+    assert len(curved_res.Data) == 2
+    assert curved_res.Description == "ABC"
+
