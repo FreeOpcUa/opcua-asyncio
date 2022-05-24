@@ -437,9 +437,8 @@ async def test_optionsets(srv):
     assert v == bit_res
     assert bit_res.description is not None
     assert bit_res.cavityId is not None
-
     curved = ua.CurveDataType(
-        Data = [ua.CurvePointDataType(0.1, 0.2), ua.CurvePointDataType(0.1, 0.2)]
+        Data=[ua.CurvePointDataType(0.1, 0.2), ua.CurvePointDataType(0.1, 0.2)]
     )
     curved_var = await srv.srv.nodes.objects.add_variable(
         ua.NodeId(NamespaceIndex=srv.idx), 'CurvePointDataType',
@@ -457,4 +456,3 @@ async def test_optionsets(srv):
     assert curved_res == curved
     assert len(curved_res.Data) == 2
     assert curved_res.Description == "ABC"
-
