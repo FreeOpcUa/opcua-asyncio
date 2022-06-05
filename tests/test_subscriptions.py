@@ -545,6 +545,16 @@ async def test_get_filter_from_ConditionType(opc):
     assert systemType.nodeid in operandNodeIds
 
 
+async def test_get_event_contains_object(opc):
+    """ Shelving State is a object this should be in the filter list!"""
+    alarm_type = opc.opc.get_node(ua.ObjectIds.AlarmConditionType)
+    evfilter = await asyncua.common.events.get_filter_from_event_type([alarm_type])
+    browsePathList = [o.BrowsePath for o in evfilter.SelectClauses if o.BrowsePath]
+    [print(b) for b in browsePathList]
+    browsePathId = [ua.QualifiedName('ShelvingState'), ua.QualifiedName('CurrentState'), ua.QualifiedName('Id')]
+    assert browsePathId in browsePathList
+
+
 async def test_get_event_from_type_node_CustomEvent(opc):
     etype = await opc.server.create_custom_event_type(
         2, 'MyEvent', ua.ObjectIds.AuditEventType,

@@ -1,9 +1,11 @@
 import copy
-
+from typing import Dict, List, TYPE_CHECKING
 from asyncua import ua
 import asyncua
 from ..ua.uaerrors import UaError
 from .ua_utils import get_node_subtypes
+if TYPE_CHECKING:
+    from asyncua.common.node import Node
 
 
 class Event:
@@ -142,10 +144,7 @@ async def get_filter_from_event_type(eventtypes):
     return evfilter
 
 
-async def append_new_attribute_to_select_clauses(attribute, select_clauses, already_selected, parent_variable):
-    browse_path = []
-    if parent_variable:
-        browse_path.append(await parent_variable.read_browse_name())
+async def _append_new_attribute_to_select_clauses(attribute: "Node", select_clauses: List[ua.SimpleAttributeOperand], already_selected: Dict[str, str], browse_path: List[ua.QualifiedName]):
     browse_path.append(await attribute.read_browse_name())
     string_path = '/'.join(map(str, browse_path))
     if string_path not in already_selected:
@@ -153,23 +152,34 @@ async def append_new_attribute_to_select_clauses(attribute, select_clauses, alre
         op = ua.SimpleAttributeOperand()
         op.AttributeId = ua.AttributeIds.Value
         op.BrowsePath = browse_path
-        select_clauses.append(op)    
+        select_clauses.append(op)
 
 
-async def select_clauses_from_evtype(evtypes):
+async def _select_clause_from_childs(child: "Node", select_clauses: List[ua.SimpleAttributeOperand], already_selected: Dict[str, str], browse_path: List[ua.QualifiedName]):
+    for property in await child.get_properties():
+        await _append_new_attribute_to_select_clauses(property, select_clauses, already_selected, [*browse_path])
+    for variable in await child.get_variables():
+        await _append_new_attribute_to_select_clauses(variable, select_clauses, already_selected, [*browse_path])
+        await _select_clause_from_childs(variable, select_clauses, already_selected, browse_path + [await variable.read_browse_name()])
+    for object in await child.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Object):
+        await _select_clause_from_childs(object, select_clauses, already_selected, browse_path + [await object.read_browse_name()])
+
+
+async def select_clauses_from_evtype(evtypes: List["Node"]):
     select_clauses = []
     already_selected = {}
     for evtype in evtypes:
         for property in await get_event_properties_from_type_node(evtype):
-            await append_new_attribute_to_select_clauses(property, select_clauses, already_selected, None)
+            await _append_new_attribute_to_select_clauses(property, select_clauses, already_selected, [])
         for variable in await get_event_variables_from_type_node(evtype):
-            await append_new_attribute_to_select_clauses(variable, select_clauses, already_selected, None)
-            for subproperty in await variable.get_properties():
-                await append_new_attribute_to_select_clauses(subproperty, select_clauses, already_selected, variable)
+            await _append_new_attribute_to_select_clauses(variable, select_clauses, already_selected, [])
+            await _select_clause_from_childs(variable, select_clauses, already_selected, [await variable.read_browse_name()])
+        for object in await get_event_objects_from_type_node(evtype):
+            await _select_clause_from_childs(object, select_clauses, already_selected, [await object.read_browse_name()])
     return select_clauses
 
 
-async def where_clause_from_evtype(evtypes):
+async def where_clause_from_evtype(evtypes: List["Node"]):
     cf = ua.ContentFilter()
     el = ua.ContentFilterElement()
     # operands can be ElementOperand, LiteralOperand, AttributeOperand, SimpleAttribute
@@ -197,7 +207,7 @@ async def where_clause_from_evtype(evtypes):
     return cf
 
 
-async def select_event_attributes_from_type_node(node, attributeSelector):
+async def select_event_attributes_from_type_node(node: "Node", attributeSelector):
     attributes = []
     curr_node = node
     while True:
@@ -213,12 +223,16 @@ async def select_event_attributes_from_type_node(node, attributeSelector):
     return attributes
 
 
-async def get_event_properties_from_type_node(node):
+async def get_event_properties_from_type_node(node: "Node") -> List[ua.NodeId]:
     return await select_event_attributes_from_type_node(node, lambda n: n.get_properties())
 
 
-async def get_event_variables_from_type_node(node):
+async def get_event_variables_from_type_node(node: "Node") -> List[ua.NodeId]:
     return await select_event_attributes_from_type_node(node, lambda n: n.get_variables())
+
+
+async def get_event_objects_from_type_node(node: "Node") -> List[ua.NodeId]:
+    return await select_event_attributes_from_type_node(node, lambda n: n.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Object))
 
 
 async def get_event_obj_from_type_node(node):
