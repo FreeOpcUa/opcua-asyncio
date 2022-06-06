@@ -173,9 +173,9 @@ async def select_clauses_from_evtype(evtypes: List["Node"]):
             await _append_new_attribute_to_select_clauses(property, select_clauses, already_selected, [])
         for variable in await get_event_variables_from_type_node(evtype):
             await _append_new_attribute_to_select_clauses(variable, select_clauses, already_selected, [])
-            await _select_clause_from_childs(variable, select_clauses, already_selected, [await variable.read_browse_name()])
+            await _select_clause_from_childs(variable, select_clauses, already_selected, [await variable.read_browse_name()])  # type: ignore
         for object in await get_event_objects_from_type_node(evtype):
-            await _select_clause_from_childs(object, select_clauses, already_selected, [await object.read_browse_name()])
+            await _select_clause_from_childs(object, select_clauses, already_selected, [await object.read_browse_name()])  # type: ignore
     return select_clauses
 
 
@@ -199,8 +199,7 @@ async def where_clause_from_evtype(evtypes: List["Node"]):
             subtypes.append(st.nodeid)
     subtypes = list(set(subtypes))  # remove duplicates
     for subtypeid in subtypes:
-        op = ua.LiteralOperand()
-        op.Value = ua.Variant(subtypeid)
+        op = ua.LiteralOperand(Value = ua.Variant(subtypeid))
         el.FilterOperands.append(op)
     el.FilterOperator = ua.FilterOperator.InList
     cf.Elements.append(el)

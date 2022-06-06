@@ -724,8 +724,7 @@ def test_where_clause():
     op.BrowsePath.append(ua.QualifiedName("property", 2))
     el.FilterOperands.append(op)
     for i in range(10):
-        op = ua.LiteralOperand()
-        op.Value = ua.Variant(i)
+        op = ua.LiteralOperand(Value = ua.Variant(i))
         el.FilterOperands.append(op)
     el.FilterOperator = ua.FilterOperator.InList
     cf.Elements.append(el)
