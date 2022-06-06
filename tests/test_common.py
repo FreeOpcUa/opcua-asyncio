@@ -107,7 +107,7 @@ async def add_server_methods(srv):
 
 
 async def test_find_servers(opc):
-    servers = await opc.opc.find_servers()
+    await opc.opc.find_servers()
     # FIXME : finish
 
 
@@ -115,19 +115,19 @@ async def test_add_node_bad_args(opc):
     obj = opc.opc.nodes.objects
 
     with pytest.raises(TypeError):
-        fold = await obj.add_folder(1.2, "kk")
+        await obj.add_folder(1.2, "kk")
 
     with pytest.raises(TypeError):
-        fold = await obj.add_folder(ua.UaError, "khjh")
+        await obj.add_folder(ua.UaError, "khjh")
 
     with pytest.raises(ua.UaError):
-        fold = await obj.add_folder("kjk", 1.2)
+        await obj.add_folder("kjk", 1.2)
 
     with pytest.raises(TypeError):
-        fold = await obj.add_folder("i=0;s='oooo'", 1.2)
+        await obj.add_folder("i=0;s='oooo'", 1.2)
 
     with pytest.raises(ua.UaError):
-        fold = await obj.add_folder("i=0;s='oooo'", "tt:oioi")
+        await obj.add_folder("i=0;s='oooo'", "tt:oioi")
 
 
 async def test_delete_nodes(opc):
@@ -399,7 +399,6 @@ async def test_datetime_read_value(opc):
 
 
 async def test_datetime_write_value(opc):
-    time_node = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
     now = datetime.utcnow()
     objects = opc.opc.nodes.objects
     v1 = await objects.add_variable(4, "test_datetime", now)
@@ -410,9 +409,9 @@ async def test_datetime_write_value(opc):
 
 async def test_variant_array_dim(opc):
     objects = opc.opc.nodes.objects
-    l = [[[1.0, 1.0, 1.0, 1.0], [2.0, 2.0, 2.0, 2.0], [3.0, 3.0, 3.0, 3.0]],
-         [[5.0, 5.0, 5.0, 5.0], [7.0, 8.0, 9.0, 1.0], [1.0, 1.0, 1.0, 1.0]]]
-    v = await objects.add_variable(3, 'variableWithDims', l)
+    arry = [[[1.0, 1.0, 1.0, 1.0], [2.0, 2.0, 2.0, 2.0], [3.0, 3.0, 3.0, 3.0]],
+            [[5.0, 5.0, 5.0, 5.0], [7.0, 8.0, 9.0, 1.0], [1.0, 1.0, 1.0, 1.0]]]
+    v = await objects.add_variable(3, 'variableWithDims', arry)
 
     await v.write_array_dimensions([0, 0, 0])
     dim = await v.read_array_dimensions()
@@ -423,15 +422,15 @@ async def test_variant_array_dim(opc):
     assert 0 == rank
 
     v2 = await v.read_value()
-    assert l == v2
+    assert arry == v2
     dv = await v.read_data_value()
     assert [2, 3, 4] == dv.Value.Dimensions
 
-    l = [[[], [], []], [[], [], []]]
-    variant = ua.Variant(l, ua.VariantType.UInt32)
+    arry = [[[], [], []], [[], [], []]]
+    variant = ua.Variant(arry, ua.VariantType.UInt32)
     v1 = await objects.add_variable(3, 'variableWithDimsEmpty', variant)
     v2 = await v1.read_value()
-    assert l == v2
+    assert arry == v2
     dv = await v1.read_data_value()
     assert [2, 3, 0] == dv.Value.Dimensions
     await opc.opc.delete_nodes([v, v1])
@@ -694,7 +693,7 @@ async def test_use_namespace(opc):
 
 async def test_method(opc):
     o = opc.opc.nodes.objects
-    v = await o.get_child("2:ServerMethod")
+    await o.get_child("2:ServerMethod")
     result = await o.call_method("2:ServerMethod", 2.1)
     assert 4.2 == result
     with pytest.raises(ua.UaStatusCodeError):
@@ -706,7 +705,7 @@ async def test_method(opc):
 
 async def test_method_no_arg(opc):
     o = opc.opc.nodes.objects
-    v = await o.get_child("2:ServerMethodNoArg")
+    await o.get_child("2:ServerMethodNoArg")
     result = await o.call_method("2:ServerMethodNoArg")
     assert 13 == result
     with pytest.raises(ua.UaStatusCodeError):
@@ -911,9 +910,9 @@ async def test_path(opc):
     target = opc.opc.get_node("i=13387")
     path = await target.get_path()
     assert [
-               opc.opc.nodes.root, opc.opc.nodes.types, opc.opc.nodes.object_types, opc.opc.nodes.base_object_type,
-               opc.opc.nodes.folder_type, opc.opc.get_node(ua.ObjectIds.FileDirectoryType), target
-           ] == path
+        opc.opc.nodes.root, opc.opc.nodes.types, opc.opc.nodes.object_types, opc.opc.nodes.base_object_type,
+        opc.opc.nodes.folder_type, opc.opc.get_node(ua.ObjectIds.FileDirectoryType), target
+    ] == path
 
 
 async def test_get_endpoints(opc):
@@ -924,19 +923,19 @@ async def test_get_endpoints(opc):
 
 async def test_copy_node(opc):
     dev_t = await opc.opc.nodes.base_structure_type.add_object_type(0, "MyDevice")
-    v_t = await dev_t.add_variable(0, "sensor", 1.0)
-    p_t = await dev_t.add_property(0, "sensor_id", "0340")
+    _ = await dev_t.add_variable(0, "sensor", 1.0)
+    _ = await dev_t.add_property(0, "sensor_id", "0340")
     ctrl_t = await dev_t.add_object(0, "controller")
     prop_t = await ctrl_t.add_property(0, "state", "Running")
     # Create device sutype
     devd_t = await dev_t.add_object_type(0, "MyDeviceDervived")
-    v_t = await devd_t.add_variable(0, "childparam", 1.0)
-    p_t = await devd_t.add_property(0, "sensorx_id", "0340")
+    _ = await devd_t.add_variable(0, "childparam", 1.0)
+    _ = await devd_t.add_property(0, "sensorx_id", "0340")
     nodes = await copy_node(opc.opc.nodes.objects, dev_t)
     mydevice = nodes[0]
     assert ua.NodeClass.ObjectType == await mydevice.read_node_class()
     assert 4 == len(await mydevice.get_children())
-    obj = await mydevice.get_child(["0:controller"])
+    _ = await mydevice.get_child(["0:controller"])
     prop = await mydevice.get_child(["0:controller", "0:state"])
     assert ua.ObjectIds.PropertyType == (await prop.read_type_definition()).Identifier
     assert "Running" == await prop.read_value()
@@ -972,7 +971,7 @@ async def test_instantiate_1(opc):
 
     assert ua.NodeClass.Object == await mydevice.read_node_class()
     assert dev_t.nodeid == await mydevice.read_type_definition()
-    obj = await mydevice.get_child(["0:controller"])
+    _ = await mydevice.get_child(["0:controller"])
     prop = await mydevice.get_child(["0:controller", "0:state"])
     with pytest.raises(ua.UaError):
         await mydevice.get_child(["0:controller", "0:vendor"])
@@ -986,10 +985,10 @@ async def test_instantiate_1(opc):
     # instanciate device subtype
     nodes = await instantiate(opc.opc.nodes.objects, devd_t, bname="2:Device0002")
     mydevicederived = nodes[0]
-    prop1 = await mydevicederived.get_child(["0:sensorx_id"])
-    var1 = await mydevicederived.get_child(["0:childparam"])
-    var_parent = await mydevicederived.get_child(["0:sensor"])
-    prop_parent = await mydevicederived.get_child(["0:sensor_id"])
+    _ = await mydevicederived.get_child(["0:sensorx_id"])
+    _ = await mydevicederived.get_child(["0:childparam"])
+    _ = await mydevicederived.get_child(["0:sensor"])
+    _ = await mydevicederived.get_child(["0:sensor_id"])
     await opc.opc.delete_nodes([devd_t, dev_t])
 
 
@@ -1025,7 +1024,7 @@ async def test_instantiate_string_nodeid(opc):
 async def test_instantiate_abstract(opc):
     finit_statemachine_type = opc.opc.get_node("ns=0;i=2771")  # IsAbstract=True
     with pytest.raises(ua.UaError):
-        node = await instantiate(opc.opc.nodes.objects, finit_statemachine_type, bname="2:TestFiniteStateMachine")
+        _ = await instantiate(opc.opc.nodes.objects, finit_statemachine_type, bname="2:TestFiniteStateMachine")
 
 
 async def test_variable_with_datatype(opc):
@@ -1180,12 +1179,12 @@ async def test_import_xml_enum_data_type_definition(opc):
 
 async def test_duplicated_browsenames_same_ns_protperties(opc):
     parentfolder = await opc.opc.nodes.objects.add_folder(2, "parent_folder")
-    childproperty = await parentfolder.add_property(2, "Myproperty1", 123)
+    _ = await parentfolder.add_property(2, "Myproperty", 123)
     try:
-        childproperty2 = await parentfolder.add_property(2, "Myproperty", 456)
+        _ = await parentfolder.add_property(2, "Myproperty", 456)
         await opc.opc.delete_nodes([parentfolder])
         pytest.fail("childproperty2 should never be created!")
-    except:
+    except Exception:
         await opc.opc.delete_nodes([parentfolder])
         return
 
@@ -1377,11 +1376,12 @@ async def test_nested_struct_arrays(opc):
 
 
 @contextlib.contextmanager
-def expect_file_creation(filename:str):
+def expect_file_creation(filename: str):
     with tempfile.TemporaryDirectory() as tmpdir:
         path = os.path.join(tmpdir, filename)
         yield path
         assert os.path.isfile(path), f"File {path} should have been created"
+
 
 async def test_custom_struct_export(opc):
     idx = 4
@@ -1419,7 +1419,7 @@ async def test_custom_enum_import(opc):
 async def test_custom_struct_import(opc):
     nodes = await opc.opc.import_xml("tests/custom_struct.xml")
     nodes = [opc.opc.get_node(node) for node in nodes]  # FIXME why does it return nodeids and not nodes?
-    node = nodes[0]  #FIXME: make that more robust
+    node = nodes[0]  # FIXME: make that more robust
     sdef = await node.read_data_type_definition()
     assert sdef.StructureType == ua.StructureType.Structure
     assert sdef.Fields[0].Name == "MyBool"
@@ -1524,6 +1524,7 @@ async def test_custom_method_with_enum(opc):
     result = await opc.opc.nodes.objects.call_method(methodid, ua.MyCustEnumForMethod.titi, ua.MyCustEnumForMethod.titi, ua.MyCustEnumForMethod.titi)
 
     assert result == ua.MyCustEnumForMethod.toto
+
 
 async def test_sub_class(opc):
     idx = 4

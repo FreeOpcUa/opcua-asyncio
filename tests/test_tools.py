@@ -45,6 +45,7 @@ async def test_cli_tools(running_server):
                     assert str_exp == "SystemExit(0)"
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 async def test_cli_tools_which_require_sigint(running_server):
     url = running_server
     tools = (
