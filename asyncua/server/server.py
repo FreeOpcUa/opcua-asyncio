@@ -433,7 +433,7 @@ class Server:
         if self._discovery_handle:
             self._discovery_handle.cancel()
         if self._discovery_clients:
-            await asyncio.wait([client.disconnect() for client in self._discovery_clients.values()])
+            await asyncio.wait(*[client.disconnect() for client in self._discovery_clients.values()])
         await self.bserver.stop()
         await self.iserver.stop()
         _logger.debug("%s Internal server stopped, everything closed", self)
