@@ -6,7 +6,7 @@ from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
 try:
     from unittest.mock import AsyncMock
-except ModuleNotFoundError:
+except ImportError:
     from asynctest import CoroutineMock as AsyncMock
 import asyncua
 from asyncua import ua, Client
