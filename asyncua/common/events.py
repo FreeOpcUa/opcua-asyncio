@@ -137,7 +137,7 @@ class Event:
         return name
 
 
-async def get_filter_from_event_type(eventtypes):
+async def get_filter_from_event_type(eventtypes: List["Node"]):
     evfilter = ua.EventFilter()
     evfilter.SelectClauses = await select_clauses_from_evtype(eventtypes)
     evfilter.WhereClause = await where_clause_from_evtype(eventtypes)
@@ -223,15 +223,15 @@ async def select_event_attributes_from_type_node(node: "Node", attributeSelector
     return attributes
 
 
-async def get_event_properties_from_type_node(node: "Node") -> List[ua.NodeId]:
+async def get_event_properties_from_type_node(node: "Node") -> List["Node"]:
     return await select_event_attributes_from_type_node(node, lambda n: n.get_properties())
 
 
-async def get_event_variables_from_type_node(node: "Node") -> List[ua.NodeId]:
+async def get_event_variables_from_type_node(node: "Node") -> List["Node"]:
     return await select_event_attributes_from_type_node(node, lambda n: n.get_variables())
 
 
-async def get_event_objects_from_type_node(node: "Node") -> List[ua.NodeId]:
+async def get_event_objects_from_type_node(node: "Node") -> List["Node"]:
     return await select_event_attributes_from_type_node(node, lambda n: n.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Object))
 
 
