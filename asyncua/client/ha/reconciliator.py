@@ -438,3 +438,20 @@ class Reconciliator:
         for a in inspect.getmembers(self):
             if not a[0].startswith("__") and not inspect.ismethod(a[1]):
                 _logger.debug(a)
+
+    def hook_mi_request(self, url: str, sub_name: str, nodes: Set[SortedDict], action: Method):
+        """placeholder for easily superclass the HaClient and implement custom logic
+        """
+
+    def hook_add_to_map_error(self, url: str, action: Method, fut: asyncio.Task, **kwargs):
+        """placeholder for easily superclass the HaClient and implement custom logic
+        """
+
+    def hook_add_to_map(self, fut: asyncio.Task, url: str, action: Method, **kwargs):
+        """placeholder for easily superclass the HaClient and implement custom logic
+        """
+
+    def hook_del_from_map(self, fut: asyncio.Task, url: str, **kwargs):
+        """placeholder for easily superclass the HaClient and implement custom logic
+        """
+
