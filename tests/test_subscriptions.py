@@ -8,8 +8,6 @@ from asynctest import CoroutineMock
 import asyncua
 from asyncua import ua, Client
 
-# pytestmark = pytest.mark.asyncio
-
 
 class MySubHandler:
     """
