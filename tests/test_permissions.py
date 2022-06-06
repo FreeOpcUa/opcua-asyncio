@@ -9,7 +9,6 @@ from asyncua.server.users import UserRole
 from asyncua.server.user_managers import CertificateUserManager
 
 try:
-    from asyncua.crypto import uacrypto
     from asyncua.crypto import security_policies
 except ImportError:
     print("WARNING: CRYPTO NOT AVAILABLE, CRYPTO TESTS DISABLED!!")
@@ -28,7 +27,7 @@ uri_crypto_cert = "opc.tcp://127.0.0.1:{0:d}".format(port_num3)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 EXAMPLE_PATH = os.path.join(BASE_DIR, "examples") + os.sep
 srv_crypto_params = [(f"{EXAMPLE_PATH}private-key-example.pem",
-                      f"{EXAMPLE_PATH}certificate-example.der"),]
+                      f"{EXAMPLE_PATH}certificate-example.der"), ]
 
 admin_peer_creds = {
     "certificate": f"{EXAMPLE_PATH}certificates/peer-certificate-example-1.der",
@@ -74,6 +73,7 @@ async def srv_crypto_one_cert(request):
     # stop the server
     await srv.delete_nodes([myobj, myvar])
     await srv.stop()
+
 
 async def test_permissions_admin(srv_crypto_one_cert):
     clt = Client(uri_crypto_cert)
@@ -125,3 +125,8 @@ async def test_permissions_anonymous(srv_crypto_one_cert):
     )
     await clt.connect()
     await clt.get_endpoints()
+    with pytest.raises(ua.uaerrors.BadUserAccessDenied):
+        # currently CloseSessionRequest ist not allowed so excpetion is expected
+        # why CloseSession is not allowed if CreateSession works?
+        # but to prevent leaking tasks we do disconnect and get the exception
+        await clt.disconnect()

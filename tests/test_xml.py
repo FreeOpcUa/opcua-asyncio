@@ -92,10 +92,11 @@ async def test_xml_import_ns_dependencies(opc):
     o4 = await o3.get_child([f"{ns3}:MyThirdLevel"])
     assert o4 is not None
     o5 = await o4.get_child([f"{ns4}:MyForthLevel"])
-    assert o4 is not None
+    assert o5 is not None
     for imported_nodes in [a, b, c, d]:
         for nodeid in imported_nodes:
             await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
+
 
 async def test_xml_method(opc, tmpdir):
     await opc.opc.register_namespace("foo")
@@ -182,7 +183,7 @@ async def test_xml_ns(opc, tmpdir):
     await ns_node.write_value(nss)
     new_ns = await opc.opc.register_namespace("my_new_namespace_offsett")
     new_ns = await opc.opc.register_namespace("my_new_namespace")
-    new_nodes = await opc.opc.import_xml(tmp_path)
+    _ = await opc.opc.import_xml(tmp_path)
     for i in [o, o50, o200]:
         await i.read_browse_name()
     with pytest.raises(uaerrors.BadNodeIdUnknown):
@@ -238,7 +239,7 @@ async def test_xml_string_with_null_description(opc, tmpdir):
 async def test_xml_string_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlstringarray", ["mystring2", "mystring3"])
     node2 = await _test_xml_var_type(opc, tmpdir, o, "stringarray")
-    dv = await node2.read_data_value()
+    _ = await node2.read_data_value()
     await opc.opc.delete_nodes([o, node2])
 
 
@@ -464,7 +465,7 @@ async def test_xml_var_nillable(opc):
 
     </UANodeSet>
     """
-    _new_nodes = await opc.opc.import_xml(xmlstring=xml)
+    _ = await opc.opc.import_xml(xmlstring=xml)
     var_string = opc.opc.get_node(ua.NodeId('test_xml.string.nillabel', 2))
     var_bool = opc.opc.get_node(ua.NodeId('test_xml.bool.nillabel', 2))
     assert await var_string.read_value() is None
@@ -487,7 +488,7 @@ async def _test_xml_var_type(opc, tmpdir, node: Node, typename: str, test_equali
     assert dtype == await node2.read_data_type()
     if test_equality:
         logger.debug(node, dv, node2, await node2.read_value())
-        dv2 = await node2.read_value()
+        _ = await node2.read_value()
         assert dv.Value == (await node2.read_data_value()).Value
     assert rank == await node2.read_value_rank()
     assert dim == await node2.read_array_dimensions()
@@ -508,6 +509,7 @@ async def test_xml_byte(opc, tmpdir):
     assert dtype == await o2.read_data_type()
     assert dv.Value == (await o2.read_data_value()).Value
     await opc.opc.delete_nodes([o2])
+
 
 async def test_xml_union(opc, tmpdir):
     idx = 4

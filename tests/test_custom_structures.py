@@ -335,8 +335,8 @@ async def test_functional_basic(srv):
     await srv.srv.load_type_definitions()
 
     basic_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(NamespaceIndex=srv.idx), 'BasicStruct',
-                                                    ua.Variant(None, ua.VariantType.Null),
-                                                    datatype=basic_struct.data_type)
+                                                         ua.Variant(None, ua.VariantType.Null),
+                                                         datatype=basic_struct.data_type)
 
     basic_msg = get_ua_class(basic_struct_name)()
     basic_msg.ID = 3
@@ -366,8 +366,8 @@ async def test_functional_advance(srv):
     await srv.srv.load_type_definitions()
 
     basic_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(NamespaceIndex=srv.idx), 'BasicStruct',
-                                                    ua.Variant(None, ua.VariantType.ExtensionObject),
-                                                    datatype=basic_struct.data_type)
+                                                         ua.Variant(None, ua.VariantType.ExtensionObject),
+                                                         datatype=basic_struct.data_type)
 
     basic_msg = get_ua_class(basic_struct_name)()
     basic_msg.ID = 3
@@ -376,8 +376,8 @@ async def test_functional_advance(srv):
     await basic_var.write_value(basic_msg)
 
     nested_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(NamespaceIndex=srv.idx), 'NestedStruct',
-                                                     ua.Variant(None, ua.VariantType.ExtensionObject),
-                                                     datatype=nested_struct.data_type)
+                                                          ua.Variant(None, ua.VariantType.ExtensionObject),
+                                                          datatype=nested_struct.data_type)
 
     nested_msg = get_ua_class(nested_struct_name)()
     nested_msg.Stuff = basic_msg
