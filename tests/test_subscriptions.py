@@ -4,7 +4,10 @@ import pytest
 from copy import copy
 from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
-from asynctest import CoroutineMock
+try:
+    from unittest.mock import AsyncMock
+except ModuleNotFoundError:
+    from asynctest import CoroutineMock as AsyncMock
 import asyncua
 from asyncua import ua, Client
 
@@ -266,7 +269,7 @@ async def test_set_monitoring_mode(opc, mocker):
     o = opc.opc.nodes.objects
     monitoring_mode = ua.SetMonitoringModeParameters()
     _ = mocker.patch.object(ua, "SetMonitoringModeParameters", return_value=monitoring_mode)
-    _ = mocker.patch("asyncua.client.ua_client.UaClient.set_monitoring_mode", new=CoroutineMock())
+    _ = mocker.patch("asyncua.client.ua_client.UaClient.set_monitoring_mode", new=AsyncMock())
     _ = await o.add_variable(3, 'SubscriptionVariable2', 123)
     sub = await opc.opc.create_subscription(100, myhandler)
 
@@ -286,7 +289,7 @@ async def test_set_publishing_mode(opc, mocker):
     o = opc.opc.nodes.objects
     publishing_mode = ua.SetPublishingModeParameters()
     _ = mocker.patch.object(ua, "SetPublishingModeParameters", return_value=publishing_mode)
-    _ = mocker.patch("asyncua.client.ua_client.UaClient.set_publishing_mode", new=CoroutineMock())
+    _ = mocker.patch("asyncua.client.ua_client.UaClient.set_publishing_mode", new=AsyncMock())
     _ = await o.add_variable(3, 'SubscriptionVariable3', 123)
     sub = await opc.opc.create_subscription(100, myhandler)
 
@@ -888,12 +891,12 @@ async def test_maxkeepalive_count(opc, mocker):
     mock_create_subscription = mocker.patch.object(
         client.uaclient,
         "create_subscription",
-        new=CoroutineMock(return_value=mock_response)
+        new=AsyncMock(return_value=mock_response)
     )
     mock_update_subscription = mocker.patch.object(
         client.uaclient,
         "update_subscription",
-        new=CoroutineMock()
+        new=AsyncMock()
     )
 
     sub = await client.create_subscription(period, sub_handler)
