@@ -10,6 +10,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Dict, Set, Union, List, Optional
 from sortedcontainers import SortedDict  # type: ignore
 from asyncua import ua, Client
+from asyncua.sync import Subscription
 from pickle import PicklingError
 
 from .common import batch, event_wait, get_digest
@@ -256,7 +257,7 @@ class Reconciliator:
         vs_ideal: VirtualSubscription,
     ) -> List[asyncio.Task]:
         tasks: List[asyncio.Task] = []
-        real_sub = self.name_to_subscription[url].get(sub_name)
+        real_sub: Subscription = self.name_to_subscription[url].get(sub_name)
         monitoring = vs_real.monitoring
         node_to_add = set(vs_ideal.nodes) - set(vs_real.nodes)
         if node_to_add:
@@ -304,7 +305,7 @@ class Reconciliator:
     ) -> List[asyncio.Task]:
         to_del: List[asyncio.Task] = []
         node_to_del = set(vs_real.nodes) - set(vs_ideal.nodes)
-        real_sub = self.name_to_subscription[url].get(sub_name)
+        real_sub: Subscription = self.name_to_subscription[url].get(sub_name)
         if node_to_del:
             _logger.info(f"Removing {len(node_to_del)} Nodes")
             for batch_nodes in batch(node_to_del, self.BATCH_MI_SIZE):

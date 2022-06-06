@@ -950,7 +950,7 @@ class DataValue:
     data_type = NodeId(25)
 
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    Value: Optional[Variant] = None
+    Value: Variant = field(default_factory=Variant)
     StatusCode_: Optional[StatusCode] = field(default_factory=StatusCode)
     SourceTimestamp: Optional[DateTime] = None # FIXME type DateType raises type hinting errors because datetime is assigned
     ServerTimestamp: Optional[DateTime] = None

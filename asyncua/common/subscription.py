@@ -362,7 +362,7 @@ class Subscription:
         If you delete the subscription, you do not need to unsubscribe.
         :param handle: The handle that was returned when subscribing to the node/nodes
         """
-        handles = [handle] if type(handle) is int else handle
+        handles: List[int] = [handle] if isinstance(handle, int) else handle
         if not handles:
             return
         params = ua.DeleteMonitoredItemsParameters()
