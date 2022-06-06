@@ -277,7 +277,9 @@ async def test_encrypted_private_key_handling_failure(srv_crypto_one_cert):
 async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
     _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
-    with pytest.raises(AttributeError):
+    with pytest.raises((AttributeError, TimeoutError)):
+        # either exception can be raise, depending on used python version
+        # and crypto library version
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             peer_creds['certificate'],
