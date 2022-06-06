@@ -173,9 +173,9 @@ async def select_clauses_from_evtype(evtypes: List["Node"]):
             await _append_new_attribute_to_select_clauses(property, select_clauses, already_selected, [])
         for variable in await get_event_variables_from_type_node(evtype):
             await _append_new_attribute_to_select_clauses(variable, select_clauses, already_selected, [])
-            await _select_clause_from_childs(variable, select_clauses, already_selected, [await variable.read_browse_name()])  # type: ignore
+            await _select_clause_from_childs(variable, select_clauses, already_selected, [await variable.read_browse_name()])
         for object in await get_event_objects_from_type_node(evtype):
-            await _select_clause_from_childs(object, select_clauses, already_selected, [await object.read_browse_name()])  # type: ignore
+            await _select_clause_from_childs(object, select_clauses, already_selected, [await object.read_browse_name()])
     return select_clauses
 
 
