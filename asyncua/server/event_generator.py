@@ -24,7 +24,7 @@ class EventGenerator:
     def __init__(self, isession):
         self.logger = logging.getLogger(__name__)
         self.isession = isession
-        self.event: Optional[event_objects.BaseEvent] = None
+        self.event: event_objects.BaseEvent = None
         self.emitting_node: Optional[Node] = None
 
     async def init(self, etype=None, emitting_node=ua.ObjectIds.Server):
