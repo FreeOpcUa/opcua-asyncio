@@ -10,11 +10,13 @@ from functools import partial
 from typing import TYPE_CHECKING, Dict, Set, Union, List, Optional
 from sortedcontainers import SortedDict  # type: ignore
 from asyncua import ua, Client
-from asyncua.sync import Subscription
 from pickle import PicklingError
 
 from .common import batch, event_wait, get_digest
 from .virtual_subscription import VirtualSubscription
+
+if TYPE_CHECKING:
+    from asyncua.sync import Subscription
 
 
 _logger = logging.getLogger(__name__)
