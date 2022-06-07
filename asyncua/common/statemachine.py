@@ -19,8 +19,10 @@ import datetime
 
 from asyncua import Server, ua, Node
 from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
-from asyncua.server.event_generator import EventGenerator
-from typing import Optional, Union, List
+from typing import Optional, Union, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from asyncua.server.event_generator import EventGenerator
 
 _logger = logging.getLogger(__name__)
 
