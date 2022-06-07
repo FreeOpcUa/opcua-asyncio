@@ -950,7 +950,7 @@ class DataValue:
     data_type = NodeId(25)
 
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    Value: Variant = field(default_factory=Variant)
+    Value: Optional[Variant] = field(default_factory=Variant)
     StatusCode_: Optional[StatusCode] = field(default_factory=StatusCode)
     SourceTimestamp: Optional[DateTime] = None # FIXME type DateType raises type hinting errors because datetime is assigned
     ServerTimestamp: Optional[DateTime] = None
@@ -966,6 +966,12 @@ class DataValue:
     @property
     def StatusCode(self):
         return self.StatusCode_
+
+    @property
+    def guaranteed_Value(self) -> Variant:
+        if self.Value is not None:
+            return self.Value
+        raise ValueError(f"{self.__class__.__name__}.guaranteed_Value failed for Value={self.Value}")
 
 
 @dataclass(frozen=True)

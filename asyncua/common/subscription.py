@@ -135,7 +135,7 @@ class Subscription:
                 continue
             data = self._monitored_items[item.ClientHandle]
             event_data = DataChangeNotif(data, item)
-            known_handles_args.append((data.node, item.Value.Value.Value, event_data))
+            known_handles_args.append((data.node, item.Value.guaranteed_Value.Value, event_data))
 
         try:
             tasks = [
