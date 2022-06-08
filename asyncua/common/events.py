@@ -93,11 +93,11 @@ class Event:
         return a field list using a select clause and the object properties
         """
         fields = []
-        for sattr in select_clauses:           
-            if len(sattr.BrowsePath) == 0:                  
+        for sattr in select_clauses:
+            if len(sattr.BrowsePath) == 0:
                 name = ua.AttributeIds(sattr.AttributeId).name
             else:
-                name = self.browse_path_to_attribute_name(sattr.BrowsePath)               
+                name = self.browse_path_to_attribute_name(sattr.BrowsePath)
             try:
                 val = getattr(self, name)
             except AttributeError:
@@ -118,20 +118,20 @@ class Event:
         ev = Event()
         ev.select_clauses = select_clauses
         ev.event_fields = fields
-        for idx, sattr in enumerate(select_clauses):           
+        for idx, sattr in enumerate(select_clauses):
             if len(sattr.BrowsePath) == 0:
-                name = sattr.AttributeId.name               
+                name = sattr.AttributeId.name
             else:
                 name = Event.browse_path_to_attribute_name(sattr.BrowsePath)
             ev.add_property(name, fields[idx].Value, fields[idx].VariantType)
         return ev
 
     @staticmethod
-    def browse_path_to_attribute_name(browsePath):  
+    def browse_path_to_attribute_name(browsePath):
         name = browsePath[0].Name
         # Append the sub-property of a VariableType with '/'
         iter_paths = iter(browsePath)
-        next(iter_paths)                
+        next(iter_paths)
         for path in iter_paths:
             name += '/' + path.Name
         return name
@@ -144,8 +144,7 @@ async def get_filter_from_event_type(eventtypes: List["Node"]):
     return evfilter
 
 
-async def _append_new_attribute_to_select_clauses(attribute: "Node", select_clauses: List[ua.SimpleAttributeOperand], already_selected: Dict[str, str], browse_path: List[ua.QualifiedName]):
-    browse_path.append(await attribute.read_browse_name())
+async def _append_new_attribute_to_select_clauses(select_clauses: List[ua.SimpleAttributeOperand], already_selected: Dict[str, str], browse_path: List[ua.QualifiedName]):
     string_path = '/'.join(map(str, browse_path))
     if string_path not in already_selected:
         already_selected[string_path] = string_path
@@ -155,27 +154,37 @@ async def _append_new_attribute_to_select_clauses(attribute: "Node", select_clau
         select_clauses.append(op)
 
 
-async def _select_clause_from_childs(child: "Node", select_clauses: List[ua.SimpleAttributeOperand], already_selected: Dict[str, str], browse_path: List[ua.QualifiedName]):
-    for property in await child.get_properties():
-        await _append_new_attribute_to_select_clauses(property, select_clauses, already_selected, [*browse_path])
-    for variable in await child.get_variables():
-        await _append_new_attribute_to_select_clauses(variable, select_clauses, already_selected, [*browse_path])
-        await _select_clause_from_childs(variable, select_clauses, already_selected, browse_path + [await variable.read_browse_name()])
-    for object in await child.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Object):
-        await _select_clause_from_childs(object, select_clauses, already_selected, browse_path + [await object.read_browse_name()])
+async def _select_clause_from_childs(child: "Node", refs: List[ua.ReferenceDescription], select_clauses: List[ua.SimpleAttributeOperand], already_selected: Dict[str, str], browse_path: List[ua.QualifiedName]):
+    for ref in refs:
+        if ref.NodeClass == ua.NodeClass.Variable:
+            if ref.ReferenceTypeId == ua.ObjectIds.HasProperty:
+                await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [*browse_path] + [ref.BrowseName])
+            else:
+                await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [*browse_path] + [ref.BrowseName])
+                var = child.init_child_node(ref.NodeId)
+                refs = await var.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True)
+                await _select_clause_from_childs(var, refs, select_clauses, already_selected, browse_path + [ref.BrowseName])
+        elif ref.NodeClass == ua.NodeClass.Object:
+            obj = child.init_child_node(ref.NodeId)
+            refs = await obj.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True)
+            await _select_clause_from_childs(obj, refs, select_clauses, already_selected, browse_path + [ref.BrowseName])
 
 
 async def select_clauses_from_evtype(evtypes: List["Node"]):
     select_clauses = []
     already_selected = {}
     for evtype in evtypes:
-        for property in await get_event_properties_from_type_node(evtype):
-            await _append_new_attribute_to_select_clauses(property, select_clauses, already_selected, [])
-        for variable in await get_event_variables_from_type_node(evtype):
-            await _append_new_attribute_to_select_clauses(variable, select_clauses, already_selected, [])
-            await _select_clause_from_childs(variable, select_clauses, already_selected, [await variable.read_browse_name()])
-        for object in await get_event_objects_from_type_node(evtype):
-            await _select_clause_from_childs(object, select_clauses, already_selected, [await object.read_browse_name()])
+        refs = await select_event_attributes_from_type_node(evtype, lambda n: n.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True))
+        if refs:
+            await _select_clause_from_childs(evtype, refs, select_clauses, already_selected, [])
+        ''' for property in await select_event_attributes_from_type_node(evtype, lambda n: n.get_children_descriptions(refs=ua.ObjectIds.HasProperty, nodeclassmask=ua.NodeClass.Variable)):
+            await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [property.BrowseName])
+        for variable in await select_event_attributes_from_type_node(evtype, lambda n: n.get_children_descriptions(ua.ObjectIds.HasComponent, ua.NodeClass.Variable)):
+            await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [variable.BrowseName])
+            await _select_clause_from_childs(evtype.init_child_node(variable.NodeId), select_clauses, already_selected, [variable.BrowseName])
+        for object in await select_event_attributes_from_type_node(evtype, lambda n: n.get_children_descriptions(ua.ObjectIds.HasComponent, ua.NodeClass.Object)):
+            await _select_clause_from_childs(evtype.init_child_node(object.NodeId), select_clauses, already_selected, [object.BrowseName])
+            '''
     return select_clauses
 
 
