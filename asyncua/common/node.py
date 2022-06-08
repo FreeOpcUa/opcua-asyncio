@@ -725,3 +725,9 @@ class Node:
         await self.server.unregister_nodes([self.nodeid])
         self.nodeid = self.basenodeid
         self.basenodeid = None
+
+    def init_child_node(self, nodeid: ua.NodeId):
+        """
+        Helper function to init nodes with out importing Node
+        """
+        return Node(self.server, nodeid)
