@@ -33,7 +33,10 @@ class XmlExporter:
         ]
     }
 
-    def __init__(self, server):
+    def __init__(self, server, export_values: bool = False):
+        """
+        param: export_values: exports values from variants (CustomDataTypes are not support!)
+        """
         self.logger = logging.getLogger(__name__)
         self.server = server
         self.aliases = {}
@@ -46,6 +49,9 @@ class XmlExporter:
         node_write_attributes['xmlns'] = 'http://opcfoundation.org/UA/2011/03/UANodeSet.xsd'
 
         self.etree = Et.ElementTree(Et.Element('UANodeSet', node_write_attributes))
+        self._export_values = export_values
+        if self._export_values:
+            self.logger.warning("Exporting values of variables is limited and can result in invalid xmls.")
 
     async def build_etree(self, node_list):
         """
@@ -219,7 +225,7 @@ class XmlExporter:
         if abstract:
             obj_el.attrib["IsAbstract"] = 'true'
 
-    async def add_variable_common(self, node, el):
+    async def add_variable_common(self, node, el, export_value: bool):
         dtype = await node.read_data_type()
         if dtype.NamespaceIndex == 0 and dtype.Identifier in o_ids.ObjectIdNames:
             dtype_name = o_ids.ObjectIdNames[dtype.Identifier]
@@ -233,14 +239,15 @@ class XmlExporter:
         if dim.Value.Value:
             el.attrib["ArrayDimensions"] = ",".join([str(i) for i in dim.Value.Value])
         el.attrib["DataType"] = dtype_name
-        await self.value_to_etree(el, dtype_name, dtype, node)
+        if export_value:
+            await self.value_to_etree(el, dtype_name, dtype, node)
 
     async def add_etree_variable(self, node):
         """
         Add a UA variable element to the XML etree
         """
         var_el = await self._add_node_common("UAVariable", node)
-        await self.add_variable_common(node, var_el)
+        await self.add_variable_common(node, var_el, self._export_values)
 
         accesslevel = (await node.read_attribute(ua.AttributeIds.AccessLevel)).Value.Value
         useraccesslevel = (await node.read_attribute(ua.AttributeIds.UserAccessLevel)).Value.Value
@@ -264,7 +271,7 @@ class XmlExporter:
         Add a UA variable type element to the XML etree
         """
         var_el = await self._add_node_common("UAVariableType", node)
-        await self.add_variable_common(node, var_el)
+        await self.add_variable_common(node, var_el, True)
         abstract = await node.read_attribute(ua.AttributeIds.IsAbstract)
         if abstract.Value.Value:
             var_el.attrib["IsAbstract"] = "true"

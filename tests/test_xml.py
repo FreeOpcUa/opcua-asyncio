@@ -114,7 +114,7 @@ async def test_xml_method(opc, tmpdir):
     nodes = [o, m]
     nodes.extend(await m.get_children())
     tmp_path = tmpdir.join("tmp_test_export.xml").strpath
-    await opc.opc.export_xml(nodes, tmp_path)
+    await opc.opc.export_xml(nodes, tmp_path, export_values=True)
     await opc.opc.delete_nodes(nodes)
     await opc.opc.import_xml(tmp_path)
     # now see if our nodes are here
@@ -134,7 +134,7 @@ async def test_xml_vars(opc, tmpdir):
     a2 = await o.add_variable(3, "myxmlvar-2dim", [[1, 2], [3, 4]], ua.VariantType.UInt32)
     a3 = await o.add_variable(3, "myxmlvar-2dim2", [[]], ua.VariantType.ByteString)
     nodes = [o, v, a, a2, a3]
-    await opc.opc.export_xml(nodes, tmp_path)
+    await opc.opc.export_xml(nodes, tmp_path, export_values=True)
     await opc.opc.delete_nodes(nodes)
     await opc.opc.import_xml(tmp_path)
     assert 6.78 == await v.read_value()
@@ -172,7 +172,7 @@ async def test_xml_ns(opc, tmpdir):
     o_bname = await onew.add_object(f"ns={new_ns};i=4000", f"{bname_ns}:BNAME")
     nodes = [o, o50, o200, onew, vnew, v_no_parent, o_bname]
     tmp_path = tmpdir.join("tmp_test_export-ns.xml").strpath
-    await opc.opc.export_xml(nodes, tmp_path)
+    await opc.opc.export_xml(nodes, tmp_path, export_values=True)
     # delete node and change index og new_ns before re-importing
     await opc.opc.delete_nodes(nodes)
     ns_node = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
@@ -206,7 +206,7 @@ async def test_xml_float(opc, tmpdir):
     dtype = await o.read_data_type()
     dv = await o.read_data_value()
     tmp_path = tmpdir.join("tmp_test_export-float.xml").strpath
-    await opc.opc.export_xml([o], tmp_path)
+    await opc.opc.export_xml([o], tmp_path, export_values=True)
     await opc.opc.delete_nodes([o])
     new_nodes = await opc.opc.import_xml(tmp_path)
     o2 = opc.opc.get_node(new_nodes[0])
@@ -480,7 +480,7 @@ async def _test_xml_var_type(opc, tmpdir, node: Node, typename: str, test_equali
     dim = await node.read_array_dimensions()
     nclass = await node.read_node_class()
     tmp_path = tmpdir.join(f"tmp_test_export-{typename}.xml").strpath
-    await opc.opc.export_xml([node], tmp_path)
+    await opc.opc.export_xml([node], tmp_path, export_values=True)
     await opc.opc.delete_nodes([node])
     new_nodes = await opc.opc.import_xml(tmp_path)
     node2 = opc.opc.get_node(new_nodes[0])
@@ -501,7 +501,7 @@ async def test_xml_byte(opc, tmpdir):
     dtype = await o.read_data_type()
     dv = await o.read_data_value()
     tmp_path = tmpdir.join("export-byte.xml").strpath
-    await opc.opc.export_xml([o], tmp_path)
+    await opc.opc.export_xml([o], tmp_path, export_values=True)
     await opc.opc.delete_nodes([o])
     new_nodes = await opc.opc.import_xml(tmp_path)
     o2 = opc.opc.get_node(new_nodes[0])
@@ -518,7 +518,7 @@ async def test_xml_union(opc, tmpdir):
         new_struct_field("MyInt64", ua.VariantType.Int64),
     ], is_union=True)
     tmp_path = tmpdir.join("export-union.xml").strpath
-    await opc.opc.export_xml([o], tmp_path)
+    await opc.opc.export_xml([o], tmp_path, export_values=True)
     await opc.opc.delete_nodes([o])
     new_nodes = await opc.opc.import_xml(tmp_path)
     o2 = opc.opc.get_node(new_nodes[0])
@@ -537,7 +537,7 @@ async def test_xml_struct_optional(opc, tmpdir):
         new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
     ])
     tmp_path = tmpdir.join("export-optional.xml").strpath
-    await opc.opc.export_xml([o], tmp_path)
+    await opc.opc.export_xml([o], tmp_path, export_values=True)
     await opc.opc.delete_nodes([o])
     new_nodes = await opc.opc.import_xml(tmp_path)
     o2 = opc.opc.get_node(new_nodes[0])
@@ -564,3 +564,21 @@ async def test_xml_required_models_fail(opc):
 
 async def test_xml_required_models_pass(opc):
     await opc.opc.import_xml(CUSTOM_REQ_XML_PASS_PATH)
+
+
+async def test_disable_xml_export_without_value(opc, tmpdir):
+    # Test that a value of a node is not exportet when export_values = False
+    o = await opc.opc.nodes.objects.add_variable(2, "byte_no_val", 255, ua.VariantType.Byte)
+    dtype = await o.read_data_type()
+    dv = await o.read_data_value()
+    tmp_path = tmpdir.join("export-byte.xml").strpath
+    await opc.opc.export_xml([o], tmp_path, export_values=False)
+    await opc.opc.delete_nodes([o])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    o2 = opc.opc.get_node(new_nodes[0])
+    assert o == o2
+    assert dtype == await o2.read_data_type()
+    v = await o2.read_data_value()
+    assert dv.Value != v.Value
+    assert v.Value.Value is None
+    await opc.opc.delete_nodes([o2])
