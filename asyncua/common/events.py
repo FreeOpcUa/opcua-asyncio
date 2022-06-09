@@ -8,6 +8,9 @@ if TYPE_CHECKING:
     from asyncua.common.node import Node
 
 
+_BROWSE_MASK =  ua.BrowseResultMask.NodeClass |  ua.BrowseResultMask.ReferenceTypeId |  ua.BrowseResultMask.BrowseName
+
+
 class Event:
     """
     OPC UA Event object.
@@ -161,12 +164,12 @@ async def _select_clause_from_childs(child: "Node", refs: List[ua.ReferenceDescr
                 await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [*browse_path] + [ref.BrowseName])
             else:
                 await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [*browse_path] + [ref.BrowseName])
-                var = child.init_child_node(ref.NodeId)
-                refs = await var.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True)
+                var = child.new_node(child.server, ref.NodeId)
+                refs = await var.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK)
                 await _select_clause_from_childs(var, refs, select_clauses, already_selected, browse_path + [ref.BrowseName])
         elif ref.NodeClass == ua.NodeClass.Object:
-            obj = child.init_child_node(ref.NodeId)
-            refs = await obj.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True)
+            obj = child.new_node(child.server, ref.NodeId)
+            refs = await obj.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK)
             await _select_clause_from_childs(obj, refs, select_clauses, already_selected, browse_path + [ref.BrowseName])
 
 
@@ -174,7 +177,7 @@ async def select_clauses_from_evtype(evtypes: List["Node"]):
     select_clauses = []
     already_selected = {}
     for evtype in evtypes:
-        refs = await select_event_attributes_from_type_node(evtype, lambda n: n.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True))
+        refs = await select_event_attributes_from_type_node(evtype, lambda n: n.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK))
         if refs:
             await _select_clause_from_childs(evtype, refs, select_clauses, already_selected, [])
     return select_clauses

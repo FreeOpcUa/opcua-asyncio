@@ -369,8 +369,8 @@ class Node:
         """
         return self.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Method)
 
-    async def get_children_descriptions(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
-        return await self.get_references(refs, ua.BrowseDirection.Forward, nodeclassmask, includesubtypes)
+    async def get_children_descriptions(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True, result_mask=ua.BrowseResultMask.All):
+        return await self.get_references(refs, ua.BrowseDirection.Forward, nodeclassmask, includesubtypes, result_mask)
 
     def get_encoding_refs(self):
         return self.get_referenced_nodes(ua.ObjectIds.HasEncoding, ua.BrowseDirection.Forward)
@@ -378,7 +378,7 @@ class Node:
     def get_description_refs(self):
         return self.get_referenced_nodes(ua.ObjectIds.HasDescription, ua.BrowseDirection.Forward)
 
-    async def get_references(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
+    async def get_references(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True, result_mask=ua.BrowseResultMask.All):
         """
         returns references of the node based on specific filter defined with:
 
@@ -386,13 +386,14 @@ class Node:
         direction = Browse direction for references
         nodeclassmask = filter nodes based on specific class
         includesubtypes = If true subtypes of the reference (ref) are also included
+        result_mask = define what results information are requested
         """
         desc = ua.BrowseDescription()
         desc.BrowseDirection = direction
         desc.ReferenceTypeId = _to_nodeid(refs)
         desc.IncludeSubtypes = includesubtypes
         desc.NodeClassMask = nodeclassmask
-        desc.ResultMask = ua.BrowseResultMask.All
+        desc.ResultMask = result_mask
         desc.NodeId = self.nodeid
         params = ua.BrowseParameters()
         params.View.Timestamp = ua.get_win_epoch()
@@ -726,8 +727,9 @@ class Node:
         self.nodeid = self.basenodeid
         self.basenodeid = None
 
-    def init_child_node(self, nodeid: ua.NodeId):
+    @staticmethod
+    def new_node(server, nodeid: ua.NodeId):
         """
         Helper function to init nodes with out importing Node
         """
-        return Node(self.server, nodeid)
+        return Node(server, nodeid)
