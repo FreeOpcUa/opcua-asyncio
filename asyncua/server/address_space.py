@@ -77,7 +77,7 @@ class AttributeService:
         # self.logger.debug("read %s", params)
         res: List[ua.DataValue] = []
         for readvalue in params.NodesToRead:
-            res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
+            res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))  # type: ignore
         return res
 
     async def write(self, params: ua.WriteParameters, user: User = User(role=UserRole.Admin)) -> List[ua.StatusCode]:
@@ -101,7 +101,7 @@ class AttributeService:
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
             res.append(
-                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value)
+                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value)  # type: ignore
             )
         return res
 

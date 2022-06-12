@@ -136,7 +136,7 @@ class MonitoredItemService:
         result, mdata = self._make_monitored_item_common(params)
         result.FilterResult = params.RequestedParameters.Filter
         result.StatusCode, handle = self.aspace.add_datachange_callback(
-            params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId, self.datachange_callback)
+            params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId, self.datachange_callback)  #type: ignore
 
         self.logger.debug("adding callback return status %s and handle %s", result.StatusCode, handle)
         mdata.callback_handle = handle

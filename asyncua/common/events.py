@@ -191,7 +191,7 @@ async def where_clause_from_evtype(evtypes: List["Node"]):
     # op.TypeDefinitionId = evtype.nodeid
     op.BrowsePath.append(ua.QualifiedName("EventType", 0))
     op.AttributeId = ua.AttributeIds.Value
-    el.FilterOperands.append(op)
+    el.FilterOperands.append(op)  # type: ignore
     # now create a list of all subtypes we want to accept
     subtypes = []
     for evtype in evtypes:
@@ -200,7 +200,7 @@ async def where_clause_from_evtype(evtypes: List["Node"]):
     subtypes = list(set(subtypes))  # remove duplicates
     for subtypeid in subtypes:
         op = ua.LiteralOperand(Value = ua.Variant(subtypeid))
-        el.FilterOperands.append(op)
+        el.FilterOperands.append(op)  # type: ignore
     el.FilterOperator = ua.FilterOperator.InList
     cf.Elements.append(el)
     return cf
