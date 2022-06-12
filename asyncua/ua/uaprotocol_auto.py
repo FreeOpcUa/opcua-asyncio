@@ -5,7 +5,7 @@ Date:2022-05-01 11:52:18.724161
 
 from datetime import datetime
 from enum import IntEnum, IntFlag
-from typing import Union, List, Optional, Type
+from typing import Union, List, Optional, Type, TYPE_CHECKING
 from dataclasses import dataclass, field
 
 from asyncua.ua.uatypes import FROZEN
@@ -16,6 +16,9 @@ from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode
 from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo
 from asyncua.ua.uatypes import extension_object_typeids, extension_objects_by_typeid
 from asyncua.ua.object_ids import ObjectIds
+
+if TYPE_CHECKING:
+    from asyncua.ua.attribute_ids import AttributeIds
 
 
 Image = ByteString
@@ -5992,7 +5995,7 @@ class ContentFilterElement:
     data_type = NodeId(ObjectIds.ContentFilterElement)
 
     FilterOperator_: FilterOperator = FilterOperator.Equals
-    FilterOperands: List[ExtensionObject] = field(default_factory=list)
+    FilterOperands: List[SimpleAttributeOperand] = field(default_factory=list)
 
     @property
     def FilterOperator(self):
@@ -6415,7 +6418,7 @@ class ReadValueId:
     data_type = NodeId(ObjectIds.ReadValueId)
 
     NodeId_: NodeId = field(default_factory=NodeId)
-    AttributeId: IntegerId = 0
+    AttributeId: "AttributeIds" = 0
     IndexRange: NumericRange = None
     DataEncoding: QualifiedName = field(default_factory=QualifiedName)
 
@@ -6804,7 +6807,7 @@ class WriteValue:
     data_type = NodeId(ObjectIds.WriteValue)
 
     NodeId_: NodeId = field(default_factory=NodeId)
-    AttributeId: IntegerId = 0
+    AttributeId: "AttributeIds" = 0
     IndexRange: NumericRange = None
     Value: DataValue = field(default_factory=DataValue)
 

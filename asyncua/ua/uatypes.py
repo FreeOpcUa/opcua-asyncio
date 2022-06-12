@@ -105,32 +105,21 @@ class ByteString(bytes):  # what is the difference between Bytes and ByteString?
     pass
 
 
-class Int16(int):
-    pass
+Int16 = int
 
 
-class Int32(int):
-    pass
+Int32 = int
+
+Int64 = int
+
+UInt16 = int
+
+UInt32 = int
+
+UInt64 = int
 
 
-class Int64(int):
-    pass
-
-
-class UInt16(int):
-    pass
-
-
-class UInt32(int):
-    pass
-
-
-class UInt64(int):
-    pass
-
-
-class Boolean:  # Boolean(bool) is not supported in Python
-    pass
+Boolean = bool  # Boolean(bool) is not supported in Python
 
 
 class Double(float):
@@ -145,8 +134,7 @@ class Null:  # Null(NoneType) is not supported in Python
     pass
 
 
-class String:  # Passing None as arg will result in unepected behaviour so disabling
-    pass
+String = str  # Passing None as arg will result in unepected behaviour so disabling
 
 
 class CharArray(str):

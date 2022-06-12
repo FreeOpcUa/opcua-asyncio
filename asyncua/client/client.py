@@ -167,7 +167,7 @@ class Client:
             certificate = uacrypto.CertProperties(certificate)
         if not isinstance(private_key, uacrypto.CertProperties):
             private_key = uacrypto.CertProperties(private_key, password=private_key_password)
-        return await self._set_security(policy, certificate, private_key, server_certificate, mode)
+        return await self._set_security(policy, certificate, private_key, server_certificate, mode)  # type: ignore
 
     async def _set_security(
         self,
@@ -443,7 +443,7 @@ class Client:
                 return self.security_policy.URI
         return self.security_policy.URI
 
-    async def activate_session(self, username: str = None, password: str = None, certificate=None):
+    async def activate_session(self, username: Optional[str] = None, password: Optional[str] = None, certificate=None):
         """
         Activate session using either username and password or private_key
         """
@@ -464,7 +464,7 @@ class Client:
         elif certificate:
             self._add_certificate_auth(params, certificate, challenge)
         else:
-            self._add_user_auth(params, username, password)
+            self._add_user_auth(params, username, password)  # type: ignore
         return await self.uaclient.activate_session(params)
 
     def _add_anonymous_auth(self, params):

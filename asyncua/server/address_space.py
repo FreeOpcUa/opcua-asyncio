@@ -348,7 +348,7 @@ class NodeManagementService:
             ua.DataValue(ua.Variant(item.NodeClass, ua.VariantType.Int32))
         )
         # add requested attrs
-        self._add_nodeattributes(item.NodeAttributes, nodedata, add_timestamps)
+        self._add_nodeattributes(item.NodeAttributes, nodedata, add_timestamps)  # type: ignore
 
     def _add_unique_reference(self, nodedata: NodeData, desc: ua.ReferenceDescription):
         for r in nodedata.references:
@@ -512,8 +512,8 @@ class NodeManagementService:
     ):
         if attributes.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
             dv = ua.DataValue(
-                ua.Variant(getattr(attributes, name), vtype, is_array=is_array),
-                SourceTimestamp=datetime.utcnow() if add_timestamps else None,
+                ua.Variant(getattr(attributes, name), vtype, is_array=is_array),  # type: ignore
+                SourceTimestamp=datetime.utcnow() if add_timestamps else None,  # type: ignore
             )
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
 

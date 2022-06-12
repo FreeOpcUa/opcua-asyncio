@@ -12,6 +12,7 @@ from asyncua import server
 from asyncua import common
 from asyncua.common import node, subscription, shortcuts, xmlexporter, type_dictionary_builder
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -665,7 +666,7 @@ def new_struct_field(
 ) -> ua.StructureField:
     if isinstance(dtype, SyncNode):
         dtype = dtype.aio_obj
-    return common.structures104.new_struct_field(name, dtype, array, optional, description)
+    return common.structures104.new_struct_field(name, dtype, array, optional, description)  # type: ignore
 
 
 @syncfunc(aio_func=common.structures104.new_enum)
