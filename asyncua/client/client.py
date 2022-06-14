@@ -443,10 +443,11 @@ class Client:
                 return self.security_policy.URI
         return self.security_policy.URI
 
-    async def activate_session(self, username: str = None, password: str = None, certificate=None):
+    async def activate_session(self, username: str = None, password: str = None, user_certificate=None):
         """
         Activate session using either username and password or private_key
         """
+        certificate = user_certificate or self.user_certificate
         params = ua.ActivateSessionParameters()
         challenge = b""
         if self.security_policy.peer_certificate is not None:
