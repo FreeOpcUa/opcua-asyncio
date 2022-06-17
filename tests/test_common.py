@@ -1534,3 +1534,18 @@ async def test_sub_class(opc):
     val = await var.read_value()
     assert val == struct_with_sub
     assert val.DataSetSource == struct_with_sub.DataSetSource
+
+
+async def test_object_meth_args(opc):
+    # Test if InputArguments and OutputArguments are create in an instantiated object
+    base_otype = opc.opc.get_node(ua.ObjectIds.BaseObjectType)
+    custom_otype = await base_otype.add_object_type(2, 'ObjectWithMethodTestArgs')
+
+    @uamethod
+    def func(_parent, value):
+        return value * 2
+    meth = await custom_otype.add_method(ua.NodeId('ObjectWithMethodTestArgsTest', 2), ua.QualifiedName('ObjectWithMethodTestArgsTest', 2), func, [ua.VariantType.Int64], [ua.VariantType.Int64])
+    await meth.set_modelling_rule(True)
+    obj = await opc.opc.nodes.objects.add_object(2, 'ObjectWithMethodsArgs', custom_otype)
+    await obj.get_child(['2:ObjectWithMethodTestArgsTest', 'InputArguments'])
+    await obj.get_child(['2:ObjectWithMethodTestArgsTest', 'OutputArguments'])
