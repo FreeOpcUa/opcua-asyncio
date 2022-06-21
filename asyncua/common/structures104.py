@@ -62,7 +62,12 @@ async def new_struct(
     simple way to create a new structure
     return the created data type node and the list of encoding nodes
     """
-    dtype = await create_data_type(server.nodes.base_structure_type, idx, name)
+    
+    type_name = server.nodes.base_structure_type
+    if is_union:
+        type_name = server.nodes.base_union_type
+    
+    dtype = await create_data_type(type_name, idx, name)
 
     if isinstance(idx, ua.NodeId):
         # user has provided a node id, we cannot reuse it
