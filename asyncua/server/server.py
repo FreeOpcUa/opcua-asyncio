@@ -582,11 +582,11 @@ class Server:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
 
-    async def import_xml(self, path=None, xmlstring=None) -> Coroutine:
+    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Coroutine:
         """
         Import nodes defined in xml
         """
-        importer = XmlImporter(self)
+        importer = XmlImporter(self, strict_mode)
         return await importer.import_xml(path, xmlstring)
 
     async def export_xml(self, nodes, path, export_values: bool = False):
