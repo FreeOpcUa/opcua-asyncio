@@ -116,7 +116,6 @@ class XmlImporter:
         for nodedata in nodes_parsed:  # self.parser:
             try:
                 node = await self._add_node_data(nodedata, no_namespace_migration=True)
-                raise Exception('test')
             except Exception as e:
                 _logger.warning("failure adding node %s %s", nodedata, e)
                 if self.strict_mode:
