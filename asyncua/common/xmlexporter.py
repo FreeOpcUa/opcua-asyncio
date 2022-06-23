@@ -319,7 +319,7 @@ class XmlExporter:
         for field in sdef.Fields:
             field_el = Et.SubElement(sdef_el, 'Field')
             field_el.attrib['Name'] = field.Name
-            field_el.attrib['DataType'] = field.DataType.to_string()
+            field_el.attrib['DataType'] = self._node_to_string(field.DataType)
             if field.ValueRank != -1:
                 field_el.attrib['ValueRank'] = str(int(field.ValueRank))
             if field.ArrayDimensions:
