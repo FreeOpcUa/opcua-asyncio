@@ -308,19 +308,15 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_exis
     ch = await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype)
     for desc in ch:
         sdef = await _read_data_type_definition(server, desc, read_existing=add_existing)
-        if clean_name(desc.BrowseName.Name) == 'Union':
-            # Union don't contain a type defintion but there could be subtypes
+        if sdef:
+            name = clean_name(desc.BrowseName.Name)
+            if parent_sdef:
+                for sfield in reversed(parent_sdef.Fields):
+                    sdef.Fields.insert(0, sfield)
+            dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
+            await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef, add_existing=add_existing)
+        else:
             await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef, add_existing=add_existing)
-        elif sdef is not None:
-            if sdef:
-                name = clean_name(desc.BrowseName.Name)
-                if parent_sdef:
-                    for sfield in reversed(parent_sdef.Fields):
-                        sdef.Fields.insert(0, sfield)
-                dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
-                await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef, add_existing=add_existing)
-            else:
-                await _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef, add_existing=add_existing)
 
 
 async def _get_parent_types(node: Node):
