@@ -447,6 +447,7 @@ class Client:
         """
         Activate session using either username and password or private_key
         """
+        user_certificate = certificate or self.user_certificate
         params = ua.ActivateSessionParameters()
         challenge = b""
         if self.security_policy.peer_certificate is not None:
@@ -459,10 +460,10 @@ class Client:
             params.ClientSignature.Algorithm = (security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI)
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
         params.LocaleIds = self._locale
-        if not username and not certificate:
+        if not username and not user_certificate:
             self._add_anonymous_auth(params)
-        elif certificate:
-            self._add_certificate_auth(params, certificate, challenge)
+        elif user_certificate:
+            self._add_certificate_auth(params, user_certificate, challenge)
         else:
             self._add_user_auth(params, username, password)
         return await self.uaclient.activate_session(params)
