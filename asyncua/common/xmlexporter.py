@@ -190,9 +190,12 @@ class XmlExporter:
         nodeid = node.nodeid
         parent = await node.get_parent()
         displayname = (await node.read_display_name()).Text
-        desc = await node.read_description()
-        if desc:
-            desc = desc.Text
+        try:
+            desc = await node.read_description()
+            if desc:
+                desc = desc.Text
+        except ua.uaerrors.BadAttributeIdInvalid:
+            desc = None
         node_el = Et.SubElement(self.etree.getroot(), nodetype)
         node_el.attrib["NodeId"] = self._node_to_string(nodeid)
         node_el.attrib["BrowseName"] = self._bname_to_string(browsename)
@@ -235,8 +238,8 @@ class XmlExporter:
         rank = await node.read_value_rank()
         if rank != -1:
             el.attrib["ValueRank"] = str(int(rank))
-        dim = await node.read_attribute(ua.AttributeIds.ArrayDimensions)
-        if dim.Value.Value:
+        dim = await node.read_attribute(ua.AttributeIds.ArrayDimensions, raise_on_bad_status=False)
+        if dim is not None and dim.Value.Value:
             el.attrib["ArrayDimensions"] = ",".join([str(i) for i in dim.Value.Value])
         el.attrib["DataType"] = dtype_name
         if export_value:
@@ -287,7 +290,7 @@ class XmlExporter:
 
     async def add_etree_reference_type(self, obj):
         obj_el = await self._add_node_common("UAReferenceType", obj)
-        var = await obj.read_attribute(ua.AttributeIds.InverseName)
+        var = await obj.read_attribute(ua.AttributeIds.InverseName, raise_on_bad_status=False)
         if var is not None and var.Value.Value is not None and var.Value.Value.Text is not None:
             self._add_sub_el(obj_el, 'InverseName', var.Value.Value.Text)
 
@@ -296,9 +299,9 @@ class XmlExporter:
         Add a UA data type element to the XML etree
         """
         obj_el = await self._add_node_common("UADataType", obj)
-        dv = await obj.read_attribute(ua.AttributeIds.DataTypeDefinition)
-        sdef = dv.Value.Value
-        if sdef:
+        dv = await obj.read_attribute(ua.AttributeIds.DataTypeDefinition, raise_on_bad_status=False)
+        if dv is not None and dv.Value.Value:
+            sdef = dv.Value.Value
             # FIXME: can probably get that name somewhere else
             bname = await obj.read_attribute(ua.AttributeIds.BrowseName)
             bname = bname.Value.Value
@@ -415,10 +418,10 @@ class XmlExporter:
             await self._all_fields_to_etree(el, val)
 
     async def value_to_etree(self, el, dtype_name, dtype, node):
-        var = (await node.read_data_value()).Value
-        if var.Value is not None:
+        var = await node.read_data_value(raise_on_bad_status=False)
+        if var.Value.Value is not None:
             val_el = Et.SubElement(el, 'Value')
-            await self._value_to_etree(val_el, dtype_name, dtype, var.Value)
+            await self._value_to_etree(val_el, dtype_name, dtype, var.Value.Value)
 
     async def _value_to_etree(self, el, type_name, dtype, val):
         if val is None:
