@@ -1072,7 +1072,7 @@ def register_basetype(name, nodeid, class_type):
     Register a new allias of basetypes for automatic decoding and make them available in ua module
     """
     logger.info("registring new basetype alias: %s %s %s", name, nodeid, class_type)
-    basetype_by_datatype[nodeid] = class_type
+    basetype_by_datatype[nodeid] = name
     basetype_datatypes[class_type] = nodeid
     import asyncua.ua
 
