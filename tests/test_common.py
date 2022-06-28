@@ -1549,3 +1549,29 @@ async def test_object_meth_args(opc):
     obj = await opc.opc.nodes.objects.add_object(2, 'ObjectWithMethodsArgs', custom_otype)
     await obj.get_child(['2:ObjectWithMethodTestArgsTest', 'InputArguments'])
     await obj.get_child(['2:ObjectWithMethodTestArgsTest', 'OutputArguments'])
+
+
+async def test_alias(opc):
+    '''
+    Testing renaming buildin datatypes like UInt32, str and test it in a struct
+    '''
+    idx = 4
+    parent = opc.opc.get_node(ua.ObjectIds.String)
+    dt_str = await parent.add_data_type(ua.NodeId(NamespaceIndex=idx), "MyString")
+
+    data_type, _ = await new_struct(opc.opc, idx, "MyAliasStruct", [
+        new_struct_field("MyStringType", dt_str),
+    ])
+    await opc.opc.load_data_type_definitions()
+    assert type(ua.MyString()) == ua.String
+    var = await opc.opc.nodes.objects.add_variable(idx, "AliasedString", '1234', datatype=dt_str.nodeid)
+    val = await var.read_value()
+    assert val == '1234'
+
+    v = ua.MyAliasStruct()
+    var = await opc.opc.nodes.objects.add_variable(idx, "AliasedStruct", v, datatype=data_type.nodeid)
+    val = await var.read_value()
+    assert val == v
+    v.MyStringType = '1234'
+    await var.write_value(v)
+    val = await var.read_value()
