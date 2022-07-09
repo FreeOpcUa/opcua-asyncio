@@ -1575,3 +1575,18 @@ async def test_alias(opc):
     v.MyStringType = '1234'
     await var.write_value(v)
     val = await var.read_value()
+
+async def test_custom_struct_with_strange_chars(opc):
+    idx = 4
+
+    await new_struct(opc.opc, ua.StringNodeId('Toto"æ', 99), ua.QualifiedName("Siemens", 99), [
+        new_struct_field("MyBool", ua.VariantType.Boolean),
+        new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+    ])
+
+    await opc.opc.load_data_type_definitions()
+    mystruct = ua.Siemens()
+    mystruct.MyUInt32 = [78, 79]
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_siemens_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    val = await var.read_value()
+    assert val.MyUInt32 == [78, 79]
