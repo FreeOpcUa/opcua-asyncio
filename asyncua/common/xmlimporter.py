@@ -150,13 +150,12 @@ class XmlImporter:
             node_ref_list: List[ua.ReferenceDescription] = await node.get_references()
 
             for ref in node_ref_list:
-                if ref.ReferenceTypeId.Identifier in __unidirectional_types:
-                    continue
-                ref_key = (new_node_id, ref.NodeId, ref.ReferenceTypeId)
-                node_reference_map[ref_key] = ref
-
                 dangling_refs_to_missing_nodes.discard(new_node_id)
                 dangling_refs_to_missing_nodes.discard(ref.NodeId)
+
+                if ref.ReferenceTypeId.Identifier not in __unidirectional_types:
+                    ref_key = (new_node_id, ref.NodeId, ref.ReferenceTypeId)
+                    node_reference_map[ref_key] = ref
 
         for node in dangling_refs_to_missing_nodes:
             _logger.warning("Node %s has no references, so it does not exist in Server!", node)
