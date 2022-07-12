@@ -26,7 +26,7 @@ class UASocketProtocol(asyncio.Protocol):
         :param security_policy: Security policy (optional)
         """
         self.logger = logging.getLogger(f"{__name__}.UASocketProtocol")
-        self.transport = None
+        self.transport: Optional[asyncio.Transport] = None
         self.receive_buffer: Optional[bytes] = None
         self.is_receiving = False
         self.timeout = timeout
@@ -39,7 +39,7 @@ class UASocketProtocol(asyncio.Protocol):
         self.closed: bool = False
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
         # passing back the processed response to the request so that it can return it.
-        self._open_secure_channel_exchange = None
+        self._open_secure_channel_exchange: Union[ua.OpenSecureChannelResponse, ua.OpenSecureChannelParameters, None] = None
 
     def connection_made(self, transport: asyncio.Transport):  # type: ignore
         self.state = self.OPEN
@@ -78,10 +78,11 @@ class UASocketProtocol(asyncio.Protocol):
                 msg = self._connection.receive_from_header_and_body(header, buf)
                 self._process_received_message(msg)
                 if header.MessageType == ua.MessageType.SecureOpen:
-                    params = self._open_secure_channel_exchange
-                    self._open_secure_channel_exchange = struct_from_binary(ua.OpenSecureChannelResponse, msg.body())
-                    self._open_secure_channel_exchange.ResponseHeader.ServiceResult.check()
-                    self._connection.set_channel(self._open_secure_channel_exchange.Parameters, params.RequestType, params.ClientNonce)
+                    params: ua.OpenSecureChannelParameters = self._open_secure_channel_exchange
+                    response: ua.OpenSecureChannelResponse = struct_from_binary(ua.OpenSecureChannelResponse, msg.body())
+                    response.ResponseHeader.ServiceResult.check()
+                    self._open_secure_channel_exchange = response
+                    self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
                 if not buf:
                     return
                 # Buffer still has bytes left, try to process again
@@ -131,7 +132,8 @@ class UASocketProtocol(asyncio.Protocol):
             self._connection.revolve_tokens()
 
         msg = self._connection.message_to_binary(binreq, message_type=message_type, request_id=self._request_id)
-        self.transport.write(msg)
+        if self.transport is not None:
+            self.transport.write(msg)
         return future
 
     async def send_request(self, request, timeout: Optional[float] = None, message_type=ua.MessageType.SecureMessage):
@@ -200,7 +202,8 @@ class UASocketProtocol(asyncio.Protocol):
         hello.MaxChunkCount = max_chunkcount
         ack = asyncio.Future()
         self._callbackmap[0] = ack
-        self.transport.write(uatcp_to_binary(ua.MessageType.Hello, hello))
+        if self.transport is not None:
+            self.transport.write(uatcp_to_binary(ua.MessageType.Hello, hello))
         return await asyncio.wait_for(ack, self.timeout)
 
     async def open_secure_channel(self, params):
@@ -249,7 +252,7 @@ class UaClient:
         self._subscription_callbacks = {}
         self._timeout = timeout
         self.security_policy = ua.SecurityPolicy()
-        self.protocol: Optional[UASocketProtocol] = None
+        self.protocol: UASocketProtocol = None
         self._publish_task = None
 
     def set_security(self, policy: ua.SecurityPolicy):

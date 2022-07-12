@@ -1,13 +1,8 @@
 import os
 import pytest
-import sys
 import asyncio
 
-if sys.version_info >= (3, 6):
-    from asyncio import TimeoutError
-else:
-    from concurrent.futures import TimeoutError
-
+from asyncio import TimeoutError
 from asyncua import Client
 from asyncua import Server
 from asyncua import ua
@@ -139,7 +134,8 @@ async def test_basic256(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
     await clt.set_security_string(
-      f"Basic256Sha256,Sign,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem,{cert}")
+        f"Basic256Sha256,Sign,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem,{cert}"
+    )
     async with clt:
         assert await clt.nodes.objects.get_children()
 
@@ -163,7 +159,7 @@ async def test_basic256_encrypt_success(srv_crypto_all_certs):
         None,
         cert,
         ua.MessageSecurityMode.SignAndEncrypt
-     )
+    )
 
     async with clt:
         assert await clt.nodes.objects.get_children()
@@ -281,7 +277,9 @@ async def test_encrypted_private_key_handling_failure(srv_crypto_one_cert):
 async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
     _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
-    with pytest.raises(TimeoutError):
+    with pytest.raises((AttributeError, TimeoutError)):
+        # either exception can be raise, depending on used python version
+        # and crypto library version
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             peer_creds['certificate'],
@@ -292,6 +290,7 @@ async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
         )
         async with clt:
             assert await clt.get_objects_node().get_children()
+
 
 async def test_secure_channel_key_expiration(srv_crypto_one_cert, mocker):
     timeout = 1
@@ -327,7 +326,7 @@ async def test_secure_channel_key_expiration(srv_crypto_one_cert, mocker):
         assert mock_decry_reset.call_count == 0
         assert mock_verif_reset.call_count == 0
 
-        await asyncio.sleep(timeout*0.3)
+        await asyncio.sleep(timeout * 0.3)
         assert await clt.get_objects_node().get_children()
 
         assert sym_crypto.key_expiration > 0
@@ -338,6 +337,7 @@ async def test_secure_channel_key_expiration(srv_crypto_one_cert, mocker):
         assert mock_verif_reset.call_count == 1
         assert clt.uaclient.security_policy.symmetric_cryptography.Prev_Verifier is None
         assert clt.uaclient.security_policy.symmetric_cryptography.Prev_Decryptor is None
+
 
 async def test_always_catch_new_cert_on_set_security():
     """
@@ -392,7 +392,7 @@ async def test_always_catch_new_cert_on_set_security():
 async def test_anonymous_rejection():
     peer_certificate = peer_creds["certificate"]
     user_manager = CertificateUserManager()
-    key, cert =  srv_crypto_params[0]
+    key, cert = srv_crypto_params[0]
     await user_manager.add_admin(peer_certificate, 'test1')
 
     srv = Server(user_manager=user_manager)
@@ -415,7 +415,7 @@ async def test_anonymous_rejection():
     )
     with pytest.raises(ua.UaStatusCodeError) as exc_info:
         await clt.connect()
+    with pytest.raises(ua.UaStatusCodeError):
         await clt.disconnect()
     assert ua.StatusCodes.BadIdentityTokenRejected == exc_info.type.code
     await srv.stop()
-

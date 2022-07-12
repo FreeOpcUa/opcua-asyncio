@@ -433,7 +433,7 @@ class Server:
         if self._discovery_handle:
             self._discovery_handle.cancel()
         if self._discovery_clients:
-            await asyncio.wait([client.disconnect() for client in self._discovery_clients.values()])
+            await asyncio.gather(*[client.disconnect() for client in self._discovery_clients.values()])
         await self.bserver.stop()
         await self.iserver.stop()
         _logger.debug("%s Internal server stopped, everything closed", self)
@@ -582,33 +582,35 @@ class Server:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
 
-    async def import_xml(self, path=None, xmlstring=None) -> Coroutine:
+    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Coroutine:
         """
         Import nodes defined in xml
         """
-        importer = XmlImporter(self)
+        importer = XmlImporter(self, strict_mode)
         return await importer.import_xml(path, xmlstring)
 
-    async def export_xml(self, nodes, path):
+    async def export_xml(self, nodes, path, export_values: bool = False):
         """
         Export defined nodes to xml
+        :param export_value: export values from variants
         """
-        exp = XmlExporter(self)
+        exp = XmlExporter(self, export_values=export_values)
         await exp.build_etree(nodes)
         await exp.write_xml(path)
 
-    async def export_xml_by_ns(self, path: str, namespaces: list = None):
+    async def export_xml_by_ns(self, path: str, namespaces: list = None, export_values: bool = False):
         """
         Export nodes of one or more namespaces to an XML file.
         Namespaces used by nodes are always exported for consistency.
         :param path: name of the xml file to write
         :param namespaces: list of string uris or int indexes of the namespace to export,
+        :param export_values: export values from variants
          if not provide all ns are used except 0
         """
         if namespaces is None:
             namespaces = []
         nodes = await get_nodes_of_namespace(self, namespaces)
-        await self.export_xml(nodes, path)
+        await self.export_xml(nodes, path, export_values=export_values)
 
     async def delete_nodes(self, nodes, recursive=False) -> Coroutine:
         return await delete_nodes(self.iserver.isession, nodes, recursive)

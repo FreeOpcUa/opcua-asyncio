@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 from enum import IntEnum, EnumMeta
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 
 from xml.etree import ElementTree as ET
@@ -65,6 +65,7 @@ class Struct:
         self.name = clean_name(name)
         self.fields = []
         self.typeid = None
+        self.option_counter = 0
 
     def __str__(self):
         return f"Struct(name={self.name}, fields={self.fields}"
@@ -82,16 +83,23 @@ class {self.name}:
     '''
 
 """
+        if self.option_counter > 0:
+            field = Field("Encoding")
+            field.uatype = "UInt32"
+            self.fields = [field] + self.fields
         for sfield in self.fields:
             uatype = f"'ua.{sfield.uatype}'"
             if sfield.array:
                 uatype = f"List[{uatype}]"
             if uatype == 'List[ua.Char]':
                 uatype = 'String'
-            uavalue = sfield.value
-            if isinstance(uavalue, str) and uavalue.startswith("ua."):
-                uavalue = f"field(default_factory=lambda: {uavalue})"
-            code += f"    {sfield.name}:{uatype} = {uavalue}\n"
+            if sfield.is_optional:
+                code += f"    {sfield.name}: Optional[{uatype}] = None\n"
+            else:
+                uavalue = sfield.value
+                if isinstance(uavalue, str) and uavalue.startswith("ua."):
+                    uavalue = f"field(default_factory=lambda: {uavalue})"
+                code += f"    {sfield.name}:{uatype} = {uavalue}\n"
         return code
 
 
@@ -101,6 +109,7 @@ class Field(object):
         self.uatype = None
         self.value = None
         self.array = False
+        self.is_optional = False
 
     def __str__(self):
         return f"Field(name={self.name}, uatype={self.uatype})"
@@ -143,14 +152,22 @@ class StructGenerator(object):
                 for xmlfield in child:
                     if xmlfield.tag.endswith("Field"):
                         name = xmlfield.get("Name")
+                        _clean_name = clean_name(name)
                         if name.startswith("NoOf"):
                             array = True
                             continue
-                        field = Field(clean_name(name))
-                        field.uatype = xmlfield.get("TypeName")
-                        if ":" in field.uatype:
-                            field.uatype = field.uatype.split(":")[1]
-                        field.uatype = clean_name(field.uatype)
+                        _type = xmlfield.get("TypeName")
+                        if ":" in _type:
+                            _type = _type.split(":")[1]
+                        if _type == 'Bit':
+                            # Bits are used for bit fields and filler ignore
+                            continue
+                        field = Field(_clean_name)
+                        field.uatype = clean_name(_type)
+                        if xmlfield.get("SwitchField", '') != '':
+                            # Optional Field
+                            field.is_optional = True
+                            struct.option_counter += 1
                         field.value = get_default_value(field.uatype, enums)
                         if array:
                             field.array = True
@@ -279,6 +296,8 @@ def _generate_python_class(model, env=None):
         env['field'] = field
     if "List" not in env:
         env['List'] = List
+    if 'Optional' not in env:
+        env['Optional'] = Optional
     # generate classes one by one and add them to dict
     for element in model:
         code = element.get_code()

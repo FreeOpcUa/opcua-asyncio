@@ -18,13 +18,19 @@ def _parse_version(version_string: str) -> List[int]:
     return [int(v) for v in version_string.split('.')]
 
 class XmlImporter:
-    def __init__(self, server):
+
+    def __init__(self, server, strict_mode=True):
+        '''
+        strict_mode: stop on a error, if False only a error message is logged,
+                     but the import continues
+        '''
         self.parser = None
         self.server = server
         self.namespaces: Dict[int, int] = {}  # Dict[IndexInXml, IndexInServer]
         self.aliases: Dict[str, ua.NodeId] = {}
-        self._unmigrated_aliases: Dict[str, str] = {} # Dict[name, nodeId string]
+        self._unmigrated_aliases: Dict[str, str] = {}  # Dict[name, nodeId string]
         self.refs = None
+        self.strict_mode = strict_mode
 
     async def _map_namespaces(self):
         """
@@ -110,9 +116,10 @@ class XmlImporter:
         for nodedata in nodes_parsed:  # self.parser:
             try:
                 node = await self._add_node_data(nodedata, no_namespace_migration=True)
-            except Exception:
-                _logger.warning("failure adding node %s", nodedata)
-                raise
+            except Exception as e:
+                _logger.warning("failure adding node %s %s", nodedata, e)
+                if self.strict_mode:
+                    raise
             nodes.append(node)
         self.refs, remaining_refs = [], self.refs
         await self._add_references(remaining_refs)

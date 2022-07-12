@@ -33,7 +33,10 @@ class XmlExporter:
         ]
     }
 
-    def __init__(self, server):
+    def __init__(self, server, export_values: bool = False):
+        """
+        param: export_values: exports values from variants (CustomDataTypes are not support!)
+        """
         self.logger = logging.getLogger(__name__)
         self.server = server
         self.aliases = {}
@@ -46,6 +49,9 @@ class XmlExporter:
         node_write_attributes['xmlns'] = 'http://opcfoundation.org/UA/2011/03/UANodeSet.xsd'
 
         self.etree = Et.ElementTree(Et.Element('UANodeSet', node_write_attributes))
+        self._export_values = export_values
+        if self._export_values:
+            self.logger.warning("Exporting values of variables is limited and can result in invalid xmls.")
 
     async def build_etree(self, node_list):
         """
@@ -184,9 +190,12 @@ class XmlExporter:
         nodeid = node.nodeid
         parent = await node.get_parent()
         displayname = (await node.read_display_name()).Text
-        desc = await node.read_description()
-        if desc:
-            desc = desc.Text
+        try:
+            desc = await node.read_description()
+            if desc:
+                desc = desc.Text
+        except ua.uaerrors.BadAttributeIdInvalid:
+            desc = None
         node_el = Et.SubElement(self.etree.getroot(), nodetype)
         node_el.attrib["NodeId"] = self._node_to_string(nodeid)
         node_el.attrib["BrowseName"] = self._bname_to_string(browsename)
@@ -219,7 +228,7 @@ class XmlExporter:
         if abstract:
             obj_el.attrib["IsAbstract"] = 'true'
 
-    async def add_variable_common(self, node, el):
+    async def add_variable_common(self, node, el, export_value: bool):
         dtype = await node.read_data_type()
         if dtype.NamespaceIndex == 0 and dtype.Identifier in o_ids.ObjectIdNames:
             dtype_name = o_ids.ObjectIdNames[dtype.Identifier]
@@ -229,18 +238,19 @@ class XmlExporter:
         rank = await node.read_value_rank()
         if rank != -1:
             el.attrib["ValueRank"] = str(int(rank))
-        dim = await node.read_attribute(ua.AttributeIds.ArrayDimensions)
-        if dim.Value.Value:
+        dim = await node.read_attribute(ua.AttributeIds.ArrayDimensions, raise_on_bad_status=False)
+        if dim is not None and dim.Value.Value:
             el.attrib["ArrayDimensions"] = ",".join([str(i) for i in dim.Value.Value])
         el.attrib["DataType"] = dtype_name
-        await self.value_to_etree(el, dtype_name, dtype, node)
+        if export_value:
+            await self.value_to_etree(el, dtype_name, dtype, node)
 
     async def add_etree_variable(self, node):
         """
         Add a UA variable element to the XML etree
         """
         var_el = await self._add_node_common("UAVariable", node)
-        await self.add_variable_common(node, var_el)
+        await self.add_variable_common(node, var_el, self._export_values)
 
         accesslevel = (await node.read_attribute(ua.AttributeIds.AccessLevel)).Value.Value
         useraccesslevel = (await node.read_attribute(ua.AttributeIds.UserAccessLevel)).Value.Value
@@ -264,7 +274,7 @@ class XmlExporter:
         Add a UA variable type element to the XML etree
         """
         var_el = await self._add_node_common("UAVariableType", node)
-        await self.add_variable_common(node, var_el)
+        await self.add_variable_common(node, var_el, True)
         abstract = await node.read_attribute(ua.AttributeIds.IsAbstract)
         if abstract.Value.Value:
             var_el.attrib["IsAbstract"] = "true"
@@ -280,7 +290,7 @@ class XmlExporter:
 
     async def add_etree_reference_type(self, obj):
         obj_el = await self._add_node_common("UAReferenceType", obj)
-        var = await obj.read_attribute(ua.AttributeIds.InverseName)
+        var = await obj.read_attribute(ua.AttributeIds.InverseName, raise_on_bad_status=False)
         if var is not None and var.Value.Value is not None and var.Value.Value.Text is not None:
             self._add_sub_el(obj_el, 'InverseName', var.Value.Value.Text)
 
@@ -289,9 +299,9 @@ class XmlExporter:
         Add a UA data type element to the XML etree
         """
         obj_el = await self._add_node_common("UADataType", obj)
-        dv = await obj.read_attribute(ua.AttributeIds.DataTypeDefinition)
-        sdef = dv.Value.Value
-        if sdef:
+        dv = await obj.read_attribute(ua.AttributeIds.DataTypeDefinition, raise_on_bad_status=False)
+        if dv is not None and dv.Value.Value:
+            sdef = dv.Value.Value
             # FIXME: can probably get that name somewhere else
             bname = await obj.read_attribute(ua.AttributeIds.BrowseName)
             bname = bname.Value.Value
@@ -312,7 +322,7 @@ class XmlExporter:
         for field in sdef.Fields:
             field_el = Et.SubElement(sdef_el, 'Field')
             field_el.attrib['Name'] = field.Name
-            field_el.attrib['DataType'] = field.DataType.to_string()
+            field_el.attrib['DataType'] = self._node_to_string(field.DataType)
             if field.ValueRank != -1:
                 field_el.attrib['ValueRank'] = str(int(field.ValueRank))
             if field.ArrayDimensions:
@@ -339,7 +349,7 @@ class XmlExporter:
         for nodeid in ordered_keys:
             name = self.aliases[nodeid]
             ref_el = Et.SubElement(aliases_el, 'Alias', Alias=name)
-            ref_el.text = nodeid.to_string()
+            ref_el.text = self._node_to_string(nodeid)
         # insert behind the namespace element
         self.etree.getroot().insert(1, aliases_el)
 
@@ -350,7 +360,7 @@ class XmlExporter:
             if ref.ReferenceTypeId.Identifier in o_ids.ObjectIdNames:
                 ref_name = o_ids.ObjectIdNames[ref.ReferenceTypeId.Identifier]
             else:
-                ref_name = ref.ReferenceTypeId.to_string()
+                ref_name = self._node_to_string(ref.ReferenceTypeId)
             ref_el = Et.SubElement(refs_el, 'Reference')
             ref_el.attrib['ReferenceType'] = ref_name
             if not ref.IsForward:
@@ -408,10 +418,10 @@ class XmlExporter:
             await self._all_fields_to_etree(el, val)
 
     async def value_to_etree(self, el, dtype_name, dtype, node):
-        var = (await node.read_data_value()).Value
-        if var.Value is not None:
+        var = await node.read_data_value(raise_on_bad_status=False)
+        if var.Value.Value is not None:
             val_el = Et.SubElement(el, 'Value')
-            await self._value_to_etree(val_el, dtype_name, dtype, var.Value)
+            await self._value_to_etree(val_el, dtype_name, dtype, var.Value.Value)
 
     async def _value_to_etree(self, el, type_name, dtype, val):
         if val is None:

@@ -400,7 +400,7 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
     results[0].StatusCode.check()
     method = make_node(parent.server, results[0].AddedNodeId)
     if inputs:
-        await create_property(
+        prob = await create_property(
             method,
             ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex),
             ua.QualifiedName("InputArguments", 0),
@@ -408,8 +408,9 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
             varianttype=ua.VariantType.ExtensionObject,
             datatype=ua.ObjectIds.Argument
         )
+        await prob.set_modelling_rule(True)
     if outputs:
-        await create_property(
+        prob = await create_property(
             method,
             ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex),
             ua.QualifiedName("OutputArguments", 0),
@@ -417,6 +418,7 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
             varianttype=ua.VariantType.ExtensionObject,
             datatype=ua.ObjectIds.Argument
         )
+        await prob.set_modelling_rule(True)
     if hasattr(parent.server, "add_method_callback"):
         parent.server.add_method_callback(method.nodeid, callback)
     return results[0].AddedNodeId

@@ -330,7 +330,7 @@ class Server:
         return SyncNode(self.tloop, self.aio_obj.get_node(nodeid))
 
     @syncmethod
-    def import_xml(self, path=None, xmlstring=None):
+    def import_xml(self, path=None, xmlstring=None, strict_mode=True):
         pass
 
     @syncmethod

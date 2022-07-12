@@ -1062,6 +1062,23 @@ def get_default_value(vtype):
     raise RuntimeError(f"function take a uatype as argument, got: {vtype}")
 
 
+basetype_by_datatype = {}
+basetype_datatypes = {}
+
+
+# register of alias of basetypes
+def register_basetype(name, nodeid, class_type):
+    """
+    Register a new allias of basetypes for automatic decoding and make them available in ua module
+    """
+    logger.info("registring new basetype alias: %s %s %s", name, nodeid, class_type)
+    basetype_by_datatype[nodeid] = name
+    basetype_datatypes[class_type] = nodeid
+    import asyncua.ua
+
+    setattr(asyncua.ua, name, class_type)
+
+
 # register of custom enums (Those loaded with load_enums())
 enums_by_datatype = {}
 enums_datatypes = {}
