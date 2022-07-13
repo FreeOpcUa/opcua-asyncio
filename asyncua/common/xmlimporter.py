@@ -138,8 +138,7 @@ class XmlImporter:
                                   ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType,
                                   ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType,
                                   ua.ObjectIds.StateType, ua.ObjectIds.TransitionType,
-                                  ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface,
-                                  ua.ObjectIds.HasTypeDefinition, ua.ObjectIds.HasComponent}
+                                  ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
         dangling_refs_to_missing_nodes = set(new_nodes)
 
         RefSpecKey = Tuple[ua.NodeId, ua.NodeId, ua.NodeId] # (source_node_id, target_node_id, ref_type_id)
