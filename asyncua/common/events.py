@@ -154,7 +154,7 @@ async def _append_new_attribute_to_select_clauses(select_clauses: List[ua.Simple
         op = ua.SimpleAttributeOperand()
         op.AttributeId = ua.AttributeIds.Value
         op.BrowsePath = browse_path
-        op.TypeDefinitionId = ua.NodeId(identifier=ua.ObjectIds.BaseEventType, namespaceidx=0, nodeidtype=ua.NodeIdType.Numeric)
+        op.TypeDefinitionId = ua.NodeId(ua.ObjectIds.BaseEventType)
         select_clauses.append(op)
 
 
@@ -193,10 +193,9 @@ async def where_clause_from_evtype(evtypes: List["Node"]):
 
     # the first operand is the attribute event type
     op = ua.SimpleAttributeOperand()
-    # op.TypeDefinitionId = evtype.nodeid
     op.BrowsePath.append(ua.QualifiedName("EventType", 0))
     op.AttributeId = ua.AttributeIds.Value
-    op.TypeDefinitionId = ua.NodeId(identifier=ua.ObjectIds.BaseEventType, namespaceidx=0, nodeidtype=ua.NodeIdType.Numeric)
+    op.TypeDefinitionId = ua.NodeId(ua.ObjectIds.BaseEventType)
     el.FilterOperands.append(op)
     # now create a list of all subtypes we want to accept
     subtypes = []
