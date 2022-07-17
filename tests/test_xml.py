@@ -582,3 +582,17 @@ async def test_disable_xml_export_without_value(opc, tmpdir):
     assert dv.Value != v.Value
     assert v.Value.Value is None
     await opc.opc.delete_nodes([o2])
+
+
+async def test_if_missing_meta_data_is_added(opc):
+    # check if missing namespace infos are added
+    urn = "http://yourorganisation.org/testenum104/"
+    idx = await opc.opc.register_namespace(urn)
+    await opc.opc.import_xml(CUSTOM_REQ_XML_PASS_PATH)
+    o = await opc.opc.nodes.namespaces.get_child([f"{idx}:{urn}"])
+    assert await (await o.get_child("NamespaceUri")).read_value() == urn
+    assert await (await o.get_child("NamespaceVersion")).read_value() == "1.0.0"
+    dt = await (await o.get_child("NamespacePublicationDate")).read_value()
+    assert dt.year == 2020
+    assert dt.month == 8
+    assert dt.day == 11
