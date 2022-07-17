@@ -5,6 +5,7 @@ import re
 import asyncio
 import base64
 import logging
+from typing import List, Tuple
 import xml.etree.ElementTree as ET
 
 from pytz import utc
@@ -439,3 +440,20 @@ class XMLParser:
                 # check if ModelUri X, in Version Y from time Z was already imported
                 required_models.append(child.attrib)
         return required_models
+
+    def get_nodeset_namespaces(self) -> List[Tuple[str, ua.String, ua.DateTime]]:
+        """
+        Get all namespaces that are registered with version and date_time
+        """
+        ns = []
+        for model in self.root.findall('base:Models/base:Model', self.ns):
+            uri = model.attrib.get('ModelUri')
+            if uri is not None:
+                version = model.attrib.get('Version', ua.String())
+                date_time = model.attrib.get('PublicationDate')
+                if date_time is None:
+                    date_time = ua.DateTime(1, 1, 1)
+                else:
+                    date_time = ua.DateTime.strptime(date_time, "%Y-%m-%dT%H:%M:%SZ")
+                ns.append((uri, version, date_time))
+        return ns

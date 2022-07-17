@@ -93,6 +93,26 @@ class XmlImporter:
             raise ValueError("Server doesn't satisfy required XML-Models. Import them first!")
         return None
 
+    async def _check_if_namespace_meta_information_is_added(self):
+        """
+        check if the NamespaceMetadata objects in server namespaces exists otherwise add them
+        to prevent errors when other nodesets depend on this namespace.
+        """
+        descs = await self.server.nodes.namespaces.get_children_descriptions()
+        ns_objs = [n.BrowseName.Name for n in descs]
+        for uri, version, pub_date in self.parser.get_nodeset_namespaces():
+            if uri not in ns_objs:
+                idx = await self.server.register_namespace(uri)
+                obj = await self.nodes.namespaces.add_object(idx, uri, ua.ObjectIds.NamespaceMetadataType, False)
+                ns_uri = await obj.get_child('NamespaceUri')
+                await ns_uri.write_value(uri, ua.VariantType.String)
+                ns_ver = await obj.get_child('NamespaceVersion')
+                await ns_ver.write_value(version, ua.VariantType.String)
+                ns_date = await obj.get_child('NamespacePublicationDate')
+                await ns_date.write_value(pub_date)
+                ns_subset = await obj.get_child('IsNamespaceSubset')
+                await ns_subset.write_value(True)
+
     async def import_xml(self, xmlpath=None, xmlstring=None):
         """
         import xml and return added nodes
@@ -131,6 +151,7 @@ class XmlImporter:
                 "The following references could not be imported and are probably broken: %s",
                 self.refs,
             )
+        await self._check_if_namespace_meta_information_is_added()
         return nodes
 
     async def _add_missing_reverse_references(self, new_nodes):
