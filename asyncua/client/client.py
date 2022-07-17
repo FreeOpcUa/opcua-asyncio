@@ -209,8 +209,10 @@ class Client:
         try:
             await self.send_hello()
             await self.open_secure_channel()
-            endpoints = await self.get_endpoints()
-            await self.close_secure_channel()
+            try:
+                endpoints = await self.get_endpoints()
+            finally:
+                await self.close_secure_channel()
         finally:
             self.disconnect_socket()
         return endpoints
@@ -223,8 +225,10 @@ class Client:
         try:
             await self.send_hello()
             await self.open_secure_channel()  # spec says it should not be necessary to open channel
-            servers = await self.find_servers()
-            await self.close_secure_channel()
+            try:
+                servers = await self.find_servers()
+            finally:
+                await self.close_secure_channel()
         finally:
             self.disconnect_socket()
         return servers
@@ -237,8 +241,10 @@ class Client:
         try:
             await self.send_hello()
             await self.open_secure_channel()
-            servers = await self.find_servers_on_network()
-            await self.close_secure_channel()
+            try:
+                servers = await self.find_servers_on_network()
+            finally:
+                await self.close_secure_channel()
         finally:
             self.disconnect_socket()
         return servers
@@ -253,7 +259,12 @@ class Client:
         try:
             await self.send_hello()
             await self.open_secure_channel()
-            await self.create_session()
+            try:
+                await self.create_session()
+            except Exception:
+                # clean up secure channel
+                self.close_secure_channel()
+                raise
         except Exception:
             # clean up open socket
             self.disconnect_socket()
