@@ -238,6 +238,9 @@ class Client:
     def get_node(self, nodeid):
         return SyncNode(self.tloop, self.aio_obj.get_node(nodeid))
 
+    def get_root_node(self):
+        return SyncNode(self.tloop, self.aio_obj.get_root_node())
+
     @syncmethod
     def connect_and_get_server_endpoints(self):
         pass
@@ -290,17 +293,28 @@ class Server:
     def __exit__(self, exc_type, exc_value, traceback):
         self.stop()
 
+    @syncmethod
+    def load_certificate(self, path: str, format: str = None):
+        pass
+
+    @syncmethod
+    def load_private_key(self, path, password=None, format=None):
+        pass
+
     def set_endpoint(self, url):
         return self.aio_obj.set_endpoint(url)
 
     def set_server_name(self, name):
         return self.aio_obj.set_server_name(name)
 
-    def set_security_policy(self, security_policy):
-        return self.aio_obj.set_security_policy(security_policy)
+    def set_security_policy(self, security_policy, permission_ruleset=None):
+        return self.aio_obj.set_security_policy(security_policy, permission_ruleset)
 
-    def disable_clock(self, boolean):
-        return self.aio_obj.disable_clock(boolean)
+    def set_security_IDs(self, policy_ids):
+        return self.aio_obj.set_security_IDs(policy_ids)
+
+    def disable_clock(self, val: bool = True):
+        return self.aio_obj.disable_clock(val)
 
     @syncmethod
     def register_namespace(self, url):
