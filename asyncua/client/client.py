@@ -417,7 +417,7 @@ class Client:
         try:
             # Part4 5.5.2.1:
             # Clients should request a new SecurityToken after 75 % of its lifetime has elapsed
-            duration = self.secure_channel_timeout * 0.75 / 1000
+            duration = self.session_timeout * 0.75 / 1000
             while True:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
