@@ -106,6 +106,7 @@ class Struct:
     parents: List[Any] = field(default_factory=list)
     # we splt some structs, they must not be registered as extension objects
     do_not_register: bool = False
+    is_data_type: bool = False
 
     def __hash__(self):
         return hash(self.name)
@@ -327,6 +328,7 @@ class Parser:
 
                 if ref.text == "i=22" or ref.text in self.model.known_structs:
                     struct = self.parse_struct(name, el)
+                    struct.is_data_type = True
                     if ref.text in self.model.known_structs:
                         parent = self.model.get_struct_by_nodeid(ref.text)
                         for sfield in reversed(parent.fields):

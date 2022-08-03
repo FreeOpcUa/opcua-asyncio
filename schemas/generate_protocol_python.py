@@ -130,8 +130,7 @@ class CodeGenerator:
             self.write(f':vartype {field.name}: {field.data_type}')
         self.write('"""')
 
-        # FIXME: next line is a weak way to find out if object is a datatype or not...
-        if "Parameter" not in obj.name and "Result" not in obj.name:
+        if obj.is_data_type:
             self.write('')
             self.write(f'data_type = NodeId(ObjectIds.{obj.name})')
 
