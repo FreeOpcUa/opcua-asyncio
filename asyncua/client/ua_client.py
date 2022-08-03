@@ -114,13 +114,13 @@ class UASocketProtocol(asyncio.Protocol):
         :param message_type: UA Message Type (optional)
         :return: Future that resolves with the Response
         """
-        request.RequestHeader = self._create_request_header(timeout)
+        self._setup_request_header(request.RequestHeader, timeout)
         self.logger.debug('Sending: %s', request)
         try:
             binreq = struct_to_binary(request)
         except Exception:
             # reset request handle if any error
-            # see self._create_request_header
+            # see self._setup_request_header
             self._request_handle -= 1
             raise
         self._request_id += 1
@@ -176,17 +176,15 @@ class UASocketProtocol(asyncio.Protocol):
             self.logger.debug("Future for request id %s not handled due to disconnect", request_id)
         del self._callbackmap[request_id]
 
-    def _create_request_header(self, timeout=1) -> ua.RequestHeader:
+    def _setup_request_header(self, hdr: ua.RequestHeader, timeout=1) -> None:
         """
+        :param hdr: Request header
         :param timeout: Timeout in seconds
-        :return: Request header
         """
-        hdr = ua.RequestHeader()
         hdr.AuthenticationToken = self.authentication_token
         self._request_handle += 1
         hdr.RequestHandle = self._request_handle
         hdr.TimeoutHint = int(timeout * 1000)
-        return hdr
 
     def disconnect_socket(self):
         self.logger.info("Request to close socket received")
