@@ -181,9 +181,9 @@ class {struct_name}{base_class}:
 """
 
     if sdef.StructureType == ua.StructureType.StructureWithOptionalFields:
-        code += "    Encoding: ua.Byte = field(default=0, repr=False, init=False, compare=False)\n"
+        code += "    Encoding: ua.UInt32 = field(default=0, repr=False, init=False, compare=False)\n"
     elif is_union:
-        code += "    Encoding: ua.Byte = field(default=0, repr=False, init=False, compare=False)\n"
+        code += "    Encoding: ua.UInt32 = field(default=0, repr=False, init=False, compare=False)\n"
     fields = []
     for sfield in sdef.Fields:
         fname = clean_name(sfield.Name)
