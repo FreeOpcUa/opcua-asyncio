@@ -285,7 +285,7 @@ def create_dataclass_serializer(dataclazz):
         encoding_funcs = [field_serializer(types) for types in types_from_union(union_field.type)]
 
         def union_serialize(obj):
-            bin = Primitives.Byte.pack(obj.Encoding)
+            bin = Primitives.UInt32.pack(obj.Encoding)
             # 0 => None
             # 1.. => union fields
             if obj.Encoding > 0 and obj.Encoding <= len(encoding_funcs):
