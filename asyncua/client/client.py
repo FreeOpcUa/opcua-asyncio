@@ -29,7 +29,7 @@ class Client:
     use UaClient object, available as self.uaclient
     which offers the raw OPC-UA services interface.
     """
-    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 10):
+    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -63,7 +63,7 @@ class Client:
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
         self._policy_ids = []
-        self.uaclient: UaClient = UaClient(timeout, self._check_tasks)
+        self.uaclient: UaClient = UaClient(timeout, self.check_connection)
         self.user_certificate = None
         self.user_private_key = None
         self._server_nonce = None
@@ -72,7 +72,7 @@ class Client:
         self.max_messagesize = 0  # No limits
         self.max_chunkcount = 0  # No limits
         self._renew_channel_task = None
-        self._watch_task = None
+        self._monitor_server_task = None
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
 
@@ -421,20 +421,19 @@ class Client:
             _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
             self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
-        self._watch_task = asyncio.create_task(self._watchdog_loop())
+        self._monitor_server_task = asyncio.create_task(self._monitor_server_loop())
         return response
 
-    async def _check_tasks(self):
+    async def check_connection(self):
         # Check if a background task has finished and if a exception is thrown rethrow it with result
-        # use half the session timeout or the supply value from constructor
         if self._renew_channel_task is not None:
             if self._renew_channel_task.done():
                 await self._renew_channel_task
-        if self._watch_task is not None:
-            if self._watch_task.done():
-                await self._watch_task
+        if self._monitor_server_task is not None:
+            if self._monitor_server_task.done():
+                await self._monitor_server_task
 
-    async def _watchdog_loop(self):
+    async def _monitor_server_loop(self):
         """
         Checks if the server is alive
         """
