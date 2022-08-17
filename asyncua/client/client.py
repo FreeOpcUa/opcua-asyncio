@@ -432,6 +432,9 @@ class Client:
         if self._monitor_server_task is not None:
             if self._monitor_server_task.done():
                 await self._monitor_server_task
+        if self.uaclient._publish_task is not None:
+            if self.uaclient._publish_task.done():
+                await self.uaclient._publish_task
 
     async def _monitor_server_loop(self):
         """
