@@ -149,6 +149,7 @@ class UaProcessor:
 
     async def _process_message(self, typeid, requesthdr, seqhdr, body):
         if typeid in [ua.NodeId(ua.ObjectIds.CreateSessionRequest_Encoding_DefaultBinary),
+                      ua.NodeId(ua.ObjectIds.CloseSessionRequest_Encoding_DefaultBinary),
                       ua.NodeId(ua.ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary),
                       ua.NodeId(ua.ObjectIds.FindServersRequest_Encoding_DefaultBinary),
                       ua.NodeId(ua.ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary)]:

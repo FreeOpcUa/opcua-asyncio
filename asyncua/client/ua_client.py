@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Union
 
 from asyncua import ua
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
-from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, UaStructParsingError
+from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, BadUserAccessDenied, UaStructParsingError
 from ..common.connection import SecureConnection
 
 
@@ -334,6 +334,9 @@ class UaClient:
             #          we can just ignore it therefore.
             #          Alternatively we could make sure that there are no publish requests in flight when
             #          closing the session.
+            pass
+        except BadUserAccessDenied:
+            # Problem: older versions of asyncua didn't allow closing non-activated sessions. just ignore it.
             pass
 
     async def browse(self, parameters):
