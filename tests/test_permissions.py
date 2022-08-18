@@ -125,8 +125,4 @@ async def test_permissions_anonymous(srv_crypto_one_cert):
     )
     await clt.connect()
     await clt.get_endpoints()
-    with pytest.raises(ua.uaerrors.BadUserAccessDenied):
-        # currently CloseSessionRequest ist not allowed so excpetion is expected
-        # why CloseSession is not allowed if CreateSession works?
-        # but to prevent leaking tasks we do disconnect and get the exception
-        await clt.disconnect()
+    await clt.disconnect()

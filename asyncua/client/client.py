@@ -261,15 +261,20 @@ class Client:
             await self.open_secure_channel()
             try:
                 await self.create_session()
+                try:
+                    await self.activate_session(username=self._username, password=self._password, certificate=self.user_certificate)
+                except Exception:
+                    # clean up session
+                    await self.close_session()
+                    raise
             except Exception:
                 # clean up secure channel
-                self.close_secure_channel()
+                await self.close_secure_channel()
                 raise
         except Exception:
             # clean up open socket
             self.disconnect_socket()
             raise
-        await self.activate_session(username=self._username, password=self._password, certificate=self.user_certificate)
 
     async def disconnect(self):
         """
@@ -290,8 +295,7 @@ class Client:
         await self.uaclient.connect_socket(self.server_url.hostname, self.server_url.port)
 
     def disconnect_socket(self):
-        if self.uaclient:
-            self.uaclient.disconnect_socket()
+        self.uaclient.disconnect_socket()
 
     async def send_hello(self):
         """

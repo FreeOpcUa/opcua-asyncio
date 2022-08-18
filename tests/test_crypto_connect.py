@@ -248,10 +248,6 @@ async def test_certificate_handling_failure(srv_crypto_one_cert):
         async with clt:
             assert await clt.get_objects_node().get_children()
 
-    with pytest.raises(ua.uaerrors.BadUserAccessDenied):
-        # disconnect manually to close the event loop and appease pytest
-        await clt.disconnect()
-
 
 async def test_encrypted_private_key_handling_failure(srv_crypto_one_cert):
     _, cert = srv_crypto_one_cert
@@ -268,10 +264,6 @@ async def test_encrypted_private_key_handling_failure(srv_crypto_one_cert):
         )
         async with clt:
             assert await clt.get_objects_node().get_children()
-
-    with pytest.raises(ua.uaerrors.BadUserAccessDenied):
-        # disconnect manually to close the event loop and appease pytest
-        await clt.disconnect()
 
 
 async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
@@ -413,9 +405,6 @@ async def test_anonymous_rejection():
         cert,
         mode=ua.MessageSecurityMode.SignAndEncrypt
     )
-    with pytest.raises(ua.UaStatusCodeError) as exc_info:
+    with pytest.raises(ua.uaerrors.BadIdentityTokenRejected):
         await clt.connect()
-    with pytest.raises(ua.UaStatusCodeError):
-        await clt.disconnect()
-    assert ua.StatusCodes.BadIdentityTokenRejected == exc_info.type.code
     await srv.stop()
