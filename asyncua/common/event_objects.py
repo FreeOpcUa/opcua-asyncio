@@ -6,7 +6,7 @@ Model Uri:http://opcfoundation.org/UA/"
 Version:1.04.10"
 Publication date:2021-09-15T00:00:00Z"
 
-File creation Date:2022-04-30 13:47:49.823843"
+File creation Date:2022-08-18 16:12:45.602922"
 """
 from asyncua import ua
 from .events import Event
@@ -28,7 +28,7 @@ class BaseEvent(Event):
         self.add_property('SourceName', None, ua.VariantType.String)
         self.add_property('Time', None, ua.VariantType.DateTime)
         self.add_property('ReceiveTime', None, ua.VariantType.DateTime)
-        self.add_property('LocalTime', ua.NodeId(ua.ObjectIds.TimeZoneDataType), ua.VariantType.ExtensionObject)
+        self.add_property('LocalTime', ua.uaprotocol_auto.TimeZoneDataType(), ua.VariantType.ExtensionObject)
         self.add_property('Message', ua.LocalizedText(message), ua.VariantType.LocalizedText)
         self.add_property('Severity', severity, ua.VariantType.UInt16)
 
