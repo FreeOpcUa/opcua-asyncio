@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from typing import List, Union, Coroutine, Optional
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 from asyncua import ua
 from .ua_client import UaClient
@@ -29,6 +29,10 @@ class Client:
     use UaClient object, available as self.uaclient
     which offers the raw OPC-UA services interface.
     """
+
+    _username = None
+    _password = None
+
     def __init__(self, url: str, timeout: float = 4):
         """
         :param url: url of the server.
@@ -43,8 +47,15 @@ class Client:
         """
         self.server_url = urlparse(url)
         # take initial username and password from the url
-        self._username = self.server_url.username
-        self._password = self.server_url.password
+        userinfo, have_info, hostinfo = self.server_url.netloc.rpartition('@')
+        if have_info:
+            username, have_password, password = userinfo.partition(':')
+            self._username = unquote(username)
+            if have_password:
+                self._password = unquote(password)
+            # remove credentials from url, preventing them to be sent unencrypted in e.g. send_hello
+            self.server_url = self.server_url.__class__(self.server_url[0], hostinfo, *self.server_url[2:])
+
         self.name = "Pure Python Async. Client"
         self.description = self.name
         self.application_uri = "urn:freeopcua:client"
