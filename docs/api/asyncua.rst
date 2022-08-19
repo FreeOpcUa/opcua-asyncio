@@ -1,11 +1,12 @@
+===============
 asyncua package
 ===============
 
 Subpackages
------------
+===========
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
    asyncua.client
    asyncua.common
@@ -14,7 +15,7 @@ Subpackages
    asyncua.ua
 
 Submodules
-----------
+==========
 
 asyncua.sync module
 -------------------
@@ -28,14 +29,6 @@ asyncua.tools module
 --------------------
 
 .. automodule:: asyncua.tools
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: asyncua
    :members:
    :undoc-members:
    :show-inheritance:

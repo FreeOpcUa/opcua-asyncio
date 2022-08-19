@@ -1,8 +1,9 @@
+===============================================
 asyncua.server.standard\_address\_space package
 ===============================================
 
 Submodules
-----------
+==========
 
 asyncua.server.standard\_address\_space.standard\_address\_space module
 -----------------------------------------------------------------------
@@ -20,10 +21,3 @@ asyncua.server.standard\_address\_space.standard\_address\_space\_services modul
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: asyncua.server.standard_address_space
-   :members:
-   :undoc-members:
-   :show-inheritance:

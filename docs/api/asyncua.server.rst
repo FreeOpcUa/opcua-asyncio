@@ -1,8 +1,9 @@
+======================
 asyncua.server package
 ======================
 
 Subpackages
------------
+===========
 
 .. toctree::
    :maxdepth: 4
@@ -10,7 +11,7 @@ Subpackages
    asyncua.server.standard_address_space
 
 Submodules
-----------
+==========
 
 asyncua.server.address\_space module
 ------------------------------------
@@ -124,10 +125,3 @@ asyncua.server.users module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: asyncua.server
-   :members:
-   :undoc-members:
-   :show-inheritance:

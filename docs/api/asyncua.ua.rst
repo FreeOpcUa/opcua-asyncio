@@ -1,8 +1,9 @@
+==================
 asyncua.ua package
 ==================
 
 Subpackages
------------
+===========
 
 .. toctree::
    :maxdepth: 4
@@ -10,7 +11,7 @@ Subpackages
    asyncua.ua.uaerrors
 
 Submodules
-----------
+==========
 
 asyncua.ua.attribute\_ids module
 --------------------------------
@@ -70,14 +71,6 @@ asyncua.ua.uatypes module
 -------------------------
 
 .. automodule:: asyncua.ua.uatypes
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: asyncua.ua
    :members:
    :undoc-members:
    :show-inheritance:

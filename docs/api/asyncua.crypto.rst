@@ -1,8 +1,6 @@
 asyncua.crypto package
 ======================
 
-Submodules
-----------
 
 asyncua.crypto.permission\_rules module
 ---------------------------------------
@@ -28,10 +26,3 @@ asyncua.crypto.uacrypto module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: asyncua.crypto
-   :members:
-   :undoc-members:
-   :show-inheritance:

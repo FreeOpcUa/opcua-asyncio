@@ -1,8 +1,9 @@
+======================
 asyncua.common package
 ======================
 
 Submodules
-----------
+==========
 
 asyncua.common.callback module
 ------------------------------
@@ -172,10 +173,3 @@ asyncua.common.xmlparser module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: asyncua.common
-   :members:
-   :undoc-members:
-   :show-inheritance:

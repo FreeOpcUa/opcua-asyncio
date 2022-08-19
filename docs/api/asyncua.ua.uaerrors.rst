@@ -1,10 +1,13 @@
 asyncua.ua.uaerrors package
 ===========================
 
-Module contents
----------------
-
-.. automodule:: asyncua.ua.uaerrors
+.. automodule:: asyncua.ua.uaerrors._base
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. automodule:: asyncua.ua.uaerrors._auto
+   :members:
+   :undoc-members:
+   :show-inheritance:
+

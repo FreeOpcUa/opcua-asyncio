@@ -1,8 +1,9 @@
+=========================
 asyncua.client.ha package
 =========================
 
 Submodules
-----------
+==========
 
 asyncua.client.ha.common module
 -------------------------------
@@ -36,10 +37,3 @@ asyncua.client.ha.virtual\_subscription module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: asyncua.client.ha
-   :members:
-   :undoc-members:
-   :show-inheritance:

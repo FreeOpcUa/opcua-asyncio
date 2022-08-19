@@ -1,8 +1,9 @@
+======================
 asyncua.client package
 ======================
 
 Subpackages
------------
+===========
 
 .. toctree::
    :maxdepth: 4
@@ -10,7 +11,7 @@ Subpackages
    asyncua.client.ha
 
 Submodules
-----------
+===========
 
 asyncua.client.client module
 ----------------------------
@@ -44,10 +45,3 @@ asyncua.client.ua\_file\_transfer module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: asyncua.client
-   :members:
-   :undoc-members:
-   :show-inheritance:
