@@ -25,6 +25,8 @@ async def test_max_connections_1(opc):
     opc.server.iserver.isession.__class__.max_connections = 1000
 
 
-async def safe_disconnect():
+async def test_safe_disconnect():
     c = Client(url="opc.tcp://example:4840")
+    await c.disconnect()
+    # second disconnect should be noop
     await c.disconnect()

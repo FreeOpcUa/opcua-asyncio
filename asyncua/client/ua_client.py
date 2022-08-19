@@ -272,7 +272,8 @@ class UaClient:
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("disconnect_socket was called but connection is closed")
             return None
-        return self.protocol.disconnect_socket()
+        self.protocol.disconnect_socket()
+        self.protocol = None
 
     async def send_hello(self, url, max_messagesize: int = 0, max_chunkcount: int = 0):
         await self.protocol.send_hello(url, max_messagesize, max_chunkcount)
