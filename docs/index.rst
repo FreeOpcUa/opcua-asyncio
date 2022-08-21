@@ -2,8 +2,11 @@
 Python opcua-asyncio Documentation
 ==================================
 
-
 Pure Python OPC-UA / IEC 62541 Client and Server for Python 3.7+ and pypy.
+
+.. note:: This documentation is a work in progress. Documenting a project takes time, effort
+   and loads of coffee. We are more than happy to get feedback and merge requests relating
+   the documentation.
 
 OPC-UA implementation is quasi complete and has been tested against many different OPC-UA stacks. API offers both a low level interface to send and receive all UA defined structures and high level classes allowing to write a server or a client in a few lines. It is easy to mix high level objects and low level UA calls in one application.
 

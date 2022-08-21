@@ -10,6 +10,12 @@ Usage Guide
     get-started/minimal-server
     get-started/minimal-client
 
+.. toctree:: 
+    :caption: Common
+
+    common/overview
+    common/nodeid-class
+    common/node-class
 
 .. toctree:: 
     :caption: Client
