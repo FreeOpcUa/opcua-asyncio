@@ -53,3 +53,12 @@ i, s, g, b
 srv, nsu:
     If one of this keys is set, a :class:`~asyncua.ua.uatypes.ExpandedNodeId` will be returned
     and the ServerIndex and NamespaceUri will be set.
+
+
+What else?
+==========
+
+The :class:`~asyncua.ua.uatypes.NodeId` class is actually just a normal UA data-type like
+other objects as :class:`~asyncua.ua.uatypes.QualifiedName` or :class:`~asyncua.ua.uatypes.Variant`
+are. The asyncua package models all datatypes as :mod:`dataclasses`, for some types, like
+the NodeId some additional logic is implemented to make it easier to work with them.
