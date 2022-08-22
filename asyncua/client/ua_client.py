@@ -20,11 +20,10 @@ class UASocketProtocol(asyncio.Protocol):
     OPEN = 'open'
     CLOSED = 'closed'
 
-    def __init__(self, timeout: float = 1, security_policy: ua.SecurityPolicy = ua.SecurityPolicy(), before_request_hook: Callable[[], Awaitable[None]] = None):
+    def __init__(self, timeout: float = 1, security_policy: ua.SecurityPolicy = ua.SecurityPolicy()):
         """
         :param timeout: Timeout in seconds
         :param security_policy: Security policy (optional)
-        :param before_request_hook: Hook for upperlayer tasks before a request is send (optional)
         """
         self.logger = logging.getLogger(f"{__name__}.UASocketProtocol")
         self.transport: Optional[asyncio.Transport] = None
@@ -41,7 +40,8 @@ class UASocketProtocol(asyncio.Protocol):
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
         # passing back the processed response to the request so that it can return it.
         self._open_secure_channel_exchange: Union[ua.OpenSecureChannelResponse, ua.OpenSecureChannelParameters, None] = None
-        self._before_request_hook = before_request_hook
+        # Hook for upperlayer tasks before a request is send (optional)
+        self.pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
 
     def connection_made(self, transport: asyncio.Transport):  # type: ignore
         self.state = self.OPEN
@@ -145,17 +145,16 @@ class UASocketProtocol(asyncio.Protocol):
         Returns response object if no callback is provided.
         """
         timeout = self.timeout if timeout is None else timeout
-        if self._before_request_hook:
+        if self.pre_request_hook:
             # This will propagade exceptions from background tasks to the libary user before calling a request which will
             # timeout then.
-            await self._before_request_hook()
+            await self.pre_request_hook()
         try:
             data = await asyncio.wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
         except Exception:
             if self.state != self.OPEN:
                 raise ConnectionError("Connection is closed") from None
             raise
-
         self.check_answer(data, f" in response to {request.__class__.__name__}")
         return data
 
@@ -247,10 +246,9 @@ class UaClient:
     In this Python implementation  most of the structures are defined in
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
-    def __init__(self, timeout: float = 1, before_request_hook: Callable[[], Awaitable[None]] = None):
+    def __init__(self, timeout: float = 1.0):
         """
         :param timeout: Timout in seconds
-        :param before_request_hook: Hook to execute before a request
         """
         self.logger = logging.getLogger(f'{__name__}.UaClient')
         self._subscription_callbacks = {}
@@ -258,14 +256,25 @@ class UaClient:
         self.security_policy = ua.SecurityPolicy()
         self.protocol: UASocketProtocol = None
         self._publish_task = None
-        self._before_request_hook = before_request_hook
+        self._pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
 
     def set_security(self, policy: ua.SecurityPolicy):
         self.security_policy = policy
 
     def _make_protocol(self):
-        self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy, before_request_hook=self._before_request_hook)
+        self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
+        self.protocol.pre_request_hook = self._pre_request_hook
         return self.protocol
+
+    @property
+    def pre_request_hook(self) -> Callable[[], Awaitable[None]]:
+        return self._pre_request_hook
+
+    @pre_request_hook.setter
+    def pre_request_hook(self, hook: Optional[Callable[[], Awaitable[None]]]):
+        self._pre_request_hook = hook
+        if self.protocol:
+            self.protocol.pre_request_hook = self._pre_request_hook
 
     async def connect_socket(self, host: str, port: int):
         """Connect to server socket."""

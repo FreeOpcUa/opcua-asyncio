@@ -63,7 +63,8 @@ class Client:
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
         self._policy_ids = []
-        self.uaclient: UaClient = UaClient(timeout, self.check_connection)
+        self.uaclient: UaClient = UaClient(timeout)
+        self.uaclient.pre_request_hook = self.check_connection
         self.user_certificate = None
         self.user_private_key = None
         self._server_nonce = None
