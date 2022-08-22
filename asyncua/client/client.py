@@ -426,7 +426,8 @@ class Client:
         return response
 
     async def check_connection(self):
-        # Check if a background task has finished and if a exception is thrown rethrow it with result
+        # can be used to check if the client is still connected
+        # if not it throws the underlying exception
         if self._renew_channel_task is not None:
             if self._renew_channel_task.done():
                 await self._renew_channel_task
