@@ -44,4 +44,11 @@ async def test_client_connection_lost():
         await srv.stop()
         await asyncio.sleep(2)
         with pytest.raises(ConnectionError):
+            # check if connection is alive
+            await cl.check_connection()
+        # check if exception is correct rethrown on second call
+        with pytest.raises(ConnectionError):
+            await cl.check_connection()
+        # check if a exception is thrown when a normal function is called
+        with pytest.raises(ConnectionError):
             await cl.get_namespace_array()
