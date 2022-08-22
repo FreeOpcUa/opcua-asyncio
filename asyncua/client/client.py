@@ -579,10 +579,10 @@ class Client:
         """
         Close session
         """
-        if self._watch_task:
-            self._watch_task.cancel()
+        if self._monitor_server_task:
+            self._monitor_server_task.cancel()
             try:
-                await self._watch_task
+                await self._monitor_server_task
             except Exception:
                 _logger.exception("Error while closing watch_task")
         if self._renew_channel_task:
