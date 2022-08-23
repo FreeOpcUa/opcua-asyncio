@@ -927,6 +927,13 @@ def get_shape(mylist):
     return dims
 
 
+# For completness, these datatypes are abstract!
+# If they are used in structs, abstract types are either Variant or ExtensionObjects.
+# If they only contain basic types (int16, float, double..) they are Variants
+UInteger = Variant
+Integer = Variant
+
+
 @dataclass(frozen=True)
 class DataValue:
     """
