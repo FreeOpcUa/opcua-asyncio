@@ -136,11 +136,11 @@ class XmlImporter:
         for nodedata in nodes_parsed:  # self.parser:
             try:
                 node = await self._add_node_data(nodedata, no_namespace_migration=True)
+                nodes.append(node)
             except Exception as e:
                 _logger.warning("failure adding node %s %s", nodedata, e)
                 if self.strict_mode:
                     raise
-            nodes.append(node)
         self.refs, remaining_refs = [], self.refs
         await self._add_references(remaining_refs)
         missing_nodes = await self._add_missing_reverse_references(nodes)
