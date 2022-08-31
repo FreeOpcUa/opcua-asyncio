@@ -262,7 +262,6 @@ class UaProcessor:
                 raise ServiceError(ua.StatusCodes.BadSessionNotActivated)
 
             if typeid == ua.NodeId(ua.ObjectIds.ReadRequest_Encoding_DefaultBinary):
-                self._raise_error_if_session_is_invalid()
                 _logger.info("Read request (%s)", user)
                 params = struct_from_binary(ua.ReadParameters, body)
                 results = await self.session.read(params)
