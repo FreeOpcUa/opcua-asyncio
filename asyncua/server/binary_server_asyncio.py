@@ -65,15 +65,22 @@ class OPCUAProtocol(asyncio.Protocol):
                 try:
                     header = header_from_binary(buf)
                 except NotEnoughData:
-                    logger.debug('Not enough data while parsing header from client, waiting for more')
+                    # a packet should at least contain a header otherwise it is malformed (8 or 12 bytes)
+                    logger.debug('Not enough data while parsing header from client, empty the buffer')
+                    self._buffer = b''
                     return
-                if len(buf) < header.body_size:
-                    logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size,
-                                 len(buf))
-                    return
-                # we have a complete message
-                self.messages.put_nowait((header, buf))
-                self._buffer = self._buffer[(header.header_size + header.body_size):]
+                if header.header_size + header.body_size <= header.header_size:
+                    # malformed header prevent invalid access of your buffer
+                    logger.error(f'Got malformed header {header}')
+                    self._buffer = b''
+                else:
+                    if len(buf) < header.body_size:
+                        logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size,
+                                    len(buf))
+                        return
+                    # we have a complete message
+                    self.messages.put_nowait((header, buf))
+                    self._buffer = self._buffer[(header.header_size + header.body_size):]
             except Exception:
                 logger.exception('Exception raised while parsing message from client')
                 return
