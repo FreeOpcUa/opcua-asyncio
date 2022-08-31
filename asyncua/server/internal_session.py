@@ -51,6 +51,9 @@ class InternalSession:
     async def get_endpoints(self, params=None, sockname=None):
         return await self.iserver.get_endpoints(params, sockname)
 
+    def is_activated(self) -> bool:
+        return self.state == SessionState.Activated
+
     async def create_session(self, params, sockname=None):
         self.logger.info('Create session request')
         result = ua.CreateSessionResult()
