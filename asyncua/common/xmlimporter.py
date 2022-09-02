@@ -173,7 +173,7 @@ class XmlImporter:
                 dangling_refs_to_missing_nodes.discard(new_node_id)
                 dangling_refs_to_missing_nodes.discard(ref.NodeId)
 
-                if ref.ReferenceTypeId.Identifier not in __unidirectional_types:
+                if ref.ReferenceTypeId.NamespaceIndex != 0 or ref.ReferenceTypeId.Identifier not in __unidirectional_types:
                     ref_key = (new_node_id, ref.NodeId, ref.ReferenceTypeId)
                     node_reference_map[ref_key] = ref
 

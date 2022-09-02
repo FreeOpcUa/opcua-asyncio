@@ -298,7 +298,7 @@ class NodeManagementService:
 
             # check properties
             for ref in self._aspace[item.ParentNodeId].references:
-                if ref.ReferenceTypeId.Identifier == ua.ObjectIds.HasProperty:
+                if ref.ReferenceTypeId == ua.NodeId(ua.ObjectIds.HasProperty):
                     if item.BrowseName.Name == ref.BrowseName.Name:
                         self.logger.warning(
                             f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
