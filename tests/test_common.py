@@ -357,9 +357,15 @@ async def test_browse_references(opc):
     assert objects in parents
 
     parents = await folder.get_referenced_nodes(
-        refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse, includesubtypes=False
+        refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse, includesubtypes=True
     )
     assert objects in parents
+
+    parents = await folder.get_referenced_nodes(
+        refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse, includesubtypes=False
+    )
+    assert objects not in parents
+
     assert await folder.get_parent() == objects
 
 
@@ -928,7 +934,7 @@ async def test_copy_node(opc):
     ctrl_t = await dev_t.add_object(0, "controller")
     prop_t = await ctrl_t.add_property(0, "state", "Running")
     # Create device sutype
-    devd_t = await dev_t.add_object_type(0, "MyDeviceDervived")
+    devd_t = await dev_t.add_object_type(0, "MyDeviceDerived")
     _ = await devd_t.add_variable(0, "childparam", 1.0)
     _ = await devd_t.add_property(0, "sensorx_id", "0340")
     nodes = await copy_node(opc.opc.nodes.objects, dev_t)
@@ -959,7 +965,7 @@ async def test_instantiate_1(opc):
     await prop_t.set_modelling_rule(True)
 
     # Create device sutype
-    devd_t = await dev_t.add_object_type(0, "MyDeviceDervived")
+    devd_t = await dev_t.add_object_type(0, "MyDeviceDerived")
     v_t = await devd_t.add_variable(0, "childparam", 1.0)
     await v_t.set_modelling_rule(True)
     p_t = await devd_t.add_property(0, "sensorx_id", "0340")
@@ -973,10 +979,11 @@ async def test_instantiate_1(opc):
     assert dev_t.nodeid == await mydevice.read_type_definition()
     _ = await mydevice.get_child(["0:controller"])
     prop = await mydevice.get_child(["0:controller", "0:state"])
-    with pytest.raises(ua.UaError):
-        await mydevice.get_child(["0:controller", "0:vendor"])
-    with pytest.raises(ua.UaError):
-        await mydevice.get_child(["0:controller", "0:model"])
+    _ = await mydevice.get_child(["0:vendor"])
+    with pytest.raises(ua.uaerrors.BadNoMatch):
+        await mydevice.get_child(["0:model"])
+    with pytest.raises(ua.uaerrors.BadNoMatch):
+        await mydevice.get_child(["0:MyDeviceDerived"])
 
     assert ua.ObjectIds.PropertyType == (await prop.read_type_definition()).Identifier
     assert "Running" == await prop.read_value()
