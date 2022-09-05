@@ -204,7 +204,7 @@ async def get_node_supertype(node):
     return node supertype or None
     """
     supertypes = await node.get_referenced_nodes(
-        refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True
+        refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse
     )
     if supertypes:
         return supertypes[0]

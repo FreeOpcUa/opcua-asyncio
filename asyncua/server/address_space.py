@@ -12,7 +12,7 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Callable, Dict, List, Union, Tuple
+    from typing import Callable, Dict, List, Union, Tuple, Generator
     from asyncua.ua.uaprotocol_auto import (
         ObjectAttributes, DataTypeAttributes, ReferenceTypeAttributes,
         VariableTypeAttributes, VariableAttributes, ObjectTypeAttributes
@@ -152,24 +152,19 @@ class ViewService(object):
             # If ReferenceTypeId is not specified in the BrowseDescription,
             # all References are returned and includeSubtypes is ignored.
             return True
-        if not subtypes and ref2.Identifier == ua.ObjectIds.HasSubtype:
-            return False
-        if ref1.Identifier == ref2.Identifier:
+        if ref1 == ref2:
             return True
-        oktypes = self._get_sub_ref(ref1)
-        if not subtypes and ua.NodeId(ua.ObjectIds.HasSubtype) in oktypes:
-            oktypes.remove(ua.NodeId(ua.ObjectIds.HasSubtype))
-        return ref2 in oktypes
+        if subtypes and ref2 in self._get_sub_ref(ref1):
+            return True
+        return False
 
-    def _get_sub_ref(self, ref: ua.NodeId) -> List[ua.NodeId]:
-        res: List[ua.NodeId] = []
-        nodedata = self._aspace[ref]
+    def _get_sub_ref(self, ref: ua.NodeId) -> Generator[ua.NodeId, None, None]:
+        nodedata = self._aspace.get(ref)
         if nodedata is not None:
             for ref_desc in nodedata.references:
-                if ref_desc.ReferenceTypeId.Identifier == ua.ObjectIds.HasSubtype and ref_desc.IsForward:
-                    res.append(ref_desc.NodeId)
-                    res += self._get_sub_ref(ref_desc.NodeId)
-        return res
+                if ref_desc.ReferenceTypeId == ua.NodeId(ua.ObjectIds.HasSubtype) and ref_desc.IsForward:
+                    yield ref_desc.NodeId
+                    yield from self._get_sub_ref(ref_desc.NodeId)
 
     def _suitable_direction(self, direction: ua.BrowseDirection, isforward: bool) -> bool:
         if direction == ua.BrowseDirection.Both:
@@ -231,11 +226,8 @@ class ViewService(object):
                 continue
             if ref.IsForward == el.IsInverse:
                 continue
-            if not el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
+            if not self._suitable_reftype(el.ReferenceTypeId, ref.ReferenceTypeId, el.IncludeSubtypes):
                 continue
-            elif el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
-                if ref.ReferenceTypeId not in self._get_sub_ref(el.ReferenceTypeId):
-                    continue
             nodeids.append(ref.NodeId)
         return nodeids
 
