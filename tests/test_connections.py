@@ -1,10 +1,11 @@
 # coding: utf-8
+import asyncio
 import pytest
 
-from asyncua import Client
+from asyncua import Client, Server
 from asyncua.ua.uaerrors import BadMaxConnectionsReached
 
-from .conftest import port_num
+from .conftest import port_num, find_free_port
 
 pytestmark = pytest.mark.asyncio
 
@@ -30,3 +31,24 @@ async def test_safe_disconnect():
     await c.disconnect()
     # second disconnect should be noop
     await c.disconnect()
+
+
+async def test_client_connection_lost():
+    # Test the disconnect behavoir
+    port = find_free_port()
+    srv = Server()
+    await srv.init()
+    srv.set_endpoint(f'opc.tcp://127.0.0.1:{port}')
+    await srv.start()
+    async with Client(f'opc.tcp://127.0.0.1:{port}', timeout=0.5, watchdog_intervall=1) as cl:
+        await srv.stop()
+        await asyncio.sleep(2)
+        with pytest.raises(ConnectionError):
+            # check if connection is alive
+            await cl.check_connection()
+        # check if exception is correct rethrown on second call
+        with pytest.raises(ConnectionError):
+            await cl.check_connection()
+        # check if a exception is thrown when a normal function is called
+        with pytest.raises(ConnectionError):
+            await cl.get_namespace_array()

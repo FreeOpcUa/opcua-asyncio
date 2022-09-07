@@ -33,7 +33,7 @@ class Client:
     _username = None
     _password = None
 
-    def __init__(self, url: str, timeout: float = 4):
+    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -41,6 +41,8 @@ class Client:
         :param timeout:
             Each request sent to the server expects an answer within this
             time. The timeout is specified in seconds.
+        :param watchdog_intervall:
+            The time between checking if the server is still alive. The timeout is specified in seconds.
         Some other client parameters can be changed by setting
         attributes on the constructed object:
         See the source code for the exhaustive list.
@@ -66,6 +68,7 @@ class Client:
         self.session_timeout = 3600000  # 1 hour
         self._policy_ids = []
         self.uaclient: UaClient = UaClient(timeout)
+        self.uaclient.pre_request_hook = self.check_connection
         self.user_certificate = None
         self.user_private_key = None
         self._server_nonce = None
@@ -74,7 +77,9 @@ class Client:
         self.max_messagesize = 0  # No limits
         self.max_chunkcount = 0  # No limits
         self._renew_channel_task = None
+        self._monitor_server_task = None
         self._locale = ["en"]
+        self._watchdog_intervall = watchdog_intervall
 
     async def __aenter__(self):
         await self.connect()
@@ -421,11 +426,42 @@ class Client:
             _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
             self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
+        self._monitor_server_task = asyncio.create_task(self._monitor_server_loop())
         return response
+
+    async def check_connection(self):
+        # can be used to check if the client is still connected
+        # if not it throws the underlying exception
+        if self._renew_channel_task is not None:
+            if self._renew_channel_task.done():
+                await self._renew_channel_task
+        if self._monitor_server_task is not None:
+            if self._monitor_server_task.done():
+                await self._monitor_server_task
+        if self.uaclient._publish_task is not None:
+            if self.uaclient._publish_task.done():
+                await self.uaclient._publish_task
+
+    async def _monitor_server_loop(self):
+        """
+        Checks if the server is alive
+        """
+        timeout = min(self.session_timeout / 1000 / 2, self._watchdog_intervall)
+        try:
+            while True:
+                await asyncio.sleep(timeout)
+                # @FIXME handle state change
+                _ = await self.nodes.server_state.read_value()
+
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            _logger.exception("Error in watchdog loop")
+            raise
 
     async def _renew_channel_loop(self):
         """
-        Renew the SecureChannel before the SessionTimeout will happen.
+        Renew the SecureChannel before the SecureChannelTimeout will happen.
         In theory we could do that only if no session activity
         but it does not cost much..
         """
@@ -549,6 +585,12 @@ class Client:
         """
         Close session
         """
+        if self._monitor_server_task:
+            self._monitor_server_task.cancel()
+            try:
+                await self._monitor_server_task
+            except Exception:
+                _logger.exception("Error while closing watch_task")
         if self._renew_channel_task:
             self._renew_channel_task.cancel()
             try:
