@@ -34,9 +34,10 @@ async def test_dos_server(opc):
         c.uaclient.protocol.transport.write(struct.pack("<3scI", message_type, chunk_type, packet_size))
         # sleep to give the server time to handle the message because we bypass the asyncio
         await asyncio.sleep(1.0)
-        # now try to read a value to see if server is still alive
-        server_time_node = c.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
-        await server_time_node.read_value()
+        with pytest.raises(ConnectionError):
+            # now try to read a value to see if server is still alive
+            server_time_node = c.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
+            await server_time_node.read_value()
 
 
 async def test_safe_disconnect():
