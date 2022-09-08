@@ -5,17 +5,21 @@ NodeId's and Nodes
 The NodeId Class
 ================
 
-The :class:`asyncua.ua.uatypes.NodeId` class is used as a reference to :class:`~asyncua.common.node.Node`'s
-and is used on the server and client side to access nodes. The two classes 
+:class:`asyncua.ua.uatypes.NodeId` objects are used as unique ids for :class:`~asyncua.common.node.Node`'s
+and are therefore used on the server and client side to access specific nodes. The two classes 
 :class:`~asyncua.ua.uatypes.NodeId` and :class:`~asyncua.common.node.Node` should not
-be confused: The NodeId is a reference to the actual Node and does not provide direct
-access to the Node. To learn more about the Node class, head over to :ref:`usage/common/node-class:the node class`.
+be confused: The NodeId is the unique identiefier of an actual Node. While the NodeId is used to identify
+a specific node, the Node object can be used to access the underlaying data.
+To learn more about the Node class, head over to :ref:`usage/common/node-nodeid:the node class`.
 
 
 A NodeId contains two main informations which allow a unique mapping in the opc-ua address space:
 The :attr:`~asyncua.ua.uatypes.NodeId.Identifier` and the :attr:`~asyncua.ua.uatypes.NodeId.NamespaceIndex`.
 In addition there is the :attr:`~asyncua.ua.uatypes.NodeId.NodeIdType` attribute which is used
-to specify which opc-ua type is used for the Identifier.
+to specify which opc-ua type is used for the Identifier. In addition to the :class:`~asyncua.ua.uatypes.NodeId`
+class, there is also the a :class:`~asyncua.ua.uatypes.ExpandedNodeId` which adds the 
+:attr:`~asyncua.ua.uatypes.ExpandedNodeId.NamespaceUri` and :attr:`~asyncua.ua.uatypes.ExpandedNodeId.ServerIndex`
+attributes to make the ID unique accross different servers and namespaces.
 
 
 Creating NodeId's

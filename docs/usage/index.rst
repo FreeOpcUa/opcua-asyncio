@@ -30,3 +30,8 @@ Usage Guide
 
     server/overview
 
+.. toctree:: 
+    :maxdepth: 2
+    :caption: Sync Interface
+
+    sync/overview
