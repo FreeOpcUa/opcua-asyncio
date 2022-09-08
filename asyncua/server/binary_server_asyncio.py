@@ -67,12 +67,12 @@ class OPCUAProtocol(asyncio.Protocol):
                 except NotEnoughData:
                     # a packet should at least contain a header otherwise it is malformed (8 or 12 bytes)
                     logger.debug('Not enough data while parsing header from client, empty the buffer')
-                    self._buffer = b''
+                    self.transport.close()
                     return
                 if header.header_size + header.body_size <= header.header_size:
                     # malformed header prevent invalid access of your buffer
                     logger.error(f'Got malformed header {header}')
-                    self._buffer = b''
+                    self.transport.close()
                 else:
                     if len(buf) < header.body_size:
                         logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size,
