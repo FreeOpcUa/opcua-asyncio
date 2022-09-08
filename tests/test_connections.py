@@ -1,10 +1,9 @@
 # coding: utf-8
 import asyncio
 import pytest
-import asyncio
+import struct
 from asyncua import Client, Server, ua
 from asyncua.ua.uaerrors import BadMaxConnectionsReached
-import struct
 from .conftest import port_num, find_free_port
 
 pytestmark = pytest.mark.asyncio
