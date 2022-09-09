@@ -429,9 +429,9 @@ class VerifierHMac256(Verifier):
 
 class SecurityPolicyAes128Sha256RsaOaep(SecurityPolicy):
     """
-    Security Basic 256Sha256
+    Security Aes128 Sha256 RsaOaep
     A suite of algorithms that uses Sha256 as Key-Wrap-algorithm
-    and 256-Bit (32 bytes) for encryption algorithms.
+    and 128-Bit (16 bytes) for encryption algorithms.
 
     - SymmetricSignatureAlgorithm_HMAC-SHA2-256
       https://tools.ietf.org/html/rfc4634
