@@ -172,6 +172,7 @@ class SecurityPolicy:
     AsymmetricSignatureURI: str = ''
     signature_key_size: int = 0
     symmetric_key_size: int = 0
+    secure_channel_nonce_length: int = 0
 
     def __init__(self, permissions=None):
         self.asymmetric_cryptography = CryptographyNone()
