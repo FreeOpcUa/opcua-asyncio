@@ -781,7 +781,8 @@ def encrypt_asymmetric(pubkey, data, policy_uri):
     The algorithm is selected by policy_uri.
     Returns a tuple (encrypted_data, algorithm_uri)
     """
-    for cls in [SecurityPolicyBasic256Sha256, SecurityPolicyBasic256, SecurityPolicyBasic128Rsa15, SecurityPolicyAes128Sha256RsaOaep]:
+    for cls in [SecurityPolicyBasic256Sha256, SecurityPolicyBasic256,
+                SecurityPolicyBasic128Rsa15, SecurityPolicyAes128Sha256RsaOaep]:
         if policy_uri == cls.URI:
             return (cls.encrypt_asymmetric(pubkey, data),
                     cls.AsymmetricEncryptionURI)
