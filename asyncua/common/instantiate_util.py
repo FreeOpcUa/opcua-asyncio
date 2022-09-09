@@ -97,7 +97,7 @@ async def _instantiate_node(server,
         parents = await get_node_supertypes(node_type, includeitself=True)
         node = make_node(server, res.AddedNodeId)
         for parent in parents:
-            descs = await parent.get_children_descriptions(includesubtypes=False)
+            descs = await parent.get_children_descriptions()
             for c_rdesc in descs:
                 # skip items that already exists, prefer the 'lowest' one in object hierarchy
                 if not await is_child_present(node, c_rdesc.BrowseName):

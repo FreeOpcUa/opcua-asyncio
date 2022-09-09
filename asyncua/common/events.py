@@ -216,10 +216,10 @@ async def select_event_attributes_from_type_node(node: "Node", attributeSelector
     curr_node = node
     while True:
         attributes.extend(await attributeSelector(curr_node))
-        if curr_node.nodeid.Identifier == ua.ObjectIds.BaseEventType:
+        if curr_node.nodeid == ua.NodeId(ua.ObjectIds.BaseEventType):
             break
         parents = await curr_node.get_referenced_nodes(
-            refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True
+            refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse
         )
         if len(parents) != 1:  # Something went wrong
             return None
@@ -247,7 +247,7 @@ async def get_event_obj_from_type_node(node):
         if node.nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
             return asyncua.common.event_objects.IMPLEMENTED_EVENTS[node.nodeid.Identifier]()
 
-    parent_identifier, parent_eventtype = await _find_parent_eventtype(node)
+    parent_nodeid, parent_eventtype = await _find_parent_eventtype(node)
 
     class CustomEvent(parent_eventtype):
 
@@ -270,7 +270,7 @@ async def get_event_obj_from_type_node(node):
 
         async def init(self):
             curr_node = node
-            while curr_node.nodeid.Identifier != parent_identifier:
+            while curr_node.nodeid != parent_nodeid:
                 for prop in await curr_node.get_properties():
                     await self._add_new_property(prop, None)
                 for var in await curr_node.get_variables():
@@ -278,9 +278,7 @@ async def get_event_obj_from_type_node(node):
                     # Add the sub-properties of the VariableType
                     for prop in await var.get_properties():
                         await self._add_new_property(prop, var)
-                parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype,
-                                                               direction=ua.BrowseDirection.Inverse,
-                                                               includesubtypes=True)
+                parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
                 if len(parents) != 1:  # Something went wrong
                     raise UaError("Parent of event type could not be found")
                 curr_node = parents[0]
@@ -295,12 +293,10 @@ async def get_event_obj_from_type_node(node):
 async def _find_parent_eventtype(node):
     """
     """
-    parents = await node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse,
-                                              includesubtypes=True)
-
+    parents = await node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
     if len(parents) != 1:   # Something went wrong
         raise UaError("Parent of event type could not be found")
     if parents[0].nodeid.NamespaceIndex == 0:
         if parents[0].nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():
-            return parents[0].nodeid.Identifier, asyncua.common.event_objects.IMPLEMENTED_EVENTS[parents[0].nodeid.Identifier]
+            return parents[0].nodeid, asyncua.common.event_objects.IMPLEMENTED_EVENTS[parents[0].nodeid.Identifier]
     return await _find_parent_eventtype(parents[0])

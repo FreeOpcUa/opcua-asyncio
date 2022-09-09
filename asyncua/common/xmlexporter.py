@@ -357,7 +357,7 @@ class XmlExporter:
         refs = await obj.get_references()
         refs_el = Et.SubElement(parent_el, 'References')
         for ref in refs:
-            if ref.ReferenceTypeId.Identifier in o_ids.ObjectIdNames:
+            if ref.ReferenceTypeId.NamespaceIndex == 0 and ref.ReferenceTypeId.Identifier in o_ids.ObjectIdNames:
                 ref_name = o_ids.ObjectIdNames[ref.ReferenceTypeId.Identifier]
             else:
                 ref_name = self._node_to_string(ref.ReferenceTypeId)

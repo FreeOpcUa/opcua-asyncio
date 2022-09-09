@@ -357,9 +357,15 @@ async def test_browse_references(opc):
     assert objects in parents
 
     parents = await folder.get_referenced_nodes(
-        refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse, includesubtypes=False
+        refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse, includesubtypes=True
     )
     assert objects in parents
+
+    parents = await folder.get_referenced_nodes(
+        refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse, includesubtypes=False
+    )
+    assert objects not in parents
+
     assert await folder.get_parent() == objects
 
 
@@ -817,16 +823,16 @@ async def test_add_node_with_type(opc):
     f = await objects.add_folder(3, 'MyFolder_TypeTest')
 
     o = await f.add_object(3, 'MyObject1', ua.ObjectIds.BaseObjectType)
-    assert ua.ObjectIds.BaseObjectType == (await o.read_type_definition()).Identifier
+    assert ua.NodeId(ua.ObjectIds.BaseObjectType) == await o.read_type_definition()
 
     o = await f.add_object(3, 'MyObject2', ua.NodeId(ua.ObjectIds.BaseObjectType, 0))
-    assert ua.ObjectIds.BaseObjectType == (await o.read_type_definition()).Identifier
+    assert ua.NodeId(ua.ObjectIds.BaseObjectType) == await o.read_type_definition()
 
     base_otype = opc.opc.get_node(ua.ObjectIds.BaseObjectType)
     custom_otype = await base_otype.add_object_type(2, 'MyFooObjectType2')
 
     o = await f.add_object(3, 'MyObject3', custom_otype.nodeid)
-    assert custom_otype.nodeid.Identifier == (await o.read_type_definition()).Identifier
+    assert custom_otype.nodeid == await o.read_type_definition()
 
     references = await o.get_references(refs=ua.ObjectIds.HasTypeDefinition, direction=ua.BrowseDirection.Forward)
     assert 1 == len(references)
@@ -846,7 +852,7 @@ async def test_references_for_added_nodes(opc):
     )
     assert objects in nodes
     assert objects == await o.get_parent()
-    assert ua.ObjectIds.BaseObjectType == (await o.read_type_definition()).Identifier
+    assert ua.NodeId(ua.ObjectIds.BaseObjectType) == await o.read_type_definition()
     assert [] == await o.get_references(ua.ObjectIds.HasModellingRule)
 
     o2 = await o.add_object(3, 'MySecondObject')
@@ -859,7 +865,7 @@ async def test_references_for_added_nodes(opc):
     )
     assert o in nodes
     assert o == await o2.get_parent()
-    assert ua.ObjectIds.BaseObjectType == (await o2.read_type_definition()).Identifier
+    assert ua.NodeId(ua.ObjectIds.BaseObjectType) == await o2.read_type_definition()
     assert [] == await o2.get_references(ua.ObjectIds.HasModellingRule)
 
     v = await o.add_variable(3, 'MyVariable', 6)
@@ -872,7 +878,7 @@ async def test_references_for_added_nodes(opc):
     )
     assert o in nodes
     assert o == await v.get_parent()
-    assert ua.ObjectIds.BaseDataVariableType == (await v.read_type_definition()).Identifier
+    assert ua.NodeId(ua.ObjectIds.BaseDataVariableType) == await v.read_type_definition()
     assert [] == await v.get_references(ua.ObjectIds.HasModellingRule)
 
     p = await o.add_property(3, 'MyProperty', 2)
@@ -885,7 +891,7 @@ async def test_references_for_added_nodes(opc):
     )
     assert o in nodes
     assert o == await p.get_parent()
-    assert ua.ObjectIds.PropertyType == (await p.read_type_definition()).Identifier
+    assert ua.NodeId(ua.ObjectIds.PropertyType) == await p.read_type_definition()
     assert [] == await p.get_references(ua.ObjectIds.HasModellingRule)
 
     m = await objects.get_child("2:ServerMethod")
@@ -928,7 +934,7 @@ async def test_copy_node(opc):
     ctrl_t = await dev_t.add_object(0, "controller")
     prop_t = await ctrl_t.add_property(0, "state", "Running")
     # Create device sutype
-    devd_t = await dev_t.add_object_type(0, "MyDeviceDervived")
+    devd_t = await dev_t.add_object_type(0, "MyDeviceDerived")
     _ = await devd_t.add_variable(0, "childparam", 1.0)
     _ = await devd_t.add_property(0, "sensorx_id", "0340")
     nodes = await copy_node(opc.opc.nodes.objects, dev_t)
@@ -937,7 +943,7 @@ async def test_copy_node(opc):
     assert 4 == len(await mydevice.get_children())
     _ = await mydevice.get_child(["0:controller"])
     prop = await mydevice.get_child(["0:controller", "0:state"])
-    assert ua.ObjectIds.PropertyType == (await prop.read_type_definition()).Identifier
+    assert ua.NodeId(ua.ObjectIds.PropertyType) == await prop.read_type_definition()
     assert "Running" == await prop.read_value()
     assert prop.nodeid != prop_t.nodeid
 
@@ -959,7 +965,7 @@ async def test_instantiate_1(opc):
     await prop_t.set_modelling_rule(True)
 
     # Create device sutype
-    devd_t = await dev_t.add_object_type(0, "MyDeviceDervived")
+    devd_t = await dev_t.add_object_type(0, "MyDeviceDerived")
     v_t = await devd_t.add_variable(0, "childparam", 1.0)
     await v_t.set_modelling_rule(True)
     p_t = await devd_t.add_property(0, "sensorx_id", "0340")
@@ -973,12 +979,13 @@ async def test_instantiate_1(opc):
     assert dev_t.nodeid == await mydevice.read_type_definition()
     _ = await mydevice.get_child(["0:controller"])
     prop = await mydevice.get_child(["0:controller", "0:state"])
-    with pytest.raises(ua.UaError):
-        await mydevice.get_child(["0:controller", "0:vendor"])
-    with pytest.raises(ua.UaError):
-        await mydevice.get_child(["0:controller", "0:model"])
+    _ = await mydevice.get_child(["0:vendor"])
+    with pytest.raises(ua.uaerrors.BadNoMatch):
+        await mydevice.get_child(["0:model"])
+    with pytest.raises(ua.uaerrors.BadNoMatch):
+        await mydevice.get_child(["0:MyDeviceDerived"])
 
-    assert ua.ObjectIds.PropertyType == (await prop.read_type_definition()).Identifier
+    assert ua.NodeId(ua.ObjectIds.PropertyType) == await prop.read_type_definition()
     assert "Running" == await prop.read_value()
     assert prop.nodeid != prop_t.nodeid
 
@@ -1015,7 +1022,7 @@ async def test_instantiate_string_nodeid(opc):
     obj_nodeid_ident = obj.nodeid.Identifier
     prop = await mydevice.get_child(["0:controller", "0:state"])
     assert "InstDevice.controller" == obj_nodeid_ident
-    assert ua.ObjectIds.PropertyType == (await prop.read_type_definition()).Identifier
+    assert ua.NodeId(ua.ObjectIds.PropertyType) == await prop.read_type_definition()
     assert "Running" == await prop.read_value()
     assert prop.nodeid != prop_t.nodeid
     await opc.opc.delete_nodes([dev_t])

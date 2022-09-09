@@ -212,34 +212,6 @@ class UaProcessor:
             response.Parameters = result
             # _logger.info("sending read response")
             self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.ReadRequest_Encoding_DefaultBinary):
-            _logger.info("Read request (%s)", user)
-            params = struct_from_binary(ua.ReadParameters, body)
-            results = await self.session.read(params)
-            response = ua.ReadResponse()
-            response.Results = results
-            # _logger.info("sending read response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.WriteRequest_Encoding_DefaultBinary):
-            _logger.info("Write request (%s)", user)
-            params = struct_from_binary(ua.WriteParameters, body)
-            results = await self.session.write(params)
-            response = ua.WriteResponse()
-            response.Results = results
-            # _logger.info("sending write response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.BrowseRequest_Encoding_DefaultBinary):
-            _logger.info("Browse request (%s)", user)
-            params = struct_from_binary(ua.BrowseParameters, body)
-            results = await self.session.browse(params)
-            response = ua.BrowseResponse()
-            response.Results = results
-            # _logger.info("sending browse response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
         elif typeid == ua.NodeId(ua.ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary):
             _logger.info("get endpoints request (%s)", user)
             params = struct_from_binary(ua.GetEndpointsParameters, body)
@@ -274,207 +246,241 @@ class UaProcessor:
             response.ConfigurationResults = results
             # _logger.info("sending register server 2 response")
             self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.TranslateBrowsePathsToNodeIdsRequest_Encoding_DefaultBinary):
-            _logger.info("translate browsepaths to nodeids request (%s)", user)
-            params = struct_from_binary(ua.TranslateBrowsePathsToNodeIdsParameters, body)
-            paths = await self.session.translate_browsepaths_to_nodeids(params.BrowsePaths)
-            response = ua.TranslateBrowsePathsToNodeIdsResponse()
-            response.Results = paths
-            # _logger.info("sending translate browsepaths to nodeids response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.AddNodesRequest_Encoding_DefaultBinary):
-            _logger.info("add nodes request (%s)", user)
-            params = struct_from_binary(ua.AddNodesParameters, body)
-            results = await self.session.add_nodes(params.NodesToAdd)
-            response = ua.AddNodesResponse()
-            response.Results = results
-            # _logger.info("sending add node response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.DeleteNodesRequest_Encoding_DefaultBinary):
-            _logger.info("delete nodes request (%s)", user)
-            params = struct_from_binary(ua.DeleteNodesParameters, body)
-            results = await self.session.delete_nodes(params)
-            response = ua.DeleteNodesResponse()
-            response.Results = results
-            # _logger.info("sending delete node response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.AddReferencesRequest_Encoding_DefaultBinary):
-            _logger.info("add references request (%s)", user)
-            params = struct_from_binary(ua.AddReferencesParameters, body)
-            results = await self.session.add_references(params.ReferencesToAdd)
-            response = ua.AddReferencesResponse()
-            response.Results = results
-            # _logger.info("sending add references response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.DeleteReferencesRequest_Encoding_DefaultBinary):
-            _logger.info("delete references request (%s)", user)
-            params = struct_from_binary(ua.DeleteReferencesParameters, body)
-            results = await self.session.delete_references(params.ReferencesToDelete)
-            response = ua.DeleteReferencesResponse()
-            response.Parameters.Results = results
-            # _logger.info("sending delete references response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.CreateSubscriptionRequest_Encoding_DefaultBinary):
-            _logger.info("create subscription request (%s)", user)
-            params = struct_from_binary(ua.CreateSubscriptionParameters, body)
-            result = await self.session.create_subscription(params, callback=self.forward_publish_response)
-            response = ua.CreateSubscriptionResponse()
-            response.Parameters = result
-            # _logger.info("sending create subscription response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.ModifySubscriptionRequest_Encoding_DefaultBinary):
-            _logger.info("modify subscription request")
-            params = struct_from_binary(ua.ModifySubscriptionParameters, body)
-
-            result = self.session.modify_subscription(params, self.forward_publish_response)
-
-            response = ua.ModifySubscriptionResponse()
-            response.Parameters = result
-
-            #_logger.info("sending modify subscription response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.DeleteSubscriptionsRequest_Encoding_DefaultBinary):
-            _logger.info("delete subscriptions request (%s)", user)
-            params = struct_from_binary(ua.DeleteSubscriptionsParameters, body)
-            results = await self.session.delete_subscriptions(params.SubscriptionIds)
-            response = ua.DeleteSubscriptionsResponse()
-            response.Results = results
-            # _logger.info("sending delete subscription response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.CreateMonitoredItemsRequest_Encoding_DefaultBinary):
-            _logger.info("create monitored items request (%s)", user)
-            params = struct_from_binary(ua.CreateMonitoredItemsParameters, body)
-            results = await self.session.create_monitored_items(params)
-            response = ua.CreateMonitoredItemsResponse()
-            response.Results = results
-            # _logger.info("sending create monitored items response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.ModifyMonitoredItemsRequest_Encoding_DefaultBinary):
-            _logger.info("modify monitored items request (%s)", user)
-            params = struct_from_binary(ua.ModifyMonitoredItemsParameters, body)
-            results = await self.session.modify_monitored_items(params)
-            response = ua.ModifyMonitoredItemsResponse()
-            response.Results = results
-            # _logger.info("sending modify monitored items response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.DeleteMonitoredItemsRequest_Encoding_DefaultBinary):
-            _logger.info("delete monitored items request (%s)", user)
-            params = struct_from_binary(ua.DeleteMonitoredItemsParameters, body)
-            results = await self.session.delete_monitored_items(params)
-            response = ua.DeleteMonitoredItemsResponse()
-            response.Results = results
-            # _logger.info("sending delete monitored items response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.HistoryReadRequest_Encoding_DefaultBinary):
-            _logger.info("history read request (%s)", user)
-            params = struct_from_binary(ua.HistoryReadParameters, body)
-            results = await self.session.history_read(params)
-            response = ua.HistoryReadResponse()
-            response.Results = results
-            # _logger.info("sending history read response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.RegisterNodesRequest_Encoding_DefaultBinary):
-            _logger.info("register nodes request (%s)", user)
-            params = struct_from_binary(ua.RegisterNodesParameters, body)
-            _logger.info("Node registration not implemented")
-            response = ua.RegisterNodesResponse()
-            response.Parameters.RegisteredNodeIds = params.NodesToRegister
-            # _logger.info("sending register nodes response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.UnregisterNodesRequest_Encoding_DefaultBinary):
-            _logger.info("unregister nodes request (%s)", user)
-            params = struct_from_binary(ua.UnregisterNodesParameters, body)
-            response = ua.UnregisterNodesResponse()
-            # _logger.info("sending unregister nodes response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.PublishRequest_Encoding_DefaultBinary):
-            _logger.debug("publish request (%s)", user)
-            if not self.session:
-                return False
-            params = struct_from_binary(ua.PublishParameters, body)
-            data = PublishRequestData(requesthdr=requesthdr, seqhdr=seqhdr)
-            # Store the Publish Request (will be used to send publish answers from server)
-            self._publish_requests.append(data)
-            # If there is an enqueued result forward it immediately
-            while self._publish_results:
-                result = self._publish_results.popleft()
-                if result.SubscriptionId not in self.session.subscription_service.active_subscription_ids:
-                    # Discard the result if the subscription is no longer active
-                    continue
-                await self.forward_publish_response(result)
-                break
-            self.session.publish(params.SubscriptionAcknowledgements)
-            # _logger.debug("publish forward to server")
-
-        elif typeid == ua.NodeId(ua.ObjectIds.RepublishRequest_Encoding_DefaultBinary):
-            _logger.info("re-publish request (%s)", user)
-            params = struct_from_binary(ua.RepublishParameters, body)
-            msg = self.session.republish(params)
-            response = ua.RepublishResponse()
-            response.NotificationMessage = msg
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
         elif typeid == ua.NodeId(ua.ObjectIds.CloseSecureChannelRequest_Encoding_DefaultBinary):
             _logger.info("close secure channel request (%s)", user)
             self._connection.close()
             response = ua.CloseSecureChannelResponse()
             self.send_response(requesthdr.RequestHandle, seqhdr, response)
             return False
-
-        elif typeid == ua.NodeId(ua.ObjectIds.CallRequest_Encoding_DefaultBinary):
-            _logger.info("call request (%s)", user)
-            params = struct_from_binary(ua.CallParameters, body)
-            results = await self.session.call(params.MethodsToCall)
-            response = ua.CallResponse()
-            response.Results = results
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.SetMonitoringModeRequest_Encoding_DefaultBinary):
-            _logger.info("set monitoring mode request (%s)", user)
-            params = struct_from_binary(ua.SetMonitoringModeParameters, body)
-            # FIXME: Implement SetMonitoringMode
-            # For now send dummy results to keep clients happy
-            response = ua.SetMonitoringModeResponse()
-            results = ua.SetMonitoringModeResult()
-            ids = params.MonitoredItemIds
-            statuses = [ua.StatusCode(ua.StatusCodes.Good) for node_id in ids]
-            results.Results = statuses
-            response.Parameters = results
-            _logger.info("sending set monitoring mode response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
-        elif typeid == ua.NodeId(ua.ObjectIds.SetPublishingModeRequest_Encoding_DefaultBinary):
-            _logger.info("set publishing mode request (%s)", user)
-            params = struct_from_binary(ua.SetPublishingModeParameters, body)
-            # FIXME: Implement SetPublishingMode
-            # For now send dummy results to keep clients happy
-            response = ua.SetPublishingModeResponse()
-            results = ua.SetPublishingModeResult()
-            ids = params.SubscriptionIds
-            statuses = [ua.StatusCode(ua.StatusCodes.Good) for node_id in ids]
-            results.Results = statuses
-            response.Parameters = results
-            _logger.info("sending set publishing mode response")
-            self.send_response(requesthdr.RequestHandle, seqhdr, response)
-
         else:
-            _logger.warning("Unknown message received %s (%s)", typeid, user)
-            raise ServiceError(ua.StatusCodes.BadServiceUnsupported)
+            # All services that requere a active session
+            if not self.session:
+                _logger.info("Request service that need a session (%s)", user)
+                raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
+            if not self.session.is_activated():
+                _logger.info("Request service that needs a activated session (%s)", user)
+                raise ServiceError(ua.StatusCodes.BadSessionNotActivated)
+
+            if typeid == ua.NodeId(ua.ObjectIds.ReadRequest_Encoding_DefaultBinary):
+                _logger.info("Read request (%s)", user)
+                params = struct_from_binary(ua.ReadParameters, body)
+                results = await self.session.read(params)
+                response = ua.ReadResponse()
+                response.Results = results
+                # _logger.info("sending read response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.WriteRequest_Encoding_DefaultBinary):
+                _logger.info("Write request (%s)", user)
+                params = struct_from_binary(ua.WriteParameters, body)
+                results = await self.session.write(params)
+                response = ua.WriteResponse()
+                response.Results = results
+                # _logger.info("sending write response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.BrowseRequest_Encoding_DefaultBinary):
+                _logger.info("Browse request (%s)", user)
+                params = struct_from_binary(ua.BrowseParameters, body)
+                results = await self.session.browse(params)
+                response = ua.BrowseResponse()
+                response.Results = results
+                # _logger.info("sending browse response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.TranslateBrowsePathsToNodeIdsRequest_Encoding_DefaultBinary):
+                _logger.info("translate browsepaths to nodeids request (%s)", user)
+                params = struct_from_binary(ua.TranslateBrowsePathsToNodeIdsParameters, body)
+                paths = await self.session.translate_browsepaths_to_nodeids(params.BrowsePaths)
+                response = ua.TranslateBrowsePathsToNodeIdsResponse()
+                response.Results = paths
+                # _logger.info("sending translate browsepaths to nodeids response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.AddNodesRequest_Encoding_DefaultBinary):
+                _logger.info("add nodes request (%s)", user)
+                params = struct_from_binary(ua.AddNodesParameters, body)
+                results = await self.session.add_nodes(params.NodesToAdd)
+                response = ua.AddNodesResponse()
+                response.Results = results
+                # _logger.info("sending add node response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.DeleteNodesRequest_Encoding_DefaultBinary):
+                _logger.info("delete nodes request (%s)", user)
+                params = struct_from_binary(ua.DeleteNodesParameters, body)
+                results = await self.session.delete_nodes(params)
+                response = ua.DeleteNodesResponse()
+                response.Results = results
+                # _logger.info("sending delete node response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.AddReferencesRequest_Encoding_DefaultBinary):
+                _logger.info("add references request (%s)", user)
+                params = struct_from_binary(ua.AddReferencesParameters, body)
+                results = await self.session.add_references(params.ReferencesToAdd)
+                response = ua.AddReferencesResponse()
+                response.Results = results
+                # _logger.info("sending add references response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.DeleteReferencesRequest_Encoding_DefaultBinary):
+                _logger.info("delete references request (%s)", user)
+                params = struct_from_binary(ua.DeleteReferencesParameters, body)
+                results = await self.session.delete_references(params.ReferencesToDelete)
+                response = ua.DeleteReferencesResponse()
+                response.Parameters.Results = results
+                # _logger.info("sending delete references response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.CreateSubscriptionRequest_Encoding_DefaultBinary):
+                _logger.info("create subscription request (%s)", user)
+                params = struct_from_binary(ua.CreateSubscriptionParameters, body)
+                result = await self.session.create_subscription(params, callback=self.forward_publish_response)
+                response = ua.CreateSubscriptionResponse()
+                response.Parameters = result
+                # _logger.info("sending create subscription response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.ModifySubscriptionRequest_Encoding_DefaultBinary):
+                _logger.info("modify subscription request")
+                params = struct_from_binary(ua.ModifySubscriptionParameters, body)
+
+                result = self.session.modify_subscription(params, self.forward_publish_response)
+
+                response = ua.ModifySubscriptionResponse()
+                response.Parameters = result
+
+                #_logger.info("sending modify subscription response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.DeleteSubscriptionsRequest_Encoding_DefaultBinary):
+                _logger.info("delete subscriptions request (%s)", user)
+                params = struct_from_binary(ua.DeleteSubscriptionsParameters, body)
+                results = await self.session.delete_subscriptions(params.SubscriptionIds)
+                response = ua.DeleteSubscriptionsResponse()
+                response.Results = results
+                # _logger.info("sending delete subscription response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.CreateMonitoredItemsRequest_Encoding_DefaultBinary):
+                _logger.info("create monitored items request (%s)", user)
+                params = struct_from_binary(ua.CreateMonitoredItemsParameters, body)
+                results = await self.session.create_monitored_items(params)
+                response = ua.CreateMonitoredItemsResponse()
+                response.Results = results
+                # _logger.info("sending create monitored items response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.ModifyMonitoredItemsRequest_Encoding_DefaultBinary):
+                _logger.info("modify monitored items request (%s)", user)
+                params = struct_from_binary(ua.ModifyMonitoredItemsParameters, body)
+                results = await self.session.modify_monitored_items(params)
+                response = ua.ModifyMonitoredItemsResponse()
+                response.Results = results
+                # _logger.info("sending modify monitored items response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.DeleteMonitoredItemsRequest_Encoding_DefaultBinary):
+                _logger.info("delete monitored items request (%s)", user)
+                params = struct_from_binary(ua.DeleteMonitoredItemsParameters, body)
+                results = await self.session.delete_monitored_items(params)
+                response = ua.DeleteMonitoredItemsResponse()
+                response.Results = results
+                # _logger.info("sending delete monitored items response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.HistoryReadRequest_Encoding_DefaultBinary):
+                _logger.info("history read request (%s)", user)
+                params = struct_from_binary(ua.HistoryReadParameters, body)
+                results = await self.session.history_read(params)
+                response = ua.HistoryReadResponse()
+                response.Results = results
+                # _logger.info("sending history read response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.RegisterNodesRequest_Encoding_DefaultBinary):
+                _logger.info("register nodes request (%s)", user)
+                params = struct_from_binary(ua.RegisterNodesParameters, body)
+                _logger.info("Node registration not implemented")
+                response = ua.RegisterNodesResponse()
+                response.Parameters.RegisteredNodeIds = params.NodesToRegister
+                # _logger.info("sending register nodes response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.UnregisterNodesRequest_Encoding_DefaultBinary):
+                _logger.info("unregister nodes request (%s)", user)
+                params = struct_from_binary(ua.UnregisterNodesParameters, body)
+                response = ua.UnregisterNodesResponse()
+                # _logger.info("sending unregister nodes response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.PublishRequest_Encoding_DefaultBinary):
+                _logger.debug("publish request (%s)", user)
+                if not self.session:
+                    return False
+                params = struct_from_binary(ua.PublishParameters, body)
+                data = PublishRequestData(requesthdr=requesthdr, seqhdr=seqhdr)
+                # Store the Publish Request (will be used to send publish answers from server)
+                self._publish_requests.append(data)
+                # If there is an enqueued result forward it immediately
+                while self._publish_results:
+                    result = self._publish_results.popleft()
+                    if result.SubscriptionId not in self.session.subscription_service.active_subscription_ids:
+                        # Discard the result if the subscription is no longer active
+                        continue
+                    await self.forward_publish_response(result)
+                    break
+                self.session.publish(params.SubscriptionAcknowledgements)
+                # _logger.debug("publish forward to server")
+
+            elif typeid == ua.NodeId(ua.ObjectIds.RepublishRequest_Encoding_DefaultBinary):
+                _logger.info("re-publish request (%s)", user)
+                params = struct_from_binary(ua.RepublishParameters, body)
+                msg = self.session.republish(params)
+                response = ua.RepublishResponse()
+                response.NotificationMessage = msg
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.CallRequest_Encoding_DefaultBinary):
+                _logger.info("call request (%s)", user)
+                params = struct_from_binary(ua.CallParameters, body)
+                results = await self.session.call(params.MethodsToCall)
+                response = ua.CallResponse()
+                response.Results = results
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.SetMonitoringModeRequest_Encoding_DefaultBinary):
+                _logger.info("set monitoring mode request (%s)", user)
+                params = struct_from_binary(ua.SetMonitoringModeParameters, body)
+                # FIXME: Implement SetMonitoringMode
+                # For now send dummy results to keep clients happy
+                response = ua.SetMonitoringModeResponse()
+                results = ua.SetMonitoringModeResult()
+                ids = params.MonitoredItemIds
+                statuses = [ua.StatusCode(ua.StatusCodes.Good) for node_id in ids]
+                results.Results = statuses
+                response.Parameters = results
+                _logger.info("sending set monitoring mode response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            elif typeid == ua.NodeId(ua.ObjectIds.SetPublishingModeRequest_Encoding_DefaultBinary):
+                _logger.info("set publishing mode request (%s)", user)
+                params = struct_from_binary(ua.SetPublishingModeParameters, body)
+                # FIXME: Implement SetPublishingMode
+                # For now send dummy results to keep clients happy
+                response = ua.SetPublishingModeResponse()
+                results = ua.SetPublishingModeResult()
+                ids = params.SubscriptionIds
+                statuses = [ua.StatusCode(ua.StatusCodes.Good) for node_id in ids]
+                results.Results = statuses
+                response.Parameters = results
+                _logger.info("sending set publishing mode response")
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
+            else:
+                _logger.warning("Unknown message received %s (%s)", typeid, user)
+                raise ServiceError(ua.StatusCodes.BadServiceUnsupported)
 
         return True
 
