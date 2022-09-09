@@ -181,7 +181,7 @@ class SecureConnection:
         Called on server side to open secure channel.
         """
 
-        self.local_nonce = ua.utils.create_nonce(self.security_policy.symmetric_key_size)
+        self.local_nonce = ua.utils.create_nonce(self.security_policy.secure_channel_nonce_length)
         self.remote_nonce = params.ClientNonce
         response = ua.OpenSecureChannelResult()
         response.ServerNonce = self.local_nonce

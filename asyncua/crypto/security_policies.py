@@ -455,6 +455,7 @@ class SecurityPolicyAes128Sha256RsaOaep(SecurityPolicy):
     URI = "http://opcfoundation.org/UA/SecurityPolicy#Aes128_Sha256_RsaOaep"
     signature_key_size = 32
     symmetric_key_size = 16
+    secure_channel_nonce_length = 32
     AsymmetricEncryptionURI = "http://www.w3.org/2001/04/xmlenc#rsa-oaep"
     AsymmetricSignatureURI = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
 
@@ -543,6 +544,7 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
     URI = "http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15"
     signature_key_size = 16
     symmetric_key_size = 16
+    secure_channel_nonce_length = 16
     AsymmetricEncryptionURI = "http://www.w3.org/2001/04/xmlenc#rsa-1_5"
     AsymmetricSignatureURI = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 
@@ -630,6 +632,7 @@ class SecurityPolicyBasic256(SecurityPolicy):
     URI = "http://opcfoundation.org/UA/SecurityPolicy#Basic256"
     signature_key_size = 24
     symmetric_key_size = 32
+    secure_channel_nonce_length = 32
     AsymmetricEncryptionURI = "http://www.w3.org/2001/04/xmlenc#rsa-oaep"
     AsymmetricSignatureURI = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 
@@ -718,6 +721,7 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
     URI = "http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256"
     signature_key_size = 32
     symmetric_key_size = 32
+    secure_channel_nonce_length = 32
     AsymmetricEncryptionURI = "http://www.w3.org/2001/04/xmlenc#rsa-oaep"
     AsymmetricSignatureURI = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
 
