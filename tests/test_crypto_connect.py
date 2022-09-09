@@ -181,6 +181,22 @@ async def test_basic256_encrypt_fail(srv_crypto_all_certs):
         )
 
 
+async def test_Aes128Sha256RsaOaep_encrypt_success(srv_crypto_all_certs):
+    clt = Client(uri_crypto)
+    _, cert = srv_crypto_all_certs
+    await clt.set_security(
+        security_policies.SecurityPolicyAes128Sha256RsaOaep,
+        f"{EXAMPLE_PATH}certificate-example.der",
+        f"{EXAMPLE_PATH}private-key-example.pem",
+        None,
+        cert,
+        ua.MessageSecurityMode.SignAndEncrypt
+    )
+
+    async with clt:
+        assert await clt.nodes.objects.get_children()
+
+
 async def test_certificate_handling_success(srv_crypto_one_cert):
     _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)

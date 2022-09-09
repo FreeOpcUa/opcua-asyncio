@@ -1157,3 +1157,5 @@ class SecurityPolicyType(Enum):
     Basic256_SignAndEncrypt = 4
     Basic256Sha256_Sign = 5
     Basic256Sha256_SignAndEncrypt = 6
+    Aes128Sha256RsaOaep_Sign = 7
+    Aes128Sha256RsaOaep_SignAndEncrypt = 8
