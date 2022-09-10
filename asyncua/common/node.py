@@ -716,7 +716,7 @@ class Node:
         Rmw: This call modifies the nodeid of the node, the original nodeid is
         available as node.basenodeid
         """
-        nodeid = await self.server.register_nodes([self.nodeid])[0]
+        nodeid = (await self.server.register_nodes([self.nodeid]))[0]
         self.basenodeid = self.nodeid
         self.nodeid = nodeid
 
