@@ -333,7 +333,7 @@ class Client:
         params.SecurityMode = self.security_policy.Mode
         params.RequestedLifetime = self.secure_channel_timeout
         # length should be equal to the length of key of symmetric encryption
-        params.ClientNonce = create_nonce(self.security_policy.symmetric_key_size)
+        params.ClientNonce = create_nonce(self.security_policy.secure_channel_nonce_length)
         result = await self.uaclient.open_secure_channel(params)
         if self.secure_channel_timeout != result.SecurityToken.RevisedLifetime:
             _logger.info("Requested secure channel timeout to be %dms, got %dms instead", self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)

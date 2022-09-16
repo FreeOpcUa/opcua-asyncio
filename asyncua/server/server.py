@@ -97,11 +97,12 @@ class Server:
         # enable all endpoints by default
         self._security_policy = [
             ua.SecurityPolicyType.NoSecurity, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
-            ua.SecurityPolicyType.Basic256Sha256_Sign
+            ua.SecurityPolicyType.Basic256Sha256_Sign, ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt,
+            ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign
         ]
         # allow all certificates by default
         self._permission_ruleset = None
-        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
+        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep"]
         self.certificate = None
 
     async def init(self, shelf_file=None):
@@ -352,6 +353,20 @@ class Server:
                 self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256, ua.MessageSecurityMode.Sign)
                 self._policies.append(
                     ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
+                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
+            if ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt in self._security_policy:
+                self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep,
+                                    ua.MessageSecurityMode.SignAndEncrypt)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
+                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
+                                             self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
+            if ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign in self._security_policy:
+                self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep, ua.MessageSecurityMode.Sign)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
                                              ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
                                              permission_ruleset=self._permission_ruleset))
 
