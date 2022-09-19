@@ -417,13 +417,13 @@ class SecureConnection:
 
     def _receive(self, msg):
         if msg.MessageHeader.packet_size > self._limits.max_recv_buffer:
-            # @FIXME return correct response https://reference.opcfoundation.org/v104/Core/docs/Part6/6.7.3/
-            return ua.UaError("Recived bigger msg than allowed")
+            self._incoming_parts = []
+            raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         self._check_incoming_chunk(msg)
         self._incoming_parts.append(msg)
         if not self._limits.check_max_chunk_count(len(self._incoming_parts)):
-            # @FIXME return correct response https://reference.opcfoundation.org/v104/Core/docs/Part6/6.7.3/
-            return ua.UaError("Recived more chunks than allowed")
+            self._incoming_parts = []
+            raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         if msg.MessageHeader.ChunkType == ua.ChunkType.Intermediate:
             return None
         if msg.MessageHeader.ChunkType == ua.ChunkType.Abort:

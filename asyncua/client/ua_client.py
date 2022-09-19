@@ -109,7 +109,8 @@ class UASocketProtocol(asyncio.Protocol):
             self._call_callback(0, msg)
         elif isinstance(msg, ua.ErrorMessage):
             self.logger.fatal("Received an error: %r", msg)
-            self._call_callback(0, ua.UaStatusCodeError(msg.Error.value))
+            # No need to do anything here because we don't know to which sequence the error belongs.
+            # Also the server should terminate the connection anyway.
         else:
             raise ua.UaError(f"Unsupported message type: {msg}")
 
