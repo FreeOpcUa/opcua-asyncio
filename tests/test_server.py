@@ -730,5 +730,3 @@ class TestServerStartError(unittest.TestCase):
         server1.stop()
         server2.stop()
 """
-
-

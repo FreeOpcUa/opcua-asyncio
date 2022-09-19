@@ -6,8 +6,7 @@ import asyncio
 import math
 from typing import Optional
 
-from asyncua.common.connection import TransportLimits
-
+from ..common.connection import TransportLimits
 from ..ua.ua_binary import header_from_binary
 from ..common.utils import Buffer, NotEnoughData
 from .uaprocessor import UaProcessor

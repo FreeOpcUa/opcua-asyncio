@@ -96,7 +96,7 @@ class UaProcessor:
             err = ua.ErrorMessage(ua.StatusCode(e.code), str(e))
             data = uatcp_to_binary(ua.MessageType.Error, err)
             self._transport.write(data)
-            return False
+            return True
         except ua.uaerrors.BadUserAccessDenied:
             _logger.warning("Unauthenticated user attempted to connect")
             return False
