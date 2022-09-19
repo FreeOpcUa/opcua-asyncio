@@ -665,6 +665,30 @@ async def test_server_read_write_attribute_value(server: Server):
     assert dv.Value.Value == 5
     await server.delete_nodes([node])
 
+
+@pytest.fixture(scope="function")
+def restore_transport_limits_server(server: Server):
+    # Restore limits after test
+    max_recv = server.bserver.limits.max_recv_buffer
+    max_chunk_count = server.bserver.limits.max_chunk_count
+    yield server
+    server.bserver.limits.max_recv_buffer = max_recv
+    server.bserver.limits.max_chunk_count = max_chunk_count
+
+
+async def test_message_limits(restore_transport_limits_server: Server):
+    server = restore_transport_limits_server
+    server.bserver.limits.max_recv_buffer = 1024
+    server.bserver.limits.max_chunk_count = 10
+    client = Client(server.endpoint.geturl())
+    # This should trigger a timeout error because the message is to large
+    with pytest.raises(asyncio.TimeoutError):
+        async with client:
+            test_string = 'a' * (1024 * 1024 * 1024)
+            n = client.get_node(ua.NodeId())
+            await n.write_value(test_string, ua.VariantType.String)
+
+
 """
 class TestServerCaching(unittest.TestCase):
     def runTest(self):
@@ -706,3 +730,5 @@ class TestServerStartError(unittest.TestCase):
         server1.stop()
         server2.stop()
 """
+
+
