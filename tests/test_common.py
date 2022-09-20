@@ -1289,6 +1289,33 @@ async def test_custom_struct_union(opc):
     assert val.MyInt64 is None
     assert val.MyString == '1234'
 
+    # test for union with the same type and multiple fields
+    await new_struct(opc.opc, idx, "MyDuplicateTypeUnionStruct", [
+        new_struct_field("MyString", ua.VariantType.String),
+        new_struct_field("MyInt64", ua.VariantType.Int64),
+        new_struct_field("MySecondString", ua.VariantType.String)
+    ], is_union=True)
+    await opc.opc.load_data_type_definitions()
+    my_union = ua.MyDuplicateTypeUnionStruct()
+    my_union.MyInt64 = 555
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_duplicate_union_struct", ua.Variant(my_union, ua.VariantType.ExtensionObject))
+    val = await var.read_value()
+    assert val.MyInt64 == 555
+    assert val.MyString is None
+    assert val.MySecondString is None
+    my_union.MyString = '1234'
+    await var.write_value(my_union)
+    val = await var.read_value()
+    assert val.MyInt64 is None
+    assert val.MyString == '1234'
+    assert val.MySecondString is None
+    my_union.MySecondString = 'ABC'
+    await var.write_value(my_union)
+    val = await var.read_value()
+    assert val.MyInt64 is None
+    assert val.MyString is None
+    assert val.MySecondString == 'ABC'
+
 
 async def test_custom_struct_of_struct(opc):
     idx = 4
