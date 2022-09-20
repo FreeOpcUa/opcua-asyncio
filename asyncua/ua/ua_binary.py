@@ -281,8 +281,7 @@ def create_dataclass_serializer(dataclazz):
     if issubclass(dataclazz, ua.UaUnion):
         # Union is a class with Encoding and Value field
         # the value is depended of encoding
-        union_field = next(filter(lambda f: type_is_union(f.type), data_fields))
-        encoding_funcs = [field_serializer(types) for types in types_from_union(union_field.type)]
+        encoding_funcs = [field_serializer(t) for t in dataclazz._union_types]
 
         def union_serialize(obj):
             bin = Primitives.UInt32.pack(obj.Encoding)
@@ -609,8 +608,7 @@ def _create_dataclass_deserializer(objtype):
     if issubclass(objtype, ua.UaUnion):
         # unions are just objects with encoding and value field
         typefields = fields(objtype)
-        union_types = next(types_from_union(f.type) for f in typefields if f.name == "Value")
-        field_deserializers = [_create_type_deserializer(type) for type in union_types]
+        field_deserializers = [_create_type_deserializer(t) for t in objtype._union_types]
         byte_decode = next(_create_type_deserializer(f.type) for f in typefields if f.name == "Encoding")
 
         def decode_union(data):

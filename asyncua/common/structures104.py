@@ -221,6 +221,7 @@ class {struct_name}{base_class}:
     if is_union:
         # Generate getter and setter to mimic opc ua union access
         names = [f[1] for f in fields]
+        code += "    _union_types = [" + ','.join(names) + "]\n"
         code += "    Value: Union[None, " + ','.join(names) + "] = field(default=None, init=False)"
         for enc_idx, fd in enumerate(fields):
             name, uatype, _ = fd
