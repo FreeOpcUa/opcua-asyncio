@@ -19,12 +19,12 @@ logger = logging.getLogger('asyncua.uaprotocol')
 @dataclass
 class TransportLimits:
     '''
-        Limits of the server to prevent excessive resource usage
+        Limits of the tcp transport layer to prevent excessive resource usage
     '''
     max_recv_buffer: int = 65535
     max_send_buffer: int = 65535
-    max_chunk_count: int = 0
-    max_message_size: int = 0
+    max_chunk_count: int = ((100 * 1024 * 1024) // 65535) + 1 #  max_message_size / max_recv_buffer 
+    max_message_size: int = 100 * 1024 * 1024  # 100mb
 
     @staticmethod
     def _select_limit(hint: ua.UInt32, limit: int) -> ua.UInt32:
@@ -46,8 +46,8 @@ class TransportLimits:
 
     def create_acknowledge_limits(self, msg: ua.Hello) -> ua.Acknowledge:
         ack = ua.Acknowledge()
-        ack.ReceiveBufferSize = self._select_limit(msg.ReceiveBufferSize, self.max_recv_buffer)
-        ack.SendBufferSize = self._select_limit(msg.SendBufferSize, self.max_send_buffer)
+        ack.ReceiveBufferSize = min(msg.ReceiveBufferSize, self.max_recv_buffer)
+        ack.SendBufferSize = min(msg.SendBufferSize, self.max_send_buffer)
         ack.MaxChunkCount = self._select_limit(msg.MaxChunkCount, self.max_chunk_count)
         ack.MaxMessageSize = self._select_limit(msg.MaxMessageSize, self.max_message_size)
         self.update_limits(ack)
