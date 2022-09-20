@@ -1,4 +1,6 @@
-sphinx
-sphinxcontrib-napoleon
-futures
-cryptography
+Sphinx>=5.1.0
+pydata-sphinx-theme>=0.9.0
+# sphinx-copybutton>=0.5.0
+
+# Optional Dependencies
+sphinx-autobuild>=2021.3.14
