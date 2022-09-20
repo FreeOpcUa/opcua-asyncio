@@ -71,11 +71,11 @@ The `Server` class provides a high level API for creation of OPC UA server insta
 
 # Documentation
 
+The documentation is available here [ReadTheDocs](http://opcua-asyncio.readthedocs.org/en/latest/).
+
 The API remains mostly unchanged in regards to [python-opcua](https://github.com/FreeOpcUa/python-opcua).
 Main difference is that many methods have been refactored to return coroutines.
 Please have a look at [the examples](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples) and/or the code.
-
-The original documentation (for python-opcua) is available here [ReadTheDocs](http://python-opcua.readthedocs.org/en/latest/).
 
 A simple GUI client is available: https://github.com/FreeOpcUa/opcua-client-gui
 
