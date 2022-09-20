@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import hashlib
 from datetime import datetime, timedelta
 import logging
@@ -13,6 +14,56 @@ except ImportError:
         pass
 
 logger = logging.getLogger('asyncua.uaprotocol')
+
+
+@dataclass
+class TransportLimits:
+    '''
+        Limits of the tcp transport layer to prevent excessive resource usage
+    '''
+    max_recv_buffer: int = 65535
+    max_send_buffer: int = 65535
+    max_chunk_count: int = ((100 * 1024 * 1024) // 65535) + 1 #  max_message_size / max_recv_buffer 
+    max_message_size: int = 100 * 1024 * 1024  # 100mb
+
+    @staticmethod
+    def _select_limit(hint: ua.UInt32, limit: int) -> ua.UInt32:
+        if limit <= 0:
+            return hint
+        elif limit < hint:
+            return hint
+        return ua.UInt32(limit)
+
+    def check_max_msg_size(self, sz: int) -> bool:
+        if self.max_message_size == 0:
+            return True
+        return self.max_message_size <= sz
+
+    def check_max_chunk_count(self, sz: int) -> bool:
+        if self.max_chunk_count == 0:
+            return True
+        return self.max_chunk_count <= sz
+
+    def create_acknowledge_limits(self, msg: ua.Hello) -> ua.Acknowledge:
+        ack = ua.Acknowledge()
+        ack.ReceiveBufferSize = min(msg.ReceiveBufferSize, self.max_recv_buffer)
+        ack.SendBufferSize = min(msg.SendBufferSize, self.max_send_buffer)
+        ack.MaxChunkCount = self._select_limit(msg.MaxChunkCount, self.max_chunk_count)
+        ack.MaxMessageSize = self._select_limit(msg.MaxMessageSize, self.max_message_size)
+        self.update_limits(ack)
+        return ack
+
+    def create_hello_limits(self, msg: ua.Hello) -> ua.Hello:
+        msg.ReceiveBufferSize = self.max_recv_buffer
+        msg.SendBufferSize = self.max_send_buffer
+        msg.MaxChunkCount = self.max_chunk_count
+        msg.MaxMessageSize = self.max_chunk_count
+
+    def update_limits(self, msg: ua.Acknowledge) -> None:
+        self.max_chunk_count = msg.MaxChunkCount
+        self.max_recv_buffer = msg.ReceiveBufferSize
+        self.max_send_buffer = msg.SendBufferSize
+        self.max_message_size = msg.MaxMessageSize
 
 
 class MessageChunk:
@@ -139,7 +190,7 @@ class SecureConnection:
     """
     Common logic for client and server
     """
-    def __init__(self, security_policy):
+    def __init__(self, security_policy, limits: TransportLimits):
         self._sequence_number = 0
         self._peer_sequence_number = None
         self._incoming_parts = []
@@ -152,7 +203,7 @@ class SecureConnection:
         self.local_nonce = 0
         self.remote_nonce = 0
         self._allow_prev_token = False
-        self._max_chunk_size = 65536
+        self._limits = limits
 
     def set_channel(self, params, request_type, client_nonce):
         """
@@ -257,7 +308,7 @@ class SecureConnection:
         chunks = MessageChunk.message_to_chunks(
             self.security_policy,
             message,
-            self._max_chunk_size,
+            self._limits.max_send_buffer,
             message_type=message_type,
             channel_id=self.security_token.ChannelId,
             request_id=request_id,
@@ -353,11 +404,10 @@ class SecureConnection:
             return self._receive(chunk)
         if header.MessageType == ua.MessageType.Hello:
             msg = struct_from_binary(ua.Hello, body)
-            self._max_chunk_size = msg.ReceiveBufferSize
             return msg
         if header.MessageType == ua.MessageType.Acknowledge:
             msg = struct_from_binary(ua.Acknowledge, body)
-            self._max_chunk_size = msg.SendBufferSize
+            self._limits.update_limits(msg)
             return msg
         if header.MessageType == ua.MessageType.Error:
             msg = struct_from_binary(ua.ErrorMessage, body)
@@ -366,8 +416,14 @@ class SecureConnection:
         raise ua.UaError(f"Unsupported message type {header.MessageType}")
 
     def _receive(self, msg):
+        if msg.MessageHeader.packet_size > self._limits.max_recv_buffer:
+            self._incoming_parts = []
+            raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         self._check_incoming_chunk(msg)
         self._incoming_parts.append(msg)
+        if not self._limits.check_max_chunk_count(len(self._incoming_parts)):
+            self._incoming_parts = []
+            raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         if msg.MessageHeader.ChunkType == ua.ChunkType.Intermediate:
             return None
         if msg.MessageHeader.ChunkType == ua.ChunkType.Abort:

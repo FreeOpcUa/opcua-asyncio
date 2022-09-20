@@ -2,13 +2,14 @@
 Low level binary client
 """
 import asyncio
+import copy
 import logging
 from typing import Awaitable, Callable, Dict, List, Optional, Union
 
 from asyncua import ua
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, BadUserAccessDenied, UaStructParsingError
-from ..common.connection import SecureConnection
+from ..common.connection import SecureConnection, TransportLimits
 
 
 class UASocketProtocol(asyncio.Protocol):
@@ -20,7 +21,7 @@ class UASocketProtocol(asyncio.Protocol):
     OPEN = 'open'
     CLOSED = 'closed'
 
-    def __init__(self, timeout: float = 1, security_policy: ua.SecurityPolicy = ua.SecurityPolicy()):
+    def __init__(self, timeout: float = 1, security_policy: ua.SecurityPolicy = ua.SecurityPolicy(), limits: TransportLimits = None):
         """
         :param timeout: Timeout in seconds
         :param security_policy: Security policy (optional)
@@ -34,7 +35,12 @@ class UASocketProtocol(asyncio.Protocol):
         self._request_id = 0
         self._request_handle = 0
         self._callbackmap: Dict[int, asyncio.Future] = {}
-        self._connection = SecureConnection(security_policy)
+        if limits is None:
+            limits = TransportLimits(65535, 65535, 0, 0)
+        else:
+            limits = copy.deep_copy(limits)  # Make a copy because the limits can change in the session
+        self._connection = SecureConnection(security_policy, limits)
+
         self.state = self.INITIALIZED
         self.closed: bool = False
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
@@ -103,7 +109,7 @@ class UASocketProtocol(asyncio.Protocol):
             self._call_callback(0, msg)
         elif isinstance(msg, ua.ErrorMessage):
             self.logger.fatal("Received an error: %r", msg)
-            self._call_callback(0, ua.UaStatusCodeError(msg.Error.value))
+            self.disconnect_socket()
         else:
             raise ua.UaError(f"Unsupported message type: {msg}")
 

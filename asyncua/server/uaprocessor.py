@@ -1,3 +1,4 @@
+import copy
 import time
 import logging
 from typing import Deque, Optional
@@ -6,7 +7,7 @@ from collections import deque
 from asyncua import ua
 from ..ua.ua_binary import nodeid_from_binary, struct_from_binary, struct_to_binary, uatcp_to_binary
 from .internal_server import InternalServer, InternalSession
-from ..common.connection import SecureConnection
+from ..common.connection import SecureConnection, TransportLimits
 from ..common.utils import ServiceError
 
 _logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class UaProcessor:
     Processor for OPC UA messages. Implements the OPC UA protocol for the server side.
     """
 
-    def __init__(self, internal_server: InternalServer, transport):
+    def __init__(self, internal_server: InternalServer, transport, limits: TransportLimits):
         self.iserver: InternalServer = internal_server
         self.name = transport.get_extra_info('peername')
         self.sockname = transport.get_extra_info('sockname')
@@ -35,7 +36,8 @@ class UaProcessor:
         self._publish_requests: Deque[PublishRequestData] = deque()
         # used when we need to wait for PublishRequest
         self._publish_results: Deque[ua.PublishResult] = deque()
-        self._connection = SecureConnection(ua.SecurityPolicy())
+        self._limits = copy.deepcopy(limits)  # Copy limits because they get overriden
+        self._connection = SecureConnection(ua.SecurityPolicy(), self._limits)
 
     def set_policies(self, policies):
         self._connection.set_policy_factories(policies)
@@ -89,6 +91,12 @@ class UaProcessor:
     async def process(self, header, body):
         try:
             msg = self._connection.receive_from_header_and_body(header, body)
+        except ua.uaerrors.BadRequestTooLarge as e:
+            _logger.warning("Recived request that exceed the transport limits")
+            err = ua.ErrorMessage(ua.StatusCode(e.code), str(e))
+            data = uatcp_to_binary(ua.MessageType.Error, err)
+            self._transport.write(data)
+            return True
         except ua.uaerrors.BadUserAccessDenied:
             _logger.warning("Unauthenticated user attempted to connect")
             return False
@@ -101,9 +109,7 @@ class UaProcessor:
             elif header.MessageType == ua.MessageType.SecureMessage:
                 return await self.process_message(msg.SequenceHeader(), msg.body())
         elif isinstance(msg, ua.Hello):
-            ack = ua.Acknowledge()
-            ack.ReceiveBufferSize = msg.ReceiveBufferSize
-            ack.SendBufferSize = msg.SendBufferSize
+            ack = self._limits.create_acknowledge_limits(msg)
             data = uatcp_to_binary(ua.MessageType.Acknowledge, ack)
             self._transport.write(data)
         elif isinstance(msg, ua.ErrorMessage):

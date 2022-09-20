@@ -3,8 +3,10 @@ Socket server forwarding request to internal server
 """
 import logging
 import asyncio
+import math
 from typing import Optional
 
+from ..common.connection import TransportLimits
 from ..ua.ua_binary import header_from_binary
 from ..common.utils import Buffer, NotEnoughData
 from .uaprocessor import UaProcessor
@@ -18,7 +20,7 @@ class OPCUAProtocol(asyncio.Protocol):
     Instantiated for every connection.
     """
 
-    def __init__(self, iserver: InternalServer, policies, clients, closing_tasks):
+    def __init__(self, iserver: InternalServer, policies, clients, closing_tasks, limits: TransportLimits):
         self.peer_name = None
         self.transport = None
         self.processor = None
@@ -28,6 +30,7 @@ class OPCUAProtocol(asyncio.Protocol):
         self.clients = clients
         self.closing_tasks = closing_tasks
         self.messages = asyncio.Queue()
+        self.limits = limits
         self._task = None
 
     def __str__(self):
@@ -39,7 +42,7 @@ class OPCUAProtocol(asyncio.Protocol):
         self.peer_name = transport.get_extra_info('peername')
         logger.info('New connection from %s', self.peer_name)
         self.transport = transport
-        self.processor = UaProcessor(self.iserver, self.transport)
+        self.processor = UaProcessor(self.iserver, self.transport, self.limits)
         self.processor.set_policies(self.policies)
         self.iserver.asyncio_transports.append(transport)
         self.clients.append(self)
@@ -119,6 +122,15 @@ class BinaryServer:
         self.clients = []
         self.closing_tasks = []
         self.cleanup_task = None
+        # Use accectable limits
+        buffer_sz = 65535
+        max_msg_sz = 16 * 1024 * 1024  # 16mb simular to the opc ua c stack so this is a good default
+        self.limits = TransportLimits(
+            max_recv_buffer=buffer_sz,
+            max_send_buffer=buffer_sz,
+            max_chunk_count=math.ceil(buffer_sz / max_msg_sz),  # Round up to allow max msg size
+            max_message_size=max_msg_sz
+        )
 
     def set_policies(self, policies):
         self._policies = policies
@@ -130,6 +142,7 @@ class BinaryServer:
             policies=self._policies,
             clients=self.clients,
             closing_tasks=self.closing_tasks,
+            limits=self.limits
         )
 
     async def start(self):
