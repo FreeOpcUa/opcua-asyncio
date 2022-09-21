@@ -21,9 +21,11 @@ class TransportLimits:
     '''
         Limits of the tcp transport layer to prevent excessive resource usage
     '''
+    # Max size of a chunk we can receive
     max_recv_buffer: int = 65535
+    # Max size of a chunk we can send
     max_send_buffer: int = 65535
-    max_chunk_count: int = ((100 * 1024 * 1024) // 65535) + 1 #  max_message_size / max_recv_buffer 
+    max_chunk_count: int = ((100 * 1024 * 1024) // 65535) + 1  # max_message_size / max_recv_buffer
     max_message_size: int = 100 * 1024 * 1024  # 100mb
 
     @staticmethod
@@ -37,12 +39,18 @@ class TransportLimits:
     def check_max_msg_size(self, sz: int) -> bool:
         if self.max_message_size == 0:
             return True
-        return self.max_message_size <= sz
+        within_limit = self.max_message_size <= sz
+        if not within_limit:
+            logger.error("Message size: %s is > configured max message size: %s", sz, self.max_message_size)
+        return within_limit
 
     def check_max_chunk_count(self, sz: int) -> bool:
         if self.max_chunk_count == 0:
             return True
-        return self.max_chunk_count <= sz
+        within_limit = self.max_chunk_count <= sz
+        if not within_limit:
+            logger.error("Number of message chunks: %s is > configured max chunk count: %s", sz, self.max_chunk_count)
+        return within_limit
 
     def create_acknowledge_limits(self, msg: ua.Hello) -> ua.Acknowledge:
         ack = ua.Acknowledge()
@@ -64,6 +72,7 @@ class TransportLimits:
         self.max_recv_buffer = msg.ReceiveBufferSize
         self.max_send_buffer = msg.SendBufferSize
         self.max_message_size = msg.MaxMessageSize
+        logger.warning("updating limits from server: %s", self)
 
 
 class MessageChunk:
