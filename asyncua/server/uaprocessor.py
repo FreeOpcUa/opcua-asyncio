@@ -109,7 +109,7 @@ class UaProcessor:
             elif header.MessageType == ua.MessageType.SecureMessage:
                 return await self.process_message(msg.SequenceHeader(), msg.body())
         elif isinstance(msg, ua.Hello):
-            ack = self._limits.create_acknowledge_limits(msg)
+            ack = self._limits.create_acknowledge_and_set_limits(msg)
             data = uatcp_to_binary(ua.MessageType.Acknowledge, ack)
             self._transport.write(data)
         elif isinstance(msg, ua.ErrorMessage):

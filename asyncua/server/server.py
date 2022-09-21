@@ -4,6 +4,7 @@ High level interface to pure python OPC-UA server
 
 import asyncio
 import logging
+import math
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
 from typing import Coroutine, Optional, Tuple
@@ -23,6 +24,7 @@ from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
 from ..common.structures104 import load_data_type_definitions
 from ..common.ua_utils import get_nodes_of_namespace
+from ..common.connection import TransportLimits
 
 from ..crypto import security_policies, uacrypto
 
@@ -104,6 +106,15 @@ class Server:
         self._permission_ruleset = None
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep"]
         self.certificate = None
+        # Use accectable limits
+        buffer_sz = 65535
+        max_msg_sz = 100 * 1024 * 1024  # 100mb
+        self.limits = TransportLimits(
+            max_recv_buffer=buffer_sz,
+            max_send_buffer=buffer_sz,
+            max_chunk_count=math.ceil(max_msg_sz / buffer_sz),  # Round up to allow max msg size
+            max_message_size=max_msg_sz
+        )
 
     async def init(self, shelf_file=None):
         await self.iserver.init(shelf_file)
@@ -425,7 +436,7 @@ class Server:
         await self.iserver.start()
         try:
             ipaddress, port = self._get_bind_socket_info()
-            self.bserver = BinaryServer(self.iserver, ipaddress, port)
+            self.bserver = BinaryServer(self.iserver, ipaddress, port, self.limits)
             self.bserver.set_policies(self._policies)
             await self.bserver.start()
         except Exception as exp:

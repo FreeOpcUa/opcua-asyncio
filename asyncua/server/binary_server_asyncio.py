@@ -3,7 +3,6 @@ Socket server forwarding request to internal server
 """
 import logging
 import asyncio
-import math
 from typing import Optional
 
 from ..common.connection import TransportLimits
@@ -68,9 +67,8 @@ class OPCUAProtocol(asyncio.Protocol):
                 try:
                     header = header_from_binary(buf)
                 except NotEnoughData:
-                    # a packet should at least contain a header otherwise it is malformed (8 or 12 bytes)
-                    logger.debug('Not enough data while parsing header from client, empty the buffer')
-                    self.transport.close()
+                    # we jsut wait for more data, that happens.
+                    # worst case recv will go in timeout or it hangs and it should be fine too
                     return
                 if header.header_size + header.body_size <= header.header_size:
                     # malformed header prevent invalid access of your buffer
@@ -78,8 +76,7 @@ class OPCUAProtocol(asyncio.Protocol):
                     self.transport.close()
                 else:
                     if len(buf) < header.body_size:
-                        logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size,
-                                    len(buf))
+                        logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size, len(buf))
                         return
                     # we have a complete message
                     self.messages.put_nowait((header, buf))
@@ -112,7 +109,7 @@ class OPCUAProtocol(asyncio.Protocol):
 
 
 class BinaryServer:
-    def __init__(self, internal_server: InternalServer, hostname, port):
+    def __init__(self, internal_server: InternalServer, hostname, port, limits: TransportLimits):
         self.logger = logging.getLogger(__name__)
         self.hostname = hostname
         self.port = port
@@ -122,15 +119,7 @@ class BinaryServer:
         self.clients = []
         self.closing_tasks = []
         self.cleanup_task = None
-        # Use accectable limits
-        buffer_sz = 65535
-        max_msg_sz = 16 * 1024 * 1024  # 16mb simular to the opc ua c stack so this is a good default
-        self.limits = TransportLimits(
-            max_recv_buffer=buffer_sz,
-            max_send_buffer=buffer_sz,
-            max_chunk_count=math.ceil(buffer_sz / max_msg_sz),  # Round up to allow max msg size
-            max_message_size=max_msg_sz
-        )
+        self.limits = limits
 
     def set_policies(self, policies):
         self._policies = policies
