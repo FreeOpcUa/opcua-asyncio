@@ -677,24 +677,43 @@ def restore_transport_limits_server(server: Server):
     server.bserver.limits.max_chunk_count = max_chunk_count
 
 
-async def test_message_limits(restore_transport_limits_server: Server):
+async def test_message_limits_fail_write(restore_transport_limits_server: Server):
     server = restore_transport_limits_server
     server.bserver.limits.max_recv_buffer = 1024
+    server.bserver.limits.max_send_buffer = 10240000
     server.bserver.limits.max_chunk_count = 10
-    n = await server.nodes.objects.add_variable(1, "MyLimitVariable", "t")
+    test_string = b'a' * 100 * 1024
+    n = await server.nodes.objects.add_variable(1, "MyLimitVariable", test_string)
     await n.set_writable(True)
     client = Client(server.endpoint.geturl())
     # This should trigger a timeout error because the message is to large
-    with pytest.raises(ConnectionError):
-        async with client:
-            test_string = 'a' * (1024 * 1024 * 1024)
-            n = client.get_node(n.nodeid)
-            await n.write_value(test_string, ua.VariantType.String)
+    async with client:
+        n = client.get_node(n.nodeid)
+        await n.read_value()
+        with pytest.raises(ConnectionError):
+            await n.write_value(test_string, ua.VariantType.ByteString)
+
+
+async def test_message_limits_fail_read(restore_transport_limits_server: Server):
+    server = restore_transport_limits_server
+    server.bserver.limits.max_recv_buffer = 10240000
+    server.bserver.limits.max_send_buffer = 1024
+    server.bserver.limits.max_chunk_count = 10
+    test_string = b'a' * 100 * 1024
+    n = await server.nodes.objects.add_variable(1, "MyLimitVariable", test_string)
+    await n.set_writable(True)
+    client = Client(server.endpoint.geturl())
+    # This should trigger a connection error because the message is to large
+    async with client:
+        n = client.get_node(n.nodeid)
+        await n.write_value(test_string, ua.VariantType.ByteString)
+        with pytest.raises(ConnectionError):
+            await n.read_value()
 
 
 async def test_message_limits_works(restore_transport_limits_server: Server):
     server = restore_transport_limits_server
-    server.bserver.limits.max_recv_buffer = 1024
+    # server.bserver.limits.max_recv_buffer = 1024
     server.bserver.limits.max_send_buffer = 1024
     server.bserver.limits.max_chunk_count = 10
     n = await server.nodes.objects.add_variable(1, "MyLimitVariable2", "t")
@@ -705,6 +724,7 @@ async def test_message_limits_works(restore_transport_limits_server: Server):
         n = client.get_node(n.nodeid)
         test_string = 'a' * (1024 * 5)
         await n.write_value(test_string, ua.VariantType.String)
+        await n.read_value()
 
 
 

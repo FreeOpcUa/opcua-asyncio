@@ -50,13 +50,17 @@ class TransportLimits:
             logger.error("Number of message chunks: %s is > configured max chunk count: %s", sz, self.max_chunk_count)
         return within_limit
 
-    def create_acknowledge_limits(self, msg: ua.Hello) -> ua.Acknowledge:
+    def create_acknowledge_and_set_limits(self, msg: ua.Hello) -> ua.Acknowledge:
         ack = ua.Acknowledge()
-        ack.ReceiveBufferSize = min(msg.ReceiveBufferSize, self.max_recv_buffer)
-        ack.SendBufferSize = min(msg.SendBufferSize, self.max_send_buffer)
+        ack.ReceiveBufferSize = min(msg.ReceiveBufferSize, self.max_send_buffer)
+        ack.SendBufferSize = min(msg.SendBufferSize, self.max_recv_buffer)
         ack.MaxChunkCount = self._select_limit(msg.MaxChunkCount, self.max_chunk_count)
         ack.MaxMessageSize = self._select_limit(msg.MaxMessageSize, self.max_message_size)
-        self.update_limits(ack)
+        self.max_chunk_count = ack.MaxChunkCount
+        self.max_recv_buffer = ack.SendBufferSize
+        self.max_send_buffer = ack.ReceiveBufferSize
+        self.max_message_size = ack.MaxMessageSize
+        logger.warning("updating server limits to: %s", self)
         return ack
 
     def create_hello_limits(self, msg: ua.Hello) -> ua.Hello:
@@ -65,12 +69,12 @@ class TransportLimits:
         msg.MaxChunkCount = self.max_chunk_count
         msg.MaxMessageSize = self.max_chunk_count
 
-    def update_limits(self, msg: ua.Acknowledge) -> None:
+    def update_client_limits(self, msg: ua.Acknowledge) -> None:
         self.max_chunk_count = msg.MaxChunkCount
         self.max_recv_buffer = msg.ReceiveBufferSize
         self.max_send_buffer = msg.SendBufferSize
         self.max_message_size = msg.MaxMessageSize
-        logger.warning("updating limits to: %s", self)
+        logger.warning("updating client limits to: %s", self)
 
 
 class MessageChunk:
@@ -415,7 +419,7 @@ class SecureConnection:
             return msg
         if header.MessageType == ua.MessageType.Acknowledge:
             msg = struct_from_binary(ua.Acknowledge, body)
-            self._limits.update_limits(msg)
+            self._limits.update_client_limits(msg)
             return msg
         if header.MessageType == ua.MessageType.Error:
             msg = struct_from_binary(ua.ErrorMessage, body)
