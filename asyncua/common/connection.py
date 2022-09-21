@@ -36,18 +36,18 @@ class TransportLimits:
             return hint
         return ua.UInt32(limit)
 
-    def check_max_msg_size(self, sz: int) -> bool:
+    def is_msg_size_within_limit(self, sz: int) -> bool:
         if self.max_message_size == 0:
             return True
-        within_limit = self.max_message_size <= sz
+        within_limit = sz <= self.max_message_size
         if not within_limit:
             logger.error("Message size: %s is > configured max message size: %s", sz, self.max_message_size)
         return within_limit
 
-    def check_max_chunk_count(self, sz: int) -> bool:
+    def is_chunk_count_within_limit(self, sz: int) -> bool:
         if self.max_chunk_count == 0:
             return True
-        within_limit = self.max_chunk_count <= sz
+        within_limit = sz <= self.max_chunk_count
         if not within_limit:
             logger.error("Number of message chunks: %s is > configured max chunk count: %s", sz, self.max_chunk_count)
         return within_limit
@@ -430,7 +430,7 @@ class SecureConnection:
             raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         self._check_incoming_chunk(msg)
         self._incoming_parts.append(msg)
-        if not self._limits.check_max_chunk_count(len(self._incoming_parts)):
+        if not self._limits.is_chunk_count_within_limit(len(self._incoming_parts)):
             self._incoming_parts = []
             raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         if msg.MessageHeader.ChunkType == ua.ChunkType.Intermediate:
