@@ -70,13 +70,14 @@ class TransportLimits:
         self.max_recv_buffer = msg.ReceiveBufferSize
         self.max_send_buffer = msg.SendBufferSize
         self.max_message_size = msg.MaxMessageSize
-        logger.warning("updating limits from server: %s", self)
+        logger.warning("updating limits to: %s", self)
 
 
 class MessageChunk:
     """
     Message Chunk, as described in OPC UA specs Part 6, 6.7.2.
     """
+
     def __init__(self, security_policy, body=b'', msg_type=ua.MessageType.SecureMessage, chunk_type=ua.ChunkType.Single):
         self.MessageHeader = ua.Header(msg_type, chunk_type)
         if msg_type in (ua.MessageType.SecureMessage, ua.MessageType.SecureClose):
@@ -425,6 +426,7 @@ class SecureConnection:
     def _receive(self, msg):
         if msg.MessageHeader.packet_size > self._limits.max_recv_buffer:
             self._incoming_parts = []
+            logger.error("Message size: %s is > chunk max size: %s", msg.MessageHeader.packet_size, self._limits.max_recv_buffer)
             raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         self._check_incoming_chunk(msg)
         self._incoming_parts.append(msg)

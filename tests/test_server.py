@@ -150,6 +150,7 @@ async def test_multiple_clients_with_subscriptions(server):
     assert sub1.subscription_id not in server.iserver.subscription_service.subscriptions
     assert sub2.subscription_id not in server.iserver.subscription_service.subscriptions
 
+
 async def test_historize_events(server):
     srv_node = server.get_node(ua.ObjectIds.Server)
     assert await srv_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
@@ -680,13 +681,31 @@ async def test_message_limits(restore_transport_limits_server: Server):
     server = restore_transport_limits_server
     server.bserver.limits.max_recv_buffer = 1024
     server.bserver.limits.max_chunk_count = 10
+    n = await server.nodes.objects.add_variable(1, "MyLimitVariable", "t")
+    await n.set_writable(True)
     client = Client(server.endpoint.geturl())
     # This should trigger a timeout error because the message is to large
-    with pytest.raises(asyncio.TimeoutError):
+    with pytest.raises(ConnectionError):
         async with client:
             test_string = 'a' * (1024 * 1024 * 1024)
-            n = client.get_node(ua.NodeId())
+            n = client.get_node(n.nodeid)
             await n.write_value(test_string, ua.VariantType.String)
+
+
+async def test_message_limits_works(restore_transport_limits_server: Server):
+    server = restore_transport_limits_server
+    server.bserver.limits.max_recv_buffer = 1024
+    server.bserver.limits.max_send_buffer = 1024
+    server.bserver.limits.max_chunk_count = 10
+    n = await server.nodes.objects.add_variable(1, "MyLimitVariable2", "t")
+    await n.set_writable(True)
+    client = Client(server.endpoint.geturl())
+    # Test that chunks are working correct
+    async with client:
+        n = client.get_node(n.nodeid)
+        test_string = 'a' * (1024 * 5)
+        await n.write_value(test_string, ua.VariantType.String)
+
 
 
 """
