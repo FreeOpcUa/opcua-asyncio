@@ -29,12 +29,10 @@ class TransportLimits:
     max_message_size: int = 100 * 1024 * 1024  # 100mb
 
     @staticmethod
-    def _select_limit(hint: ua.UInt32, limit: int) -> ua.UInt32:
-        if limit <= 0:
-            return hint
-        elif limit < hint:
-            return hint
-        return ua.UInt32(limit)
+    def _select_limit(other: ua.UInt32, current_limit: int) -> ua.UInt32:
+        if current_limit <= 0 or other <= 0:
+            return max(other, ua.UInt32(current_limit))
+        return min(other, ua.UInt32(current_limit))
 
     def is_msg_size_within_limit(self, sz: int) -> bool:
         if self.max_message_size == 0:
