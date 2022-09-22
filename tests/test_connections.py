@@ -27,7 +27,6 @@ async def test_max_connections_1(opc):
     opc.server.iserver.isession.__class__.max_connections = 1000
 
 
-@pytest.mark.skip("disabled for now, sending too small packet does not break anything")
 async def test_dos_server(opc):
     # See issue 1013 a crafted packet triggered dos
     port = opc.server.endpoint.port
