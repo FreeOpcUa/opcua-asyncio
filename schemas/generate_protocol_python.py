@@ -145,12 +145,12 @@ class CodeGenerator:
 
         for field in obj.fields:
             typestring = field.data_type
+            if field.allow_subtypes and typestring != 'ExtensionObject':
+                typestring = f"Type[{typestring}]"
             if field.is_array():
                 typestring = f"List[{typestring}]"
             if field.is_optional:
                 typestring = f"Optional[{typestring}]"
-            if field.allow_subtypes:
-                typestring = f"Type[{typestring}]"
             if field.name == field.data_type:
                 # variable name and type name are the same. Dataclass do not like it
                 hack_names.append(field.name)
