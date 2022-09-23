@@ -85,10 +85,11 @@ class InternalSubscription:
                 await self.publish_results()
         except asyncio.CancelledError:
             self.logger.info('exiting _subscription_loop for %s', self.data.SubscriptionId)
-            pass
+            raise
         except Exception:
             # seems this except is necessary to log errors
             self.logger.exception("Exception in subscription loop")
+            raise
 
     def has_published_results(self):
         if self._startup or self._triggered_datachanges or self._triggered_events:

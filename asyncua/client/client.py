@@ -311,7 +311,8 @@ class Client:
         await self.uaclient.connect_socket(self.server_url.hostname, self.server_url.port)
 
     def disconnect_socket(self):
-        self.uaclient.disconnect_socket()
+        if self.uaclient:
+            self.uaclient.disconnect_socket()
 
     async def send_hello(self):
         """
@@ -452,9 +453,6 @@ class Client:
                 await asyncio.sleep(timeout)
                 # @FIXME handle state change
                 _ = await self.nodes.server_state.read_value()
-
-        except asyncio.CancelledError:
-            pass
         except Exception:
             _logger.exception("Error in watchdog loop")
             raise
@@ -475,8 +473,6 @@ class Client:
                 await self.open_secure_channel(renew=True)
                 val = await self.nodes.server_state.read_value()
                 _logger.debug("server state is: %s ", val)
-        except asyncio.CancelledError:
-            pass
         except Exception:
             _logger.exception("Error while renewing session")
             raise
@@ -581,7 +577,7 @@ class Client:
         data, uri = security_policies.encrypt_asymmetric(pubkey, etoken, policy_uri)
         return data, uri
 
-    async def close_session(self) -> Coroutine:
+    async def close_session(self):
         """
         Close session
         """
@@ -589,12 +585,18 @@ class Client:
             self._monitor_server_task.cancel()
             try:
                 await self._monitor_server_task
+            except asyncio.CancelledError:
+                pass
             except Exception:
                 _logger.exception("Error while closing watch_task")
+        # disable hook because we kill our monitor task, so we are going to get CancelledError at every request
+        self.uaclient.pre_request_hook = None
         if self._renew_channel_task:
             self._renew_channel_task.cancel()
             try:
                 await self._renew_channel_task
+            except asyncio.CancelledError:
+                pass
             except Exception:
                 _logger.exception("Error while closing secure channel loop")
         return await self.uaclient.close_session(True)

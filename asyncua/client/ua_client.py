@@ -252,6 +252,7 @@ class UaClient:
     In this Python implementation  most of the structures are defined in
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
+
     def __init__(self, timeout: float = 1.0):
         """
         :param timeout: Timout in seconds

@@ -461,9 +461,13 @@ class KeepAlive:
             except BadSessionClosed:
                 _logger.warning("Session is closed.")
                 server_info.status = ConnectionStates.NO_DATA
-            except (asyncio.TimeoutError, asyncio.CancelledError):
+            except asyncio.TimeoutError:
                 _logger.warning("Timeout when fetching state")
                 server_info.status = ConnectionStates.NO_DATA
+            except asyncio.CancelledError:
+                _logger.warning("CancelledError, this means we should shutdown")
+                server_info.status = ConnectionStates.NO_DATA
+                # FIXME: It cannot be correct to catch CancelledError here, we should re-raise
             except Exception:
                 _logger.exception("Unknown exception during keepalive liveness check")
                 server_info.status = ConnectionStates.NO_DATA
