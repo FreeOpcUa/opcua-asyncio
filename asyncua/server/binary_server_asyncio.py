@@ -174,8 +174,5 @@ class BinaryServer:
             task = self.closing_tasks.pop()
             try:
                 await task
-            except asyncio.CancelledError:
-                # this means a stop request has been sent, it should not be catched
-                raise
             except Exception:
                 logger.exception("Unexpected crash in BinaryServer._close_tasks")
