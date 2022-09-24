@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import timeit
 from typing import List, Union, Coroutine, Optional
 from urllib.parse import urlparse, unquote
 
@@ -391,6 +392,7 @@ class Client:
         If you want o modify settings look at code of this methods
         and make your own
         """
+        connection_time = timeit.timeit()
         desc = ua.ApplicationDescription()
         desc.ApplicationUri = self.application_uri
         desc.ProductUri = self.product_uri
@@ -425,7 +427,7 @@ class Client:
         if self.session_timeout != response.RevisedSessionTimeout:
             _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
             self.session_timeout = response.RevisedSessionTimeout
-        self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
+        self._renew_channel_task = asyncio.create_task(self._renew_channel_loop(connection_time))
         self._monitor_server_task = asyncio.create_task(self._monitor_server_loop())
         return response
 
@@ -459,22 +461,26 @@ class Client:
             _logger.exception("Error in watchdog loop")
             raise
 
-    async def _renew_channel_loop(self):
+    async def _renew_channel_loop(self, connect_time):
         """
         Renew the SecureChannel before the SecureChannelTimeout will happen.
         In theory we could do that only if no session activity
         but it does not cost much..
         """
+        end = timeit.timeit()
+        ajust_time = end - connect_time
         try:
+
             # Part4 5.5.2.1:
             # Clients should request a new SecurityToken after 75 % of its lifetime has elapsed
             duration = self.secure_channel_timeout * 0.75 / 1000
             while True:
-                await asyncio.sleep(duration)
+                await asyncio.sleep(duration - ajust_time)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
                 val = await self.nodes.server_state.read_value()
                 _logger.debug("server state is: %s ", val)
+                ajust_time = 0
         except asyncio.CancelledError:
             pass
         except Exception:
