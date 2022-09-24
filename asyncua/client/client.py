@@ -80,6 +80,7 @@ class Client:
         self._monitor_server_task = None
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
+        self._closing: bool = False
 
     async def __aenter__(self):
         await self.connect()
@@ -449,7 +450,7 @@ class Client:
         """
         timeout = min(self.session_timeout / 1000 / 2, self._watchdog_intervall)
         try:
-            while True:
+            while not self._closing:
                 await asyncio.sleep(timeout)
                 # @FIXME handle state change
                 _ = await self.nodes.server_state.read_value()
@@ -467,7 +468,7 @@ class Client:
             # Part4 5.5.2.1:
             # Clients should request a new SecurityToken after 75 % of its lifetime has elapsed
             duration = self.secure_channel_timeout * 0.75 / 1000
-            while True:
+            while not self._closing:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
@@ -581,6 +582,7 @@ class Client:
         """
         Close session
         """
+        self._closing = True
         if self._monitor_server_task:
             self._monitor_server_task.cancel()
             try:
