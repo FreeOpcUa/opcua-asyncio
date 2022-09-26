@@ -78,14 +78,15 @@ async def new_struct(
     sdef = ua.StructureDefinition()
     if is_union:
         sdef.StructureType = ua.StructureType.Union
+        sdef.BaseDataType = server.nodes.base_union_type.nodeid
     else:
+        sdef.BaseDataType = server.nodes.base_structure_type.nodeid
         sdef.StructureType = ua.StructureType.Structure
         for sfield in fields:
             if sfield.IsOptional:
                 sdef.StructureType = ua.StructureType.StructureWithOptionalFields
                 break
     sdef.Fields = fields
-    sdef.BaseDataType = server.nodes.base_data_type.nodeid
     sdef.DefaultEncodingId = enc.nodeid
 
     await dtype.write_data_type_definition(sdef)
