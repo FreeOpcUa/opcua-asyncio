@@ -512,6 +512,8 @@ class XmlImporter:
             attrs.ValueRank = obj.rank
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
+        else:
+            obj.abstract = False
         if obj.dimensions:
             attrs.ArrayDimensions = obj.dimensions
         node.NodeAttributes = attrs
@@ -550,6 +552,8 @@ class XmlImporter:
             attrs.InverseName = ua.LocalizedText(obj.inversename)
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
+        else:
+            obj.abstract = False
         if obj.symmetric:
             attrs.Symmetric = obj.symmetric
         node.NodeAttributes = attrs
@@ -566,6 +570,8 @@ class XmlImporter:
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
+        else:
+            obj.abstract = False
         if not obj.definitions:
             pass
         else:
