@@ -513,7 +513,7 @@ class XmlImporter:
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
         else:
-            obj.abstract = False
+            attrs.IsAbstract = False
         if obj.dimensions:
             attrs.ArrayDimensions = obj.dimensions
         node.NodeAttributes = attrs
@@ -553,7 +553,7 @@ class XmlImporter:
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
         else:
-            obj.abstract = False
+            attrs.IsAbstract = False
         if obj.symmetric:
             attrs.Symmetric = obj.symmetric
         node.NodeAttributes = attrs
@@ -571,7 +571,7 @@ class XmlImporter:
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
         else:
-            obj.abstract = False
+            attrs.IsAbstract = False
         if not obj.definitions:
             pass
         else:
