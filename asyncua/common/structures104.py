@@ -201,6 +201,8 @@ class {struct_name}{base_class}:
             uatype = ua.enums_by_datatype[sfield.DataType].__name__
         elif sfield.DataType in ua.basetype_by_datatype:
             uatype = ua.basetype_by_datatype[sfield.DataType]
+        elif sfield.DataType == data_type:
+            uatype = struct_name
         else:
             if log_error:
                 logger.error(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
@@ -211,7 +213,11 @@ class {struct_name}{base_class}:
         else:
             default_value = get_default_value(uatype)
 
-        uatype = f"ua.{uatype}"
+        if sfield.DataType != data_type:
+            uatype = f"ua.{uatype}"
+        else:
+            # when field point to itself datatype use forward reference for typing
+            uatype = f"'ua.{uatype}'"
         if sfield.ValueRank >= 1 and uatype == 'Char':
             uatype = 'String'
         elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
