@@ -314,7 +314,7 @@ class DataTypeSorter:
             if dep_nodeid not in self.dtype_index:
                 continue
             dep = self.dtype_index[dep_nodeid]
-            if dep.depends_on(other):
+            if dep != self and dep.depends_on(other):
                 return True
         return False
 
