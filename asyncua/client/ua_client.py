@@ -491,6 +491,25 @@ class UaClient:
             self._publish_task = asyncio.create_task(self._publish_loop())
         return response.Parameters
 
+    async def inform_subscriptions(self, status: ua.StatusCode):
+        """
+            Inform all current subscriptions with a status code. This calls the handlers status_change_notification
+        """
+        status_message = ua.StatusChangeNotification(Status=status)
+        notification_message = ua.NotificationMessage(NotificationData=[status_message])
+        for subid, callback in self._subscription_callbacks.items():
+            try:
+                parameters = ua.PublishResult(
+                    subid,
+                    NotificationMessage_=notification_message
+                )
+                if asyncio.iscoroutinefunction(callback):
+                    await callback(parameters)
+                else:
+                    callback(parameters)
+            except Exception:  # we call user code, catch everything!
+                self.logger.exception("Exception while calling user callback: %s")
+
     async def update_subscription(
         self, params: ua.ModifySubscriptionParameters
     ) -> ua.ModifySubscriptionResult:
