@@ -396,7 +396,7 @@ class XMLParser:
         if nsval is not None:
             ns = string_to_val(nsval.text, ua.VariantType.UInt16)
         v = ua.QualifiedName(name, ns)
-        self.logger.error(f"qn: {v}")
+        self.logger.warning("qn: %s", v)
         return v
 
     def _parse_refs(self, el, obj):
