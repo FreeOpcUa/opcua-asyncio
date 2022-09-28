@@ -1460,6 +1460,20 @@ async def test_custom_struct_import(opc):
     with expect_file_creation("custom_enum_v2.xml") as path:
         await opc.opc.export_xml(nodes, path)
 
+async def test_custom_struct_recursive_import(opc):
+    nodes = await opc.opc.import_xml("tests/custom_struct_recursive.xml")
+    await opc.opc.load_data_type_definitions()
+
+    nodes = [opc.opc.get_node(node) for node in nodes]  # FIXME why does it return nodeids and not nodes?
+    node = nodes[0]  # FIXME: make that more robust
+    sdef = await node.read_data_type_definition()
+
+    assert sdef.StructureType == ua.StructureType.Structure
+    assert sdef.Fields[0].Name == "Subparameters"
+    with expect_file_creation("custom_struct_recursive_export.xml") as path:
+        await opc.opc.export_xml(nodes, path)
+
+
 
 async def test_enum_string_identifier_and_spaces(opc):
     idx = 4
