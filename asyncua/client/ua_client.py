@@ -318,6 +318,7 @@ class UaClient:
 
     async def create_session(self, parameters):
         self.logger.info("create_session")
+        self._closing = False
         # FIXME: setting a value on an object to set it its state is suspicious,
         # especially when that object has its own state
         self.protocol.closed = False

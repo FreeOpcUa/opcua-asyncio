@@ -393,6 +393,7 @@ class Client:
         If you want o modify settings look at code of this methods
         and make your own
         """
+        self._closing = False
         desc = ua.ApplicationDescription()
         desc.ApplicationUri = self.application_uri
         desc.ProductUri = self.product_uri
