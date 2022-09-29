@@ -5,7 +5,6 @@ Binary protocol specific functions and constants
 import functools
 import struct
 import logging
-from types import NoneType
 from typing import Any, Callable
 import typing
 import uuid
@@ -574,7 +573,7 @@ def _create_list_deserializer(uatype, recursive: bool = False):
             size = Primitives.Int32.unpack(data)
             return [_create_type_deserializer(uatype)(data) for _ in range(size)]
         return _deserialize
-    element_deserializer = _create_type_deserializer(uatype)
+    element_deserializer = _create_type_deserializer(uatype, type(None))
 
     def _deserialize(data):
         size = Primitives.Int32.unpack(data)
@@ -583,9 +582,9 @@ def _create_list_deserializer(uatype, recursive: bool = False):
 
 
 @functools.lru_cache(maxsize=None)
-def _create_type_deserializer(uatype, dataclazz = NoneType):
+def _create_type_deserializer(uatype, dataclazz):
     if type_is_union(uatype):
-        return _create_type_deserializer(types_from_union(uatype)[0])
+        return _create_type_deserializer(types_from_union(uatype)[0], uatype)
     if type_is_list(uatype):
         utype = type_from_list(uatype)
         if hasattr(ua.VariantType, utype.__name__):
@@ -628,7 +627,7 @@ def _create_dataclass_deserializer(objtype):
         # unions are just objects with encoding and value field
         typefields = fields(objtype)
         field_deserializers = [_create_type_deserializer(t, objtype) for t in objtype._union_types]
-        byte_decode = next(_create_type_deserializer(f.type) for f in typefields if f.name == "Encoding")
+        byte_decode = next(_create_type_deserializer(f.type, type(None)) for f in typefields if f.name == "Encoding")
 
         def decode_union(data):
             enc = byte_decode(data)
