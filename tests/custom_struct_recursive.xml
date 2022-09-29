@@ -21,6 +21,7 @@
         </References>
         <Definition Name="1:MyParameterType">
             <Field DataType="MyParameterType" ValueRank="1" ArrayDimensions="0" Name="Subparameters"/>
+            <Field Name="Value" DataType="i=7"/>
         </Definition>
     </UADataType>
 
