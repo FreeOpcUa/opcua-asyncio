@@ -344,7 +344,7 @@ def create_type_serializer(uatype):
     if type_allow_subclass(uatype):
         return extensionobject_to_binary
     if type_is_list(uatype):
-        return create_list_serializer(type_from_list(uatype))
+        return create_list_serializer(type_from_list(uatype), type(None))
     if hasattr(Primitives, uatype.__name__):
         return getattr(Primitives, uatype.__name__).pack
     if issubclass(uatype, Enum):
@@ -571,7 +571,7 @@ def _create_list_deserializer(uatype, recursive: bool = False):
 
         def _deserialize(data):
             size = Primitives.Int32.unpack(data)
-            return [_create_type_deserializer(uatype)(data) for _ in range(size)]
+            return [_create_type_deserializer(uatype, type(None))(data) for _ in range(size)]
         return _deserialize
     element_deserializer = _create_type_deserializer(uatype, type(None))
 
@@ -614,7 +614,7 @@ def from_binary(uatype, data):
     """
     unpack data given an uatype as a string or a python dataclass using ua types
     """
-    return _create_type_deserializer(uatype)(data)
+    return _create_type_deserializer(uatype, type(None))(data)
 
 
 @functools.lru_cache(maxsize=None)
