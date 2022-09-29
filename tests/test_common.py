@@ -22,7 +22,7 @@ from asyncua.common.methods import call_method_full
 from asyncua.common.copy_node_util import copy_node
 from asyncua.common.instantiate_util import instantiate
 from asyncua.common.structures104 import new_struct, new_enum, new_struct_field
-
+from asyncua.ua.ua_binary import struct_to_binary, struct_from_binary
 pytestmark = pytest.mark.asyncio
 
 
@@ -1640,3 +1640,14 @@ async def test_custom_struct_with_strange_chars(opc):
     var = await opc.opc.nodes.objects.add_variable(idx, "my_siemens_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
     assert val.My_UInt32 == [78, 79]
+
+
+async def test_custom_struct_recursive_serialize(opc):
+    idx = 4
+    nodes = await opc.opc.import_xml("tests/custom_struct_recursive.xml")
+    await opc.opc.load_data_type_definitions()
+    param =ua.MyParameterType(Value=2)
+    param.Subparameters.append(ua.MyParameterType(Value=1))
+    bin = struct_to_binary(param)
+    res = struct_from_binary(ua.MyParameterType, ua.utils.Buffer(bin))
+    assert param == res
