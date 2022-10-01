@@ -23,6 +23,7 @@ from asyncua.common.copy_node_util import copy_node
 from asyncua.common.instantiate_util import instantiate
 from asyncua.common.structures104 import new_struct, new_enum, new_struct_field
 from asyncua.ua.ua_binary import struct_to_binary, struct_from_binary
+
 pytestmark = pytest.mark.asyncio
 
 
@@ -1460,19 +1461,26 @@ async def test_custom_struct_import(opc):
     with expect_file_creation("custom_enum_v2.xml") as path:
         await opc.opc.export_xml(nodes, path)
 
-async def test_custom_struct_recursive_import(opc):
+
+async def test_custom_struct_recursive(opc):
     nodes = await opc.opc.import_xml("tests/custom_struct_recursive.xml")
     await opc.opc.load_data_type_definitions()
 
     nodes = [opc.opc.get_node(node) for node in nodes]  # FIXME why does it return nodeids and not nodes?
     node = nodes[0]  # FIXME: make that more robust
     sdef = await node.read_data_type_definition()
-
     assert sdef.StructureType == ua.StructureType.Structure
     assert sdef.Fields[0].Name == "Subparameters"
+
+    # Check encoding / decoding
+    param = ua.MyParameterType(Value=2)
+    param.Subparameters.append(ua.MyParameterType(Value=1))
+    bin = struct_to_binary(param)
+    res = struct_from_binary(ua.MyParameterType, ua.utils.Buffer(bin))
+    assert param == res
+
     with expect_file_creation("custom_struct_recursive_export.xml") as path:
         await opc.opc.export_xml(nodes, path)
-
 
 
 async def test_enum_string_identifier_and_spaces(opc):
@@ -1640,14 +1648,3 @@ async def test_custom_struct_with_strange_chars(opc):
     var = await opc.opc.nodes.objects.add_variable(idx, "my_siemens_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
     assert val.My_UInt32 == [78, 79]
-
-
-async def test_custom_struct_recursive_serialize(opc):
-    idx = 4
-    nodes = await opc.opc.import_xml("tests/custom_struct_recursive.xml")
-    await opc.opc.load_data_type_definitions()
-    param =ua.MyParameterType(Value=2)
-    param.Subparameters.append(ua.MyParameterType(Value=1))
-    bin = struct_to_binary(param)
-    res = struct_from_binary(ua.MyParameterType, ua.utils.Buffer(bin))
-    assert param == res
