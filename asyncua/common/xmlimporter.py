@@ -103,7 +103,7 @@ class XmlImporter:
         for uri, version, pub_date in self.parser.get_nodeset_namespaces():
             if uri not in ns_objs:
                 idx = await self.server.register_namespace(uri)
-                obj = await self.nodes.namespaces.add_object(idx, uri, ua.ObjectIds.NamespaceMetadataType, False)
+                obj = await self.server.nodes.namespaces.add_object(idx, uri, ua.ObjectIds.NamespaceMetadataType, False)
                 ns_uri = await obj.get_child('NamespaceUri')
                 await ns_uri.write_value(uri, ua.VariantType.String)
                 ns_ver = await obj.get_child('NamespaceVersion')
