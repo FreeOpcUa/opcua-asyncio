@@ -598,4 +598,4 @@ async def test_xml_namespace_meta_add(opc):
     with pytest.raises(ValueError):
         await opc.opc.get_namespace_index("http://foobar.org/struct_optional/")
     await opc.opc.import_xml(CUSTOM_NS_META_ADD_XML_PATH)
-    assert await opc.opc.get_namespace_index("http://foobar.org/struct_optional/") == 2
+    assert await opc.opc.get_namespace_index("http://foobar.org/struct_optional/") > 0
