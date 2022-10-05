@@ -397,7 +397,6 @@ def make_basetype_code(name, parent_datatype):
     env = {}
     env['ua'] = ua
     logger.debug("Executing code: %s", code)
-    print(code)
     try:
         exec(code, env)
     except Exception:

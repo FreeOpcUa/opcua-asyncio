@@ -1529,7 +1529,6 @@ async def test_custom_method_with_struct(opc):
 
     @uamethod
     def func(parent, mystruct):
-        print(mystruct)
         mystruct.MyUInt32.append(100)
         return mystruct
 
