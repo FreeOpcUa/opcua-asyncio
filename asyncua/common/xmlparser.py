@@ -449,7 +449,7 @@ class XMLParser:
         for model in self.root.findall('base:Models/base:Model', self.ns):
             uri = model.attrib.get('ModelUri')
             if uri is not None:
-                version = model.attrib.get('Version', ua.String())
+                version = model.attrib.get('Version', '')
                 date_time = model.attrib.get('PublicationDate')
                 if date_time is None:
                     date_time = ua.DateTime(1, 1, 1)
