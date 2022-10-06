@@ -84,6 +84,7 @@ class Field:
         self.arraydim = data.get("ArrayDimensions", None)  # FIXME: check type
         self.value = int(data.get("Value", 0))
         self.desc = data.get("Description", "")
+        self.max_str_len = int(data.get("MaxStringLength", 0))
 
 
 class RefStruct:

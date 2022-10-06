@@ -644,6 +644,7 @@ class XmlImporter:
             f.DataType = field.datatype
             f.ValueRank = field.valuerank
             f.IsOptional = field.optional
+            f.MaxStringLength = field.max_str_len
             if f.IsOptional:
                 optional = True
             if field.arraydim is None:
