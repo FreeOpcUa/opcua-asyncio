@@ -102,7 +102,7 @@ def fields_with_resolved_types(
     globalns: Optional[Dict[str, Any]] = None,
     localns: Optional[Dict[str, Any]] = None,
     include_extras: bool = False,
-) -> Tuple[Field]:
+) -> Tuple[Field[Any], ...]:
     """Return a tuple describing the fields of this dataclass.
 
     Accepts a dataclass or an instance of one. Tuple elements are of
