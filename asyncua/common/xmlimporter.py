@@ -439,7 +439,10 @@ class XmlImporter:
             atttype = type_from_list(atttype)
             my_list = []
             for vtype, v2 in val:
-                my_list.append(ua_type_to_python(v2, vtype))
+                if isinstance(v2, str):
+                    my_list.append(ua_type_to_python(v2, vtype))
+                else:
+                    my_list.append(v2)
             fargs[attname] = my_list
 
         elif issubclass(atttype, ua.NodeId):  # NodeId representation does not follow common rules!!
@@ -582,7 +585,10 @@ class XmlImporter:
             else:
                 parent_node = self.server.get_node(obj.parent)
                 path = await parent_node.get_path()
-                if self.server.nodes.base_structure_type in path:
+                if self.server.nodes.option_set_type in path:
+                    # nodes below option_set_type are enums, not structs
+                    attrs.DataTypeDefinition = self._get_edef(obj)
+                elif self.server.nodes.base_structure_type in path:
                     attrs.DataTypeDefinition = self._get_sdef(obj)
                 else:
                     _logger.warning(
