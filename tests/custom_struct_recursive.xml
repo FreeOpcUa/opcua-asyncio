@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UANodeSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd" xmlns:ua="http://unifiedautomation.com/Configuration/NodeSet.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <NamespaceUris>
+        <Uri>http://examples.freeopcua.github.io</Uri>
+    </NamespaceUris>
+    <Aliases>
+        <!-- <Alias Alias="String">i=12</Alias> -->
+        <Alias Alias="MyParameterType">ns=1;i=1001</Alias>
+        <Alias Alias="MyParameterAlsoType">ns=1;i=1002</Alias>
+    </Aliases>
+    <Extensions>
+        <Extension>
+            <ua:ModelInfo Tool="UaModeler" Hash="N9NP1ZtvG/6K4zwcil7BIw==" Version="1.6.7"/>
+        </Extension>
+    </Extensions>
+
+    <UADataType NodeId="ns=1;i=1001" BrowseName="1:MyParameterType">
+        <DisplayName>MyParameterType</DisplayName>
+        <References>
+            <Reference ReferenceType="HasSubtype" IsForward="false">i=22</Reference>
+        </References>
+        <Definition Name="1:MyParameterType">
+            <Field DataType="MyParameterType" ValueRank="1" ArrayDimensions="0" Name="Subparameters"/>
+            <Field Name="Value" DataType="i=7"/>
+        </Definition>
+    </UADataType>
+
+  <UADataType NodeId="ns=1;i=1002" BrowseName="1:MyParameterAlsoType">
+        <DisplayName>MyParameterAlsoType</DisplayName>
+        <References>
+            <Reference ReferenceType="HasSubtype" IsForward="false">i=22</Reference>
+        </References>
+        <Definition Name="1:MyParameterAlsoType">
+            <Field DataType="MyParameterAlsoType" ValueRank="1" ArrayDimensions="0" Name="Subparameters"/>
+        </Definition>
+    </UADataType>
+
+
+
+</UANodeSet>

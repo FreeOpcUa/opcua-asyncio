@@ -7,6 +7,7 @@ import pytest
 from pytz import timezone
 
 from asyncua import ua, Node, uamethod
+from asyncua.common.structures104 import new_struct, new_struct_field
 from asyncua.ua import uaerrors
 
 logger = logging.getLogger("asyncua.common.xmlimporter")
@@ -19,6 +20,10 @@ pytestmark = pytest.mark.asyncio
 BASE_DIR = pathlib.Path(__file__).parent.absolute()
 CUSTOM_NODES_XML_PATH = BASE_DIR / "custom_nodes.xml"
 CUSTOM_NODES_NS_XML_PATH = BASE_DIR / "custom_nodesns.xml"
+CUSTOM_NODES_NS_XML_PATH1 = BASE_DIR / "custom_nodesns_2.xml"
+CUSTOM_NODES_NS_XML_PATH2 = BASE_DIR / "custom_nodesns_3.xml"
+CUSTOM_NODES_NS_XML_PATH3 = BASE_DIR / "custom_nodesns_4.xml"
+CUSTOM_NS_META_ADD_XML_PATH = BASE_DIR / "custom_ns_meta_add.xml"
 CUSTOM_REQ_XML_PASS_PATH = BASE_DIR / "test_requirement_pass.xml"
 CUSTOM_REQ_XML_FAIL_PATH = BASE_DIR / "test_requirement_fail.xml"
 
@@ -47,9 +52,8 @@ async def test_xml_import(opc):
     input_arg = (await o.read_data_value()).Value.Value[0]
     assert "Context" == input_arg.Name
     await opc.opc.delete_nodes([v])
-    n = []
-    [n.append(opc.opc.get_node(node)) for node in nodes]
-    await opc.opc.delete_nodes(n)
+    for nodeid in nodes:
+        await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
 
 
 async def test_xml_import_additional_ns(opc):
@@ -57,7 +61,7 @@ async def test_xml_import_additional_ns(opc):
     await opc.server.register_namespace("http://placeholder.toincrease.nsindex")
     # "tests/custom_nodes.xml" isn't created with namespaces in mind, provide new test file
     # the ns=1 in to file now should be mapped to ns=2
-    await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)
+    z = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)
     ns = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/")
     o = opc.opc.nodes.objects
     o2 = await o.get_child([f"{ns}:MyBaseObject"])
@@ -68,7 +72,31 @@ async def test_xml_import_additional_ns(opc):
     assert ns == r1.NodeId.NamespaceIndex
     r3 = (await v1.get_references(refs=ua.ObjectIds.HasComponent))[0]
     assert ns == r3.NodeId.NamespaceIndex
-    await opc.opc.delete_nodes([o2, v1])
+    for nodeid in z:
+        await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
+
+
+async def test_xml_import_ns_dependencies(opc):
+    a = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH)
+    b = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH1)
+    c = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH2)
+    d = await opc.opc.import_xml(CUSTOM_NODES_NS_XML_PATH3)
+    ns = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/")
+    ns2 = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/xmlfile_1/")
+    ns3 = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/xmlfile_2/")
+    ns4 = await opc.opc.get_namespace_index("http://examples.freeopcua.github.io/xmlfile_3/")
+    o = opc.opc.nodes.objects
+    o2 = await o.get_child([f"{ns}:MyBaseObject"])
+    assert o2 is not None
+    o3 = await o2.get_child([f"{ns2}:MySecondLevel"])
+    assert o3 is not None
+    o4 = await o3.get_child([f"{ns3}:MyThirdLevel"])
+    assert o4 is not None
+    o5 = await o4.get_child([f"{ns4}:MyForthLevel"])
+    assert o5 is not None
+    for imported_nodes in [a, b, c, d]:
+        for nodeid in imported_nodes:
+            await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
 
 
 async def test_xml_method(opc, tmpdir):
@@ -87,7 +115,7 @@ async def test_xml_method(opc, tmpdir):
     nodes = [o, m]
     nodes.extend(await m.get_children())
     tmp_path = tmpdir.join("tmp_test_export.xml").strpath
-    await opc.opc.export_xml(nodes, tmp_path)
+    await opc.opc.export_xml(nodes, tmp_path, export_values=True)
     await opc.opc.delete_nodes(nodes)
     await opc.opc.import_xml(tmp_path)
     # now see if our nodes are here
@@ -107,7 +135,7 @@ async def test_xml_vars(opc, tmpdir):
     a2 = await o.add_variable(3, "myxmlvar-2dim", [[1, 2], [3, 4]], ua.VariantType.UInt32)
     a3 = await o.add_variable(3, "myxmlvar-2dim2", [[]], ua.VariantType.ByteString)
     nodes = [o, v, a, a2, a3]
-    await opc.opc.export_xml(nodes, tmp_path)
+    await opc.opc.export_xml(nodes, tmp_path, export_values=True)
     await opc.opc.delete_nodes(nodes)
     await opc.opc.import_xml(tmp_path)
     assert 6.78 == await v.read_value()
@@ -145,7 +173,7 @@ async def test_xml_ns(opc, tmpdir):
     o_bname = await onew.add_object(f"ns={new_ns};i=4000", f"{bname_ns}:BNAME")
     nodes = [o, o50, o200, onew, vnew, v_no_parent, o_bname]
     tmp_path = tmpdir.join("tmp_test_export-ns.xml").strpath
-    await opc.opc.export_xml(nodes, tmp_path)
+    await opc.opc.export_xml(nodes, tmp_path, export_values=True)
     # delete node and change index og new_ns before re-importing
     await opc.opc.delete_nodes(nodes)
     ns_node = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
@@ -156,7 +184,7 @@ async def test_xml_ns(opc, tmpdir):
     await ns_node.write_value(nss)
     new_ns = await opc.opc.register_namespace("my_new_namespace_offsett")
     new_ns = await opc.opc.register_namespace("my_new_namespace")
-    new_nodes = await opc.opc.import_xml(tmp_path)
+    _ = await opc.opc.import_xml(tmp_path)
     for i in [o, o50, o200]:
         await i.read_browse_name()
     with pytest.raises(uaerrors.BadNodeIdUnknown):
@@ -179,7 +207,7 @@ async def test_xml_float(opc, tmpdir):
     dtype = await o.read_data_type()
     dv = await o.read_data_value()
     tmp_path = tmpdir.join("tmp_test_export-float.xml").strpath
-    await opc.opc.export_xml([o], tmp_path)
+    await opc.opc.export_xml([o], tmp_path, export_values=True)
     await opc.opc.delete_nodes([o])
     new_nodes = await opc.opc.import_xml(tmp_path)
     o2 = opc.opc.get_node(new_nodes[0])
@@ -203,7 +231,7 @@ async def test_xml_string(opc, tmpdir):
 
 async def test_xml_string_with_null_description(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlstring", "mystring")
-    await o.write_attribute(ua.AttributeIds.Description, ua.DataValue(None))
+    await o.write_attribute(ua.AttributeIds.Description, ua.DataValue(ua.Variant(ua.LocalizedText())))
     o2 = await _test_xml_var_type(opc, tmpdir, o, "string")
     assert await o.read_description() == await o2.read_description()
     await opc.opc.delete_nodes([o, o2])
@@ -212,7 +240,7 @@ async def test_xml_string_with_null_description(opc, tmpdir):
 async def test_xml_string_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlstringarray", ["mystring2", "mystring3"])
     node2 = await _test_xml_var_type(opc, tmpdir, o, "stringarray")
-    dv = await node2.read_data_value()
+    _ = await node2.read_data_value()
     await opc.opc.delete_nodes([o, node2])
 
 
@@ -244,17 +272,57 @@ async def test_xml_datetime_array(opc, tmpdir):
     await opc.opc.delete_nodes([o])
 
 
-# async def test_xml_qualifiedname(opc):
-#    o = opc.opc.nodes.objects.add_variable(2, "xmlltext", ua.QualifiedName("mytext", 5))
-#    await _test_xml_var_type(o, "qualified_name")
+async def test_xml_qualifiedname(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext", ua.QualifiedName("mytext", 5))
+    await _test_xml_var_type(opc, tmpdir, o, "qualified_name")
+    await opc.opc.delete_nodes([o])
 
-# async def test_xml_qualifiedname_array(opc):
-#    o = opc.opc.nodes.objects.add_variable(2, "xmlltext_array", [ua.QualifiedName("erert", 5), ua.QualifiedName("erert33", 6)])
-#    await _test_xml_var_type(o, "qualified_name_array")
+
+async def test_xml_qualifiedname_array(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array", [ua.QualifiedName("erert", 5), ua.QualifiedName("erert33", 6)])
+    await _test_xml_var_type(opc, tmpdir, o, "qualified_name_array")
+    await opc.opc.delete_nodes([o])
+
+
+async def test_xml_xmlelement(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmllxmlelement", ua.XmlElement("XMLElem"))
+    await _test_xml_var_type(opc, tmpdir, o, "xmlelement")
+    await opc.opc.delete_nodes([o])
+
+
+async def test_xml_xmlelement_array(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmllxmlelement_array", [ua.XmlElement("XMLElem1"), ua.XmlElement("XMLElem2")], ua.VariantType.XmlElement)
+    await _test_xml_var_type(opc, tmpdir, o, "xmlelement_array")
+    await opc.opc.delete_nodes([o])
+
+
+async def test_xml_expanded_nodeid(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmllexpandednodeid", ua.ExpandedNodeId(32, 1, None, "urn://testxml", 1))
+    await _test_xml_var_type(opc, tmpdir, o, "expanded_nodeid")
+    await opc.opc.delete_nodes([o])
+
+
+async def test_xml_expanded_nodeid_array(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmllexpandednodeid_array", [ua.ExpandedNodeId(32, 1, None, "urn://testxml", 1), ua.ExpandedNodeId(33, 5, None, "urn://testxml2", 2)])
+    await _test_xml_var_type(opc, tmpdir, o, "expanded_nodeid_array")
+    await opc.opc.delete_nodes([o])
+
 
 async def test_xml_bytestring(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlltext", "mytext".encode("utf8"), ua.VariantType.ByteString)
     await _test_xml_var_type(opc, tmpdir, o, "bytestring")
+    await opc.opc.delete_nodes([o])
+
+
+async def test_xml_statuscode(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmllstatuscode", ua.StatusCode(value=ua.StatusCodes.BadNodeIdInvalid))
+    await _test_xml_var_type(opc, tmpdir, o, "statuscode")
+    await opc.opc.delete_nodes([o])
+
+
+async def test_xml_statuscode_array(opc, tmpdir):
+    o = await opc.opc.nodes.objects.add_variable(2, "xmllstatuscode_array", [ua.StatusCode(value=ua.StatusCodes.BadNodeIdInvalid), ua.StatusCode(value=ua.StatusCodes.BadNodeIdExists)])
+    await _test_xml_var_type(opc, tmpdir, o, "statuscode_array")
     await opc.opc.delete_nodes([o])
 
 
@@ -398,7 +466,7 @@ async def test_xml_var_nillable(opc):
 
     </UANodeSet>
     """
-    _new_nodes = await opc.opc.import_xml(xmlstring=xml)
+    _ = await opc.opc.import_xml(xmlstring=xml)
     var_string = opc.opc.get_node(ua.NodeId('test_xml.string.nillabel', 2))
     var_bool = opc.opc.get_node(ua.NodeId('test_xml.bool.nillabel', 2))
     assert await var_string.read_value() is None
@@ -413,7 +481,7 @@ async def _test_xml_var_type(opc, tmpdir, node: Node, typename: str, test_equali
     dim = await node.read_array_dimensions()
     nclass = await node.read_node_class()
     tmp_path = tmpdir.join(f"tmp_test_export-{typename}.xml").strpath
-    await opc.opc.export_xml([node], tmp_path)
+    await opc.opc.export_xml([node], tmp_path, export_values=True)
     await opc.opc.delete_nodes([node])
     new_nodes = await opc.opc.import_xml(tmp_path)
     node2 = opc.opc.get_node(new_nodes[0])
@@ -421,6 +489,7 @@ async def _test_xml_var_type(opc, tmpdir, node: Node, typename: str, test_equali
     assert dtype == await node2.read_data_type()
     if test_equality:
         logger.debug(node, dv, node2, await node2.read_value())
+        _ = await node2.read_value()
         assert dv.Value == (await node2.read_data_value()).Value
     assert rank == await node2.read_value_rank()
     assert dim == await node2.read_array_dimensions()
@@ -433,7 +502,7 @@ async def test_xml_byte(opc, tmpdir):
     dtype = await o.read_data_type()
     dv = await o.read_data_value()
     tmp_path = tmpdir.join("export-byte.xml").strpath
-    await opc.opc.export_xml([o], tmp_path)
+    await opc.opc.export_xml([o], tmp_path, export_values=True)
     await opc.opc.delete_nodes([o])
     new_nodes = await opc.opc.import_xml(tmp_path)
     o2 = opc.opc.get_node(new_nodes[0])
@@ -443,9 +512,90 @@ async def test_xml_byte(opc, tmpdir):
     await opc.opc.delete_nodes([o2])
 
 
+async def test_xml_union(opc, tmpdir):
+    idx = 4
+    o, _ = await new_struct(opc.opc, idx, "MyUnionStruct2", [
+        new_struct_field("MyString", ua.VariantType.String),
+        new_struct_field("MyInt64", ua.VariantType.Int64),
+    ], is_union=True)
+    tmp_path = tmpdir.join("export-union.xml").strpath
+    await opc.opc.export_xml([o], tmp_path, export_values=True)
+    await opc.opc.delete_nodes([o])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    o2 = opc.opc.get_node(new_nodes[0])
+    assert o == o2
+    await opc.opc.load_data_type_definitions()
+    t = ua.MyUnionStruct2()
+    t.MyString = "abc"
+    assert t.MyString == "abc"
+    assert t.MyInt64 is None
+
+
+async def test_xml_struct_optional(opc, tmpdir):
+    idx = 4
+    o, _ = await new_struct(opc.opc, idx, "MyOptionalStruct2", [
+        new_struct_field("MyString", ua.VariantType.String, optional=True),
+        new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
+    ])
+    tmp_path = tmpdir.join("export-optional.xml").strpath
+    await opc.opc.export_xml([o], tmp_path, export_values=True)
+    await opc.opc.delete_nodes([o])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    o2 = opc.opc.get_node(new_nodes[0])
+    assert o == o2
+    await opc.opc.load_data_type_definitions()
+    t = ua.MyOptionalStruct2()
+    t.MyInt64 = 5
+    assert t.MyString is None
+    assert t.MyInt64 == 5
+
+
+async def test_basetype_alias(opc):
+    idx = 4
+    # Alias double
+    _ = await opc.opc.get_node(ua.NodeId(11)).add_data_type(ua.NodeId(NamespaceIndex=idx), '4:MyDouble')
+    await opc.opc.load_data_type_definitions()
+    assert ua.MyDouble(4.0) == ua.Double(4.0)
+
+
 async def test_xml_required_models_fail(opc):
     with pytest.raises(ValueError):
         await opc.opc.import_xml(CUSTOM_REQ_XML_FAIL_PATH)
 
+
 async def test_xml_required_models_pass(opc):
     await opc.opc.import_xml(CUSTOM_REQ_XML_PASS_PATH)
+    # check if missing namespace infos are added
+    urn = "http://yourorganisation.org/testenum104/"
+    idx = await opc.opc.register_namespace(urn)
+    o = await opc.opc.nodes.namespaces.get_child([f"{idx}:{urn}"])
+    assert await (await o.get_child("NamespaceUri")).read_value() == urn
+    assert await (await o.get_child("NamespaceVersion")).read_value() == "1.0.0"
+    dt = await (await o.get_child("NamespacePublicationDate")).read_value()
+    assert dt.year == 2020
+    assert dt.month == 8
+    assert dt.day == 11
+
+
+async def test_disable_xml_export_without_value(opc, tmpdir):
+    # Test that a value of a node is not exportet when export_values = False
+    o = await opc.opc.nodes.objects.add_variable(2, "byte_no_val", 255, ua.VariantType.Byte)
+    dtype = await o.read_data_type()
+    dv = await o.read_data_value()
+    tmp_path = tmpdir.join("export-byte.xml").strpath
+    await opc.opc.export_xml([o], tmp_path, export_values=False)
+    await opc.opc.delete_nodes([o])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    o2 = opc.opc.get_node(new_nodes[0])
+    assert o == o2
+    assert dtype == await o2.read_data_type()
+    v = await o2.read_data_value()
+    assert dv.Value != v.Value
+    assert v.Value.Value is None
+    await opc.opc.delete_nodes([o2])
+
+async def test_xml_namespace_meta_add(opc):
+    with pytest.raises(ValueError):
+        await opc.opc.get_namespace_index("http://foobar.org/struct_optional/")
+    await opc.opc.import_xml(CUSTOM_NS_META_ADD_XML_PATH)
+    assert await opc.opc.get_namespace_index("http://foobar.org/struct_optional/") > 0

@@ -79,7 +79,7 @@ from .events import Event
         elif reference.refBrowseName == "Message":
             return "ua.LocalizedText(message)"
         elif reference.refBrowseName == "LocalTime":
-            return "ua.NodeId(ua.ObjectIds.TimeZoneDataType)"
+            return "ua.uaprotocol_auto.TimeZoneDataType()"
         elif reference.refDataType == "NodeId":
             return "ua.NodeId(ua.ObjectIds.{0})".format(
                 str(ob_ids.ObjectIdNames[int(str(reference.refId).split("=")[1])]).split("_")[0])
@@ -126,7 +126,7 @@ class {event.browseName}({parent_event_browse_name[0]}):""")
             self.write('"""')
             self.write("def __init__(self, sourcenode=None, message=None, severity=1):")
             self.iidx += 1
-            self.write("super({0}, self).__init__(sourcenode, message, severity)".format(event.browseName))
+            self.write("super().__init__(sourcenode, message, severity)")
             self.write("self.EventType = ua.NodeId(ua.ObjectIds.{0}Type)".format(event.browseName))
             self.add_properties_and_variables(event)
         self.iidx -= 2

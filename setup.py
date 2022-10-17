@@ -13,17 +13,17 @@ pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 setup(
     name="asyncua",
-    version="0.9.14",
+    version="0.9.98",
     description="Pure Python OPC-UA client and server library",
     long_description=long_description,
     long_description_content_type='text/markdown',
     author="Olivier Roulet-Dubonnet",
     author_email="olivier.roulet@gmail.com",
     url='http://freeopcua.github.io/',
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests"]),
     provides=["asyncua"],
     license="GNU Lesser General Public License v3 or later",
-    install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", "cryptography", "sortedcontainers"],
+    install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", "cryptography", "sortedcontainers", "importlib-metadata;python_version<'3.8'"],
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

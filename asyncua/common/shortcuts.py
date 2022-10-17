@@ -2,7 +2,7 @@ from ..ua import ObjectIds
 from .node import Node
 
 
-class Shortcuts(object):
+class Shortcuts:
     """
     This object contains Node objects to some commonly used nodes
     """
@@ -16,6 +16,7 @@ class Shortcuts(object):
         self.base_variable_type = Node(server, ObjectIds.BaseVariableType)
         self.folder_type = Node(server, ObjectIds.FolderType)
         self.enum_data_type = Node(server, ObjectIds.Enumeration)
+        self.option_set_type = Node(server, ObjectIds.OptionSet)
         self.types = Node(server, ObjectIds.TypesFolder)
         self.data_types = Node(server, ObjectIds.DataTypesFolder)
         self.event_types = Node(server, ObjectIds.EventTypesFolder)
@@ -26,6 +27,7 @@ class Shortcuts(object):
         self.namespaces = Node(server, ObjectIds.Server_Namespaces)
         self.opc_binary = Node(server, ObjectIds.OPCBinarySchema_TypeSystem)
         self.base_structure_type = Node(server, ObjectIds.Structure)
+        self.base_union_type = Node(server, ObjectIds.Union)
         self.server_state = Node(server, ObjectIds.Server_ServerStatus_State)
         self.service_level = Node(server, ObjectIds.Server_ServiceLevel)
         self.HasComponent = Node(server, ObjectIds.HasComponent)

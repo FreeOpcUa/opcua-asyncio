@@ -27,7 +27,7 @@ async def _copy_node(server, parent_nodeid, rdesc, nodeid, recursive):
     addnode.TypeDefinition = rdesc.TypeDefinition
     addnode.NodeClass = rdesc.NodeClass
     node_to_copy = make_node(server, rdesc.NodeId)
-    attr_obj = getattr(ua, rdesc.NodeClass.name + "Attributes")
+    attr_obj = getattr(ua, ua.NodeClass(rdesc.NodeClass).name + "Attributes")
     await _read_and_copy_attrs(node_to_copy, attr_obj(), addnode)
     res = (await server.add_nodes([addnode]))[0]
     added_nodes = [res.AddedNodeId]

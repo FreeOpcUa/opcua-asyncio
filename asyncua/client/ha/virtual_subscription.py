@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional, Set
 
 from asyncua import ua
-from sortedcontainers import SortedDict
+from sortedcontainers import SortedDict  # type: ignore
 
 
 TypeSubHandler = Any

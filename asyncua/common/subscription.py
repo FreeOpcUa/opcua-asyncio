@@ -4,7 +4,8 @@ high level interface to subscriptions
 import asyncio
 import logging
 import collections.abc
-from typing import Union, List, Iterable
+from typing import Tuple, Union, List, Iterable, Optional
+from asyncua.common.ua_utils import copy_dataclass_attr
 
 from asyncua import ua
 from .events import Event, get_filter_from_event_type
@@ -73,20 +74,31 @@ class Subscription:
     :param server: `InternalSession` or `UAClient`
     """
 
-    def __init__(self, server, params: ua.CreateSubscriptionParameters, handler: SubHandler, loop=None):
-        self.loop = loop or asyncio.get_event_loop()
+    def __init__(self, server, params: ua.CreateSubscriptionParameters, handler: SubHandler):
         self.logger = logging.getLogger(__name__)
         self.server = server
         self._client_handle = 200
         self._handler: SubHandler = handler
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items = {}
-        self.subscription_id = None
+        self.subscription_id: Optional[int] = None
 
-    async def init(self):
-        response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
+    async def init(self) -> ua.CreateSubscriptionResult:
+        response = await self.server.create_subscription(
+            self.parameters, callback=self.publish_callback
+        )
         self.subscription_id = response.SubscriptionId  # move to data class
-        self.logger.info('Subscription created %s', self.subscription_id)
+        self.logger.info("Subscription created %s", self.subscription_id)
+        return response
+
+    async def update(
+        self, params: ua.ModifySubscriptionParameters
+    ) -> ua.ModifySubscriptionResponse:
+        response = await self.server.update_subscription(params)
+        self.logger.info('Subscription updated %s', params.SubscriptionId)
+        # update the self.parameters attr with the updated values
+        copy_dataclass_attr(params, self.parameters)
+        return response
 
     async def publish_callback(self, publish_result: ua.PublishResult):
         """
@@ -112,22 +124,27 @@ class Subscription:
         results[0].check()
 
     async def _call_datachange(self, datachange: ua.DataChangeNotification):
+        if not hasattr(self._handler, "datachange_notification"):
+            self.logger.error("DataChange subscription created but handler has no datachange_notification method")
+            return
+
+        known_handles_args: List[Tuple] = []
         for item in datachange.MonitoredItems:
             if item.ClientHandle not in self._monitored_items:
                 self.logger.warning("Received a notification for unknown handle: %s", item.ClientHandle)
                 continue
             data = self._monitored_items[item.ClientHandle]
-            if hasattr(self._handler, "datachange_notification"):
-                event_data = DataChangeNotif(data, item)
-                try:
-                    if asyncio.iscoroutinefunction(self._handler.datachange_notification):
-                        await self._handler.datachange_notification(data.node, item.Value.Value.Value, event_data)
-                    else:
-                        self._handler.datachange_notification(data.node, item.Value.Value.Value, event_data)
-                except Exception:
-                    self.logger.exception("Exception calling data change handler")
-            else:
-                self.logger.error("DataChange subscription created but handler has no datachange_notification method")
+            event_data = DataChangeNotif(data, item)
+            known_handles_args.append((data.node, item.Value.Value.Value, event_data))
+
+        try:
+            tasks = [
+                self._handler.datachange_notification(*args) for args in known_handles_args
+            ]
+            if asyncio.iscoroutinefunction(self._handler.datachange_notification):  
+                await asyncio.gather(*tasks)
+        except Exception as ex:
+            self.logger.exception("Exception calling data change handler. Error: %s", ex)
 
     async def _call_event(self, eventlist: ua.EventNotificationList):
         for event in eventlist.Events:
@@ -210,7 +227,7 @@ class Subscription:
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
             evfilter = await self._create_eventfilter(evtypes)
-        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
+        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)  # type: ignore
 
     async def subscribe_alarms_and_conditions(self,
                                               sourcenode: Node = ua.ObjectIds.Server,
@@ -238,10 +255,10 @@ class Subscription:
         matches = [a for a in evfilter.SelectClauses if a.AttributeId == ua.AttributeIds.NodeId]
         if not matches:
             conditionIdOperand = ua.SimpleAttributeOperand()
-            conditionIdOperand.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)    
-            conditionIdOperand.AttributeId = ua.AttributeIds.NodeId 
+            conditionIdOperand.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)
+            conditionIdOperand.AttributeId = ua.AttributeIds.NodeId
             evfilter.SelectClauses.append(conditionIdOperand)
-        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
+        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)  # type: ignore
 
     async def _subscribe(self,
                          nodes: Union[Node, Iterable[Node]],
@@ -253,7 +270,7 @@ class Subscription:
                         ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Private low level method for subscribing.
-        :param nodes: One Node or an Iterable og Nodes.
+        :param nodes: One Node or an Iterable of Nodes.
         :param attr: ua.AttributeId
         :param mfilter: MonitoringFilter
         :param queuesize: queue size
@@ -281,7 +298,7 @@ class Subscription:
         # Check and return result for single node (raise `UaStatusCodeError` if subscription failed)
         if type(mids[0]) == ua.StatusCode:
             mids[0].check()
-        return mids[0]
+        return mids[0]  # type: ignore
 
     def _make_monitored_item_request(
             self,
@@ -350,7 +367,7 @@ class Subscription:
         If you delete the subscription, you do not need to unsubscribe.
         :param handle: The handle that was returned when subscribing to the node/nodes
         """
-        handles = [handle] if type(handle) is int else handle
+        handles: List[int] = [handle] if isinstance(handle, int) else handle
         if not handles:
             return
         params = ua.DeleteMonitoredItemsParameters()
@@ -456,7 +473,7 @@ class Subscription:
         """
         self.logger.info("set_publishing_mode")
         params = ua.SetPublishingModeParameters()
-        params.SubscriptionIds = [self.subscription_id]
+        params.SubscriptionIds = [self.subscription_id]  # type: ignore
         params.PublishingEnabled = publishing
         result = await self.server.set_publishing_mode(params)
         if result[0].is_good():

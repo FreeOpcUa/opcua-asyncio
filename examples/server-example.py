@@ -4,8 +4,6 @@ import logging
 from datetime import datetime
 import time
 from math import sin
-import sys
-sys.path.insert(0, "..")
 
 
 from asyncua import ua, uamethod, Server
@@ -94,7 +92,9 @@ async def main():
     mydtvar = await myobj.add_variable(idx, "MyDateTimeVar", datetime.utcnow())
     await mydtvar.set_writable()    # Set MyVariable to be writable by clients
     myarrayvar = await myobj.add_variable(idx, "myarrayvar", [6.7, 7.9])
-    myarrayvar = await myobj.add_variable(idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32))
+    myuintvar = await myobj.add_variable(idx, "myuintvar", ua.UInt16(4))
+    await myobj.add_variable(idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32))
+    await myarrayvar.set_writable(True)
     myprop = await myobj.add_property(idx, "myproperty", "I am a property")
     mymethod = await myobj.add_method(idx, "mymethod", func, [ua.VariantType.Int64], [ua.VariantType.Boolean])
     multiply_node = await myobj.add_method(idx, "multiply", multiply, [ua.VariantType.Int64, ua.VariantType.Int64], [ua.VariantType.Int64])
@@ -113,8 +113,8 @@ async def main():
         print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
         # enable following if you want to subscribe to nodes on server side
         #handler = SubHandler()
-        #sub = server.create_subscription(500, handler)
-        #handle = sub.subscribe_data_change(myvar)
+        #sub = await server.create_subscription(500, handler)
+        #handle = await sub.subscribe_data_change(myvar)
         # trigger event, all subscribed clients wil receive it
         var = await myarrayvar.read_value()  # return a ref to value in db server side! not a copy!
         var = copy.copy(var)  # WARNING: we need to copy before writting again otherwise no data change event will be generated

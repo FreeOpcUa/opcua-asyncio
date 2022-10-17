@@ -7,7 +7,6 @@ pytestmark = pytest.mark.asyncio
 async def test_history_ev_read_2_with_end(history_server):
     """only has end time, should return reverse order"""
     now = datetime.utcnow()
-    old = now - timedelta(days=6)
     res = await history_server.srv_node.read_event_history(None, now, 2)
     assert 2 == len(res)
     assert res[-1].Severity == history_server.ev_values[-2]

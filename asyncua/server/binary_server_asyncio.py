@@ -5,6 +5,7 @@ import logging
 import asyncio
 from typing import Optional
 
+from ..common.connection import TransportLimits
 from ..ua.ua_binary import header_from_binary
 from ..common.utils import Buffer, NotEnoughData
 from .uaprocessor import UaProcessor
@@ -18,7 +19,7 @@ class OPCUAProtocol(asyncio.Protocol):
     Instantiated for every connection.
     """
 
-    def __init__(self, iserver: InternalServer, policies, clients, closing_tasks):
+    def __init__(self, iserver: InternalServer, policies, clients, closing_tasks, limits: TransportLimits):
         self.peer_name = None
         self.transport = None
         self.processor = None
@@ -28,6 +29,7 @@ class OPCUAProtocol(asyncio.Protocol):
         self.clients = clients
         self.closing_tasks = closing_tasks
         self.messages = asyncio.Queue()
+        self.limits = limits
         self._task = None
 
     def __str__(self):
@@ -39,17 +41,17 @@ class OPCUAProtocol(asyncio.Protocol):
         self.peer_name = transport.get_extra_info('peername')
         logger.info('New connection from %s', self.peer_name)
         self.transport = transport
-        self.processor = UaProcessor(self.iserver, self.transport)
+        self.processor = UaProcessor(self.iserver, self.transport, self.limits)
         self.processor.set_policies(self.policies)
         self.iserver.asyncio_transports.append(transport)
         self.clients.append(self)
-        self._task = self.iserver.loop.create_task(self._process_received_message_loop())
+        self._task = asyncio.create_task(self._process_received_message_loop())
 
     def connection_lost(self, ex):
         logger.info('Lost connection from %s, %s', self.peer_name, ex)
         self.transport.close()
         self.iserver.asyncio_transports.remove(self.transport)
-        closing_task = self.iserver.loop.create_task(self.processor.close())
+        closing_task = asyncio.create_task(self.processor.close())
         self.closing_tasks.append(closing_task)
         if self in self.clients:
             self.clients.remove(self)
@@ -65,15 +67,21 @@ class OPCUAProtocol(asyncio.Protocol):
                 try:
                     header = header_from_binary(buf)
                 except NotEnoughData:
-                    logger.debug('Not enough data while parsing header from client, waiting for more')
+                    # we jsut wait for more data, that happens.
+                    # worst case recv will go in timeout or it hangs and it should be fine too
                     return
-                if len(buf) < header.body_size:
-                    logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size,
-                                 len(buf))
+                if header.header_size + header.body_size <= header.header_size:
+                    # malformed header prevent invalid access of your buffer
+                    logger.error(f'Got malformed header {header}')
+                    self.transport.close()
                     return
-                # we have a complete message
-                self.messages.put_nowait((header, buf))
-                self._buffer = self._buffer[(header.header_size + header.body_size):]
+                else:
+                    if len(buf) < header.body_size:
+                        logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size, len(buf))
+                        return
+                    # we have a complete message
+                    self.messages.put_nowait((header, buf))
+                    self._buffer = self._buffer[(header.header_size + header.body_size):]
             except Exception:
                 logger.exception('Exception raised while parsing message from client')
                 return
@@ -102,7 +110,7 @@ class OPCUAProtocol(asyncio.Protocol):
 
 
 class BinaryServer:
-    def __init__(self, internal_server: InternalServer, hostname, port):
+    def __init__(self, internal_server: InternalServer, hostname, port, limits: TransportLimits):
         self.logger = logging.getLogger(__name__)
         self.hostname = hostname
         self.port = port
@@ -112,6 +120,7 @@ class BinaryServer:
         self.clients = []
         self.closing_tasks = []
         self.cleanup_task = None
+        self.limits = limits
 
     def set_policies(self, policies):
         self._policies = policies
@@ -123,10 +132,11 @@ class BinaryServer:
             policies=self._policies,
             clients=self.clients,
             closing_tasks=self.closing_tasks,
+            limits=self.limits
         )
 
     async def start(self):
-        self._server = await self.iserver.loop.create_server(self._make_protocol, self.hostname, self.port)
+        self._server = await asyncio.get_running_loop().create_server(self._make_protocol, self.hostname, self.port)
         # get the port and the hostname from the created server socket
         # only relevant for dynamic port asignment (when self.port == 0)
         if self.port == 0 and len(self._server.sockets) == 1:
@@ -136,7 +146,7 @@ class BinaryServer:
             self.hostname = sockname[0]
             self.port = sockname[1]
         self.logger.info('Listening on %s:%s', self.hostname, self.port)
-        self.cleanup_task = self.iserver.loop.create_task(self._await_closing_tasks())
+        self.cleanup_task = asyncio.create_task(self._close_task_loop())
 
     async def stop(self):
         self.logger.info('Closing asyncio socket server')
@@ -149,22 +159,21 @@ class BinaryServer:
             await self.cleanup_task
         except asyncio.CancelledError:
             pass
-        await self._await_closing_tasks(recursive=False)
+        await self._close_tasks()
 
         if self._server:
-            self.iserver.loop.call_soon(self._server.close)
+            asyncio.get_running_loop().call_soon(self._server.close)
             await self._server.wait_closed()
 
-    async def _await_closing_tasks(self, recursive=True):
+    async def _close_task_loop(self):
+        while True:
+            await self._close_tasks()
+            await asyncio.sleep(10)
+
+    async def _close_tasks(self):
         while self.closing_tasks:
             task = self.closing_tasks.pop()
             try:
                 await task
-            except asyncio.CancelledError:
-                # this means a stop request has been sent, it should not be catched
-                raise
             except Exception:
-                logger.exception("Unexpected crash in BinaryServer._await_closing_tasks")
-        if recursive:
-            await asyncio.sleep(10)
-            await self._await_closing_tasks()
+                logger.exception("Unexpected crash in BinaryServer._close_tasks")

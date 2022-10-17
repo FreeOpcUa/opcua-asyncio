@@ -2,6 +2,9 @@
 High level functions to create nodes
 """
 import logging
+from enum import Enum
+import inspect
+
 from asyncua import ua
 from .instantiate_util import instantiate
 from .node_factory import make_node
@@ -140,7 +143,7 @@ async def create_reference_type(parent, nodeid, bname, symmetric=True, inversena
 
 async def create_object_type(parent, nodeid, bname):
     """
-    Create a new object type to be instanciated in address space.
+    Create a new object type to be instantiated in address space.
     arguments are nodeid, browsename
     or namespace index, name
     """
@@ -327,7 +330,7 @@ async def create_data_type(parent, nodeid, bname, description=None):
     attrs.DisplayName = ua.LocalizedText(qname.Name)
     attrs.WriteMask = 0
     attrs.UserWriteMask = 0
-    attrs.IsAbstract = False  # True mean they cannot be instanciated
+    attrs.IsAbstract = False  # True mean they cannot be instantiated
     addnode.NodeAttributes = attrs
     results = await parent.server.add_nodes([addnode])
     results[0].StatusCode.check()
@@ -348,12 +351,13 @@ async def create_data_type(parent, nodeid, bname, description=None):
 
 async def create_encoding(parent, nodeid, bname):
     """
-    Create a new encoding object to be instanciated in address space.
+    Create a new encoding object to be instantiated in address space.
     arguments are nodeid, browsename
     or namespace index, name
     """
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
-    qname.NamespaceIndex = 0  # encoding bname idx must be 0
+    if qname.NamespaceIndex != 0:
+        raise ua.UaError("Encoding QualigiedName index must be 0")
     return make_node(parent.server, await _create_encoding(parent.server, parent.nodeid, nodeid, qname))
 
 
@@ -396,7 +400,7 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
     results[0].StatusCode.check()
     method = make_node(parent.server, results[0].AddedNodeId)
     if inputs:
-        await create_property(
+        prob = await create_property(
             method,
             ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex),
             ua.QualifiedName("InputArguments", 0),
@@ -404,8 +408,9 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
             varianttype=ua.VariantType.ExtensionObject,
             datatype=ua.ObjectIds.Argument
         )
+        await prob.set_modelling_rule(True)
     if outputs:
-        await create_property(
+        prob = await create_property(
             method,
             ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex),
             ua.QualifiedName("OutputArguments", 0),
@@ -413,6 +418,7 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
             varianttype=ua.VariantType.ExtensionObject,
             datatype=ua.ObjectIds.Argument
         )
+        await prob.set_modelling_rule(True)
     if hasattr(parent.server, "add_method_callback"):
         parent.server.add_method_callback(method.nodeid, callback)
     return results[0].AddedNodeId
@@ -424,8 +430,16 @@ def _vtype_to_argument(vtype):
     arg = ua.Argument()
     if hasattr(vtype, "data_type"):
         arg.DataType = vtype.data_type
+    elif inspect.isclass(vtype) and issubclass(vtype, Enum):
+        arg.DataType = ua.enums_datatypes[vtype]
     elif isinstance(vtype, ua.VariantType):
         arg.DataType = ua.NodeId(vtype.value)
+    elif isinstance(vtype, ua.NodeId):
+        arg.DataType = vtype
+    elif hasattr(vtype, "nodeid"):  # NodeId case but we cannot import Node object here
+        arg.DataType = vtype.nodeid
+    elif hasattr(vtype, "__name__") and hasattr(ua.VariantType, vtype.__name__):
+        arg.DataType = ua.NodeId(ua.VariantType[vtype.__name__].value)
     else:
         arg.DataType = ua.NodeId(vtype)
     return arg

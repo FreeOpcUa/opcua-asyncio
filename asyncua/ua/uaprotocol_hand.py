@@ -1,16 +1,17 @@
 import struct
 from dataclasses import dataclass, field
+from typing import List
 
 from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
 from asyncua.common import utils
-from asyncua.ua.uatypes import AccessLevel, FrozenClass
+from asyncua.ua.uatypes import AccessLevel
 
 OPC_TCP_SCHEME = 'opc.tcp'
 
 
 @dataclass
-class Hello(uatypes.FrozenClass):
+class Hello:
     ProtocolVersion: uatypes.UInt32 = 0
     # the following values couldbe set to 0 (meaning no limits)
     # unfortunaltely many servers do not support it
@@ -43,7 +44,7 @@ class ChunkType:
 
 
 @dataclass
-class Header(uatypes.FrozenClass):
+class Header:
     MessageType: MessageType = None
     ChunkType: ChunkType = None
     ChannelId: int = 0
@@ -60,13 +61,13 @@ class Header(uatypes.FrozenClass):
 
 
 @dataclass
-class ErrorMessage(uatypes.FrozenClass):
+class ErrorMessage:
     Error: uatypes.StatusCode = uatypes.StatusCode()
     Reason: uatypes.String = ""
 
 
 @dataclass
-class Acknowledge(uatypes.FrozenClass):
+class Acknowledge:
     ProtocolVersion: uatypes.UInt32 = 0
     ReceiveBufferSize: uatypes.UInt32 = 65536
     SendBufferSize: uatypes.UInt32 = 65536
@@ -75,7 +76,7 @@ class Acknowledge(uatypes.FrozenClass):
 
 
 @dataclass
-class AsymmetricAlgorithmHeader(uatypes.FrozenClass):
+class AsymmetricAlgorithmHeader:
     SecurityPolicyURI: uatypes.String = 'http://opcfoundation.org/UA/SecurityPolicy#None'
     SenderCertificate: uatypes.ByteString = None
     ReceiverCertificateThumbPrint: uatypes.ByteString = None
@@ -90,7 +91,7 @@ class AsymmetricAlgorithmHeader(uatypes.FrozenClass):
 
 
 @dataclass
-class SymmetricAlgorithmHeader(uatypes.FrozenClass):
+class SymmetricAlgorithmHeader:
     TokenId: uatypes.UInt32 = 0
 
     @staticmethod
@@ -99,7 +100,7 @@ class SymmetricAlgorithmHeader(uatypes.FrozenClass):
 
 
 @dataclass
-class SequenceHeader(uatypes.FrozenClass):
+class SequenceHeader:
     SequenceNumber: uatypes.UInt32 = None
     RequestId: uatypes.UInt32 = None
 
@@ -171,6 +172,7 @@ class SecurityPolicy:
     AsymmetricSignatureURI: str = ''
     signature_key_size: int = 0
     symmetric_key_size: int = 0
+    secure_channel_nonce_length: int = 0
 
     def __init__(self, permissions=None):
         self.asymmetric_cryptography = CryptographyNone()
@@ -247,12 +249,11 @@ class ObjectTypeAttributes(auto.ObjectTypeAttributes):
 
 @dataclass
 class VariableAttributes(auto.VariableAttributes):
-    def __post_init__(self):
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Value | ana.DataType | ana.ValueRank | ana.ArrayDimensions | ana.AccessLevel | ana.UserAccessLevel | ana.MinimumSamplingInterval | ana.Historizing
-        self.Historizing = False
-        self.AccessLevel = AccessLevel.CurrentRead.mask
-        self.UserAccessLevel = AccessLevel.CurrentRead.mask
-        self.ArrayDimensions = None
+    ArrayDimensions: List[uatypes.UInt32] = None
+    Historizing: uatypes.Boolean = True
+    AccessLevel: uatypes.Byte = auto.AccessLevel.CurrentRead.mask
+    UserAccessLevel: uatypes.Byte = auto.AccessLevel.CurrentRead.mask
+    SpecifiedAttributes: uatypes.UInt32 = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Value | ana.DataType | ana.ValueRank | ana.ArrayDimensions | ana.AccessLevel | ana.UserAccessLevel | ana.MinimumSamplingInterval | ana.Historizing
 
 
 @dataclass
@@ -298,12 +299,11 @@ class ViewAttributes(auto.ViewAttributes):
 
 @dataclass
 class Argument(auto.Argument):
-    def __post_init__(self):
-        self.ValueRank = -2
+    ValueRank: auto.Int32 = -1
 
 
 @dataclass
-class XmlElement(FrozenClass):
+class XmlElement:
     """
     An XML element encoded as a UTF-8 string.
     :ivar Value:

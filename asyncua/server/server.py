@@ -4,9 +4,10 @@ High level interface to pure python OPC-UA server
 
 import asyncio
 import logging
+import math
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
-from typing import Coroutine, Optional
+from typing import Coroutine, Optional, Tuple
 
 from asyncua import ua
 from .binary_server_asyncio import BinaryServer
@@ -23,6 +24,7 @@ from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
 from ..common.structures104 import load_data_type_definitions
 from ..common.ua_utils import get_nodes_of_namespace
+from ..common.connection import TransportLimits
 
 from ..crypto import security_policies, uacrypto
 
@@ -71,10 +73,14 @@ class Server:
     :ivar iserver: `InternalServer` instance
     :ivar bserver: binary protocol server `BinaryServer`
     :ivar nodes: shortcuts to common nodes - `Shortcuts` instance
+    :ivar socket_address:
+        A tuple of IP address and port describing the server socket address. Used when the IP address of the network
+        interface is different from the endpoint IP offered to the client during discovery. Helpful when the server
+        is running behind NAT or inside a Docker container, where the client connects to an external IP, while the
+        server listens on some internal IP.
     """
 
-    def __init__(self, iserver: InternalServer = None, loop: asyncio.AbstractEventLoop = None, user_manager=None):
-        self.loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
+    def __init__(self, iserver: InternalServer = None, user_manager=None):
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
         self.product_uri = "urn:freeopcua.github.io:python:server"
@@ -82,8 +88,9 @@ class Server:
         self.manufacturer_name = "FreeOpcUa"
         self.application_type = ua.ApplicationType.ClientAndServer
         self.default_timeout: int = 60 * 60 * 1000
-        self.iserver = iserver if iserver else InternalServer(self.loop, user_manager=user_manager)
+        self.iserver = iserver if iserver else InternalServer(user_manager=user_manager)
         self.bserver: Optional[BinaryServer] = None
+        self.socket_address: Optional[Tuple[str, int]] = None
         self._discovery_clients = {}
         self._discovery_period = 60
         self._discovery_handle = None
@@ -92,12 +99,22 @@ class Server:
         # enable all endpoints by default
         self._security_policy = [
             ua.SecurityPolicyType.NoSecurity, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
-            ua.SecurityPolicyType.Basic256Sha256_Sign
+            ua.SecurityPolicyType.Basic256Sha256_Sign, ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt,
+            ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign
         ]
         # allow all certificates by default
         self._permission_ruleset = None
-        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
+        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep"]
         self.certificate = None
+        # Use accectable limits
+        buffer_sz = 65535
+        max_msg_sz = 100 * 1024 * 1024  # 100mb
+        self.limits = TransportLimits(
+            max_recv_buffer=buffer_sz,
+            max_send_buffer=buffer_sz,
+            max_chunk_count=math.ceil(max_msg_sz / buffer_sz),  # Round up to allow max msg size
+            max_message_size=max_msg_sz
+        )
 
     async def init(self, shelf_file=None):
         await self.iserver.init(shelf_file)
@@ -111,27 +128,38 @@ class Server:
 
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
 
+    def set_match_discovery_client_ip(self, match_discovery_client_ip: bool):
+        """
+        Enables or disables the matching of an endpoint IP to a client IP during discovery.
+
+        When True (default), the IP address of endpoints sent during the discovery is modified to an IP address
+        of the server network interface used to communicate with the client. Disabling comes handy when the real
+        client IP is different from the client IP that the server sees (e.g., behind NAT or inside Docker container).
+        Do not call unless you know what you are doing.
+        """
+        self.iserver.match_discovery_source_ip = match_discovery_client_ip
+
     async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
                              build_number, build_date):
-        
+
         if not all(isinstance(arg, str) for arg in [
-            product_uri, 
-            manufacturer_name, 
-            product_name, 
-            software_version, 
+            product_uri,
+            manufacturer_name,
+            product_name,
+            software_version,
             build_number
             ]):
-            raise TypeError(f"""Expected all str got 
-                product_uri: {type(product_uri)}, 
-                manufacturer_name: {type(manufacturer_name)}, 
-                product_name: {type(product_name)}, 
-                software_version: {type(software_version)}, 
+            raise TypeError(f"""Expected all str got
+                product_uri: {type(product_uri)},
+                manufacturer_name: {type(manufacturer_name)},
+                product_name: {type(product_name)},
+                software_version: {type(software_version)},
                 build_number: {type(build_number)}
                 instead!""")
-        
+
         if not isinstance(build_date, datetime):
             raise TypeError(f"Expected datetime got {type(build_date)} instead!")
-        
+
         status_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus))
         build_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo))
 
@@ -240,7 +268,7 @@ class Server:
         await self._discovery_clients[url].register_server(self)
         self._discovery_period = period
         if period:
-            self.loop.call_soon(self._schedule_renew_registration)
+            asyncio.get_running_loop().call_soon(self._schedule_renew_registration)
 
     async def unregister_to_discovery(self, url: str = "opc.tcp://localhost:4840"):
         """
@@ -253,8 +281,8 @@ class Server:
             self._discovery_handle.cancel()
 
     def _schedule_renew_registration(self):
-        self.loop.create_task(self._renew_registration())
-        self._discovery_handle = self.loop.call_later(self._discovery_period, self._schedule_renew_registration)
+        asyncio.create_task(self._renew_registration())
+        self._discovery_handle = asyncio.get_running_loop().call_later(self._discovery_period, self._schedule_renew_registration)
 
     async def _renew_registration(self):
         for client in self._discovery_clients.values():
@@ -338,26 +366,44 @@ class Server:
                     ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
                                              ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
                                              permission_ruleset=self._permission_ruleset))
+            if ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt in self._security_policy:
+                self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep,
+                                    ua.MessageSecurityMode.SignAndEncrypt)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
+                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
+                                             self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
+            if ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign in self._security_policy:
+                self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep, ua.MessageSecurityMode.Sign)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
+                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
 
     def _set_endpoints(self, policy=ua.SecurityPolicy, mode=ua.MessageSecurityMode.None_):
         idtokens = []
+        supported_token_classes = []
         if "Anonymous" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "anonymous"
             idtoken.TokenType = ua.UserTokenType.Anonymous
             idtokens.append(idtoken)
+            supported_token_classes.append(ua.AnonymousIdentityToken)
 
         if "Basic256Sha256" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = 'certificate_basic256sha256'
             idtoken.TokenType = ua.UserTokenType.Certificate
             idtokens.append(idtoken)
+            supported_token_classes.append(ua.X509IdentityToken)
 
         if "Username" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "username"
             idtoken.TokenType = ua.UserTokenType.UserName
             idtokens.append(idtoken)
+            supported_token_classes.append(ua.UserNameIdentityToken)
 
         appdesc = ua.ApplicationDescription()
         appdesc.ApplicationName = ua.LocalizedText(self.name)
@@ -377,6 +423,7 @@ class Server:
         edp.TransportProfileUri = "http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary"
         edp.SecurityLevel = 0
         self.iserver.add_endpoint(edp)
+        self.iserver.supported_tokens = tuple(supported_token_classes)
 
     def set_server_name(self, name):
         self.name = name
@@ -388,7 +435,8 @@ class Server:
         await self._setup_server_nodes()
         await self.iserver.start()
         try:
-            self.bserver = BinaryServer(self.iserver, self.endpoint.hostname, self.endpoint.port)
+            ipaddress, port = self._get_bind_socket_info()
+            self.bserver = BinaryServer(self.iserver, ipaddress, port, self.limits)
             self.bserver.set_policies(self._policies)
             await self.bserver.start()
         except Exception as exp:
@@ -398,6 +446,12 @@ class Server:
         else:
             _logger.debug("%s server started", self)
 
+    def _get_bind_socket_info(self) -> Tuple[Optional[str], Optional[int]]:
+        if self.socket_address is not None:
+            return self.socket_address
+        else:
+            return self.endpoint.hostname, self.endpoint.port
+
     async def stop(self):
         """
         Stop server
@@ -405,7 +459,7 @@ class Server:
         if self._discovery_handle:
             self._discovery_handle.cancel()
         if self._discovery_clients:
-            await asyncio.wait([client.disconnect() for client in self._discovery_clients.values()])
+            await asyncio.gather(*[client.disconnect() for client in self._discovery_clients.values()])
         await self.bserver.stop()
         await self.iserver.stop()
         _logger.debug("%s Internal server stopped, everything closed", self)
@@ -554,33 +608,35 @@ class Server:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
 
-    async def import_xml(self, path=None, xmlstring=None) -> Coroutine:
+    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Coroutine:
         """
         Import nodes defined in xml
         """
-        importer = XmlImporter(self)
+        importer = XmlImporter(self, strict_mode)
         return await importer.import_xml(path, xmlstring)
 
-    async def export_xml(self, nodes, path):
+    async def export_xml(self, nodes, path, export_values: bool = False):
         """
         Export defined nodes to xml
+        :param export_value: export values from variants
         """
-        exp = XmlExporter(self)
+        exp = XmlExporter(self, export_values=export_values)
         await exp.build_etree(nodes)
         await exp.write_xml(path)
 
-    async def export_xml_by_ns(self, path: str, namespaces: list = None):
+    async def export_xml_by_ns(self, path: str, namespaces: list = None, export_values: bool = False):
         """
         Export nodes of one or more namespaces to an XML file.
         Namespaces used by nodes are always exported for consistency.
         :param path: name of the xml file to write
         :param namespaces: list of string uris or int indexes of the namespace to export,
+        :param export_values: export values from variants
          if not provide all ns are used except 0
         """
         if namespaces is None:
             namespaces = []
         nodes = await get_nodes_of_namespace(self, namespaces)
-        await self.export_xml(nodes, path)
+        await self.export_xml(nodes, path, export_values=export_values)
 
     async def delete_nodes(self, nodes, recursive=False) -> Coroutine:
         return await delete_nodes(self.iserver.isession, nodes, recursive)
@@ -670,3 +726,9 @@ class Server:
         so it is a little faster
         """
         return await self.iserver.write_attribute_value(nodeid, datavalue, attr)
+
+    def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
+        """
+        directly read datavalue of the Attribute
+        """
+        return self.iserver.read_attribute_value(nodeid, attr)

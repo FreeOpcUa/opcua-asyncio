@@ -2,11 +2,12 @@
 Usefull method and classes not belonging anywhere and depending on asyncua library
 """
 
-from dateutil import parser
-from datetime import datetime
-from enum import Enum, IntEnum
 import uuid
 import logging
+from datetime import datetime
+from enum import Enum, IntEnum, IntFlag
+
+from dateutil import parser
 
 from asyncua import ua
 
@@ -18,14 +19,10 @@ def value_to_datavalue(val, varianttype=None):
     convert anyting to a DataValue using varianttype
     """
     if isinstance(val, ua.DataValue):
-        datavalue = val
-    elif isinstance(val, ua.Variant):
-        datavalue = ua.DataValue(val)
-        datavalue.SourceTimestamp = datetime.utcnow()
-    else:
-        datavalue = ua.DataValue(ua.Variant(val, varianttype))
-        datavalue.SourceTimestamp = datetime.utcnow()
-    return datavalue
+        return val
+    if isinstance(val, ua.Variant):
+        return ua.DataValue(val, SourceTimestamp=datetime.utcnow())
+    return ua.DataValue(ua.Variant(val, varianttype), SourceTimestamp=datetime.utcnow())
 
 
 def val_to_string(val, truncate=False):
@@ -47,7 +44,7 @@ def val_to_string(val, truncate=False):
         val = val.to_string()
     elif isinstance(val, ua.StatusCode):
         val = val.name
-    elif isinstance(val, (Enum, IntEnum)):
+    elif isinstance(val, (Enum, IntEnum, IntFlag)):
         val = val.name
     elif isinstance(val, ua.DataValue):
         val = variant_to_string(val.Value)
@@ -135,6 +132,9 @@ def string_to_val(string, vtype):
         val = ua.StatusCode(string)
     elif vtype == ua.VariantType.Guid:
         val = uuid.UUID(string)
+    elif issubclass(vtype, Enum):
+        enum_int = int(string.rsplit('_', 1)[1])
+        val = vtype(enum_int)
     else:
         # FIXME: Some types are probably missing!
         raise NotImplementedError
@@ -204,12 +204,11 @@ async def get_node_supertype(node):
     return node supertype or None
     """
     supertypes = await node.get_referenced_nodes(
-        refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True
+        refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse
     )
     if supertypes:
         return supertypes[0]
-    else:
-        return None
+    return None
 
 
 async def is_child_present(node, browsename):
@@ -234,9 +233,8 @@ async def data_type_to_variant_type(dtype_node):
     base = await get_base_data_type(dtype_node)
     if base.nodeid.Identifier != 29:
         return ua.VariantType(base.nodeid.Identifier)
-    else:
-        # we have an enumeration, value is a Int32
-        return ua.VariantType.Int32
+    # we have an enumeration, value is a Int32
+    return ua.VariantType.Int32
 
 
 async def get_base_data_type(datatype):
@@ -289,11 +287,10 @@ async def get_nodes_of_namespace(server, namespaces=None):
 
 def get_default_value(uatype):
     if isinstance(uatype, ua.VariantType):
-        return ua.get_default_values(uatype)
-    elif hasattr(ua.VariantType, uatype):
+        return ua.get_default_value(uatype)
+    if hasattr(ua.VariantType, uatype):
         return ua.get_default_value(getattr(ua.VariantType, uatype))
-    else:
-        return getattr(ua, uatype)()
+    return getattr(ua, uatype)()
 
 
 def data_type_to_string(dtype):
@@ -303,3 +300,11 @@ def data_type_to_string(dtype):
     else:
         string = dtype.to_string()
     return string
+
+def copy_dataclass_attr(dc_source, dc_dest) -> None:
+    """
+    Copy the common attributes of dc_source to dc_dest
+    """
+    common_params = set(vars(dc_source)) & set(vars(dc_dest))
+    for c in common_params:
+        setattr(dc_dest, c, getattr(dc_source, c))

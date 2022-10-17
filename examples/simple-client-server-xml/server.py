@@ -1,14 +1,6 @@
 import os.path
-try:
-    from IPython import embed
-except ImportError:
-    import code
-
-    def embed():
-        vars = globals()
-        vars.update(locals())
-        shell = code.InteractiveConsole(vars)
-        shell.interact()
+import asyncio
+import logging
 
 from asyncua import ua, uamethod, Server
 
@@ -47,39 +39,62 @@ def say_hello_array(parent, happy):
 class HelloServer:
     def __init__(self, endpoint, name, model_filepath):
         self.server = Server()
+        self.model_filepath = model_filepath
+        self.server.set_server_name(name)
+        self.server.set_endpoint(endpoint)
+
+    async def init(self):
+        await self.server.init()
 
         #  This need to be imported at the start or else it will overwrite the data
-        self.server.import_xml(model_filepath)
-
-        self.server.set_endpoint(endpoint)
-        self.server.set_server_name(name)
+        await self.server.import_xml(self.model_filepath)
 
         objects = self.server.nodes.objects
 
-        freeopcua_namespace = self.server.get_namespace_index("urn:freeopcua:python:server")
-        hellower = objects.get_child("0:Hellower")
-        hellower_say_hello = hellower.get_child("0:SayHello")
+        freeopcua_namespace = await self.server.get_namespace_index(
+            "urn:freeopcua:python:server"
+        )
+        hellower = await objects.get_child("0:Hellower")
+        hellower_say_hello = await hellower.get_child("0:SayHello")
 
         self.server.link_method(hellower_say_hello, say_hello_xml)
 
-        hellower.add_method(
-            freeopcua_namespace, "SayHello2", say_hello, [ua.VariantType.Boolean], [ua.VariantType.String])
+        await hellower.add_method(
+            freeopcua_namespace,
+            "SayHello2",
+            say_hello,
+            [ua.VariantType.Boolean],
+            [ua.VariantType.String],
+        )
 
-        hellower.add_method(
-            freeopcua_namespace, "SayHelloArray", say_hello_array, [ua.VariantType.Boolean], [ua.VariantType.String])
+        await hellower.add_method(
+            freeopcua_namespace,
+            "SayHelloArray",
+            say_hello_array,
+            [ua.VariantType.Boolean],
+            [ua.VariantType.String],
+        )
 
-    def __enter__(self):
-        self.server.start()
+    async def __aenter__(self):
+        await self.init()
+        await self.server.start()
         return self.server
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.server.stop()
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.server.stop()
 
 
-if __name__ == '__main__':
+async def main():
     script_dir = os.path.dirname(__file__)
-    with HelloServer(
-            "opc.tcp://0.0.0.0:40840/freeopcua/server/",
-            "FreeOpcUa Example Server",
-            os.path.join(script_dir, "test_saying.xml")) as server:
-        embed()
+    async with HelloServer(
+        "opc.tcp://0.0.0.0:4840/freeopcua/server/",
+        "FreeOpcUa Example Server",
+        os.path.join(script_dir, "test_saying.xml"),
+    ) as server:
+        while True:
+            await asyncio.sleep(1)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(main())

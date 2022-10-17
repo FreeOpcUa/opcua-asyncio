@@ -5,19 +5,25 @@ import re
 import asyncio
 import base64
 import logging
-from pytz import utc
-
+from typing import List, Tuple
 import xml.etree.ElementTree as ET
 
-from .ua_utils import string_to_val
+from pytz import utc
 from asyncua import ua
+
+from .ua_utils import string_to_val
 
 
 def ua_type_to_python(val, uatype_as_str):
     """
     Converts a string value to a python value according to ua_utils.
     """
-    return string_to_val(val, getattr(ua.VariantType, uatype_as_str))
+    if hasattr(ua.VariantType, uatype_as_str):
+        return string_to_val(val, getattr(ua.VariantType, uatype_as_str))
+    elif hasattr(ua, uatype_as_str):
+        return string_to_val(val, getattr(ua, uatype_as_str))
+    else:
+        raise ValueError
 
 
 def _to_bool(val):
@@ -60,6 +66,7 @@ class NodeData:
 
         # datatype
         self.definitions = []
+        self.struct_type = ""
 
     def __str__(self):
         return f"NodeData(nodeid:{self.nodeid})"
@@ -69,7 +76,7 @@ class NodeData:
 
 class Field:
     def __init__(self, data):
-        self.datatype = data.get("DataType", "")
+        self.datatype = data.get("DataType", "i=24")  # Default is BaseDataType
         self.name = data.get("Name")
         self.dname = data.get("DisplayName", "")
         self.optional = bool(data.get("IsOptional", False))
@@ -77,6 +84,7 @@ class Field:
         self.arraydim = data.get("ArrayDimensions", None)  # FIXME: check type
         self.value = int(data.get("Value", 0))
         self.desc = data.get("Description", "")
+        self.max_str_len = int(data.get("MaxStringLength", 0))
 
 
 class RefStruct:
@@ -123,7 +131,7 @@ class XMLParser:
         if xmlstring:
             self.root = ET.fromstring(xmlstring)
         else:
-            tree = await asyncio.get_event_loop().run_in_executor(None, ET.parse, xmlpath)
+            tree = await asyncio.get_running_loop().run_in_executor(None, ET.parse, xmlpath)
             self.root = tree.getroot()
 
     def parse_sync(self, xmlpath=None, xmlstring=None):
@@ -203,7 +211,7 @@ class XMLParser:
         elif key == "ArrayDimensions":
             obj.dimensions = [int(i) for i in val.split(",")]
         elif key == "MinimumSamplingInterval":
-            obj.minsample = int(val)
+            obj.minsample = float(val)
         elif key == "AccessLevel":
             obj.accesslevel = int(val)
         elif key == "UserAccessLevel":
@@ -227,6 +235,10 @@ class XMLParser:
         elif tag == "InverseName":
             obj.inversename = el.text
         elif tag == "Definition":
+            if el.attrib.get("IsUnion", False):
+                obj.struct_type = "IsUnion"
+            elif el.attrib.get("IsOptional", False):
+                obj.struct_type = "IsOptional"
             for field in el:
                 field = self._parse_field(field)
                 obj.definitions.append(field)
@@ -270,13 +282,16 @@ class XMLParser:
                 mytext = val_el.text.encode()
                 mytext = base64.b64decode(mytext)
             obj.value = mytext
-        elif ntag == "String":
+        elif ntag == "String" or ntag == "XmlElement":
+            # String and XMLElement are identical only type is different
             mytext = val_el.text
             if mytext is None:
                 # Support importing null strings.
                 mytext = ""
-            # mytext = mytext.replace('\n', '').replace('\r', '')
-            obj.value = mytext
+            if ntag == "XmlElement":
+                obj.value = ua.XmlElement(mytext)
+            else:
+                obj.value = mytext
         elif ntag == "Guid":
             self._parse_contained_value(val_el, obj)
             # Override parsed string type to guid.
@@ -285,6 +300,12 @@ class XMLParser:
             id_el = val_el.find("uax:Identifier", self.ns)
             if id_el is not None:
                 obj.value = id_el.text
+        elif ntag == "ExpandedNodeId":
+            id_el = val_el.find("uax:Identifier", self.ns)
+            if id_el is not None:
+                obj.value = ua.NodeId.from_string(id_el.text)
+                if not isinstance(obj.value, ua.ExpandedNodeId):
+                    obj.value = ua.ExpandedNodeId(obj.value.Identifier, obj.value.NamespaceIndex)
         elif ntag == "ExtensionObject":
             obj.value = self._parse_ext_obj(val_el)
         elif ntag == "LocalizedText":
@@ -293,6 +314,12 @@ class XMLParser:
             obj.value = self._parse_list_of_localized_text(val_el)
         elif ntag == "ListOfExtensionObject":
             obj.value = self._parse_list_of_extension_object(val_el)
+        elif ntag == "StatusCode":
+            code_el = val_el.find("uax:Code", self.ns)
+            val = code_el.text if code_el is not None else "0"
+            obj.value = ua.StatusCode(string_to_val(val, ua.VariantType.UInt32))
+        elif ntag == "QualifiedName":
+            obj.value = self._parse_qualifed_name(val_el)
         elif ntag.startswith("ListOf"):
             # Default case for "ListOf" types.
             # Should stay after particular cases (e.g.: "ListOfLocalizedText").
@@ -302,8 +329,6 @@ class XMLParser:
                 self._parse_value(val_el, tmp)
                 obj.value.append(tmp.value)
         else:
-            # Missing according to string_to_val: XmlElement, ExpandedNodeId,
-            # QualifiedName, StatusCode.
             # Missing according to ua.VariantType (also missing in string_to_val):
             # DataValue, Variant, DiagnosticInfo.
             self.logger.warning("Parsing value of type '%s' not implemented", ntag)
@@ -362,6 +387,19 @@ class XMLParser:
                 body.append((otag, val))
         return body
 
+    def _parse_qualifed_name(self, el):
+        name = None
+        ns = 0
+        nval = el.find("uax:Name", self.ns)
+        if nval is not None:
+            name = nval.text
+        nsval = el.find("uax:NamespaceIndex", self.ns)
+        if nsval is not None:
+            ns = string_to_val(nsval.text, ua.VariantType.UInt16)
+        v = ua.QualifiedName(name, ns)
+        self.logger.warning("qn: %s", v)
+        return v
+
     def _parse_refs(self, el, obj):
         parent, parentlink = obj.parent, None
 
@@ -403,3 +441,20 @@ class XMLParser:
                 # check if ModelUri X, in Version Y from time Z was already imported
                 required_models.append(child.attrib)
         return required_models
+
+    def get_nodeset_namespaces(self) -> List[Tuple[str, ua.String, ua.DateTime]]:
+        """
+        Get all namespaces that are registered with version and date_time
+        """
+        ns = []
+        for model in self.root.findall('base:Models/base:Model', self.ns):
+            uri = model.attrib.get('ModelUri')
+            if uri is not None:
+                version = model.attrib.get('Version', '')
+                date_time = model.attrib.get('PublicationDate')
+                if date_time is None:
+                    date_time = ua.DateTime(1, 1, 1)
+                else:
+                    date_time = ua.DateTime.strptime(date_time, "%Y-%m-%dT%H:%M:%SZ")
+                ns.append((uri, version, date_time))
+        return ns
