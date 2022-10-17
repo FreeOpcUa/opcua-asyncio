@@ -200,13 +200,14 @@ class Subscription:
         :param nodes: One Node or an Iterable of Nodes
         :param attr: The Node attribute you want to subscribe to
         :param queuesize: 0 or 1 for default queue size (shall be 1 - no queuing), n for FIFO queue
+        :param sampling_interval: ua.Duration
         :return: Handle for changing/cancelling of the subscription
         """
         return await self._subscribe(
             nodes, attr, queuesize=queuesize, monitoring=monitoring, sampling_interval=sampling_interval
         )
 
-    async def _create_eventfilter(self, evtypes: ua.ObjectIds):
+    async def _create_eventfilter(self, evtypes: Union[ua.ObjectIds, List[ua.ObjectIds], ua.NodeId, List[ua.NodeId]]):
         if not type(evtypes) in (list, tuple):
             evtypes = [evtypes]
         evtypes = [Node(self.server, evtype) for evtype in evtypes]
@@ -216,7 +217,7 @@ class Subscription:
     async def subscribe_events(
         self,
         sourcenode: Node = ua.ObjectIds.Server,
-        evtypes: ua.ObjectIds = ua.ObjectIds.BaseEventType,
+        evtypes: Union[ua.ObjectIds, List[ua.ObjectIds], ua.NodeId, List[ua.NodeId]] = ua.ObjectIds.BaseEventType,
         evfilter: ua.EventFilter = None,
         queuesize: int = 0
     ) -> int:
@@ -227,7 +228,7 @@ class Subscription:
         If evtypes is a list or tuple of custom event types, the events will be filtered to the supplied types.
         A handle (integer value) is returned which can be used to modify/cancel the subscription.
 
-        :param sourcenode:
+        :param sourcenode: Node
         :param evtypes:
         :param evfilter:
         :param queuesize: 0 for default queue size, 1 for minimum queue size, n for FIFO queue,
@@ -242,7 +243,7 @@ class Subscription:
     async def subscribe_alarms_and_conditions(
         self,
         sourcenode: Node = ua.ObjectIds.Server,
-        evtypes: ua.ObjectIds = ua.ObjectIds.ConditionType,
+        evtypes: Union[ua.ObjectIds, List[ua.ObjectIds], ua.NodeId, List[ua.NodeId]] = ua.ObjectIds.ConditionType,
         evfilter: ua.EventFilter = None,
         queuesize: int = 0
     ) -> int:
@@ -288,6 +289,7 @@ class Subscription:
         :param mfilter: MonitoringFilter
         :param queuesize: queue size
         :param monitoring: ua.MonitoringMode
+        :param sampling_interval: ua.Duration
         :return: Integer handle or if multiple Nodes were given a List of Integer handles/ua.StatusCode
         """
         is_list = True
