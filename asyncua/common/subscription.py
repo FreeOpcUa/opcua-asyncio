@@ -141,7 +141,7 @@ class Subscription:
             tasks = [
                 self._handler.datachange_notification(*args) for args in known_handles_args
             ]
-            if asyncio.iscoroutinefunction(self._handler.datachange_notification):  
+            if asyncio.iscoroutinefunction(self._handler.datachange_notification):
                 await asyncio.gather(*tasks)
         except Exception as ex:
             self.logger.exception("Exception calling data change handler. Error: %s", ex)
