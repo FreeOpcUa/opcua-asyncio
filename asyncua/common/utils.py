@@ -5,6 +5,7 @@ Helper function and classes depending on ua object are in ua_utils.py
 
 import os
 import logging
+import sys
 from dataclasses import Field, fields
 from typing import get_type_hints, Dict, Tuple, Any, Optional
 from ..ua.uaerrors import UaError
@@ -110,12 +111,19 @@ def fields_with_resolved_types(
     """
 
     fields_ = fields(class_or_instance)
-    resolved_fieldtypes = get_type_hints(
-        class_or_instance,
-        globalns=globalns,
-        localns=localns,
-        include_extras=include_extras,
-    )
+    if sys.version_info.major == 3 and sys.version_info.minor <= 8:
+        resolved_fieldtypes = get_type_hints(
+            class_or_instance,
+            globalns=globalns,
+            localns=localns
+        )
+    else:
+        resolved_fieldtypes = get_type_hints(
+            class_or_instance,
+            globalns=globalns,
+            localns=localns,
+            include_extras=include_extras
+        )
     for field in fields_:
         try:
             field.type = resolved_fieldtypes[field.name]
