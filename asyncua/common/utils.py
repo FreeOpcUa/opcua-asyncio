@@ -12,7 +12,7 @@ _logger = logging.getLogger(__name__)
 
 class ServiceError(UaError):
     def __init__(self, code):
-        super(ServiceError, self).__init__('UA Service Error')
+        super().__init__('UA Service Error')
         self.code = code
 
 
@@ -49,7 +49,7 @@ class Buffer:
 
     def __bytes__(self):
         """Return remains of buffer as bytes."""
-        return self._data[self._cur_pos:]
+        return bytes(self._data[self._cur_pos:])
 
     def read(self, size):
         """

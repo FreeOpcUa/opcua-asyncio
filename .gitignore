@@ -22,3 +22,5 @@ examples/history.db
 /.settings/
 /venv/
 .eggs*
+.coverage
+schemas/UA-Nodese*

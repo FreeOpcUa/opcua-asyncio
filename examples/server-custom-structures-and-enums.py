@@ -18,29 +18,34 @@ async def main():
     uri = 'http://examples.freeopcua.github.io'
     idx = await server.register_namespace(uri)
 
-    await new_struct(server, idx, "MyStruct", [
+    snode1, _ = await new_struct(server, idx, "MyStruct", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32List", ua.VariantType.UInt32, array=True),
     ])
-    await new_struct(server, idx, "MyOptionalStruct", [
+    snode2, _ = await new_struct(server, idx, "MyOptionalStruct", [
         new_struct_field("MyBool", ua.VariantType.Boolean),
         new_struct_field("MyUInt32List", ua.VariantType.UInt32, array=True),
         new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
     ])
-    await new_enum(server, idx, "MyEnum", [
+    snode3, _ = await new_struct(server, idx, "MyNestedStruct", [
+        new_struct_field("MyStructArray", snode1, array=True),
+    ])
+    enode = await new_enum(server, idx, "MyEnum", [
         "titi",
         "toto",
         "tutu",
     ])
 
-    await server.load_data_type_definitions()
+    custom_objs = await server.load_data_type_definitions()
+    print("Custom objects on server")
+    for name, obj in custom_objs.items():
+        print("    ", obj)
 
-    await server.nodes.objects.add_variable(idx, "my_enum", ua.MyEnum.toto)
+    valnode = await server.nodes.objects.add_variable(idx, "my_enum", ua.MyEnum.toto, datatype=enode.nodeid)
     await server.nodes.objects.add_variable(idx, "my_struct", ua.Variant(ua.MyStruct(), ua.VariantType.ExtensionObject))
-    my_struct_optional = ua.MyOptionalStruct()
-    my_struct_optional.MyUInt32List = [45, 67]
-    my_struct_optional.MyInt64 = -67
-    await server.nodes.objects.add_variable(idx, "my_struct_optional", ua.Variant(my_struct_optional, ua.VariantType.ExtensionObject))
+    await server.nodes.objects.add_variable(idx, "my_struct_optional", ua.Variant(ua.MyOptionalStruct(), ua.VariantType.ExtensionObject))
+    await server.nodes.objects.add_variable(idx, "t1", ua.Variant(ua.MyNestedStruct(), ua.VariantType.ExtensionObject))
+    await server.export_xml([server.nodes.objects, server.nodes.root, snode1, snode2, snode3, enode, valnode], "structs_and_enum.xml")
 
     async with server:
         while True:

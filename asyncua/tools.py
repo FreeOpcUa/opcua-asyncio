@@ -8,7 +8,7 @@ import time
 import concurrent.futures
 
 try:
-    from IPython import embed
+    from IPython import embed  # type: ignore
 except ImportError:
     import code
 
@@ -428,7 +428,7 @@ async def _lsprint_long(pnode, depth, indent=""):
         )
         print("")
     for node in await pnode.get_children():
-        attrs = node.read_attributes(
+        attrs = await node.read_attributes(
             [
                 ua.AttributeIds.DisplayName,
                 ua.AttributeIds.BrowseName,
@@ -508,7 +508,7 @@ async def _uasubscribe():
             await sub.subscribe_events(node)
         print("Type Ctr-C to exit")
         while True:
-            time.sleep(1)
+            await asyncio.sleep(1)
     finally:
         await client.disconnect()
 
@@ -525,8 +525,9 @@ def application_to_strings(app):
     for (n, v) in optionals:
         if v:
             result.append((n, v))
-    for url in app.DiscoveryUrls:
-        result.append(("Discovery URL", url))
+    if app.DiscoveryUrls:
+        for url in app.DiscoveryUrls:
+            result.append(("Discovery URL", url))
     return result  # ['{}: {}'.format(n, v) for (n, v) in result]
 
 
@@ -644,6 +645,7 @@ async def _uaserver():
     logging.basicConfig(format="%(levelname)s: %(message)s", level=getattr(logging, args.loglevel))
 
     server = Server()
+    await server.init()
     server.set_endpoint(args.url)
     if args.certificate:
         await server.load_certificate(args.certificate)
@@ -659,17 +661,16 @@ async def _uaserver():
         def multiply(parent, x, y):
             print("multiply method call with parameters: ", x, y)
             return x * y
-
         uri = "http://examples.freeopcua.github.io"
-        idx = server.register_namespace(uri)
+        idx = await server.register_namespace(uri)
         objects = server.nodes.objects
-        myobj = objects.add_object(idx, "MyObject")
-        mywritablevar = myobj.add_variable(idx, "MyWritableVariable", 6.7)
-        mywritablevar.set_writable()  # Set MyVariable to be writable by clients
-        myvar = myobj.add_variable(idx, "MyVariable", 6.7)
-        myarrayvar = myobj.add_variable(idx, "MyVarArray", [6.7, 7.9])
-        myprop = myobj.add_property(idx, "MyProperty", "I am a property")
-        mymethod = myobj.add_method(
+        myobj = await objects.add_object(idx, "MyObject")
+        mywritablevar = await myobj.add_variable(idx, "MyWritableVariable", 6.7)
+        await mywritablevar.set_writable()  # Set MyVariable to be writable by clients
+        myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
+        myarrayvar = await myobj.add_variable(idx, "MyVarArray", [6.7, 7.9])
+        myprop = await myobj.add_property(idx, "MyProperty", "I am a property")
+        mymethod = await myobj.add_method(
             idx,
             "MyMethod",
             multiply,
@@ -678,17 +679,15 @@ async def _uaserver():
         )
 
     try:
-        await server.init()
         async with server:
-
             if args.shell:
                 embed()
             elif args.populate:
                 count = 0
                 while True:
                     await asyncio.sleep(1)
-                    myvar.write_value(math.sin(count / 10))
-                    myarrayvar.write_value([math.sin(count / 10), math.sin(count / 100)])
+                    await myvar.write_value(math.sin(count / 10))
+                    await myarrayvar.write_value([math.sin(count / 10), math.sin(count / 100)])
                     count += 1
             else:
                 while True:

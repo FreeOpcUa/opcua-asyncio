@@ -1,4 +1,6 @@
 from concurrent.futures import Future
+import os
+import tempfile
 
 import pytest
 
@@ -131,7 +133,8 @@ def test_sync_call_meth(client, idx):
 def test_sync_xml_export(server):
     exp = XmlExporter(server)
     exp.build_etree([server.nodes.objects])
-    exp.write_xml("toto_test_export.xml")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        exp.write_xml(os.path.join(tmpdir, "toto_test_export.xml"))
 
 
 def test_create_enum_sync(server):

@@ -51,6 +51,9 @@ class InternalSession:
     async def get_endpoints(self, params=None, sockname=None):
         return await self.iserver.get_endpoints(params, sockname)
 
+    def is_activated(self) -> bool:
+        return self.state == SessionState.Activated
+
     async def create_session(self, params, sockname=None):
         self.logger.info('Create session request')
         result = ua.CreateSessionResult()
@@ -87,9 +90,16 @@ class InternalSession:
         self.state = SessionState.Activated
         InternalSession._current_connections += 1
         id_token = params.UserIdentityToken
+        # Check if security policy is supported
+        if not isinstance(id_token, self.iserver.supported_tokens):
+            self.logger.error('Rejected active session UserIdentityToken not supported')
+            raise ServiceError(ua.StatusCodes.BadIdentityTokenRejected)
         if self.iserver.user_manager is not None:
             if isinstance(id_token, ua.UserNameIdentityToken):
                 username, password = self.iserver.check_user_token(self, id_token)
+            elif isinstance(id_token, ua.X509IdentityToken):
+                peer_certificate = id_token.CertificateData
+                username, password = None, None
             else:
                 username, password = None, None
 
@@ -108,10 +118,10 @@ class InternalSession:
         else:
             user = self.user
         await self.iserver.callback_service.dispatch(CallbackType.PreRead,
-                                                     ServerItemCallback(params, None, user))
+                                                     ServerItemCallback(params, None, user, self.external))
         results = self.iserver.attribute_service.read(params)
         await self.iserver.callback_service.dispatch(CallbackType.PostRead,
-                                                     ServerItemCallback(params, results, user))
+                                                     ServerItemCallback(params, results, user, self.external))
         return results
 
     async def history_read(self, params) -> Coroutine:
@@ -123,10 +133,10 @@ class InternalSession:
         else:
             user = self.user
         await self.iserver.callback_service.dispatch(CallbackType.PreWrite,
-                                                     ServerItemCallback(params, None, user))
+                                                     ServerItemCallback(params, None, user, self.external))
         write_result = await self.iserver.attribute_service.write(params, user=user)
         await self.iserver.callback_service.dispatch(CallbackType.PostWrite,
-                                                     ServerItemCallback(params, write_result, user))
+                                                     ServerItemCallback(params, write_result, user, self.external))
         return write_result
 
     async def browse(self, params):
@@ -163,13 +173,15 @@ class InternalSession:
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
         await self.iserver.callback_service.dispatch(CallbackType.ItemSubscriptionCreated,
-                                                     ServerItemCallback(params, subscription_result))
+                                                     ServerItemCallback(params, subscription_result, None,
+                                                                        self.external))
         return subscription_result
 
     async def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
         await self.iserver.callback_service.dispatch(CallbackType.ItemSubscriptionModified,
-                                                     ServerItemCallback(params, subscription_result))
+                                                     ServerItemCallback(params, subscription_result, None,
+                                                                        self.external))
         return subscription_result
 
     def republish(self, params):
@@ -183,7 +195,8 @@ class InternalSession:
         # This is an async method, dues to symmetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
         await self.iserver.callback_service.dispatch(CallbackType.ItemSubscriptionDeleted,
-                                                     ServerItemCallback(params, subscription_result))
+                                                     ServerItemCallback(params, subscription_result, None,
+                                                                        self.external))
 
         return subscription_result
 

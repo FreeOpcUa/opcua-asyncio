@@ -27,21 +27,20 @@ def _check_results(results, reqlen=1):
 def _to_nodeid(nodeid):
     if isinstance(nodeid, int):
         return ua.TwoByteNodeId(nodeid)
-    elif isinstance(nodeid, Node):
+    if isinstance(nodeid, Node):
         return nodeid.nodeid
-    elif isinstance(nodeid, ua.NodeId):
+    if isinstance(nodeid, ua.NodeId):
         return nodeid
-    elif type(nodeid) in (str, bytes):
+    if type(nodeid) in (str, bytes):
         return ua.NodeId.from_string(nodeid)
-    else:
-        raise ua.UaError(f"Could not resolve '{nodeid}' to a type id")
+    raise ua.UaError(f"Could not resolve '{nodeid}' to a type id")
 
 
 class Node:
     """
     High level node object, to access node attribute,
     browse and populate address space.
-    Node objects are usefull as-is but they do not expose the entire
+    Node objects are useful as-is but they do not expose the entire
     OPC-UA protocol. Feel free to look at the code of this class and call
     directly UA services methods to optimize your code
     """
@@ -143,12 +142,12 @@ class Node:
         get node class attribute of node
         """
         result = await self.read_attribute(ua.AttributeIds.NodeClass)
-        return result.Value.Value
+        return ua.NodeClass(result.Value.Value)
 
     async def read_data_type_definition(self):
         """
         read data type definition attribute of node
-        only DataType nodes following spec >= 1.04 have that atttribute
+        only DataType nodes following spec >= 1.04 have that attribute
         """
         result = await self.read_attribute(ua.AttributeIds.DataTypeDefinition)
         return result.Value.Value
@@ -156,7 +155,7 @@ class Node:
     async def write_data_type_definition(self, sdef: ua.DataTypeDefinition):
         """
         write data type definition attribute of node
-        only DataType nodes following spec >= 1.04 have that atttribute
+        only DataType nodes following spec >= 1.04 have that attribute
         """
         v = ua.Variant(sdef, ua.VariantType.ExtensionObject)
         await self.write_attribute(ua.AttributeIds.DataTypeDefinition, ua.DataValue(v))
@@ -180,13 +179,13 @@ class Node:
 
     get_value = read_value  # legacy compatibility
 
-    async def read_data_value(self):
+    async def read_data_value(self, raise_on_bad_status=True):
         """
         Get value of a node as a DataValue object. Only variables (and properties) have values.
         An exception will be generated for other node types.
         DataValue contain a variable value as a variant as well as server and source timestamps
         """
-        return await self.read_attribute(ua.AttributeIds.Value)
+        return await self.read_attribute(ua.AttributeIds.Value, None, raise_on_bad_status)
 
     async def write_array_dimensions(self, value):
         """
@@ -205,17 +204,17 @@ class Node:
 
     async def write_value_rank(self, value):
         """
-        Set attribute ArrayDimensions of node
+        Set attribute ValueRank of node
         """
         v = ua.Variant(value, ua.VariantType.Int32)
         await self.write_attribute(ua.AttributeIds.ValueRank, ua.DataValue(v))
 
     async def read_value_rank(self):
         """
-        Read and return ArrayDimensions attribute of node
+        Read and return ValueRank attribute of node
         """
         res = await self.read_attribute(ua.AttributeIds.ValueRank)
-        return res.Value.Value
+        return ua.ValueRank(res.Value.Value)
 
     async def write_value(self, value, varianttype=None):
         """
@@ -223,11 +222,11 @@ class Node:
         An exception will be generated for other node types.
         value argument is either:
         * a python built-in type, converted to opc-ua
-        optionnaly using the variantype argument.
+        optionally using the variantype argument.
         * a ua.Variant, varianttype is then ignored
         * a ua.DataValue, you then have full control over data send to server
         WARNING: On server side, ref to object is directly saved in our UA db, if this is a mutable object
-        and you modfy it afterward, then the object in db will be modified without any
+        and you modify it afterward, then the object in db will be modified without any
         data change event generated
         """
         dv = value_to_datavalue(value, varianttype)
@@ -249,14 +248,14 @@ class Node:
             await self.unset_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.CurrentWrite)
 
     async def set_attr_bit(self, attr, bit):
-        val = await self.read_attribute(attr)
-        val.Value.Value = ua.ua_binary.set_bit(val.Value.Value, bit)
-        await self.write_attribute(attr, val)
+        dv = await self.read_attribute(attr)
+        val = ua.ua_binary.set_bit(dv.Value.Value, bit)
+        await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
     async def unset_attr_bit(self, attr, bit):
-        val = await self.read_attribute(attr)
-        val.Value.Value = ua.ua_binary.unset_bit(val.Value.Value, bit)
-        await self.write_attribute(attr, val)
+        dv = await self.read_attribute(attr)
+        val = ua.ua_binary.unset_bit(dv.Value.Value, bit)
+        await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
     def set_read_only(self):
         """
@@ -287,18 +286,22 @@ class Node:
         result = await self.server.write(params)
         return result
 
-    async def read_attribute(self, attr):
+    async def read_attribute(self, attr, indexrange=None, raise_on_bad_status=True):
         """
         Read one attribute of a node
+        attributeid is a member of ua.AttributeIds
+        indexrange is a NumericRange (a string; e.g. "1" or "1:3".
         result code from server is checked and an exception is raised in case of error
         """
         rv = ua.ReadValueId()
         rv.NodeId = self.nodeid
         rv.AttributeId = attr
+        rv.IndexRange = indexrange
         params = ua.ReadParameters()
         params.NodesToRead.append(rv)
         result = await self.server.read(params)
-        result[0].StatusCode.check()
+        if raise_on_bad_status:
+            result[0].StatusCode.check()
         return result[0]
 
     async def read_attributes(self, attrs):
@@ -355,19 +358,19 @@ class Node:
     def get_variables(self):
         """
         return variables of node.
-        properties are child nodes with a reference of type HasComponent and a NodeClass of Variable
+        variables are child nodes with a reference of type HasComponent and a NodeClass of Variable
         """
         return self.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Variable)
 
     def get_methods(self):
         """
         return methods of node.
-        properties are child nodes with a reference of type HasComponent and a NodeClass of Method
+        methods are child nodes with a reference of type HasComponent and a NodeClass of Method
         """
         return self.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Method)
 
-    async def get_children_descriptions(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
-        return await self.get_references(refs, ua.BrowseDirection.Forward, nodeclassmask, includesubtypes)
+    async def get_children_descriptions(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True, result_mask=ua.BrowseResultMask.All):
+        return await self.get_references(refs, ua.BrowseDirection.Forward, nodeclassmask, includesubtypes, result_mask)
 
     def get_encoding_refs(self):
         return self.get_referenced_nodes(ua.ObjectIds.HasEncoding, ua.BrowseDirection.Forward)
@@ -375,7 +378,7 @@ class Node:
     def get_description_refs(self):
         return self.get_referenced_nodes(ua.ObjectIds.HasDescription, ua.BrowseDirection.Forward)
 
-    async def get_references(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
+    async def get_references(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True, result_mask=ua.BrowseResultMask.All):
         """
         returns references of the node based on specific filter defined with:
 
@@ -383,13 +386,14 @@ class Node:
         direction = Browse direction for references
         nodeclassmask = filter nodes based on specific class
         includesubtypes = If true subtypes of the reference (ref) are also included
+        result_mask = define what results information are requested
         """
         desc = ua.BrowseDescription()
         desc.BrowseDirection = direction
         desc.ReferenceTypeId = _to_nodeid(refs)
         desc.IncludeSubtypes = includesubtypes
         desc.NodeClassMask = nodeclassmask
-        desc.ResultMask = ua.BrowseResultMask.All
+        desc.ResultMask = result_mask
         desc.NodeId = self.nodeid
         params = ua.BrowseParameters()
         params.View.Timestamp = ua.get_win_epoch()
@@ -412,7 +416,7 @@ class Node:
     async def get_referenced_nodes(self, refs=ua.ObjectIds.References, direction=ua.BrowseDirection.Both, nodeclassmask=ua.NodeClass.Unspecified, includesubtypes=True):
         """
         returns referenced nodes based on specific filter
-        Paramters are the same as for get_references
+        Parameters are the same as for get_references
 
         """
         references = await self.get_references(refs, direction, nodeclassmask, includesubtypes)
@@ -478,10 +482,9 @@ class Node:
         refs = await self.get_references(refs=ua.ObjectIds.HierarchicalReferences, direction=ua.BrowseDirection.Inverse)
         if len(refs) > 0:
             return Node(self.server, refs[0].NodeId)
-        else:
-            return None
+        return None
 
-    async def get_child(self, path):
+    async def get_child(self, path, return_all=False):
         """
         get a child specified by its path from this node.
         A path might be:
@@ -499,7 +502,8 @@ class Node:
         result = await self.server.translate_browsepaths_to_nodeids([bpath])
         result = result[0]
         result.StatusCode.check()
-        # FIXME: seems this method may return several nodes
+        if return_all:
+            return [Node(self.server, target.TargetId) for target in result.Targets]
         return Node(self.server, result.Targets[0].TargetId)
 
     def _make_relative_path(self, path):
@@ -516,7 +520,7 @@ class Node:
             rpath.Elements.append(el)
         return rpath
 
-    async def read_raw_history(self, starttime=None, endtime=None, numvalues=0):
+    async def read_raw_history(self, starttime=None, endtime=None, numvalues=0, return_bounds=True):
         """
         Read raw history of a node
         result code from server is checked and an exception is raised in case of error
@@ -534,12 +538,21 @@ class Node:
         else:
             details.EndTime = ua.get_win_epoch()
         details.NumValuesPerNode = numvalues
-        details.ReturnBounds = True
-        result = await self.history_read(details)
-        result.StatusCode.check()
-        return result.HistoryData.DataValues
+        details.ReturnBounds = return_bounds
+        history = []
+        continuation_point = None
+        while True:
+            result = await self.history_read(details, continuation_point)
+            result.StatusCode.check()
+            continuation_point = result.ContinuationPoint
+            history.extend(result.HistoryData.DataValues)
+            # No more data available
+            if continuation_point is None:
+                break
 
-    async def history_read(self, details):
+        return history
+
+    async def history_read(self, details, continuation_point=None):
         """
         Read raw history of a node, low-level function
         result code from server is checked and an exception is raised in case of error
@@ -547,6 +560,7 @@ class Node:
         valueid = ua.HistoryReadValueId()
         valueid.NodeId = self.nodeid
         valueid.IndexRange = ''
+        valueid.ContinuationPoint = continuation_point
         params = ua.HistoryReadParameters()
         params.HistoryReadDetails = details
         params.TimestampsToReturn = ua.TimestampsToReturn.Both
@@ -655,7 +669,7 @@ class Node:
         """
         Add a modelling rule reference to Node.
         When creating a new object type, its variable and child nodes will not
-        be instanciated if they do not have modelling rule
+        be instantiated if they do not have modelling rule
         if mandatory is None, the modelling rule is removed
         """
         # remove all existing modelling rule
@@ -702,7 +716,7 @@ class Node:
         Rmw: This call modifies the nodeid of the node, the original nodeid is
         available as node.basenodeid
         """
-        nodeid = await self.server.register_nodes([self.nodeid])[0]
+        nodeid = (await self.server.register_nodes([self.nodeid]))[0]
         self.basenodeid = self.nodeid
         self.nodeid = nodeid
 
@@ -712,3 +726,10 @@ class Node:
         await self.server.unregister_nodes([self.nodeid])
         self.nodeid = self.basenodeid
         self.basenodeid = None
+
+    @staticmethod
+    def new_node(server, nodeid: ua.NodeId):
+        """
+        Helper function to init nodes with out importing Node
+        """
+        return Node(server, nodeid)

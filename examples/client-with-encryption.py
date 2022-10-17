@@ -14,7 +14,7 @@ private_key = f"certificates/peer-private-key-example-{cert_idx}.pem"
 
 
 async def task(loop):
-    url = "opc.tcp://0.0.0.0:4840/freeopcua/server/"
+    url = "opc.tcp://127.0.0.1:4840/freeopcua/server/"
     client = Client(url=url)
     await client.set_security(
         SecurityPolicyBasic256Sha256,

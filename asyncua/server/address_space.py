@@ -1,61 +1,88 @@
+from __future__ import annotations
+
 import asyncio
+import collections.abc
+import dataclasses
+import logging
 import pickle
 import shelve
-import logging
-import collections
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from functools import partial
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Callable, Dict, List, Union, Tuple, Generator
+    from asyncua.ua.uaprotocol_auto import (
+        ObjectAttributes, DataTypeAttributes, ReferenceTypeAttributes,
+        VariableTypeAttributes, VariableAttributes, ObjectTypeAttributes
+    )
+    __TYPE_ATTRIBUTES = Union[    
+        DataTypeAttributes,
+        ReferenceTypeAttributes,
+        VariableTypeAttributes,
+        VariableAttributes,
+        ObjectTypeAttributes,
+        ObjectAttributes
+    ] # FIXME Check, if there are missing attribute types.
 
 from asyncua import ua
+
 from .users import User, UserRole
 
 _logger = logging.getLogger(__name__)
 
 
 class AttributeValue(object):
-
-    def __init__(self, value):
+    """
+    The class holds the value(s) of an attribute and callbacks.
+    """
+    def __init__(self, value: ua.DataValue):
         self.value = value
-        self.value_callback = None
+        self.value_callback: Union[Callable[[], ua.DataValue], None] = None
         self.datachange_callbacks = {}
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"AttributeValue({self.value})"
 
     __repr__ = __str__
 
 
 class NodeData:
-
-    def __init__(self, nodeid):
+    """
+    The class is internal to asyncua and holds all the information about a Node.
+    """
+    def __init__(self, nodeid: ua.NodeId):
         self.nodeid = nodeid
-        self.attributes = {}
-        self.references = []
+        self.attributes: Dict[ua.AttributeIds, AttributeValue] = {}
+        self.references: List[ua.ReferenceDescription] = []
         self.call = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"NodeData(id:{self.nodeid}, attrs:{self.attributes}, refs:{self.references})"
 
     __repr__ = __str__
 
 
 class AttributeService:
-
-    def __init__(self, aspace: "AddressSpace"):
+    """
+    This class implements the attribute service set defined in the opc ua standard.
+    https://reference.opcfoundation.org/v104/Core/docs/Part4/5.10.1/
+    """
+    def __init__(self, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
-        self._aspace: "AddressSpace" = aspace
+        self._aspace: AddressSpace = aspace
 
-    def read(self, params):
+    def read(self, params: ua.ReadParameters) -> List[ua.DataValue]:
         # self.logger.debug("read %s", params)
-        res = []
+        res: List[ua.DataValue] = []
         for readvalue in params.NodesToRead:
             res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
         return res
 
-    async def write(self, params, user=User(role=UserRole.Admin)):
+    async def write(self, params: ua.WriteParameters, user: User = User(role=UserRole.Admin)) -> List[ua.StatusCode]:
         # self.logger.debug("write %s as user %s", params, user)
-        res = []
+        res: List[ua.StatusCode] = []
         for writevalue in params.NodesToWrite:
             if user.role != UserRole.Admin:
                 if writevalue.AttributeId != ua.AttributeIds.Value:
@@ -63,30 +90,39 @@ class AttributeService:
                     continue
                 al = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.AccessLevel)
                 ual = self._aspace.read_attribute_value(writevalue.NodeId, ua.AttributeIds.UserAccessLevel)
-                if not al.StatusCode.is_good() or not ua.ua_binary.test_bit(
-                        al.Value.Value, ua.AccessLevel.CurrentWrite) or not \
-                        ua.ua_binary.test_bit(ual.Value.Value, ua.AccessLevel.CurrentWrite):
+                if (
+                    al.StatusCode is None
+                    or al.Value is None
+                    or ual.Value is None
+                    or not al.StatusCode.is_good()
+                    or not ua.ua_binary.test_bit(al.Value.Value, ua.AccessLevel.CurrentWrite)
+                    or not ua.ua_binary.test_bit(ual.Value.Value, ua.AccessLevel.CurrentWrite)
+                ):
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
             res.append(
-                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value))
+                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value)
+            )
         return res
 
 
 class ViewService(object):
-
-    def __init__(self, aspace: "AddressSpace"):
+    """
+    This class implements the view service set defined in the opc ua standard.
+    https://reference.opcfoundation.org/v104/Core/docs/Part4/5.8.1/
+    """
+    def __init__(self, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
-        self._aspace: "AddressSpace" = aspace
+        self._aspace: AddressSpace = aspace
 
-    def browse(self, params):
+    def browse(self, params: ua.BrowseParameters) -> List[ua.BrowseResult]:
         # self.logger.debug("browse %s", params)
-        res = []
+        res: List[ua.BrowseResult] = []
         for desc in params.NodesToBrowse:
             res.append(self._browse(desc))
         return res
 
-    def _browse(self, desc):
+    def _browse(self, desc: ua.BrowseDescription) -> ua.BrowseResult:
         res = ua.BrowseResult()
         if desc.NodeId not in self._aspace:
             res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdInvalid)
@@ -98,7 +134,7 @@ class ViewService(object):
             res.References.append(ref)
         return res
 
-    def _is_suitable_ref(self, desc, ref):
+    def _is_suitable_ref(self, desc: ua.BrowseDescription, ref: ua.ReferenceDescription) -> bool:
         if not self._suitable_direction(desc.BrowseDirection, ref.IsForward):
             # self.logger.debug("%s is not suitable due to direction", ref)
             return False
@@ -111,33 +147,26 @@ class ViewService(object):
         # self.logger.debug("%s is a suitable ref for desc %s", ref, desc)
         return True
 
-    def _suitable_reftype(self, ref1, ref2, subtypes):
-        """
-        """
+    def _suitable_reftype(self, ref1: ua.NodeId, ref2: ua.NodeId, subtypes: bool) -> bool:
         if ref1 == ua.NodeId(ua.ObjectIds.Null):
             # If ReferenceTypeId is not specified in the BrowseDescription,
             # all References are returned and includeSubtypes is ignored.
             return True
-        if not subtypes and ref2.Identifier == ua.ObjectIds.HasSubtype:
-            return False
-        if ref1.Identifier == ref2.Identifier:
+        if ref1 == ref2:
             return True
-        oktypes = self._get_sub_ref(ref1)
-        if not subtypes and ua.NodeId(ua.ObjectIds.HasSubtype) in oktypes:
-            oktypes.remove(ua.NodeId(ua.ObjectIds.HasSubtype))
-        return ref2 in oktypes
+        if subtypes and ref2 in self._get_sub_ref(ref1):
+            return True
+        return False
 
-    def _get_sub_ref(self, ref):
-        res = []
-        nodedata = self._aspace[ref]
+    def _get_sub_ref(self, ref: ua.NodeId) -> Generator[ua.NodeId, None, None]:
+        nodedata = self._aspace.get(ref)
         if nodedata is not None:
-            for ref in nodedata.references:
-                if ref.ReferenceTypeId.Identifier == ua.ObjectIds.HasSubtype and ref.IsForward:
-                    res.append(ref.NodeId)
-                    res += self._get_sub_ref(ref.NodeId)
-        return res
+            for ref_desc in nodedata.references:
+                if ref_desc.ReferenceTypeId == ua.NodeId(ua.ObjectIds.HasSubtype) and ref_desc.IsForward:
+                    yield ref_desc.NodeId
+                    yield from self._get_sub_ref(ref_desc.NodeId)
 
-    def _suitable_direction(self, direction, isforward):
+    def _suitable_direction(self, direction: ua.BrowseDirection, isforward: bool) -> bool:
         if direction == ua.BrowseDirection.Both:
             return True
         if direction == ua.BrowseDirection.Forward and isforward:
@@ -146,14 +175,14 @@ class ViewService(object):
             return True
         return False
 
-    def translate_browsepaths_to_nodeids(self, browsepaths):
+    def translate_browsepaths_to_nodeids(self, browsepaths: List[ua.BrowsePath]) -> List[ua.BrowsePathResult]:
         # self.logger.debug("translate browsepath: %s", browsepaths)
-        results = []
+        results: List[ua.BrowsePathResult] = []
         for path in browsepaths:
             results.append(self._translate_browsepath_to_nodeid(path))
         return results
 
-    def _translate_browsepath_to_nodeid(self, path):
+    def _translate_browsepath_to_nodeid(self, path: ua.BrowsePath) -> ua.BrowsePathResult:
         # self.logger.debug("looking at path: %s", path)
         res = ua.BrowsePathResult()
         if not path.RelativePath.Elements[-1].TargetName:
@@ -164,55 +193,71 @@ class ViewService(object):
         if path.StartingNode not in self._aspace:
             res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdInvalid)
             return res
-        current = path.StartingNode
-        for el in path.RelativePath.Elements:
-            nodeid = self._find_element_in_node(el, current)
-            if not nodeid:
-                res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNoMatch)
-                return res
-            current = nodeid
-        target = ua.BrowsePathTarget()
-        target.TargetId = current
-        target.RemainingPathIndex = 4294967295
-        res.Targets = [target]
+        target_nodeids = self._navigate(path.StartingNode, path.RelativePath.Elements)
+        if not target_nodeids:
+            res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNoMatch)
+            return res
+        for nodeid in target_nodeids:
+            target = ua.BrowsePathTarget()
+            target.TargetId = nodeid # FIXME <<<< Type conflict
+            target.RemainingPathIndex = ua.Index(4294967295) # FIXME: magic number, why not Index.MAX?
+            res.Targets.append(target)
+        # FIXME: might need to order these one way or another
         return res
 
-    def _find_element_in_node(self, el, nodeid):
-        nodedata = self._aspace[nodeid]
+    def _navigate(self, start_nodeid: ua.NodeId, elements: List[ua.RelativePathElement]) -> List[ua.NodeId]:
+        current_nodeids = [start_nodeid]
+        for el in elements:
+            new_currents = []
+            for nodeid in current_nodeids:
+                tmp_nodeids = self._find_elements_in_node(el, nodeid)
+                new_currents.extend(tmp_nodeids)
+            if not new_currents:
+                self.logger.info("element %s was not found as child of node %s", el, current_nodeids)
+                return []
+            current_nodeids = new_currents
+        return current_nodeids
+
+    def _find_elements_in_node(self, el: ua.RelativePathElement, nodeid: ua.NodeId) -> List[ua.NodeId]:
+        nodedata: NodeData = self._aspace[nodeid]
+        nodeids: List[ua.NodeId] = []
         for ref in nodedata.references:
             if ref.BrowseName != el.TargetName:
                 continue
             if ref.IsForward == el.IsInverse:
                 continue
-            if not el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
+            if not self._suitable_reftype(el.ReferenceTypeId, ref.ReferenceTypeId, el.IncludeSubtypes):
                 continue
-            elif el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
-                if ref.ReferenceTypeId not in self._get_sub_ref(el.ReferenceTypeId):
-                    continue
-            return ref.NodeId
-        self.logger.info("element %s was not found in node %s", el, nodeid)
-        return None
+            nodeids.append(ref.NodeId)
+        return nodeids
 
 
 class NodeManagementService:
-
-    def __init__(self, aspace: "AddressSpace"):
+    """
+    This class implements the node management service set defined in the opc ua standard.
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.1/
+    """
+    def __init__(self, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
-        self._aspace: "AddressSpace" = aspace
+        self._aspace: AddressSpace = aspace
 
-    def add_nodes(self, addnodeitems, user=User(role=UserRole.Admin)):
-        results = []
+    def add_nodes(
+        self,
+        addnodeitems: List[ua.AddNodesItem],
+        user: User = User(role=UserRole.Admin)
+    ) -> List[ua.AddNodesResult]:
+        results: List[ua.AddNodesResult] = []
         for item in addnodeitems:
             results.append(self._add_node(item, user))
         return results
 
-    def try_add_nodes(self, addnodeitems, user=User(role=UserRole.Admin), check=True):
+    def try_add_nodes(self, addnodeitems: List[ua.AddNodesItem], user: User = User(role=UserRole.Admin), check: bool = True):
         for item in addnodeitems:
             ret = self._add_node(item, user, check=check)
             if not ret.StatusCode.is_good():
                 yield item
 
-    def _add_node(self, item, user, check=True):
+    def _add_node(self, item: ua.AddNodesItem, user: User, check: bool = True) -> ua.AddNodesResult:
         # self.logger.debug("Adding node %s %s", item.RequestedNewNodeId, item.BrowseName)
         result = ua.AddNodesResult()
 
@@ -225,7 +270,7 @@ class NodeManagementService:
             # the namespace of the nodeid, this is an extention of the spec to allow
             # to requests the server to generate a new nodeid in a specified namespace
             # self.logger.debug("RequestedNewNodeId has null identifier, generating Identifier")
-            item.RequestedNewNodeId = self._aspace.generate_nodeid(item.RequestedNewNodeId.NamespaceIndex)
+            item.RequestedNewNodeId = self._aspace.generate_nodeid(item.RequestedNewNodeId.NamespaceIndex) # FIXME type conflict
         else:
             if item.RequestedNewNodeId in self._aspace:
                 self.logger.warning("AddNodesItem: Requested NodeId %s already exists", item.RequestedNewNodeId)
@@ -241,21 +286,25 @@ class NodeManagementService:
 
         parentdata = self._aspace.get(item.ParentNodeId)
         if parentdata is None and not item.ParentNodeId.is_null():
-            self.logger.info("add_node: while adding node %s, requested parent node %s does not exists",
-                             item.RequestedNewNodeId, item.ParentNodeId)
+            self.logger.info(
+                "add_node: while adding node %s, requested parent node %s does not exists",
+                item.RequestedNewNodeId,
+                item.ParentNodeId,
+            )
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadParentNodeIdInvalid)
             return result
 
         if item.ParentNodeId in self._aspace:
+
+            # check properties
             for ref in self._aspace[item.ParentNodeId].references:
-                # Check if the Parent has a "HasChild" Reference (or subtype of it) with the Node
-                if ref.ReferenceTypeId.Identifier in [ua.ObjectIds.HasChild, ua.ObjectIds.HasComponent,
-                                           ua.ObjectIds.HasProperty, ua.ObjectIds.HasSubtype,
-                                           ua.ObjectIds.HasOrderedComponent] and ref.IsForward:
+                if ref.ReferenceTypeId == ua.NodeId(ua.ObjectIds.HasProperty):
                     if item.BrowseName.Name == ref.BrowseName.Name:
-                        self.logger.warning(f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
-                                            f" already exists in Parent Node. ParentID:{item.ParentNodeId} --- "
-                                            f"ItemId:{item.RequestedNewNodeId}")
+                        self.logger.warning(
+                            f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
+                            f" already exists in Parent Node. ParentID:{item.ParentNodeId} --- "
+                            f"ItemId:{item.RequestedNewNodeId}"
+                        )
                         result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
                         return result
 
@@ -279,7 +328,7 @@ class NodeManagementService:
 
         return result
 
-    def _add_node_attributes(self, nodedata, item, add_timestamps):
+    def _add_node_attributes(self, nodedata: NodeData, item: ua.AddNodesItem, add_timestamps: bool):
         # add common attrs
         nodedata.attributes[ua.AttributeIds.NodeId] = AttributeValue(
             ua.DataValue(ua.Variant(nodedata.nodeid, ua.VariantType.NodeId))
@@ -293,7 +342,7 @@ class NodeManagementService:
         # add requested attrs
         self._add_nodeattributes(item.NodeAttributes, nodedata, add_timestamps)
 
-    def _add_unique_reference(self, nodedata, desc):
+    def _add_unique_reference(self, nodedata: NodeData, desc: ua.ReferenceDescription):
         for r in nodedata.references:
             if r.ReferenceTypeId == desc.ReferenceTypeId and r.NodeId == desc.NodeId:
                 if r.IsForward != desc.IsForward:
@@ -312,34 +361,38 @@ class NodeManagementService:
         desc.BrowseName = item.BrowseName
         desc.DisplayName = item.NodeAttributes.DisplayName
         desc.TypeDefinition = item.TypeDefinition
-        desc.IsForward = True
-        self._add_unique_reference(parentdata, desc)
+        desc.IsForward = True # FIXME in uaprotocol_auto.py
+        self._add_unique_reference(parentdata, desc) # FIXME return StatusCode is not evaluated
 
-    def _add_ref_to_parent(self, nodedata, item, parentdata):
+    def _add_ref_to_parent(self, nodedata: NodeData, item: ua.AddNodesItem, parentdata: NodeData):
         addref = ua.AddReferencesItem()
         addref.ReferenceTypeId = item.ReferenceTypeId
         addref.SourceNodeId = nodedata.nodeid
         addref.TargetNodeId = item.ParentNodeId
         addref.TargetNodeClass = parentdata.attributes[ua.AttributeIds.NodeClass].value.Value.Value
-        addref.IsForward = False
-        self._add_reference_no_check(nodedata, addref)
+        addref.IsForward = False # FIXME in uaprotocol_auto.py
+        self._add_reference_no_check(nodedata, addref) # FIXME return StatusCode is not evaluated
 
-    def _add_type_definition(self, nodedata, item):
+    def _add_type_definition(self, nodedata: NodeData, item: ua.AddNodesItem):
         addref = ua.AddReferencesItem()
         addref.SourceNodeId = nodedata.nodeid
-        addref.IsForward = True
+        addref.IsForward = True # FIXME in uaprotocol_auto.py
         addref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasTypeDefinition)
         addref.TargetNodeId = item.TypeDefinition
         addref.TargetNodeClass = ua.NodeClass.DataType
-        self._add_reference_no_check(nodedata, addref)
+        self._add_reference_no_check(nodedata, addref) # FIXME return StatusCode is not evaluated
 
-    def delete_nodes(self, deletenodeitems, user=User(role=UserRole.Admin)):
-        results = []
+    def delete_nodes(
+        self,
+        deletenodeitems: ua.DeleteNodesParameters,
+        user: User = User(role=UserRole.Admin)
+    ) -> List[ua.StatusCode]:
+        results: List[ua.StatusCode] = []
         for item in deletenodeitems.NodesToDelete:
             results.append(self._delete_node(item, user))
         return results
 
-    def _delete_node(self, item, user):
+    def _delete_node(self, item: ua.DeleteNodesItem, user: User) -> ua.StatusCode:
         if user.role != UserRole.Admin:
             return ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)
 
@@ -355,32 +408,31 @@ class NodeManagementService:
 
         self._delete_node_callbacks(self._aspace[item.NodeId])
 
-        del (self._aspace[item.NodeId])
+        del self._aspace[item.NodeId]
 
         return ua.StatusCode()
 
-    def _delete_node_callbacks(self, nodedata):
+    def _delete_node_callbacks(self, nodedata: NodeData):
         if ua.AttributeIds.Value in nodedata.attributes:
             for handle, callback in list(nodedata.attributes[ua.AttributeIds.Value].datachange_callbacks.items()):
                 try:
                     callback(handle, None, ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
                     self._aspace.delete_datachange_callback(handle)
                 except Exception as ex:
-                    self.logger.exception("Error calling delete node callback callback %s, %s, %s", nodedata,
-                                          ua.AttributeIds.Value, ex)
+                    self.logger.exception(
+                        "Error calling delete node callback callback %s, %s, %s", nodedata, ua.AttributeIds.Value, ex
+                    )
 
-    def add_references(self, refs, user=User(role=UserRole.Admin)):
-        result = []
-        for ref in refs:
-            result.append(self._add_reference(ref, user))
+    def add_references(self, refs: List[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)): # FIXME return type
+        result = [self._add_reference(ref, user) for ref in refs]
         return result
 
-    def try_add_references(self, refs, user=User(role=UserRole.Admin)):
+    def try_add_references(self, refs: List[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)):
         for ref in refs:
             if not self._add_reference(ref, user).is_good():
                 yield ref
 
-    def _add_reference(self, addref, user):
+    def _add_reference(self, addref: ua.AddReferencesItem, user: User) -> ua.StatusCode:
         sourcedata = self._aspace.get(addref.SourceNodeId)
         if sourcedata is None:
             return ua.StatusCode(ua.StatusCodes.BadSourceNodeIdInvalid)
@@ -390,14 +442,15 @@ class NodeManagementService:
             return ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)
         return self._add_reference_no_check(sourcedata, addref)
 
-    def _add_reference_no_check(self, sourcedata, addref):
+    def _add_reference_no_check(self, sourcedata: NodeData, addref: ua.AddReferencesItem) -> ua.StatusCode:
         rdesc = ua.ReferenceDescription()
         rdesc.ReferenceTypeId = addref.ReferenceTypeId
         rdesc.IsForward = addref.IsForward
         rdesc.NodeId = addref.TargetNodeId
         if addref.TargetNodeClass == ua.NodeClass.Unspecified:
             rdesc.NodeClass = self._aspace.read_attribute_value(
-                addref.TargetNodeId, ua.AttributeIds.NodeClass).Value.Value
+                addref.TargetNodeId, ua.AttributeIds.NodeClass
+            ).Value.Value
         else:
             rdesc.NodeClass = addref.TargetNodeClass
         bname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value
@@ -408,13 +461,13 @@ class NodeManagementService:
             rdesc.DisplayName = dname
         return self._add_unique_reference(sourcedata, rdesc)
 
-    def delete_references(self, refs, user=User(role=UserRole.Admin)):
-        result = []
+    def delete_references(self, refs: List[ua.DeleteReferencesItem], user: User = User(role=UserRole.Admin)) -> List[ua.StatusCode]:
+        result: List[ua.StatusCode] = []
         for ref in refs:
             result.append(self._delete_reference(ref, user))
         return result
 
-    def _delete_unique_reference(self, item, invert=False):
+    def _delete_unique_reference(self, item: ua.DeleteReferencesItem, invert: bool = False) -> ua.StatusCode:
         if invert:
             source, target, forward = item.TargetNodeId, item.SourceNodeId, not item.IsForward
         else:
@@ -426,7 +479,7 @@ class NodeManagementService:
                     return ua.StatusCode()
         return ua.StatusCode(ua.StatusCodes.BadNotFound)
 
-    def _delete_reference(self, item, user):
+    def _delete_reference(self, item: ua.DeleteReferencesItem, user: User) -> ua.StatusCode:
         if item.SourceNodeId not in self._aspace:
             return ua.StatusCode(ua.StatusCodes.BadSourceNodeIdInvalid)
         if item.TargetNodeId not in self._aspace:
@@ -440,46 +493,62 @@ class NodeManagementService:
             self._delete_unique_reference(item, True)
         return self._delete_unique_reference(item)
 
-    def _add_node_attr(self, item, nodedata, name, vtype=None, add_timestamps=False, is_array=False):
-        if item.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
-            dv = ua.DataValue(ua.Variant(getattr(item, name), vtype, is_array=is_array))
-            if add_timestamps:
-                # dv.ServerTimestamp = datetime.utcnow()  # Disabled until someone explains us it should be there
-                dv.SourceTimestamp = datetime.utcnow()
+    def _add_node_attr(
+        self,
+        attributes: __TYPE_ATTRIBUTES,
+        nodedata: NodeData,
+        name: str,
+        vtype: ua.VariantType = None,
+        add_timestamps: bool = False,
+        is_array: bool = False
+    ):
+        if attributes.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
+            dv = ua.DataValue(
+                ua.Variant(getattr(attributes, name), vtype, is_array=is_array),
+                SourceTimestamp=datetime.utcnow() if add_timestamps else None,
+            )
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
 
-    def _add_nodeattributes(self, item, nodedata, add_timestamps):
-        self._add_node_attr(item, nodedata, "AccessLevel", ua.VariantType.Byte)
-        self._add_node_attr(item, nodedata, "ArrayDimensions", ua.VariantType.UInt32, is_array=True)
-        self._add_node_attr(item, nodedata, "BrowseName", ua.VariantType.QualifiedName)
-        self._add_node_attr(item, nodedata, "ContainsNoLoops", ua.VariantType.Boolean)
-        self._add_node_attr(item, nodedata, "DataType", ua.VariantType.NodeId)
-        self._add_node_attr(item, nodedata, "Description", ua.VariantType.LocalizedText)
-        self._add_node_attr(item, nodedata, "DisplayName", ua.VariantType.LocalizedText)
-        self._add_node_attr(item, nodedata, "EventNotifier", ua.VariantType.Byte)
-        self._add_node_attr(item, nodedata, "Executable", ua.VariantType.Boolean)
-        self._add_node_attr(item, nodedata, "Historizing", ua.VariantType.Boolean)
-        self._add_node_attr(item, nodedata, "InverseName", ua.VariantType.LocalizedText)
-        self._add_node_attr(item, nodedata, "IsAbstract", ua.VariantType.Boolean)
-        self._add_node_attr(item, nodedata, "MinimumSamplingInterval", ua.VariantType.Double)
-        self._add_node_attr(item, nodedata, "NodeClass", ua.VariantType.Int32)
-        self._add_node_attr(item, nodedata, "NodeId", ua.VariantType.NodeId)
-        self._add_node_attr(item, nodedata, "Symmetric", ua.VariantType.Boolean)
-        self._add_node_attr(item, nodedata, "UserAccessLevel", ua.VariantType.Byte)
-        self._add_node_attr(item, nodedata, "UserExecutable", ua.VariantType.Boolean)
-        self._add_node_attr(item, nodedata, "UserWriteMask", ua.VariantType.Byte)
-        self._add_node_attr(item, nodedata, "ValueRank", ua.VariantType.Int32)
-        self._add_node_attr(item, nodedata, "WriteMask", ua.VariantType.UInt32)
-        self._add_node_attr(item, nodedata, "UserWriteMask", ua.VariantType.UInt32)
-        self._add_node_attr(item, nodedata, "DataTypeDefinition", ua.VariantType.ExtensionObject)
-        self._add_node_attr(item, nodedata, "Value", add_timestamps=add_timestamps)
+    def _add_nodeattributes(
+        self,
+        node_attributes: __TYPE_ATTRIBUTES,
+        nodedata: NodeData,
+        add_timestamps: bool
+    ):
+        self._add_node_attr(node_attributes, nodedata, "AccessLevel", ua.VariantType.Byte)
+        self._add_node_attr(node_attributes, nodedata, "ArrayDimensions", ua.VariantType.UInt32, is_array=True)
+        self._add_node_attr(node_attributes, nodedata, "BrowseName", ua.VariantType.QualifiedName)
+        self._add_node_attr(node_attributes, nodedata, "ContainsNoLoops", ua.VariantType.Boolean)
+        self._add_node_attr(node_attributes, nodedata, "DataType", ua.VariantType.NodeId)
+        self._add_node_attr(node_attributes, nodedata, "Description", ua.VariantType.LocalizedText)
+        self._add_node_attr(node_attributes, nodedata, "DisplayName", ua.VariantType.LocalizedText)
+        self._add_node_attr(node_attributes, nodedata, "EventNotifier", ua.VariantType.Byte)
+        self._add_node_attr(node_attributes, nodedata, "Executable", ua.VariantType.Boolean)
+        self._add_node_attr(node_attributes, nodedata, "Historizing", ua.VariantType.Boolean)
+        self._add_node_attr(node_attributes, nodedata, "InverseName", ua.VariantType.LocalizedText)
+        self._add_node_attr(node_attributes, nodedata, "IsAbstract", ua.VariantType.Boolean)
+        self._add_node_attr(node_attributes, nodedata, "MinimumSamplingInterval", ua.VariantType.Double)
+        self._add_node_attr(node_attributes, nodedata, "NodeClass", ua.VariantType.Int32)
+        self._add_node_attr(node_attributes, nodedata, "NodeId", ua.VariantType.NodeId)
+        self._add_node_attr(node_attributes, nodedata, "Symmetric", ua.VariantType.Boolean)
+        self._add_node_attr(node_attributes, nodedata, "UserAccessLevel", ua.VariantType.Byte)
+        self._add_node_attr(node_attributes, nodedata, "UserExecutable", ua.VariantType.Boolean)
+        self._add_node_attr(node_attributes, nodedata, "UserWriteMask", ua.VariantType.Byte)
+        self._add_node_attr(node_attributes, nodedata, "ValueRank", ua.VariantType.Int32)
+        self._add_node_attr(node_attributes, nodedata, "WriteMask", ua.VariantType.UInt32)
+        self._add_node_attr(node_attributes, nodedata, "UserWriteMask", ua.VariantType.UInt32)
+        self._add_node_attr(node_attributes, nodedata, "DataTypeDefinition", ua.VariantType.ExtensionObject)
+        self._add_node_attr(node_attributes, nodedata, "Value", add_timestamps=add_timestamps)
 
 
 class MethodService:
-
-    def __init__(self, aspace: "AddressSpace"):
+    """
+    This class implements the method service set defined in the opc ua standard.
+    https://reference.opcfoundation.org/v104/Core/docs/Part4/5.11.1/
+    """
+    def __init__(self, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
-        self._aspace: "AddressSpace" = aspace
+        self._aspace: AddressSpace = aspace
         self._pool = ThreadPoolExecutor()
 
     def stop(self):
@@ -530,44 +599,48 @@ class AddressSpace:
     """
     The address space object stores all the nodes of the OPC-UA server and helper methods.
     The methods are thread safe
+
+    https://reference.opcfoundation.org/Core/docs/Part3/
     """
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self._nodes = {}
+        self._nodes: Dict[ua.NodeId, NodeData] = {}
         self._datachange_callback_counter = 200
-        self._handle_to_attribute_map = {}
+        self._handle_to_attribute_map: Dict[int, Tuple[ua.NodeId, ua.AttributeIds]] = {}
         self._default_idx = 2
         self._nodeid_counter = {0: 20000, 1: 2000}
 
-    def __getitem__(self, nodeid):
+    def __getitem__(self, nodeid: ua.NodeId) -> NodeData:
         return self._nodes.__getitem__(nodeid)
 
-    def get(self, nodeid):
-        return self._nodes.get(nodeid, None)
+    def get(self, nodeid: ua.NodeId) -> Union[NodeData, None]:
+        return self._nodes.get(nodeid, None) # Fixme This is another behaviour than __getitem__ where an KeyError exception is thrown, right?
 
-    def __setitem__(self, nodeid, value):
+    def __setitem__(self, nodeid: ua.NodeId, value: NodeData):
         return self._nodes.__setitem__(nodeid, value)
 
-    def __contains__(self, nodeid):
+    def __contains__(self, nodeid: ua.NodeId) -> bool:
         return self._nodes.__contains__(nodeid)
 
-    def __delitem__(self, nodeid):
+    def __delitem__(self, nodeid: ua.NodeId):
         self._nodes.__delitem__(nodeid)
 
-    def generate_nodeid(self, idx=None):
+    def generate_nodeid(self, idx: Union[int, None] = None) -> ua.NodeId:
         if idx is None:
             idx = self._default_idx
         if idx in self._nodeid_counter:
             self._nodeid_counter[idx] += 1
         else:
             # get the biggest identifier number from the existed nodes in address space
-            identifier_list = sorted([
-                nodeid.Identifier for nodeid in self._nodes.keys()
-                if nodeid.NamespaceIndex == idx and nodeid.NodeIdType in (
-                    ua.NodeIdType.Numeric, ua.NodeIdType.TwoByte, ua.NodeIdType.FourByte
-                )
-            ])
+            identifier_list = sorted(  # type: ignore
+                [
+                    nodeid.Identifier
+                    for nodeid in self._nodes.keys()
+                    if nodeid.NamespaceIndex == idx
+                    and nodeid.NodeIdType in (ua.NodeIdType.Numeric, ua.NodeIdType.TwoByte, ua.NodeIdType.FourByte)
+                ]
+            )
             if identifier_list:
                 self._nodeid_counter[idx] = identifier_list[-1]
             else:
@@ -582,23 +655,29 @@ class AddressSpace:
     def keys(self):
         return self._nodes.keys()
 
-    def empty(self):
+    def clear(self):
         """Delete all nodes in address space"""
-        self._nodes = {}
+        self._nodes.clear()
 
     def dump(self, path):
         """
         Dump address space as binary to file; note that server must be stopped for this method to work
         DO NOT DUMP AN ADDRESS SPACE WHICH IS USING A SHELF (load_aspace_shelf), ONLY CACHED NODES WILL GET DUMPED!
         """
-        # prepare nodes in address space for being serialized
+        self.__prepare_nodes_for_dump()
+
+        with open(path, 'wb') as f:
+            pickle.dump(self._nodes, f, pickle.HIGHEST_PROTOCOL)
+
+    def __prepare_nodes_for_dump(self):
+        """
+        Removes unserialisable data from nodes.
+        * function calls
+        """
         for nodeid, ndata in self._nodes.items():
             # if the node has a reference to a method call, remove it so the object can be serialized
             if ndata.call is not None:
                 self._nodes[nodeid].call = None
-
-        with open(path, 'wb') as f:
-            pickle.dump(self._nodes, f, pickle.HIGHEST_PROTOCOL)
 
     def load(self, path):
         """
@@ -630,7 +709,7 @@ class AddressSpace:
         raise NotImplementedError
 
         # ToDo: async friendly implementation - load all at once?
-        class LazyLoadingDict(collections.MutableMapping):
+        class LazyLoadingDict(collections.abc.MutableMapping):
             """
             Special dict that only loads nodes as they are accessed. If a node is accessed it gets copied from the
             shelve to the cache dict. All user nodes are saved in the cache ONLY. Saving data back to the shelf
@@ -670,23 +749,21 @@ class AddressSpace:
 
         self._nodes = LazyLoadingDict(shelve.open(path, "r"))
 
-    def read_attribute_value(self, nodeid, attr):
+    def read_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds) -> ua.DataValue:
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
         if nodeid not in self._nodes:
-            dv = ua.DataValue()
-            dv.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown)
+            dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
             return dv
         node = self._nodes[nodeid]
         if attr not in node.attributes:
-            dv = ua.DataValue()
-            dv.StatusCode = ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
+            dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
             return dv
         attval = node.attributes[attr]
         if attval.value_callback:
             return attval.value_callback()
         return attval.value
 
-    async def write_attribute_value(self, nodeid, attr, value):
+    async def write_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds, value: ua.DataValue) -> ua.StatusCode:
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
         node = self._nodes.get(nodeid, None)
         if node is None:
@@ -694,12 +771,19 @@ class AddressSpace:
         attval = node.attributes.get(attr, None)
         if attval is None:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
+        if value.StatusCode is not None and not value.StatusCode.is_good():
+            # https://reference.opcfoundation.org/v104/Core/docs/Part4/7.7.1/
+            # If the StatusCode indicates an error then the value is to be ignored and the Server shall set it to null.
+            value = dataclasses.replace(value, Value=ua.Variant(ua.Null(), ua.VariantType.Null))
+        elif not self._is_expected_variant_type(value, attval, node):
+            # Only check datatype if no bad StatusCode is set
+            return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
 
         old = attval.value
         attval.value = value
         cbs = []
         # only send call callback when a value or status code change has happened
-        if (old.Value != value.Value) or (old.StatusCode != value.StatusCode):  
+        if (old.Value != value.Value) or (old.StatusCode != value.StatusCode):
             cbs = list(attval.datachange_callbacks.items())
 
         for k, v in cbs:
@@ -710,8 +794,26 @@ class AddressSpace:
 
         return ua.StatusCode()
 
-    def add_datachange_callback(self, nodeid, attr, callback):
-        self.logger.debug("set attr callback: %s %s %s", nodeid, attr, callback)
+    def _is_expected_variant_type(self, value: ua.DataValue, attval: AttributeValue, node: NodeData) -> bool:
+        vtype = attval.value.Value.VariantType # FIXME Type hinting reveals that it is possible that Value (Optional) is None which would raise an exception
+        if vtype == ua.VariantType.Null:
+            # Node had a null value, many nodes are initialized with that value
+            # we should check what the real type is
+            dtype = node.attributes[ua.AttributeIds.DataType].value.Value.Value
+            if dtype.NamespaceIndex == 0 and dtype.Identifier <= 25:
+                vtype = ua.VariantType(dtype.Identifier)
+            else:
+                # FIXME: should find the correct variant type given data type but
+                # this is a bit complicaed so trusting the first write
+                return True
+        if value.Value.VariantType == vtype:
+            return True
+        _logger.critical("Write refused: Variant: %s with type %s does not have expected type: %s",
+                value.Value, value.Value.VariantType, attval.value.Value.VariantType)
+        return False
+
+    def add_datachange_callback(self, nodeid: ua.NodeId, attr: ua.AttributeIds, callback: Callable) -> Tuple[ua.StatusCode, int]:
+        # self.logger.debug("set attr callback: %s %s %s", nodeid, attr, callback)
         if nodeid not in self._nodes:
             return ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown), 0
         node = self._nodes[nodeid]
@@ -724,11 +826,11 @@ class AddressSpace:
         self._handle_to_attribute_map[handle] = (nodeid, attr)
         return ua.StatusCode(), handle
 
-    def delete_datachange_callback(self, handle):
+    def delete_datachange_callback(self, handle: int):
         if handle in self._handle_to_attribute_map:
             nodeid, attr = self._handle_to_attribute_map.pop(handle)
             self._nodes[nodeid].attributes[attr].datachange_callbacks.pop(handle)
 
-    def add_method_callback(self, methodid, callback):
+    def add_method_callback(self, methodid: ua.NodeId, callback: Callable):
         node = self._nodes[methodid]
         node.call = callback

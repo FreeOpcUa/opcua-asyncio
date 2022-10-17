@@ -4,12 +4,12 @@ server side implementation of a subscription object
 
 import logging
 import asyncio
+import time
 
 from typing import Union, Iterable, Dict, List
 from asyncua import ua
 from .monitored_item_service import MonitoredItemService
 from .address_space import AddressSpace
-
 
 class InternalSubscription:
     """
@@ -17,7 +17,7 @@ class InternalSubscription:
     Runs the publication loop and stores the Publication Results until they are acknowledged.
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
+    def __init__(self, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
                  callback=None, no_acks=False):
         """
         :param loop: Event loop instance
@@ -27,7 +27,6 @@ class InternalSubscription:
         :param no_acks: If true no acknowledging will be expected (for server internal subscriptions)
         """
         self.logger = logging.getLogger(__name__)
-        self.loop: asyncio.AbstractEventLoop = loop
         self.data: ua.CreateSubscriptionResult = data
         self.pub_result_callback = callback
         self.monitored_item_srv = MonitoredItemService(self, aspace)
@@ -35,6 +34,7 @@ class InternalSubscription:
         self._triggered_events: Dict[int, List[ua.EventFieldList]] = {}
         self._triggered_statuschanges: list = []
         self._notification_seq = 1
+        self._no_acks_limit = 500
         self._not_acknowledged_results: Dict[int, ua.PublishResult] = {}
         self._startup = True
         self._keep_alive_count = 0
@@ -48,13 +48,16 @@ class InternalSubscription:
     async def start(self):
         self.logger.debug("starting subscription %s", self.data.SubscriptionId)
         if self.data.RevisedPublishingInterval > 0.0:
-            self._task = self.loop.create_task(self._subscription_loop())
+            self._task = asyncio.create_task(self._subscription_loop())
 
     async def stop(self):
         if self._task:
             self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
             self._task.cancel()
-            await self._task
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
             self._task = None
         self.monitored_item_srv.delete_all_monitored_items()
 
@@ -70,16 +73,23 @@ class InternalSubscription:
         """
         Start the publication loop running at the RevisedPublishingInterval.
         """
+        ts = time.time()
+        period = self.data.RevisedPublishingInterval / 1000.0
         try:
+            await self.publish_results()
             while True:
-                await asyncio.sleep(self.data.RevisedPublishingInterval / 1000.0)
+                next_ts = ts + period
+                sleep_time = next_ts - time.time()
+                ts = next_ts
+                await asyncio.sleep(max(sleep_time, 0))
                 await self.publish_results()
         except asyncio.CancelledError:
             self.logger.info('exiting _subscription_loop for %s', self.data.SubscriptionId)
-            pass
+            raise
         except Exception:
             # seems this except is necessary to log errors
             self.logger.exception("Exception in subscription loop")
+            raise
 
     def has_published_results(self):
         if self._startup or self._triggered_datachanges or self._triggered_events:
@@ -129,6 +139,8 @@ class InternalSubscription:
             # Acknowledgement is only expected when the Subscription is for a client.
             self._notification_seq += 1
             self._not_acknowledged_results[result.NotificationMessage.SequenceNumber] = result
+            if len(self._not_acknowledged_results) > self._no_acks_limit:
+                self._not_acknowledged_results.popitem()
         result.MoreNotifications = False
         result.AvailableSequenceNumbers = list(self._not_acknowledged_results.keys())
         return result

@@ -19,6 +19,7 @@ async def main():
     url = "opc.tcp://localhost:53530/OPCUA/SimulationServer/"
     # url = "opc.tcp://olivier:olivierpass@localhost:53530/OPCUA/SimulationServer/"
     async with Client(url=url) as client:
+        await client.load_data_type_definitions(overwrite_existing=True)
         print("Root children are", await client.nodes.root.get_children())
 
 

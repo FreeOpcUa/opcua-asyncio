@@ -3,7 +3,6 @@ import logging
 
 from asyncua import Client
 
-logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger('asyncua')
 
 
@@ -49,7 +48,7 @@ async def main():
 
         # subscribing to a variable node
         handler = SubHandler()
-        sub = await client.create_subscription(500, handler)
+        sub = await client.create_subscription(10, handler)
         handle = await sub.subscribe_data_change(myvar)
         await asyncio.sleep(0.1)
 
@@ -61,7 +60,10 @@ async def main():
         # calling a method on server
         res = await obj.call_method("2:multiply", 3, "klk")
         _logger.info("method result is: %r", res)
+        while True:
+            await asyncio.sleep(1)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())

@@ -4,6 +4,8 @@ Instantiate a new node and its child nodes from a node type.
 
 import logging
 
+from typing import Union
+
 from asyncua import ua
 from .ua_utils import get_node_supertypes, is_child_present
 from .copy_node_util import _rdesc_from_node, _read_and_copy_attrs
@@ -12,7 +14,12 @@ from .node_factory import make_node
 logger = logging.getLogger(__name__)
 
 
-async def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, idx=0, instantiate_optional=True):
+async def is_abstract(node_type) -> bool:
+    result = await node_type.read_attribute(ua.AttributeIds.IsAbstract)
+    return result.Value.Value
+
+
+async def instantiate(parent, node_type, nodeid: ua.NodeId=None, bname: Union[str, ua.QualifiedName]=None, dname: ua.LocalizedText=None, idx: int=0, instantiate_optional: bool=True):
     """
     instantiate a node type under a parent node.
     nodeid and browse name of new node can be specified, or just namespace index
@@ -21,7 +28,11 @@ async def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, id
     """
     rdesc = await _rdesc_from_node(parent, node_type)
     rdesc.TypeDefinition = node_type.nodeid
-
+    if rdesc.NodeClass in (ua.NodeClass.DataType, ua.NodeClass.ReferenceType, ua.NodeClass.ObjectType, ua.NodeClass.ReferenceType):
+        # Only some nodes can be abstract
+        abstract = await is_abstract(node_type)
+        if abstract:
+            raise ua.UaError(f"InstantiationError NodeId: {node_type.nodeid} is abstract and cant be instantiated!")
     if nodeid is None:
         nodeid = ua.NodeId(NamespaceIndex=idx)  # will trigger automatic node generation in namespace idx
     if bname is None:
@@ -86,7 +97,7 @@ async def _instantiate_node(server,
         parents = await get_node_supertypes(node_type, includeitself=True)
         node = make_node(server, res.AddedNodeId)
         for parent in parents:
-            descs = await parent.get_children_descriptions(includesubtypes=False)
+            descs = await parent.get_children_descriptions()
             for c_rdesc in descs:
                 # skip items that already exists, prefer the 'lowest' one in object hierarchy
                 if not await is_child_present(node, c_rdesc.BrowseName):

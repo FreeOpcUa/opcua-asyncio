@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from typing import Union, Coroutine, Optional
-from urllib.parse import urlparse
+from typing import List, Union, Coroutine, Optional
+from urllib.parse import urlparse, unquote
 
 from asyncua import ua
 from .ua_client import UaClient
@@ -14,7 +14,7 @@ from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
 from ..common.structures104 import load_data_type_definitions
 from ..common.utils import create_nonce
-from ..common.ua_utils import value_to_datavalue
+from ..common.ua_utils import value_to_datavalue, copy_dataclass_attr
 from ..crypto import uacrypto, security_policies
 
 _logger = logging.getLogger(__name__)
@@ -29,7 +29,11 @@ class Client:
     use UaClient object, available as self.uaclient
     which offers the raw OPC-UA services interface.
     """
-    def __init__(self, url: str, timeout: int = 4, loop=None):
+
+    _username = None
+    _password = None
+
+    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -37,15 +41,23 @@ class Client:
         :param timeout:
             Each request sent to the server expects an answer within this
             time. The timeout is specified in seconds.
+        :param watchdog_intervall:
+            The time between checking if the server is still alive. The timeout is specified in seconds.
         Some other client parameters can be changed by setting
         attributes on the constructed object:
         See the source code for the exhaustive list.
         """
-        self.loop = loop or asyncio.get_event_loop()
         self.server_url = urlparse(url)
         # take initial username and password from the url
-        self._username = self.server_url.username
-        self._password = self.server_url.password
+        userinfo, have_info, hostinfo = self.server_url.netloc.rpartition('@')
+        if have_info:
+            username, have_password, password = userinfo.partition(':')
+            self._username = unquote(username)
+            if have_password:
+                self._password = unquote(password)
+            # remove credentials from url, preventing them to be sent unencrypted in e.g. send_hello
+            self.server_url = self.server_url.__class__(self.server_url[0], hostinfo, *self.server_url[2:])
+
         self.name = "Pure Python Async. Client"
         self.description = self.name
         self.application_uri = "urn:freeopcua:client"
@@ -55,7 +67,8 @@ class Client:
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
         self._policy_ids = []
-        self.uaclient: UaClient = UaClient(timeout, loop=self.loop)
+        self.uaclient: UaClient = UaClient(timeout)
+        self.uaclient.pre_request_hook = self.check_connection
         self.user_certificate = None
         self.user_private_key = None
         self._server_nonce = None
@@ -64,6 +77,10 @@ class Client:
         self.max_messagesize = 0  # No limits
         self.max_chunkcount = 0  # No limits
         self._renew_channel_task = None
+        self._monitor_server_task = None
+        self._locale = ["en"]
+        self._watchdog_intervall = watchdog_intervall
+        self._closing: bool = False
 
     async def __aenter__(self):
         await self.connect()
@@ -103,6 +120,14 @@ class Client:
         if not isinstance(pwd, str):
             raise TypeError(f"Password must be a string, got {pwd} of type {type(pwd)}")
         self._password = pwd
+
+    def set_locale(self, locale: List[str]) -> None:
+        """
+        Sets the prefred locales of the client, the server chooses which locale he can provide.
+        Normaly the first matching locale in the list will be chossen, by the server.
+        Call this before connect()
+        """
+        self._locale = locale
 
     async def set_security_string(self, string: str):
         """
@@ -145,6 +170,10 @@ class Client:
         Call this before connect()
         """
         if server_certificate is None:
+            # Force unencrypted/unsigned SecureChannel to list the endpoints
+            new_policy = ua.SecurityPolicy()
+            self.security_policy = new_policy
+            self.uaclient.security_policy = new_policy
             # load certificate from server's list of endpoints
             endpoints = await self.connect_and_get_server_endpoints()
             endpoint = Client.find_endpoint(endpoints, mode, policy.URI)
@@ -174,7 +203,7 @@ class Client:
             private_key.password,
             private_key.extension,
         )
-        self.security_policy = policy(server_cert, cert, pk, mode)
+        self.security_policy = policy(server_cert, cert, pk, mode)  # type: ignore
         self.uaclient.set_security(self.security_policy)
 
     async def load_client_certificate(self, path: str, extension: Optional[str] = None):
@@ -197,8 +226,10 @@ class Client:
         try:
             await self.send_hello()
             await self.open_secure_channel()
-            endpoints = await self.get_endpoints()
-            await self.close_secure_channel()
+            try:
+                endpoints = await self.get_endpoints()
+            finally:
+                await self.close_secure_channel()
         finally:
             self.disconnect_socket()
         return endpoints
@@ -211,8 +242,10 @@ class Client:
         try:
             await self.send_hello()
             await self.open_secure_channel()  # spec says it should not be necessary to open channel
-            servers = await self.find_servers()
-            await self.close_secure_channel()
+            try:
+                servers = await self.find_servers()
+            finally:
+                await self.close_secure_channel()
         finally:
             self.disconnect_socket()
         return servers
@@ -225,8 +258,10 @@ class Client:
         try:
             await self.send_hello()
             await self.open_secure_channel()
-            servers = await self.find_servers_on_network()
-            await self.close_secure_channel()
+            try:
+                servers = await self.find_servers_on_network()
+            finally:
+                await self.close_secure_channel()
         finally:
             self.disconnect_socket()
         return servers
@@ -241,12 +276,22 @@ class Client:
         try:
             await self.send_hello()
             await self.open_secure_channel()
-            await self.create_session()
+            try:
+                await self.create_session()
+                try:
+                    await self.activate_session(username=self._username, password=self._password, certificate=self.user_certificate)
+                except Exception:
+                    # clean up session
+                    await self.close_session()
+                    raise
+            except Exception:
+                # clean up secure channel
+                await self.close_secure_channel()
+                raise
         except Exception:
             # clean up open socket
             self.disconnect_socket()
             raise
-        await self.activate_session(username=self._username, password=self._password, certificate=self.user_certificate)
 
     async def disconnect(self):
         """
@@ -267,7 +312,8 @@ class Client:
         await self.uaclient.connect_socket(self.server_url.hostname, self.server_url.port)
 
     def disconnect_socket(self):
-        self.uaclient.disconnect_socket()
+        if self.uaclient:
+            self.uaclient.disconnect_socket()
 
     async def send_hello(self):
         """
@@ -289,7 +335,7 @@ class Client:
         params.SecurityMode = self.security_policy.Mode
         params.RequestedLifetime = self.secure_channel_timeout
         # length should be equal to the length of key of symmetric encryption
-        params.ClientNonce = create_nonce(self.security_policy.symmetric_key_size)
+        params.ClientNonce = create_nonce(self.security_policy.secure_channel_nonce_length)
         result = await self.uaclient.open_secure_channel(params)
         if self.secure_channel_timeout != result.SecurityToken.RevisedLifetime:
             _logger.info("Requested secure channel timeout to be %dms, got %dms instead", self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
@@ -347,6 +393,7 @@ class Client:
         If you want o modify settings look at code of this methods
         and make your own
         """
+        self._closing = False
         desc = ua.ApplicationDescription()
         desc.ApplicationUri = self.application_uri
         desc.ProductUri = self.product_uri
@@ -381,12 +428,45 @@ class Client:
         if self.session_timeout != response.RevisedSessionTimeout:
             _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
             self.session_timeout = response.RevisedSessionTimeout
-        self._renew_channel_task = self.loop.create_task(self._renew_channel_loop())
+        self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
+        self._monitor_server_task = asyncio.create_task(self._monitor_server_loop())
         return response
+
+    async def check_connection(self):
+        # can be used to check if the client is still connected
+        # if not it throws the underlying exception
+        if self._renew_channel_task is not None:
+            if self._renew_channel_task.done():
+                await self._renew_channel_task
+        if self._monitor_server_task is not None:
+            if self._monitor_server_task.done():
+                await self._monitor_server_task
+        if self.uaclient._publish_task is not None:
+            if self.uaclient._publish_task.done():
+                await self.uaclient._publish_task
+
+    async def _monitor_server_loop(self):
+        """
+        Checks if the server is alive
+        """
+        timeout = min(self.session_timeout / 1000 / 2, self._watchdog_intervall)
+        try:
+            while not self._closing:
+                await asyncio.sleep(timeout)
+                # @FIXME handle state change
+                _ = await self.nodes.server_state.read_value()
+        except ConnectionError as e:
+            _logger.info("connection error in watchdog loop %s", e, exc_info=True)
+            await self.uaclient.inform_subscriptions(ua.StatusCodes.BadShutdown)
+            raise
+        except Exception:
+            _logger.exception("Error in watchdog loop")
+            await self.uaclient.inform_subscriptions(ua.StatusCodes.BadShutdown)
+            raise
 
     async def _renew_channel_loop(self):
         """
-        Renew the SecureChannel before the SessionTimeout will happen.
+        Renew the SecureChannel before the SecureChannelTimeout will happen.
         In theory we could do that only if no session activity
         but it does not cost much..
         """
@@ -394,14 +474,15 @@ class Client:
             # Part4 5.5.2.1:
             # Clients should request a new SecurityToken after 75 % of its lifetime has elapsed
             duration = self.secure_channel_timeout * 0.75 / 1000
-            while True:
+            while not self._closing:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
                 val = await self.nodes.server_state.read_value()
                 _logger.debug("server state is: %s ", val)
-        except asyncio.CancelledError:
-            pass
+        except ConnectionError as e:
+            _logger.info("connection error  in watchdog loop %s", e, exc_info=True)
+            raise
         except Exception:
             _logger.exception("Error while renewing session")
             raise
@@ -434,6 +515,7 @@ class Client:
         """
         Activate session using either username and password or private_key
         """
+        user_certificate = certificate or self.user_certificate
         params = ua.ActivateSessionParameters()
         challenge = b""
         if self.security_policy.peer_certificate is not None:
@@ -445,11 +527,11 @@ class Client:
         else:
             params.ClientSignature.Algorithm = (security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI)
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
-        params.LocaleIds.append("en")
-        if not username and not certificate:
+        params.LocaleIds = self._locale
+        if not username and not user_certificate:
             self._add_anonymous_auth(params)
-        elif certificate:
-            self._add_certificate_auth(params, certificate, challenge)
+        elif user_certificate:
+            self._add_certificate_auth(params, user_certificate, challenge)
         else:
             self._add_user_auth(params, username, password)
         return await self.uaclient.activate_session(params)
@@ -505,15 +587,29 @@ class Client:
         data, uri = security_policies.encrypt_asymmetric(pubkey, etoken, policy_uri)
         return data, uri
 
-    async def close_session(self) -> Coroutine:
+    async def close_session(self):
         """
         Close session
         """
-        self._renew_channel_task.cancel()
-        try:
-            await self._renew_channel_task
-        except Exception:
-            _logger.exception("Error while closing secure channel loop")
+        self._closing = True
+        if self._monitor_server_task:
+            self._monitor_server_task.cancel()
+            try:
+                await self._monitor_server_task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                _logger.exception("Error while closing watch_task")
+        # disable hook because we kill our monitor task, so we are going to get CancelledError at every request
+        self.uaclient.pre_request_hook = None
+        if self._renew_channel_task:
+            self._renew_channel_task.cancel()
+            try:
+                await self._renew_channel_task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                _logger.exception("Error while closing secure channel loop")
         return await self.uaclient.close_session(True)
 
     def get_root_node(self):
@@ -532,7 +628,9 @@ class Client:
         """
         return Node(self.uaclient, nodeid)
 
-    async def create_subscription(self, period, handler, publishing=True):
+    async def create_subscription(
+        self, period, handler, publishing=True
+    ) -> Subscription:
         """
         Create a subscription.
         Returns a Subscription object which allows to subscribe to events or data changes on server.
@@ -552,19 +650,62 @@ class Client:
             params.PublishingEnabled = publishing
             params.Priority = 0
         subscription = Subscription(self.uaclient, params, handler)
-        await subscription.init()
+        results = await subscription.init()
+        new_params = self.get_subscription_revised_params(params, results)
+        if new_params:
+            results = await subscription.update(new_params)
+            _logger.info(f"Result from subscription update: {results}")
         return subscription
+
+    def get_subscription_revised_params(  # type: ignore
+        self,
+        params: ua.CreateSubscriptionParameters,
+        results: ua.CreateSubscriptionResult,
+    ) -> Optional[ua.ModifySubscriptionParameters]:
+        if (
+            results.RevisedPublishingInterval == params.RequestedPublishingInterval
+            and results.RevisedLifetimeCount == params.RequestedLifetimeCount
+            and results.RevisedMaxKeepAliveCount == params.RequestedMaxKeepAliveCount
+        ):
+            return  # type: ignore
+        _logger.warning(
+            f"Revised values returned differ from subscription values: {results}"
+        )
+        revised_interval = results.RevisedPublishingInterval
+        # Adjust the MaxKeepAliveCount based on the RevisedPublishInterval when necessary
+        new_keepalive_count = self.get_keepalive_count(revised_interval)
+        if (
+            revised_interval != params.RequestedPublishingInterval
+            and new_keepalive_count != params.RequestedMaxKeepAliveCount
+        ):
+            _logger.info(
+                f"KeepAliveCount will be updated to {new_keepalive_count} "
+                f"for consistency with RevisedPublishInterval"
+            )
+            modified_params = ua.ModifySubscriptionParameters()
+            # copy the existing subscription parameters
+            copy_dataclass_attr(params, modified_params)
+            # then override with the revised values
+            modified_params.RequestedMaxKeepAliveCount = new_keepalive_count
+            modified_params.SubscriptionId = results.SubscriptionId
+            modified_params.RequestedPublishingInterval = (
+                results.RevisedPublishingInterval
+            )
+            # update LifetimeCount but chances are it will be re-revised again
+            modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
+            return modified_params
 
     def get_keepalive_count(self, period) -> int:
         """
         We request the server to send a Keepalive notification when
         no notification has been received for 75% of the session lifetime.
-        This is especially useful to keep the sesssion up
+        This is especially useful to keep the session up
         when self.session_timeout < self.secure_channel_timeout.
 
         Part4 5.13.2: If the requested value is 0, the Server
         shall revise with the smallest supported keep-alive count.
         """
+        period = period or 1000
         return int((self.session_timeout / period) * 0.75)
 
     async def get_namespace_array(self):
@@ -579,25 +720,26 @@ class Client:
     async def delete_nodes(self, nodes, recursive=False) -> Coroutine:
         return await delete_nodes(self.uaclient, nodes, recursive)
 
-    async def import_xml(self, path=None, xmlstring=None) -> Coroutine:
+    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Coroutine:
         """
         Import nodes defined in xml
         """
-        importer = XmlImporter(self)
+        importer = XmlImporter(self, strict_mode=strict_mode)
         return await importer.import_xml(path, xmlstring)
 
-    async def export_xml(self, nodes, path):
+    async def export_xml(self, nodes, path, export_values: bool = False):
         """
         Export defined nodes to xml
+        :param export_values: exports values from variants
         """
-        exp = XmlExporter(self)
+        exp = XmlExporter(self, export_values=export_values)
         await exp.build_etree(nodes)
         await exp.write_xml(path)
 
     async def register_namespace(self, uri):
         """
         Register a new namespace. Nodes should in custom namespace, not 0.
-        This method is mainly implemented for symetry with server
+        This method is mainly implemented for symmetry with server
         """
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
         uries = await ns_node.read_value()
@@ -617,13 +759,13 @@ class Client:
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_type_definitions(self, nodes)
 
-    async def load_data_type_definitions(self, node=None):
+    async def load_data_type_definitions(self, node=None, overwrite_existing=False):
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
         These classes will be available in ua module
         """
-        return await load_data_type_definitions(self, node)
+        return await load_data_type_definitions(self, node, overwrite_existing=overwrite_existing)
 
     async def load_enums(self):
         """
