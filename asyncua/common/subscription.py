@@ -154,13 +154,14 @@ class Subscription:
         except Exception:
             self.logger.exception("Exception calling status change handler")
 
-    async def subscribe_data_change(self,
-                                    nodes: Union[Node, Iterable[Node]],
-                                    attr=ua.AttributeIds.Value,
-                                    queuesize=0,
-                                    monitoring=ua.MonitoringMode.Reporting,
-                                    sampling_interval=0
-                                   ) -> Union[int, List[Union[int, ua.StatusCode]]]:
+    async def subscribe_data_change(
+        self,
+        nodes: Union[Node, Iterable[Node]],
+        attr=ua.AttributeIds.Value,
+        queuesize=0,
+        monitoring=ua.MonitoringMode.Reporting,
+        sampling_interval=0
+    ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Subscribe to data change events of one or multiple nodes.
         The default attribute used for the subscription is `Value`.
@@ -238,19 +239,20 @@ class Subscription:
         matches = [a for a in evfilter.SelectClauses if a.AttributeId == ua.AttributeIds.NodeId]
         if not matches:
             conditionIdOperand = ua.SimpleAttributeOperand()
-            conditionIdOperand.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)    
-            conditionIdOperand.AttributeId = ua.AttributeIds.NodeId 
+            conditionIdOperand.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)
+            conditionIdOperand.AttributeId = ua.AttributeIds.NodeId
             evfilter.SelectClauses.append(conditionIdOperand)
         return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 
-    async def _subscribe(self,
-                         nodes: Union[Node, Iterable[Node]],
-                         attr=ua.AttributeIds.Value,
-                         mfilter=None,
-                         queuesize=0,
-                         monitoring=ua.MonitoringMode.Reporting,
-                         sampling_interval=0
-                        ) -> Union[int, List[Union[int, ua.StatusCode]]]:
+    async def _subscribe(
+        self,
+        nodes: Union[Node, Iterable[Node]],
+        attr=ua.AttributeIds.Value,
+        mfilter=None,
+        queuesize=0,
+        monitoring=ua.MonitoringMode.Reporting,
+        sampling_interval=0
+    ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Private low level method for subscribing.
         :param nodes: One Node or an Iterable og Nodes.
