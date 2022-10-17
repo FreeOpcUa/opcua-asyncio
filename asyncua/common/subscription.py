@@ -4,7 +4,6 @@ high level interface to subscriptions
 import asyncio
 import logging
 import collections.abc
-from tokenize import Double
 from typing import Tuple, Union, List, Iterable, Optional
 from asyncua.common.ua_utils import copy_dataclass_attr
 
