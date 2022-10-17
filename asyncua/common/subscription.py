@@ -159,6 +159,7 @@ class Subscription:
                                     attr=ua.AttributeIds.Value,
                                     queuesize=0,
                                     monitoring=ua.MonitoringMode.Reporting,
+                                    sampling_interval=0
                                    ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Subscribe to data change events of one or multiple nodes.
@@ -177,7 +178,7 @@ class Subscription:
         :return: Handle for changing/cancelling of the subscription
         """
         return await self._subscribe(
-            nodes, attr, queuesize=queuesize, monitoring=monitoring
+            nodes, attr, queuesize=queuesize, monitoring=monitoring, sampling_interval=sampling_interval
         )
 
     async def _create_eventfilter(self, evtypes):
@@ -248,6 +249,7 @@ class Subscription:
                          mfilter=None,
                          queuesize=0,
                          monitoring=ua.MonitoringMode.Reporting,
+                         sampling_interval=0
                         ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Private low level method for subscribing.
@@ -268,7 +270,7 @@ class Subscription:
         mirs = []
         for node in nodes:
             mir = self._make_monitored_item_request(
-                node, attr, mfilter, queuesize, monitoring
+                node, attr, mfilter, queuesize, monitoring, sampling_interval
             )
             mirs.append(mir)
         # Await MonitoredItemCreateResult
@@ -281,12 +283,15 @@ class Subscription:
             mids[0].check()
         return mids[0]
 
-    def _make_monitored_item_request(self,
-                                     node: Node,
-                                     attr,
-                                     mfilter,
-                                     queuesize,
-                                     monitoring) -> ua.MonitoredItemCreateRequest:
+    def _make_monitored_item_request(
+            self,
+            node: Node,
+            attr,
+            mfilter,
+            queuesize,
+            monitoring,
+            sampling_interval
+    ) -> ua.MonitoredItemCreateRequest:
         rv = ua.ReadValueId()
         rv.NodeId = node.nodeid
         rv.AttributeId = attr
@@ -294,7 +299,7 @@ class Subscription:
         mparams = ua.MonitoringParameters()
         self._client_handle += 1
         mparams.ClientHandle = self._client_handle
-        mparams.SamplingInterval = self.parameters.RequestedPublishingInterval
+        mparams.SamplingInterval = sampling_interval
         mparams.QueueSize = queuesize
         mparams.DiscardOldest = True
         if mfilter:
