@@ -5186,7 +5186,7 @@ class ObjectTypeAttributes(NodeAttributes):
     Description: LocalizedText = field(default_factory=LocalizedText)
     WriteMask: UInt32 = 0
     UserWriteMask: UInt32 = 0
-    IsAbstract: Boolean = True
+    IsAbstract: Boolean = False
 
 
 @dataclass(frozen=FROZEN)
