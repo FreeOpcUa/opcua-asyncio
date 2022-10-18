@@ -560,7 +560,7 @@ async def test_xml_struct_with_value(opc, tmpdir):
 
     new_value = ua.MyStruct()
     new_value.int_value = 14
-    await valnode.write_value(new_value)
+    await valnode.write_value(ua.Variant(new_value, ua.VariantType.ExtensionObject))
 
     tmp_path = tmpdir.join("export-struct-with-value.xml").strpath
     await opc.opc.export_xml([my_struct, valnode], tmp_path, export_values=True)
@@ -590,7 +590,7 @@ async def test_xml_struct_in_struct_with_value(opc, tmpdir):
 
     new_value = ua.MyOuterStruct()
     new_value.inner_struct_value.int_value = 42
-    await valnode.write_value(new_value)
+    await valnode.write_value(ua.Variant(new_value, ua.VariantType.ExtensionObject))
 
     tmp_path = tmpdir.join("export-struct-in-struct-with-value.xml").strpath
     await opc.opc.export_xml([outer_struct, inner_struct, valnode], tmp_path, export_values=True)
