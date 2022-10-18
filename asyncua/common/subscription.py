@@ -448,7 +448,7 @@ class Subscription:
             self,
             var: Union[Node, Iterable[Node]],
             deadband_val: ua.Double,
-            deadbandtype: ua.DataChangeTrigger = 1,
+            deadbandtype: ua.UInt32 = 1,
             queuesize: int = 0,
             attr: ua.AttributeIds = ua.AttributeIds.Value
         ):
