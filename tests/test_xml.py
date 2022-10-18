@@ -552,13 +552,13 @@ async def test_xml_struct_optional(opc, tmpdir):
 
 async def test_xml_struct_with_value(opc, tmpdir):
     idx = 4
-    my_struct, _ = await new_struct(opc.opc, idx, "MyStruct", [
+    my_struct, _ = await new_struct(opc.opc, idx, "MyStructWithValue", [
         new_struct_field("int_value", ua.VariantType.Int64, optional=False),
     ])
     await opc.opc.load_data_type_definitions()
-    valnode = await opc.opc.nodes.objects.add_variable(idx, "my_struct", ua.Variant(ua.MyStruct(), ua.VariantType.ExtensionObject))
+    valnode = await opc.opc.nodes.objects.add_variable(idx, "my_struct", ua.Variant(ua.MyStructWithValue(), ua.VariantType.ExtensionObject))
 
-    new_value = ua.MyStruct()
+    new_value = ua.MyStructWithValue()
     new_value.int_value = 14
     await valnode.write_value(ua.Variant(new_value, ua.VariantType.ExtensionObject))
 
