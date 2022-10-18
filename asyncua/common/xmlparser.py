@@ -58,6 +58,7 @@ class NodeData:
         self.accesslevel = None
         self.useraccesslevel = None
         self.minsample = None
+        self.historizing = False
 
         # referencetype
         self.inversename = ""
