@@ -228,8 +228,8 @@ class Subscription:
         A handle (integer value) is returned which can be used to modify/cancel the subscription.
 
         :param sourcenode: Node
-        :param evtypes:
-        :param evfilter:
+        :param evtypes: ua.ObjectIds or ua.NodeId
+        :param evfilter: ua.EventFilter which provides the SelectClauses and WhereClause
         :param queuesize: 0 for default queue size, 1 for minimum queue size, n for FIFO queue,
         MaxUInt32 for max queue size
         :return: Handle for changing/cancelling of the subscription
@@ -253,9 +253,9 @@ class Subscription:
         If evtypes is a list or tuple of custom event types, the events will be filtered to the supplied types.
         A handle (integer value) is returned which can be used to modify/cancel the subscription.
 
-        :param sourcenode:
-        :param evtypes:
-        :param evfilter:
+        :param sourcenode: Node
+        :param evtypes: ua.ObjectIds or ua.NodeId 
+        :param evfilter: ua.EventFilter which provides the SelectClauses and WhereClause
         :param queuesize: 0 for default queue size, 1 for minimum queue size, n for FIFO queue,
         MaxUInt32 for max queue size
         :return: Handle for changing/cancelling of the subscription
@@ -284,8 +284,8 @@ class Subscription:
         """
         Private low level method for subscribing.
         :param nodes: One Node or an Iterable of Nodes.
-        :param attr: ua.AttributeId
-        :param mfilter: MonitoringFilter
+        :param attr: ua.AttributeId which shall be subscribed
+        :param mfilter: ua.MonitoringFilter which shall be applied
         :param queuesize: queue size
         :param monitoring: ua.MonitoringMode
         :param sampling_interval: ua.Duration
