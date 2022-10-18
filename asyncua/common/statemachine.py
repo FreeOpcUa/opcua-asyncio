@@ -78,7 +78,7 @@ class StateMachine(object):
     LastTransition: Optional "TransitionVariableType"
     Generates TransitionEvent's
     '''
-    def __init__(self, server: Server=None, parent: Node=None, idx: int=None, name: str=None):
+    def __init__(self, server: Server=None, parent: Node=None, idx: int=None, name: str=None, typeid: ua.NodeId=ua.NodeId(2299, 0)):
         if not isinstance(server, Server): 
             raise ValueError(f"server: {type(server)} is not a instance of Server class")
         if not isinstance(parent, Node): 
@@ -91,7 +91,7 @@ class StateMachine(object):
         self._server = server
         self._parent = parent
         self._state_machine_node: Node = None
-        self._state_machine_type = ua.NodeId(2299, 0) #StateMachineType
+        self._state_machine_type = typeid
         self._name = name
         self._idx = idx
         self._optionals = False
@@ -283,14 +283,44 @@ class FiniteStateMachine(StateMachine):
     '''
     Implementation of an FiniteStateMachineType a little more advanced than the basic one
     if you need to know the available states and transition from clientside
+    A FiniteStateMachine is Abstract and can't be instantiated
     '''
-    def __init__(self, server: Server=None, parent: Node=None, idx: int=None, name: str=None):
+    def __init__(self, server: Server=None, parent: Node=None, idx: int=None, name: str=None, typeid: ua.NodeId=ua.NodeId(2299, 0)):
         super().__init__(server, parent, idx, name)
         if name is None:
             self._name = "FiniteStateMachine"
-        self._state_machine_type = ua.NodeId(2771, 0)
+        self._state_machine_type = typeid
         self._available_states_node: Node = None
         self._available_transitions_node: Node = None
+        self._finitestatemachine_nodeid = ua.NodeId(2771, 0)
+
+    async def install(self, optionals: bool=False):
+        if await self._is_subtype_of_finitestatemachine():
+            super().install(optionals)
+            pass
+        else:
+            raise ua.UaError(f"NodeId: {self._state_machine_type} is not a subtype of FiniteStateMachine!")
+
+    async def _is_subtype_of_finitestatemachine(self):
+        result = False
+        type_node = Node(self._server, self._state_machine_type)
+        parent = await type_node.get_parent()
+        if not parent:
+            raise ua.UaError("Node does not have a Parent!")
+        if parent.nodeid == self._finitestatemachine_nodeid:
+            result = True
+        else:
+            # sub or sub-sub type ...
+            while not parent.nodeid == self._finitestatemachine_nodeid:
+                parent = await parent.get_parent()
+                if parent.nodeid == self._finitestatemachine_nodeid:
+                    result = True
+                    break
+                if parent.nodeid == self._server.nodes.root.nodeid:
+                    result = False
+                    break
+        return result
+
 
     async def set_available_states(self, states: List[ua.NodeId]):
         if not self._available_states_node:
