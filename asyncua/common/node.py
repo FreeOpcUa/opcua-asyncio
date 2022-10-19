@@ -7,8 +7,7 @@ import logging
 from typing import Union
 
 from asyncua import ua
-from asyncua.client.ua_client import UaClient
-from asyncua.server.internal_session import InternalSession
+from asyncua.common.session_interface import AbstractSession
 from .ua_utils import value_to_datavalue
 
 from .events import Event, get_filter_from_event_type
@@ -47,7 +46,7 @@ class Node:
     OPC-UA protocol. Feel free to look at the code of this class and call
     directly UA services methods to optimize your code
     """
-    def __init__(self, session: Union[InternalSession, UaClient], nodeid: Union[ua.NodeId, str, int]):
+    def __init__(self, session: AbstractSession, nodeid: Union[ua.NodeId, str, int]):
         self.session = session
         self.nodeid = None
         if isinstance(nodeid, Node):
