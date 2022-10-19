@@ -150,9 +150,11 @@ class InternalSession(AbstractSession):
         raise ua.UaError("BrowseNext is not avalible in server internal session")
 
     async def register_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
+        self.logger.info("Node registration not implemented")
         return nodes
 
     async def unregister_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
+        self.logger.info("Node registration not implemented")
         return nodes
 
     async def translate_browsepaths_to_nodeids(self, params):
