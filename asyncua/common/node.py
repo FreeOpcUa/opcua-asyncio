@@ -730,8 +730,8 @@ class Node:
         self.basenodeid = None
 
     @staticmethod
-    def new_node(server, nodeid: ua.NodeId):
+    def new_node(session, nodeid: ua.NodeId):
         """
         Helper function to init nodes with out importing Node
         """
-        return Node(server, nodeid)
+        return Node(session, nodeid)
