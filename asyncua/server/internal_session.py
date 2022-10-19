@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Coroutine, Iterable, Optional
 
 from asyncua import ua
+from asyncua.common.session_interface import AbstractSession
 from ..common.callback import CallbackType, ServerItemCallback
 from ..common.utils import create_nonce, ServiceError
 from .address_space import AddressSpace
@@ -16,7 +17,7 @@ class SessionState(Enum):
     Closed = 2
 
 
-class InternalSession:
+class InternalSession(AbstractSession):
     """
 
     """
