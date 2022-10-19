@@ -144,13 +144,16 @@ class InternalSession(AbstractSession):
         return self.iserver.view_service.browse(params)
 
     async def browse_next(self, parameters: ua.BrowseNextParameters) -> List[ua.BrowseResult]:
+        # TODO 
+        release = parameters.ReleaseContinuationPoints
+        continuation_points = parameters.ContinuationPoints
         raise ua.UaError("BrowseNext is not avalible in server internal session")
 
     async def register_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
-        raise ua.UaError("RegisterNodes is not avalible in server internal session")
+        return nodes
 
     async def unregister_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
-        raise ua.UaError("UnregisterNodes is not avalible in server internal session")
+        return nodes
 
     async def translate_browsepaths_to_nodeids(self, params):
         return self.iserver.view_service.translate_browsepaths_to_nodeids(params)
