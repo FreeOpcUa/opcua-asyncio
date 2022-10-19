@@ -7,6 +7,7 @@ import logging
 from typing import Awaitable, Callable, Dict, List, Optional, Union
 
 from asyncua import ua
+from asyncua.common.session_interface import AbstractSession
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, BadUserAccessDenied, UaStructParsingError
 from ..common.connection import SecureConnection, TransportLimits
@@ -242,7 +243,7 @@ class UASocketProtocol(asyncio.Protocol):
         # some servers send a response here, most do not ... so we ignore
 
 
-class UaClient:
+class UaClient(AbstractSession):
     """
     low level OPC-UA client.
 
