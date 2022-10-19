@@ -29,3 +29,39 @@ class AbstractSession(ABC):
         '''
 
         '''
+
+    @abstractmethod
+    def translate_browsepaths_to_nodeids(self, browse_paths: List[ua.BrowsePath]) -> List[ua.BrowsePathResult]:
+        '''
+
+        '''
+
+    @abstractmethod
+    def history_read(self, params: ua.HistoryReadParameters) -> ua.HistoryReadResult:
+        '''
+
+        '''
+
+    @abstractmethod
+    def delete_references(self, refs: List[ua.DeleteReferencesItem]) -> List[ua.StatusCode]:
+        '''
+
+        '''
+
+    @abstractmethod
+    def add_references(self, refs: List[ua.AddReferencesItem]) -> List[ua.StatusCode]:
+        '''
+
+        '''
+
+    @abstractmethod
+    def register_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
+        '''
+
+        '''
+
+    @abstractmethod
+    def unregister_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
+        '''
+
+        '''
