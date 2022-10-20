@@ -525,6 +525,8 @@ class UaClient(AbstractSession):
         )
         return response.Parameters
 
+    modify_subscription = update_subscription # legacy support
+
     async def delete_subscriptions(self, subscription_ids):
         self.logger.debug("delete_subscriptions %r", subscription_ids)
         request = ua.DeleteSubscriptionsRequest()
@@ -776,3 +778,6 @@ class UaClient(AbstractSession):
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
+
+    async def transfer_subscription(self, params: ua.TransferSubscriptionsParameters):
+        raise NotImplementedError

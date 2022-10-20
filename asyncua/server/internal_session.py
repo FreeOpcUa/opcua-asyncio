@@ -220,3 +220,6 @@ class InternalSession(AbstractSession):
 
     def modify_subscription(self, params, callback):
         return self.subscription_service.modify_subscription(params, callback)
+
+    async def transfer_subscription(self, params: ua.TransferSubscriptionsParameters):
+        raise NotImplementedError

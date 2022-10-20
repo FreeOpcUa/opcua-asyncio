@@ -79,7 +79,49 @@ class AbstractSession(ABC):
         '''
 
     @abstractmethod
-    async def call(self, methodstocall: List[ua.CallMethodRequest]) -> List[ua.StatusCode]:
+    async def call(self, methodstocall: List[ua.CallMethodRequest]) -> ua.CallMethodResult:
+        '''
+
+        '''
+
+    @abstractmethod
+    async def create_subscription(self, params: ua.CreateSubscriptionParameters) -> ua.CreateSubscriptionResult:
+        '''
+
+        '''
+
+    @abstractmethod
+    async def modify_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
+        '''
+
+        '''
+
+    @abstractmethod
+    async def delete_subscriptions(self, params: ua.DeleteSubscriptionsParameters) -> List[StatusCode]:
+        '''
+
+        '''
+
+    @abstractmethod
+    async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters) -> List[ua.MonitoredItemCreateResult]:
+        '''
+
+        '''
+
+    @abstractmethod
+    async def modify_monitored_items(self, params: ua.ModifyMonitoredItemsParameters) -> List[ua.MonitoredItemModifyResult]:
+        '''
+
+        '''
+
+    @abstractmethod
+    async def delete_monitored_items(self, params: ua.DeleteMonitoredItemsParameters) -> List[ua.StatusCode]:
+        '''
+
+        '''
+
+    @abstractmethod
+    async def transfer_subscription(self, params: ua.TransferSubscriptionsParameters) -> ua.TransferResult:
         '''
 
         '''
