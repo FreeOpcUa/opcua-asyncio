@@ -144,10 +144,9 @@ class InternalSession(AbstractSession):
         return self.iserver.view_service.browse(params)
 
     async def browse_next(self, parameters: ua.BrowseNextParameters) -> List[ua.BrowseResult]:
-        # TODO 
-        release = parameters.ReleaseContinuationPoints
-        continuation_points = parameters.ContinuationPoints
-        raise ua.UaError("BrowseNext is not avalible in server internal session")
+        # TODO
+        self.logger.info("BrowseNext and ContinuationPoints have not been implemented yet!")
+        raise NotImplementedError
 
     async def register_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
         self.logger.info("Node registration not implemented")
@@ -221,5 +220,8 @@ class InternalSession(AbstractSession):
     def modify_subscription(self, params, callback):
         return self.subscription_service.modify_subscription(params, callback)
 
-    async def transfer_subscription(self, params: ua.TransferSubscriptionsParameters):
+    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
+        # Subscriptions aren't bound to a Session and can be transfered!
+        # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
+        self.logger.info("TransferSubscriptions has not been implemented yet!")
         raise NotImplementedError

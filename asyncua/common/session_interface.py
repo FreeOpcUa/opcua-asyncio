@@ -121,7 +121,7 @@ class AbstractSession(ABC):
         '''
 
     @abstractmethod
-    async def transfer_subscription(self, params: ua.TransferSubscriptionsParameters) -> ua.TransferResult:
+    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
         '''
 
         '''

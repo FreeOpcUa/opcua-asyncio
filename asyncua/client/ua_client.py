@@ -779,5 +779,8 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
 
-    async def transfer_subscription(self, params: ua.TransferSubscriptionsParameters):
+    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
+        # Subscriptions aren't bound to a Session and can be transfered!
+        # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
+        self.logger.info("TransferSubscriptions has not been implemented yet!")
         raise NotImplementedError
