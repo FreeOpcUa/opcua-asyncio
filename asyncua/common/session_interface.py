@@ -65,3 +65,21 @@ class AbstractSession(ABC):
         '''
 
         '''
+
+    @abstractmethod
+    async def add_nodes(self, params: ua.AddNodesParameters) -> List[ua.AddNodesResult]:
+        '''
+
+        '''
+
+    @abstractmethod
+    async def delete_nodes(self, params: ua.DeleteNodesParameters) -> List[ua.StatusCode]:
+        '''
+
+        '''
+
+    @abstractmethod
+    async def call(self, methodstocall: List[ua.CallMethodRequest]) -> List[ua.StatusCode]:
+        '''
+
+        '''

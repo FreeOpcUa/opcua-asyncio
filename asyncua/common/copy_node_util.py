@@ -18,7 +18,7 @@ async def copy_node(parent, node, nodeid=None, recursive=True):
     return [make_node(parent.server, nid) for nid in added_nodeids]
 
 
-async def _copy_node(server, parent_nodeid, rdesc, nodeid, recursive):
+async def _copy_node(session, parent_nodeid, rdesc, nodeid, recursive):
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = rdesc.BrowseName
@@ -26,15 +26,15 @@ async def _copy_node(server, parent_nodeid, rdesc, nodeid, recursive):
     addnode.ReferenceTypeId = rdesc.ReferenceTypeId
     addnode.TypeDefinition = rdesc.TypeDefinition
     addnode.NodeClass = rdesc.NodeClass
-    node_to_copy = make_node(server, rdesc.NodeId)
+    node_to_copy = make_node(session, rdesc.NodeId)
     attr_obj = getattr(ua, ua.NodeClass(rdesc.NodeClass).name + "Attributes")
     await _read_and_copy_attrs(node_to_copy, attr_obj(), addnode)
-    res = (await server.add_nodes([addnode]))[0]
+    res = (await session.add_nodes([addnode]))[0]
     added_nodes = [res.AddedNodeId]
     if recursive:
         descs = await node_to_copy.get_children_descriptions()
         for desc in descs:
-            nodes = await _copy_node(server, res.AddedNodeId, desc,
+            nodes = await _copy_node(session, res.AddedNodeId, desc,
                                      nodeid=ua.NodeId(NamespaceIndex=desc.NodeId.NamespaceIndex), recursive=True)
             added_nodes.extend(nodes)
 
