@@ -97,7 +97,7 @@ class AbstractSession(ABC):
         '''
 
     @abstractmethod
-    async def delete_subscriptions(self, params: ua.DeleteSubscriptionsParameters) -> List[StatusCode]:
+    async def delete_subscriptions(self, params: ua.DeleteSubscriptionsParameters) -> List[ua.StatusCode]:
         '''
 
         '''
