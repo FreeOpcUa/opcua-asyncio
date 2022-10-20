@@ -148,7 +148,6 @@ class InternalSession(AbstractSession):
         # ContinuationPoint: https://reference.opcfoundation.org/v104/Core/docs/Part4/7.6/
         # Add "ContinuationPoints" and some form of management for them to current sessionimplementation
         # BrowseNext: https://reference.opcfoundation.org/Core/Part4/v104/5.8.3/
-        self.logger.info("BrowseNext and ContinuationPoints have not been implemented yet!")
         raise NotImplementedError
 
     async def register_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
