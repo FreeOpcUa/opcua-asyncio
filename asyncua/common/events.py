@@ -165,11 +165,11 @@ async def _select_clause_from_childs(child: "Node", refs: List[ua.ReferenceDescr
                 await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [*browse_path] + [ref.BrowseName])
             else:
                 await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [*browse_path] + [ref.BrowseName])
-                var = child.new_node(child.server, ref.NodeId)
+                var = child.new_node(child.session, ref.NodeId)
                 refs = await var.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK)
                 await _select_clause_from_childs(var, refs, select_clauses, already_selected, browse_path + [ref.BrowseName])
         elif ref.NodeClass == ua.NodeClass.Object:
-            obj = child.new_node(child.server, ref.NodeId)
+            obj = child.new_node(child.session, ref.NodeId)
             refs = await obj.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK)
             await _select_clause_from_childs(obj, refs, select_clauses, already_selected, browse_path + [ref.BrowseName])
 

@@ -14,8 +14,8 @@ async def copy_node(parent, node, nodeid=None, recursive=True):
     rdesc = await _rdesc_from_node(parent, node)
     if nodeid is None:
         nodeid = ua.NodeId(NamespaceIndex=node.nodeid.NamespaceIndex)
-    added_nodeids = await _copy_node(parent.server, parent.nodeid, rdesc, nodeid, recursive)
-    return [make_node(parent.server, nid) for nid in added_nodeids]
+    added_nodeids = await _copy_node(parent.session, parent.nodeid, rdesc, nodeid, recursive)
+    return [make_node(parent.session, nid) for nid in added_nodeids]
 
 
 async def _copy_node(session, parent_nodeid, rdesc, nodeid, recursive):

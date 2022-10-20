@@ -196,7 +196,7 @@ async def test_xml_ns(opc, tmpdir):
     new_ns = await opc.opc.register_namespace("my_new_namespace")
     bname_ns = await opc.opc.register_namespace("bname_namespace")
 
-    nnode = Node(onew.server, ua.NodeId(Identifier=onew.nodeid.Identifier, NamespaceIndex=new_ns))
+    nnode = Node(onew.session, ua.NodeId(Identifier=onew.nodeid.Identifier, NamespaceIndex=new_ns))
     await nnode.read_browse_name()
     vnew2 = (await nnode.get_children())[0]
     assert vnew2.nodeid.NamespaceIndex == new_ns

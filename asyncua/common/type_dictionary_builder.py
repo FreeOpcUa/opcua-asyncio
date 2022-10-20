@@ -127,7 +127,7 @@ class DataTypeDictionaryBuilder:
 
     def __init__(self, server, idx, ns_urn, dict_name, dict_node_id=None):
         self._server = server
-        self._session_server = server.get_node(ua.ObjectIds.RootFolder).server
+        self._session_server = server.get_node(ua.ObjectIds.RootFolder).session
         self._idx = idx
         self.ns_urn = ns_urn
         self.dict_name = dict_name
