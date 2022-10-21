@@ -550,6 +550,64 @@ async def test_xml_struct_optional(opc, tmpdir):
     assert t.MyInt64 == 5
 
 
+async def test_xml_struct_with_value(opc, tmpdir):
+    idx = 4
+    my_struct, _ = await new_struct(opc.opc, idx, "MyStructWithValue", [
+        new_struct_field("int_value", ua.VariantType.Int64, optional=False),
+    ])
+    await opc.opc.load_data_type_definitions()
+    valnode = await opc.opc.nodes.objects.add_variable(idx, "my_struct", ua.Variant(ua.MyStructWithValue(), ua.VariantType.ExtensionObject))
+
+    new_value = ua.MyStructWithValue()
+    new_value.int_value = 14
+    await valnode.write_value(ua.Variant(new_value, ua.VariantType.ExtensionObject))
+
+    tmp_path = tmpdir.join("export-struct-with-value.xml").strpath
+    await opc.opc.export_xml([my_struct, valnode], tmp_path, export_values=True)
+    await opc.opc.delete_nodes([my_struct, valnode])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    imported_my_struct = opc.opc.get_node(new_nodes[0])
+    imported_valnode = opc.opc.get_node(new_nodes[1])
+    assert my_struct == imported_my_struct
+    assert valnode == imported_valnode
+    await opc.opc.load_data_type_definitions()
+
+    value = await valnode.read_value()
+    imported_value = await imported_valnode.read_value()
+    assert value == imported_value
+
+
+async def test_xml_struct_in_struct_with_value(opc, tmpdir):
+    idx = 4
+    inner_struct, _ = await new_struct(opc.opc, idx, "MyInnerStruct", [
+        new_struct_field("int_value", ua.VariantType.Int64, optional=False),
+    ])
+    outer_struct, _ = await new_struct(opc.opc, idx, "MyOuterStruct", [
+        new_struct_field("inner_struct_value", inner_struct, optional=False),
+    ])
+    await opc.opc.load_data_type_definitions()
+    valnode = await opc.opc.nodes.objects.add_variable(idx, "my_outer_struct", ua.Variant(ua.MyOuterStruct(), ua.VariantType.ExtensionObject))
+
+    new_value = ua.MyOuterStruct()
+    new_value.inner_struct_value.int_value = 42
+    await valnode.write_value(ua.Variant(new_value, ua.VariantType.ExtensionObject))
+
+    tmp_path = tmpdir.join("export-struct-in-struct-with-value.xml").strpath
+    await opc.opc.export_xml([outer_struct, inner_struct, valnode], tmp_path, export_values=True)
+    await opc.opc.delete_nodes([outer_struct, inner_struct, valnode])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    imported_outer_struct = opc.opc.get_node(new_nodes[0])
+    imported_inner_struct = opc.opc.get_node(new_nodes[1])
+    imported_valnode = opc.opc.get_node(new_nodes[2])
+    assert outer_struct == imported_outer_struct
+    assert inner_struct == imported_inner_struct
+    await opc.opc.load_data_type_definitions()
+
+    value = await valnode.read_value()
+    imported_value = await imported_valnode.read_value()
+    assert value == imported_value
+
+
 async def test_basetype_alias(opc):
     idx = 4
     # Alias double
