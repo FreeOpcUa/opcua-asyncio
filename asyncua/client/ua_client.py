@@ -7,6 +7,7 @@ import logging
 from typing import Awaitable, Callable, Dict, List, Optional, Union
 
 from asyncua import ua
+from asyncua.common.session_interface import AbstractSession
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, BadUserAccessDenied, UaStructParsingError
 from ..common.connection import SecureConnection, TransportLimits
@@ -242,7 +243,7 @@ class UASocketProtocol(asyncio.Protocol):
         # some servers send a response here, most do not ... so we ignore
 
 
-class UaClient:
+class UaClient(AbstractSession):
     """
     low level OPC-UA client.
 
@@ -524,6 +525,8 @@ class UaClient:
         )
         return response.Parameters
 
+    modify_subscription = update_subscription # legacy support
+
     async def delete_subscriptions(self, subscription_ids):
         self.logger.debug("delete_subscriptions %r", subscription_ids)
         request = ua.DeleteSubscriptionsRequest()
@@ -775,3 +778,8 @@ class UaClient:
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
+
+    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
+        # Subscriptions aren't bound to a Session and can be transfered!
+        # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
+        raise NotImplementedError

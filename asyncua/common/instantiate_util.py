@@ -41,18 +41,18 @@ async def instantiate(parent, node_type, nodeid: ua.NodeId=None, bname: Union[st
         bname = ua.QualifiedName.from_string(bname)
 
     nodeids = await _instantiate_node(
-        parent.server,
-        make_node(parent.server, rdesc.NodeId),
+        parent.session,
+        make_node(parent.session, rdesc.NodeId),
         parent.nodeid,
         rdesc,
         nodeid,
         bname,
         dname=dname,
         instantiate_optional=instantiate_optional)
-    return [make_node(parent.server, nid) for nid in nodeids]
+    return [make_node(parent.session, nid) for nid in nodeids]
 
 
-async def _instantiate_node(server,
+async def _instantiate_node(session,
                             node_type,
                             parentid,
                             rdesc,
@@ -90,18 +90,18 @@ async def _instantiate_node(server,
     if dname is not None:
         addnode.NodeAttributes.DisplayName = dname
 
-    res = (await server.add_nodes([addnode]))[0]
+    res = (await session.add_nodes([addnode]))[0]
     added_nodes = [res.AddedNodeId]
 
     if recursive:
         parents = await get_node_supertypes(node_type, includeitself=True)
-        node = make_node(server, res.AddedNodeId)
+        node = make_node(session, res.AddedNodeId)
         for parent in parents:
             descs = await parent.get_children_descriptions()
             for c_rdesc in descs:
                 # skip items that already exists, prefer the 'lowest' one in object hierarchy
                 if not await is_child_present(node, c_rdesc.BrowseName):
-                    c_node_type = make_node(server, c_rdesc.NodeId)
+                    c_node_type = make_node(session, c_rdesc.NodeId)
                     refs = await c_node_type.get_referenced_nodes(refs=ua.ObjectIds.HasModellingRule)
                     if not refs:
                         # spec says to ignore nodes without modelling rules
@@ -119,7 +119,7 @@ async def _instantiate_node(server,
                     if res.AddedNodeId.NodeIdType is ua.NodeIdType.String:
                         inst_nodeid = res.AddedNodeId.Identifier + "." + c_rdesc.BrowseName.Name
                         nodeids = await _instantiate_node(
-                            server,
+                            session,
                             c_node_type,
                             res.AddedNodeId,
                             c_rdesc,
@@ -129,7 +129,7 @@ async def _instantiate_node(server,
                         )
                     else:
                         nodeids = await _instantiate_node(
-                            server,
+                            session,
                             c_node_type,
                             res.AddedNodeId,
                             c_rdesc,

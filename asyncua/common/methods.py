@@ -40,14 +40,14 @@ async def call_method_full(parent, methodid, *args):
     elif hasattr(methodid, 'nodeid'):
         methodid = methodid.nodeid
 
-    result = await _call_method(parent.server, parent.nodeid, methodid, to_variant(*args))
+    result = await _call_method(parent.session, parent.nodeid, methodid, to_variant(*args))
     if result.OutputArguments is None:
         result.OutputArguments = []
     result.OutputArguments = [var.Value for var in result.OutputArguments]
     return result
 
 
-async def _call_method(server, parentnodeid, methodid, arguments):
+async def _call_method(session, parentnodeid, methodid, arguments):
     """
     :param server: `UaClient` or `InternalSession`
     :param parentnodeid:
@@ -60,7 +60,7 @@ async def _call_method(server, parentnodeid, methodid, arguments):
     request.MethodId = methodid
     request.InputArguments = arguments
     methodstocall = [request]
-    results = await server.call(methodstocall)
+    results = await session.call(methodstocall)
     res = results[0]
     res.StatusCode.check()
     return res
