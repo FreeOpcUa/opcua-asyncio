@@ -318,7 +318,9 @@ class StatusCode:
 
     def __post_init__(self):
         if isinstance(self.value, str):
-            object.__setattr__(self, "value", getattr(status_codes.StatusCodes, self.value))
+            object.__setattr__(self, "value", getattr(status_codes.StatusCodes, self.value).value)
+        elif isinstance(self.value, status_codes.StatusCodes):
+            object.__setattr__(self, "value", self.value.value)
 
     def check(self):
         """
