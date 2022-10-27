@@ -4,7 +4,7 @@ server side implementation of a subscription object
 
 import logging
 from asyncua import ua
-from typing import Dict
+from typing import Dict, Optional
 from .address_space import AddressSpace
 
 
@@ -22,18 +22,18 @@ class MonitoredItemData:
 
 class MonitoredItemValues:
     def __init__(self):
-        self.current_value = None
-        self.old_value = None
+        self.current_dvalue: Optional[ua.DataValue] = None
+        self.old_dvalue: Optional[ua.DataValue] = None
 
-    def set_current_value(self, cur_val):
-        self.old_value = self.current_value
-        self.current_value = cur_val
+    def set_current_datavalue(self, cur_val: ua.DataValue):
+        self.old_dvalue = self.current_dvalue
+        self.current_dvalue = cur_val
 
-    def get_current_value(self):
-        return self.current_value
+    def get_current_datavalue(self) -> ua.DataValue:
+        return self.current_dvalue
 
-    def get_old_value(self):
-        return self.old_value
+    def get_old_datavalue(self) -> ua.DataValue:
+        return self.old_dvalue
 
 
 class MonitoredItemService:
@@ -172,7 +172,26 @@ class MonitoredItemService:
         self._monitored_items.pop(mid)
         return ua.StatusCode()
 
-    async def datachange_callback(self, handle: int, value, error=None):
+    @staticmethod
+    def _is_data_changed(values: MonitoredItemValues, trg: ua.DataChangeTrigger) -> bool:
+        old = values.get_old_datavalue()
+        current = values.get_current_datavalue()
+
+        if old is None or old.StatusCode != current.StatusCode:
+            return True
+
+        if trg == ua.DataChangeTrigger.StatusValue and \
+                old.Value != current.Value:
+            return True
+
+        if trg == ua.DataChangeTrigger.StatusValueTimestamp and \
+                (old.SourceTimestamp != current.SourceTimestamp or
+                 old.SourcePicoseconds != current.SourcePicoseconds):
+            return True
+
+        return False
+
+    async def datachange_callback(self, handle: int, value: ua.DataValue, error=None):
         if error:
             self.logger.info("subscription %s: datachange callback called with handle '%s' and error '%s'", self,
                              handle, error)
@@ -183,21 +202,24 @@ class MonitoredItemService:
             event = ua.MonitoredItemNotification()
             mid = self._monitored_datachange[handle]
             mdata = self._monitored_items[mid]
-            mdata.mvalue.set_current_value(value.Value.Value)
+            mdata.mvalue.set_current_datavalue(value)
             if mdata.filter:
-                deadband_flag_pass = self.deadband_callback(mdata.mvalue, mdata.filter)
+                deadband_flag_pass = self._is_data_changed(mdata.mvalue, mdata.filter.Trigger) and \
+                                     self._is_deadband_exceeded(mdata.mvalue, mdata.filter)
             else:
-                deadband_flag_pass = True
+                # Trigger defaults to StatusValue
+                deadband_flag_pass = self._is_data_changed(mdata.mvalue, ua.DataChangeTrigger.StatusValue)
+
             if deadband_flag_pass:
                 event.ClientHandle = mdata.client_handle
                 event.Value = value
                 await self.isub.enqueue_datachange_event(mid, event, mdata.queue_size)
 
-    def deadband_callback(self, values, flt):
-        if flt.DeadbandType == ua.DeadbandType.None_ or values.get_old_value() is None:
+    def _is_deadband_exceeded(self, values: MonitoredItemValues, flt: ua.DataChangeFilter):
+        if flt.DeadbandType == ua.DeadbandType.None_ or values.get_old_datavalue() is None:
             return True
-        if flt.DeadbandType == ua.DeadbandType.Absolute and \
-                ((abs(values.get_current_value() - values.get_old_value())) > flt.DeadbandValue):
+        delta = values.get_current_datavalue().Value.Value - values.get_old_datavalue().Value.Value
+        if flt.DeadbandType == ua.DeadbandType.Absolute and ((abs(delta)) > flt.DeadbandValue):
             return True
         if flt.DeadbandType == ua.DeadbandType.Percent:
             self.logger.warning("DeadbandType Percent is not implemented !")
