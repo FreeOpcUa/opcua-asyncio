@@ -779,14 +779,9 @@ class AddressSpace:
             # Only check datatype if no bad StatusCode is set
             return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
 
-        old = attval.value
         attval.value = value
-        cbs = []
-        # only send call callback when a value or status code change has happened
-        if (old.Value != value.Value) or (old.StatusCode != value.StatusCode):
-            cbs = list(attval.datachange_callbacks.items())
 
-        for k, v in cbs:
+        for k, v in attval.datachange_callbacks.items():
             try:
                 await v(k, value)
             except Exception as ex:
