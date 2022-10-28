@@ -383,7 +383,7 @@ async def _lsprint_0(node, depth, indent=""):
             )
         )
         if depth:
-            await _lsprint_0(Node(node.server, desc.NodeId), depth - 1, indent + "  ")
+            await _lsprint_0(Node(node.session, desc.NodeId), depth - 1, indent + "  ")
 
 
 async def _lsprint_1(node, depth, indent=""):
@@ -394,7 +394,7 @@ async def _lsprint_1(node, depth, indent=""):
     for desc in await node.get_children_descriptions():
         if desc.NodeClass == ua.NodeClass.Variable:
             try:
-                val = await Node(node.server, desc.NodeId).read_value()
+                val = await Node(node.session, desc.NodeId).read_value()
             except UaStatusCodeError as err:
                 val = "Bad (0x{0:x})".format(err.code)
             print(
@@ -416,7 +416,7 @@ async def _lsprint_1(node, depth, indent=""):
                 )
             )
         if depth:
-            await _lsprint_1(Node(node.server, desc.NodeId), depth - 1, indent + "  ")
+            await _lsprint_1(Node(node.session, desc.NodeId), depth - 1, indent + "  ")
 
 
 async def _lsprint_long(pnode, depth, indent=""):

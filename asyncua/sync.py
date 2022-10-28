@@ -391,7 +391,7 @@ def new_node(sync_node, nodeid):
     """
     given a sync node, create a new SyncNode with the given nodeid
     """
-    return SyncNode(sync_node.tloop, node.Node(sync_node.aio_obj.server, nodeid))
+    return SyncNode(sync_node.tloop, node.Node(sync_node.aio_obj.session, nodeid))
 
 
 class SyncNode:
