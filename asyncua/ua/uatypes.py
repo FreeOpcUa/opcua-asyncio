@@ -329,12 +329,33 @@ class StatusCode:
 
     def is_good(self):
         """
-        return True if status is Good.
+        return True if status is Good (00).
         """
         mask = 3 << 30
-        if mask & self.value:
-            return False
-        return True
+        if mask & self.value == 0x00000000:
+            return True
+        return False
+
+    def is_bad(self):
+        """
+        https://reference.opcfoundation.org/v104/Core/docs/Part4/7.34.1/
+        11   Reserved for future use. All Clients should treat a StatusCode with this severity as “Bad”.
+
+        return True if status is Bad (10) or (11).
+        """
+        mask = 3 << 30
+        if mask & self.value in (0x80000000, 0xc0000000):
+            return True
+        return False
+
+    def is_uncertain(self):
+        """
+        return True if status is Uncertain (01).
+        """
+        mask = 3 << 30
+        if mask & self.value == 0x40000000:
+            return True
+        return False
 
     @property
     def name(self):
