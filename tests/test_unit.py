@@ -182,6 +182,30 @@ def test_nodeid_ordering():
     assert mylist == expected
 
 
+def test_status_code_severity():
+    good_statuscodes = (ua.StatusCodes.Good, ua.StatusCodes.GoodLocalOverride)
+    bad_statuscodes = (ua.StatusCodes.Bad, ua.StatusCodes.BadConditionDisabled)
+    uncertain_statuscodes = (ua.StatusCodes.Uncertain, ua.StatusCodes.UncertainSimulatedValue)
+
+    for good_statuscode in good_statuscodes:
+        statuscode = ua.StatusCode(good_statuscode)
+        assert statuscode.is_good()
+        assert not statuscode.is_bad()
+        assert not statuscode.is_uncertain()
+
+    for bad_statuscode in bad_statuscodes:
+        statuscode = ua.StatusCode(bad_statuscode)
+        assert not statuscode.is_good()
+        assert statuscode.is_bad()
+        assert not statuscode.is_uncertain()
+
+    for uncertain_statuscode in uncertain_statuscodes:
+        statuscode = ua.StatusCode(uncertain_statuscode)
+        assert not statuscode.is_good()
+        assert not statuscode.is_bad()
+        assert statuscode.is_uncertain()
+
+
 def test_string_to_variant_int():
     s_arr_uint = "[1, 2, 3, 4]"
     arr_uint = [1, 2, 3, 4]

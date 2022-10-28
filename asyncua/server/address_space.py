@@ -771,7 +771,7 @@ class AddressSpace:
         attval = node.attributes.get(attr, None)
         if attval is None:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
-        if value.StatusCode is not None and not value.StatusCode.is_good():
+        if value.StatusCode is not None and value.StatusCode.is_bad():
             # https://reference.opcfoundation.org/v104/Core/docs/Part4/7.7.1/
             # If the StatusCode indicates an error then the value is to be ignored and the Server shall set it to null.
             value = dataclasses.replace(value, Value=ua.Variant(ua.Null(), ua.VariantType.Null))
