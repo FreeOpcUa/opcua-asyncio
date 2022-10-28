@@ -356,7 +356,7 @@ async def _get_parent_types(node: Node):
         refs = await tmp_node.get_references(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
         if not refs or refs[0].NodeId.NamespaceIndex == 0 and refs[0].NodeId.Identifier == 22:
             return parents
-        tmp_node = Node(tmp_node.server, refs[0])
+        tmp_node = Node(tmp_node.session, refs[0])
         parents.append(tmp_node)
     logger.warning("Went 10 layers up while look of subtype of given node %s, something is wrong: %s", node, parents)
 
