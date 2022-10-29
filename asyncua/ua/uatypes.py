@@ -34,7 +34,8 @@ else:
 
 
 from asyncua.ua import status_codes
-from .uaerrors import UaError, UaStatusCodeError, UaStringParsingError
+# from asyncua.ua.status_codes import StatusCodes as StatusCode
+from asyncua.ua.uaerrors import UaError, UaStatusCodeError, UaStringParsingError
 
 
 logger = logging.getLogger(__name__)
@@ -314,39 +315,52 @@ class StatusCode:
     :vartype doc: string
     """
 
-    value: UInt32 = status_codes.StatusCodes.Good
+    value: UInt32 = status_codes.StatusCodes.default().value
+    # enum: status_codes.StatusCodes = field(default_factory=status_codes.StatusCodes.default, compare=False, init=False)
 
     def __post_init__(self):
-        if isinstance(self.value, str):
-            object.__setattr__(self, "value", getattr(status_codes.StatusCodes, self.value).value)
-        elif isinstance(self.value, status_codes.StatusCodes):
-            object.__setattr__(self, "value", self.value.value)
+        if isinstance(self.value, status_codes.StatusCodes):
+            object.__setattr__(self, "enum", self.value)
+            object.__setattr__(self, "value", self.enum.value)
+        elif isinstance(self.value, str):
+            object.__setattr__(self, "enum", getattr(status_codes.StatusCodes, self.value))
+            object.__setattr__(self, "value", self.enum.value)
+        elif isinstance(self.value, int):
+            object.__setattr__(self, "enum", status_codes.StatusCodes(self.value))
+        else:
+            raise ValueError("StatusCodes can be integers, strings or elements of asyncua.ua.status_codes.StatusCodes")
+
+    def __str__(self):
+        return f"StatusCode.{self.name}"
+
+    def __repr__(self):
+        return f"<StatusCode.{self.name}: {self.value}>"
+
+    @classmethod
+    def default(cls):
+        return cls()
 
     def check(self):
         """
         Raises an exception if the status code is anything else than 0 (good).
         """
-        if not self.is_good():
-            raise UaStatusCodeError(self.value)
+        self.enum.check()
 
     def is_good(self):
         """
         return True if status is Good.
         """
-        mask = 3 << 30
-        if mask & self.value:
-            return False
-        return True
+        return self.enum.is_good()
 
     @property
     def name(self):
-        name, _ = status_codes.get_name_and_doc(self.value)
-        return name
+        return self.enum.name
 
     @property
     def doc(self):
-        _, doc = status_codes.get_name_and_doc(self.value)
-        return doc
+        if self.enum.value == self.value:
+            return self.enum.doc
+        return f'Unknown StatusCode value: {self.value}'
 
 
 class NodeIdType(IntEnum):

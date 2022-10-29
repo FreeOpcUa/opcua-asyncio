@@ -72,7 +72,8 @@ class UaStatusCodeError(_AutoRegister("Meta", (UaError,), {})):
         # import here to avoid circular import problems
         import asyncua.ua.status_codes as status_codes
 
-        return "{1}({0})".format(*status_codes.get_name_and_doc(self.code))
+        status = status_codes.StatusCodes(self.code)
+        return f"{status.name}({status.doc})"
 
     @property
     def code(self):
