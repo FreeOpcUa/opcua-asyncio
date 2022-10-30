@@ -168,7 +168,7 @@ class StructGenerator(object):
                             # Optional Field
                             field.is_optional = True
                             struct.option_counter += 1
-                        field.value = get_default_value(field.uatype, enums)
+                        field.value = get_default_value(field.uatype, enums, hack=True)
                         if array:
                             field.array = True
                             field.value = "field(default_factory=list)"

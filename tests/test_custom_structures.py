@@ -392,7 +392,6 @@ async def test_functional_advance(srv):
     await srv.srv.delete_nodes([basic_var, nested_var])
 
 
-@pytest.mark.skip("broken with python3.11. needs reordering of classes when importing")
 async def test_optionsets(srv):
     # We use a bsd file from a server dict, because we only provide optionsets for backwards compatibility
     xmlpath = "tests/custom_extension_with_optional_fields.xml"

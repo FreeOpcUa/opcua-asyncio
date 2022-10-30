@@ -132,7 +132,7 @@ def clean_name(name):
     return newname
 
 
-def get_default_value(uatype, enums=None):
+def get_default_value(uatype, enums=None, hack=False):
     if hasattr(ua, uatype):
         # That type is know, make sure this is not a subtype
         dtype = getattr(ua, uatype)
@@ -157,6 +157,10 @@ def get_default_value(uatype, enums=None):
         # We have an enum, try to initilize it correctly
         val = list(getattr(ua, uatype).__members__)[0]
         return f"ua.{uatype}.{val}"
+    if hack:
+        # FIXME: This is horrible but necssary for old struc support until
+        # someone fixes dependencies og we deprecated it
+        return f"field(default_factory=lambda :ua.{uatype}())"
     return f"field(default_factory=ua.{uatype})"
 
 
