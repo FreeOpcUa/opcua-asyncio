@@ -337,8 +337,7 @@ class CodeGenerator:
         if obj.desc:
             self.writecode(indent, u'    Description=LocalizedText("{0}"),'.format(obj.desc))
         self.writecode(indent, '    DisplayName=LocalizedText("{0}"),'.format(obj.displayname))
-        if obj.abstract:
-            self.writecode(indent, f'    IsAbstract={obj.abstract},')
+        self.writecode(indent, f'    IsAbstract={obj.abstract},')
         self.writecode(indent, '    )')
         self.make_node_code(obj, indent)
         self.make_refs_code(obj, indent)
