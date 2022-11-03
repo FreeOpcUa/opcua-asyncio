@@ -5907,7 +5907,7 @@ class ReferenceDescription:
         self.NodeClass_ = val
 
     def __hash__(self):
-        return hash((self.ReferenceTypeId, self.NodeId, self.IsForward))
+        return hash((self.ReferenceTypeId.__hash__(), self.NodeId.__hash__(), self.IsForward))
 
 @dataclass(frozen=FROZEN)
 class BrowseResult:
