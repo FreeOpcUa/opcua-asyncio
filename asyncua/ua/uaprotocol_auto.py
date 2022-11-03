@@ -5888,15 +5888,17 @@ class ReferenceDescription:
     :vartype TypeDefinition: ExpandedNodeId
     """
 
-    data_type = NodeId(ObjectIds.ReferenceDescription)
+    data_type : NodeId = field(default=NodeId(ObjectIds.ReferenceDescription), compare=False)
 
     ReferenceTypeId: NodeId = field(default_factory=NodeId)
-    IsForward: Boolean = True
+    IsForward: Boolean = field(default=True)
     NodeId: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-    BrowseName: QualifiedName = field(default_factory=QualifiedName)
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    NodeClass_: NodeClass = NodeClass.Unspecified
-    TypeDefinition: ExpandedNodeId = field(default_factory=ExpandedNodeId)
+
+    BrowseName: QualifiedName = field(default_factory=QualifiedName, compare=False)
+    DisplayName: LocalizedText = field(default_factory=LocalizedText, compare=False)
+    NodeClass_: NodeClass = field(default=NodeClass.Unspecified, compare=False)
+    TypeDefinition: ExpandedNodeId = field(default_factory=ExpandedNodeId, compare=False)
+
 
     @property
     def NodeClass(self):
