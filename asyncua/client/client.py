@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List, Union, Coroutine, Optional
+from typing import List, Union, Coroutine, Optional, Type
 from urllib.parse import urlparse, unquote
 
 from asyncua import ua
@@ -158,7 +158,7 @@ class Client:
 
     async def set_security(
         self,
-        policy: ua.SecurityPolicy,
+        policy: Type[ua.SecurityPolicy],
         certificate: Union[str, uacrypto.CertProperties],
         private_key: Union[str, uacrypto.CertProperties],
         private_key_password: Optional[Union[str, bytes]] = None,
@@ -188,7 +188,7 @@ class Client:
 
     async def _set_security(
         self,
-        policy: ua.SecurityPolicy,
+        policy: Type[ua.SecurityPolicy],
         certificate: uacrypto.CertProperties,
         private_key: uacrypto.CertProperties,
         server_cert: uacrypto.CertProperties,
