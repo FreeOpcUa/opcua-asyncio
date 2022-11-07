@@ -1,0 +1,62 @@
+import logging
+import asyncio
+
+from asyncua import Client, ua, Node
+
+
+_logger = logging.getLogger("asyncua")
+url = "opc.tcp://localhost:4840/freeopcua/server/"
+namespace = "http://examples.freeopcua.github.io"
+
+
+class SubHandler:
+    """
+    Subscription Handler. To receive events from server for a subscription
+    This class is just a sample class. Whatever class having these methods can be used
+    """
+
+    def datachange_notification(self, node: Node, val, data):
+        """
+        called for every datachange notification from server
+        """
+        _logger.info("datachange_notification %r %s", node, val)
+        pass
+
+    def event_notification(self, event: ua.EventNotificationList):
+        """
+        called for every event notification from server
+        """
+        pass
+
+    def status_change_notification(self, status: ua.StatusChangeNotification):
+        """
+        called for every status change notification from server
+        """
+        pass
+
+
+async def main():
+    handler = SubHandler()
+
+    while True:
+        client = Client(url="opc.tcp://localhost:4840/freeopcua/server/")
+        client = Client(url="opc.tcp://localhost:53530/OPCUA/SimulationServer/")
+        try:
+            async with client:
+                _logger.warning("Connected")
+                ...
+                subscription = await client.create_subscription(500, handler)
+                node = (client.get_node(ua.ObjectIds.Server_ServerStatus_CurrentTime),)
+                await subscription.subscribe_data_change(node)
+                while 1:
+                    await asyncio.sleep(1)
+                    await client.check_connection()  # Throws a exception if connection is lost
+        except (ConnectionError, ua.UaError):
+            _logger.warning("Reconnecting in 2 seconds")
+            await asyncio.sleep(2)
+
+
+if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(main())
