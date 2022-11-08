@@ -159,10 +159,10 @@ class Client:
     async def set_security(
         self,
         policy: Type[ua.SecurityPolicy],
-        certificate: Union[str, uacrypto.CertProperties],
-        private_key: Union[str, uacrypto.CertProperties],
+        certificate: Union[str, uacrypto.CertProperties, bytes],
+        private_key: Union[str, uacrypto.CertProperties, bytes],
         private_key_password: Optional[Union[str, bytes]] = None,
-        server_certificate: Optional[Union[str, uacrypto.CertProperties]] = None,
+        server_certificate: Optional[Union[str, uacrypto.CertProperties, bytes]] = None,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
     ):
         """
@@ -196,10 +196,10 @@ class Client:
     ):
 
         if isinstance(server_cert, uacrypto.CertProperties):
-            server_cert = await uacrypto.load_certificate(server_cert.path, server_cert.extension)
-        cert = await uacrypto.load_certificate(certificate.path, certificate.extension)
+            server_cert = await uacrypto.load_certificate(server_cert.path_or_content, server_cert.extension)
+        cert = await uacrypto.load_certificate(certificate.path_or_content, certificate.extension)
         pk = await uacrypto.load_private_key(
-            private_key.path,
+            private_key.path_or_content,
             private_key.password,
             private_key.extension,
         )
