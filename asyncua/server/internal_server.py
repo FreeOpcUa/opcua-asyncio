@@ -306,7 +306,7 @@ class InternalServer:
         """
         directly read datavalue of the Attribute
         """
-        return self.aspace.read_attribute_value(nodeid, attr)  
+        return self.aspace.read_attribute_value(nodeid, attr)
 
     def set_user_manager(self, user_manager):
         """

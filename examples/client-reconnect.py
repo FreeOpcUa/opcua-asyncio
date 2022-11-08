@@ -5,8 +5,6 @@ from asyncua import Client, ua, Node
 
 
 _logger = logging.getLogger("asyncua")
-url = "opc.tcp://localhost:4840/freeopcua/server/"
-namespace = "http://examples.freeopcua.github.io"
 
 
 class SubHandler:
@@ -20,7 +18,6 @@ class SubHandler:
         called for every datachange notification from server
         """
         _logger.info("datachange_notification %r %s", node, val)
-        pass
 
     def event_notification(self, event: ua.EventNotificationList):
         """
@@ -32,7 +29,7 @@ class SubHandler:
         """
         called for every status change notification from server
         """
-        pass
+        _logger.info("status_notification %s", status)
 
 
 async def main():
@@ -40,15 +37,14 @@ async def main():
 
     while True:
         client = Client(url="opc.tcp://localhost:4840/freeopcua/server/")
-        client = Client(url="opc.tcp://localhost:53530/OPCUA/SimulationServer/")
+        # client = Client(url="opc.tcp://localhost:53530/OPCUA/SimulationServer/")
         try:
             async with client:
                 _logger.warning("Connected")
-                ...
                 subscription = await client.create_subscription(500, handler)
                 node = (client.get_node(ua.ObjectIds.Server_ServerStatus_CurrentTime),)
                 await subscription.subscribe_data_change(node)
-                while 1:
+                while True:
                     await asyncio.sleep(1)
                     await client.check_connection()  # Throws a exception if connection is lost
         except (ConnectionError, ua.UaError):
