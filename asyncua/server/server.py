@@ -7,7 +7,7 @@ import logging
 import math
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
-from typing import Coroutine, Optional, Tuple
+from typing import Coroutine, Optional, Tuple, Union
 
 from asyncua import ua
 from .binary_server_asyncio import BinaryServer
@@ -206,14 +206,14 @@ class Server:
         return f"OPC UA Server({self.endpoint.geturl()})"
     __repr__ = __str__
 
-    async def load_certificate(self, path: str, format: str = None):
+    async def load_certificate(self, path_or_content: Union[str, bytes], format: str = None):
         """
         load server certificate from file, either pem or der
         """
-        self.certificate = await uacrypto.load_certificate(path, format)
+        self.certificate = await uacrypto.load_certificate(path_or_content, format)
 
-    async def load_private_key(self, path, password=None, format=None):
-        self.iserver.private_key = await uacrypto.load_private_key(path, password, format)
+    async def load_private_key(self, path_or_content: Union[str, bytes], password=None, format=None):
+        self.iserver.private_key = await uacrypto.load_private_key(path_or_content, password, format)
 
     def disable_clock(self, val: bool = True):
         """
