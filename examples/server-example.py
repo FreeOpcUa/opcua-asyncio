@@ -23,7 +23,6 @@ class SubHandler(object):
 
 
 # method to be exposed through server
-
 def func(parent, variant):
     ret = False
     if variant.Value % 2 == 0:
@@ -33,7 +32,6 @@ def func(parent, variant):
 
 # method to be exposed through server
 # uses a decorator to automatically convert to and from variants
-
 @uamethod
 def multiply(parent, x, y):
     print("multiply method call with parameters: ", x, y)
@@ -42,27 +40,30 @@ def multiply(parent, x, y):
 
 async def main():
     # optional: setup logging
-    #logger = logging.getLogger("asyncua.address_space")
+    # logger = logging.getLogger("asyncua.address_space")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("asyncua.internal_server")
+    # logger = logging.getLogger("asyncua.internal_server")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("asyncua.binary_server_asyncio")
+    # logger = logging.getLogger("asyncua.binary_server_asyncio")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("asyncua.uaprocessor")
+    # logger = logging.getLogger("asyncua.uaprocessor")
     # logger.setLevel(logging.DEBUG)
 
     # now setup our server
     server = Server()
     await server.init()
-    server.disable_clock()  #for debuging
-    #server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
+    # server.disable_clock()  #for debuging
+    # server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
     server.set_server_name("FreeOpcUa Example Server")
     # set all possible endpoint policies for clients to connect through
-    server.set_security_policy([
-                ua.SecurityPolicyType.NoSecurity,
-                ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
-                ua.SecurityPolicyType.Basic256Sha256_Sign])
+    server.set_security_policy(
+        [
+            ua.SecurityPolicyType.NoSecurity,
+            ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
+            ua.SecurityPolicyType.Basic256Sha256_Sign,
+        ]
+    )
 
     # setup our own namespace
     uri = "http://examples.freeopcua.github.io"
@@ -82,22 +83,32 @@ async def main():
     myfolder = await server.nodes.objects.add_folder(idx, "myEmptyFolder")
     # instanciate one instance of our device
     mydevice = await server.nodes.objects.add_object(idx, "Device0001", dev)
-    mydevice_var = await mydevice.get_child([f"{idx}:controller", f"{idx}:state"])  # get proxy to our device state variable
+    mydevice_var = await mydevice.get_child(
+        [f"{idx}:controller", f"{idx}:state"]
+    )  # get proxy to our device state variable
     # create directly some objects and variables
     myobj = await server.nodes.objects.add_object(idx, "MyObject")
     myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
-    await myvar.set_writable()    # Set MyVariable to be writable by clients
+    await myvar.set_writable()  # Set MyVariable to be writable by clients
     mystringvar = await myobj.add_variable(idx, "MyStringVariable", "Really nice string")
-    await mystringvar.set_writable()    # Set MyVariable to be writable by clients
+    await mystringvar.set_writable()  # Set MyVariable to be writable by clients
     mydtvar = await myobj.add_variable(idx, "MyDateTimeVar", datetime.utcnow())
-    await mydtvar.set_writable()    # Set MyVariable to be writable by clients
+    await mydtvar.set_writable()  # Set MyVariable to be writable by clients
     myarrayvar = await myobj.add_variable(idx, "myarrayvar", [6.7, 7.9])
     myuintvar = await myobj.add_variable(idx, "myuintvar", ua.UInt16(4))
     await myobj.add_variable(idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32))
     await myarrayvar.set_writable(True)
     myprop = await myobj.add_property(idx, "myproperty", "I am a property")
-    mymethod = await myobj.add_method(idx, "mymethod", func, [ua.VariantType.Int64], [ua.VariantType.Boolean])
-    multiply_node = await myobj.add_method(idx, "multiply", multiply, [ua.VariantType.Int64, ua.VariantType.Int64], [ua.VariantType.Int64])
+    mymethod = await myobj.add_method(
+        idx, "mymethod", func, [ua.VariantType.Int64], [ua.VariantType.Boolean]
+    )
+    multiply_node = await myobj.add_method(
+        idx,
+        "multiply",
+        multiply,
+        [ua.VariantType.Int64, ua.VariantType.Int64],
+        [ua.VariantType.Int64],
+    )
 
     # import some nodes from xml
     await server.import_xml("custom_nodes.xml")
@@ -112,17 +123,21 @@ async def main():
     async with server:
         print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
         # enable following if you want to subscribe to nodes on server side
-        #handler = SubHandler()
-        #sub = await server.create_subscription(500, handler)
-        #handle = await sub.subscribe_data_change(myvar)
+        # handler = SubHandler()
+        # sub = await server.create_subscription(500, handler)
+        # handle = await sub.subscribe_data_change(myvar)
         # trigger event, all subscribed clients wil receive it
         var = await myarrayvar.read_value()  # return a ref to value in db server side! not a copy!
-        var = copy.copy(var)  # WARNING: we need to copy before writting again otherwise no data change event will be generated
+        var = copy.copy(
+            var
+        )  # WARNING: we need to copy before writting again otherwise no data change event will be generated
         var.append(9.3)
         await myarrayvar.write_value(var)
         await mydevice_var.write_value("Running")
         await myevgen.trigger(message="This is BaseEvent")
-        await server.write_attribute_value(myvar.nodeid, ua.DataValue(0.9))  # Server side write method which is a bit faster than using write_value
+        await server.write_attribute_value(
+            myvar.nodeid, ua.DataValue(0.9)
+        )  # Server side write method which is a bit faster than using write_value
         while True:
             await asyncio.sleep(0.1)
             await server.write_attribute_value(myvar.nodeid, ua.DataValue(sin(time.time())))
