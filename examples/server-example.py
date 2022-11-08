@@ -9,6 +9,9 @@ from math import sin
 from asyncua import ua, uamethod, Server
 
 
+_logger = logging.getLogger(__name__)
+
+
 class SubHandler(object):
 
     """
@@ -16,10 +19,10 @@ class SubHandler(object):
     """
 
     def datachange_notification(self, node, val, data):
-        print("Python: New data change event", node, val)
+        _logger.warn("Python: New data change event %s %s", node, val)
 
     def event_notification(self, event):
-        print("Python: New event", event)
+        _logger.warn("Python: New event %s", event)
 
 
 # method to be exposed through server
@@ -34,22 +37,12 @@ def func(parent, variant):
 # uses a decorator to automatically convert to and from variants
 @uamethod
 def multiply(parent, x, y):
-    print("multiply method call with parameters: ", x, y)
+    _logger.warn("multiply method call with parameters: %s %s", x, y)
     return x * y
 
 
 async def main():
-    # optional: setup logging
-    # logger = logging.getLogger("asyncua.address_space")
-    # logger.setLevel(logging.DEBUG)
-    # logger = logging.getLogger("asyncua.internal_server")
-    # logger.setLevel(logging.DEBUG)
-    # logger = logging.getLogger("asyncua.binary_server_asyncio")
-    # logger.setLevel(logging.DEBUG)
-    # logger = logging.getLogger("asyncua.uaprocessor")
-    # logger.setLevel(logging.DEBUG)
 
-    # now setup our server
     server = Server()
     await server.init()
     # server.disable_clock()  #for debuging
@@ -135,9 +128,10 @@ async def main():
         await myarrayvar.write_value(var)
         await mydevice_var.write_value("Running")
         await myevgen.trigger(message="This is BaseEvent")
-        await server.write_attribute_value(
-            myvar.nodeid, ua.DataValue(0.9)
-        )  # Server side write method which is a bit faster than using write_value
+        # write_attribute_value is a server side method which is faster than using write_value
+        # but than methods has less checks
+        await server.write_attribute_value(myvar.nodeid, ua.DataValue(0.9))
+
         while True:
             await asyncio.sleep(0.1)
             await server.write_attribute_value(myvar.nodeid, ua.DataValue(sin(time.time())))
@@ -145,4 +139,14 @@ async def main():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+    # optional: setup logging
+    # logger = logging.getLogger("asyncua.address_space")
+    # logger.setLevel(logging.DEBUG)
+    # logger = logging.getLogger("asyncua.internal_server")
+    # logger.setLevel(logging.DEBUG)
+    # logger = logging.getLogger("asyncua.binary_server_asyncio")
+    # logger.setLevel(logging.DEBUG)
+    # logger = logging.getLogger("asyncua.uaprocessor")
+    # logger.setLevel(logging.DEBUG)
+
     asyncio.run(main())

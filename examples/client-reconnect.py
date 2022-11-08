@@ -4,7 +4,7 @@ import asyncio
 from asyncua import Client, ua, Node
 
 
-_logger = logging.getLogger("asyncua")
+_logger = logging.getLogger(__name__)
 
 
 class SubHandler:

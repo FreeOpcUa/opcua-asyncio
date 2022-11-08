@@ -11,7 +11,7 @@ def func(parent, value):
 
 
 async def main():
-    _logger = logging.getLogger("asyncua")
+    _logger = logging.getLogger(__name__)
     # setup our server
     server = Server()
     await server.init()
