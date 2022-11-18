@@ -42,10 +42,10 @@ class UaFile:
 
     async def write(self, data: bytes):
         """ writes file contents """
-        read_node = await self._file_node.get_child("Write")
+        write_node = await self._file_node.get_child("Write")
         arg1 = ua.Variant(self._handle, ua.VariantType.UInt32)
         arg2 = ua.Variant(data, ua.VariantType.ByteString)
-        return await self._file_node.call_method(read_node, arg1, arg2)
+        return await self._file_node.call_method(write_node, arg1, arg2)
 
     async def get_size(self):
         """ gets size of file """
