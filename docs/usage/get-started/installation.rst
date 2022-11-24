@@ -42,7 +42,7 @@ Alongside the package some utility command line tools are installed:
     Call method of a node
 
 :code:`uaclient`:
-    Connect to server and start python shell. root and objects nodes are available. Node specificed in command line is available as mynode variable.
+    Connect to server and start python shell. root and objects nodes are available. Node specified in command line is available as mynode variable.
 
 :code:`uadiscover`:
     Performs OPC UA discovery and prints information on servers and endpoints.
