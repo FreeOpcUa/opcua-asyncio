@@ -9,11 +9,11 @@ The NodeId Class
 and are therefore used on the server and client side to access specific nodes. The two classes 
 :class:`~asyncua.ua.uatypes.NodeId` and :class:`~asyncua.common.node.Node` should not
 be confused: The NodeId is the unique identiefier of an actual Node. While the NodeId is used to identify
-a specific node, the Node object can be used to access the underlaying data.
+a specific node, the Node object can be used to access the underlying data.
 To learn more about the Node class, head over to :ref:`usage/common/node-nodeid:the node class`.
 
 
-A NodeId contains two main informations which allow a unique mapping in the opc-ua address space:
+A NodeId contains two main pieces of information that allow a unique mapping in the opc-ua address space:
 The :attr:`~asyncua.ua.uatypes.NodeId.Identifier` and the :attr:`~asyncua.ua.uatypes.NodeId.NamespaceIndex`.
 In addition there is the :attr:`~asyncua.ua.uatypes.NodeId.NodeIdType` attribute which is used
 to specify which opc-ua type is used for the Identifier. In addition to the :class:`~asyncua.ua.uatypes.NodeId`
@@ -67,8 +67,13 @@ What else?
 
 The :class:`~asyncua.ua.uatypes.NodeId` class is actually just a normal UA data-type like
 other objects as :class:`~asyncua.ua.uatypes.QualifiedName` or :class:`~asyncua.ua.uatypes.Variant`
-are. The asyncua package models all datatypes as :mod:`dataclasses`, for some types, like
-the NodeId some additional logic is implemented to make it easier to work with them.
+are, with some additional logic to make it easier to work with.
+
+..
+   The asyncua package models all datatypes as :mod:`dataclasses`.
+
+   The info about dataclasses is an internal detail of a package implementation,
+   that may change in future. Maybe users should not know about it to avoid dependency on it.
 
 
 The Node Class
@@ -76,9 +81,9 @@ The Node Class
 
 The :class:`~asyncua.common.node.Node` class is a central part used on the server and client.
 On the server side nodes are created and configured as well as read and written. On the client
-side we can browser through the nodes and access and manipulate their values. Nodes should not
-be confused with :class:`~asyncua.ua.uatypes.NodeId`: Each node has a NodeId an can be access
-by it, so the NodeId is a unique identiefier within the server to reference a Node.
+side we can browse through the nodes, access and manipulate their values. Nodes should not
+be confused with :class:`~asyncua.ua.uatypes.NodeId`: Each node has a NodeId an can be accessed
+through it. NodeId uniquely identifies the Node within the server.
 
 The Node class exposes a wide range of the OPC-UA protocol for easy access, however, to fully
 optimize your code you will need to use lower level functions. Beside that, for many usecases
@@ -116,7 +121,7 @@ The node now can be used to read / write / ... data from the server:
     >>> await node.write_value(5.0)  # Must use 5.0, see note below
     >>> value = (await node.read_value())
     >>> print(f"{name} = {value}")
-    MyVariable = 5.1
+    MyVariable = 5.0
 
 Writing values using :meth:`~asyncua.common.node.Node.write_value` can be tricky in some cases
 as the method converts the python type to a OPC-UA datatype. In the example above we explicitly
