@@ -22,7 +22,6 @@ the server. The following session gives you an idea how the tools can be used.
 
     $ uals --url=opc.tcp://127.0.0.1:4840  # List root node
     Browsing node i=84 at opc.tcp://127.0.0.1:4840
-
     DisplayName                                NodeId   BrowseName    Value
 
     LocalizedText(Locale=None, Text='Objects') i=85     0:Objects
@@ -51,6 +50,7 @@ So let's start working through the code!
 
 Imports, Basic Setup & Configuration
 ====================================
+
 In the first few lines the relevant packages, classes and methods are imported. 
 While the :mod:`logging` module is optional (just remove all calls to the logging module),
 :mod:`asyncio` is required to actually run our main function. From the :mod:`asyncua`
@@ -70,8 +70,8 @@ Ignore the :code:`@uamethod ...` part for the moment and jump straight into the
 Here the server is created and initialized (:meth:`~asyncua.server.server.Server.init`).
 The endpoint is configured (:meth:`~asyncua.server.server.Server.set_endpoint`) and a custom namespace
 is registered (:meth:`~asyncua.server.server.Server.register_namespace`). It's recommended (:emphasis:`required??`)
-that all custom objects, variables and methods life in a separate namespace. As we later need the
-namespace index to our objects to it, the index is stored as :code:`idx`.
+that all custom objects, variables and methods live in a separate namespace. We store its index as :code:`idx`.
+We'll need it later to add our custom objects to the namespace.
 
 Creating Objects and Variables
 ==============================
@@ -82,7 +82,7 @@ Creating Objects and Variables
 
 In the next lines, the custom object "MyObject" is created and a variable is added to this object.
 Note that by default all variables are read-only, so we need to be explicit and make it writable.
-The :meth:`~asyncua.common.node.Node.add_object` / :meth:`~asyncua.common.node.Node.add_object` calls
+The :meth:`~asyncua.common.node.Node.add_object` / :meth:`~asyncua.common.node.Node.add_variable` calls
 are actually just calling :meth:`~asyncua.common.manage_nodes.create_object`, respectively 
 :meth:`~asyncua.common.manage_nodes.create_variable` internally. You can find more information on
 how nodes and variables are created in the API docs of these methods.
@@ -116,7 +116,7 @@ Starting the Server
 
 Using the server as a context manager with :code:`async with server: ...` allows us to 
 hide starting and shutting down the server nicely. In order to keep the server alive
-a endless loop must be present. In the this example the loop is also used to periodically
-update the variable on our custom object.
+a endless loop must be present. In this example the loop is also used to periodically
+update the variable in our custom object.
 
 Now that we have a working server, let's go on and write :ref:`usage/get-started/minimal-client:a minimal opc-ua client`!
