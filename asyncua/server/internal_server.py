@@ -110,7 +110,7 @@ class InternalServer:
             attr.Value = ua.DataValue(
                 ua.Variant(10000, ua.VariantType.UInt32),
                 StatusCode_=ua.StatusCode(ua.StatusCodes.Good),
-                ServerTimestamp=datetime.utcnow(),
+                SourceTimestamp=datetime.utcnow(),
             )
             params.NodesToWrite.append(attr)
         result = await self.isession.write(params)
