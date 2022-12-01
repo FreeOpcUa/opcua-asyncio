@@ -100,8 +100,12 @@ class AttributeService:
                 ):
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
+            if writevalue.AttributeId == ua.AttributeIds.Value and self._aspace.force_server_timestamp:
+                dv = dataclasses.replace(writevalue.Value, ServerTimestamp=datetime.utcnow(), ServerPicoseconds=None)
+            else:
+                dv = writevalue.Value
             res.append(
-                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value)
+                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, dv)
             )
         return res
 
@@ -506,6 +510,7 @@ class NodeManagementService:
             dv = ua.DataValue(
                 ua.Variant(getattr(attributes, name), vtype, is_array=is_array),
                 SourceTimestamp=datetime.utcnow() if add_timestamps else None,
+                ServerTimestamp=datetime.utcnow() if add_timestamps and self._aspace.force_server_timestamp else None,
             )
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
 
@@ -605,6 +610,7 @@ class AddressSpace:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.force_server_timestamp: bool = True
         self._nodes: Dict[ua.NodeId, NodeData] = {}
         self._datachange_callback_counter = 200
         self._handle_to_attribute_map: Dict[int, Tuple[ua.NodeId, ua.AttributeIds]] = {}

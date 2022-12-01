@@ -139,6 +139,12 @@ class Server:
         """
         self.iserver.match_discovery_source_ip = match_discovery_client_ip
 
+    def set_force_server_timestamp(self, force_server_timestamp: bool):
+        """
+        Enables or disables automatically setting ServerTimestamp on Value attributes
+        """
+        self.iserver.aspace.force_server_timestamp = force_server_timestamp
+
     async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
                              build_number, build_date):
 
