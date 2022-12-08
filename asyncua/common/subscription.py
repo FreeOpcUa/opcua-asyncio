@@ -169,6 +169,9 @@ class Subscription:
                 self.logger.error("Event subscription created but handler has no event_notification method")
 
     async def _call_status(self, status: ua.StatusChangeNotification):
+        if not hasattr(self._handler, "status_change_notification"):
+            self.logger.error("DataChange subscription has no status_change_notification method")
+            return
         try:
             if asyncio.iscoroutinefunction(self._handler.status_change_notification):
                 await self._handler.status_change_notification(status.Status)
@@ -254,7 +257,7 @@ class Subscription:
         A handle (integer value) is returned which can be used to modify/cancel the subscription.
 
         :param sourcenode: Node
-        :param evtypes: ua.ObjectIds or ua.NodeId 
+        :param evtypes: ua.ObjectIds or ua.NodeId
         :param evfilter: ua.EventFilter which provides the SelectClauses and WhereClause
         :param queuesize: 0 for default queue size, 1 for minimum queue size, n for FIFO queue,
         MaxUInt32 for max queue size
@@ -393,7 +396,7 @@ class Subscription:
         for handle in handles:
             if handle in handle_map:
                 del self._monitored_items[handle_map[handle]]
- 
+
     async def modify_monitored_item(self, handle: int, new_samp_time: ua.Duration, new_queuesize: int = 0, mod_filter_val: int = -1):
         """
         Modify a monitored item.
