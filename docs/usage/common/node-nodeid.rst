@@ -8,7 +8,7 @@ The NodeId Class
 :class:`asyncua.ua.uatypes.NodeId` objects are used as unique ids for :class:`~asyncua.common.node.Node`'s
 and are therefore used on the server and client side to access specific nodes. The two classes 
 :class:`~asyncua.ua.uatypes.NodeId` and :class:`~asyncua.common.node.Node` should not
-be confused: The NodeId is the unique identiefier of an actual Node. While the NodeId is used to identify
+be confused: The NodeId is the unique identifier of an actual Node. While the NodeId is used to identify
 a specific node, the Node object can be used to access the underlying data.
 To learn more about the Node class, head over to :ref:`usage/common/node-nodeid:the node class`.
 
@@ -19,14 +19,14 @@ In addition there is the :attr:`~asyncua.ua.uatypes.NodeId.NodeIdType` attribute
 to specify which opc-ua type is used for the Identifier. In addition to the :class:`~asyncua.ua.uatypes.NodeId`
 class, there is also the a :class:`~asyncua.ua.uatypes.ExpandedNodeId` which adds the 
 :attr:`~asyncua.ua.uatypes.ExpandedNodeId.NamespaceUri` and :attr:`~asyncua.ua.uatypes.ExpandedNodeId.ServerIndex`
-attributes to make the ID unique accross different servers and namespaces.
+attributes to make the ID unique across different servers and namespaces.
 
 
 Creating NodeId's
 -----------------
 
-As allready mentioned above, the NodeId class supports different types for the Identifier.
-The type is handled automatically on class instanciation and there is usually no need
+As already mentioned above, the NodeId class supports different types for the Identifier.
+The type is handled automatically on class instantiation and there is usually no need
 to set the type manually. Creating new NodeIds usually looks like this:
 
 .. code-block:: python
@@ -158,8 +158,8 @@ to access a child several levels deeper than the current node:
     >>> await c.nodes.objects.get_child(['2:MyObject', '2:MyVariable'])
     Node(NodeId(Identifier=2, NamespaceIndex=2, NodeIdType=<NodeIdType.FourByte: 1>))
 
-Here we start at the objects node an traverse via MyObject to MyVariable. Allways keep in
+Here we start at the objects node an traverse via MyObject to MyVariable. Always keep in
 mind that browsing through the nodes will create network traffic and server load. If
-you allready know the NodeId using :meth:`~asyncua.client.client.Client.get_node` should
-be prefered. You might also consider caching NodeIds which you found through browsing
+you already know the NodeId using :meth:`~asyncua.client.client.Client.get_node` should
+be preferred. You might also consider caching NodeIds which you found through browsing
 to reduce the traffic. 

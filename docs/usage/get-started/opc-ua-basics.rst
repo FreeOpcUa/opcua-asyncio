@@ -23,7 +23,7 @@ External References
 https://reference.opcfoundation.org
     Luckily the complete documentation about OPC-UA is available for free. As this is
     the official reference documentation, you will find links to this page in the
-    source code of this package and also in this documentation where necesary.
+    source code of this package and also in this documentation where necessary.
 
 https://www.open62541.org
     Open Source (MPL v2.0) OPC UA stack implemented in C. If you need a library which
