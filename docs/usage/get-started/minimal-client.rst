@@ -38,7 +38,7 @@ of the variable. The :meth:`~asyncua.common.node.Node.get_child` method of the r
 
 .. note:: Using :meth:`~asyncua.common.node.Node.get_child` will perform a server request
     in the background to resolve the path to a node. Extensive usage of this method can
-    create a lot of network traffic which is not strictly required if the node id is knwon.
+    create a lot of network traffic which is not strictly required if the node id is known.
     If you know the node id it's better to use the :meth:`~asyncua.client.client.Client.get_node`
     method of the client. For example :code:`client.get_node("ns=2;i=2")` or
     :code:`client.get_node(ua.NodeId(2, 2))` could be used in the example. 
@@ -57,4 +57,4 @@ Calling Methods
 The method interface is similar to the interface of variables. In the example the special
 node :code:`client.nodes.objects`, which is in fact just a shortcut to the :code:`0:Objects`
 node, is used to call the `2:ServerMethod` on it. The :meth:`~asyncua.common.node.Node.call_method`
-must be called on the parent node of the actuall method node.
+must be called on the parent node of the actual method node.

@@ -7,7 +7,7 @@ Most of the hard work will be hidden behind the scene and we only need to implem
 application specific code.
 
 The complete code will look like the code below. In the next sections we will look at
-the different parts of the code, so don't be overhelmed by the code snippet!
+the different parts of the code, so don't be overwhelmed by the code snippet!
 
 .. literalinclude:: ../../../examples/server-minimal.py
     :caption: server-minimal.py
@@ -105,7 +105,7 @@ by clients:
 To do this, a function, decorated with the :meth:`~asyncua.common.methods.uamethod` decorator,
 is created and, similar to the objects and variables, registered on the server. It would
 also be possible to register a undecorated function on the server, but in this case the
-coversion from and to UA Variant types would be up to us.
+conversion from and to UA Variant types would be up to us.
 
 Starting the Server
 ===================

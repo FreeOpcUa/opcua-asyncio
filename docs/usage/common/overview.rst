@@ -16,7 +16,7 @@ asyncua.common package
 
 The :mod:`asyncua.common` package is provides the core functionality of the library.
 Several important parts life in this subpackage, for example the :class:`~asyncua.common.node.Node`
-class and the :mod:`~asyncua.common.subscription` module. You can find usage exampels
+class and the :mod:`~asyncua.common.subscription` module. You can find usage examples
 of these classes and functionalities in the following sections.
 
 
