@@ -53,7 +53,7 @@ async with Client(url='opc.tcp://localhost:4840/freeopcua/server/') as client:
         value = await node.read_value()
 ```
 
-Of course you can also call the `connect`, `disconnect` methods yourself if you do not want to use the context manager.
+Of course, you can also call the `connect`, `disconnect` methods yourself if you do not want to use the context manager.
 
 See the example folder and the code for more information on the client API.
 

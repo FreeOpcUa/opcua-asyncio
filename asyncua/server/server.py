@@ -52,11 +52,11 @@ class Server:
     All methods are threadsafe
 
     If you need more flexibility you call directly the Ua Service methods
-    on the iserver  or iserver.isession object members.
+    on the iserver or iserver.isession object members.
 
     During startup the standard address space will be constructed, which may be
     time-consuming when running a server on a less powerful device (e.g. a
-    Raspberry Pi). In order to improve startup performance, a optional path to a
+    Raspberry Pi). In order to improve startup performance, an optional path to a
     cache file can be passed to the server constructor.
     If the parameter is defined, the address space will be loaded from the
     cache file or the file will be created if it does not exist yet.
@@ -106,7 +106,7 @@ class Server:
         self._permission_ruleset = None
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep"]
         self.certificate = None
-        # Use accectable limits
+        # Use acceptable limits
         buffer_sz = 65535
         max_msg_sz = 100 * 1024 * 1024  # 100mb
         self.limits = TransportLimits(
@@ -234,7 +234,7 @@ class Server:
     async def set_application_uri(self, uri: str):
         """
         Set application/server URI.
-        This uri is supposed to be unique. If you intent to register
+        This uri is supposed to be unique. If you intend to register
         your server to a discovery server, it really should be unique in
         your system!
         default is : "urn:freeopcua:python:server"
@@ -728,7 +728,7 @@ class Server:
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
-        directly write datavalue to the Attribute, bypasing some checks and structure creation
+        directly write datavalue to the Attribute, bypassing some checks and structure creation,
         so it is a little faster
         """
         return await self.iserver.write_attribute_value(nodeid, datavalue, attr)

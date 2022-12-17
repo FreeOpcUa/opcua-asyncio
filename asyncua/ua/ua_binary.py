@@ -278,14 +278,14 @@ def create_dataclass_serializer(dataclazz):
     """Given a dataclass, return a function that serializes instances of this dataclass"""
     data_fields = fields(dataclazz)
     # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
-    #       its possible that the type annotations also refere to classes defined in other modules.
+    #       it is possible that the type annotations also refere to classes defined in other modules.
     resolved_fieldtypes = typing.get_type_hints(dataclazz, {'ua': ua})
     for f in data_fields:
         f.type = resolved_fieldtypes[f.name]
 
     if issubclass(dataclazz, ua.UaUnion):
         # Union is a class with Encoding and Value field
-        # the value is depended of encoding
+        # the value depends on encoding
         encoding_funcs = [field_serializer(t, dataclazz) for t in dataclazz._union_types]
 
         def union_serialize(obj):

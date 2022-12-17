@@ -120,7 +120,7 @@ async def new_enum(
 def clean_name(name):
     """
     Remove characters that might be present in  OPC UA structures
-    but cannot be part of of Python class names
+    but cannot be part of Python class names
     """
     if keyword.iskeyword(name):
         return name + "_"
@@ -383,7 +383,7 @@ async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new
     for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
         name = clean_name(desc.BrowseName.Name)
         if parent_datatype not in 'Number':
-            # Don't insert Number alias, they should be allready insert because they have to be basetypes allready
+            # Don't insert Number alias, they should be already insert because they have to be basetypes already
             if not hasattr(ua, name):
                 env = make_basetype_code(name, parent_datatype)
                 ua.register_basetype(name, desc.NodeId, env[name])
@@ -421,7 +421,7 @@ async def _load_base_datatypes(server: Union["Server", "Client"]) -> Any:
 
 async def load_data_type_definitions(server: Union["Server", "Client"], base_node: Node = None, overwrite_existing=False) -> Dict:
     """
-    Read DataTypeDefition attribute on all Structure  and Enumeration  defined
+    Read DataTypeDefinition attribute on all Structure and Enumeration defined
     on server and generate Python objects in ua namespace to be used to talk with server
     """
     new_objects = await _load_base_datatypes(server)  # we need to load all basedatatypes alias first
@@ -510,7 +510,7 @@ async def load_enums(server: Union["Server", "Client"], base_node: Node = None, 
         name = clean_name(desc.BrowseName.Name)
         if hasattr(ua, name):
             continue
-        logger.info("Registring Enum %s %s OptionSet=%s", desc.NodeId, name, option_set)
+        logger.info("Registering Enum %s %s OptionSet=%s", desc.NodeId, name, option_set)
         edef = await _read_data_type_definition(server, desc)
         if not edef:
             continue

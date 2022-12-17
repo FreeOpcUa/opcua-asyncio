@@ -66,4 +66,3 @@ class SimpleRoleRuleset(PermissionRuleset):
             return True
         else:
             return False
-

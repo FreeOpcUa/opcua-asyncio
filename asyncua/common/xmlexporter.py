@@ -322,7 +322,7 @@ class XmlExporter:
             elif isinstance(sdef, ua.EnumDefinition):
                 self._enum_fields_to_etree(sdef_el, sdef)
             else:
-                self.logger.warning("Unknown DataTypeSpecification elemnt: %s", sdef)
+                self.logger.warning("Unknown DataTypeSpecification element: %s", sdef)
 
     def _structure_fields_to_etree(self, sdef_el, sdef):
         for field in sdef.Fields:
@@ -447,7 +447,7 @@ class XmlExporter:
         if isinstance(val, (list, tuple)):
             if dtype.NamespaceIndex == 0 and dtype.Identifier <= 21:
                 elname = "uax:ListOf" + type_name
-            else:  # this is an extentionObject:
+            else:  # this is an extensionObject:
                 elname = "uax:ListOfExtensionObject"
 
             list_el = Et.SubElement(el, elname)
@@ -489,9 +489,9 @@ class XmlExporter:
 
     async def _all_fields_to_etree(self, struct_el, val):
         # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
-        #       its possible that the type annotations also refere to classes defined in other modules.
+        #       it is possible that the type annotations also refere to classes defined in other modules.
         for field in fields_with_resolved_types(val, globalns={"ua": ua}):
-            # FIXME; what happend if we have a custom type which is not part of ObjectIds???
+            # FIXME; what happened if we have a custom type which is not part of ObjectIds???
             if field.name == "Encoding":
                 continue
             type_name = type_string_from_type(field.type)

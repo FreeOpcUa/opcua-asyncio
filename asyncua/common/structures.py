@@ -228,10 +228,10 @@ from asyncua import ua
 async def load_type_definitions(server, nodes=None):
     """
     Download xml from given variable node defining custom structures.
-    If no node is given, attemps to import variables from all nodes under
+    If no node is given, attempts to import variables from all nodes under
     "0:OPC Binary"
     the code is generated and imported on the fly. If you know the structures
-    are not going to be modified it might be interresting to copy the generated files
+    are not going to be modified it might be interesting to copy the generated files
     and include them in you code
     """
     if nodes is None:
@@ -251,7 +251,7 @@ async def load_type_definitions(server, nodes=None):
         generator.get_python_classes(structs_dict)
         # same but using a file that is imported. This can be useful for debugging library
         # name = node.read_browse_name().Name
-        # Make sure structure names do not contain charaters that cannot be used in Python class file names
+        # Make sure structure names do not contain characters that cannot be used in Python class file names
         # name = clean_name(name)
         # name = "structures_" + node.read_browse_name().Name
         # generator.save_and_import(name + ".py", append_to=structs_dict)
@@ -268,7 +268,7 @@ async def load_type_definitions(server, nodes=None):
                     continue
                 nodeid = ref_desc_list[0].NodeId
                 ua.register_extension_object(name, nodeid, structs_dict[name])
-                # save the typeid if user want to create static file for type definitnion
+                # save the typeid if user want to create static file for type definition
                 generator.set_typeid(name, nodeid.to_string())
 
         for key, val in structs_dict.items():

@@ -49,7 +49,7 @@ class InternalServer:
         self.endpoints = []
         self._channel_id_counter = 5
         self.allow_remote_admin = True
-        self.disabled_clock = False  # for debugging we may want to disable clock that writes too much in log
+        self.disabled_clock = False  # for debugging, we may want to disable clock that writes too much in log
         self._known_servers = {}  # used if we are a discovery server
         self.certificate = None
         self.private_key = None
@@ -297,7 +297,7 @@ class InternalServer:
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
-        directly write datavalue to the Attribute, bypassing some checks and structure creation
+        directly write datavalue to the Attribute, bypassing some checks and structure creation,
         so it is a little faster
         """
         await self.aspace.write_attribute_value(nodeid, attr, datavalue)

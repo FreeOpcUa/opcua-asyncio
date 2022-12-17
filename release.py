@@ -21,7 +21,7 @@ def bump_version():
 
 def release():
     v = bump_version()
-    ans = input("version bumped, commiting?(Y/n)")
+    ans = input("version bumped, committing?(Y/n)")
     if ans in ("", "y", "yes"):
         os.system("git add setup.py")
         os.system(f"git commit -m 'new release v{v}'")

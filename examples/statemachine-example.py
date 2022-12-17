@@ -13,7 +13,7 @@ if __name__ == "__main__":
         server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         idx = await server.register_namespace("http://examples.freeopcua.github.io")
 
-        # get a instance of the StateMachine-Class def "__init__(self, server=None, parent=None, idx=None, name=None):"
+        # get an instance of the StateMachine-Class def "__init__(self, server=None, parent=None, idx=None, name=None):"
         mystatemachine = StateMachine(server, server.nodes.objects, idx, "StateMachine")
         # call statemachine.install() to instantiate the statemachinetype (with or without optional nodes)
         await mystatemachine.install(optionals=True)
@@ -22,7 +22,7 @@ if __name__ == "__main__":
         # if the state node already exist for example from xml model you can assign it here: node=<StateNode>
         state1 = State("State-Id-1", "Idle", 1)
         # adds the state (StateType) to the statemachine childs - this is optional!
-        await mystatemachine.add_state(state1, state_type=ua.NodeId(2309, 0)) #this is a init state -> InitialStateType: ua.NodeId(2309, 0)
+        await mystatemachine.add_state(state1, state_type=ua.NodeId(2309, 0)) #this is an init state -> InitialStateType: ua.NodeId(2309, 0)
         state2 = State("State-Id-2", "Loading", 2)
         await mystatemachine.add_state(state2)
         state3 = State("State-Id-3", "Initializing", 3)
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         state5 = State("State-Id-5", "Finished", 5)
         await mystatemachine.add_state(state5)
 
-        # setup your transition helperclass 
+        # set up your transition helperclass
         # if the transition node already exist for example from xml model you can assign it here: node=<TransitionNode>      
         trans1 = Transition("Transition-Id-1", "to Idle", 1)
         # adds the transition (TransitionType) to the statemachine childs - this is optional!
