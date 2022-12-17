@@ -602,7 +602,7 @@ async def _uaserver():
         description="Run an example OPC-UA server. By importing xml definition and using uawrite "
         " command line, it is even possible to expose real data using this server"
     )
-    # we setup a server, this is a bit different from other tool so we do not reuse common arguments
+    # we set up a server, this is a bit different from other tool, so we do not reuse common arguments
     parser.add_argument(
         "-u",
         "--url",

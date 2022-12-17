@@ -259,7 +259,7 @@ class UaProcessor:
             self.send_response(requesthdr.RequestHandle, seqhdr, response)
             return False
         else:
-            # All services that requere a active session
+            # All services that require an active session
             if not self.session:
                 _logger.info("Request service that need a session (%s)", user)
                 raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)

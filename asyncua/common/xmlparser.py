@@ -352,8 +352,8 @@ class XMLParser:
 
     def _parse_list_of_extension_object(self, el):
         """
-        Parse a uax:ListOfExtensionObject Value
-        Return an list of ExtObj
+        Parse an uax:ListOfExtensionObject Value
+        Return a list of ExtObj
         """
         value = []
         for extension_object in el:

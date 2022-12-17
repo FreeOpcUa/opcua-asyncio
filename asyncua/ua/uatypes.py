@@ -149,7 +149,7 @@ class Null:  # Null(NoneType) is not supported in Python
     pass
 
 
-class String:  # Passing None as arg will result in unepected behaviour so disabling
+class String:  # Passing None as arg will result in unexpected behaviour so disabling
     pass
 
 
@@ -206,7 +206,7 @@ class ValueRank(IntEnum):
     """
     Defines dimensions of a variable.
     This enum does not support all cases since ValueRank support any n>0
-    but since it is an IntEnum it can be replace by a normal int
+    but since it is an IntEnum it can be replaced by a normal int
     """
 
     ScalarOrOneDimension = -3
@@ -405,7 +405,7 @@ class NodeId:
     Args:
         identifier: The identifier might be an int, a string, bytes or a Guid
         namespaceidx(int): The index of the namespace
-        nodeidtype(NodeIdType): The type of the nodeid if it cannot be guess or you want something
+        nodeidtype(NodeIdType): The type of the nodeid if it cannot be guessed, or you want something
         special like twobyte nodeid or fourbytenodeid
 
 
@@ -644,10 +644,10 @@ class QualifiedName:
         object.__setattr__(self, "NamespaceIndex", NamespaceIndex)
         if isinstance(self.NamespaceIndex, str) and isinstance(self.Name, int):
             # originally the order or argument was inversed, try to support it
-            logger.warning("QualifiedName are str, int, while int, str is expected, swithcing")
+            logger.warning("QualifiedName are str, int, while int, str is expected, switching")
 
         if not isinstance(self.NamespaceIndex, int) or not isinstance(self.Name, (str, type(None))):
-            raise ValueError(f"QualifiedName constructore args have wrong types, {self}")
+            raise ValueError(f"QualifiedName constructor args have wrong types, {self}")
 
     def to_string(self):
         return f"{self.NamespaceIndex}:{self.Name}"
@@ -677,7 +677,7 @@ class LocalizedText:
     Text: Optional[String] = None
 
     def __init__(self, Text=None, Locale=None):
-        # need to write init method since args ar inverted in original implementataion
+        # need to write init method since args ar inverted in original implementation
         object.__setattr__(self, "Text", Text)
         object.__setattr__(self, "Locale", Locale)
 
@@ -820,7 +820,7 @@ class Variant:
     """
     Create an OPC-UA Variant object.
     if no argument a Null Variant is created.
-    if not variant type is given, attemps to guess type from python type
+    if not variant type is given, attempts to guess type from python type
     if a variant is given as value, the new objects becomes a copy of the argument
 
     :ivar Value:
@@ -828,9 +828,9 @@ class Variant:
     :ivar VariantType:
     :vartype VariantType: VariantType
     :ivar Dimension:
-    :vartype Dimensions: The length of each dimensions. Make the variant a Matrix
+    :vartype Dimensions: The length of each dimension. Make the variant a Matrix
     :ivar is_array:
-    :vartype is_array: If the variant is an array. Always True if Dimension is specificied
+    :vartype is_array: If the variant is an array. Always True if Dimension is specified
     """
 
     # FIXME: typing is wrong here
@@ -965,7 +965,7 @@ def get_shape(mylist):
     return dims
 
 
-# For completness, these datatypes are abstract!
+# For completeness, these datatypes are abstract!
 # If they are used in structs, abstract types are either Variant or ExtensionObjects.
 # If they only contain basic types (int16, float, double..) they are Variants
 UInteger = Variant
@@ -1087,7 +1087,7 @@ def get_default_value(vtype):
     if vtype == VariantType.Guid:
         return uuid.uuid4()
     if vtype == VariantType.XmlElement:
-        return None  # Not sure this is correct
+        return None  # Not sure if this is correct
     if vtype == VariantType.NodeId:
         return NodeId()
     if vtype == VariantType.ExpandedNodeId:
@@ -1114,9 +1114,9 @@ basetype_datatypes = {}
 # register of alias of basetypes
 def register_basetype(name, nodeid, class_type):
     """
-    Register a new allias of basetypes for automatic decoding and make them available in ua module
+    Register a new alias of basetypes for automatic decoding and make them available in ua module
     """
-    logger.info("registring new basetype alias: %s %s %s", name, nodeid, class_type)
+    logger.info("registering new basetype alias: %s %s %s", name, nodeid, class_type)
     basetype_by_datatype[nodeid] = name
     basetype_datatypes[class_type] = nodeid
     import asyncua.ua
@@ -1133,7 +1133,7 @@ def register_enum(name, nodeid, class_type):
     """
     Register a new enum for automatic decoding and make them available in ua module
     """
-    logger.info("registring new enum: %s %s %s", name, nodeid, class_type)
+    logger.info("registering new enum: %s %s %s", name, nodeid, class_type)
     enums_by_datatype[nodeid] = class_type
     enums_datatypes[class_type] = nodeid
     import asyncua.ua
@@ -1141,7 +1141,7 @@ def register_enum(name, nodeid, class_type):
     setattr(asyncua.ua, name, class_type)
 
 
-# These dictionnaries are used to register extensions classes for automatic
+# These dictionaries are used to register extensions classes for automatic
 # decoding and encoding
 extension_objects_by_datatype = {}  # Dict[Datatype, type]
 extension_objects_by_typeid = {}  # Dict[EncodingId, type]
@@ -1154,7 +1154,7 @@ def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid
     Register a new extension object for automatic decoding and make them available in ua module
     """
     logger.info(
-        "registring new extension object: %s %s %s %s",
+        "registering new extension object: %s %s %s %s",
         name,
         encoding_nodeid,
         class_type,

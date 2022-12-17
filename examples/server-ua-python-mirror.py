@@ -11,7 +11,7 @@ from asyncua import ua, Server
 
 # The advantage of this is that the software can be designed in a tool like UA Modeler. Then with minimal setup, a
 # python program will import the XML and mirror all the objects in the software design. After this mirroring is achieved
-# the user can focus on programming in python knowing that all all data from UA clients will reach the python object,
+# the user can focus on programming in python knowing that all data from UA clients will reach the python object,
 # and all data that needs to be output to the server can be published from the python object.
 #
 # Be aware that subscription calls are asynchronous.
@@ -72,7 +72,7 @@ class UaObject(object):
 
 class MyObj(UaObject):
     """
-    Definition of OPC UA object which represents a object to be mirrored in python
+    Definition of OPC UA object which represents an object to be mirrored in python
     This class mirrors it's UA counterpart and semi-configures itself according to the UA model (generally from XML)
     """
     def __init__(self, asyncua_server, ua_node):
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     server = Server()
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
 
-    # setup our own namespace, not really necessary but should as spec
+    # set up our own namespace, not really necessary but should as spec
     uri = "http://examples.freeopcua.github.io"
     idx = server.register_namespace(uri)
 

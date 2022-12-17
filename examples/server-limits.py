@@ -24,12 +24,12 @@ async def main():
     await server.init()
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
 
-    # setup our own namespace, not really necessary but should as spec
+    # set up our own namespace, not really necessary but should as spec
     uri = "http://examples.freeopcua.github.io"
     idx = await server.register_namespace(uri)
 
     # populating our address space
-    # setup a variable far too big for our limits
+    # set up a variable far too big for our limits
     test_string = b'a' * (100 * 1024 * 1024)
     test_string = b'a' * 100 * 1024
     print("LENGTH VAR", len(test_string))

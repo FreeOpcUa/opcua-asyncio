@@ -123,8 +123,8 @@ class Client:
 
     def set_locale(self, locale: List[str]) -> None:
         """
-        Sets the prefred locales of the client, the server chooses which locale he can provide.
-        Normaly the first matching locale in the list will be chossen, by the server.
+        Sets the preferred locales of the client, the server chooses which locale he can provide.
+        Normally the first matching locale in the list will be chosen, by the server.
         Call this before connect()
         """
         self._locale = locale
@@ -390,7 +390,7 @@ class Client:
     async def create_session(self):
         """
         send a CreateSessionRequest to server with reasonable parameters.
-        If you want o modify settings look at code of this methods
+        If you want to modify settings look at code of these methods
         and make your own
         """
         self._closing = False
@@ -467,8 +467,8 @@ class Client:
     async def _renew_channel_loop(self):
         """
         Renew the SecureChannel before the SecureChannelTimeout will happen.
-        In theory we could do that only if no session activity
-        but it does not cost much..
+        In theory, we could do that only if no session activity,
+        but it does not cost much.
         """
         try:
             # Part4 5.5.2.1:

@@ -21,7 +21,7 @@ class XmlImporter:
 
     def __init__(self, server, strict_mode=True):
         '''
-        strict_mode: stop on a error, if False only a error message is logged,
+        strict_mode: stop on an error, if False only an error message is logged,
                      but the import continues
         '''
         self.parser = None
@@ -279,7 +279,7 @@ class XmlImporter:
     def _migrate_ns(self, obj: Union[ua.NodeId, ua.QualifiedName]) -> Union[ua.NodeId, ua.QualifiedName]:
         """
         Check if the index of nodeid or browsename  given in the xml model file
-        must be converted to a already existing namespace id based on the files
+        must be converted to an already existing namespace id based on the files
         namespace uri
 
         :returns: NodeId (str)

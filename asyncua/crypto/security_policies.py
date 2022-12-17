@@ -538,7 +538,7 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
     - CertificateSignatureAlgorithm - Sha1
 
     If a certificate or any certificate in the chain is not signed with
-    a hash that is Sha1 or stronger then the certificate shall be rejected.
+    a hash that is Sha1 or stronger than the certificate shall be rejected.
     """
 
     URI = "http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15"
@@ -626,7 +626,7 @@ class SecurityPolicyBasic256(SecurityPolicy):
     - CertificateSignatureAlgorithm - Sha1
 
     If a certificate or any certificate in the chain is not signed with
-    a hash that is Sha1 or stronger then the certificate shall be rejected.
+    a hash that is Sha1 or stronger than the certificate shall be rejected.
     """
 
     URI = "http://opcfoundation.org/UA/SecurityPolicy#Basic256"

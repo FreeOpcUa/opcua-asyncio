@@ -13,7 +13,7 @@ _logger = getLogger(__name__)
 IgnoredEnums = []
 IgnoredStructs = []
 
-# by default we split requests and respons in header and parameters, but some are so simple we do not split them
+# by default, we split requests and responses in header and parameters, but some are so simple we do not split them
 NoSplitStruct = [
     "GetEndpointsResponse",
     "CloseSessionRequest",

@@ -1,5 +1,5 @@
 """
-Usefull method and classes not belonging anywhere and depending on asyncua library
+Useful methods and classes not belonging anywhere and depending on asyncua library
 """
 
 import uuid
@@ -16,7 +16,7 @@ logger = logging.getLogger('__name__')
 
 def value_to_datavalue(val, varianttype=None):
     """
-    convert anyting to a DataValue using varianttype
+    convert anything to a DataValue using varianttype
     """
     if isinstance(val, ua.DataValue):
         return val
@@ -31,7 +31,7 @@ def val_to_string(val, truncate=False):
     which should be easy to understand for human
     easy to modify, and not too hard to parse back ....not easy
     meant for UI or command lines
-    if truncate is true then huge strings or bytes are tuncated
+    if truncate is true then huge strings or bytes are truncated
 
     """
     if isinstance(val, (list, tuple)):
@@ -172,7 +172,7 @@ async def get_node_subtypes(node, nodes=None):
 async def get_node_supertypes(node, includeitself=False, skipbase=True):
     """
     return get all subtype parents of node recursive
-    :param node: can be a ua.Node or ua.NodeId
+    :param node: can be an ua.Node or ua.NodeId
     :param includeitself: include also node to the list
     :param skipbase don't include the toplevel one
     :returns list of ua.Node, top parent first
@@ -216,7 +216,7 @@ async def is_child_present(node, browsename):
     return if a browsename is present a child from the provide node
     :param node: node wherein to find the browsename
     :param browsename: browsename to search
-    :returns returne True if the browsename is present else False
+    :returns returns True if the browsename is present else False
     """
     child_descs = await node.get_children_descriptions()
     for child_desc in child_descs:
@@ -232,7 +232,7 @@ async def data_type_to_variant_type(dtype_node):
     """
     base = await get_base_data_type(dtype_node)
     if base.nodeid.Identifier == 29:
-        # we have an enumeration, value is a Int32
+        # we have an enumeration, value is an Int32
         return ua.VariantType.Int32
     elif base.nodeid.Identifier in [24, 26, 27, 28]:
         # BaseDataType, Number, Integer, UInteger -> Variant
@@ -277,10 +277,10 @@ async def get_nodes_of_namespace(server, namespaces=None):
     elif isinstance(namespaces, (str, int)):
         namespaces = [namespaces]
 
-    # make sure all namespace are indexes (if needed convert strings to indexes)
+    # make sure all namespace are indexes (if needed, convert strings to indexes)
     namespace_indexes = [n if isinstance(n, int) else ns_available.index(n) for n in namespaces]
 
-    # filter nodeis based on the provide namespaces and convert the nodeid to a node
+    # filter node is based on the provided namespaces and convert the nodeid to a node
     nodes = [
         server.get_node(nodeid) for nodeid in server.iserver.aspace.keys()
         if nodeid.NamespaceIndex != 0 and nodeid.NamespaceIndex in namespace_indexes
@@ -297,7 +297,7 @@ def get_default_value(uatype):
 
 
 def data_type_to_string(dtype):
-    # we could just display browse name of node but it requires a query
+    # we could just display browse name of node, but it requires a query
     if dtype.NamespaceIndex == 0 and dtype.Identifier in ua.ObjectIdNames:
         string = ua.ObjectIdNames[dtype.Identifier]
     else:

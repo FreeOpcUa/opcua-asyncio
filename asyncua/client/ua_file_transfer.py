@@ -89,7 +89,7 @@ class UaFile:
         It is server-dependent whether the written data are persistently
         stored if the session is ended without calling the Close Method with the fileHandle.
         Writing an empty or null ByteString returns a Good result code without any
-        affect on the file.
+        effect on the file.
         """
         _logger.debug("Request to write to file %s", self._file_node)
         if self._write_node is None:
