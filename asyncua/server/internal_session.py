@@ -88,8 +88,6 @@ class InternalSession(AbstractSession):
         result.ServerNonce = self.nonce
         for _ in params.ClientSoftwareCertificates:
             result.Results.append(ua.StatusCode())
-        self.state = SessionState.Activated
-        InternalSession._current_connections += 1
         id_token = params.UserIdentityToken
         # Check if security policy is supported
         if not isinstance(id_token, self.iserver.supported_tokens):
@@ -110,6 +108,8 @@ class InternalSession(AbstractSession):
                 raise ServiceError(ua.StatusCodes.BadUserAccessDenied)
             else:
                 self.user = user
+        self.state = SessionState.Activated
+        InternalSession._current_connections += 1
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)
         return result
 
