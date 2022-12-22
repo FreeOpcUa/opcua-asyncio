@@ -194,7 +194,7 @@ def win_epoch_to_datetime(epch):
         # FILETIMEs after 31 Dec 9999 are truncated to max value
         return MAX_FILETIME_EPOCH_DATETIME
     if epch < 0:
-        return 0
+        return FILETIME_EPOCH_AS_DATETIME
     return FILETIME_EPOCH_AS_DATETIME + timedelta(microseconds=epch // 10)
 
 
