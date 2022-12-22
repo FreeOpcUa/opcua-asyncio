@@ -546,7 +546,7 @@ def test_datetime():
     assert ua.datetime_to_win_epoch(ua.win_epoch_to_datetime(epch)) == epch
     # Test if values that are out of range are either min or max
     assert ua.datetime_to_win_epoch(datetime.min) == 0
-    assert ua.datetime_to_win_epoch(datetime.max) == (2**63) - 1
+    assert ua.datetime_to_win_epoch(datetime.max) == ua.MAX_INT64
 
 
 def test_equal_nodeid():
