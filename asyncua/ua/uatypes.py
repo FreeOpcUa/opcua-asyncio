@@ -173,7 +173,6 @@ def datetime_to_win_epoch(dt: datetime):
     else:
         ref = FILETIME_EPOCH_AS_UTC_DATETIME
         max_ep = MAX_FILETIME_EPOCH_AS_UTC_DATETIME
-    ref = FILETIME_EPOCH_AS_DATETIME if dt.tzinfo is None else FILETIME_EPOCH_AS_UTC_DATETIME
     # Python datetime starts from year 1, opc ua only support dates starting 1601-01-01 12:00AM UTC
     # So we need to trunc the value to zero
     if ref >= dt:
