@@ -231,17 +231,20 @@ async def data_type_to_variant_type(dtype_node):
     data. This is not exactly straightforward...
     """
     base = await get_base_data_type(dtype_node)
-    if base.nodeid.Identifier != 29:
-        return ua.VariantType(base.nodeid.Identifier)
-    # we have an enumeration, value is a Int32
-    return ua.VariantType.Int32
+    if base.nodeid.Identifier == 29:
+        # we have an enumeration, value is a Int32
+        return ua.VariantType.Int32
+    elif base.nodeid.Identifier in [24, 26, 27, 28]:
+        # BaseDataType, Number, Integer, UInteger -> Variant
+        return ua.VariantType.Variant
+    return ua.VariantType(base.nodeid.Identifier)
 
 
 async def get_base_data_type(datatype):
     """
     Looks up the base datatype of the provided datatype Node
     The base datatype is either:
-    A primitive type (ns=0, i<=21) or a complex one (ns=0 i>21 and i<=30) like Enum and Struct.
+    A primitive type (ns=0, i<=21) or a complex one (ns=0 i>21 and i<30) like Enum and Struct.
 
     Args:
         datatype: NodeId of a datype of a variable
@@ -250,7 +253,7 @@ async def get_base_data_type(datatype):
     """
     base = datatype
     while base:
-        if base.nodeid.NamespaceIndex == 0 and isinstance(base.nodeid.Identifier, int) and base.nodeid.Identifier <= 30:
+        if base.nodeid.NamespaceIndex == 0 and isinstance(base.nodeid.Identifier, int) and base.nodeid.Identifier < 30:
             return base
         base = await get_node_supertype(base)
     raise ua.UaError(f"Datatype must be a subtype of builtin types {str(datatype)}")
