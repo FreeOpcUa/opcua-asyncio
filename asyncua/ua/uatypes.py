@@ -43,6 +43,8 @@ EPOCH_AS_FILETIME = 116444736000000000  # January 1, 1970 as MS file time
 HUNDREDS_OF_NANOSECONDS = 10000000
 FILETIME_EPOCH_AS_DATETIME = datetime(1601, 1, 1)
 FILETIME_EPOCH_AS_UTC_DATETIME = FILETIME_EPOCH_AS_DATETIME.replace(tzinfo=timezone.utc)
+MAX_FILETIME_EPOCH_DATETIME = datetime(9999, 12, 31, 23, 59, 59)
+MAX_FILETIME_EPOCH_AS_UTC_DATETIME = MAX_FILETIME_EPOCH_DATETIME.replace(tzinfo=timezone.utc)
 
 
 def type_is_union(uatype):
@@ -165,7 +167,21 @@ _microsecond = timedelta(microseconds=1)
 
 
 def datetime_to_win_epoch(dt: datetime):
+    if dt.tzinfo is None:
+        ref = FILETIME_EPOCH_AS_DATETIME
+        max_ep = MAX_FILETIME_EPOCH_DATETIME
+    else:
+        ref = FILETIME_EPOCH_AS_UTC_DATETIME
+        max_ep = MAX_FILETIME_EPOCH_AS_UTC_DATETIME
     ref = FILETIME_EPOCH_AS_DATETIME if dt.tzinfo is None else FILETIME_EPOCH_AS_UTC_DATETIME
+    # Python datetime starts from year 1, opc ua only support dates starting 1601-01-01 12:00AM UTC
+    # So we need to trunc the value to zero
+    if ref >= dt:
+        return 0
+    # A date/time is encoded as the maximum value for an Int64 if either
+    # The value is equal to or greater than 9999-12-31 11:59:59PM UTC,
+    if dt >= max_ep:
+        return 9223372036854775807
     return 10 * ((dt - ref) // _microsecond)
 
 
@@ -174,12 +190,12 @@ def get_win_epoch():
 
 
 def win_epoch_to_datetime(epch):
-    try:
-        return FILETIME_EPOCH_AS_DATETIME + timedelta(microseconds=epch // 10)
-    except OverflowError:
-        # FILETIMEs after 31 Dec 9999 can't be converted to datetime
-        logger.warning("datetime overflow: %s", epch)
-        return datetime(MAXYEAR, 12, 31, 23, 59, 59, 999999)
+    if epch >= 2650467743989999999:
+        # FILETIMEs after 31 Dec 9999 are truncated to max value
+        return MAX_FILETIME_EPOCH_DATETIME
+    if epch < 0:
+        return 0
+    return FILETIME_EPOCH_AS_DATETIME + timedelta(microseconds=epch // 10)
 
 
 FROZEN: bool = False
