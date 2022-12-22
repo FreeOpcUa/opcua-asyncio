@@ -45,6 +45,8 @@ FILETIME_EPOCH_AS_DATETIME = datetime(1601, 1, 1)
 FILETIME_EPOCH_AS_UTC_DATETIME = FILETIME_EPOCH_AS_DATETIME.replace(tzinfo=timezone.utc)
 MAX_FILETIME_EPOCH_DATETIME = datetime(9999, 12, 31, 23, 59, 59)
 MAX_FILETIME_EPOCH_AS_UTC_DATETIME = MAX_FILETIME_EPOCH_DATETIME.replace(tzinfo=timezone.utc)
+MAX_OPC_FILETIME = int((MAX_FILETIME_EPOCH_DATETIME - FILETIME_EPOCH_AS_DATETIME).total_seconds()) * HUNDREDS_OF_NANOSECONDS
+MAX_INT64 = 2 ** 63 - 1
 
 
 def type_is_union(uatype):
@@ -180,7 +182,7 @@ def datetime_to_win_epoch(dt: datetime):
     # A date/time is encoded as the maximum value for an Int64 if either
     # The value is equal to or greater than 9999-12-31 11:59:59PM UTC,
     if dt >= max_ep:
-        return 9223372036854775807
+        return MAX_INT64
     return 10 * ((dt - ref) // _microsecond)
 
 
@@ -189,7 +191,7 @@ def get_win_epoch():
 
 
 def win_epoch_to_datetime(epch):
-    if epch >= 2650467743989999999:
+    if epch >= MAX_OPC_FILETIME:
         # FILETIMEs after 31 Dec 9999 are truncated to max value
         return MAX_FILETIME_EPOCH_DATETIME
     if epch < 0:
