@@ -89,6 +89,10 @@ class InternalSession(AbstractSession):
         for _ in params.ClientSoftwareCertificates:
             result.Results.append(ua.StatusCode())
         id_token = params.UserIdentityToken
+        if isinstance(id_token, ua.ExtensionObject) and id_token.TypeId == ua.NodeId(ua.ObjectIds.Null):
+            # https://reference.opcfoundation.org/Core/Part4/v104/docs/5.6.3
+            # Null or empty user token shall always be interpreted as anonymous.
+            id_token = ua.AnonymousIdentityToken()
         # Check if security policy is supported
         if not isinstance(id_token, self.iserver.supported_tokens):
             self.logger.error('Rejected active session UserIdentityToken not supported')

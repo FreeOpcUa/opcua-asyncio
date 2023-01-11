@@ -769,3 +769,19 @@ class TestServerStartError(unittest.TestCase):
         server1.stop()
         server2.stop()
 """
+
+async def test_null_auth(server):
+    """
+    OPC-UA Specification Part 4, 5.6.3 specifies that a:
+    > Null or empty user token shall always be interpreted as anonymous
+
+    Ensure a Null token is accepted as an anonymous connection token.
+    """
+    client = Client(server.endpoint.geturl())
+    # Modify the authentication creation in the client request
+    def _add_null_auth(self, params):
+        params.UserIdentityToken = ua.ExtensionObject(ua.NodeId(ua.ObjectIds.Null))
+    client._add_anonymous_auth = _add_null_auth.__get__(client, Client)
+    # Attempt to connect, this should be accepted without error
+    async with client:
+        pass
