@@ -3,6 +3,7 @@ import xml.etree.ElementTree as Et
 import pytest
 
 from asyncua import ua
+from asyncua.common.structures import EnumType, StructGenerator, Struct
 import asyncua.common.type_dictionary_builder
 from asyncua.common.type_dictionary_builder import OPCTypeDictionaryBuilder, DataTypeDictionaryBuilder
 from asyncua.common.type_dictionary_builder import get_ua_class, StructNode
@@ -334,8 +335,8 @@ async def test_functional_basic(srv):
     await srv.srv.load_type_definitions()
 
     basic_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(NamespaceIndex=srv.idx), 'BasicStruct',
-                                                    ua.Variant(None, ua.VariantType.Null),
-                                                    datatype=basic_struct.data_type)
+                                                         ua.Variant(None, ua.VariantType.Null),
+                                                         datatype=basic_struct.data_type)
 
     basic_msg = get_ua_class(basic_struct_name)()
     basic_msg.ID = 3
@@ -365,8 +366,8 @@ async def test_functional_advance(srv):
     await srv.srv.load_type_definitions()
 
     basic_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(NamespaceIndex=srv.idx), 'BasicStruct',
-                                                    ua.Variant(None, ua.VariantType.ExtensionObject),
-                                                    datatype=basic_struct.data_type)
+                                                         ua.Variant(None, ua.VariantType.ExtensionObject),
+                                                         datatype=basic_struct.data_type)
 
     basic_msg = get_ua_class(basic_struct_name)()
     basic_msg.ID = 3
@@ -375,8 +376,8 @@ async def test_functional_advance(srv):
     await basic_var.write_value(basic_msg)
 
     nested_var = await srv.srv.nodes.objects.add_variable(ua.NodeId(NamespaceIndex=srv.idx), 'NestedStruct',
-                                                     ua.Variant(None, ua.VariantType.ExtensionObject),
-                                                     datatype=nested_struct.data_type)
+                                                          ua.Variant(None, ua.VariantType.ExtensionObject),
+                                                          datatype=nested_struct.data_type)
 
     nested_msg = get_ua_class(nested_struct_name)()
     nested_msg.Stuff = basic_msg
@@ -389,3 +390,69 @@ async def test_functional_advance(srv):
     nested_result = await nested_var.read_value()
     assert nested_result == nested_msg
     await srv.srv.delete_nodes([basic_var, nested_var])
+
+
+async def test_optionsets(srv):
+    # We use a bsd file from a server dict, because we only provide optionsets for backwards compatibility
+    xmlpath = "tests/custom_extension_with_optional_fields.xml"
+    structs_dict = {}
+    c = StructGenerator()
+    c.make_model_from_file(xmlpath)
+    c.get_python_classes(structs_dict)
+    for m in c.model:
+        if type(m) in (Struct, EnumType):
+            m.typeid = ua.NodeId(m.name, 1)
+            ua.register_extension_object(m.name, m.typeid, structs_dict[m.name])
+            c.set_typeid(m.name, m.typeid.to_string())
+    await srv.dict_builder.set_dict_byte_string()
+    await srv.srv.load_type_definitions()
+    v = ua.ProcessValueType(name='XXX', id='YYY')
+    bitfield_var = await srv.srv.nodes.objects.add_variable(
+        ua.NodeId(NamespaceIndex=srv.idx), 'BitFieldSetsTest',
+        ua.Variant(None, ua.VariantType.ExtensionObject),
+        datatype=ua.NodeId('ProcessValueType', 1)
+    )
+    await bitfield_var.write_value(v)
+    bit_res = await bitfield_var.read_value()
+    assert v.cavityId is None
+    assert v.description is None
+    assert v == bit_res
+    v.cavityId = ua.UInt16(123)
+    await bitfield_var.write_value(v)
+    bit_res = await bitfield_var.read_value()
+    assert v == bit_res
+    assert bit_res.description is None
+    assert bit_res.cavityId is not None
+    v.description = '1234'
+    v.cavityId = None
+    await bitfield_var.write_value(v)
+    bit_res = await bitfield_var.read_value()
+    assert v == bit_res
+    assert bit_res.description is not None
+    assert bit_res.cavityId is None
+    v.description = 'test'
+    v.cavityId = ua.UInt16(44)
+    await bitfield_var.write_value(v)
+    bit_res = await bitfield_var.read_value()
+    assert v == bit_res
+    assert bit_res.description is not None
+    assert bit_res.cavityId is not None
+    curved = ua.CurveDataType(
+        Data=[ua.CurvePointDataType(0.1, 0.2), ua.CurvePointDataType(0.1, 0.2)]
+    )
+    curved_var = await srv.srv.nodes.objects.add_variable(
+        ua.NodeId(NamespaceIndex=srv.idx), 'CurvePointDataType',
+        ua.Variant(None, ua.VariantType.ExtensionObject),
+        datatype=ua.NodeId('CurvePointDataType', 1)
+    )
+    await curved_var.write_value(curved)
+    curved_res = await curved_var.read_value()
+    assert curved_res == curved
+    assert len(curved_res.Data) == 2
+    assert curved_res.Description is None
+    curved.Description = "ABC"
+    await curved_var.write_value(curved)
+    curved_res = await curved_var.read_value()
+    assert curved_res == curved
+    assert len(curved_res.Data) == 2
+    assert curved_res.Description == "ABC"

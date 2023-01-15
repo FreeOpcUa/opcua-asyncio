@@ -390,6 +390,8 @@ async def ha_client(ha_config, ha_servers):
 async def wait_clients_socket(ha_client, state):
     for client in ha_client.get_clients():
         for _ in range(RETRY):
+            if state == UASocketProtocol.CLOSED and not client.uaclient.protocol:
+                break
             if client.uaclient.protocol and client.uaclient.protocol.state == state:
                 # for connection OPEN, also wait for the session to be established
                 # otherwise we can encounter failure on disconnect
@@ -399,7 +401,7 @@ async def wait_clients_socket(ha_client, state):
                 else:
                     break
             await sleep(SLEEP)
-        assert client.uaclient.protocol.state == state
+        assert (not client.uaclient.protocol and state == UASocketProtocol.CLOSED) or client.uaclient.protocol.state == state
 
 
 async def wait_sub_in_real_map(ha_client, sub, negation=False):

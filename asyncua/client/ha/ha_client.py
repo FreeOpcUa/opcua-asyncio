@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from functools import partial
 from itertools import chain
-from sortedcontainers import SortedDict
+from sortedcontainers import SortedDict  # type: ignore
 from asyncua import Node, ua, Client
 from asyncua.client.ua_client import UASocketProtocol
 from asyncua.ua.uaerrors import BadSessionClosed, BadSessionNotActivated
@@ -461,9 +461,13 @@ class KeepAlive:
             except BadSessionClosed:
                 _logger.warning("Session is closed.")
                 server_info.status = ConnectionStates.NO_DATA
-            except (asyncio.TimeoutError, asyncio.CancelledError):
+            except asyncio.TimeoutError:
                 _logger.warning("Timeout when fetching state")
                 server_info.status = ConnectionStates.NO_DATA
+            except asyncio.CancelledError:
+                _logger.warning("CancelledError, this means we should shutdown")
+                server_info.status = ConnectionStates.NO_DATA
+                # FIXME: It cannot be correct to catch CancelledError here, we should re-raise
             except Exception:
                 _logger.exception("Unknown exception during keepalive liveness check")
                 server_info.status = ConnectionStates.NO_DATA

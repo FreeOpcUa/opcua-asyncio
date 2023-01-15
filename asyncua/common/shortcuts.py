@@ -27,6 +27,7 @@ class Shortcuts:
         self.namespaces = Node(server, ObjectIds.Server_Namespaces)
         self.opc_binary = Node(server, ObjectIds.OPCBinarySchema_TypeSystem)
         self.base_structure_type = Node(server, ObjectIds.Structure)
+        self.base_union_type = Node(server, ObjectIds.Union)
         self.server_state = Node(server, ObjectIds.Server_ServerStatus_State)
         self.service_level = Node(server, ObjectIds.Server_ServiceLevel)
         self.HasComponent = Node(server, ObjectIds.HasComponent)

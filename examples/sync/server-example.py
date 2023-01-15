@@ -83,7 +83,7 @@ if __name__ == "__main__":
     #logger = logging.getLogger("opcua.uaprocessor")
     # logger.setLevel(logging.DEBUG)
     with ThreadLoop() as tloop:
-        # now setup our server
+        # now set up our server
         server = Server(tloop=tloop)
         #server.disable_clock()
         #server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
@@ -95,7 +95,7 @@ if __name__ == "__main__":
                     ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
                     ua.SecurityPolicyType.Basic256Sha256_Sign])
 
-        # setup our own namespace
+        # set up our own namespace
         uri = "http://examples.freeopcua.github.io"
         idx = server.register_namespace(uri)
         print("IDX", idx)
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         # starting!
         with server:
             print("Available loggers are: ", logging.Logger.manager.loggerDict.keys())
-            vup = VarUpdater(mysin)  # just  a stupide class update a variable
+            vup = VarUpdater(mysin)  # just a stupid class updating a variable
             vup.start()
 
             # enable following if you want to subscribe to nodes on server side
@@ -151,12 +151,12 @@ if __name__ == "__main__":
             #handle = sub.subscribe_data_change(myvar)
             # trigger event, all subscribed clients wil receive it
             var = myarrayvar.read_value()  # return a ref to value in db server side! not a copy!
-            var = copy.copy(var)  # WARNING: we need to copy before writting again otherwise no data change event will be generated
+            var = copy.copy(var)  # WARNING: we need to copy before writing again, otherwise no data change event will be generated
             var.append(9.3)
             myarrayvar.write_value(var)
             mydevice_var.write_value("Running")
             myevgen.trigger(message="This is BaseEvent")
-            server.write_attribute_value(myvar.nodeid, ua.DataValue(9.9))  # Server side write method which is a but faster than using write
+            server.write_attribute_value(myvar.nodeid, ua.DataValue(9.9))  # Server side write method which is a bit faster than using write
 
             embed()
             vup.stop()

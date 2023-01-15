@@ -5,6 +5,9 @@ Helper function and classes depending on ua object are in ua_utils.py
 
 import os
 import logging
+import sys
+from dataclasses import Field, fields
+from typing import get_type_hints, Dict, Tuple, Any, Optional
 from ..ua.uaerrors import UaError
 
 _logger = logging.getLogger(__name__)
@@ -49,7 +52,7 @@ class Buffer:
 
     def __bytes__(self):
         """Return remains of buffer as bytes."""
-        return self._data[self._cur_pos:]
+        return bytes(self._data[self._cur_pos:])
 
     def read(self, size):
         """
@@ -93,3 +96,39 @@ class Buffer:
 
 def create_nonce(size=32):
     return os.urandom(size)
+
+
+def fields_with_resolved_types(
+    class_or_instance: Any,
+    globalns: Optional[Dict[str, Any]] = None,
+    localns: Optional[Dict[str, Any]] = None,
+    include_extras: bool = False,
+) -> Tuple[Field, ...]:
+    """Return a tuple describing the fields of this dataclass.
+
+    Accepts a dataclass or an instance of one. Tuple elements are of
+    type Field. ForwardRefs and string types will be resolved.
+    """
+
+    fields_ = fields(class_or_instance)
+    if sys.version_info.major == 3 and sys.version_info.minor <= 8:
+        resolved_fieldtypes = get_type_hints(
+            class_or_instance,
+            globalns=globalns,
+            localns=localns
+        )
+    else:
+        resolved_fieldtypes = get_type_hints(
+            class_or_instance,
+            globalns=globalns,
+            localns=localns,
+            include_extras=include_extras
+        )
+    for field in fields_:
+        try:
+            field.type = resolved_fieldtypes[field.name]
+        except KeyError:
+            _logger.info(f"could not resolve fieldtype for field={field} of class_or_instance={class_or_instance}")
+            pass
+
+    return fields_

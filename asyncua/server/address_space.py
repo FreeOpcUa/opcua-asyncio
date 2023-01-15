@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import collections
+import collections.abc
+import dataclasses
 import logging
 import pickle
 import shelve
@@ -11,7 +12,7 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Callable, Dict, List, Union, Tuple
+    from typing import Callable, Dict, List, Union, Tuple, Generator
     from asyncua.ua.uaprotocol_auto import (
         ObjectAttributes, DataTypeAttributes, ReferenceTypeAttributes,
         VariableTypeAttributes, VariableAttributes, ObjectTypeAttributes
@@ -99,8 +100,12 @@ class AttributeService:
                 ):
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
+            if writevalue.AttributeId == ua.AttributeIds.Value and self._aspace.force_server_timestamp:
+                dv = dataclasses.replace(writevalue.Value, ServerTimestamp=datetime.utcnow(), ServerPicoseconds=None)
+            else:
+                dv = writevalue.Value
             res.append(
-                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value)
+                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, dv)
             )
         return res
 
@@ -151,24 +156,19 @@ class ViewService(object):
             # If ReferenceTypeId is not specified in the BrowseDescription,
             # all References are returned and includeSubtypes is ignored.
             return True
-        if not subtypes and ref2.Identifier == ua.ObjectIds.HasSubtype:
-            return False
-        if ref1.Identifier == ref2.Identifier:
+        if ref1 == ref2:
             return True
-        oktypes = self._get_sub_ref(ref1)
-        if not subtypes and ua.NodeId(ua.ObjectIds.HasSubtype) in oktypes:
-            oktypes.remove(ua.NodeId(ua.ObjectIds.HasSubtype))
-        return ref2 in oktypes
+        if subtypes and ref2 in self._get_sub_ref(ref1):
+            return True
+        return False
 
-    def _get_sub_ref(self, ref: ua.NodeId) -> List[ua.NodeId]:
-        res: List[ua.NodeId] = []
-        nodedata = self._aspace[ref]
+    def _get_sub_ref(self, ref: ua.NodeId) -> Generator[ua.NodeId, None, None]:
+        nodedata = self._aspace.get(ref)
         if nodedata is not None:
             for ref_desc in nodedata.references:
-                if ref_desc.ReferenceTypeId.Identifier == ua.ObjectIds.HasSubtype and ref_desc.IsForward:
-                    res.append(ref_desc.NodeId)
-                    res += self._get_sub_ref(ref_desc.NodeId)
-        return res
+                if ref_desc.ReferenceTypeId == ua.NodeId(ua.ObjectIds.HasSubtype) and ref_desc.IsForward:
+                    yield ref_desc.NodeId
+                    yield from self._get_sub_ref(ref_desc.NodeId)
 
     def _suitable_direction(self, direction: ua.BrowseDirection, isforward: bool) -> bool:
         if direction == ua.BrowseDirection.Both:
@@ -230,11 +230,8 @@ class ViewService(object):
                 continue
             if ref.IsForward == el.IsInverse:
                 continue
-            if not el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
+            if not self._suitable_reftype(el.ReferenceTypeId, ref.ReferenceTypeId, el.IncludeSubtypes):
                 continue
-            elif el.IncludeSubtypes and ref.ReferenceTypeId != el.ReferenceTypeId:
-                if ref.ReferenceTypeId not in self._get_sub_ref(el.ReferenceTypeId):
-                    continue
             nodeids.append(ref.NodeId)
         return nodeids
 
@@ -305,7 +302,7 @@ class NodeManagementService:
 
             # check properties
             for ref in self._aspace[item.ParentNodeId].references:
-                if ref.ReferenceTypeId.Identifier == ua.ObjectIds.HasProperty:
+                if ref.ReferenceTypeId == ua.NodeId(ua.ObjectIds.HasProperty):
                     if item.BrowseName.Name == ref.BrowseName.Name:
                         self.logger.warning(
                             f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
@@ -430,13 +427,11 @@ class NodeManagementService:
                         "Error calling delete node callback callback %s, %s, %s", nodedata, ua.AttributeIds.Value, ex
                     )
 
-    def add_references(self, refs: ua.AddReferencesItem, user: User = User(role=UserRole.Admin)): # FIXME return type
-        result = []
-        for ref in refs:
-            result.append(self._add_reference(ref, user))
+    def add_references(self, refs: List[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)): # FIXME return type
+        result = [self._add_reference(ref, user) for ref in refs]
         return result
 
-    def try_add_references(self, refs: ua.AddReferencesItem, user: User = User(role=UserRole.Admin)):
+    def try_add_references(self, refs: List[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)):
         for ref in refs:
             if not self._add_reference(ref, user).is_good():
                 yield ref
@@ -515,6 +510,7 @@ class NodeManagementService:
             dv = ua.DataValue(
                 ua.Variant(getattr(attributes, name), vtype, is_array=is_array),
                 SourceTimestamp=datetime.utcnow() if add_timestamps else None,
+                ServerTimestamp=datetime.utcnow() if add_timestamps and self._aspace.force_server_timestamp else None,
             )
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
 
@@ -614,6 +610,7 @@ class AddressSpace:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.force_server_timestamp: bool = True
         self._nodes: Dict[ua.NodeId, NodeData] = {}
         self._datachange_callback_counter = 200
         self._handle_to_attribute_map: Dict[int, Tuple[ua.NodeId, ua.AttributeIds]] = {}
@@ -642,7 +639,7 @@ class AddressSpace:
             self._nodeid_counter[idx] += 1
         else:
             # get the biggest identifier number from the existed nodes in address space
-            identifier_list = sorted(
+            identifier_list = sorted(  # type: ignore
                 [
                     nodeid.Identifier
                     for nodeid in self._nodes.keys()
@@ -718,7 +715,7 @@ class AddressSpace:
         raise NotImplementedError
 
         # ToDo: async friendly implementation - load all at once?
-        class LazyLoadingDict(collections.MutableMapping):
+        class LazyLoadingDict(collections.abc.MutableMapping):
             """
             Special dict that only loads nodes as they are accessed. If a node is accessed it gets copied from the
             shelve to the cache dict. All user nodes are saved in the cache ONLY. Saving data back to the shelf
@@ -780,18 +777,17 @@ class AddressSpace:
         attval = node.attributes.get(attr, None)
         if attval is None:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
-
-        if not self._is_expected_variant_type(value, attval, node):
+        if value.StatusCode is not None and value.StatusCode.is_bad():
+            # https://reference.opcfoundation.org/v104/Core/docs/Part4/7.7.1/
+            # If the StatusCode indicates an error then the value is to be ignored and the Server shall set it to null.
+            value = dataclasses.replace(value, Value=ua.Variant(ua.Null(), ua.VariantType.Null))
+        elif not self._is_expected_variant_type(value, attval, node):
+            # Only check datatype if no bad StatusCode is set
             return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
 
-        old = attval.value
         attval.value = value
-        cbs = []
-        # only send call callback when a value or status code change has happened
-        if (old.Value != value.Value) or (old.StatusCode != value.StatusCode):
-            cbs = list(attval.datachange_callbacks.items())
 
-        for k, v in cbs:
+        for k, v in attval.datachange_callbacks.items():
             try:
                 await v(k, value)
             except Exception as ex:

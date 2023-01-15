@@ -30,7 +30,7 @@ if sys.version_info.minor < 10:
             return res
         return ()
 else:
-    from typing import get_origin, get_args
+    from typing import get_origin, get_args  # type: ignore
 
 
 from asyncua.ua import status_codes
@@ -43,6 +43,10 @@ EPOCH_AS_FILETIME = 116444736000000000  # January 1, 1970 as MS file time
 HUNDREDS_OF_NANOSECONDS = 10000000
 FILETIME_EPOCH_AS_DATETIME = datetime(1601, 1, 1)
 FILETIME_EPOCH_AS_UTC_DATETIME = FILETIME_EPOCH_AS_DATETIME.replace(tzinfo=timezone.utc)
+MAX_FILETIME_EPOCH_DATETIME = datetime(9999, 12, 31, 23, 59, 59)
+MAX_FILETIME_EPOCH_AS_UTC_DATETIME = MAX_FILETIME_EPOCH_DATETIME.replace(tzinfo=timezone.utc)
+MAX_OPC_FILETIME = int((MAX_FILETIME_EPOCH_DATETIME - FILETIME_EPOCH_AS_DATETIME).total_seconds()) * HUNDREDS_OF_NANOSECONDS
+MAX_INT64 = 2 ** 63 - 1
 
 
 def type_is_union(uatype):
@@ -52,36 +56,48 @@ def type_is_union(uatype):
 def type_is_list(uatype):
     return get_origin(uatype) == list
 
+def type_allow_subclass(uatype):
+    return get_origin(uatype) not in [Union, list, None]
 
-def type_from_union(uatype, origin=None):
+def types_from_union(uatype, origin=None):
     if origin is None:
         origin = get_origin(uatype)
     if origin != Union:
         raise ValueError(f"{uatype} is not an Union")
     # need to find out what real type is
-    for subtype in get_args(uatype):
-        if subtype is not None.__class__:  # FIXME: strange comparison...
-            return subtype
-    raise ValueError(f"Union {uatype} does not seem to contain a valid type")
+    types = list(filter(lambda subtype: not isinstance(None, subtype), get_args(uatype)))
+    if not types:
+        raise ValueError(f"Union {uatype} does not seem to contain a valid type")
+    return types
 
 
 def type_from_list(uatype):
     return get_args(uatype)[0]
 
+def type_from_allow_subtype(uatype):
+    return get_args(uatype)[0]
 
 def type_string_from_type(uatype):
     if type_is_union(uatype):
-        uatype = type_from_union(uatype)
+        uatype = types_from_union(uatype)[0]
     elif type_is_list(uatype):
         uatype = type_from_list(uatype)
+    elif type_allow_subclass(uatype):
+        uatype = type_from_allow_subtype(uatype)
     return uatype.__name__
 
 
-class SByte(bytes):
+@dataclass
+class UaUnion:
+    ''' class to identify unions '''
     pass
 
 
-class Byte(bytes):
+class SByte(int):
+    pass
+
+
+class Byte(int):
     pass
 
 
@@ -133,7 +149,7 @@ class Null:  # Null(NoneType) is not supported in Python
     pass
 
 
-class String:  # Passing None as arg will result in unepected behaviour so disabling
+class String:  # Passing None as arg will result in unexpected behaviour so disabling
     pass
 
 
@@ -153,7 +169,20 @@ _microsecond = timedelta(microseconds=1)
 
 
 def datetime_to_win_epoch(dt: datetime):
-    ref = FILETIME_EPOCH_AS_DATETIME if dt.tzinfo is None else FILETIME_EPOCH_AS_UTC_DATETIME
+    if dt.tzinfo is None:
+        ref = FILETIME_EPOCH_AS_DATETIME
+        max_ep = MAX_FILETIME_EPOCH_DATETIME
+    else:
+        ref = FILETIME_EPOCH_AS_UTC_DATETIME
+        max_ep = MAX_FILETIME_EPOCH_AS_UTC_DATETIME
+    # Python datetime starts from year 1, opc ua only support dates starting 1601-01-01 12:00AM UTC
+    # So we need to trunc the value to zero
+    if ref >= dt:
+        return 0
+    # A date/time is encoded as the maximum value for an Int64 if either
+    # The value is equal to or greater than 9999-12-31 11:59:59PM UTC,
+    if dt >= max_ep:
+        return MAX_INT64
     return 10 * ((dt - ref) // _microsecond)
 
 
@@ -162,12 +191,12 @@ def get_win_epoch():
 
 
 def win_epoch_to_datetime(epch):
-    try:
-        return FILETIME_EPOCH_AS_DATETIME + timedelta(microseconds=epch // 10)
-    except OverflowError:
-        # FILETIMEs after 31 Dec 9999 can't be converted to datetime
-        logger.warning("datetime overflow: %s", epch)
-        return datetime(MAXYEAR, 12, 31, 23, 59, 59, 999999)
+    if epch >= MAX_OPC_FILETIME:
+        # FILETIMEs after 31 Dec 9999 are truncated to max value
+        return MAX_FILETIME_EPOCH_DATETIME
+    if epch < 0:
+        return FILETIME_EPOCH_AS_DATETIME
+    return FILETIME_EPOCH_AS_DATETIME + timedelta(microseconds=epch // 10)
 
 
 FROZEN: bool = False
@@ -177,7 +206,7 @@ class ValueRank(IntEnum):
     """
     Defines dimensions of a variable.
     This enum does not support all cases since ValueRank support any n>0
-    but since it is an IntEnum it can be replace by a normal int
+    but since it is an IntEnum it can be replaced by a normal int
     """
 
     ScalarOrOneDimension = -3
@@ -311,20 +340,39 @@ class StatusCode:
     def check(self):
         """
         Raises an exception if the status code is anything else than 0 (good).
-
-        Use the is_good() method if you do not want an exception.
         """
         if not self.is_good():
             raise UaStatusCodeError(self.value)
 
     def is_good(self):
         """
-        return True if status is Good.
+        return True if status is Good (00).
         """
         mask = 3 << 30
-        if mask & self.value:
-            return False
-        return True
+        if mask & self.value == 0x00000000:
+            return True
+        return False
+
+    def is_bad(self):
+        """
+        https://reference.opcfoundation.org/v104/Core/docs/Part4/7.34.1/
+        11   Reserved for future use. All Clients should treat a StatusCode with this severity as “Bad”.
+
+        return True if status is Bad (10) or (11).
+        """
+        mask = 3 << 30
+        if mask & self.value in (0x80000000, 0xc0000000):
+            return True
+        return False
+
+    def is_uncertain(self):
+        """
+        return True if status is Uncertain (01).
+        """
+        mask = 3 << 30
+        if mask & self.value == 0x40000000:
+            return True
+        return False
 
     @property
     def name(self):
@@ -357,7 +405,7 @@ class NodeId:
     Args:
         identifier: The identifier might be an int, a string, bytes or a Guid
         namespaceidx(int): The index of the namespace
-        nodeidtype(NodeIdType): The type of the nodeid if it cannot be guess or you want something
+        nodeidtype(NodeIdType): The type of the nodeid if it cannot be guessed, or you want something
         special like twobyte nodeid or fourbytenodeid
 
 
@@ -596,10 +644,10 @@ class QualifiedName:
         object.__setattr__(self, "NamespaceIndex", NamespaceIndex)
         if isinstance(self.NamespaceIndex, str) and isinstance(self.Name, int):
             # originally the order or argument was inversed, try to support it
-            logger.warning("QualifiedName are str, int, while int, str is expected, swithcing")
+            logger.warning("QualifiedName are str, int, while int, str is expected, switching")
 
         if not isinstance(self.NamespaceIndex, int) or not isinstance(self.Name, (str, type(None))):
-            raise ValueError(f"QualifiedName constructore args have wrong types, {self}")
+            raise ValueError(f"QualifiedName constructor args have wrong types, {self}")
 
     def to_string(self):
         return f"{self.NamespaceIndex}:{self.Name}"
@@ -629,7 +677,7 @@ class LocalizedText:
     Text: Optional[String] = None
 
     def __init__(self, Text=None, Locale=None):
-        # need to write init method since args ar inverted in original implementataion
+        # need to write init method since args ar inverted in original implementation
         object.__setattr__(self, "Text", Text)
         object.__setattr__(self, "Locale", Locale)
 
@@ -772,7 +820,7 @@ class Variant:
     """
     Create an OPC-UA Variant object.
     if no argument a Null Variant is created.
-    if not variant type is given, attemps to guess type from python type
+    if not variant type is given, attempts to guess type from python type
     if a variant is given as value, the new objects becomes a copy of the argument
 
     :ivar Value:
@@ -780,9 +828,9 @@ class Variant:
     :ivar VariantType:
     :vartype VariantType: VariantType
     :ivar Dimension:
-    :vartype Dimensions: The length of each dimensions. Make the variant a Matrix
+    :vartype Dimensions: The length of each dimension. Make the variant a Matrix
     :ivar is_array:
-    :vartype is_array: If the variant is an array. Always True if Dimension is specificied
+    :vartype is_array: If the variant is an array. Always True if Dimension is specified
     """
 
     # FIXME: typing is wrong here
@@ -917,6 +965,13 @@ def get_shape(mylist):
     return dims
 
 
+# For completeness, these datatypes are abstract!
+# If they are used in structs, abstract types are either Variant or ExtensionObjects.
+# If they only contain basic types (int16, float, double..) they are Variants
+UInteger = Variant
+Integer = Variant
+
+
 @dataclass(frozen=True)
 class DataValue:
     """
@@ -1032,7 +1087,7 @@ def get_default_value(vtype):
     if vtype == VariantType.Guid:
         return uuid.uuid4()
     if vtype == VariantType.XmlElement:
-        return None  # Not sure this is correct
+        return None  # Not sure if this is correct
     if vtype == VariantType.NodeId:
         return NodeId()
     if vtype == VariantType.ExpandedNodeId:
@@ -1052,6 +1107,23 @@ def get_default_value(vtype):
     raise RuntimeError(f"function take a uatype as argument, got: {vtype}")
 
 
+basetype_by_datatype = {}
+basetype_datatypes = {}
+
+
+# register of alias of basetypes
+def register_basetype(name, nodeid, class_type):
+    """
+    Register a new alias of basetypes for automatic decoding and make them available in ua module
+    """
+    logger.info("registering new basetype alias: %s %s %s", name, nodeid, class_type)
+    basetype_by_datatype[nodeid] = name
+    basetype_datatypes[class_type] = nodeid
+    import asyncua.ua
+
+    setattr(asyncua.ua, name, class_type)
+
+
 # register of custom enums (Those loaded with load_enums())
 enums_by_datatype = {}
 enums_datatypes = {}
@@ -1061,7 +1133,7 @@ def register_enum(name, nodeid, class_type):
     """
     Register a new enum for automatic decoding and make them available in ua module
     """
-    logger.info("registring new enum: %s %s %s", name, nodeid, class_type)
+    logger.info("registering new enum: %s %s %s", name, nodeid, class_type)
     enums_by_datatype[nodeid] = class_type
     enums_datatypes[class_type] = nodeid
     import asyncua.ua
@@ -1069,7 +1141,7 @@ def register_enum(name, nodeid, class_type):
     setattr(asyncua.ua, name, class_type)
 
 
-# These dictionnaries are used to register extensions classes for automatic
+# These dictionaries are used to register extensions classes for automatic
 # decoding and encoding
 extension_objects_by_datatype = {}  # Dict[Datatype, type]
 extension_objects_by_typeid = {}  # Dict[EncodingId, type]
@@ -1082,7 +1154,7 @@ def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid
     Register a new extension object for automatic decoding and make them available in ua module
     """
     logger.info(
-        "registring new extension object: %s %s %s %s",
+        "registering new extension object: %s %s %s %s",
         name,
         encoding_nodeid,
         class_type,
@@ -1130,3 +1202,5 @@ class SecurityPolicyType(Enum):
     Basic256_SignAndEncrypt = 4
     Basic256Sha256_Sign = 5
     Basic256Sha256_SignAndEncrypt = 6
+    Aes128Sha256RsaOaep_Sign = 7
+    Aes128Sha256RsaOaep_SignAndEncrypt = 8

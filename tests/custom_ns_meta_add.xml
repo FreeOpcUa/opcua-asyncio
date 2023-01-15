@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UANodeSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd" xmlns:s1="http://foobar.org/struct_optional/Types.xsd" xmlns:ua="http://unifiedautomation.com/Configuration/NodeSet.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <NamespaceUris>
+        <Uri>http://foobar.org/struct_optional/</Uri>
+    </NamespaceUris>
+    <Models>
+        <Model ModelUri="http://foobar.org/struct_optional/" PublicationDate="2022-10-03T11:29:34Z" Version="1.0.0">
+            <RequiredModel ModelUri="http://opcfoundation.org/UA/" PublicationDate="2022-01-24T00:00:00Z" Version="1.05.01"/>
+        </Model>
+    </Models>
+</UANodeSet>

@@ -9,7 +9,6 @@ from asyncua.server.users import UserRole
 from asyncua.server.user_managers import CertificateUserManager
 
 try:
-    from asyncua.crypto import uacrypto
     from asyncua.crypto import security_policies
 except ImportError:
     print("WARNING: CRYPTO NOT AVAILABLE, CRYPTO TESTS DISABLED!!")
@@ -75,6 +74,7 @@ async def srv_crypto_one_cert(request):
     await srv.delete_nodes([myobj, myvar])
     await srv.stop()
 
+
 async def test_permissions_admin(srv_crypto_one_cert):
     clt = Client(uri_crypto_cert)
     await clt.set_security(
@@ -125,3 +125,4 @@ async def test_permissions_anonymous(srv_crypto_one_cert):
     )
     await clt.connect()
     await clt.get_endpoints()
+    await clt.disconnect()

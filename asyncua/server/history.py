@@ -152,7 +152,7 @@ class HistoryDict(HistoryStorageInterface):
                 results = results[:nb_values]
 
             if len(results) > self.max_history_data_response_size:
-                cont = results[self.max_history_data_response_size + 1].SourceTimestamp
+                cont = results[self.max_history_data_response_size].SourceTimestamp
                 results = results[:self.max_history_data_response_size]
             return results, cont
 
@@ -202,7 +202,7 @@ class HistoryDict(HistoryStorageInterface):
                 results = results[:nb_values]
 
             if len(results) > self.max_history_data_response_size:
-                cont = results[self.max_history_data_response_size + 1].Time
+                cont = results[self.max_history_data_response_size].Time
                 results = results[:self.max_history_data_response_size]
             return results, cont
 
@@ -210,7 +210,7 @@ class HistoryDict(HistoryStorageInterface):
         pass
 
 
-class SubHandler(SubHandler):
+class SubHandler(SubHandler):  # type: ignore
     def __init__(self, storage):
         self.storage = storage
 

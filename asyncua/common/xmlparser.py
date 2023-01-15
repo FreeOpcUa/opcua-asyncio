@@ -5,6 +5,7 @@ import re
 import asyncio
 import base64
 import logging
+from typing import List, Tuple
 import xml.etree.ElementTree as ET
 
 from pytz import utc
@@ -57,6 +58,7 @@ class NodeData:
         self.accesslevel = None
         self.useraccesslevel = None
         self.minsample = None
+        self.historizing = False
 
         # referencetype
         self.inversename = ""
@@ -65,6 +67,7 @@ class NodeData:
 
         # datatype
         self.definitions = []
+        self.struct_type = ""
 
     def __str__(self):
         return f"NodeData(nodeid:{self.nodeid})"
@@ -74,7 +77,7 @@ class NodeData:
 
 class Field:
     def __init__(self, data):
-        self.datatype = data.get("DataType", "")
+        self.datatype = data.get("DataType", "i=24")  # Default is BaseDataType
         self.name = data.get("Name")
         self.dname = data.get("DisplayName", "")
         self.optional = bool(data.get("IsOptional", False))
@@ -82,6 +85,7 @@ class Field:
         self.arraydim = data.get("ArrayDimensions", None)  # FIXME: check type
         self.value = int(data.get("Value", 0))
         self.desc = data.get("Description", "")
+        self.max_str_len = int(data.get("MaxStringLength", 0))
 
 
 class RefStruct:
@@ -208,7 +212,7 @@ class XMLParser:
         elif key == "ArrayDimensions":
             obj.dimensions = [int(i) for i in val.split(",")]
         elif key == "MinimumSamplingInterval":
-            obj.minsample = int(val)
+            obj.minsample = float(val)
         elif key == "AccessLevel":
             obj.accesslevel = int(val)
         elif key == "UserAccessLevel":
@@ -232,6 +236,10 @@ class XMLParser:
         elif tag == "InverseName":
             obj.inversename = el.text
         elif tag == "Definition":
+            if el.attrib.get("IsUnion", False):
+                obj.struct_type = "IsUnion"
+            elif el.attrib.get("IsOptional", False):
+                obj.struct_type = "IsOptional"
             for field in el:
                 field = self._parse_field(field)
                 obj.definitions.append(field)
@@ -344,8 +352,8 @@ class XMLParser:
 
     def _parse_list_of_extension_object(self, el):
         """
-        Parse a uax:ListOfExtensionObject Value
-        Return an list of ExtObj
+        Parse an uax:ListOfExtensionObject Value
+        Return a list of ExtObj
         """
         value = []
         for extension_object in el:
@@ -390,7 +398,7 @@ class XMLParser:
         if nsval is not None:
             ns = string_to_val(nsval.text, ua.VariantType.UInt16)
         v = ua.QualifiedName(name, ns)
-        self.logger.error(f"qn: {v}")
+        self.logger.warning("qn: %s", v)
         return v
 
     def _parse_refs(self, el, obj):
@@ -434,3 +442,20 @@ class XMLParser:
                 # check if ModelUri X, in Version Y from time Z was already imported
                 required_models.append(child.attrib)
         return required_models
+
+    def get_nodeset_namespaces(self) -> List[Tuple[str, ua.String, ua.DateTime]]:
+        """
+        Get all namespaces that are registered with version and date_time
+        """
+        ns = []
+        for model in self.root.findall('base:Models/base:Model', self.ns):
+            uri = model.attrib.get('ModelUri')
+            if uri is not None:
+                version = model.attrib.get('Version', '')
+                date_time = model.attrib.get('PublicationDate')
+                if date_time is None:
+                    date_time = ua.DateTime(1, 1, 1)
+                else:
+                    date_time = ua.DateTime.strptime(date_time, "%Y-%m-%dT%H:%M:%SZ")
+                ns.append((uri, version, date_time))
+        return ns

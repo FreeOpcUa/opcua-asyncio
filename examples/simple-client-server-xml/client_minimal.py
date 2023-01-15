@@ -1,3 +1,6 @@
+import asyncio
+import logging
+
 from asyncua import Client
 
 
@@ -5,29 +8,34 @@ class HelloClient:
     def __init__(self, endpoint):
         self.client = Client(endpoint)
 
-    def __enter__(self):
-        self.client.connect()
+    async def __aenter__(self):
+        await self.client.connect()
         return self.client
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.client.disconnect()
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.client.disconnect()
 
 
-if __name__ == '__main__':
-    with HelloClient("opc.tcp://localhost:40840/freeopcua/server/") as client:
+async def main():
+    async with HelloClient("opc.tcp://localhost:4840/freeopcua/server/") as client:
         root = client.nodes.root
         print("Root node is: ", root)
         objects = client.nodes.objects
         print("Objects node is: ", objects)
 
-        hellower = objects.get_child("0:Hellower")
+        hellower = await objects.get_child("0:Hellower")
         print("Hellower is: ", hellower)
 
-        resulting_text = hellower.call_method("0:SayHello", False)
+        resulting_text = await hellower.call_method("0:SayHello", False)
         print(resulting_text)
 
-        resulting_text = hellower.call_method("1:SayHello2", True)
+        resulting_text = await hellower.call_method("1:SayHello2", True)
         print(resulting_text)
 
-        resulting_array = hellower.call_method("1:SayHelloArray", False)
+        resulting_array = await hellower.call_method("1:SayHelloArray", False)
         print(resulting_array)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(main())

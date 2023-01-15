@@ -24,8 +24,8 @@ if __name__ == "__main__":
     with Client("opc.tcp://localhost:53530/OPCUA/SimulationServer/") as client:
         root = client.nodes.root
         print("Root is", root)
-        print("childs of root are: ", root.get_children())
+        print("children of root are: ", root.get_children())
         print("name of root is", root.read_browse_name())
         objects = client.nodes.objects
-        print("childs og objects are: ", objects.get_children())
+        print("children og objects are: ", objects.get_children())
         embed()

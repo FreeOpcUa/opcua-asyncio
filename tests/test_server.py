@@ -150,6 +150,7 @@ async def test_multiple_clients_with_subscriptions(server):
     assert sub1.subscription_id not in server.iserver.subscription_service.subscriptions
     assert sub2.subscription_id not in server.iserver.subscription_service.subscriptions
 
+
 async def test_historize_events(server):
     srv_node = server.get_node(ua.ObjectIds.Server)
     assert await srv_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
@@ -665,6 +666,68 @@ async def test_server_read_write_attribute_value(server: Server):
     assert dv.Value.Value == 5
     await server.delete_nodes([node])
 
+
+@pytest.fixture(scope="function")
+def restore_transport_limits_server(server: Server):
+    # Restore limits after test
+    max_recv = server.bserver.limits.max_recv_buffer
+    max_chunk_count = server.bserver.limits.max_chunk_count
+    yield server
+    server.bserver.limits.max_recv_buffer = max_recv
+    server.bserver.limits.max_chunk_count = max_chunk_count
+
+
+async def test_message_limits_fail_write(restore_transport_limits_server: Server):
+    server = restore_transport_limits_server
+    server.bserver.limits.max_recv_buffer = 1024
+    server.bserver.limits.max_send_buffer = 10240000
+    server.bserver.limits.max_chunk_count = 10
+    test_string = b'a' * 100 * 1024
+    n = await server.nodes.objects.add_variable(1, "MyLimitVariable", test_string)
+    await n.set_writable(True)
+    client = Client(server.endpoint.geturl())
+    # This should trigger a timeout error because the message is to large
+    async with client:
+        n = client.get_node(n.nodeid)
+        await n.read_value()
+        with pytest.raises(ConnectionError):
+            await n.write_value(test_string, ua.VariantType.ByteString)
+
+
+async def test_message_limits_fail_read(restore_transport_limits_server: Server):
+    server = restore_transport_limits_server
+    server.bserver.limits.max_recv_buffer = 10240000
+    server.bserver.limits.max_send_buffer = 1024
+    server.bserver.limits.max_chunk_count = 10
+    test_string = b'a' * 100 * 1024
+    n = await server.nodes.objects.add_variable(1, "MyLimitVariable", test_string)
+    await n.set_writable(True)
+    client = Client(server.endpoint.geturl())
+    # This should trigger a connection error because the message is to large
+    async with client:
+        n = client.get_node(n.nodeid)
+        await n.write_value(test_string, ua.VariantType.ByteString)
+        with pytest.raises(ConnectionError):
+            await n.read_value()
+
+
+async def test_message_limits_works(restore_transport_limits_server: Server):
+    server = restore_transport_limits_server
+    # server.bserver.limits.max_recv_buffer = 1024
+    server.bserver.limits.max_send_buffer = 1024
+    server.bserver.limits.max_chunk_count = 10
+    n = await server.nodes.objects.add_variable(1, "MyLimitVariable2", "t")
+    await n.set_writable(True)
+    client = Client(server.endpoint.geturl())
+    # Test that chunks are working correct
+    async with client:
+        n = client.get_node(n.nodeid)
+        test_string = 'a' * (1024 * 5)
+        await n.write_value(test_string, ua.VariantType.String)
+        await n.read_value()
+
+
+
 """
 class TestServerCaching(unittest.TestCase):
     def runTest(self):
@@ -706,3 +769,19 @@ class TestServerStartError(unittest.TestCase):
         server1.stop()
         server2.stop()
 """
+
+async def test_null_auth(server):
+    """
+    OPC-UA Specification Part 4, 5.6.3 specifies that a:
+    > Null or empty user token shall always be interpreted as anonymous
+
+    Ensure a Null token is accepted as an anonymous connection token.
+    """
+    client = Client(server.endpoint.geturl())
+    # Modify the authentication creation in the client request
+    def _add_null_auth(self, params):
+        params.UserIdentityToken = ua.ExtensionObject(ua.NodeId(ua.ObjectIds.Null))
+    client._add_anonymous_auth = _add_null_auth.__get__(client, Client)
+    # Attempt to connect, this should be accepted without error
+    async with client:
+        pass

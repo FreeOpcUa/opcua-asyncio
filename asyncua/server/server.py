@@ -4,9 +4,10 @@ High level interface to pure python OPC-UA server
 
 import asyncio
 import logging
+import math
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
-from typing import Coroutine, Optional, Tuple
+from typing import Coroutine, Optional, Tuple, Union
 from pathlib import Path
 
 from asyncua import ua
@@ -24,6 +25,7 @@ from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
 from ..common.structures104 import load_data_type_definitions
 from ..common.ua_utils import get_nodes_of_namespace
+from ..common.connection import TransportLimits
 
 from ..crypto import security_policies, uacrypto
 
@@ -51,11 +53,11 @@ class Server:
     All methods are threadsafe
 
     If you need more flexibility you call directly the Ua Service methods
-    on the iserver  or iserver.isession object members.
+    on the iserver or iserver.isession object members.
 
     During startup the standard address space will be constructed, which may be
     time-consuming when running a server on a less powerful device (e.g. a
-    Raspberry Pi). In order to improve startup performance, a optional path to a
+    Raspberry Pi). In order to improve startup performance, an optional path to a
     cache file can be passed to the server constructor.
     If the parameter is defined, the address space will be loaded from the
     cache file or the file will be created if it does not exist yet.
@@ -98,12 +100,22 @@ class Server:
         # enable all endpoints by default
         self._security_policy = [
             ua.SecurityPolicyType.NoSecurity, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
-            ua.SecurityPolicyType.Basic256Sha256_Sign
+            ua.SecurityPolicyType.Basic256Sha256_Sign, ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt,
+            ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign
         ]
         # allow all certificates by default
         self._permission_ruleset = None
-        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
+        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep"]
         self.certificate = None
+        # Use acceptable limits
+        buffer_sz = 65535
+        max_msg_sz = 100 * 1024 * 1024  # 100mb
+        self.limits = TransportLimits(
+            max_recv_buffer=buffer_sz,
+            max_send_buffer=buffer_sz,
+            max_chunk_count=math.ceil(max_msg_sz / buffer_sz),  # Round up to allow max msg size
+            max_message_size=max_msg_sz
+        )
 
     async def init(self, shelf_file=None):
         await self.iserver.init(shelf_file)
@@ -127,6 +139,12 @@ class Server:
         Do not call unless you know what you are doing.
         """
         self.iserver.match_discovery_source_ip = match_discovery_client_ip
+
+    def set_force_server_timestamp(self, force_server_timestamp: bool):
+        """
+        Enables or disables automatically setting ServerTimestamp on Value attributes
+        """
+        self.iserver.aspace.force_server_timestamp = force_server_timestamp
 
     async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
                              build_number, build_date):
@@ -195,14 +213,14 @@ class Server:
         return f"OPC UA Server({self.endpoint.geturl()})"
     __repr__ = __str__
 
-    async def load_certificate(self, path: str, format: str = None):
+    async def load_certificate(self, path_or_content: Union[str, bytes], format: str = None):
         """
         load server certificate from file, either pem or der
         """
-        self.certificate = await uacrypto.load_certificate(path, format)
+        self.certificate = await uacrypto.load_certificate(path_or_content, format)
 
-    async def load_private_key(self, path: Path, password=None, format=None):
-        self.iserver.private_key = await uacrypto.load_private_key(path, password, format)
+    async def load_private_key(self, path_or_content: Union[Path, bytes], password=None, format=None):
+        self.iserver.private_key = await uacrypto.load_private_key(path_or_content, password, format)
 
     def disable_clock(self, val: bool = True):
         """
@@ -217,7 +235,7 @@ class Server:
     async def set_application_uri(self, uri: str):
         """
         Set application/server URI.
-        This uri is supposed to be unique. If you intent to register
+        This uri is supposed to be unique. If you intend to register
         your server to a discovery server, it really should be unique in
         your system!
         default is : "urn:freeopcua:python:server"
@@ -355,26 +373,44 @@ class Server:
                     ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
                                              ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
                                              permission_ruleset=self._permission_ruleset))
+            if ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt in self._security_policy:
+                self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep,
+                                    ua.MessageSecurityMode.SignAndEncrypt)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
+                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
+                                             self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
+            if ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign in self._security_policy:
+                self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep, ua.MessageSecurityMode.Sign)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
+                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
 
     def _set_endpoints(self, policy=ua.SecurityPolicy, mode=ua.MessageSecurityMode.None_):
         idtokens = []
+        supported_token_classes = []
         if "Anonymous" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "anonymous"
             idtoken.TokenType = ua.UserTokenType.Anonymous
             idtokens.append(idtoken)
+            supported_token_classes.append(ua.AnonymousIdentityToken)
 
         if "Basic256Sha256" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = 'certificate_basic256sha256'
             idtoken.TokenType = ua.UserTokenType.Certificate
             idtokens.append(idtoken)
+            supported_token_classes.append(ua.X509IdentityToken)
 
         if "Username" in self._policyIDs:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "username"
             idtoken.TokenType = ua.UserTokenType.UserName
             idtokens.append(idtoken)
+            supported_token_classes.append(ua.UserNameIdentityToken)
 
         appdesc = ua.ApplicationDescription()
         appdesc.ApplicationName = ua.LocalizedText(self.name)
@@ -394,6 +430,7 @@ class Server:
         edp.TransportProfileUri = "http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary"
         edp.SecurityLevel = 0
         self.iserver.add_endpoint(edp)
+        self.iserver.supported_tokens = tuple(supported_token_classes)
 
     def set_server_name(self, name):
         self.name = name
@@ -406,7 +443,7 @@ class Server:
         await self.iserver.start()
         try:
             ipaddress, port = self._get_bind_socket_info()
-            self.bserver = BinaryServer(self.iserver, ipaddress, port)
+            self.bserver = BinaryServer(self.iserver, ipaddress, port, self.limits)
             self.bserver.set_policies(self._policies)
             await self.bserver.start()
         except Exception as exp:
@@ -416,7 +453,7 @@ class Server:
         else:
             _logger.debug("%s server started", self)
 
-    def _get_bind_socket_info(self) -> Tuple[str, int]:
+    def _get_bind_socket_info(self) -> Tuple[Optional[str], Optional[int]]:
         if self.socket_address is not None:
             return self.socket_address
         else:
@@ -429,7 +466,7 @@ class Server:
         if self._discovery_handle:
             self._discovery_handle.cancel()
         if self._discovery_clients:
-            await asyncio.wait([client.disconnect() for client in self._discovery_clients.values()])
+            await asyncio.gather(*[client.disconnect() for client in self._discovery_clients.values()])
         await self.bserver.stop()
         await self.iserver.stop()
         _logger.debug("%s Internal server stopped, everything closed", self)
@@ -578,33 +615,35 @@ class Server:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
 
-    async def import_xml(self, path=None, xmlstring=None) -> Coroutine:
+    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Coroutine:
         """
         Import nodes defined in xml
         """
-        importer = XmlImporter(self)
+        importer = XmlImporter(self, strict_mode)
         return await importer.import_xml(path, xmlstring)
 
-    async def export_xml(self, nodes, path):
+    async def export_xml(self, nodes, path, export_values: bool = False):
         """
         Export defined nodes to xml
+        :param export_value: export values from variants
         """
-        exp = XmlExporter(self)
+        exp = XmlExporter(self, export_values=export_values)
         await exp.build_etree(nodes)
         await exp.write_xml(path)
 
-    async def export_xml_by_ns(self, path: str, namespaces: list = None):
+    async def export_xml_by_ns(self, path: str, namespaces: list = None, export_values: bool = False):
         """
         Export nodes of one or more namespaces to an XML file.
         Namespaces used by nodes are always exported for consistency.
         :param path: name of the xml file to write
         :param namespaces: list of string uris or int indexes of the namespace to export,
+        :param export_values: export values from variants
          if not provide all ns are used except 0
         """
         if namespaces is None:
             namespaces = []
         nodes = await get_nodes_of_namespace(self, namespaces)
-        await self.export_xml(nodes, path)
+        await self.export_xml(nodes, path, export_values=export_values)
 
     async def delete_nodes(self, nodes, recursive=False) -> Coroutine:
         return await delete_nodes(self.iserver.isession, nodes, recursive)
@@ -690,7 +729,7 @@ class Server:
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
-        directly write datavalue to the Attribute, bypasing some checks and structure creation
+        directly write datavalue to the Attribute, bypassing some checks and structure creation,
         so it is a little faster
         """
         return await self.iserver.write_attribute_value(nodeid, datavalue, attr)

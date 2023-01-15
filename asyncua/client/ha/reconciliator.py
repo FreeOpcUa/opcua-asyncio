@@ -8,12 +8,15 @@ from dataclasses import astuple
 from enum import Enum
 from functools import partial
 from typing import TYPE_CHECKING, Dict, Set, Union, List, Optional
-from sortedcontainers import SortedDict
+from sortedcontainers import SortedDict  # type: ignore
 from asyncua import ua, Client
 from pickle import PicklingError
 
 from .common import batch, event_wait, get_digest
 from .virtual_subscription import VirtualSubscription
+
+if TYPE_CHECKING:
+    from asyncua.sync import Subscription
 
 
 _logger = logging.getLogger(__name__)
@@ -179,8 +182,8 @@ class Reconciliator:
 
     def _subs_to_del(
         self, url: str, real_map: SubMap, ideal_map: SubMap
-    ) -> List[Optional[asyncio.Task]]:
-        to_del = []
+    ) -> List[asyncio.Task]:
+        to_del: List[asyncio.Task] = []
         sub_to_del = set(real_map[url]) - set(ideal_map[url])
         if sub_to_del:
             _logger.info(f"Removing {len(sub_to_del)} subscriptions")
@@ -195,8 +198,8 @@ class Reconciliator:
 
     def _subs_to_add(
         self, url: str, real_map: SubMap, ideal_map: SubMap
-    ) -> List[Optional[asyncio.Task]]:
-        to_add = []
+    ) -> List[asyncio.Task]:
+        to_add: List[asyncio.Task] = []
         sub_to_add = set(ideal_map[url]) - set(real_map[url])
         if sub_to_add:
             _logger.info(f"Adding {len(sub_to_add)} subscriptions")
@@ -254,9 +257,9 @@ class Reconciliator:
         client: Client,
         vs_real: VirtualSubscription,
         vs_ideal: VirtualSubscription,
-    ) -> List[Optional[asyncio.Task]]:
-        tasks = []
-        real_sub = self.name_to_subscription[url].get(sub_name)
+    ) -> List[asyncio.Task]:
+        tasks: List[asyncio.Task] = []
+        real_sub: Subscription = self.name_to_subscription[url].get(sub_name)
         monitoring = vs_real.monitoring
         node_to_add = set(vs_ideal.nodes) - set(vs_real.nodes)
         if node_to_add:
@@ -301,10 +304,10 @@ class Reconciliator:
         sub_name: str,
         vs_real: VirtualSubscription,
         vs_ideal: VirtualSubscription,
-    ) -> List[Optional[asyncio.Task]]:
-        to_del = []
+    ) -> List[asyncio.Task]:
+        to_del: List[asyncio.Task] = []
         node_to_del = set(vs_real.nodes) - set(vs_ideal.nodes)
-        real_sub = self.name_to_subscription[url].get(sub_name)
+        real_sub: Subscription = self.name_to_subscription[url].get(sub_name)
         if node_to_del:
             _logger.info(f"Removing {len(node_to_del)} Nodes")
             for batch_nodes in batch(node_to_del, self.BATCH_MI_SIZE):
@@ -438,3 +441,20 @@ class Reconciliator:
         for a in inspect.getmembers(self):
             if not a[0].startswith("__") and not inspect.ismethod(a[1]):
                 _logger.debug(a)
+
+    def hook_mi_request(self, url: str, sub_name: str, nodes: Set[SortedDict], action: Method):
+        """placeholder for easily superclass the HaClient and implement custom logic
+        """
+
+    def hook_add_to_map_error(self, url: str, action: Method, fut: asyncio.Task, **kwargs):
+        """placeholder for easily superclass the HaClient and implement custom logic
+        """
+
+    def hook_add_to_map(self, fut: asyncio.Task, url: str, action: Method, **kwargs):
+        """placeholder for easily superclass the HaClient and implement custom logic
+        """
+
+    def hook_del_from_map(self, fut: asyncio.Task, url: str, **kwargs):
+        """placeholder for easily superclass the HaClient and implement custom logic
+        """
+

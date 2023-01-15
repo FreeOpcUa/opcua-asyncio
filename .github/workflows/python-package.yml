@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.7', '3.10', 'pypy-3.8']
+        python-version: ['3.7', '3.11', 'pypy-3.8']
 
     steps:
     - uses: actions/checkout@v2
@@ -26,7 +26,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
+        python -m pip install flake8 pytest mypy
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f dev_requirements.txt ]; then pip install -r dev_requirements.txt; fi
     - name: Lint with flake8
@@ -35,6 +35,10 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --statistics
+        # - name: Lint with mypy
+        # run: |
+        # python -m pip install types-aiofiles types-python-dateutil types-pytz
+        # python -m mypy --show-error-code asyncua/
     - name: Test with pytest
       run: |
         pytest -v -s

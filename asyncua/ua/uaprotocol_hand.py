@@ -13,9 +13,9 @@ OPC_TCP_SCHEME = 'opc.tcp'
 @dataclass
 class Hello:
     ProtocolVersion: uatypes.UInt32 = 0
-    # the following values couldbe set to 0 (meaning no limits)
-    # unfortunaltely many servers do not support it
-    # even newer version of prosys are broken
+    # the following values could be set to 0 (meaning no limits)
+    # unfortunately many servers do not support it
+    # even newer version of prosys is broken,
     # so we set then to a high value known to work most places
     ReceiveBufferSize: uatypes.UInt32 = 2**31 - 1
     SendBufferSize: uatypes.UInt32 = 2**31 - 1
@@ -111,7 +111,7 @@ class SequenceHeader:
 
 class CryptographyNone:
     """
-    Base class for symmetric/asymmetric cryprography
+    Base class for symmetric/asymmetric cryptography
     """
     def __init__(self):
         pass
@@ -172,6 +172,7 @@ class SecurityPolicy:
     AsymmetricSignatureURI: str = ''
     signature_key_size: int = 0
     symmetric_key_size: int = 0
+    secure_channel_nonce_length: int = 0
 
     def __init__(self, permissions=None):
         self.asymmetric_cryptography = CryptographyNone()
@@ -274,7 +275,7 @@ class ReferenceTypeAttributes(auto.ReferenceTypeAttributes):
 
 
 # FIXME: changes in that class donnot seem to be part of spec as of 1.04
-#not sure what the spec expect, maybe DataTypeDefinition must be set using an extra call...
+# not sure what the spec expect, maybe DataTypeDefinition must be set using an extra call...
 # maybe it will be part of spec in 1.05??? no ideas
 @dataclass
 class DataTypeAttributes(auto.DataTypeAttributes):
@@ -284,7 +285,7 @@ class DataTypeAttributes(auto.DataTypeAttributes):
         self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract | ana.DataTypeDefinition
 
 
-# we now need to register DataTypeAttributes since we added a new attritbute
+# we now need to register DataTypeAttributes since we added a new attribute
 nid = uatypes.FourByteNodeId(auto.ObjectIds.DataTypeAttributes_Encoding_DefaultBinary)
 uatypes.extension_objects_by_typeid[nid] = DataTypeAttributes
 uatypes.extension_object_typeids['DataTypeAttributes'] = nid

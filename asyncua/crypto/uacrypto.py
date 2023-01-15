@@ -17,18 +17,30 @@ from dataclasses import dataclass
 
 @dataclass
 class CertProperties:
-    path: Path
+    path_or_content: Union[bytes, Path]
     extension: Optional[str] = None
     password: Optional[Union[str, bytes]] = None
 
 
-async def load_certificate(path: Path, extension: Optional[str] = None):
-    ext = path.suffix
-    async with aiofiles.open(path, mode='rb') as f:
-        if ext == ".pem" or extension == 'pem' or extension == 'PEM':
-            return x509.load_pem_x509_certificate(await f.read(), default_backend())
-        else:
-            return x509.load_der_x509_certificate(await f.read(), default_backend())
+async def get_content(path_or_content: Union[str, bytes, Path]) -> bytes:
+    if isinstance(path_or_content, bytes):
+        return path_or_content
+
+    async with aiofiles.open(path_or_content, mode='rb') as f:
+        return await f.read()
+
+
+async def load_certificate(path_or_content: Union[bytes, Path], extension: Optional[str] = None):
+    if isinstance(path_or_content, Path):
+        ext = path_or_content.suffix
+    else:
+        ext = ''
+
+    content = await get_content(path_or_content)
+    if ext == ".pem" or extension == 'pem' or extension == 'PEM':
+        return x509.load_pem_x509_certificate(content, default_backend())
+    else:
+        return x509.load_der_x509_certificate(content, default_backend())
 
 
 def x509_from_der(data):
@@ -37,17 +49,21 @@ def x509_from_der(data):
     return x509.load_der_x509_certificate(data, default_backend())
 
 
-async def load_private_key(path: Path,
+async def load_private_key(path_or_content: Union[Path, bytes],
                            password: Optional[Union[str, bytes]] = None,
                            extension: Optional[str] = None):
-    ext = path.suffix
+    if isinstance(path_or_content, Path):
+        ext = path_or_content.suffix
+    else:
+        ext = ''
     if isinstance(password, str):
         password = password.encode('utf-8')
-    async with aiofiles.open(path, mode='rb') as f:
-        if ext == ".pem" or extension == 'pem' or extension == 'PEM':
-            return serialization.load_pem_private_key(await f.read(), password=password, backend=default_backend())
-        else:
-            return serialization.load_der_private_key(await f.read(), password=password, backend=default_backend())
+
+    content = await get_content(path_or_content)
+    if ext == ".pem" or extension == 'pem' or extension == 'PEM':
+        return serialization.load_pem_private_key(content, password=password, backend=default_backend())
+    else:
+        return serialization.load_der_private_key(content, password=password, backend=default_backend())
 
 
 def der_from_x509(certificate):

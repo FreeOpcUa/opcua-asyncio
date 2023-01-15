@@ -10,7 +10,7 @@ from struct import unpack_from
 from pathlib import Path
 import logging
 from urllib.parse import urlparse
-from typing import Coroutine
+from typing import Coroutine, Tuple
 
 from asyncua import ua
 from .user_managers import PermissiveUserManager, UserManager
@@ -49,7 +49,7 @@ class InternalServer:
         self.endpoints = []
         self._channel_id_counter = 5
         self.allow_remote_admin = True
-        self.disabled_clock = False  # for debugging we may want to disable clock that writes too much in log
+        self.disabled_clock = False  # for debugging, we may want to disable clock that writes too much in log
         self._known_servers = {}  # used if we are a discovery server
         self.certificate = None
         self.private_key = None
@@ -72,7 +72,8 @@ class InternalServer:
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         self.time_task = None
         self._time_task_stop = False
-        self.match_discovery_source_ip: bool = True 
+        self.match_discovery_source_ip: bool = True
+        self.supported_tokens = []
 
     async def init(self, shelffile=None):
         await self.load_standard_address_space(shelffile)
@@ -109,7 +110,7 @@ class InternalServer:
             attr.Value = ua.DataValue(
                 ua.Variant(10000, ua.VariantType.UInt32),
                 StatusCode_=ua.StatusCode(ua.StatusCodes.Good),
-                ServerTimestamp=datetime.utcnow(),
+                SourceTimestamp=datetime.utcnow(),
             )
             params.NodesToWrite.append(attr)
         result = await self.isession.write(params)
@@ -133,7 +134,7 @@ class InternalServer:
             # path was supplied, but file doesn't exist - create one for next start up
             await asyncio.get_running_loop().run_in_executor(None, self.aspace.make_aspace_shelf, shelf_file)
 
-    async def _address_space_fixes(self) -> Coroutine:
+    async def _address_space_fixes(self) -> Coroutine:  # type: ignore
         """
         Looks like the xml definition of address space has some error. This is a good place to fix them
         """
@@ -296,7 +297,7 @@ class InternalServer:
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
-        directly write datavalue to the Attribute, bypassing some checks and structure creation
+        directly write datavalue to the Attribute, bypassing some checks and structure creation,
         so it is a little faster
         """
         await self.aspace.write_attribute_value(nodeid, attr, datavalue)
@@ -305,7 +306,7 @@ class InternalServer:
         """
         directly read datavalue of the Attribute
         """
-        return self.aspace.read_attribute_value(nodeid, attr)  
+        return self.aspace.read_attribute_value(nodeid, attr)
 
     def set_user_manager(self, user_manager):
         """

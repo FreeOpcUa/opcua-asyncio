@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 from enum import IntEnum, EnumMeta
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 
 from xml.etree import ElementTree as ET
@@ -65,6 +65,7 @@ class Struct:
         self.name = clean_name(name)
         self.fields = []
         self.typeid = None
+        self.option_counter = 0
 
     def __str__(self):
         return f"Struct(name={self.name}, fields={self.fields}"
@@ -82,14 +83,29 @@ class {self.name}:
     '''
 
 """
+        if self.option_counter > 0:
+            field = Field("Encoding")
+            field.uatype = "UInt32"
+            self.fields = [field] + self.fields
         for sfield in self.fields:
-            uatype = f"ua.{sfield.uatype}"
-            if sfield.array:
-                uatype = f"List[{uatype}]"
-            if uatype == 'List[ua.Char]':
-                uatype = 'String'
-            code += f"    {sfield.name}:{uatype} = {sfield.value}\n"
-        print(code)
+            if sfield.name != 'SwitchField':
+                '''
+                SwitchFields is the 'Encoding' Field in OptionSets to be
+                compatible with 1.04 structs we added
+                the 'Encoding' Field before and skip the SwitchField Field
+                '''
+                uatype = f"'ua.{sfield.uatype}'"
+                if sfield.array:
+                    uatype = f"List[{uatype}]"
+                if uatype == 'List[ua.Char]':
+                    uatype = 'String'
+                if sfield.is_optional:
+                    code += f"    {sfield.name}: Optional[{uatype}] = None\n"
+                else:
+                    uavalue = sfield.value
+                    if isinstance(uavalue, str) and uavalue.startswith("ua."):
+                        uavalue = f"field(default_factory=lambda: {uavalue})"
+                    code += f"    {sfield.name}:{uatype} = {uavalue}\n"
         return code
 
 
@@ -99,6 +115,7 @@ class Field(object):
         self.uatype = None
         self.value = None
         self.array = False
+        self.is_optional = False
 
     def __str__(self):
         return f"Field(name={self.name}, uatype={self.uatype})"
@@ -141,15 +158,23 @@ class StructGenerator(object):
                 for xmlfield in child:
                     if xmlfield.tag.endswith("Field"):
                         name = xmlfield.get("Name")
+                        _clean_name = clean_name(name)
                         if name.startswith("NoOf"):
                             array = True
                             continue
-                        field = Field(clean_name(name))
-                        field.uatype = xmlfield.get("TypeName")
-                        if ":" in field.uatype:
-                            field.uatype = field.uatype.split(":")[1]
-                        field.uatype = clean_name(field.uatype)
-                        field.value = get_default_value(field.uatype, enums)
+                        _type = xmlfield.get("TypeName")
+                        if ":" in _type:
+                            _type = _type.split(":")[1]
+                        if _type == 'Bit':
+                            # Bits are used for bit fields and filler ignore
+                            continue
+                        field = Field(_clean_name)
+                        field.uatype = clean_name(_type)
+                        if xmlfield.get("SwitchField", '') != '':
+                            # Optional Field
+                            field.is_optional = True
+                            struct.option_counter += 1
+                        field.value = get_default_value(field.uatype, enums, hack=True)
                         if array:
                             field.array = True
                             field.value = "field(default_factory=list)"
@@ -169,6 +194,8 @@ class StructGenerator(object):
     def _make_registration(self):
         code = "\n\n"
         for struct in self.model:
+            if isinstance(struct, EnumType):
+                continue  # No registration required for enums
             code += f"ua.register_extension_object('{struct.name}'," \
                     f" ua.NodeId.from_string('{struct.typeid}'), {struct.name})\n"
         return code
@@ -186,6 +213,7 @@ from datetime import datetime
 import uuid
 from dataclasses import dataclass, field
 from typing import List, Union
+from enum import IntEnum
 
 from asyncua import ua
 """)
@@ -200,10 +228,10 @@ from asyncua import ua
 async def load_type_definitions(server, nodes=None):
     """
     Download xml from given variable node defining custom structures.
-    If no node is given, attemps to import variables from all nodes under
+    If no node is given, attempts to import variables from all nodes under
     "0:OPC Binary"
     the code is generated and imported on the fly. If you know the structures
-    are not going to be modified it might be interresting to copy the generated files
+    are not going to be modified it might be interesting to copy the generated files
     and include them in you code
     """
     if nodes is None:
@@ -223,7 +251,7 @@ async def load_type_definitions(server, nodes=None):
         generator.get_python_classes(structs_dict)
         # same but using a file that is imported. This can be useful for debugging library
         # name = node.read_browse_name().Name
-        # Make sure structure names do not contain charaters that cannot be used in Python class file names
+        # Make sure structure names do not contain characters that cannot be used in Python class file names
         # name = clean_name(name)
         # name = "structures_" + node.read_browse_name().Name
         # generator.save_and_import(name + ".py", append_to=structs_dict)
@@ -240,7 +268,7 @@ async def load_type_definitions(server, nodes=None):
                     continue
                 nodeid = ref_desc_list[0].NodeId
                 ua.register_extension_object(name, nodeid, structs_dict[name])
-                # save the typeid if user want to create static file for type definitnion
+                # save the typeid if user want to create static file for type definition
                 generator.set_typeid(name, nodeid.to_string())
 
         for key, val in structs_dict.items():
@@ -274,6 +302,8 @@ def _generate_python_class(model, env=None):
         env['field'] = field
     if "List" not in env:
         env['List'] = List
+    if 'Optional' not in env:
+        env['Optional'] = Optional
     # generate classes one by one and add them to dict
     for element in model:
         code = element.get_code()

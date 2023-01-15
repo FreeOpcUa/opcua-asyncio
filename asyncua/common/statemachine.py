@@ -19,11 +19,14 @@ import datetime
 
 from asyncua import Server, ua, Node
 from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
-from typing import Union, List
+from typing import Optional, Union, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from asyncua.server.event_generator import EventGenerator
 
 _logger = logging.getLogger(__name__)
 
-class State(object):
+class State:
     '''
     Helperclass for States (StateVariableType)
     https://reference.opcfoundation.org/v104/Core/docs/Part5/B.4.3/
@@ -32,7 +35,7 @@ class State(object):
     id: "BaseVariableType" Id is a name which uniquely identifies the current state within the StateMachineType. A subtype may restrict the DataType.
     number: Number is an integer which uniquely identifies the current state within the StateMachineType.
     '''
-    def __init__(self, id, name: str=None, number: int=None, node: Node=None):
+    def __init__(self, id, name: str=None, number: int=None, node: Optional[Node]=None):
         if id is not None:
             self.id = ua.Variant(id)
         else:
@@ -40,12 +43,12 @@ class State(object):
         self.name = name
         self.number = number
         self.effectivedisplayname = ua.LocalizedText(name, "en-US")
-        self.node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
+        self.node: Node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
 
 
-class Transition(object):
+class Transition:
     '''
-    Helperclass for Transitions (TransitionVariableType)
+    Helper class for Transitions (TransitionVariableType)
     https://reference.opcfoundation.org/v104/Core/docs/Part5/B.4.4/
     name: type string will be converted automatically to qualifiedname 
         -> Name is a QualifiedName which uniquely identifies a transition within the StateMachineType.
@@ -54,7 +57,7 @@ class Transition(object):
     transitiontime: TransitionTime specifies when the transition occurred.
     effectivetransitiontime: EffectiveTransitionTime specifies the time when the current state or one of its substates was entered. 
     If, for example, a StateA is active and – while active – switches several times between its substates SubA and SubB, 
-    then the TransitionTime stays at the point in time where StateA became active whereas the EffectiveTransitionTime changes 
+    then the TransitionTime stays at the point in time when StateA became active whereas the EffectiveTransitionTime changes
     with each change of a substate.
     '''
     def __init__(self, id, name: str=None, number: int=None, node: Node=None):
@@ -65,7 +68,7 @@ class Transition(object):
         self.name = name
         self.number = number
         self._transitiontime = datetime.datetime.utcnow() #will be overwritten from _write_transition()
-        self.node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
+        self.node: Node = node #will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
 
 
 class StateMachine(object):
@@ -87,22 +90,22 @@ class StateMachine(object):
         self.locale = "en-US"
         self._server = server
         self._parent = parent
-        self._state_machine_node = None
+        self._state_machine_node: Node = None
         self._state_machine_type = ua.NodeId(2299, 0) #StateMachineType
         self._name = name
         self._idx = idx
         self._optionals = False
-        self._current_state_node = None
+        self._current_state_node: Node = None
         self._current_state_id_node = None
         self._current_state_name_node = None
         self._current_state_number_node = None
         self._current_state_effective_display_name_node = None
-        self._last_transition_node = None
+        self._last_transition_node: Node = None
         self._last_transition_id_node = None
         self._last_transition_name_node = None
         self._last_transition_number_node = None
         self._last_transition_transitiontime_node = None
-        self._evgen = None
+        self._evgen: EventGenerator = None
         self.evtype = TransitionEvent()
         self._current_state = State(None)
 
@@ -127,7 +130,7 @@ class StateMachine(object):
                 self._last_transition_transitiontime_node = await self._last_transition_node.add_property(
                     0, 
                     "TransitionTime", 
-                    ua.Variant(datetime.datetime.utcnow(), varianttype=ua.VariantType.DateTime)
+                    ua.Variant(datetime.datetime.utcnow(), VariantType=ua.VariantType.DateTime)
                     )
             else:
                 self._last_transition_transitiontime_node = await self._last_transition_node.get_child("TransitionTime")
@@ -150,7 +153,7 @@ class StateMachine(object):
             elif dn.Text == "EffectiveDisplayName":
                 self._current_state_effective_display_name_node = await self._current_state_node.get_child(["EffectiveDisplayName"])
             else:
-                _logger.warning(f"{await statemachine.read_browse_name()} CurrentState Unknown propertie: {dn.Text}")
+                _logger.warning(f"{await statemachine.read_browse_name()} CurrentState Unknown property: {dn.Text}")
         if self._optionals:
             self._last_transition_node = await statemachine.get_child(["LastTransition"])
             last_transition_props = await self._last_transition_node.get_properties()
@@ -165,7 +168,7 @@ class StateMachine(object):
                 elif dn.Text == "TransitionTime":
                     self._last_transition_transitiontime_node = await self._last_transition_node.get_child(["TransitionTime"])
                 else:
-                    _logger.warning(f"{await statemachine.read_browse_name()} LastTransition Unknown propertie: {dn.Text}")
+                    _logger.warning(f"{await statemachine.read_browse_name()} LastTransition Unknown property: {dn.Text}")
         self._evgen = await self._server.get_event_generator(self.evtype, self._state_machine_node)
 
     async def change_state(self, state: State, transition: Transition=None, event_msg:Union[str, ua.LocalizedText]=None, severity: int=500):
@@ -184,12 +187,12 @@ class StateMachine(object):
                 event_msg = ua.LocalizedText(event_msg, self.locale)
             if not isinstance(event_msg, ua.LocalizedText):
                 raise ValueError(f"Statemachine: {self._name} -> event_msg: {event_msg} is not a instance of LocalizedText")
-            self._evgen.event.Message = event_msg
-            self._evgen.event.Severity = severity
-            self._evgen.event.ToState = ua.LocalizedText(state.name, self.locale)
+            self._evgen.event.Message = event_msg  # type: ignore
+            self._evgen.event.Severity = severity  # type: ignore
+            self._evgen.event.ToState = ua.LocalizedText(state.name, self.locale)  # type: ignore
             if transition:
-                self._evgen.event.Transition = ua.LocalizedText(transition.name, self.locale)
-            self._evgen.event.FromState = ua.LocalizedText(self._current_state.name)
+                self._evgen.event.Transition = ua.LocalizedText(transition.name, self.locale)  # type: ignore
+            self._evgen.event.FromState = ua.LocalizedText(self._current_state.name)  # type: ignore
             await self._evgen.trigger()
         self._current_state = state
 
@@ -286,8 +289,8 @@ class FiniteStateMachine(StateMachine):
         if name is None:
             self._name = "FiniteStateMachine"
         self._state_machine_type = ua.NodeId(2771, 0)
-        self._available_states_node = None
-        self._available_transitions_node = None
+        self._available_states_node: Node = None
+        self._available_transitions_node: Node = None
 
     async def set_available_states(self, states: List[ua.NodeId]):
         if not self._available_states_node:

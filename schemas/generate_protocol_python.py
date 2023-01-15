@@ -4,8 +4,9 @@ import datetime
 BASE_DIR = Path(__file__).absolute().parent.parent
 
 IgnoredEnums = ["NodeIdType"]
-IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "FilterOperand", "Variant", "DataValue",
+IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "Variant", "DataValue",
                   "ExtensionObject", "XmlElement", "LocalizedText"]
+MyPyIgnoredStructs = ["Union"]
 
 
 class CodeGenerator:
@@ -61,7 +62,7 @@ class CodeGenerator:
         self.write('')
         self.write('from datetime import datetime')
         self.write('from enum import IntEnum, IntFlag')
-        self.write('from typing import Union, List, Optional')
+        self.write('from typing import Union, List, Optional, Type')
         self.write('from dataclasses import dataclass, field')
         self.write('')
         self.write('from asyncua.ua.uatypes import FROZEN')
@@ -89,6 +90,10 @@ class CodeGenerator:
             self.write('"""')
             for val in enum.fields:
                 self.write(f'{val.name} = 1<<{val.value}')
+            self.write('')
+            self.write('@staticmethod')
+            self.write('def datatype() -> str:')
+            self.write(f'    return "{enum.base_type}"')
             self.iidx = 0
         else:
             self.write(f'class {enum.name}(IntEnum):')
@@ -109,8 +114,12 @@ class CodeGenerator:
         self.write('')
         self.write('')
         self.iidx = 0
-        self.write('@dataclass(frozen=FROZEN)')
-        self.write(f'class {obj.name}:')
+        ignore = ' # type: ignore' if obj.name in MyPyIgnoredStructs else ''
+        self.write('@dataclass(frozen=FROZEN)' + ignore)
+        if obj.basetype:
+            self.write(f'class {obj.name}({obj.basetype}):{ignore}')
+        else:
+            self.write(f'class {obj.name}:{ignore}')
         self.iidx += 1
         self.write('"""')
         if obj.doc:
@@ -121,8 +130,7 @@ class CodeGenerator:
             self.write(f':vartype {field.name}: {field.data_type}')
         self.write('"""')
 
-        # FIXME: next line is a weak way to find out if object is a datatype or not...
-        if "Parameter" not in obj.name and "Result" not in obj.name:
+        if obj.is_data_type:
             self.write('')
             self.write(f'data_type = NodeId(ObjectIds.{obj.name})')
 
@@ -137,11 +145,12 @@ class CodeGenerator:
 
         for field in obj.fields:
             typestring = field.data_type
+            if field.allow_subtypes and typestring != 'ExtensionObject':
+                typestring = f"Type[{typestring}]"
             if field.is_array():
                 typestring = f"List[{typestring}]"
             if field.is_optional:
                 typestring = f"Optional[{typestring}]"
-
             if field.name == field.data_type:
                 # variable name and type name are the same. Dataclass do not like it
                 hack_names.append(field.name)
@@ -180,6 +189,8 @@ class CodeGenerator:
         dtype = field.data_type
         if dtype in self.model.enum_list:
             enum = self.model.get_enum(dtype)
+            if enum.is_option_set:
+                return f'field(default_factory=lambda:{enum.name}(0))'
             return f'{enum.name}.{enum.fields[0].name}'
 
         al = self.model.get_alias(dtype)

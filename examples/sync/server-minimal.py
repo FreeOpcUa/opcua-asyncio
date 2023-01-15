@@ -7,11 +7,11 @@ from asyncua.sync import Server
 
 
 if __name__ == "__main__":
-    # setup our server
+    # set up our server
     server = Server()
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
 
-    # setup our own namespace, not really necessary but should as spec
+    # set up our own namespace, not really necessary but should as spec
     uri = "http://examples.freeopcua.github.io"
     idx = server.register_namespace(uri)
 
@@ -30,5 +30,5 @@ if __name__ == "__main__":
             count += 0.1
             myvar.write_value(count)
     finally:
-        #close connection, remove subcsriptions, etc
+        #close connection, remove subscriptions, etc
         server.stop()

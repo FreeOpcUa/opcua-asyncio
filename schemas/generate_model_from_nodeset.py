@@ -4,7 +4,7 @@ Generate address space code from xml file specification
 from xml.etree import ElementTree
 from logging import getLogger
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Optional
 import re
 from pathlib import Path
 
@@ -13,7 +13,7 @@ _logger = getLogger(__name__)
 IgnoredEnums = []
 IgnoredStructs = []
 
-# by default we split requests and respons in header and parameters, but some are so simple we do not split them
+# by default, we split requests and responses in header and parameters, but some are so simple we do not split them
 NoSplitStruct = [
     "GetEndpointsResponse",
     "CloseSessionRequest",
@@ -96,7 +96,7 @@ class Field:
 @dataclass
 class Struct:
     name: str = None
-    basetype: str = None
+    basetype: Optional[str] = None
     node_id: str = None
     doc: str = ""
     fields: List[Field] = field(default_factory=list)
@@ -106,6 +106,7 @@ class Struct:
     parents: List[Any] = field(default_factory=list)
     # we splt some structs, they must not be registered as extension objects
     do_not_register: bool = False
+    is_data_type: bool = False
 
     def __hash__(self):
         return hash(self.name)
@@ -123,8 +124,8 @@ class Enum:
     data_type: str = None
     fields: List[Field] = field(default_factory=list)
     doc: str = ""
-    is_option_set: bool = False 
-
+    is_option_set: bool = False
+    base_type: str = None
 
 
 @dataclass
@@ -210,6 +211,7 @@ def reorder_structs(model):
                 ok = False
         if ok:
             _add_struct(s, newstructs, waiting_structs, types)
+
     if len(model.structs) != len(newstructs):
         _logger.warning('Error while reordering structs, some structs could not be reinserted: had %s structs, we now have %s structs', len(model.structs), len(newstructs))
         s1 = set(model.structs)
@@ -230,12 +232,18 @@ def nodeid_to_names(model):
     ids["22"] = "ExtensionObject"
 
     for struct in model.structs:
+        if struct.basetype is not None:
+            if struct.basetype.startswith("i="):
+                struct.basetype = ids[struct.basetype[2:]]
         for sfield in struct.fields:
             if sfield.data_type.startswith("i="):
                 sfield.data_type = ids[sfield.data_type[2:]]
     for alias in model.aliases.values():
         alias.data_type = ids[alias.data_type[2:]]
         alias.real_type = ids[alias.real_type[2:]]
+    for enum in model.enums:
+        if enum.base_type.startswith("i="):
+            enum.base_type = ids[enum.base_type[2:]]
 
 
 def split_requests(model):
@@ -270,6 +278,17 @@ def split_requests(model):
     model.structs = structs
 
 
+def get_basetypes(el) -> List[str]:
+    # return all basetypes
+    basetypes = []
+    for ref in el.findall("./{*}References/{*}Reference"):
+        if ref.get("ReferenceType") == "HasSubtype" and \
+           ref.get("IsForward", "true") == "false" and \
+           ref.text != "i=22":
+            basetypes.append(ref.text)
+    return basetypes
+
+
 class Parser:
     def __init__(self, path):
         self.path = path
@@ -292,13 +311,13 @@ class Parser:
         for ref in el.findall("./{*}References/{*}Reference"):
             if ref.get("ReferenceType") == "HasSubtype" and ref.get("IsForward", "true") == "false":
                 if ref.text == "i=29":
-                    enum = self.parse_enum(name, el)
+                    enum = self.parse_enum(name, el, "Int32")  # Enumeration Values are always Int32 type
                     self.model.enums.append(enum)
                     self.model.enum_list.append(enum.name)
                     return
-                if ref.text in ("i=7", "i=3", "i=5", "i=9"):
+                if ref.text in ("i=2", "i=3", "i=4", "i=5", "i=6", "i=7", "i=8", "i=9"):
                     # looks like some enums are defined there too
-                    enum = self.parse_enum(name, el)
+                    enum = self.parse_enum(name, el, ref.text)
                     if not enum.fields:
                         alias = Alias(name, el.get("NodeId"), ref.text)
                         self.model.aliases[alias.data_type] = alias
@@ -309,6 +328,7 @@ class Parser:
 
                 if ref.text == "i=22" or ref.text in self.model.known_structs:
                     struct = self.parse_struct(name, el)
+                    struct.is_data_type = True
                     if ref.text in self.model.known_structs:
                         parent = self.model.get_struct_by_nodeid(ref.text)
                         for sfield in reversed(parent.fields):
@@ -327,7 +347,7 @@ class Parser:
                     return
                 if ref.text in ("i=24"):
                     return
-                _logger.warning(" %s is of unknown type %s", name,  ref.text)
+                _logger.warning(" %s is of unknown type %s", name, ref.text)
 
     @staticmethod
     def parse_struct(name, el):
@@ -341,8 +361,14 @@ class Parser:
             doc=doc,
             node_id=el.get("NodeId"),
         )
+        basetypes = get_basetypes(el)
+        if basetypes:
+            struct.basetype = basetypes[0]
+            if len(basetypes) > 1:
+                print(f'Error found mutliple basetypes for {struct} {basetypes}')
         for sfield in el.findall("./{*}Definition/{*}Field"):
             opt = sfield.get("IsOptional", "false")
+            allow_subtypes = True if sfield.get("AllowSubTypes", "false") == 'true' else False
             is_optional = True if opt == "true" else False
             f = Field(
                 name=sfield.get("Name"),
@@ -351,6 +377,7 @@ class Parser:
                 array_dimensions=sfield.get("ArayDimensions"),
                 value=sfield.get("Value"),
                 is_optional=is_optional,
+                allow_subtypes=allow_subtypes
             )
             if is_optional:
                 struct.has_optional = True
@@ -358,7 +385,7 @@ class Parser:
         return struct
 
     @staticmethod
-    def parse_enum(name, el):
+    def parse_enum(name, el, base_type):
         doc_el = el.find("{*}Documentation")
         if doc_el is not None:
             doc = doc_el.text
@@ -368,7 +395,8 @@ class Parser:
             name=name,
             data_type=el.get("NodeId"),
             doc=doc,
-            is_option_set=el.find("./{*}Definition/[@IsOptionSet]")
+            is_option_set=el.find("./{*}Definition/[@IsOptionSet]"),
+            base_type=base_type
         )
         for f in el.findall("./{*}Definition/{*}Field"):
             efield = EnumField(name=f.get("Name"), value=int(f.get("Value")))
