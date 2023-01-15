@@ -130,14 +130,14 @@ async def test_nocrypto_fail(srv_no_crypto):
     clt = Client(uri_no_crypto)
     with pytest.raises(ua.UaError):
         await clt.set_security_string(
-            f"Basic256Sha256,Sign,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem")
+            f"Basic256Sha256,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'}")
 
 
 async def test_basic256(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
     await clt.set_security_string(
-        f"Basic256Sha256,Sign,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem,{cert}"
+        f"Basic256Sha256,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}"
     )
     async with clt:
         assert await clt.nodes.objects.get_children()
@@ -147,7 +147,7 @@ async def test_basic256_encrypt(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
     await clt.set_security_string(
-        f"Basic256Sha256,SignAndEncrypt,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem,{cert}")
+        f"Basic256Sha256,SignAndEncrypt,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}")
     async with clt:
         assert await clt.nodes.objects.get_children()
 
@@ -157,8 +157,8 @@ async def test_basic256_encrypt_success(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     await clt.set_security(
         security_policies.SecurityPolicyBasic256Sha256,
-        f"{EXAMPLE_PATH}certificate-example.der",
-        f"{EXAMPLE_PATH}private-key-example.pem",
+        f"{EXAMPLE_PATH / 'certificate-example.der'}",
+        f"{EXAMPLE_PATH / 'private-key-example.pem'}",
         None,
         cert,
         ua.MessageSecurityMode.SignAndEncrypt
@@ -172,8 +172,8 @@ async def test_basic256_encrypt_use_certificate_bytes(srv_crypto_all_certs):
     clt = Client(uri_crypto)
     _, cert = srv_crypto_all_certs
     with open(cert, 'rb') as server_cert, \
-            open(f"{EXAMPLE_PATH}certificate-example.der", 'rb') as user_cert, \
-            open(f"{EXAMPLE_PATH}private-key-example.pem", 'rb') as user_key:
+            open(f"{EXAMPLE_PATH / 'certificate-example.der'}", 'rb') as user_cert, \
+            open(f"{EXAMPLE_PATH / 'private-key-example.pem'}", 'rb') as user_key:
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             user_cert.read(),
@@ -195,8 +195,8 @@ async def test_basic256_encrypt_fail(srv_crypto_all_certs):
     with pytest.raises(ua.UaError):
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
-            f"{EXAMPLE_PATH}certificate-example.der",
-            f"{EXAMPLE_PATH}private-key-example.pem",
+            f"{EXAMPLE_PATH / 'certificate-example.der'}",
+            f"{EXAMPLE_PATH / 'private-key-example.pem'}",
             None,
             None,
             mode=ua.MessageSecurityMode.None_
@@ -208,8 +208,8 @@ async def test_Aes128Sha256RsaOaep_encrypt_success(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     await clt.set_security(
         security_policies.SecurityPolicyAes128Sha256RsaOaep,
-        f"{EXAMPLE_PATH}certificate-example.der",
-        f"{EXAMPLE_PATH}private-key-example.pem",
+        f"{EXAMPLE_PATH / 'certificate-example.der'}",
+        f"{EXAMPLE_PATH / 'private-key-example.pem'}",
         None,
         cert,
         ua.MessageSecurityMode.SignAndEncrypt

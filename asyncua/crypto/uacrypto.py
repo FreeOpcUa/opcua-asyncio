@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 @dataclass
 class CertProperties:
-    path_or_content: Union[bytes, Path]
+    path_or_content: Union[bytes, Path, str]
     extension: Optional[str] = None
     password: Optional[Union[str, bytes]] = None
 
@@ -30,8 +30,10 @@ async def get_content(path_or_content: Union[str, bytes, Path]) -> bytes:
         return await f.read()
 
 
-async def load_certificate(path_or_content: Union[bytes, Path], extension: Optional[str] = None):
-    if isinstance(path_or_content, Path):
+async def load_certificate(path_or_content: Union[bytes, str, Path], extension: Optional[str] = None):
+    if isinstance(path_or_content, str):
+        ext = Path(path_or_content).suffix
+    elif isinstance(path_or_content, Path):
         ext = path_or_content.suffix
     else:
         ext = ''
@@ -49,10 +51,12 @@ def x509_from_der(data):
     return x509.load_der_x509_certificate(data, default_backend())
 
 
-async def load_private_key(path_or_content: Union[Path, bytes],
+async def load_private_key(path_or_content: Union[str, Path, bytes],
                            password: Optional[Union[str, bytes]] = None,
                            extension: Optional[str] = None):
-    if isinstance(path_or_content, Path):
+    if isinstance(path_or_content, str):
+        ext = Path(path_or_content).suffix
+    elif isinstance(path_or_content, Path):
         ext = path_or_content.suffix
     else:
         ext = ''

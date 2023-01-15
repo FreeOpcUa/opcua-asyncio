@@ -219,7 +219,7 @@ class Server:
         """
         self.certificate = await uacrypto.load_certificate(path_or_content, format)
 
-    async def load_private_key(self, path_or_content: Union[Path, bytes], password=None, format=None):
+    async def load_private_key(self, path_or_content: Union[str, Path, bytes], password=None, format=None):
         self.iserver.private_key = await uacrypto.load_private_key(path_or_content, password, format)
 
     def disable_clock(self, val: bool = True):
