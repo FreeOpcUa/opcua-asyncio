@@ -1,4 +1,4 @@
-import os.path
+from pathlib import Path
 try:
     from IPython import embed
 except ImportError:
@@ -77,9 +77,10 @@ class HelloServer:
 
 
 if __name__ == '__main__':
-    script_dir = os.path.dirname(__file__)
+    script_dir = Path(__file__).parent
     with HelloServer(
             "opc.tcp://0.0.0.0:40840/freeopcua/server/",
             "FreeOpcUa Example Server",
-            os.path.join(script_dir, "test_saying.xml")) as server:
+            script_dir / "test_saying.xml"
+    ) as server:
         embed()

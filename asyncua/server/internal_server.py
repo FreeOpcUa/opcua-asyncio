@@ -7,7 +7,7 @@ import asyncio
 from datetime import datetime, timedelta
 from copy import copy
 from struct import unpack_from
-import os
+from pathlib import Path
 import logging
 from urllib.parse import urlparse
 from typing import Coroutine
@@ -118,8 +118,8 @@ class InternalServer:
     async def load_standard_address_space(self, shelf_file=None):
         if shelf_file:
             is_file = await asyncio.get_running_loop().run_in_executor(
-                None, os.path.isfile, shelf_file
-            ) or await asyncio.get_running_loop().run_in_executor(None, os.path.isfile, f'{shelf_file}.db')
+                None, Path.is_file, shelf_file
+            ) or await asyncio.get_running_loop().run_in_executor(None, Path.is_file, f'{shelf_file}.db')
             if is_file:
                 # import address space from shelf
                 await asyncio.get_running_loop().run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)

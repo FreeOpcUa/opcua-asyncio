@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import aiofiles
 from typing import Optional, Union
 
@@ -23,7 +23,7 @@ class CertProperties:
 
 
 async def load_certificate(path: str, extension: Optional[str] = None):
-    _, ext = os.path.splitext(path)
+    ext = Path(path).suffix
     async with aiofiles.open(path, mode='rb') as f:
         if ext == ".pem" or extension == 'pem' or extension == 'PEM':
             return x509.load_pem_x509_certificate(await f.read(), default_backend())
@@ -40,7 +40,7 @@ def x509_from_der(data):
 async def load_private_key(path: str,
                            password: Optional[Union[str, bytes]] = None,
                            extension: Optional[str] = None):
-    _, ext = os.path.splitext(path)
+    ext = Path(path).suffix
     if isinstance(password, str):
         password = password.encode('utf-8')
     async with aiofiles.open(path, mode='rb') as f:

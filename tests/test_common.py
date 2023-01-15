@@ -11,7 +11,7 @@ from datetime import datetime
 from datetime import timedelta
 import math
 import tempfile
-import os
+from pathlib import Path
 import contextlib
 
 import pytest
@@ -1306,9 +1306,9 @@ async def test_custom_struct_with_enum(opc):
 @contextlib.contextmanager
 def expect_file_creation(filename:str):
     with tempfile.TemporaryDirectory() as tmpdir:
-        path = os.path.join(tmpdir, filename)
+        path = Path(tmpdir) / filename
         yield path
-        assert os.path.isfile(path), f"File {path} should have been created"
+        assert Path.is_file(path), f"File {path} should have been created"
 
 async def test_custom_struct_export(opc):
     idx = 4

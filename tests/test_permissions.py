@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import pytest
 
 from asyncua import Client
@@ -25,24 +25,24 @@ port_num3 = 48516
 uri_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num1)
 uri_no_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num2)
 uri_crypto_cert = "opc.tcp://127.0.0.1:{0:d}".format(port_num3)
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-EXAMPLE_PATH = os.path.join(BASE_DIR, "examples") + os.sep
-srv_crypto_params = [(f"{EXAMPLE_PATH}private-key-example.pem",
-                      f"{EXAMPLE_PATH}certificate-example.der"),]
+BASE_DIR = Path(__file__).parent.parent
+EXAMPLE_PATH = BASE_DIR / "examples"
+srv_crypto_params = [(EXAMPLE_PATH / "private-key-example.pem",
+                      EXAMPLE_PATH / "certificate-example.der"),]
 
 admin_peer_creds = {
-    "certificate": f"{EXAMPLE_PATH}certificates/peer-certificate-example-1.der",
-    "private_key": f"{EXAMPLE_PATH}certificates/peer-private-key-example-1.pem"
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-1.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-1.pem"
 }
 
 user_peer_creds = {
-    "certificate": f"{EXAMPLE_PATH}certificates/peer-certificate-example-2.der",
-    "private_key": f"{EXAMPLE_PATH}certificates/peer-private-key-example-2.pem"
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-2.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-2.pem"
 }
 
 anonymous_peer_creds = {
-    "certificate": f"{EXAMPLE_PATH}certificates/peer-certificate-example-3.der",
-    "private_key": f"{EXAMPLE_PATH}certificates/peer-private-key-example-3.pem"
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-3.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-3.pem"
 }
 
 
