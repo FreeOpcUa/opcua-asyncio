@@ -17,13 +17,13 @@ from dataclasses import dataclass
 
 @dataclass
 class CertProperties:
-    path: str
+    path: Path
     extension: Optional[str] = None
     password: Optional[Union[str, bytes]] = None
 
 
-async def load_certificate(path: str, extension: Optional[str] = None):
-    ext = Path(path).suffix
+async def load_certificate(path: Path, extension: Optional[str] = None):
+    ext = path.suffix
     async with aiofiles.open(path, mode='rb') as f:
         if ext == ".pem" or extension == 'pem' or extension == 'PEM':
             return x509.load_pem_x509_certificate(await f.read(), default_backend())
@@ -37,10 +37,10 @@ def x509_from_der(data):
     return x509.load_der_x509_certificate(data, default_backend())
 
 
-async def load_private_key(path: str,
+async def load_private_key(path: Path,
                            password: Optional[Union[str, bytes]] = None,
                            extension: Optional[str] = None):
-    ext = Path(path).suffix
+    ext = path.suffix
     if isinstance(password, str):
         password = password.encode('utf-8')
     async with aiofiles.open(path, mode='rb') as f:
@@ -139,6 +139,7 @@ def decrypt_rsa15(private_key, data):
 
 
 def cipher_aes_cbc(key, init_vec):
+    # FIXME sonarlint reports critical vulnerability (python:S5542) 
     return Cipher(algorithms.AES(key), modes.CBC(init_vec), default_backend())
 
 
