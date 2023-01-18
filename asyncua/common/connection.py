@@ -52,7 +52,16 @@ class TransportLimits:
             _logger.error("Number of message chunks: %s is > configured max chunk count: %s", sz, self.max_chunk_count)
         return within_limit
 
-    def _set_new_limits(self, new_limits: "TransportLimits", role: Literal["client", "server"]) -> None:
+    def _set_new_limits_from_ack(self, ack: ua.Acknowledge, role: Literal["client", "server"]) -> None:
+        max_recv_buffer = ack.ReceiveBufferSize if role == "client" else ack.SendBufferSize
+        max_send_buffer = ack.SendBufferSize if role == "client" else ack.ReceiveBufferSize
+
+        new_limits = TransportLimits(
+            max_chunk_count=ack.MaxChunkCount,
+            max_recv_buffer=max_recv_buffer,
+            max_send_buffer=max_send_buffer,
+            max_message_size=ack.MaxMessageSize,
+        )
         if new_limits != self:
             self.max_chunk_count = new_limits.max_chunk_count
             self.max_recv_buffer = new_limits.max_recv_buffer
@@ -66,13 +75,7 @@ class TransportLimits:
         ack.SendBufferSize = min(msg.SendBufferSize, self.max_recv_buffer)
         ack.MaxChunkCount = self._select_limit(msg.MaxChunkCount, self.max_chunk_count)
         ack.MaxMessageSize = self._select_limit(msg.MaxMessageSize, self.max_message_size)
-        new_limits = TransportLimits(
-            max_chunk_count=ack.MaxChunkCount,
-            max_recv_buffer=ack.SendBufferSize,
-            max_send_buffer=ack.ReceiveBufferSize,
-            max_message_size=ack.MaxMessageSize,
-        )
-        self._set_new_limits(new_limits, "server")
+        self._set_new_limits_from_ack(ack, "server")
         return ack
 
     def create_hello_limits(self, msg: ua.Hello) -> ua.Hello:
@@ -83,13 +86,7 @@ class TransportLimits:
         return msg
 
     def update_client_limits(self, msg: ua.Acknowledge) -> None:
-        new_limits = TransportLimits(
-            max_chunk_count=msg.MaxChunkCount,
-            max_recv_buffer=msg.ReceiveBufferSize,
-            max_send_buffer=msg.SendBufferSize,
-            max_message_size=msg.MaxMessageSize,
-        )
-        self._set_new_limits(new_limits, "client")
+        self._set_new_limits_from_ack(msg, "client")
 
 
 class MessageChunk:
