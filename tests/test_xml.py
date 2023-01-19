@@ -10,10 +10,10 @@ from asyncua import ua, Node, uamethod
 from asyncua.common.structures104 import new_struct, new_struct_field
 from asyncua.ua import uaerrors
 
-logger = logging.getLogger("asyncua.common.xmlimporter")
-logger.setLevel(logging.DEBUG)
-logger = logging.getLogger("asyncua.common.xmlparser")
-logger.setLevel(logging.DEBUG)
+_logger = logging.getLogger("asyncua.common.xmlimporter")
+_logger.setLevel(logging.DEBUG)
+_logger = logging.getLogger("asyncua.common.xmlparser")
+_logger.setLevel(logging.DEBUG)
 
 pytestmark = pytest.mark.asyncio
 
@@ -488,7 +488,7 @@ async def _test_xml_var_type(opc, tmpdir, node: Node, typename: str, test_equali
     assert node == node
     assert dtype == await node2.read_data_type()
     if test_equality:
-        logger.debug(node, dv, node2, await node2.read_value())
+        _logger.debug(node, dv, node2, await node2.read_value())
         _ = await node2.read_value()
         assert dv.Value == (await node2.read_data_value()).Value
     assert rank == await node2.read_value_rank()

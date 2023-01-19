@@ -11,7 +11,7 @@ from dateutil import parser
 
 from asyncua import ua
 
-logger = logging.getLogger('__name__')
+_logger = logging.getLogger('__name__')
 
 
 def value_to_datavalue(val, varianttype=None):

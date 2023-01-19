@@ -37,7 +37,7 @@ from asyncua.ua import status_codes
 from .uaerrors import UaError, UaStatusCodeError, UaStringParsingError
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 EPOCH_AS_FILETIME = 116444736000000000  # January 1, 1970 as MS file time
 HUNDREDS_OF_NANOSECONDS = 10000000
@@ -644,7 +644,7 @@ class QualifiedName:
         object.__setattr__(self, "NamespaceIndex", NamespaceIndex)
         if isinstance(self.NamespaceIndex, str) and isinstance(self.Name, int):
             # originally the order or argument was inversed, try to support it
-            logger.warning("QualifiedName are str, int, while int, str is expected, switching")
+            _logger.warning("QualifiedName are str, int, while int, str is expected, switching")
 
         if not isinstance(self.NamespaceIndex, int) or not isinstance(self.Name, (str, type(None))):
             raise ValueError(f"QualifiedName constructor args have wrong types, {self}")
@@ -1116,7 +1116,7 @@ def register_basetype(name, nodeid, class_type):
     """
     Register a new alias of basetypes for automatic decoding and make them available in ua module
     """
-    logger.info("registering new basetype alias: %s %s %s", name, nodeid, class_type)
+    _logger.info("registering new basetype alias: %s %s %s", name, nodeid, class_type)
     basetype_by_datatype[nodeid] = name
     basetype_datatypes[class_type] = nodeid
     import asyncua.ua
@@ -1133,7 +1133,7 @@ def register_enum(name, nodeid, class_type):
     """
     Register a new enum for automatic decoding and make them available in ua module
     """
-    logger.info("registering new enum: %s %s %s", name, nodeid, class_type)
+    _logger.info("registering new enum: %s %s %s", name, nodeid, class_type)
     enums_by_datatype[nodeid] = class_type
     enums_datatypes[class_type] = nodeid
     import asyncua.ua
@@ -1153,7 +1153,7 @@ def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid
     """
     Register a new extension object for automatic decoding and make them available in ua module
     """
-    logger.info(
+    _logger.info(
         "registering new extension object: %s %s %s %s",
         name,
         encoding_nodeid,

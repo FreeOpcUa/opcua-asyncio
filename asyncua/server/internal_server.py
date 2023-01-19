@@ -29,7 +29,7 @@ except ImportError:
     logging.getLogger(__name__).warning("cryptography is not installed, use of crypto disabled")
     uacrypto = False
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ServerDesc:
@@ -62,7 +62,7 @@ class InternalServer:
         self.subscription_service: SubscriptionService = SubscriptionService(self.aspace)
         self.history_manager = HistoryManager(self)
         if user_manager is None:
-            logger.info("No user manager specified. Using default permissive manager instead.")
+            _logger.info("No user manager specified. Using default permissive manager instead.")
             user_manager = PermissiveUserManager()
         self.user_manager = user_manager
         # create a session to use on server side
