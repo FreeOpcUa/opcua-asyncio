@@ -8,7 +8,7 @@ from ..common.subscription import Subscription, SubHandler
 from ..common.utils import Buffer
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class UaNodeAlreadyHistorizedError(ua.UaError):
@@ -121,7 +121,7 @@ class HistoryDict(HistoryStorageInterface):
     async def read_node_history(self, node_id, start, end, nb_values):
         cont = None
         if node_id not in self._datachanges:
-            logger.warning("Error attempt to read history for a node which is not historized")
+            _logger.warning("Error attempt to read history for a node which is not historized")
             return [], cont
         else:
             if start is None:
@@ -176,7 +176,7 @@ class HistoryDict(HistoryStorageInterface):
     async def read_event_history(self, source_id, start, end, nb_values, evfilter):
         cont = None
         if source_id not in self._events:
-            logger.warning(
+            _logger.warning(
                 "Error attempt to read event history for node %s which does not historize events",
                 source_id,
             )
@@ -305,7 +305,7 @@ class HistoryManager:
             await self._sub.unsubscribe(self._handlers[node])
             del self._handlers[node]
         else:
-            logger.error("History Manager isn't subscribed to %s", node)
+            _logger.error("History Manager isn't subscribed to %s", node)
 
     async def read_history(self, params):
         """
