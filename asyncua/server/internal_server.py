@@ -29,7 +29,7 @@ except ImportError:
     logging.getLogger(__name__).warning("cryptography is not installed, use of crypto disabled")
     uacrypto = False
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class ServerDesc:
