@@ -11,7 +11,7 @@ from .ua_utils import get_node_supertypes, is_child_present
 from .copy_node_util import _rdesc_from_node, _read_and_copy_attrs
 from .node_factory import make_node
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def is_abstract(node_type) -> bool:
@@ -85,7 +85,7 @@ async def _instantiate_node(session,
         addnode.NodeClass = ua.NodeClass.DataType
         await _read_and_copy_attrs(node_type, ua.DataTypeAttributes(), addnode)
     else:
-        logger.error("Instantiate: Node class not supported: %s", rdesc.NodeClass)
+        _logger.error("Instantiate: Node class not supported: %s", rdesc.NodeClass)
         raise RuntimeError("Instantiate: Node class not supported")
     if dname is not None:
         addnode.NodeAttributes.DisplayName = dname
@@ -105,14 +105,14 @@ async def _instantiate_node(session,
                     refs = await c_node_type.get_referenced_nodes(refs=ua.ObjectIds.HasModellingRule)
                     if not refs:
                         # spec says to ignore nodes without modelling rules
-                        logger.info("Instantiate: Skip node without modelling rule %s as part of %s",
+                        _logger.info("Instantiate: Skip node without modelling rule %s as part of %s",
                                     c_rdesc.BrowseName, addnode.BrowseName)
                         continue
                         # exclude nodes with optional ModellingRule if requested
                     if refs[0].nodeid in (ua.NodeId(ua.ObjectIds.ModellingRule_Optional), ua.NodeId(ua.ObjectIds.ModellingRule_OptionalPlaceholder)):
                         # instatiate optionals
                         if not instantiate_optional:
-                            logger.info("Instantiate: Skip optional node %s as part of %s", c_rdesc.BrowseName,
+                            _logger.info("Instantiate: Skip optional node %s as part of %s", c_rdesc.BrowseName,
                                 addnode.BrowseName)
                             continue
                     # if root node being instantiated has a String NodeId, create the children with a String NodeId

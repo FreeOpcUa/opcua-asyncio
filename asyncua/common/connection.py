@@ -13,7 +13,7 @@ except ImportError:
     class InvalidSignature(Exception):  # type: ignore
         pass
 
-logger = logging.getLogger('asyncua.uaprotocol')
+_logger = logging.getLogger('asyncua.uaprotocol')
 
 
 @dataclass
@@ -39,7 +39,7 @@ class TransportLimits:
             return True
         within_limit = sz <= self.max_message_size
         if not within_limit:
-            logger.error("Message size: %s is > configured max message size: %s", sz, self.max_message_size)
+            _logger.error("Message size: %s is > configured max message size: %s", sz, self.max_message_size)
         return within_limit
 
     def is_chunk_count_within_limit(self, sz: int) -> bool:
@@ -47,7 +47,7 @@ class TransportLimits:
             return True
         within_limit = sz <= self.max_chunk_count
         if not within_limit:
-            logger.error("Number of message chunks: %s is > configured max chunk count: %s", sz, self.max_chunk_count)
+            _logger.error("Number of message chunks: %s is > configured max chunk count: %s", sz, self.max_chunk_count)
         return within_limit
 
     def create_acknowledge_and_set_limits(self, msg: ua.Hello) -> ua.Acknowledge:
@@ -60,7 +60,7 @@ class TransportLimits:
         self.max_recv_buffer = ack.SendBufferSize
         self.max_send_buffer = ack.ReceiveBufferSize
         self.max_message_size = ack.MaxMessageSize
-        logger.warning("updating server limits to: %s", self)
+        _logger.info("updating server limits to: %s", self)
         return ack
 
     def create_hello_limits(self, msg: ua.Hello) -> ua.Hello:
@@ -74,7 +74,7 @@ class TransportLimits:
         self.max_recv_buffer = msg.ReceiveBufferSize
         self.max_send_buffer = msg.SendBufferSize
         self.max_message_size = msg.MaxMessageSize
-        logger.warning("updating client limits to: %s", self)
+        _logger.info("updating client limits to: %s", self)
 
 
 class MessageChunk:
@@ -329,7 +329,7 @@ class SecureConnection:
         for chunk in chunks:
             self._sequence_number += 1
             if self._sequence_number >= (1 << 32):
-                logger.debug("Wrapping sequence number: %d -> 1", self._sequence_number)
+                _logger.debug("Wrapping sequence number: %d -> 1", self._sequence_number)
                 self._sequence_number = 1
             chunk.SequenceHeader.SequenceNumber = self._sequence_number
         return b"".join([chunk.to_binary() for chunk in chunks])
@@ -380,7 +380,7 @@ class SecureConnection:
                 wrap_limit = (1 << 32) - 1024
                 if seq_num < 1024 and self._peer_sequence_number >= wrap_limit:
                     # The sequence number has wrapped around. See spec. part 6, 6.7.2
-                    logger.debug('Sequence number wrapped: %d -> %d', self._peer_sequence_number, seq_num)
+                    _logger.debug('Sequence number wrapped: %d -> %d', self._peer_sequence_number, seq_num)
                 else:
                     # Condition for monotonically increase is not met
                     raise ua.UaError(f"Received chunk: {chunk} with wrong sequence expecting:" f" {self._peer_sequence_number}, received: {seq_num}," f" spec says to close connection")
@@ -423,14 +423,14 @@ class SecureConnection:
             return msg
         if header.MessageType == ua.MessageType.Error:
             msg = struct_from_binary(ua.ErrorMessage, body)
-            logger.warning(f"Received an error: {msg}")
+            _logger.warning(f"Received an error: {msg}")
             return msg
         raise ua.UaError(f"Unsupported message type {header.MessageType}")
 
     def _receive(self, msg):
         if msg.MessageHeader.packet_size > self._limits.max_recv_buffer:
             self._incoming_parts = []
-            logger.error("Message size: %s is > chunk max size: %s", msg.MessageHeader.packet_size, self._limits.max_recv_buffer)
+            _logger.error("Message size: %s is > chunk max size: %s", msg.MessageHeader.packet_size, self._limits.max_recv_buffer)
             raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         self._check_incoming_chunk(msg)
         self._incoming_parts.append(msg)
@@ -441,7 +441,7 @@ class SecureConnection:
             return None
         if msg.MessageHeader.ChunkType == ua.ChunkType.Abort:
             err = struct_from_binary(ua.ErrorMessage, ua.utils.Buffer(msg.Body))
-            logger.warning(f"Message {msg} aborted: {err}")
+            _logger.warning(f"Message {msg} aborted: {err}")
             # specs Part 6, 6.7.3 say that aborted message shall be ignored
             # and SecureChannel should not be closed
             self._incoming_parts = []

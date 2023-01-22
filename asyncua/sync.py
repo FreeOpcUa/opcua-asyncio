@@ -13,7 +13,7 @@ from asyncua import server
 from asyncua import common
 from asyncua.common import node, subscription, shortcuts, xmlexporter, type_dictionary_builder
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ThreadLoopNotRunning(Exception):
@@ -33,7 +33,7 @@ class ThreadLoop(Thread):
 
     def run(self):
         self.loop = asyncio.new_event_loop()
-        logger.debug("Threadloop: %s", self.loop)
+        _logger.debug("Threadloop: %s", self.loop)
         self.loop.call_soon_threadsafe(self._notify_start)
         self.loop.run_forever()
 

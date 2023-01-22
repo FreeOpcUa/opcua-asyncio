@@ -3,7 +3,7 @@ from asyncua.common.callback import CallbackType
 import logging
 import pytest
 
-_logger = logging.getLogger()
+_logger = logging.getLogger(__name__)
 pytestmark = pytest.mark.asyncio
 
 port_num = 48560
