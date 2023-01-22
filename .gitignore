@@ -24,3 +24,4 @@ examples/history.db
 .eggs*
 .coverage
 schemas/UA-Nodese*
+.vscode
