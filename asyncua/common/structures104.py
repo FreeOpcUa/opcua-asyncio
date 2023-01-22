@@ -14,7 +14,7 @@ from asyncua.common.manage_nodes import create_encoding, create_data_type
 if TYPE_CHECKING:
     from asyncua import Client, Server
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def new_struct_field(
@@ -128,7 +128,7 @@ def clean_name(name):
         return name
     newname = re.sub(r'\W+', '_', name)
     newname = re.sub(r'^[0-9]+', r'_\g<0>', newname)
-    logger.warning("renamed %s to %s due to Python syntax", name, newname)
+    _logger.warning("renamed %s to %s due to Python syntax", name, newname)
     return newname
 
 
@@ -209,7 +209,7 @@ class {struct_name}{base_class}:
             uatype = struct_name
         else:
             if log_error:
-                logger.error(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
+                _logger.error(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
             raise RuntimeError(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
 
         if sfield.ValueRank >= 0:
@@ -291,12 +291,12 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False, opt
         code = make_enum_code(name, sdef, option_set)
     else:
         code = make_structure_code(data_type, name, sdef, log_error=log_fail)
-    logger.debug("Executing code: %s", code)
+    _logger.debug("Executing code: %s", code)
     try:
         exec(code, env)
     except Exception:
         if log_fail:
-            logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
+            _logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
         raise
     return env
 
@@ -362,7 +362,7 @@ async def _get_parent_types(node: Node):
             return parents
         tmp_node = Node(tmp_node.session, refs[0])
         parents.append(tmp_node)
-    logger.warning("Went 10 layers up while look of subtype of given node %s, something is wrong: %s", node, parents)
+    _logger.warning("Went 10 layers up while look of subtype of given node %s, something is wrong: %s", node, parents)
 
 
 async def load_custom_struct(node: Node) -> Any:
@@ -400,11 +400,11 @@ def make_basetype_code(name, parent_datatype):
 """
     env = {}
     env['ua'] = ua
-    logger.debug("Executing code: %s", code)
+    _logger.debug("Executing code: %s", code)
     try:
         exec(code, env)
     except Exception:
-        logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
+        _logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
         raise
     return env
 
@@ -443,7 +443,7 @@ async def load_data_type_definitions(server: Union["Server", "Client"], base_nod
                 ua.register_extension_object(dts.name, dts.encoding_id, env[dts.name], dts.data_type)
                 new_objects[dts.name] = env[dts.name]  # type: ignore
             except NotImplementedError:
-                logger.exception("Structure type %s not implemented", dts.sdef)
+                _logger.exception("Structure type %s not implemented", dts.sdef)
             except AttributeError:
                 # Failed to resolve datatypes
                 failed_types.append(dts)
@@ -467,15 +467,15 @@ async def _read_data_type_definition(server, desc: ua.ReferenceDescription, read
     # FIXME: this is fishy, we may have same name in different Namespaces
     if not read_existing and hasattr(ua, desc.BrowseName.Name):
         return None
-    logger.info("Registering data type %s %s", desc.NodeId, desc.BrowseName)
+    _logger.info("Registering data type %s %s", desc.NodeId, desc.BrowseName)
     node = server.get_node(desc.NodeId)
     try:
         sdef = await node.read_data_type_definition()
     except ua.uaerrors.BadAttributeIdInvalid:
-        logger.debug("%s has no DataTypeDefinition attribute", node)
+        _logger.debug("%s has no DataTypeDefinition attribute", node)
         return None
     except Exception:
-        logger.exception("Error getting datatype for node %s", node)
+        _logger.exception("Error getting datatype for node %s", node)
         return None
     return sdef
 
@@ -510,7 +510,7 @@ async def load_enums(server: Union["Server", "Client"], base_node: Node = None, 
         name = clean_name(desc.BrowseName.Name)
         if hasattr(ua, name):
             continue
-        logger.info("Registering Enum %s %s OptionSet=%s", desc.NodeId, name, option_set)
+        _logger.info("Registering Enum %s %s OptionSet=%s", desc.NodeId, name, option_set)
         edef = await _read_data_type_definition(server, desc)
         if not edef:
             continue

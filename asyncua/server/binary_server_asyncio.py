@@ -11,7 +11,7 @@ from ..common.utils import Buffer, NotEnoughData
 from .uaprocessor import UaProcessor
 from .internal_server import InternalServer
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class OPCUAProtocol(asyncio.Protocol):
@@ -39,7 +39,7 @@ class OPCUAProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.peer_name = transport.get_extra_info('peername')
-        logger.info('New connection from %s', self.peer_name)
+        _logger.info('New connection from %s', self.peer_name)
         self.transport = transport
         self.processor = UaProcessor(self.iserver, self.transport, self.limits)
         self.processor.set_policies(self.policies)
@@ -48,7 +48,7 @@ class OPCUAProtocol(asyncio.Protocol):
         self._task = asyncio.create_task(self._process_received_message_loop())
 
     def connection_lost(self, ex):
-        logger.info('Lost connection from %s, %s', self.peer_name, ex)
+        _logger.info('Lost connection from %s, %s', self.peer_name, ex)
         self.transport.close()
         self.iserver.asyncio_transports.remove(self.transport)
         closing_task = asyncio.create_task(self.processor.close())
@@ -72,18 +72,18 @@ class OPCUAProtocol(asyncio.Protocol):
                     return
                 if header.header_size + header.body_size <= header.header_size:
                     # malformed header prevent invalid access of your buffer
-                    logger.error(f'Got malformed header {header}')
+                    _logger.error(f'Got malformed header {header}')
                     self.transport.close()
                     return
                 else:
                     if len(buf) < header.body_size:
-                        logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size, len(buf))
+                        _logger.debug('We did not receive enough data from client. Need %s got %s', header.body_size, len(buf))
                         return
                     # we have a complete message
                     self.messages.put_nowait((header, buf))
                     self._buffer = self._buffer[(header.header_size + header.body_size):]
             except Exception:
-                logger.exception('Exception raised while parsing message from client')
+                _logger.exception('Exception raised while parsing message from client')
                 return
 
     async def _process_received_message_loop(self):
@@ -98,13 +98,13 @@ class OPCUAProtocol(asyncio.Protocol):
             try:
                 await self._process_one_msg(header, buf)
             except Exception:
-                logger.exception('Exception raised while processing message from client')
+                _logger.exception('Exception raised while processing message from client')
 
     async def _process_one_msg(self, header, buf):
-        logger.debug('_process_received_message %s %s', header.body_size, len(buf))
+        _logger.debug('_process_received_message %s %s', header.body_size, len(buf))
         ret = await self.processor.process(header, buf)
         if not ret:
-            logger.info('processor returned False, we close connection from %s', self.peer_name)
+            _logger.info('processor returned False, we close connection from %s', self.peer_name)
             self.transport.close()
             return
 
@@ -176,4 +176,4 @@ class BinaryServer:
             try:
                 await task
             except Exception:
-                logger.exception("Unexpected crash in BinaryServer._close_tasks")
+                _logger.exception("Unexpected crash in BinaryServer._close_tasks")

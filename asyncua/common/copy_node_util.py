@@ -4,7 +4,7 @@ from asyncua import ua
 from .node_factory import make_node
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def copy_node(parent, node, nodeid=None, recursive=True):
@@ -74,6 +74,6 @@ async def _read_and_copy_attrs(node_type, struct, addnode):
             else:
                 setattr(struct, name, results[idx].Value.Value)
         else:
-            logger.warning(f"Instantiate: while copying attributes from node type {str(node_type)},"
+            _logger.warning(f"Instantiate: while copying attributes from node type {str(node_type)},"
                            f" attribute {str(name)}, statuscode is {str(results[idx].StatusCode)}")
     addnode.NodeAttributes = struct
