@@ -7,22 +7,22 @@ same api on server and client side
 """
 
 import asyncio
-from datetime import datetime
-from datetime import timedelta
+import contextlib
 import math
 import tempfile
+from datetime import datetime, timedelta
 from pathlib import Path
-import contextlib
 
 import pytest
 
-from asyncua import ua, uamethod, Node
+from asyncua import Node, ua, uamethod
 from asyncua.common import ua_utils
-from asyncua.common.methods import call_method_full
 from asyncua.common.copy_node_util import copy_node
 from asyncua.common.instantiate_util import instantiate
-from asyncua.common.structures104 import new_struct, new_enum, new_struct_field
-from asyncua.ua.ua_binary import struct_to_binary, struct_from_binary
+from asyncua.common.methods import call_method_full
+from asyncua.common.sql_injection import SqlInjectionError, validate_table_name
+from asyncua.common.structures104 import new_enum, new_struct, new_struct_field
+from asyncua.ua.ua_binary import struct_from_binary, struct_to_binary
 
 pytestmark = pytest.mark.asyncio
 
@@ -1647,3 +1647,19 @@ async def test_custom_struct_with_strange_chars(opc):
     var = await opc.opc.nodes.objects.add_variable(idx, "my_siemens_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
     assert val.My_UInt32 == [78, 79]
+
+async def test_sql_injection():
+    table = 'myTable'
+    validate_table_name(table)
+    table = 'my table'
+    with pytest.raises(SqlInjectionError) as _:
+        validate_table_name(table)
+    table = 'user;SELECT true'
+    with pytest.raises(SqlInjectionError) as _:
+        validate_table_name(table)
+    table = 'user"'
+    with pytest.raises(SqlInjectionError) as _:
+        validate_table_name(table)
+    table = "user'"
+    with pytest.raises(SqlInjectionError) as _:
+        validate_table_name(table)
