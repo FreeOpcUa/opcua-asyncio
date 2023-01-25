@@ -780,7 +780,7 @@ class AddressSpace:
         if value.StatusCode is not None and value.StatusCode.is_bad():
             # https://reference.opcfoundation.org/v104/Core/docs/Part4/7.7.1/
             # If the StatusCode indicates an error then the value is to be ignored and the Server shall set it to null.
-            value = dataclasses.replace(value, Value=ua.Variant(ua.Null(), ua.VariantType.Null))
+            value = dataclasses.replace(value, Value=ua.Variant(None, ua.VariantType.Null))
         elif not self._is_expected_variant_type(value, attval, node):
             # Only check datatype if no bad StatusCode is set
             return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
