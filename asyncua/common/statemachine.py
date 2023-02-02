@@ -295,14 +295,14 @@ class FiniteStateMachine(StateMachine):
 
     async def install(self, optionals: bool=False):
         if await self._is_subtype_of_finitestatemachine():
-            super().install(optionals)
+            await super().install(optionals)
             pass
         else:
             raise ua.UaError(f"NodeId: {self._state_machine_type} is not a subtype of FiniteStateMachine!")
 
     async def _is_subtype_of_finitestatemachine(self):
         result = False
-        type_node = Node(self._server, self._state_machine_type)
+        type_node = self._server.get_node(self._state_machine_type)  
         parent = await type_node.get_parent()
         if not parent:
             raise ua.UaError("Node does not have a Parent!")
