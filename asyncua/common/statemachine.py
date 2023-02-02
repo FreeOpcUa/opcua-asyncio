@@ -122,7 +122,7 @@ class StateMachine(object):
             )
         if self._optionals:
             self._last_transition_node = await self._state_machine_node.get_child(["LastTransition"])
-            children = await self._last_transition_node.get_children()
+            children: List[Node] = await self._last_transition_node.get_children()
             childnames = []
             for each in children:
                 childnames.append(await each.read_browse_name())
@@ -141,9 +141,9 @@ class StateMachine(object):
         initialize and get subnodes
         '''
         self._current_state_node = await statemachine.get_child(["CurrentState"])
-        current_state_props = await self._current_state_node.get_properties()
+        current_state_props: List[Node] = await self._current_state_node.get_properties()
         for prop in current_state_props:
-            dn = await prop.read_display_name()
+            dn: ua.LocalizedText = await prop.read_display_name()
             if dn.Text == "Id":
                 self._current_state_id_node = await self._current_state_node.get_child(["Id"])
             elif dn.Text == "Name":
@@ -156,9 +156,9 @@ class StateMachine(object):
                 _logger.warning(f"{await statemachine.read_browse_name()} CurrentState Unknown property: {dn.Text}")
         if self._optionals:
             self._last_transition_node = await statemachine.get_child(["LastTransition"])
-            last_transition_props = await self._last_transition_node.get_properties()
+            last_transition_props: List[Node] = await self._last_transition_node.get_properties()
             for prop in last_transition_props:
-                dn = await prop.read_display_name()
+                dn: ua.LocalizedText = await prop.read_display_name()
                 if dn.Text == "Id":
                     self._last_transition_id_node = await self._last_transition_node.get_child(["Id"])
                 elif dn.Text == "Name":
@@ -213,7 +213,6 @@ class StateMachine(object):
     async def _write_transition(self, transition: Transition):
         '''
         transition: Transition
-        issub: boolean (true if it is a transition between substates)
         '''
         if not isinstance(transition, Transition):
             raise ValueError(f"Statemachine: {self._name} -> state: {transition} is not a instance of StateMachine.Transition class")
@@ -283,7 +282,7 @@ class FiniteStateMachine(StateMachine):
     '''
     Implementation of an FiniteStateMachineType a little more advanced than the basic one
     if you need to know the available states and transition from clientside
-    A FiniteStateMachine is Abstract and can't be instantiated
+    The FiniteStateMachineType is Abstract and can't be instantiated
     '''
     def __init__(self, server: Server=None, parent: Node=None, idx: int=None, name: str=None, typeid: ua.NodeId=ua.NodeId(2299, 0)):
         super().__init__(server, parent, idx, name)
@@ -310,9 +309,11 @@ class FiniteStateMachine(StateMachine):
         if parent.nodeid == self._finitestatemachine_nodeid:
             result = True
         else:
-            # sub or sub-sub type ...
             while not parent.nodeid == self._finitestatemachine_nodeid:
                 parent = await parent.get_parent()
+                if not parent:
+                    result = False
+                    break
                 if parent.nodeid == self._finitestatemachine_nodeid:
                     result = True
                     break
