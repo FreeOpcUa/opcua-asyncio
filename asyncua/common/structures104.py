@@ -360,7 +360,7 @@ async def _get_parent_types(node: Node):
         refs = await tmp_node.get_references(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
         if not refs or refs[0].NodeId.NamespaceIndex == 0 and refs[0].NodeId.Identifier == 22:
             return parents
-        tmp_node = Node(tmp_node.session, refs[0])
+        tmp_node = Node(tmp_node.session, refs[0].NodeId)
         parents.append(tmp_node)
     _logger.warning("Went 10 layers up while look of subtype of given node %s, something is wrong: %s", node, parents)
 
@@ -370,7 +370,7 @@ async def load_custom_struct(node: Node) -> Any:
     name = (await node.read_browse_name()).Name
     for parent in await _get_parent_types(node):
         parent_sdef = await parent.read_data_type_definition()
-        for f in reversed(parent_sdef.fields):
+        for f in reversed(parent_sdef.Fields):
             sdef.Fields.insert(0, f)
     env = await _generate_object(name, sdef, data_type=node.nodeid)
     struct = env[name]
