@@ -322,6 +322,11 @@ class FiniteStateMachine(StateMachine):
                     break
         return result
 
+    async def add_state(self, state: State, state_type: ua.NodeId=ua.NodeId(2307, 0), optionals: bool=False):
+        raise ua.UaError("Unable to add a state to a FiniteStateMachine all states and transitions are defined in the SubType of FiniteStateMachineType")
+
+    async def add_transition(self, transition: Transition, transition_type: ua.NodeId=ua.NodeId(2310, 0), optionals: bool=False):
+        raise ua.UaError("Unable to add a transition to a FiniteStateMachine all states and transitions are defined in the SubType of FiniteStateMachineType")
 
     async def set_available_states(self, states: List[ua.NodeId]):
         if not self._available_states_node:
