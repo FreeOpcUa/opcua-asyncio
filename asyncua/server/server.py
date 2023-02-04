@@ -268,9 +268,12 @@ class Server:
         """
         # FIXME: have a period per discovery
         if url in self._discovery_clients:
-            await self._discovery_clients[url].disconnect()
+            await self._discovery_clients[url].close_secure_channel() 
+            await self._discovery_clients[url].disconnect_socket()
         self._discovery_clients[url] = Client(url)
-        await self._discovery_clients[url].connect()
+        await self._discovery_clients[url].connect_socket()
+        await self._discovery_clients[url].send_hello()
+        await self._discovery_clients[url].open_secure_channel()
         await self._discovery_clients[url].register_server(self)
         self._discovery_period = period
         if period:
@@ -281,7 +284,8 @@ class Server:
         stop registration thread
         """
         # FIXME: is there really no way to deregister?
-        await self._discovery_clients[url].disconnect()
+        await self._discovery_clients[url].close_secure_channel() 
+        await self._discovery_clients[url].disconnect_socket()
         del self._discovery_clients[url]
         if not self._discovery_clients and self._discovery_handle:
             self._discovery_handle.cancel()
