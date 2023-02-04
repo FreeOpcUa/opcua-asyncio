@@ -283,7 +283,7 @@ class Server:
         """
         stop registration thread
         """
-        # FIXME: is there really no way to deregister?
+        # FIXME: is there really no way to deregister? -> isOnline false! https://reference.opcfoundation.org/Core/Part4/v104/docs/7.27#_Ref413265664
         await self._discovery_clients[url].close_secure_channel() 
         await self._discovery_clients[url].disconnect_socket()
         del self._discovery_clients[url]
