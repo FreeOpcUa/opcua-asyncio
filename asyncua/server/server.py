@@ -259,7 +259,7 @@ class Server:
         params.ServerUris = uris
         return self.iserver.find_servers(params)
 
-    async def register_to_discovery(self, url: str = "opc.tcp://localhost:4840", period: int = 60):
+    async def register_to_discovery(self, url: str = "opc.tcp://localhost:4840", period: int = 60, discovery_configuration=None):
         """
         Register to an OPC-UA Discovery server. Registering must be renewed at
         least every 10 minutes, so this method will use our asyncio thread to
@@ -268,25 +268,22 @@ class Server:
         """
         # FIXME: have a period per discovery
         if url in self._discovery_clients:
-            await self._discovery_clients[url].close_secure_channel() 
-            await self._discovery_clients[url].disconnect_socket()
+            await self._discovery_clients[url].disconnect_sessionless()
         self._discovery_clients[url] = Client(url)
-        await self._discovery_clients[url].connect_socket()
-        await self._discovery_clients[url].send_hello()
-        await self._discovery_clients[url].open_secure_channel()
-        await self._discovery_clients[url].register_server(self)
+        await self._discovery_clients[url].connect_sessionless()
+        await self._discovery_clients[url].register_server(self, discovery_configuration)
+        await self._discovery_clients[url].disconnect_sessionless()
         self._discovery_period = period
         if period:
             asyncio.get_running_loop().call_soon(self._schedule_renew_registration)
 
-    async def unregister_to_discovery(self, url: str = "opc.tcp://localhost:4840"):
+    async def unregister_from_discovery(self, url: str = "opc.tcp://localhost:4840", discovery_configuration=None):
         """
         stop registration thread
         """
-        # FIXME: is there really no way to deregister? -> isOnline false! https://reference.opcfoundation.org/Core/Part4/v104/docs/7.27#_Ref413265664
-        await self._discovery_clients[url].unregister_server(self)
-        await self._discovery_clients[url].close_secure_channel() 
-        await self._discovery_clients[url].disconnect_socket()
+        await self._discovery_clients[url].connect_sessionless()
+        await self._discovery_clients[url].unregister_server(self, discovery_configuration)
+        await self._discovery_clients[url].disconnect_sessionless()
         del self._discovery_clients[url]
         if not self._discovery_clients and self._discovery_handle:
             self._discovery_handle.cancel()
@@ -297,7 +294,9 @@ class Server:
 
     async def _renew_registration(self):
         for client in self._discovery_clients.values():
+            await client.connect_sessionless()
             await client.register_server(self)
+            await client.disconnect_sessionless()
 
     def allow_remote_admin(self, allow):
         """
