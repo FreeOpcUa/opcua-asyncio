@@ -158,7 +158,10 @@ class UaProcessor:
                       ua.NodeId(ua.ObjectIds.CloseSessionRequest_Encoding_DefaultBinary),
                       ua.NodeId(ua.ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary),
                       ua.NodeId(ua.ObjectIds.FindServersRequest_Encoding_DefaultBinary),
-                      ua.NodeId(ua.ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary)]:
+                      ua.NodeId(ua.ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary),
+                      ua.NodeId(ua.ObjectIds.RegisterServerRequest_Encoding_DefaultBinary),
+                      ua.NodeId(ua.ObjectIds.RegisterServer2Request_Encoding_DefaultBinary),
+                      ]:
             # The connection is first created without a user being attached, and then during activation the
             user = None
         elif self.session is None:
