@@ -295,7 +295,7 @@ class Server:
     async def _renew_registration(self):
         for client in self._discovery_clients.values():
             await client.connect_sessionless()
-            await client.register_server(self)
+            await client.register_server(self)  #FIXME discovery_configuration?
             await client.disconnect_sessionless()
 
     def allow_remote_admin(self, allow):
