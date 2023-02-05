@@ -41,11 +41,11 @@ async def test_unregister_discovery(server, discovery_server):
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=0)
         await asyncio.sleep(0.1)
         # unregister, no automatic renewal to stop
-        await server.unregister_to_discovery(discovery_server.endpoint.geturl())
+        await server.unregister_from_discovery(discovery_server.endpoint.geturl())
         # reregister with automatic renewal
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=60)
         # unregister, cancel scheduled renewal
-        await server.unregister_to_discovery(discovery_server.endpoint.geturl())
+        await server.unregister_from_discovery(discovery_server.endpoint.geturl())
 
 
 async def test_find_servers2(server, discovery_server):
