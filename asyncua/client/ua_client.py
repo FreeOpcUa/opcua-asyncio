@@ -444,6 +444,18 @@ class UaClient(AbstractSession):
         self.logger.debug("register_server")
         request = ua.RegisterServerRequest()
         request.Server = registered_server
+        request.Server.IsOnline = True
+        data = await self.protocol.send_request(request)
+        response = struct_from_binary(ua.RegisterServerResponse, data)
+        self.logger.debug(response)
+        response.ResponseHeader.ServiceResult.check()
+        # nothing to return for this service
+    
+    async def unregister_server(self, registered_server):
+        self.logger.debug("register_server")
+        request = ua.RegisterServerRequest()
+        request.Server = registered_server
+        request.Server.IsOnline = False
         data = await self.protocol.send_request(request)
         response = struct_from_binary(ua.RegisterServerResponse, data)
         self.logger.debug(response)
