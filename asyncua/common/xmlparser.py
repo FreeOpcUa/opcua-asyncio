@@ -219,6 +219,8 @@ class XMLParser:
             obj.useraccesslevel = int(val)
         elif key == "Symmetric":
             obj.symmetric = _to_bool(val)
+        elif key == "Historizing":
+            obj.historizing = _to_bool(val)
         else:
             self.logger.info("Attribute not implemented: %s:%s", key, val)
 
