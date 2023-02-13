@@ -293,6 +293,21 @@ class Client:
             self.disconnect_socket()
             raise
 
+    async def connect_sessionless(self):
+        """
+        High level method
+        Connect without a session
+        """
+        _logger.info("connect")
+        await self.connect_socket()
+        try:
+            await self.send_hello()
+            await self.open_secure_channel()
+        except Exception:
+            # clean up open socket
+            self.disconnect_socket()
+            raise
+
     async def disconnect(self):
         """
         High level method
@@ -301,6 +316,17 @@ class Client:
         _logger.info("disconnect")
         try:
             await self.close_session()
+            await self.close_secure_channel()
+        finally:
+            self.disconnect_socket()
+
+    async def disconnect_sessionless(self):
+        """
+        High level method
+        Close secure channel and socket
+        """
+        _logger.info("disconnect")
+        try:
             await self.close_secure_channel()
         finally:
             self.disconnect_socket()
@@ -369,6 +395,25 @@ class Client:
             params.DiscoveryConfiguration = discovery_configuration
             return await self.uaclient.register_server2(params)
         return await self.uaclient.register_server(serv)
+
+    async def unregister_server(self, server, discovery_configuration=None):
+        """
+        register a server to discovery server
+        if discovery_configuration is provided, the newer register_server2 service call is used
+        """
+        serv = ua.RegisteredServer()
+        serv.ServerUri = server.get_application_uri()
+        serv.ProductUri = server.product_uri
+        serv.DiscoveryUrls = [server.endpoint.geturl()]
+        serv.ServerType = server.application_type
+        serv.ServerNames = [ua.LocalizedText(server.name)]
+        serv.IsOnline = False
+        if discovery_configuration:
+            params = ua.RegisterServer2Parameters()
+            params.Server = serv
+            params.DiscoveryConfiguration = discovery_configuration
+            return await self.uaclient.unregister_server2(params)
+        return await self.uaclient.unregister_server(serv)
 
     async def find_servers(self, uris=None):
         """

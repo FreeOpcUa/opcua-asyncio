@@ -25,7 +25,7 @@ async def test_discovery(server, discovery_server):
         await server.set_application_uri(new_app_uri)
         await server.register_to_discovery(discovery_server.endpoint.geturl(), 0)
         # let server register registration
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
         new_servers = await client.find_servers()
         assert len(new_servers) - len(servers) == 1
         assert new_app_uri not in [s.ApplicationUri for s in servers]
@@ -39,13 +39,15 @@ async def test_unregister_discovery(server, discovery_server):
         await server.set_application_uri(new_app_uri)
         # register without automatic renewal
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=0)
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
         # unregister, no automatic renewal to stop
-        await server.unregister_to_discovery(discovery_server.endpoint.geturl())
+        await server.unregister_from_discovery(discovery_server.endpoint.geturl())
+        await asyncio.sleep(0.5)
         # reregister with automatic renewal
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=60)
+        await asyncio.sleep(0.5)
         # unregister, cancel scheduled renewal
-        await server.unregister_to_discovery(discovery_server.endpoint.geturl())
+        await server.unregister_from_discovery(discovery_server.endpoint.geturl())
 
 
 async def test_find_servers2(server, discovery_server):
