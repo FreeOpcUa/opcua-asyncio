@@ -154,11 +154,13 @@ class BinaryServer:
             transport.close()
 
         # stop cleanup process and run it a last time
-        self.cleanup_task.cancel()
-        try:
-            await self.cleanup_task
-        except asyncio.CancelledError:
-            pass
+        if self.cleanup_task is not None:
+            self.cleanup_task.cancel()
+            try:
+                await self.cleanup_task
+            except asyncio.CancelledError:
+                pass
+            
         await self._close_tasks()
 
         if self._server:
