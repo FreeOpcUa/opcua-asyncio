@@ -809,7 +809,7 @@ class AddressSpace:
                 return True
         if value.Value.VariantType == vtype:
             return True
-        _logger.critical("Write refused: Variant: %s with type %s does not have expected type: %s",
+        _logger.warning("Write refused: Variant: %s with type %s does not have expected type: %s",
                 value.Value, value.Value.VariantType, attval.value.Value.VariantType)
         return False
 
