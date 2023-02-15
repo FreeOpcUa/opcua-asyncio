@@ -641,20 +641,16 @@ class Client:
             self._monitor_server_task.cancel()
             try:
                 await self._monitor_server_task
-            except asyncio.CancelledError:
+            except (asyncio.CancelledError, Exception):
                 pass
-            except Exception:
-                _logger.exception("Error while closing watch_task")
         # disable hook because we kill our monitor task, so we are going to get CancelledError at every request
         self.uaclient.pre_request_hook = None
         if self._renew_channel_task:
             self._renew_channel_task.cancel()
             try:
                 await self._renew_channel_task
-            except asyncio.CancelledError:
+            except (asyncio.CancelledError, Exception):
                 pass
-            except Exception:
-                _logger.exception("Error while closing secure channel loop")
         return await self.uaclient.close_session(True)
 
     def get_root_node(self):
