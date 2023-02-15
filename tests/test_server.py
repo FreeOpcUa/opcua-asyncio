@@ -753,23 +753,6 @@ class TestServerCaching(unittest.TestCase):
 
         os.remove(path)
 
-class TestServerStartError(unittest.TestCase):
-
-    def test_port_in_use(self):
-
-        server1 = Server()
-        server1.set_endpoint('opc.tcp://127.0.0.1:{0:d}'.format(port_num + 1))
-        server1.start()
-
-        server2 = Server()
-        server2.set_endpoint('opc.tcp://127.0.0.1:{0:d}'.format(port_num + 1))
-        try:
-            server2.start()
-        except Exception:
-            pass
-
-        server1.stop()
-        server2.stop()
 """
 
 async def test_null_auth(server):
@@ -787,3 +770,14 @@ async def test_null_auth(server):
     # Attempt to connect, this should be accepted without error
     async with client:
         pass
+
+
+async def test_start_server_when_port_is_in_use(server: str):
+    server2 = Server()
+    await server2.init()
+    url = server.endpoint.geturl()
+    server2.set_endpoint(url) # try to bind on the same endpoint as an already running server
+    with pytest.raises(OSError):
+        await server2.start()
+    # now it should still be possible to stop the server with exceptions
+    await server2.stop()
