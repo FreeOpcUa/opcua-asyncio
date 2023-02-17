@@ -221,7 +221,8 @@ class Subscription:
         sourcenode: Node = ua.ObjectIds.Server,
         evtypes: Union[ua.ObjectIds, List[ua.ObjectIds], ua.NodeId, List[ua.NodeId]] = ua.ObjectIds.BaseEventType,
         evfilter: ua.EventFilter = None,
-        queuesize: int = 0
+        queuesize: int = 0,
+        where_clause_generation: bool = True
     ) -> int:
         """
         Subscribe to events from a node. Default node is Server node.
@@ -235,11 +236,11 @@ class Subscription:
         :param evfilter: ua.EventFilter which provides the SelectClauses and WhereClause
         :param queuesize: 0 for default queue size, 1 for minimum queue size, n for FIFO queue,
         MaxUInt32 for max queue size
+        :param where_clause_generation: No where_clause generation when no eventfilter is provided. Need for TwinCAT, Codesys
         :return: Handle for changing/cancelling of the subscription
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
-            where_clause_generation = True
             if not type(evtypes) in (list, tuple) and evtypes == ua.ObjectIds.BaseEventType:
                 # Remove where clause for base event type, for servers that have problems with long WhereClauses.
                 # Also because BaseEventType wants every event we can ommit it. Issue: #1205
