@@ -140,10 +140,11 @@ class Event:
         return name
 
 
-async def get_filter_from_event_type(eventtypes: List["Node"]):
+async def get_filter_from_event_type(eventtypes: List["Node"], where_clause_generation: bool = True):
     evfilter = ua.EventFilter()
     evfilter.SelectClauses = await select_clauses_from_evtype(eventtypes)
-    evfilter.WhereClause = await where_clause_from_evtype(eventtypes)
+    if where_clause_generation:
+        evfilter.WhereClause = await where_clause_from_evtype(eventtypes)
     return evfilter
 
 
