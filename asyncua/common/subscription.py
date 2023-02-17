@@ -209,11 +209,11 @@ class Subscription:
             nodes, attr, queuesize=queuesize, monitoring=monitoring, sampling_interval=sampling_interval
         )
 
-    async def _create_eventfilter(self, evtypes: Union[ua.ObjectIds, List[ua.ObjectIds], ua.NodeId, List[ua.NodeId]]):
+    async def _create_eventfilter(self, evtypes: Union[ua.ObjectIds, List[ua.ObjectIds], ua.NodeId, List[ua.NodeId]], where_clause_generation: bool = True):
         if not type(evtypes) in (list, tuple):
             evtypes = [evtypes]
         evtypes = [Node(self.server, evtype) for evtype in evtypes]
-        evfilter = await get_filter_from_event_type(evtypes)
+        evfilter = await get_filter_from_event_type(evtypes, where_clause_generation)
         return evfilter
 
     async def subscribe_events(
@@ -239,7 +239,12 @@ class Subscription:
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
-            evfilter = await self._create_eventfilter(evtypes)
+            where_clause_generation = True
+            if not type(evtypes) in (list, tuple) and evtypes == ua.ObjectIds.BaseEventType:
+                # Remove where clause for base event type, for servers that have problems with long WhereClauses.
+                # Also because BaseEventType wants every event we can ommit it. Issue: #1205
+                where_clause_generation = False
+            evfilter = await self._create_eventfilter(evtypes, where_clause_generation)
         return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)  # type: ignore
 
     async def subscribe_alarms_and_conditions(
