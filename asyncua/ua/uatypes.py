@@ -520,7 +520,10 @@ class NodeId:
                 identifier = uuid.UUID(f"urn:uuid:{v}")
             elif k == "b":
                 ntype = NodeIdType.ByteString
-                identifier = bytes(v, 'utf-8')
+                if v[0:2] == '0x':
+                    identifier = bytes.fromhex(v[2:])
+                else:
+                    identifier = v.encode()
             elif k == "srv":
                 srv = int(v)
             elif k == "nsu":
@@ -549,7 +552,7 @@ class NodeId:
             ntype = "g"
         elif self.NodeIdType == NodeIdType.ByteString:
             ntype = "b"
-            identifier = identifier.decode()
+            identifier = '0x' + identifier.hex()
         string.append(f"{ntype}={identifier}")
         return ";".join(string)
 
