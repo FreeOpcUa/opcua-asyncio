@@ -390,6 +390,14 @@ def test_nodeid_bytestring():
     s2 = n2.to_string()
     assert n == n2
     assert s == s2
+    n = ua.ByteStringNodeId(Identifier=b'\x01\x00\x05\x55')
+    s = n.to_string()
+    n2 = ua.NodeId.from_string(s)
+    s2 = n2.to_string()
+    assert n == n2
+    assert s == s2
+    n = ua.NodeId.from_string('b=0xaabbccdd')
+    assert n.Identifier == b'\xaa\xbb\xcc\xdd'
 
 
 def test__nodeid():

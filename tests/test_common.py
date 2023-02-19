@@ -149,8 +149,10 @@ async def test_delete_nodes(opc):
 
 async def test_node_bytestring(opc):
     obj = opc.opc.nodes.objects
-    var = await obj.add_variable(ua.ByteStringNodeId(b"VarByteString", 2), ua.QualifiedName("toto", 2), ua.UInt16(9))
-    node = opc.opc.get_node("ns=2;b=VarByteString")
+    var = await obj.add_variable(ua.ByteStringNodeId(b'VarByteString', 2), ua.QualifiedName("toto", 2), ua.UInt16(9))
+    node = opc.opc.get_node(f"ns=2;b=VarByteString")
+    assert node == var
+    node = opc.opc.get_node(f"ns=2;b=0x{b'VarByteString'.hex()}")
     assert node == var
 
 
