@@ -577,6 +577,9 @@ class MethodService:
                 res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNothingToDo)
             else:
                 try:
+                    if method.InputArguments is None:
+                        # An array value can also be None
+                        method.InputArguments = []
                     result = await self._run_method(node.call, method.ObjectId, *method.InputArguments)
                 except Exception:
                     self.logger.exception("Error executing method call %s, an exception was raised: ", method)
