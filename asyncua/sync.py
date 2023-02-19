@@ -254,7 +254,11 @@ class Client:
         pass
 
     def __enter__(self):
-        self.connect()
+        try:
+            self.connect()
+        except Exception as ex:
+            self.disconnect()
+            raise ex
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
