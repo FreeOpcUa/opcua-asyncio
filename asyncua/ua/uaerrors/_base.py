@@ -2,29 +2,11 @@
 Define exceptions to be raised at various places in the stack
 """
 
-
-class _AutoRegister(type):
-    def __new__(mcs, name, bases, dict):
-        SubClass = type.__new__(mcs, name, bases, dict)
-
-        # register subclass in bases
-        for base in bases:
-            try:
-                subclasses = base._subclasses
-                code = dict['code']
-            except (AttributeError, KeyError):
-                pass
-            else:
-                subclasses[code] = SubClass
-
-        return SubClass
-
-
 class UaError(RuntimeError):
     pass
 
 
-class UaStatusCodeError(_AutoRegister("Meta", (UaError,), {})):
+class UaStatusCodeError(UaError):
     """
     This exception is raised when a bad status code is encountered.
 
@@ -36,7 +18,14 @@ class UaStatusCodeError(_AutoRegister("Meta", (UaError,), {})):
     """
 
     # Dict containing all subclasses keyed to their status code.
+    # When instanciating UaStatusCodeError with given code, we will return the
+    # appropriate subclass if it exists. See __new__.
     _subclasses = {}
+
+    @classmethod
+    def __init_subclass__(cls):
+        # Inplace modification of _subclasses
+        cls._subclasses[cls.code] = cls
 
     def __new__(cls, *args):
         """
@@ -46,15 +35,10 @@ class UaStatusCodeError(_AutoRegister("Meta", (UaError,), {})):
             UaStatusCodeError(0x80010000) => BadUnexpectedError()
         """
 
-        # switch class to a more appropriate subclass
-        if len(args) >= 1:
-            code = args[0]
-            try:
-                cls = cls._subclasses[code]
-            except (KeyError, AttributeError):
-                pass
-            else:
-                args = args[1:]
+        if args:
+            code, *args = args
+            # Try to find the subclass with the given code.
+            cls = cls._subclasses.get(code, cls)
 
         return UaError.__new__(cls, *args)
 
