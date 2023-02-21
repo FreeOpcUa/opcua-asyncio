@@ -163,6 +163,9 @@ class HistoryDict(HistoryStorageInterface):
         self._events_periods[source_id] = period, count
 
     async def save_event(self, event):
+        if event.emitting_node not in self._events:
+            self._events[event.emitting_node] = []
+        evts = self._events[event.emitting_node]
         evts = self._events[event.emitting_node]
         evts.append(event)
         period, count = self._events_periods[event.emitting_node]
