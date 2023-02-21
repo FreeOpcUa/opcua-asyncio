@@ -279,7 +279,11 @@ def create_dataclass_serializer(dataclazz):
     data_fields = fields(dataclazz)
     # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
     #       it is possible that the type annotations also refere to classes defined in other modules.
-    resolved_fieldtypes = typing.get_type_hints(dataclazz, {'ua': ua})
+    try:
+        resolved_fieldtypes = typing.get_type_hints(dataclazz, {'ua': ua})
+    except NameError as e:
+        resolved_fieldtypes = typing.get_type_hints(dataclazz)
+
     for f in data_fields:
         f.type = resolved_fieldtypes[f.name]
 
@@ -646,7 +650,11 @@ def _create_dataclass_deserializer(objtype):
     field_deserializers = []
     # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
     #       its possible that the type annotations also refere to classes defined in other modules.
-    resolved_fieldtypes = typing.get_type_hints(objtype, {'ua': ua})
+    try:
+        resolved_fieldtypes = typing.get_type_hints(objtype, {'ua': ua})
+    except NameError as e:
+        resolved_fieldtypes = typing.get_type_hints(objtype)
+
     for field in fields(objtype):
         optional_enc_bit = 0
         field_type = resolved_fieldtypes[field.name]
