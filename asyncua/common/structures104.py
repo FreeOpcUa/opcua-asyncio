@@ -132,7 +132,10 @@ def clean_name(name):
     return newname
 
 
-def get_default_value(uatype, enums=None, hack=False):
+def get_default_value(uatype, enums=None, hack=False, optional=False):
+    if optional:
+        return "None"
+
     if hasattr(ua, uatype):
         # That type is know, make sure this is not a subtype
         dtype = getattr(ua, uatype)
@@ -140,7 +143,7 @@ def get_default_value(uatype, enums=None, hack=False):
     if enums is None:
         enums = {}
     if uatype == "String":
-        return "None"
+        return "ua.String()"
     if uatype == "Guid":
         return "uuid.uuid4()"
     if uatype in ("ByteString", "CharArray", "Char"):
@@ -148,9 +151,9 @@ def get_default_value(uatype, enums=None, hack=False):
     if uatype == "Boolean":
         return "True"
     if uatype == "DateTime":
-        return "datetime.utcnow()"
+        return "datetime.utcnow() # type: ignore"
     if uatype in ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte", "SByte"):
-        return 0
+        return f"ua.{uatype}(0)"
     if uatype in enums:
         return f"ua.{uatype}({enums[uatype]})"
     if hasattr(ua, uatype) and issubclass(getattr(ua, uatype), Enum):
@@ -215,7 +218,7 @@ class {struct_name}{base_class}:
         if sfield.ValueRank >= 0:
             default_value = "field(default_factory=list)"
         else:
-            default_value = get_default_value(uatype)
+            default_value = get_default_value(uatype, optional=sfield.IsOptional)
 
         if sfield.DataType != data_type:
             uatype = f"ua.{uatype}"

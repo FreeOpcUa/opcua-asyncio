@@ -1148,7 +1148,7 @@ async def test_import_xml_data_type_definition(opc):
     s = ua.MyStruct()
     s.toto = 0.1
     ss = ua.MySubstruct()
-    assert ss.titi == 0
+    assert ss.titi == None
     assert isinstance(ss.structs, list)
 
     ss.titi = 1
@@ -1253,6 +1253,11 @@ async def test_custom_struct_with_optional_fields(opc):
     await opc.opc.load_data_type_definitions()
 
     my_struct_optional = ua.MyOptionalStruct()
+    assert my_struct_optional.MyBool is not None
+    assert my_struct_optional.MyUInt32 is not None
+    assert my_struct_optional.MyString is None
+    assert my_struct_optional.MyInt64 is None
+
     my_struct_optional.MyUInt32 = 45
     my_struct_optional.MyInt64 = -67
     var = await opc.opc.nodes.objects.add_variable(idx, "my_struct_optional", ua.Variant(my_struct_optional, ua.VariantType.ExtensionObject))
