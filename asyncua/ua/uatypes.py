@@ -149,7 +149,7 @@ class Null:  # Null(NoneType) is not supported in Python
     pass
 
 
-class String:  # Passing None as arg will result in unexpected behaviour so disabling
+class String(str):
     pass
 
 
