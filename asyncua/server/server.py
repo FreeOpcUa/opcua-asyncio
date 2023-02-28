@@ -128,6 +128,15 @@ class Server:
 
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
 
+    def set_match_discovery_endpoint_url(self, match_discovery_endpoint_url: bool):
+        """
+        Enables or disables the matching of the EndpointUrl request parameter during discovery.
+
+        When True (default), the host/port of endpoints sent during the discovery is modified to the host/port
+        which is specified in the EndpointUrl request parameter.
+        """
+        self.iserver.match_discovery_endpoint_url = match_discovery_endpoint_url
+
     def set_match_discovery_client_ip(self, match_discovery_client_ip: bool):
         """
         Enables or disables the matching of an endpoint IP to a client IP during discovery.

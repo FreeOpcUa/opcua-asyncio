@@ -64,7 +64,10 @@ class InternalSession(AbstractSession):
         result.MaxRequestMessageSize = 65536
         self.nonce = create_nonce(32)
         result.ServerNonce = self.nonce
-        result.ServerEndpoints = await self.get_endpoints(sockname=sockname)
+
+        ep_params = ua.GetEndpointsParameters()
+        ep_params.EndpointUrl = params.EndpointUrl
+        result.ServerEndpoints = await self.get_endpoints(params=ep_params, sockname=sockname)
 
         return result
 

@@ -72,6 +72,7 @@ class InternalServer:
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         self.time_task = None
         self._time_task_stop = False
+        self.match_discovery_endpoint_url: bool = True
         self.match_discovery_source_ip: bool = True
         self.supported_tokens = []
 
@@ -200,32 +201,52 @@ class InternalServer:
     def add_endpoint(self, endpoint):
         self.endpoints.append(endpoint)
 
+    def _mangle_endpoint_url(self, ep_url, params_ep_url=None, sockname=None):
+        url = urlparse(ep_url)
+        if self.match_discovery_endpoint_url and params_ep_url:
+            try:
+                netloc = urlparse(params_ep_url).netloc
+            except ValueError:
+                netloc = ''
+            if netloc:
+                return url._replace(netloc=netloc).geturl()
+        if self.match_discovery_source_ip and sockname:
+            return url._replace(netloc=sockname[0] + ':' + str(sockname[1])).geturl()
+        return url.geturl()
+
     async def get_endpoints(self, params=None, sockname=None):
         self.logger.info('get endpoint')
-        if sockname:
-            # return to client the ip address it has access to
-            edps = []
-            for edp in self.endpoints:
-                edp1 = copy(edp)
-                url = urlparse(edp1.EndpointUrl)
-                if self.match_discovery_source_ip:
-                    url = url._replace(netloc=sockname[0] + ':' + str(sockname[1]))
-                edp1.EndpointUrl = url.geturl()
-                edps.append(edp1)
-            return edps
-        return self.endpoints[:]
+        edps = []
+        params_ep_url = params.EndpointUrl if params else None
+        for edp in self.endpoints:
+            edp = copy(edp)
+            edp.EndpointUrl = self._mangle_endpoint_url(edp.EndpointUrl, params_ep_url=params_ep_url, sockname=sockname)
+            edp.Server = copy(edp.Server)
+            edp.Server.DiscoveryUrls = [
+                self._mangle_endpoint_url(url, params_ep_url=params_ep_url, sockname=sockname)
+                for url in edp.Server.DiscoveryUrls
+            ]
+            edps.append(edp)
+        return edps
 
-    def find_servers(self, params):
-        if not params.ServerUris:
-            return [desc.Server for desc in self._known_servers.values()]
+    def find_servers(self, params, sockname=None):
         servers = []
-        for serv in self._known_servers.values():
-            serv_uri = serv.Server.ApplicationUri.split(':')
-            for uri in params.ServerUris:
-                uri = uri.split(':')
-                if serv_uri[: len(uri)] == uri:
-                    servers.append(serv.Server)
-                    break
+        params_server_uris = [uri.split(':') for uri in params.ServerUris]
+        our_application_uris = [edp.Server.ApplicationUri for edp in self.endpoints]
+        for desc in self._known_servers.values():
+            if params_server_uris:
+                serv_uri = desc.Server.ApplicationUri.split(':')
+                if not any(serv_uri[: len(uri)] == uri for uri in params_server_uris):
+                    continue
+            if desc.Server.ApplicationUri in our_application_uris:
+                serv = copy(desc.Server)
+                serv.DiscoveryUrls = [
+                    self._mangle_endpoint_url(url, params_ep_url=params.EndpointUrl, sockname=sockname)
+                    for url in serv.DiscoveryUrls
+                ]
+            else:
+                serv = desc.Server
+            servers.append(serv)
         return servers
 
     def register_server(self, server, conf=None):

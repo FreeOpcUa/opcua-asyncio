@@ -233,7 +233,7 @@ class UaProcessor:
         elif typeid == ua.NodeId(ua.ObjectIds.FindServersRequest_Encoding_DefaultBinary):
             _logger.info("find servers request (%s)", user)
             params = struct_from_binary(ua.FindServersParameters, body)
-            servers = self.iserver.find_servers(params)
+            servers = self.iserver.find_servers(params, sockname=self.sockname)
             response = ua.FindServersResponse()
             response.Servers = servers
             # _logger.info("sending find servers response")
