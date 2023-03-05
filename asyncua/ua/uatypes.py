@@ -59,6 +59,22 @@ def type_is_list(uatype):
 def type_allow_subclass(uatype):
     return get_origin(uatype) not in [Union, list, None]
 
+
+def types_or_list_from_union(uatype):
+    # returns the type of a union or the list of type if a list is inside the union
+    types = []
+    for subtype in get_args(uatype):
+        if hasattr(subtype, '_paramspec_tvars'):
+            # @hack how to check if a parameter is a list:
+            # check if have _paramspec_tvars
+            return True, subtype
+        if not isinstance(None, subtype):
+            types.append(subtype)
+    if not types:
+        raise ValueError(f"Union {uatype} does not seem to contain a valid type")
+    return False, types[0]
+
+
 def types_from_union(uatype, origin=None):
     if origin is None:
         origin = get_origin(uatype)
@@ -74,8 +90,14 @@ def types_from_union(uatype, origin=None):
 def type_from_list(uatype):
     return get_args(uatype)[0]
 
+
+def type_from_optional(uatype):
+    return get_args(uatype)[0]
+
+
 def type_from_allow_subtype(uatype):
     return get_args(uatype)[0]
+
 
 def type_string_from_type(uatype):
     if type_is_union(uatype):

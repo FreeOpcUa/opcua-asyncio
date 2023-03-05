@@ -1146,11 +1146,13 @@ async def test_import_xml_data_type_definition(opc):
     sdef = await datatype.read_data_type_definition()
     assert isinstance(sdef, ua.StructureDefinition)
     s = ua.MyStruct()
+
     s.toto = 0.1
     ss = ua.MySubstruct()
-    assert ss.titi == None
+    assert ss.titi is None
+    assert ss.opt_array is None
     assert isinstance(ss.structs, list)
-
+    ss.opt_array = []
     ss.titi = 1
     ss.structs.append(s)
     ss.structs.append(s)
@@ -1159,6 +1161,8 @@ async def test_import_xml_data_type_definition(opc):
 
     s2 = await var.read_value()
     assert s2.structs[1].toto == ss.structs[1].toto == 0.1
+    assert s2.opt_array == []
+
     await opc.opc.delete_nodes([datatype, var])
     n = []
     [n.append(opc.opc.get_node(node)) for node in nodes]

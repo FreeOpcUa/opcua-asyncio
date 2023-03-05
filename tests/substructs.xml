@@ -49,6 +49,7 @@
         </References>
         <Definition Name="1:MySubstruct">
             <Field IsOptional="true" DataType="Double" Name="titi"/>
+            <Field IsOptional="true" DataType="Double" Name="opt_array" ValueRank="1" ArrayDimensions="0"/>
             <Field DataType="MyStruct" ValueRank="1" ArrayDimensions="0" Name="structs"/>
         </Definition>
     </UADataType>

@@ -5,7 +5,7 @@ Binary protocol specific functions and constants
 import functools
 import struct
 import logging
-from typing import Any, Callable
+from typing import Any, Callable, Union
 import typing
 import uuid
 from enum import Enum, IntFlag
@@ -13,7 +13,7 @@ from dataclasses import is_dataclass, fields
 from asyncua import ua
 from .uaerrors import UaError
 from ..common.utils import Buffer
-from .uatypes import type_is_list, type_is_union, type_from_list, types_from_union, type_allow_subclass
+from .uatypes import type_from_optional, type_is_list, type_is_union, type_from_list, types_or_list_from_union, type_allow_subclass
 
 logger = logging.getLogger('__name__')
 
@@ -257,7 +257,8 @@ def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
     is_optional = type_is_union(ftype)
     uatype = ftype
     if is_optional:
-        uatype = types_from_union(uatype)[0]
+        # unpack optional because this we will handeled by the decoding
+        uatype = type_from_optional(uatype)
     if type_is_list(uatype):
         ft = type_from_list(uatype)
         return create_list_serializer(ft, ft == dataclazz)
@@ -588,7 +589,9 @@ def _create_list_deserializer(uatype, recursive: bool = False):
 @functools.lru_cache(maxsize=None)
 def _create_type_deserializer(uatype, dataclazz):
     if type_is_union(uatype):
-        return _create_type_deserializer(types_from_union(uatype)[0], uatype)
+        array, uatype = types_or_list_from_union(uatype)
+        if not array:
+            return _create_type_deserializer(uatype, uatype)
     if type_is_list(uatype):
         utype = type_from_list(uatype)
         if hasattr(ua.VariantType, utype.__name__):
