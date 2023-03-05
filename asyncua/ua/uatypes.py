@@ -66,9 +66,14 @@ def types_or_list_from_union(uatype):
     for subtype in get_args(uatype):
         if hasattr(subtype, '_paramspec_tvars'):
             # @hack how to check if a parameter is a list:
-            # check if have _paramspec_tvars
+            # check if have _paramspec_tvars works for type[X]
             return True, subtype
-        if not isinstance(None, subtype):
+        elif hasattr(subtype, '_name'):
+            # @hack how to check if parameter is union or list
+            # if _name is not List, it is Union
+            if subtype._name == 'List':
+                return True, subtype
+        elif not isinstance(None, subtype):
             types.append(subtype)
     if not types:
         raise ValueError(f"Union {uatype} does not seem to contain a valid type")
