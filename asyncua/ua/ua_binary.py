@@ -261,6 +261,8 @@ def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
         uatype = type_from_optional(uatype)
     if type_is_list(uatype):
         ft = type_from_list(uatype)
+        if is_optional:
+            return lambda val: b'' if val is None else create_list_serializer(ft, ft == dataclazz)(val)
         return create_list_serializer(ft, ft == dataclazz)
     else:
         if ftype == dataclazz:
