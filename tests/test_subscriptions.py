@@ -328,6 +328,37 @@ async def test_subscription_data_change_bool(opc):
     await opc.opc.delete_nodes([v1])
 
 
+async def test_subscription_data_change_complex(opc):
+    """
+    test subscriptions. This is far too complicated for
+    a unittest but, setting up subscriptions requires a lot
+    of code, so when we first set it up, it is best
+    to test as many things as possible.
+    Check if a mutable object is handeled corretly
+    """
+    myhandler = MySubHandler()
+    o = opc.opc.nodes.objects
+    # subscribe to a variable
+    startv1 = ua.BuildInfo('ABC')
+    v1 = await o.add_variable(3, 'SubscriptionVariableLoc', startv1)
+    sub = await opc.opc.create_subscription(100, myhandler)
+    _ = await sub.subscribe_data_change(v1)
+    # Now check we get the start value
+    node, val, data = await myhandler.result()
+    assert startv1 == val
+    assert v1 == node
+    myhandler.reset()  # reset future object
+    # modify v1 and check we get value
+    startv1.ProductUri = 'BB'
+    await v1.write_value(startv1)
+    node, val, data = await myhandler.result()
+    assert v1 == node
+    assert startv1 == val
+    assert val.ProductUri == 'BB'
+    await sub.delete()  # should delete our monitoreditem too
+    await opc.opc.delete_nodes([v1])
+
+
 async def test_subscription_data_change_many(opc):
     """
     test subscriptions. This is far too complicated for
