@@ -6,6 +6,7 @@ import logging
 from asyncua import ua
 from typing import Dict, Optional
 from .address_space import AddressSpace
+import copy
 
 
 class MonitoredItemData:
@@ -27,7 +28,8 @@ class MonitoredItemValues:
 
     def set_current_datavalue(self, cur_val: ua.DataValue):
         self.old_dvalue = self.current_dvalue
-        self.current_dvalue = cur_val
+        # We need to clone the value, to prevent referencing the inner value
+        self.current_dvalue = copy.deepcopy(cur_val)
 
     def get_current_datavalue(self) -> ua.DataValue:
         return self.current_dvalue
