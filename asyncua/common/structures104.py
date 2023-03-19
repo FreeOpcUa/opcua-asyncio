@@ -43,7 +43,7 @@ def new_struct_field(
     else:
         raise ValueError(f"DataType of a field must be a NodeId, not {dtype} of type {type(dtype)}")
     if array:
-        field.ValueRank = ua.ValueRank.OneOrMoreDimensions
+        field.ValueRank = ua.ValueRank.OneDimension
         field.ArrayDimensions = [1]  # type: ignore
     else:
         field.ValueRank = ua.ValueRank.Scalar
