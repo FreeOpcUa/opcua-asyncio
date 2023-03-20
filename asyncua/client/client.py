@@ -183,7 +183,6 @@ class Client:
             cert_len_idx = 2
             len_bytestr = endpoint.ServerCertificate[cert_len_idx:cert_len_idx + 2]
             cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
-            print(cert_len)
             server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate[:cert_len])
         elif not isinstance(server_certificate, uacrypto.CertProperties):
             server_certificate = uacrypto.CertProperties(server_certificate)
