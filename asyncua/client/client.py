@@ -468,9 +468,16 @@ class Client:
             data = self.security_policy.host_certificate + nonce
         self.security_policy.asymmetric_cryptography.verify(data, response.ServerSignature.Signature)
         self._server_nonce = response.ServerNonce
+        # If a server has certificate chain, the certificates are chained
+        # this generates a error in our crypto part, so we strip everything after
+        # the server cert. To do this we read byte 2:4 and get the length - 4
+        cert_len_idx = 2
+        len_bytestr = response.ServerCertificate[cert_len_idx:cert_len_idx + 2]
+        cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
+        server_certificate = response.ServerCertificate[:cert_len]
         if not self.security_policy.peer_certificate:
-            self.security_policy.peer_certificate = response.ServerCertificate
-        elif self.security_policy.peer_certificate != response.ServerCertificate:
+            self.security_policy.peer_certificate = server_certificate
+        elif self.security_policy.peer_certificate != server_certificate:
             raise ua.UaError("Server certificate mismatch")
         # remember PolicyId's: we will use them in activate_session()
         ep = Client.find_endpoint(response.ServerEndpoints, self.security_policy.Mode, self.security_policy.URI)
