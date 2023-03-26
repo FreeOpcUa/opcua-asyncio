@@ -26,6 +26,10 @@ CUSTOM_NODES_NS_XML_PATH3 = BASE_DIR / "custom_nodesns_4.xml"
 CUSTOM_NS_META_ADD_XML_PATH = BASE_DIR / "custom_ns_meta_add.xml"
 CUSTOM_REQ_XML_PASS_PATH = BASE_DIR / "test_requirement_pass.xml"
 CUSTOM_REQ_XML_FAIL_PATH = BASE_DIR / "test_requirement_fail.xml"
+NODESET_DI = BASE_DIR / "Nodesets" / "Opc.Ua.Di.NodeSet2.xml"
+NODESET_SCALES = BASE_DIR / "Nodesets" / "Opc.Ua.Scales.NodeSet2.xml"
+NODESET_PACK = BASE_DIR / "Nodesets" / "Opc.Ua.PACKML.NodeSet2.xml"
+NODESET_TMC = BASE_DIR / "Nodesets" / "Opc.Ua.TMC.NodeSet2.xml"
 
 
 @uamethod
@@ -52,6 +56,20 @@ async def test_xml_import(opc):
     input_arg = (await o.read_data_value()).Value.Value[0]
     assert "Context" == input_arg.Name
     await opc.opc.delete_nodes([v])
+    for nodeid in nodes:
+        await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
+
+
+async def test_xml_import_companion_specifications(opc):
+    # if not already shift the new namespaces
+    await opc.server.register_namespace("http://placeholder.toincrease.nsindex")
+    # Test against some companion specifications
+    nodes = await opc.opc.import_xml(NODESET_DI)
+    nodes += await opc.opc.import_xml(NODESET_SCALES)
+    if opc.opc == opc.server:
+        # Only load in server testcase takes to long if the networklayer is involved
+        nodes += await opc.opc.import_xml(NODESET_PACK)
+        nodes += await opc.opc.import_xml(NODESET_TMC)
     for nodeid in nodes:
         await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
 

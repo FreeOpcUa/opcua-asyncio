@@ -6,7 +6,7 @@ import logging
 import uuid
 from typing import Union, Dict, List, Tuple
 from dataclasses import fields, is_dataclass
-
+from asyncua.common.structures104 import load_custom_struct_xml_import, load_enum_xml_import
 from asyncua import ua
 from asyncua.ua.uatypes import type_is_union, types_from_union, type_is_list, type_from_list
 from .xmlparser import XMLParser, ua_type_to_python
@@ -131,7 +131,7 @@ class XmlImporter:
         dnodes = self.parser.get_node_datas()
         dnodes = self.make_objects(dnodes)
         self._add_missing_parents(dnodes)
-        nodes_parsed = self._sort_nodes_by_parentid(dnodes)
+        nodes_parsed = self._sort_nodes(dnodes)
         nodes = []
         for nodedata in nodes_parsed:  # self.parser:
             try:
@@ -368,7 +368,8 @@ class XmlImporter:
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
-        attrs.DataType = obj.datatype
+        if obj.datatype is not None:
+            attrs.DataType = obj.datatype
         if obj.value is not None:
             attrs.Value = await self._add_variable_value(obj, )
         if obj.rank:
@@ -414,8 +415,10 @@ class XmlImporter:
                     val,
                 )
             for attname, v in val:
-                atttype = self._get_val_type(extclass, attname)
-                self._set_attr(atttype, args, attname, v)
+                if attname != 'EncodingMask':
+                    # Skip Encoding Mask used for optional types
+                    atttype = self._get_val_type(extclass, attname)
+                    self._set_attr(atttype, args, attname, v)
         return extclass(**args)
 
     def _get_val_type(self, objclass, attname: str):
@@ -457,8 +460,10 @@ class XmlImporter:
         elif is_dataclass(atttype):
             subargs = {}
             for attname2, v2 in val:
-                sub_atttype = self._get_val_type(atttype, attname2)
-                self._set_attr(sub_atttype, subargs, attname2, v2)
+                if attname2 != 'EncodingMask':
+                    # Skip Encoding Mask used for optional types
+                    sub_atttype = self._get_val_type(atttype, attname2)
+                    self._set_attr(sub_atttype, subargs, attname2, v2)
             if "Encoding" in subargs:
                 del subargs["Encoding"]
             fargs[attname] = atttype(**subargs)
@@ -508,9 +513,10 @@ class XmlImporter:
         if obj.desc:
             attrs.Description = ua.LocalizedText(obj.desc)
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
-        attrs.DataType = obj.datatype
-        if obj.value and len(obj.value) == 1:
-            attrs.Value = obj.value[0]
+        if obj.datatype is not None:
+            attrs.DataType = obj.datatype
+        if obj.value:
+            attrs.Value = await self._add_variable_value(obj, )
         if obj.rank:
             attrs.ValueRank = obj.rank
         if obj.abstract:
@@ -566,6 +572,9 @@ class XmlImporter:
         return res[0].AddedNodeId
 
     async def add_datatype(self, obj, no_namespace_migration=False):
+        is_enum = False
+        is_struct = False
+        is_option_set = False
         node = self._get_add_node_item(obj, no_namespace_migration)
         attrs = ua.DataTypeAttributes()
         if obj.desc:
@@ -580,16 +589,21 @@ class XmlImporter:
         else:
             if obj.parent == self.session.nodes.enum_data_type.nodeid:
                 attrs.DataTypeDefinition = self._get_edef(obj)
+                is_enum = True
             elif obj.parent == self.session.nodes.base_structure_type.nodeid:
                 attrs.DataTypeDefinition = self._get_sdef(obj)
+                is_struct = True
             else:
                 parent_node = self.session.get_node(obj.parent)
                 path = await parent_node.get_path()
                 if self.session.nodes.option_set_type in path:
                     # nodes below option_set_type are enums, not structs
                     attrs.DataTypeDefinition = self._get_edef(obj)
+                    is_enum = True
+                    is_option_set = True
                 elif self.session.nodes.base_structure_type in path:
                     attrs.DataTypeDefinition = self._get_sdef(obj)
+                    is_struct = True
                 else:
                     _logger.warning(
                         "%s has datatypedefinition and path %s"
@@ -601,6 +615,10 @@ class XmlImporter:
         res = await self._get_server().add_nodes([node])
         res[0].StatusCode.check()
         await self._add_refs(obj)
+        if is_struct:
+            await load_custom_struct_xml_import(node.RequestedNewNodeId, attrs)
+        if is_enum:
+            await load_enum_xml_import(node.RequestedNewNodeId, attrs, is_option_set)
         return res[0].AddedNodeId
 
     async def _add_refs(self, obj):
@@ -667,29 +685,40 @@ class XmlImporter:
             sdef.StructureType = ua.StructureType.Structure
         return sdef
 
-    def _sort_nodes_by_parentid(self, ndatas):
+    def _sort_nodes(self, ndatas):
         """
         Sort the list of nodes according their parent node in order to respect
-        the dependency between nodes.
+        the dependency between nodes. Also respect the datatypes used in variables
 
         :param nodes: list of NodeDataObjects
         :returns: list of sorted nodes
         """
 
         sorted_ndatas = []
-        sorted_nodes_ids = set()
-        all_node_ids = set(data.nodeid for data in ndatas)
-        while len(sorted_nodes_ids) < len(ndatas):
-            for ndata in ndatas:
-                if ndata.nodeid in sorted_nodes_ids:
+        all_nodes = {data.nodeid: data for data in ndatas}
+        sorted_nodes = {}
+
+        def add_to_sorted(nid, ndata):
+            # check if a node is a datatype, if fields are imported already
+            for field in ndata.definitions:
+                if field.datatype != nid and field.datatype in all_nodes:
+                    if field.datatype not in sorted_nodes:
+                        return
+            sorted_ndatas.append(ndata)
+            sorted_nodes[nid] = ndata
+
+        while len(sorted_nodes) < len(ndatas):
+            for nid, ndata in all_nodes.items():
+                if nid in sorted_nodes:
                     continue
-                elif (ndata.parent is None or ndata.parent not in all_node_ids):
-                    sorted_ndatas.append(ndata)
-                    sorted_nodes_ids.add(ndata.nodeid)
+                if ndata.datatype is not None and ndata.datatype in all_nodes:
+                    if ndata.datatype not in sorted_nodes:
+                        continue
+                if (ndata.parent is None or ndata.parent not in all_nodes):
+                    add_to_sorted(nid, ndata)
                 else:
                     # Check if the nodes parent is already in the list of
                     # inserted nodes
-                    if ndata.parent in sorted_nodes_ids:
-                        sorted_ndatas.append(ndata)
-                        sorted_nodes_ids.add(ndata.nodeid)
+                    if ndata.parent in sorted_nodes:
+                        add_to_sorted(nid, ndata)
         return sorted_ndatas
