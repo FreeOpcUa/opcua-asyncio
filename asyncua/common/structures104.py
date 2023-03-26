@@ -381,6 +381,18 @@ async def load_custom_struct(node: Node) -> Any:
     return env[name]
 
 
+async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes):
+    """
+    This function is used to load custom structs from xmlimporter
+    """
+    name = attrs.DisplayName.Text
+    sdef = attrs.DataTypeDefinition
+    env = await _generate_object(name, sdef, data_type=node_id)
+    struct = env[name]
+    ua.register_extension_object(name, sdef.DefaultEncodingId, struct, node_id)
+    return env[name]
+
+
 async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new_alias) -> Any:
 
     for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
@@ -521,3 +533,15 @@ async def load_enums(server: Union["Server", "Client"], base_node: Node = None, 
         ua.register_enum(name, desc.NodeId, env[name])
         new_enums[name] = env[name]
     return new_enums
+
+
+async def load_enum_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes, option_set: bool):
+    """
+    This function is used to load enums from xmlimporter
+    """
+    name = attrs.DisplayName.Text
+    if hasattr(ua, name):
+        return getattr(ua, name)
+    env = await _generate_object(name, attrs.DataTypeDefinition, enum=True, option_set=option_set)
+    ua.register_enum(name, node_id, env[name])
+    return env[name]
