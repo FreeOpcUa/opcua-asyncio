@@ -386,6 +386,8 @@ async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAt
     This function is used to load custom structs from xmlimporter
     """
     name = attrs.DisplayName.Text
+    if hasattr(ua, name):
+        return getattr(ua, name)
     sdef = attrs.DataTypeDefinition
     env = await _generate_object(name, sdef, data_type=node_id)
     struct = env[name]
