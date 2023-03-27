@@ -614,8 +614,8 @@ async def test_xml_struct_in_struct_with_value(opc, tmpdir):
     await opc.opc.export_xml([outer_struct, inner_struct, valnode], tmp_path, export_values=True)
     await opc.opc.delete_nodes([outer_struct, inner_struct, valnode])
     new_nodes = await opc.opc.import_xml(tmp_path)
-    imported_outer_struct = opc.opc.get_node(new_nodes[0])
-    imported_inner_struct = opc.opc.get_node(new_nodes[1])
+    imported_outer_struct = opc.opc.get_node(new_nodes[1])
+    imported_inner_struct = opc.opc.get_node(new_nodes[0])
     imported_valnode = opc.opc.get_node(new_nodes[2])
     assert outer_struct == imported_outer_struct
     assert inner_struct == imported_inner_struct
