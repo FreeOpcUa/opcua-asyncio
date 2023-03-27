@@ -28,7 +28,7 @@ CUSTOM_REQ_XML_PASS_PATH = BASE_DIR / "test_requirement_pass.xml"
 CUSTOM_REQ_XML_FAIL_PATH = BASE_DIR / "test_requirement_fail.xml"
 NODESET_DI = BASE_DIR / "Nodesets" / "Opc.Ua.Di.NodeSet2.xml"
 NODESET_SCALES = BASE_DIR / "Nodesets" / "Opc.Ua.Scales.NodeSet2.xml"
-NODESET_PACK = BASE_DIR / "Nodesets" / "Opc.Ua.PACKML.NodeSet2.xml"
+NODESET_PACK = BASE_DIR / "Nodesets" / "Opc.Ua.PackML.NodeSet2.xml"
 NODESET_TMC = BASE_DIR / "Nodesets" / "Opc.Ua.TMC.NodeSet2.xml"
 
 
