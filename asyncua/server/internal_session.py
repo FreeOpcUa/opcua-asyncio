@@ -187,8 +187,8 @@ class InternalSession(AbstractSession):
         """COROUTINE"""
         return await self.iserver.method_service.call(params)
 
-    async def create_subscription(self, params, callback=None):
-        result = await self.subscription_service.create_subscription(params, callback, external=self.external)
+    async def create_subscription(self, params, callback, request_callback=None):
+        result = await self.subscription_service.create_subscription(params, callback, request_callback=request_callback)
         self.subscriptions.append(result.SubscriptionId)
         return result
 
@@ -226,8 +226,8 @@ class InternalSession(AbstractSession):
     def publish(self, acks: Optional[Iterable[ua.SubscriptionAcknowledgement]] = None):
         return self.subscription_service.publish(acks or [])
 
-    def modify_subscription(self, params, callback):
-        return self.subscription_service.modify_subscription(params, callback)
+    def modify_subscription(self, params):
+        return self.subscription_service.modify_subscription(params)
 
     async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
         # Subscriptions aren't bound to a Session and can be transfered!
