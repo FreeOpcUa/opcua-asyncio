@@ -177,7 +177,13 @@ class Client:
             # load certificate from server's list of endpoints
             endpoints = await self.connect_and_get_server_endpoints()
             endpoint = Client.find_endpoint(endpoints, mode, policy.URI)
-            server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate)
+            # If a server has certificate chain, the certificates are chained
+            # this generates a error in our crypto part, so we strip everything after
+            # the server cert. To do this we read byte 2:4 and get the length - 4
+            cert_len_idx = 2
+            len_bytestr = endpoint.ServerCertificate[cert_len_idx:cert_len_idx + 2]
+            cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
+            server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate[:cert_len])
         elif not isinstance(server_certificate, uacrypto.CertProperties):
             server_certificate = uacrypto.CertProperties(server_certificate)
         if not isinstance(certificate, uacrypto.CertProperties):
