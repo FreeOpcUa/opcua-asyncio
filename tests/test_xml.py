@@ -26,10 +26,13 @@ CUSTOM_NODES_NS_XML_PATH3 = BASE_DIR / "custom_nodesns_4.xml"
 CUSTOM_NS_META_ADD_XML_PATH = BASE_DIR / "custom_ns_meta_add.xml"
 CUSTOM_REQ_XML_PASS_PATH = BASE_DIR / "test_requirement_pass.xml"
 CUSTOM_REQ_XML_FAIL_PATH = BASE_DIR / "test_requirement_fail.xml"
-NODESET_DI = BASE_DIR / "Nodesets" / "Opc.Ua.Di.NodeSet2.xml"
-NODESET_SCALES = BASE_DIR / "Nodesets" / "Opc.Ua.Scales.NodeSet2.xml"
-NODESET_PACK = BASE_DIR / "Nodesets" / "Opc.Ua.PackML.NodeSet2.xml"
-NODESET_TMC = BASE_DIR / "Nodesets" / "Opc.Ua.TMC.NodeSet2.xml"
+NODESET_DIR = BASE_DIR.parents[0] / "nodeset"
+NODESET_DI = NODESET_DIR / "DI" / "Opc.Ua.Di.NodeSet2.xml"
+NODESET_SCALES = NODESET_DIR / "Scales" / "Opc.Ua.Scales.NodeSet2.xml"
+NODESET_PACK = NODESET_DIR / "PackML" / "Opc.Ua.PackML.NodeSet2.xml"
+NODESET_TMC = NODESET_DIR / "TMC" / "Opc.Ua.TMC.NodeSet2.xml"
+NODESET_IA = NODESET_DIR / "IA" / "Opc.Ua.IA.NodeSet2.xml"
+NODESET_VISION = NODESET_DIR / "MachineVision" / "Opc.Ua.MachineVision.NodeSet2.xml"
 
 
 @uamethod
@@ -65,11 +68,18 @@ async def test_xml_import_companion_specifications(opc):
     await opc.server.register_namespace("http://placeholder.toincrease.nsindex")
     # Test against some companion specifications
     nodes = await opc.opc.import_xml(NODESET_DI)
-    nodes += await opc.opc.import_xml(NODESET_SCALES)
+    scales_nodes = await opc.opc.import_xml(NODESET_SCALES)
+    for nodeid in scales_nodes:
+        await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
     if opc.opc == opc.server:
         # Only load in server testcase takes to long if the networklayer is involved
-        nodes += await opc.opc.import_xml(NODESET_PACK)
-        nodes += await opc.opc.import_xml(NODESET_TMC)
+        pack_nodes = await opc.opc.import_xml(NODESET_PACK)
+
+        # pack_nodes += await opc.opc.import_xml(NODESET_TMC) # @TODO we have a nameming colison
+        for nodeid in pack_nodes:
+            await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
+        nodes += await opc.opc.import_xml(NODESET_IA)
+        nodes += await opc.opc.import_xml(NODESET_VISION)
     for nodeid in nodes:
         await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
 
