@@ -6,7 +6,7 @@ import logging
 import uuid
 from typing import Union, Dict, List, Tuple
 from dataclasses import fields, is_dataclass
-from asyncua.common.structures104 import load_custom_struct_xml_import, load_enum_xml_import
+from asyncua.common.structures104 import load_custom_struct_xml_import, load_enum_xml_import, load_basetype_alias_xml_import
 from asyncua import ua
 from asyncua.ua.uatypes import type_is_union, types_from_union, type_is_list, type_from_list
 from .xmlparser import XMLParser, ua_type_to_python
@@ -575,6 +575,7 @@ class XmlImporter:
         is_enum = False
         is_struct = False
         is_option_set = False
+        is_alias = False
         node = self._get_add_node_item(obj, no_namespace_migration)
         attrs = ua.DataTypeAttributes()
         if obj.desc:
@@ -585,7 +586,7 @@ class XmlImporter:
         else:
             attrs.IsAbstract = False
         if not obj.definitions:
-            pass
+            is_alias = True
         else:
             if obj.parent == self.session.nodes.enum_data_type.nodeid:
                 attrs.DataTypeDefinition = self._get_edef(obj)
@@ -619,6 +620,9 @@ class XmlImporter:
             await load_custom_struct_xml_import(node.RequestedNewNodeId, attrs)
         if is_enum:
             await load_enum_xml_import(node.RequestedNewNodeId, attrs, is_option_set)
+        if is_alias:
+            if node.ParentNodeId != ua.NodeId(ua.ObjectIds.Structure):
+                await load_basetype_alias_xml_import(self.session, node.BrowseName.Name, node.RequestedNewNodeId, node.ParentNodeId)
         return res[0].AddedNodeId
 
     async def _add_refs(self, obj):

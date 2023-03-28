@@ -408,6 +408,20 @@ async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new
         await _recursive_parse_basedatatypes(server, server.get_node(desc.NodeId), name, new_alias)
 
 
+async def load_basetype_alias_xml_import(server, name, nodeid, parent_datatype_nid):
+    '''
+    Insert alias for a datatype used for xml import
+    '''
+    if hasattr(ua, name):
+        return getattr(ua, name)
+    parent = server.get_node(parent_datatype_nid)
+    bname = await parent.read_browse_name()
+    parent_datatype = clean_name(bname.Name)
+    env = make_basetype_code(name, parent_datatype)
+    ua.register_basetype(name, nodeid, env[name])
+    return env[name]
+
+
 def make_basetype_code(name, parent_datatype):
     """
     alias basetypes
