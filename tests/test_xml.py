@@ -33,6 +33,7 @@ NODESET_PACK = NODESET_DIR / "PackML" / "Opc.Ua.PackML.NodeSet2.xml"
 NODESET_TMC = NODESET_DIR / "TMC" / "Opc.Ua.TMC.NodeSet2.xml"
 NODESET_IA = NODESET_DIR / "IA" / "Opc.Ua.IA.NodeSet2.xml"
 NODESET_VISION = NODESET_DIR / "MachineVision" / "Opc.Ua.MachineVision.NodeSet2.xml"
+NODESET_PLASTIC_RUBBER = NODESET_DIR / "PlasticsRubber" / "GeneralTypes" / "1.03" / "Opc.Ua.PlasticsRubber.GeneralTypes.NodeSet2.xml"
 
 
 @uamethod
@@ -77,6 +78,9 @@ async def test_xml_import_companion_specifications(opc):
 
         # pack_nodes += await opc.opc.import_xml(NODESET_TMC) # @TODO we have a nameming colison
         for nodeid in pack_nodes:
+            await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
+        ruber_nodes = await opc.opc.import_xml(NODESET_PLASTIC_RUBBER)
+        for nodeid in ruber_nodes:
             await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
         nodes += await opc.opc.import_xml(NODESET_IA)
         nodes += await opc.opc.import_xml(NODESET_VISION)
