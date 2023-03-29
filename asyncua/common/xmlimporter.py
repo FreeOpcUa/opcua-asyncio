@@ -346,7 +346,9 @@ class XmlImporter:
         node.NodeAttributes = attrs
         res = await self._get_server().add_nodes([node])
         await self._add_refs(obj)
-        res[0].StatusCode.check()
+        # do not verify these nodes because some nodesets contain invalid elements
+        if obj.displayname != 'Default Binary' and obj.displayname != 'Default XML' and obj.displayname != 'Default Json':
+            res[0].StatusCode.check()
         return res[0].AddedNodeId
 
     async def add_object_type(self, obj, no_namespace_migration=False):
@@ -710,7 +712,7 @@ class XmlImporter:
                         return
             sorted_ndatas.append(ndata)
             sorted_nodes[nid] = ndata
-
+        last_len = 0
         while len(sorted_nodes) < len(ndatas):
             for nid, ndata in all_nodes.items():
                 if nid in sorted_nodes:
@@ -725,4 +727,7 @@ class XmlImporter:
                     # inserted nodes
                     if ndata.parent in sorted_nodes:
                         add_to_sorted(nid, ndata)
+            if last_len == len(sorted_nodes):
+                # When no change is found we are in a endlessloop
+                raise ValueError('Ordering of nodes is not possible')
         return sorted_ndatas
