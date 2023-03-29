@@ -9,9 +9,9 @@ same api on server and client side
 import asyncio
 import contextlib
 import math
-import os
 import tempfile
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import pytest
 
@@ -20,7 +20,7 @@ from asyncua.common import ua_utils
 from asyncua.common.copy_node_util import copy_node
 from asyncua.common.instantiate_util import instantiate
 from asyncua.common.methods import call_method_full
-from asyncua.common.sql_injection import validate_table_name, SqlInjectionError
+from asyncua.common.sql_injection import SqlInjectionError, validate_table_name
 from asyncua.common.structures104 import new_enum, new_struct, new_struct_field
 from asyncua.ua.ua_binary import struct_from_binary, struct_to_binary
 
@@ -1426,9 +1426,9 @@ async def test_nested_struct_arrays(opc):
 @contextlib.contextmanager
 def expect_file_creation(filename: str):
     with tempfile.TemporaryDirectory() as tmpdir:
-        path = os.path.join(tmpdir, filename)
+        path = Path(tmpdir) / filename
         yield path
-        assert os.path.isfile(path), f"File {path} should have been created"
+        assert Path.is_file(path), f"File {path} should have been created"
 
 
 async def test_custom_struct_export(opc):

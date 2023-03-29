@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import List, Union, Coroutine, Optional, Type
 from urllib.parse import urlparse, unquote
+from pathlib import Path
 
 from asyncua import ua
 from .ua_client import UaClient
@@ -218,7 +219,7 @@ class Client:
         """
         self.user_certificate = await uacrypto.load_certificate(path, extension)
 
-    async def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
+    async def load_private_key(self, path: Path, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
         """
         Load user private key. This is used for authenticating using certificate
         """

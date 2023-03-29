@@ -2,6 +2,7 @@
 sync API of asyncua
 """
 import asyncio
+from pathlib import Path
 from threading import Thread, Condition
 import logging
 from typing import List, Tuple, Union, Optional
@@ -647,7 +648,7 @@ class XmlExporter:
         pass
 
     @syncmethod
-    def write_xml(self, xmlpath, pretty=True):
+    def write_xml(self, xmlpath: Path, pretty=True):
         pass
 
 

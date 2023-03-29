@@ -8,6 +8,7 @@ import math
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
 from typing import Coroutine, Optional, Tuple, Union
+from pathlib import Path
 
 from asyncua import ua
 from .binary_server_asyncio import BinaryServer
@@ -227,7 +228,7 @@ class Server:
         """
         self.certificate = await uacrypto.load_certificate(path_or_content, format)
 
-    async def load_private_key(self, path_or_content: Union[str, bytes], password=None, format=None):
+    async def load_private_key(self, path_or_content: Union[str, Path, bytes], password=None, format=None):
         self.iserver.private_key = await uacrypto.load_private_key(path_or_content, password, format)
 
     def disable_clock(self, val: bool = True):

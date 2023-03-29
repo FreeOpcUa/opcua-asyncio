@@ -5,7 +5,7 @@ Simple unit test that do not need to setup a server or a client
 """
 
 import io
-import os
+from pathlib import Path
 import uuid
 import pytest
 import logging
@@ -27,7 +27,7 @@ from asyncua.ua.uatypes import _MaskEnum
 from asyncua.common.structures import StructGenerator
 from asyncua.common.connection import MessageChunk
 
-EXAMPLE_BSD_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "example.bsd"))
+EXAMPLE_BSD_PATH = Path(__file__).parent.absolute() / "example.bsd"
 
 
 def test_variant_array_none():
