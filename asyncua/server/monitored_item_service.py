@@ -182,7 +182,7 @@ class MonitoredItemService:
         if old is None or old.StatusCode != current.StatusCode:
             return True
 
-        if trg == ua.DataChangeTrigger.StatusValue and \
+        if trg in [ua.DataChangeTrigger.StatusValue,ua.DataChangeTrigger.StatusValueTimestamp ] and \
                 old.Value != current.Value:
             return True
 

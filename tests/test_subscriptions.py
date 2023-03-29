@@ -4,6 +4,8 @@ import pytest
 from copy import copy
 from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
+from asyncua.common.subscription import Subscription
+from typing import List
 try:
     from unittest.mock import AsyncMock
 except ImportError:
@@ -242,6 +244,55 @@ async def test_subscription_data_change(opc):
     await sub.delete()
     with pytest.raises(ua.UaStatusCodeError):
         await sub.unsubscribe(handle1)  # sub does not exist anymore
+    await opc.opc.delete_nodes([v1])
+
+async def test_subscription_monitored_item(opc):
+    """
+    test subscriptions with a monitored item with a datachange filter.
+
+    filter is Trigger=ua.DataChangeTrigger.StatusValueTimestamp (Part 4 7.17.2 DataChangeFilter)
+    """
+    myhandler = MySubHandler()
+    o = opc.opc.nodes.objects
+    # subscribe to a variable, adding the variable will also set a sourcetimestamp on the value
+    startv1 = [1, 2, 3]
+    v1 = await o.add_variable(3, 'SubscriptionVariableV1', startv1)
+    sub: Subscription = await opc.opc.create_subscription(100, myhandler)
+
+
+    mfilter = ua.DataChangeFilter(Trigger=ua.DataChangeTrigger.StatusValueTimestamp)
+
+    #For creating monitor items create_monitored_items is availablem, but that one is not very easy in use.
+    #So use the internal function instead.
+    #TODO: Should there be an easy shorthand for making monitored items with filter?
+    handles = await sub._subscribe(nodes=v1, mfilter=mfilter)
+
+    # # Now check we get the start value
+    node, val, data = await myhandler.result()
+    assert startv1 == val
+    assert v1 == node
+    myhandler.reset()  # reset future object
+
+    # modify v1 and check we get value
+    # Instead of  v1.write_value([5]) use the datavalue to prevent setting a source stamp
+    await v1.write_value(ua.DataValue([5]))
+
+    # first change will trigger an event (now the new sourcetimestamp becomes not set)
+    node, val, data = await myhandler.result()
+    assert v1 == node
+    assert [5] == val
+    myhandler.reset()  # reset future object
+
+    # second update; again use the datavalue to prevent setting a source stamp
+    await v1.write_value(ua.DataValue([6]))
+
+    # seccond change will trigger based on value (no change in sourcetimestamp)
+    node, val, data = await myhandler.result()
+    assert v1 == node
+    assert [6] == val
+
+    await sub.unsubscribe(handles)  # typing issues
+    await sub.delete()
     await opc.opc.delete_nodes([v1])
 
 
