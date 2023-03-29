@@ -229,8 +229,9 @@ class {struct_name}{base_class}:
             uatype = 'String'
         elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
             uatype = f"List[{uatype}]"
-        elif sfield.IsOptional:
+        if sfield.IsOptional:
             uatype = f"Optional[{uatype}]"
+            default_value = 'None'
         fields.append((fname, uatype, default_value))
     if is_union:
         # Generate getter and setter to mimic opc ua union access
@@ -256,7 +257,6 @@ class {struct_name}{base_class}:
     else:
         for fname, uatype, default_value in fields:
             code += f"    {fname}: {uatype} = {default_value}\n"
-
     return code
 
 
