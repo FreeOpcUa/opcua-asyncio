@@ -4,7 +4,7 @@ import asyncio
 
 from asyncio import TimeoutError
 
-from asyncua.crypto.uacrypto import CertProperties
+from asyncua.crypto.uacrypto import CertProperties, check_certificate
 
 from asyncua import Client
 from asyncua import Server
@@ -118,6 +118,12 @@ async def srv_no_crypto():
     yield srv
     # stop the server
     await srv.stop()
+
+
+async def test_cert_warning():
+    ''' check if a warning for a no longer valid cert is generated'''
+    cert = await uacrypto.load_certificate(peer_creds["certificate"])
+    assert uacrypto.check_certificate(cert, 'abc')
 
 
 async def test_nocrypto(srv_no_crypto):
