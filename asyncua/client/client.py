@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from socket import socket
+import socket
 from typing import List, Union, Coroutine, Optional, Type
 from urllib.parse import urlparse, unquote
 from pathlib import Path
@@ -211,7 +211,7 @@ class Client:
             private_key.password,
             private_key.extension,
         )
-        uacrypto.check_certificate(cert, self.application_uri, socket.get_hostname())
+        uacrypto.check_certificate(cert, self.application_uri, socket.gethostname())
         self.security_policy = policy(server_cert, cert, pk, mode)  # type: ignore
         self.uaclient.set_security(self.security_policy)
 
