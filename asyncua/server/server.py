@@ -455,7 +455,7 @@ class Server:
         """
         if self.certificate is not None:
             # Log warnings about the certificate
-            await uacrypto.check_certificate(self.certificate, self.application_uri, socket.get_hostname())
+            await uacrypto.check_certificate(self.certificate, self._application_uri, socket.get_hostname())
         await self._setup_server_nodes()
         await self.iserver.start()
         try:
