@@ -174,9 +174,9 @@ class Subscription:
             return
         try:
             if asyncio.iscoroutinefunction(self._handler.status_change_notification):
-                await self._handler.status_change_notification(status.Status)
+                await self._handler.status_change_notification(status)
             else:
-                self._handler.status_change_notification(status.Status)
+                self._handler.status_change_notification(status)
         except Exception:
             self.logger.exception("Exception calling status change handler")
 
