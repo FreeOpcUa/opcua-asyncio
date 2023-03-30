@@ -88,7 +88,7 @@ class Node:
 
     async def read_display_name(self):
         """
-        get description attribute of node
+        get DisplayName attribute of node
         """
         result = await self.read_attribute(ua.AttributeIds.DisplayName)
         return result.Value.Value

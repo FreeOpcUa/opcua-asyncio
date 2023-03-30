@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 import operator
-import os
+from pathlib import Path
 import socket
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Process, Condition, Event
@@ -268,19 +268,19 @@ async def history_server(request):
 
 @pytest.fixture(scope="session")
 def client_key_and_cert(request):
-    base_dir = os.path.dirname(os.path.dirname(__file__))
-    cert_dir = os.path.join(base_dir, "examples/certificates") + os.sep
-    key = f"{cert_dir}peer-private-key-example-1.pem"
-    cert = f"{cert_dir}peer-certificate-example-1.der"
+    base_dir = Path(__file__).parent.parent
+    cert_dir = base_dir / "examples/certificates"
+    key = cert_dir / "peer-private-key-example-1.pem"
+    cert = cert_dir / "peer-certificate-example-1.der"
     return key, cert
 
 
 @pytest.fixture(scope="session")
 def server_key_and_cert(request):
-    base_dir = os.path.dirname(os.path.dirname(__file__))
-    cert_dir = os.path.join(base_dir, "examples") + os.sep
-    key = f"{cert_dir}private-key-example.pem"
-    cert = f"{cert_dir}certificate-example.der"
+    base_dir = Path(__file__).parent.parent
+    cert_dir = base_dir / "examples"
+    key = cert_dir / "private-key-example.pem"
+    cert = cert_dir / "certificate-example.der"
     return key, cert
 
 

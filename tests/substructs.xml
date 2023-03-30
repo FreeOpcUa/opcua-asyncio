@@ -27,6 +27,20 @@
             <ua:ModelInfo Tool="UaModeler" Hash="l1kpQd8c2aTEMZi8xJvKfA==" Version="1.6.3"/>
         </Extension>
     </Extensions>
+        <UADataType NodeId="ns=1;i=3003" BrowseName="1:MySubstruct">
+        <DisplayName>MySubstruct</DisplayName>
+        <References>
+            <Reference ReferenceType="HasEncoding">ns=1;i=5004</Reference>
+            <Reference ReferenceType="HasEncoding">ns=1;i=5006</Reference>
+            <Reference ReferenceType="HasEncoding">ns=1;i=5005</Reference>
+            <Reference ReferenceType="HasSubtype" IsForward="false">i=22</Reference>
+        </References>
+        <Definition Name="1:MySubstruct">
+            <Field IsOptional="true" DataType="Double" Name="titi"/>
+            <Field IsOptional="true" DataType="Double" Name="opt_array" ValueRank="1" ArrayDimensions="0"/>
+            <Field DataType="MyStruct" ValueRank="1" ArrayDimensions="0" Name="structs"/>
+        </Definition>
+    </UADataType>
     <UADataType NodeId="ns=1;i=3002" BrowseName="1:MyStruct">
         <DisplayName>MyStruct</DisplayName>
         <References>
@@ -39,19 +53,7 @@
             <Field DataType="Double" Name="toto"/>
         </Definition>
     </UADataType>
-    <UADataType NodeId="ns=1;i=3003" BrowseName="1:MySubstruct">
-        <DisplayName>MySubstruct</DisplayName>
-        <References>
-            <Reference ReferenceType="HasEncoding">ns=1;i=5004</Reference>
-            <Reference ReferenceType="HasEncoding">ns=1;i=5006</Reference>
-            <Reference ReferenceType="HasEncoding">ns=1;i=5005</Reference>
-            <Reference ReferenceType="HasSubtype" IsForward="false">ns=1;i=3002</Reference>
-        </References>
-        <Definition Name="1:MySubstruct">
-            <Field IsOptional="true" DataType="Double" Name="titi"/>
-            <Field DataType="MyStruct" ValueRank="1" ArrayDimensions="0" Name="structs"/>
-        </Definition>
-    </UADataType>
+
     <UAObject SymbolicName="http___yourorganisation_org_testsubstruct_" NodeId="ns=1;i=5007" BrowseName="1:http://yourorganisation.org/testsubstruct/">
         <DisplayName>http://yourorganisation.org/testsubstruct/</DisplayName>
         <References>

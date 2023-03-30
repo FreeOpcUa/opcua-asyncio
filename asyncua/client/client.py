@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import List, Union, Coroutine, Optional, Type
 from urllib.parse import urlparse, unquote
+from pathlib import Path
 
 from asyncua import ua
 from .ua_client import UaClient
@@ -177,7 +178,13 @@ class Client:
             # load certificate from server's list of endpoints
             endpoints = await self.connect_and_get_server_endpoints()
             endpoint = Client.find_endpoint(endpoints, mode, policy.URI)
-            server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate)
+            # If a server has certificate chain, the certificates are chained
+            # this generates a error in our crypto part, so we strip everything after
+            # the server cert. To do this we read byte 2:4 and get the length - 4
+            cert_len_idx = 2
+            len_bytestr = endpoint.ServerCertificate[cert_len_idx:cert_len_idx + 2]
+            cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
+            server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate[:cert_len])
         elif not isinstance(server_certificate, uacrypto.CertProperties):
             server_certificate = uacrypto.CertProperties(server_certificate)
         if not isinstance(certificate, uacrypto.CertProperties):
@@ -212,7 +219,7 @@ class Client:
         """
         self.user_certificate = await uacrypto.load_certificate(path, extension)
 
-    async def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
+    async def load_private_key(self, path: Path, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
         """
         Load user private key. This is used for authenticating using certificate
         """
@@ -462,9 +469,18 @@ class Client:
             data = self.security_policy.host_certificate + nonce
         self.security_policy.asymmetric_cryptography.verify(data, response.ServerSignature.Signature)
         self._server_nonce = response.ServerNonce
+        server_certificate = None
+        if response.ServerCertificate is not None:
+            # If a server has certificate chain, the certificates are chained
+            # this generates a error in our crypto part, so we strip everything after
+            # the server cert. To do this we read byte 2:4 and get the length - 4
+            cert_len_idx = 2
+            len_bytestr = response.ServerCertificate[cert_len_idx:cert_len_idx + 2]
+            cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
+            server_certificate = response.ServerCertificate[:cert_len]
         if not self.security_policy.peer_certificate:
-            self.security_policy.peer_certificate = response.ServerCertificate
-        elif self.security_policy.peer_certificate != response.ServerCertificate:
+            self.security_policy.peer_certificate = server_certificate
+        elif self.security_policy.peer_certificate != server_certificate:
             raise ua.UaError("Server certificate mismatch")
         # remember PolicyId's: we will use them in activate_session()
         ep = Client.find_endpoint(response.ServerEndpoints, self.security_policy.Mode, self.security_policy.URI)

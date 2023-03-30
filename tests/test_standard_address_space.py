@@ -1,5 +1,5 @@
 import pytest
-import os.path
+from pathlib import Path
 import xml.etree.ElementTree as ET
 
 from asyncua.server.address_space import AddressSpace
@@ -55,7 +55,7 @@ def test_std_address_space_references():
     node_mgt_service = NodeManagementService(aspace)
     standard_address_space.fill_address_space(node_mgt_service)
     std_nodes = read_nodes(
-        os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'schemas', 'Opc.Ua.NodeSet2.xml'))
+        Path(__file__).parent.parent.absolute() / 'schemas' / 'Opc.Ua.NodeSet2.xml'
     )
     for k in aspace.keys():
         refs = set(

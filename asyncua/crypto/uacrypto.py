@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import aiofiles
 from typing import Optional, Union
 
@@ -17,12 +17,12 @@ from dataclasses import dataclass
 
 @dataclass
 class CertProperties:
-    path_or_content: Union[str, bytes]
+    path_or_content: Union[bytes, Path, str]
     extension: Optional[str] = None
     password: Optional[Union[str, bytes]] = None
 
 
-async def get_content(path_or_content: Union[str, bytes]) -> bytes:
+async def get_content(path_or_content: Union[str, bytes, Path]) -> bytes:
     if isinstance(path_or_content, bytes):
         return path_or_content
 
@@ -30,8 +30,13 @@ async def get_content(path_or_content: Union[str, bytes]) -> bytes:
         return await f.read()
 
 
-async def load_certificate(path_or_content: Union[str, bytes], extension: Optional[str] = None):
-    _, ext = os.path.splitext(path_or_content)
+async def load_certificate(path_or_content: Union[bytes, str, Path], extension: Optional[str] = None):
+    if isinstance(path_or_content, str):
+        ext = Path(path_or_content).suffix
+    elif isinstance(path_or_content, Path):
+        ext = path_or_content.suffix
+    else:
+        ext = ''
 
     content = await get_content(path_or_content)
     if ext == ".pem" or extension == 'pem' or extension == 'PEM':
@@ -46,10 +51,15 @@ def x509_from_der(data):
     return x509.load_der_x509_certificate(data, default_backend())
 
 
-async def load_private_key(path_or_content: Union[str, bytes],
+async def load_private_key(path_or_content: Union[str, Path, bytes],
                            password: Optional[Union[str, bytes]] = None,
                            extension: Optional[str] = None):
-    _, ext = os.path.splitext(path_or_content)
+    if isinstance(path_or_content, str):
+        ext = Path(path_or_content).suffix
+    elif isinstance(path_or_content, Path):
+        ext = path_or_content.suffix
+    else:
+        ext = ''
     if isinstance(password, str):
         password = password.encode('utf-8')
 
@@ -149,6 +159,7 @@ def decrypt_rsa15(private_key, data):
 
 
 def cipher_aes_cbc(key, init_vec):
+    # FIXME sonarlint reports critical vulnerability (python:S5542) 
     return Cipher(algorithms.AES(key), modes.CBC(init_vec), default_backend())
 
 

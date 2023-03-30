@@ -22,6 +22,6 @@ examples/history.db
 /.settings/
 /venv/
 .eggs*
+.vscode
 .coverage
 schemas/UA-Nodese*
-.vscode

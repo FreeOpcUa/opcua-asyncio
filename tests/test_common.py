@@ -9,9 +9,9 @@ same api on server and client side
 import asyncio
 import contextlib
 import math
-import os
 import tempfile
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import pytest
 
@@ -20,7 +20,7 @@ from asyncua.common import ua_utils
 from asyncua.common.copy_node_util import copy_node
 from asyncua.common.instantiate_util import instantiate
 from asyncua.common.methods import call_method_full
-from asyncua.common.sql_injection import validate_table_name, SqlInjectionError
+from asyncua.common.sql_injection import SqlInjectionError, validate_table_name
 from asyncua.common.structures104 import new_enum, new_struct, new_struct_field
 from asyncua.ua.ua_binary import struct_from_binary, struct_to_binary
 
@@ -1146,12 +1146,13 @@ async def test_import_xml_data_type_definition(opc):
     sdef = await datatype.read_data_type_definition()
     assert isinstance(sdef, ua.StructureDefinition)
     s = ua.MyStruct()
+
     s.toto = 0.1
     ss = ua.MySubstruct()
-    assert ss.titi == None
+    assert ss.titi is None
+    assert ss.opt_array is None
     assert isinstance(ss.structs, list)
-
-    ss.titi = 1
+    ss.titi = 1.0
     ss.structs.append(s)
     ss.structs.append(s)
 
@@ -1159,6 +1160,11 @@ async def test_import_xml_data_type_definition(opc):
 
     s2 = await var.read_value()
     assert s2.structs[1].toto == ss.structs[1].toto == 0.1
+    assert s2.opt_array is None
+    s2.opt_array = [1]
+    await var.write_value(s2)
+    s2 = await var.read_value()
+    assert s2.opt_array == [1]
     await opc.opc.delete_nodes([datatype, var])
     n = []
     [n.append(opc.opc.get_node(node)) for node in nodes]
@@ -1420,9 +1426,9 @@ async def test_nested_struct_arrays(opc):
 @contextlib.contextmanager
 def expect_file_creation(filename: str):
     with tempfile.TemporaryDirectory() as tmpdir:
-        path = os.path.join(tmpdir, filename)
+        path = Path(tmpdir) / filename
         yield path
-        assert os.path.isfile(path), f"File {path} should have been created"
+        assert Path.is_file(path), f"File {path} should have been created"
 
 
 async def test_custom_struct_export(opc):

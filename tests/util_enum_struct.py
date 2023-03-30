@@ -1,12 +1,11 @@
-import os
 from dataclasses import dataclass
-
-from asyncua import ua
-from asyncua.ua import uatypes
 from enum import IntEnum
-from asyncua import Server
+from pathlib import Path
 
-TEST_DIR = os.path.dirname(__file__) + os.sep
+from asyncua import Server, ua
+from asyncua.ua import uatypes
+
+TEST_DIR = Path(__file__).parent
 
 
 class ExampleEnum(IntEnum):
@@ -31,8 +30,8 @@ async def add_server_custom_enum_struct(server: Server):
     # import some nodes from xml
     ns = await server.register_namespace('http://yourorganisation.org/struct_enum_example/')
     uatypes.register_enum('ExampleEnum', ua.NodeId(3002, ns), ExampleEnum)
-    uatypes.register_extension_object('ExampleStruct', ua.NodeId(5002, ns), ExampleStruct)
-    await server.import_xml(f"{TEST_DIR}enum_struct_test_nodes.xml")
+    uatypes.register_extension_object('ExampleStruct', ua.NodeId(5001, ns), ExampleStruct)
+    await server.import_xml(f"{TEST_DIR}enum_struct_test_nodes.xml"),
     val = ua.ExampleStruct()
     val.IntVal1 = 242
     val.EnumVal = ua.ExampleEnum.EnumVal2

@@ -1,8 +1,8 @@
-import os.path
 import asyncio
 import logging
+from pathlib import Path
 
-from asyncua import ua, uamethod, Server
+from asyncua import Server, ua, uamethod
 
 
 @uamethod
@@ -85,11 +85,11 @@ class HelloServer:
 
 
 async def main():
-    script_dir = os.path.dirname(__file__)
+    script_dir = Path(__file__).parent
     async with HelloServer(
         "opc.tcp://0.0.0.0:4840/freeopcua/server/",
         "FreeOpcUa Example Server",
-        os.path.join(script_dir, "test_saying.xml"),
+        script_dir / "test_saying.xml",
     ) as server:
         while True:
             await asyncio.sleep(1)
