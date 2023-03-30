@@ -31,7 +31,7 @@ async def add_server_custom_enum_struct(server: Server):
     ns = await server.register_namespace('http://yourorganisation.org/struct_enum_example/')
     uatypes.register_enum('ExampleEnum', ua.NodeId(3002, ns), ExampleEnum)
     uatypes.register_extension_object('ExampleStruct', ua.NodeId(5001, ns), ExampleStruct)
-    await server.import_xml(f"{TEST_DIR}enum_struct_test_nodes.xml"),
+    await server.import_xml(TEST_DIR / "enum_struct_test_nodes.xml"),
     val = ua.ExampleStruct()
     val.IntVal1 = 242
     val.EnumVal = ua.ExampleEnum.EnumVal2
