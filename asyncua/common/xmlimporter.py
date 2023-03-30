@@ -21,11 +21,11 @@ class XmlImporter:
 
     def __init__(self, server, strict_mode=True):
         '''
-        strict_mode: stop on a error, if False only a error message is logged,
+        strict_mode: stop on an error, if False only an error message is logged,
                      but the import continues
         '''
         self.parser = None
-        self.server = server
+        self.session = server
         self.namespaces: Dict[int, int] = {}  # Dict[IndexInXml, IndexInServer]
         self.aliases: Dict[str, ua.NodeId] = {}
         self._unmigrated_aliases: Dict[str, str] = {}  # Dict[name, nodeId string]
@@ -38,14 +38,14 @@ class XmlImporter:
         if not present the namespace is registered.
         """
         xml_uris = self.parser.get_used_namespaces()
-        server_uris = await self.server.get_namespace_array()
+        server_uris = await self.session.get_namespace_array()
         namespaces_map = {}
         for ns_index, ns_uri in enumerate(xml_uris):
             ns_index += 1  # since namespaces start at 1 in xml files
             if ns_uri in server_uris:
                 namespaces_map[ns_index] = server_uris.index(ns_uri)
             else:
-                ns_server_index = await self.server.register_namespace(ns_uri)
+                ns_server_index = await self.session.register_namespace(ns_uri)
                 namespaces_map[ns_index] = ns_server_index
         return namespaces_map
 
@@ -60,7 +60,7 @@ class XmlImporter:
 
     async def _get_existing_model_in_namespace(self):
         server_model_list = []
-        server_namespaces_node = await self.server.nodes.namespaces.get_children()
+        server_namespaces_node = await self.session.nodes.namespaces.get_children()
         for model_node in server_namespaces_node:
             server_model_list.append({
                 "ModelUri": await (await model_node.get_child("NamespaceUri")).read_value(),
@@ -98,12 +98,12 @@ class XmlImporter:
         check if the NamespaceMetadata objects in server namespaces exists otherwise add them
         to prevent errors when other nodesets depend on this namespace.
         """
-        descs = await self.server.nodes.namespaces.get_children_descriptions()
+        descs = await self.session.nodes.namespaces.get_children_descriptions()
         ns_objs = [n.BrowseName.Name for n in descs]
         for uri, version, pub_date in self.parser.get_nodeset_namespaces():
             if uri not in ns_objs:
-                idx = await self.server.register_namespace(uri)
-                obj = await self.nodes.namespaces.add_object(idx, uri, ua.ObjectIds.NamespaceMetadataType, False)
+                idx = await self.session.register_namespace(uri)
+                obj = await self.session.nodes.namespaces.add_object(idx, uri, ua.ObjectIds.NamespaceMetadataType, False)
                 ns_uri = await obj.get_child('NamespaceUri')
                 await ns_uri.write_value(uri, ua.VariantType.String)
                 ns_ver = await obj.get_child('NamespaceVersion')
@@ -166,7 +166,7 @@ class XmlImporter:
         node_reference_map: Dict[RefSpecKey, ua.ReferenceDescription] = {}
 
         for new_node_id in new_nodes:
-            node = self.server.get_node(new_node_id)
+            node = self.session.get_node(new_node_id)
             node_ref_list: List[ua.ReferenceDescription] = await node.get_references()
 
             for ref in node_ref_list:
@@ -205,8 +205,8 @@ class XmlImporter:
             for ref in nd.refs:
                 if ref.forward:
                     if ref.reftype in [
-                            self.server.nodes.HasComponent.nodeid,
-                            self.server.nodes.HasProperty.nodeid]:
+                            self.session.nodes.HasComponent.nodeid,
+                            self.session.nodes.HasProperty.nodeid]:
                         # if a node has several links, the last one will win
                         if ref.target in childs:
                             _logger.warning(
@@ -243,9 +243,9 @@ class XmlImporter:
         return node
 
     def _get_server(self):
-        if hasattr(self.server, "iserver"):
-            return self.server.iserver.isession
-        return self.server.uaclient
+        if hasattr(self.session, "iserver"):
+            return self.session.iserver.isession
+        return self.session.uaclient
 
     async def _add_references(self, refs):
         res = await self._get_server().add_references(refs)
@@ -279,7 +279,7 @@ class XmlImporter:
     def _migrate_ns(self, obj: Union[ua.NodeId, ua.QualifiedName]) -> Union[ua.NodeId, ua.QualifiedName]:
         """
         Check if the index of nodeid or browsename  given in the xml model file
-        must be converted to a already existing namespace id based on the files
+        must be converted to an already existing namespace id based on the files
         namespace uri
 
         :returns: NodeId (str)
@@ -402,7 +402,7 @@ class XmlImporter:
         try:
             extclass = self._get_ext_class(obj.objname)
         except Exception:
-            await self.server.load_data_type_definitions()      # load new data type definitions since a customn class should be created
+            await self.session.load_data_type_definitions()      # load new data type definitions since a customn class should be created
             extclass = self._get_ext_class(obj.objname)
         args = {}
         for name, val in obj.body:
@@ -439,7 +439,10 @@ class XmlImporter:
             atttype = type_from_list(atttype)
             my_list = []
             for vtype, v2 in val:
-                my_list.append(ua_type_to_python(v2, vtype))
+                if isinstance(v2, str):
+                    my_list.append(ua_type_to_python(v2, vtype))
+                else:
+                    my_list.append(v2)
             fargs[attname] = my_list
 
         elif issubclass(atttype, ua.NodeId):  # NodeId representation does not follow common rules!!
@@ -512,6 +515,8 @@ class XmlImporter:
             attrs.ValueRank = obj.rank
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
+        else:
+            attrs.IsAbstract = False
         if obj.dimensions:
             attrs.ArrayDimensions = obj.dimensions
         node.NodeAttributes = attrs
@@ -550,6 +555,8 @@ class XmlImporter:
             attrs.InverseName = ua.LocalizedText(obj.inversename)
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
+        else:
+            attrs.IsAbstract = False
         if obj.symmetric:
             attrs.Symmetric = obj.symmetric
         node.NodeAttributes = attrs
@@ -566,17 +573,22 @@ class XmlImporter:
         attrs.DisplayName = ua.LocalizedText(obj.displayname)
         if obj.abstract:
             attrs.IsAbstract = obj.abstract
+        else:
+            attrs.IsAbstract = False
         if not obj.definitions:
             pass
         else:
-            if obj.parent == self.server.nodes.enum_data_type.nodeid:
+            if obj.parent == self.session.nodes.enum_data_type.nodeid:
                 attrs.DataTypeDefinition = self._get_edef(obj)
-            elif obj.parent == self.server.nodes.base_structure_type.nodeid:
+            elif obj.parent == self.session.nodes.base_structure_type.nodeid:
                 attrs.DataTypeDefinition = self._get_sdef(obj)
             else:
-                parent_node = self.server.get_node(obj.parent)
+                parent_node = self.session.get_node(obj.parent)
                 path = await parent_node.get_path()
-                if self.server.nodes.base_structure_type in path:
+                if self.session.nodes.option_set_type in path:
+                    # nodes below option_set_type are enums, not structs
+                    attrs.DataTypeDefinition = self._get_edef(obj)
+                elif self.session.nodes.base_structure_type in path:
                     attrs.DataTypeDefinition = self._get_sdef(obj)
                 else:
                     _logger.warning(
@@ -627,7 +639,7 @@ class XmlImporter:
         if obj.parent:
             sdef.BaseDataType = obj.parent
         for refdata in obj.refs:
-            if refdata.reftype == self.server.nodes.HasEncoding.nodeid:
+            if refdata.reftype == self.session.nodes.HasEncoding.nodeid:
                 # supposing that default encoding is the first one...
                 sdef.DefaultEncodingId = refdata.target
                 break
@@ -638,6 +650,7 @@ class XmlImporter:
             f.DataType = field.datatype
             f.ValueRank = field.valuerank
             f.IsOptional = field.optional
+            f.MaxStringLength = field.max_str_len
             if f.IsOptional:
                 optional = True
             if field.arraydim is None:

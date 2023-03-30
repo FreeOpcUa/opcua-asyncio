@@ -7,21 +7,22 @@ same api on server and client side
 """
 
 import asyncio
-from datetime import datetime
-from datetime import timedelta
+import contextlib
 import math
 import tempfile
-import os
-import contextlib
+from datetime import datetime, timedelta
+from pathlib import Path
 
 import pytest
 
-from asyncua import ua, uamethod, Node
+from asyncua import Node, ua, uamethod
 from asyncua.common import ua_utils
-from asyncua.common.methods import call_method_full
 from asyncua.common.copy_node_util import copy_node
 from asyncua.common.instantiate_util import instantiate
-from asyncua.common.structures104 import new_struct, new_enum, new_struct_field
+from asyncua.common.methods import call_method_full
+from asyncua.common.sql_injection import SqlInjectionError, validate_table_name
+from asyncua.common.structures104 import new_enum, new_struct, new_struct_field
+from asyncua.ua.ua_binary import struct_from_binary, struct_to_binary
 
 pytestmark = pytest.mark.asyncio
 
@@ -148,8 +149,10 @@ async def test_delete_nodes(opc):
 
 async def test_node_bytestring(opc):
     obj = opc.opc.nodes.objects
-    var = await obj.add_variable(ua.ByteStringNodeId(b"VarByteString", 2), ua.QualifiedName("toto", 2), ua.UInt16(9))
-    node = opc.opc.get_node("ns=2;b=VarByteString")
+    var = await obj.add_variable(ua.ByteStringNodeId(b'VarByteString', 2), ua.QualifiedName("toto", 2), ua.UInt16(9))
+    node = opc.opc.get_node(f"ns=2;b=VarByteString")
+    assert node == var
+    node = opc.opc.get_node(f"ns=2;b=0x{b'VarByteString'.hex()}")
     assert node == var
 
 
@@ -650,7 +653,7 @@ async def test_write_value(opc):
 async def test_write_value_statuscode_bad(opc):
     o = opc.opc.nodes.objects
     var = ua.Variant('Some value that should not be set!')
-    dvar = ua.DataValue(ua.Null(), StatusCode_=ua.StatusCode(ua.StatusCodes.BadDeviceFailure))
+    dvar = ua.DataValue(None, StatusCode_=ua.StatusCode(ua.StatusCodes.BadDeviceFailure))
     v = await o.add_variable(3, 'VariableValueBad', var)
     await v.write_value(dvar)
     with pytest.raises(ua.UaStatusCodeError) as error_read:
@@ -1143,12 +1146,13 @@ async def test_import_xml_data_type_definition(opc):
     sdef = await datatype.read_data_type_definition()
     assert isinstance(sdef, ua.StructureDefinition)
     s = ua.MyStruct()
+
     s.toto = 0.1
     ss = ua.MySubstruct()
-    assert ss.titi == 0
+    assert ss.titi is None
+    assert ss.opt_array is None
     assert isinstance(ss.structs, list)
-
-    ss.titi = 1
+    ss.titi = 1.0
     ss.structs.append(s)
     ss.structs.append(s)
 
@@ -1156,6 +1160,11 @@ async def test_import_xml_data_type_definition(opc):
 
     s2 = await var.read_value()
     assert s2.structs[1].toto == ss.structs[1].toto == 0.1
+    assert s2.opt_array is None
+    s2.opt_array = [1]
+    await var.write_value(s2)
+    s2 = await var.read_value()
+    assert s2.opt_array == [1]
     await opc.opc.delete_nodes([datatype, var])
     n = []
     [n.append(opc.opc.get_node(node)) for node in nodes]
@@ -1250,6 +1259,11 @@ async def test_custom_struct_with_optional_fields(opc):
     await opc.opc.load_data_type_definitions()
 
     my_struct_optional = ua.MyOptionalStruct()
+    assert my_struct_optional.MyBool is not None
+    assert my_struct_optional.MyUInt32 is not None
+    assert my_struct_optional.MyString is None
+    assert my_struct_optional.MyInt64 is None
+
     my_struct_optional.MyUInt32 = 45
     my_struct_optional.MyInt64 = -67
     var = await opc.opc.nodes.objects.add_variable(idx, "my_struct_optional", ua.Variant(my_struct_optional, ua.VariantType.ExtensionObject))
@@ -1412,9 +1426,9 @@ async def test_nested_struct_arrays(opc):
 @contextlib.contextmanager
 def expect_file_creation(filename: str):
     with tempfile.TemporaryDirectory() as tmpdir:
-        path = os.path.join(tmpdir, filename)
+        path = Path(tmpdir) / filename
         yield path
-        assert os.path.isfile(path), f"File {path} should have been created"
+        assert Path.is_file(path), f"File {path} should have been created"
 
 
 async def test_custom_struct_export(opc):
@@ -1458,6 +1472,27 @@ async def test_custom_struct_import(opc):
     assert sdef.StructureType == ua.StructureType.Structure
     assert sdef.Fields[0].Name == "MyBool"
     with expect_file_creation("custom_enum_v2.xml") as path:
+        await opc.opc.export_xml(nodes, path)
+
+
+async def test_custom_struct_recursive(opc):
+    nodes = await opc.opc.import_xml("tests/custom_struct_recursive.xml")
+    await opc.opc.load_data_type_definitions()
+
+    nodes = [opc.opc.get_node(node) for node in nodes]  # FIXME why does it return nodeids and not nodes?
+    node = nodes[0]  # FIXME: make that more robust
+    sdef = await node.read_data_type_definition()
+    assert sdef.StructureType == ua.StructureType.Structure
+    assert sdef.Fields[0].Name == "Subparameters"
+
+    # Check encoding / decoding
+    param = ua.MyParameterType(Value=2)
+    param.Subparameters.append(ua.MyParameterType(Value=1))
+    bin = struct_to_binary(param)
+    res = struct_from_binary(ua.MyParameterType, ua.utils.Buffer(bin))
+    assert param == res
+
+    with expect_file_creation("custom_struct_recursive_export.xml") as path:
         await opc.opc.export_xml(nodes, path)
 
 
@@ -1515,7 +1550,6 @@ async def test_custom_method_with_struct(opc):
 
     @uamethod
     def func(parent, mystruct):
-        print(mystruct)
         mystruct.MyUInt32.append(100)
         return mystruct
 
@@ -1626,3 +1660,19 @@ async def test_custom_struct_with_strange_chars(opc):
     var = await opc.opc.nodes.objects.add_variable(idx, "my_siemens_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
     assert val.My_UInt32 == [78, 79]
+
+async def test_sql_injection():
+    table = 'myTable'
+    validate_table_name(table)
+    table = 'my table'
+    with pytest.raises(SqlInjectionError) as _:
+        validate_table_name(table)
+    table = 'user;SELECT true'
+    with pytest.raises(SqlInjectionError) as _:
+        validate_table_name(table)
+    table = 'user"'
+    with pytest.raises(SqlInjectionError) as _:
+        validate_table_name(table)
+    table = "user'"
+    with pytest.raises(SqlInjectionError) as _:
+        validate_table_name(table)

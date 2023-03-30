@@ -27,7 +27,6 @@ async def test_max_connections_1(opc):
     opc.server.iserver.isession.__class__.max_connections = 1000
 
 
-@pytest.mark.skip("disabled for now, sending too small packet does not break anything")
 async def test_dos_server(opc):
     # See issue 1013 a crafted packet triggered dos
     port = opc.server.endpoint.port
@@ -51,6 +50,12 @@ async def test_safe_disconnect():
 
 
 async def test_client_connection_lost():
+    class LostSubHandler:
+        def __init__(self) -> None:
+            self.status = ua.StatusCodes.Good
+
+        def status_change_notification(self, status):
+            self.status = status
     # Test the disconnect behavoir
     port = find_free_port()
     srv = Server()
@@ -58,11 +63,15 @@ async def test_client_connection_lost():
     srv.set_endpoint(f'opc.tcp://127.0.0.1:{port}')
     await srv.start()
     async with Client(f'opc.tcp://127.0.0.1:{port}', timeout=0.5, watchdog_intervall=1) as cl:
+        myhandler = LostSubHandler()
+        _ = await cl.create_subscription(1, myhandler)
         await srv.stop()
         await asyncio.sleep(2)
         with pytest.raises(ConnectionError):
             # check if connection is alive
             await cl.check_connection()
+        # check if the status_change_notification was triggered
+        assert myhandler.status == ua.StatusCodes.BadShutdown
         # check if exception is correct rethrown on second call
         with pytest.raises(ConnectionError):
             await cl.check_connection()

@@ -24,11 +24,7 @@ class SubscriptionService:
         self.subscriptions: Dict[int, InternalSubscription] = {}
         self._sub_id_counter = 77
 
-    @property
-    def active_subscription_ids(self):
-        return self.subscriptions.keys()
-
-    async def create_subscription(self, params, callback=None, external=False):
+    async def create_subscription(self, params, callback, request_callback=None):
         self.logger.info("create subscription")
         result = ua.CreateSubscriptionResult()
         result.RevisedPublishingInterval = params.RequestedPublishingInterval
@@ -36,14 +32,14 @@ class SubscriptionService:
         result.RevisedMaxKeepAliveCount = params.RequestedMaxKeepAliveCount
         self._sub_id_counter += 1
         result.SubscriptionId = self._sub_id_counter
-        internal_sub = InternalSubscription(result, self.aspace, callback=callback, no_acks=not external)
+        internal_sub = InternalSubscription(result, self.aspace, callback, request_callback=request_callback)
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub
         return result
 
-    def modify_subscription(self, params, callback):
+    def modify_subscription(self, params):
         # Requested params are ignored, result = params set during create_subscription.
-        self.logger.info("modify subscription with callback: %s", callback)
+        self.logger.info("modify subscription")
         result = ua.ModifySubscriptionResult()
         try:
             sub = self.subscriptions[params.SubscriptionId]

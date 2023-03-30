@@ -6,7 +6,7 @@ import xml.etree.ElementTree as Et
 import re
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 # Indicates which type should be OPC build in types
 _ua_build_in_types = [ua_type for ua_type in ua.VariantType.__members__ if ua_type != 'ExtensionObject']
 
@@ -127,7 +127,7 @@ class DataTypeDictionaryBuilder:
 
     def __init__(self, server, idx, ns_urn, dict_name, dict_node_id=None):
         self._server = server
-        self._session_server = server.get_node(ua.ObjectIds.RootFolder).server
+        self._session_server = server.get_node(ua.ObjectIds.RootFolder).session
         self._idx = idx
         self.ns_urn = ns_urn
         self.dict_name = dict_name
@@ -159,7 +159,7 @@ class DataTypeDictionaryBuilder:
             node.NodeAttributes = attrs
             res = await self._session_server.add_nodes([node])
             return res[0].AddedNodeId
-        logger.warning("Making %s object for node %s which already exist, its data will be overriden", self, node)
+        _logger.warning("Making %s object for node %s which already exist, its data will be overriden", self, node)
         # FIXME: we have an issue
         return node.nodeid
 

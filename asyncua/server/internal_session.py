@@ -1,8 +1,9 @@
 import logging
 from enum import Enum
-from typing import Coroutine, Iterable, Optional
+from typing import Coroutine, Iterable, Optional, List
 
 from asyncua import ua
+from asyncua.common.session_interface import AbstractSession
 from ..common.callback import CallbackType, ServerItemCallback
 from ..common.utils import create_nonce, ServiceError
 from .address_space import AddressSpace
@@ -16,7 +17,7 @@ class SessionState(Enum):
     Closed = 2
 
 
-class InternalSession:
+class InternalSession(AbstractSession):
     """
 
     """
@@ -63,7 +64,10 @@ class InternalSession:
         result.MaxRequestMessageSize = 65536
         self.nonce = create_nonce(32)
         result.ServerNonce = self.nonce
-        result.ServerEndpoints = await self.get_endpoints(sockname=sockname)
+
+        ep_params = ua.GetEndpointsParameters()
+        ep_params.EndpointUrl = params.EndpointUrl
+        result.ServerEndpoints = await self.get_endpoints(params=ep_params, sockname=sockname)
 
         return result
 
@@ -87,9 +91,11 @@ class InternalSession:
         result.ServerNonce = self.nonce
         for _ in params.ClientSoftwareCertificates:
             result.Results.append(ua.StatusCode())
-        self.state = SessionState.Activated
-        InternalSession._current_connections += 1
         id_token = params.UserIdentityToken
+        if isinstance(id_token, ua.ExtensionObject) and id_token.TypeId == ua.NodeId(ua.ObjectIds.Null):
+            # https://reference.opcfoundation.org/Core/Part4/v104/docs/5.6.3
+            # Null or empty user token shall always be interpreted as anonymous.
+            id_token = ua.AnonymousIdentityToken()
         # Check if security policy is supported
         if not isinstance(id_token, self.iserver.supported_tokens):
             self.logger.error('Rejected active session UserIdentityToken not supported')
@@ -109,6 +115,8 @@ class InternalSession:
                 raise ServiceError(ua.StatusCodes.BadUserAccessDenied)
             else:
                 self.user = user
+        self.state = SessionState.Activated
+        InternalSession._current_connections += 1
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)
         return result
 
@@ -142,6 +150,21 @@ class InternalSession:
     async def browse(self, params):
         return self.iserver.view_service.browse(params)
 
+    async def browse_next(self, parameters: ua.BrowseNextParameters) -> List[ua.BrowseResult]:
+        # TODO 
+        # ContinuationPoint: https://reference.opcfoundation.org/v104/Core/docs/Part4/7.6/
+        # Add "ContinuationPoints" and some form of management for them to current sessionimplementation
+        # BrowseNext: https://reference.opcfoundation.org/Core/Part4/v104/5.8.3/
+        raise NotImplementedError
+
+    async def register_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
+        self.logger.info("Node registration not implemented")
+        return nodes
+
+    async def unregister_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
+        self.logger.info("Node registration not implemented")
+        return nodes
+
     async def translate_browsepaths_to_nodeids(self, params):
         return self.iserver.view_service.translate_browsepaths_to_nodeids(params)
 
@@ -164,8 +187,8 @@ class InternalSession:
         """COROUTINE"""
         return await self.iserver.method_service.call(params)
 
-    async def create_subscription(self, params, callback=None):
-        result = await self.subscription_service.create_subscription(params, callback, external=self.external)
+    async def create_subscription(self, params, callback, request_callback=None):
+        result = await self.subscription_service.create_subscription(params, callback, request_callback=request_callback)
         self.subscriptions.append(result.SubscriptionId)
         return result
 
@@ -203,5 +226,10 @@ class InternalSession:
     def publish(self, acks: Optional[Iterable[ua.SubscriptionAcknowledgement]] = None):
         return self.subscription_service.publish(acks or [])
 
-    def modify_subscription(self, params, callback):
-        return self.subscription_service.modify_subscription(params, callback)
+    def modify_subscription(self, params):
+        return self.subscription_service.modify_subscription(params)
+
+    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
+        # Subscriptions aren't bound to a Session and can be transfered!
+        # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
+        raise NotImplementedError

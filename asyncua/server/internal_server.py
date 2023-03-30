@@ -7,7 +7,7 @@ import asyncio
 from datetime import datetime, timedelta
 from copy import copy
 from struct import unpack_from
-import os
+from pathlib import Path
 import logging
 from urllib.parse import urlparse
 from typing import Coroutine, Tuple
@@ -29,7 +29,7 @@ except ImportError:
     logging.getLogger(__name__).warning("cryptography is not installed, use of crypto disabled")
     uacrypto = False
 
-logger = logging.getLogger()
+_logger = logging.getLogger(__name__)
 
 
 class ServerDesc:
@@ -49,7 +49,7 @@ class InternalServer:
         self.endpoints = []
         self._channel_id_counter = 5
         self.allow_remote_admin = True
-        self.disabled_clock = False  # for debugging we may want to disable clock that writes too much in log
+        self.disabled_clock = False  # for debugging, we may want to disable clock that writes too much in log
         self._known_servers = {}  # used if we are a discovery server
         self.certificate = None
         self.private_key = None
@@ -62,7 +62,7 @@ class InternalServer:
         self.subscription_service: SubscriptionService = SubscriptionService(self.aspace)
         self.history_manager = HistoryManager(self)
         if user_manager is None:
-            logger.info("No user manager specified. Using default permissive manager instead.")
+            _logger.info("No user manager specified. Using default permissive manager instead.")
             user_manager = PermissiveUserManager()
         self.user_manager = user_manager
         # create a session to use on server side
@@ -72,6 +72,7 @@ class InternalServer:
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         self.time_task = None
         self._time_task_stop = False
+        self.match_discovery_endpoint_url: bool = True
         self.match_discovery_source_ip: bool = True
         self.supported_tokens = []
 
@@ -110,7 +111,7 @@ class InternalServer:
             attr.Value = ua.DataValue(
                 ua.Variant(10000, ua.VariantType.UInt32),
                 StatusCode_=ua.StatusCode(ua.StatusCodes.Good),
-                ServerTimestamp=datetime.utcnow(),
+                SourceTimestamp=datetime.utcnow(),
             )
             params.NodesToWrite.append(attr)
         result = await self.isession.write(params)
@@ -119,8 +120,8 @@ class InternalServer:
     async def load_standard_address_space(self, shelf_file=None):
         if shelf_file:
             is_file = await asyncio.get_running_loop().run_in_executor(
-                None, os.path.isfile, shelf_file
-            ) or await asyncio.get_running_loop().run_in_executor(None, os.path.isfile, f'{shelf_file}.db')
+                None, Path.is_file, shelf_file
+            ) or await asyncio.get_running_loop().run_in_executor(None, Path.is_file, f'{shelf_file}.db')
             if is_file:
                 # import address space from shelf
                 await asyncio.get_running_loop().run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
@@ -200,32 +201,52 @@ class InternalServer:
     def add_endpoint(self, endpoint):
         self.endpoints.append(endpoint)
 
+    def _mangle_endpoint_url(self, ep_url, params_ep_url=None, sockname=None):
+        url = urlparse(ep_url)
+        if self.match_discovery_endpoint_url and params_ep_url:
+            try:
+                netloc = urlparse(params_ep_url).netloc
+            except ValueError:
+                netloc = ''
+            if netloc:
+                return url._replace(netloc=netloc).geturl()
+        if self.match_discovery_source_ip and sockname:
+            return url._replace(netloc=sockname[0] + ':' + str(sockname[1])).geturl()
+        return url.geturl()
+
     async def get_endpoints(self, params=None, sockname=None):
         self.logger.info('get endpoint')
-        if sockname:
-            # return to client the ip address it has access to
-            edps = []
-            for edp in self.endpoints:
-                edp1 = copy(edp)
-                url = urlparse(edp1.EndpointUrl)
-                if self.match_discovery_source_ip:
-                    url = url._replace(netloc=sockname[0] + ':' + str(sockname[1]))
-                edp1.EndpointUrl = url.geturl()
-                edps.append(edp1)
-            return edps
-        return self.endpoints[:]
+        edps = []
+        params_ep_url = params.EndpointUrl if params else None
+        for edp in self.endpoints:
+            edp = copy(edp)
+            edp.EndpointUrl = self._mangle_endpoint_url(edp.EndpointUrl, params_ep_url=params_ep_url, sockname=sockname)
+            edp.Server = copy(edp.Server)
+            edp.Server.DiscoveryUrls = [
+                self._mangle_endpoint_url(url, params_ep_url=params_ep_url, sockname=sockname)
+                for url in edp.Server.DiscoveryUrls
+            ]
+            edps.append(edp)
+        return edps
 
-    def find_servers(self, params):
-        if not params.ServerUris:
-            return [desc.Server for desc in self._known_servers.values()]
+    def find_servers(self, params, sockname=None):
         servers = []
-        for serv in self._known_servers.values():
-            serv_uri = serv.Server.ApplicationUri.split(':')
-            for uri in params.ServerUris:
-                uri = uri.split(':')
-                if serv_uri[: len(uri)] == uri:
-                    servers.append(serv.Server)
-                    break
+        params_server_uris = [uri.split(':') for uri in params.ServerUris]
+        our_application_uris = [edp.Server.ApplicationUri for edp in self.endpoints]
+        for desc in self._known_servers.values():
+            if params_server_uris:
+                serv_uri = desc.Server.ApplicationUri.split(':')
+                if not any(serv_uri[: len(uri)] == uri for uri in params_server_uris):
+                    continue
+            if desc.Server.ApplicationUri in our_application_uris:
+                serv = copy(desc.Server)
+                serv.DiscoveryUrls = [
+                    self._mangle_endpoint_url(url, params_ep_url=params.EndpointUrl, sockname=sockname)
+                    for url in serv.DiscoveryUrls
+                ]
+            else:
+                serv = desc.Server
+            servers.append(serv)
         return servers
 
     def register_server(self, server, conf=None):
@@ -297,7 +318,7 @@ class InternalServer:
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
-        directly write datavalue to the Attribute, bypassing some checks and structure creation
+        directly write datavalue to the Attribute, bypassing some checks and structure creation,
         so it is a little faster
         """
         await self.aspace.write_attribute_value(nodeid, attr, datavalue)
@@ -306,7 +327,7 @@ class InternalServer:
         """
         directly read datavalue of the Attribute
         """
-        return self.aspace.read_attribute_value(nodeid, attr)  
+        return self.aspace.read_attribute_value(nodeid, attr)
 
     def set_user_manager(self, user_manager):
         """

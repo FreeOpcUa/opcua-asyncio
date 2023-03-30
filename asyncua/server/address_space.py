@@ -100,8 +100,12 @@ class AttributeService:
                 ):
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
+            if writevalue.AttributeId == ua.AttributeIds.Value and self._aspace.force_server_timestamp:
+                dv = dataclasses.replace(writevalue.Value, ServerTimestamp=datetime.utcnow(), ServerPicoseconds=None)
+            else:
+                dv = writevalue.Value
             res.append(
-                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, writevalue.Value)
+                await self._aspace.write_attribute_value(writevalue.NodeId, writevalue.AttributeId, dv)
             )
         return res
 
@@ -506,6 +510,7 @@ class NodeManagementService:
             dv = ua.DataValue(
                 ua.Variant(getattr(attributes, name), vtype, is_array=is_array),
                 SourceTimestamp=datetime.utcnow() if add_timestamps else None,
+                ServerTimestamp=datetime.utcnow() if add_timestamps and self._aspace.force_server_timestamp else None,
             )
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
 
@@ -572,6 +577,9 @@ class MethodService:
                 res.StatusCode = ua.StatusCode(ua.StatusCodes.BadNothingToDo)
             else:
                 try:
+                    if method.InputArguments is None:
+                        # An array value can also be None
+                        method.InputArguments = []
                     result = await self._run_method(node.call, method.ObjectId, *method.InputArguments)
                 except Exception:
                     self.logger.exception("Error executing method call %s, an exception was raised: ", method)
@@ -605,6 +613,7 @@ class AddressSpace:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.force_server_timestamp: bool = True
         self._nodes: Dict[ua.NodeId, NodeData] = {}
         self._datachange_callback_counter = 200
         self._handle_to_attribute_map: Dict[int, Tuple[ua.NodeId, ua.AttributeIds]] = {}
@@ -775,22 +784,17 @@ class AddressSpace:
         attval = node.attributes.get(attr, None)
         if attval is None:
             return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
-        if value.StatusCode is not None and not value.StatusCode.is_good():
+        if value.StatusCode is not None and value.StatusCode.is_bad():
             # https://reference.opcfoundation.org/v104/Core/docs/Part4/7.7.1/
             # If the StatusCode indicates an error then the value is to be ignored and the Server shall set it to null.
-            value = dataclasses.replace(value, Value=ua.Variant(ua.Null(), ua.VariantType.Null))
+            value = dataclasses.replace(value, Value=ua.Variant(None, ua.VariantType.Null))
         elif not self._is_expected_variant_type(value, attval, node):
             # Only check datatype if no bad StatusCode is set
             return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
 
-        old = attval.value
         attval.value = value
-        cbs = []
-        # only send call callback when a value or status code change has happened
-        if (old.Value != value.Value) or (old.StatusCode != value.StatusCode):
-            cbs = list(attval.datachange_callbacks.items())
 
-        for k, v in cbs:
+        for k, v in attval.datachange_callbacks.items():
             try:
                 await v(k, value)
             except Exception as ex:
@@ -812,7 +816,7 @@ class AddressSpace:
                 return True
         if value.Value.VariantType == vtype:
             return True
-        _logger.critical("Write refused: Variant: %s with type %s does not have expected type: %s",
+        _logger.warning("Write refused: Variant: %s with type %s does not have expected type: %s",
                 value.Value, value.Value.VariantType, attval.value.Value.VariantType)
         return False
 

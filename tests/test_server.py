@@ -25,7 +25,7 @@ async def test_discovery(server, discovery_server):
         await server.set_application_uri(new_app_uri)
         await server.register_to_discovery(discovery_server.endpoint.geturl(), 0)
         # let server register registration
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
         new_servers = await client.find_servers()
         assert len(new_servers) - len(servers) == 1
         assert new_app_uri not in [s.ApplicationUri for s in servers]
@@ -39,13 +39,15 @@ async def test_unregister_discovery(server, discovery_server):
         await server.set_application_uri(new_app_uri)
         # register without automatic renewal
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=0)
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
         # unregister, no automatic renewal to stop
-        await server.unregister_to_discovery(discovery_server.endpoint.geturl())
+        await server.unregister_from_discovery(discovery_server.endpoint.geturl())
+        await asyncio.sleep(0.5)
         # reregister with automatic renewal
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=60)
+        await asyncio.sleep(0.5)
         # unregister, cancel scheduled renewal
-        await server.unregister_to_discovery(discovery_server.endpoint.geturl())
+        await server.unregister_from_discovery(discovery_server.endpoint.geturl())
 
 
 async def test_find_servers2(server, discovery_server):
@@ -751,21 +753,31 @@ class TestServerCaching(unittest.TestCase):
 
         os.remove(path)
 
-class TestServerStartError(unittest.TestCase):
-
-    def test_port_in_use(self):
-
-        server1 = Server()
-        server1.set_endpoint('opc.tcp://127.0.0.1:{0:d}'.format(port_num + 1))
-        server1.start()
-
-        server2 = Server()
-        server2.set_endpoint('opc.tcp://127.0.0.1:{0:d}'.format(port_num + 1))
-        try:
-            server2.start()
-        except Exception:
-            pass
-
-        server1.stop()
-        server2.stop()
 """
+
+async def test_null_auth(server):
+    """
+    OPC-UA Specification Part 4, 5.6.3 specifies that a:
+    > Null or empty user token shall always be interpreted as anonymous
+
+    Ensure a Null token is accepted as an anonymous connection token.
+    """
+    client = Client(server.endpoint.geturl())
+    # Modify the authentication creation in the client request
+    def _add_null_auth(self, params):
+        params.UserIdentityToken = ua.ExtensionObject(ua.NodeId(ua.ObjectIds.Null))
+    client._add_anonymous_auth = _add_null_auth.__get__(client, Client)
+    # Attempt to connect, this should be accepted without error
+    async with client:
+        pass
+
+
+async def test_start_server_when_port_is_in_use(server: str):
+    server2 = Server()
+    await server2.init()
+    url = server.endpoint.geturl()
+    server2.set_endpoint(url) # try to bind on the same endpoint as an already running server
+    with pytest.raises(OSError):
+        await server2.start()
+    # now it should still be possible to stop the server with exceptions
+    await server2.stop()

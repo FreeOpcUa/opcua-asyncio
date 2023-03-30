@@ -7,7 +7,8 @@ import logging
 import math
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
-from typing import Coroutine, Optional, Tuple
+from typing import Coroutine, Optional, Tuple, Union
+from pathlib import Path
 
 from asyncua import ua
 from .binary_server_asyncio import BinaryServer
@@ -52,11 +53,11 @@ class Server:
     All methods are threadsafe
 
     If you need more flexibility you call directly the Ua Service methods
-    on the iserver  or iserver.isession object members.
+    on the iserver or iserver.isession object members.
 
     During startup the standard address space will be constructed, which may be
     time-consuming when running a server on a less powerful device (e.g. a
-    Raspberry Pi). In order to improve startup performance, a optional path to a
+    Raspberry Pi). In order to improve startup performance, an optional path to a
     cache file can be passed to the server constructor.
     If the parameter is defined, the address space will be loaded from the
     cache file or the file will be created if it does not exist yet.
@@ -106,7 +107,7 @@ class Server:
         self._permission_ruleset = None
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep"]
         self.certificate = None
-        # Use accectable limits
+        # Use acceptable limits
         buffer_sz = 65535
         max_msg_sz = 100 * 1024 * 1024  # 100mb
         self.limits = TransportLimits(
@@ -128,6 +129,15 @@ class Server:
 
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
 
+    def set_match_discovery_endpoint_url(self, match_discovery_endpoint_url: bool):
+        """
+        Enables or disables the matching of the EndpointUrl request parameter during discovery.
+
+        When True (default), the host/port of endpoints sent during the discovery is modified to the host/port
+        which is specified in the EndpointUrl request parameter.
+        """
+        self.iserver.match_discovery_endpoint_url = match_discovery_endpoint_url
+
     def set_match_discovery_client_ip(self, match_discovery_client_ip: bool):
         """
         Enables or disables the matching of an endpoint IP to a client IP during discovery.
@@ -138,6 +148,12 @@ class Server:
         Do not call unless you know what you are doing.
         """
         self.iserver.match_discovery_source_ip = match_discovery_client_ip
+
+    def set_force_server_timestamp(self, force_server_timestamp: bool):
+        """
+        Enables or disables automatically setting ServerTimestamp on Value attributes
+        """
+        self.iserver.aspace.force_server_timestamp = force_server_timestamp
 
     async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
                              build_number, build_date):
@@ -206,14 +222,14 @@ class Server:
         return f"OPC UA Server({self.endpoint.geturl()})"
     __repr__ = __str__
 
-    async def load_certificate(self, path: str, format: str = None):
+    async def load_certificate(self, path_or_content: Union[str, bytes], format: str = None):
         """
         load server certificate from file, either pem or der
         """
-        self.certificate = await uacrypto.load_certificate(path, format)
+        self.certificate = await uacrypto.load_certificate(path_or_content, format)
 
-    async def load_private_key(self, path, password=None, format=None):
-        self.iserver.private_key = await uacrypto.load_private_key(path, password, format)
+    async def load_private_key(self, path_or_content: Union[str, Path, bytes], password=None, format=None):
+        self.iserver.private_key = await uacrypto.load_private_key(path_or_content, password, format)
 
     def disable_clock(self, val: bool = True):
         """
@@ -228,7 +244,7 @@ class Server:
     async def set_application_uri(self, uri: str):
         """
         Set application/server URI.
-        This uri is supposed to be unique. If you intent to register
+        This uri is supposed to be unique. If you intend to register
         your server to a discovery server, it really should be unique in
         your system!
         default is : "urn:freeopcua:python:server"
@@ -253,7 +269,7 @@ class Server:
         params.ServerUris = uris
         return self.iserver.find_servers(params)
 
-    async def register_to_discovery(self, url: str = "opc.tcp://localhost:4840", period: int = 60):
+    async def register_to_discovery(self, url: str = "opc.tcp://localhost:4840", period: int = 60, discovery_configuration=None):
         """
         Register to an OPC-UA Discovery server. Registering must be renewed at
         least every 10 minutes, so this method will use our asyncio thread to
@@ -262,20 +278,22 @@ class Server:
         """
         # FIXME: have a period per discovery
         if url in self._discovery_clients:
-            await self._discovery_clients[url].disconnect()
+            await self._discovery_clients[url].disconnect_sessionless()
         self._discovery_clients[url] = Client(url)
-        await self._discovery_clients[url].connect()
-        await self._discovery_clients[url].register_server(self)
+        await self._discovery_clients[url].connect_sessionless()
+        await self._discovery_clients[url].register_server(self, discovery_configuration)
+        await self._discovery_clients[url].disconnect_sessionless()
         self._discovery_period = period
         if period:
             asyncio.get_running_loop().call_soon(self._schedule_renew_registration)
 
-    async def unregister_to_discovery(self, url: str = "opc.tcp://localhost:4840"):
+    async def unregister_from_discovery(self, url: str = "opc.tcp://localhost:4840", discovery_configuration=None):
         """
         stop registration thread
         """
-        # FIXME: is there really no way to deregister?
-        await self._discovery_clients[url].disconnect()
+        await self._discovery_clients[url].connect_sessionless()
+        await self._discovery_clients[url].unregister_server(self, discovery_configuration)
+        await self._discovery_clients[url].disconnect_sessionless()
         del self._discovery_clients[url]
         if not self._discovery_clients and self._discovery_handle:
             self._discovery_handle.cancel()
@@ -286,7 +304,9 @@ class Server:
 
     async def _renew_registration(self):
         for client in self._discovery_clients.values():
-            await client.register_server(self)
+            await client.connect_sessionless()
+            await client.register_server(self)  #FIXME discovery_configuration?
+            await client.disconnect_sessionless()
 
     def allow_remote_admin(self, allow):
         """
@@ -722,7 +742,7 @@ class Server:
 
     async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         """
-        directly write datavalue to the Attribute, bypasing some checks and structure creation
+        directly write datavalue to the Attribute, bypassing some checks and structure creation,
         so it is a little faster
         """
         return await self.iserver.write_attribute_value(nodeid, datavalue, attr)

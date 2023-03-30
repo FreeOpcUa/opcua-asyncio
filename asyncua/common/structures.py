@@ -88,18 +88,24 @@ class {self.name}:
             field.uatype = "UInt32"
             self.fields = [field] + self.fields
         for sfield in self.fields:
-            uatype = f"'ua.{sfield.uatype}'"
-            if sfield.array:
-                uatype = f"List[{uatype}]"
-            if uatype == 'List[ua.Char]':
-                uatype = 'String'
-            if sfield.is_optional:
-                code += f"    {sfield.name}: Optional[{uatype}] = None\n"
-            else:
-                uavalue = sfield.value
-                if isinstance(uavalue, str) and uavalue.startswith("ua."):
-                    uavalue = f"field(default_factory=lambda: {uavalue})"
-                code += f"    {sfield.name}:{uatype} = {uavalue}\n"
+            if sfield.name != 'SwitchField':
+                '''
+                SwitchFields is the 'Encoding' Field in OptionSets to be
+                compatible with 1.04 structs we added
+                the 'Encoding' Field before and skip the SwitchField Field
+                '''
+                uatype = f"'ua.{sfield.uatype}'"
+                if sfield.array:
+                    uatype = f"List[{uatype}]"
+                if uatype == 'List[ua.Char]':
+                    uatype = 'String'
+                if sfield.is_optional:
+                    code += f"    {sfield.name}: Optional[{uatype}] = None\n"
+                else:
+                    uavalue = sfield.value
+                    if isinstance(uavalue, str) and uavalue.startswith("ua."):
+                        uavalue = f"field(default_factory=lambda: {uavalue})"
+                    code += f"    {sfield.name}:{uatype} = {uavalue}\n"
         return code
 
 
@@ -168,7 +174,7 @@ class StructGenerator(object):
                             # Optional Field
                             field.is_optional = True
                             struct.option_counter += 1
-                        field.value = get_default_value(field.uatype, enums)
+                        field.value = get_default_value(field.uatype, enums, hack=True)
                         if array:
                             field.array = True
                             field.value = "field(default_factory=list)"
@@ -222,10 +228,10 @@ from asyncua import ua
 async def load_type_definitions(server, nodes=None):
     """
     Download xml from given variable node defining custom structures.
-    If no node is given, attemps to import variables from all nodes under
+    If no node is given, attempts to import variables from all nodes under
     "0:OPC Binary"
     the code is generated and imported on the fly. If you know the structures
-    are not going to be modified it might be interresting to copy the generated files
+    are not going to be modified it might be interesting to copy the generated files
     and include them in you code
     """
     if nodes is None:
@@ -245,7 +251,7 @@ async def load_type_definitions(server, nodes=None):
         generator.get_python_classes(structs_dict)
         # same but using a file that is imported. This can be useful for debugging library
         # name = node.read_browse_name().Name
-        # Make sure structure names do not contain charaters that cannot be used in Python class file names
+        # Make sure structure names do not contain characters that cannot be used in Python class file names
         # name = clean_name(name)
         # name = "structures_" + node.read_browse_name().Name
         # generator.save_and_import(name + ".py", append_to=structs_dict)
@@ -262,7 +268,7 @@ async def load_type_definitions(server, nodes=None):
                     continue
                 nodeid = ref_desc_list[0].NodeId
                 ua.register_extension_object(name, nodeid, structs_dict[name])
-                # save the typeid if user want to create static file for type definitnion
+                # save the typeid if user want to create static file for type definition
                 generator.set_typeid(name, nodeid.to_string())
 
         for key, val in structs_dict.items():

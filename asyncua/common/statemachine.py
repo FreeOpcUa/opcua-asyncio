@@ -48,7 +48,7 @@ class State:
 
 class Transition:
     '''
-    Helperclass for Transitions (TransitionVariableType)
+    Helper class for Transitions (TransitionVariableType)
     https://reference.opcfoundation.org/v104/Core/docs/Part5/B.4.4/
     name: type string will be converted automatically to qualifiedname 
         -> Name is a QualifiedName which uniquely identifies a transition within the StateMachineType.
@@ -57,7 +57,7 @@ class Transition:
     transitiontime: TransitionTime specifies when the transition occurred.
     effectivetransitiontime: EffectiveTransitionTime specifies the time when the current state or one of its substates was entered. 
     If, for example, a StateA is active and – while active – switches several times between its substates SubA and SubB, 
-    then the TransitionTime stays at the point in time where StateA became active whereas the EffectiveTransitionTime changes 
+    then the TransitionTime stays at the point in time when StateA became active whereas the EffectiveTransitionTime changes
     with each change of a substate.
     '''
     def __init__(self, id, name: str=None, number: int=None, node: Node=None):
@@ -153,7 +153,7 @@ class StateMachine(object):
             elif dn.Text == "EffectiveDisplayName":
                 self._current_state_effective_display_name_node = await self._current_state_node.get_child(["EffectiveDisplayName"])
             else:
-                _logger.warning(f"{await statemachine.read_browse_name()} CurrentState Unknown propertie: {dn.Text}")
+                _logger.warning(f"{await statemachine.read_browse_name()} CurrentState Unknown property: {dn.Text}")
         if self._optionals:
             self._last_transition_node = await statemachine.get_child(["LastTransition"])
             last_transition_props = await self._last_transition_node.get_properties()
@@ -168,7 +168,7 @@ class StateMachine(object):
                 elif dn.Text == "TransitionTime":
                     self._last_transition_transitiontime_node = await self._last_transition_node.get_child(["TransitionTime"])
                 else:
-                    _logger.warning(f"{await statemachine.read_browse_name()} LastTransition Unknown propertie: {dn.Text}")
+                    _logger.warning(f"{await statemachine.read_browse_name()} LastTransition Unknown property: {dn.Text}")
         self._evgen = await self._server.get_event_generator(self.evtype, self._state_machine_node)
 
     async def change_state(self, state: State, transition: Transition=None, event_msg:Union[str, ua.LocalizedText]=None, severity: int=500):

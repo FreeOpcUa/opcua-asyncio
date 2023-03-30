@@ -5,7 +5,7 @@ Simple unit test that do not need to setup a server or a client
 """
 
 import io
-import os
+from pathlib import Path
 import uuid
 import pytest
 import logging
@@ -27,7 +27,7 @@ from asyncua.ua.uatypes import _MaskEnum
 from asyncua.common.structures import StructGenerator
 from asyncua.common.connection import MessageChunk
 
-EXAMPLE_BSD_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "example.bsd"))
+EXAMPLE_BSD_PATH = Path(__file__).parent.absolute() / "example.bsd"
 
 
 def test_variant_array_none():
@@ -180,6 +180,30 @@ def test_nodeid_ordering():
     expected = [h, c, a, b, e, d, f, g, i, j]
     expected = [c, h, a, b, e, d, f, g, i, j]  # FIXME: make sure this does not break some client/server
     assert mylist == expected
+
+
+def test_status_code_severity():
+    good_statuscodes = (ua.StatusCodes.Good, ua.StatusCodes.GoodLocalOverride)
+    bad_statuscodes = (ua.StatusCodes.Bad, ua.StatusCodes.BadConditionDisabled)
+    uncertain_statuscodes = (ua.StatusCodes.Uncertain, ua.StatusCodes.UncertainSimulatedValue)
+
+    for good_statuscode in good_statuscodes:
+        statuscode = ua.StatusCode(good_statuscode)
+        assert statuscode.is_good()
+        assert not statuscode.is_bad()
+        assert not statuscode.is_uncertain()
+
+    for bad_statuscode in bad_statuscodes:
+        statuscode = ua.StatusCode(bad_statuscode)
+        assert not statuscode.is_good()
+        assert statuscode.is_bad()
+        assert not statuscode.is_uncertain()
+
+    for uncertain_statuscode in uncertain_statuscodes:
+        statuscode = ua.StatusCode(uncertain_statuscode)
+        assert not statuscode.is_good()
+        assert not statuscode.is_bad()
+        assert statuscode.is_uncertain()
 
 
 def test_string_to_variant_int():
@@ -366,6 +390,14 @@ def test_nodeid_bytestring():
     s2 = n2.to_string()
     assert n == n2
     assert s == s2
+    n = ua.ByteStringNodeId(Identifier=b'\x01\x00\x05\x55')
+    s = n.to_string()
+    n2 = ua.NodeId.from_string(s)
+    s2 = n2.to_string()
+    assert n == n2
+    assert s == s2
+    n = ua.NodeId.from_string('b=0xaabbccdd')
+    assert n.Identifier == b'\xaa\xbb\xcc\xdd'
 
 
 def test__nodeid():
@@ -520,6 +552,9 @@ def test_datetime():
     assert epch == epch2
     epch = 0
     assert ua.datetime_to_win_epoch(ua.win_epoch_to_datetime(epch)) == epch
+    # Test if values that are out of range are either min or max
+    assert ua.datetime_to_win_epoch(datetime.min) == 0
+    assert ua.datetime_to_win_epoch(datetime.max) == ua.MAX_INT64
 
 
 def test_equal_nodeid():

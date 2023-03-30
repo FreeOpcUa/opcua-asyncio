@@ -8,7 +8,7 @@ from ..common.subscription import Subscription, SubHandler
 from ..common.utils import Buffer
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class UaNodeAlreadyHistorizedError(ua.UaError):
@@ -121,7 +121,7 @@ class HistoryDict(HistoryStorageInterface):
     async def read_node_history(self, node_id, start, end, nb_values):
         cont = None
         if node_id not in self._datachanges:
-            logger.warning("Error attempt to read history for a node which is not historized")
+            _logger.warning("Error attempt to read history for a node which is not historized")
             return [], cont
         else:
             if start is None:
@@ -152,7 +152,7 @@ class HistoryDict(HistoryStorageInterface):
                 results = results[:nb_values]
 
             if len(results) > self.max_history_data_response_size:
-                cont = results[self.max_history_data_response_size + 1].SourceTimestamp
+                cont = results[self.max_history_data_response_size].SourceTimestamp
                 results = results[:self.max_history_data_response_size]
             return results, cont
 
@@ -163,6 +163,9 @@ class HistoryDict(HistoryStorageInterface):
         self._events_periods[source_id] = period, count
 
     async def save_event(self, event):
+        if event.emitting_node not in self._events:
+            self._events[event.emitting_node] = []
+        evts = self._events[event.emitting_node]
         evts = self._events[event.emitting_node]
         evts.append(event)
         period, count = self._events_periods[event.emitting_node]
@@ -176,7 +179,7 @@ class HistoryDict(HistoryStorageInterface):
     async def read_event_history(self, source_id, start, end, nb_values, evfilter):
         cont = None
         if source_id not in self._events:
-            logger.warning(
+            _logger.warning(
                 "Error attempt to read event history for node %s which does not historize events",
                 source_id,
             )
@@ -202,7 +205,7 @@ class HistoryDict(HistoryStorageInterface):
                 results = results[:nb_values]
 
             if len(results) > self.max_history_data_response_size:
-                cont = results[self.max_history_data_response_size + 1].Time
+                cont = results[self.max_history_data_response_size].Time
                 results = results[:self.max_history_data_response_size]
             return results, cont
 
@@ -305,7 +308,7 @@ class HistoryManager:
             await self._sub.unsubscribe(self._handlers[node])
             del self._handlers[node]
         else:
-            logger.error("History Manager isn't subscribed to %s", node)
+            _logger.error("History Manager isn't subscribed to %s", node)
 
     async def read_history(self, params):
         """

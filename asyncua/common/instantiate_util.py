@@ -11,7 +11,7 @@ from .ua_utils import get_node_supertypes, is_child_present
 from .copy_node_util import _rdesc_from_node, _read_and_copy_attrs
 from .node_factory import make_node
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def is_abstract(node_type) -> bool:
@@ -41,18 +41,18 @@ async def instantiate(parent, node_type, nodeid: ua.NodeId=None, bname: Union[st
         bname = ua.QualifiedName.from_string(bname)
 
     nodeids = await _instantiate_node(
-        parent.server,
-        make_node(parent.server, rdesc.NodeId),
+        parent.session,
+        make_node(parent.session, rdesc.NodeId),
         parent.nodeid,
         rdesc,
         nodeid,
         bname,
         dname=dname,
         instantiate_optional=instantiate_optional)
-    return [make_node(parent.server, nid) for nid in nodeids]
+    return [make_node(parent.session, nid) for nid in nodeids]
 
 
-async def _instantiate_node(server,
+async def _instantiate_node(session,
                             node_type,
                             parentid,
                             rdesc,
@@ -85,41 +85,41 @@ async def _instantiate_node(server,
         addnode.NodeClass = ua.NodeClass.DataType
         await _read_and_copy_attrs(node_type, ua.DataTypeAttributes(), addnode)
     else:
-        logger.error("Instantiate: Node class not supported: %s", rdesc.NodeClass)
+        _logger.error("Instantiate: Node class not supported: %s", rdesc.NodeClass)
         raise RuntimeError("Instantiate: Node class not supported")
     if dname is not None:
         addnode.NodeAttributes.DisplayName = dname
 
-    res = (await server.add_nodes([addnode]))[0]
+    res = (await session.add_nodes([addnode]))[0]
     added_nodes = [res.AddedNodeId]
 
     if recursive:
         parents = await get_node_supertypes(node_type, includeitself=True)
-        node = make_node(server, res.AddedNodeId)
+        node = make_node(session, res.AddedNodeId)
         for parent in parents:
             descs = await parent.get_children_descriptions()
             for c_rdesc in descs:
                 # skip items that already exists, prefer the 'lowest' one in object hierarchy
                 if not await is_child_present(node, c_rdesc.BrowseName):
-                    c_node_type = make_node(server, c_rdesc.NodeId)
+                    c_node_type = make_node(session, c_rdesc.NodeId)
                     refs = await c_node_type.get_referenced_nodes(refs=ua.ObjectIds.HasModellingRule)
                     if not refs:
                         # spec says to ignore nodes without modelling rules
-                        logger.info("Instantiate: Skip node without modelling rule %s as part of %s",
+                        _logger.info("Instantiate: Skip node without modelling rule %s as part of %s",
                                     c_rdesc.BrowseName, addnode.BrowseName)
                         continue
                         # exclude nodes with optional ModellingRule if requested
                     if refs[0].nodeid in (ua.NodeId(ua.ObjectIds.ModellingRule_Optional), ua.NodeId(ua.ObjectIds.ModellingRule_OptionalPlaceholder)):
                         # instatiate optionals
                         if not instantiate_optional:
-                            logger.info("Instantiate: Skip optional node %s as part of %s", c_rdesc.BrowseName,
+                            _logger.info("Instantiate: Skip optional node %s as part of %s", c_rdesc.BrowseName,
                                 addnode.BrowseName)
                             continue
                     # if root node being instantiated has a String NodeId, create the children with a String NodeId
                     if res.AddedNodeId.NodeIdType is ua.NodeIdType.String:
                         inst_nodeid = res.AddedNodeId.Identifier + "." + c_rdesc.BrowseName.Name
                         nodeids = await _instantiate_node(
-                            server,
+                            session,
                             c_node_type,
                             res.AddedNodeId,
                             c_rdesc,
@@ -129,7 +129,7 @@ async def _instantiate_node(server,
                         )
                     else:
                         nodeids = await _instantiate_node(
-                            server,
+                            session,
                             c_node_type,
                             res.AddedNodeId,
                             c_rdesc,

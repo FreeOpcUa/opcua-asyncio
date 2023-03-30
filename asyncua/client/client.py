@@ -1,7 +1,8 @@
 import asyncio
 import logging
-from typing import List, Union, Coroutine, Optional
+from typing import List, Union, Coroutine, Optional, Type
 from urllib.parse import urlparse, unquote
+from pathlib import Path
 
 from asyncua import ua
 from .ua_client import UaClient
@@ -80,6 +81,7 @@ class Client:
         self._monitor_server_task = None
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
+        self._closing: bool = False
 
     async def __aenter__(self):
         await self.connect()
@@ -122,8 +124,8 @@ class Client:
 
     def set_locale(self, locale: List[str]) -> None:
         """
-        Sets the prefred locales of the client, the server chooses which locale he can provide.
-        Normaly the first matching locale in the list will be chossen, by the server.
+        Sets the preferred locales of the client, the server chooses which locale he can provide.
+        Normally the first matching locale in the list will be chosen, by the server.
         Call this before connect()
         """
         self._locale = locale
@@ -157,11 +159,11 @@ class Client:
 
     async def set_security(
         self,
-        policy: ua.SecurityPolicy,
-        certificate: Union[str, uacrypto.CertProperties],
-        private_key: Union[str, uacrypto.CertProperties],
+        policy: Type[ua.SecurityPolicy],
+        certificate: Union[str, uacrypto.CertProperties, bytes],
+        private_key: Union[str, uacrypto.CertProperties, bytes],
         private_key_password: Optional[Union[str, bytes]] = None,
-        server_certificate: Optional[Union[str, uacrypto.CertProperties]] = None,
+        server_certificate: Optional[Union[str, uacrypto.CertProperties, bytes]] = None,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
     ):
         """
@@ -176,7 +178,13 @@ class Client:
             # load certificate from server's list of endpoints
             endpoints = await self.connect_and_get_server_endpoints()
             endpoint = Client.find_endpoint(endpoints, mode, policy.URI)
-            server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate)
+            # If a server has certificate chain, the certificates are chained
+            # this generates a error in our crypto part, so we strip everything after
+            # the server cert. To do this we read byte 2:4 and get the length - 4
+            cert_len_idx = 2
+            len_bytestr = endpoint.ServerCertificate[cert_len_idx:cert_len_idx + 2]
+            cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
+            server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate[:cert_len])
         elif not isinstance(server_certificate, uacrypto.CertProperties):
             server_certificate = uacrypto.CertProperties(server_certificate)
         if not isinstance(certificate, uacrypto.CertProperties):
@@ -187,7 +195,7 @@ class Client:
 
     async def _set_security(
         self,
-        policy: ua.SecurityPolicy,
+        policy: Type[ua.SecurityPolicy],
         certificate: uacrypto.CertProperties,
         private_key: uacrypto.CertProperties,
         server_cert: uacrypto.CertProperties,
@@ -195,10 +203,10 @@ class Client:
     ):
 
         if isinstance(server_cert, uacrypto.CertProperties):
-            server_cert = await uacrypto.load_certificate(server_cert.path, server_cert.extension)
-        cert = await uacrypto.load_certificate(certificate.path, certificate.extension)
+            server_cert = await uacrypto.load_certificate(server_cert.path_or_content, server_cert.extension)
+        cert = await uacrypto.load_certificate(certificate.path_or_content, certificate.extension)
         pk = await uacrypto.load_private_key(
-            private_key.path,
+            private_key.path_or_content,
             private_key.password,
             private_key.extension,
         )
@@ -211,7 +219,7 @@ class Client:
         """
         self.user_certificate = await uacrypto.load_certificate(path, extension)
 
-    async def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
+    async def load_private_key(self, path: Path, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
         """
         Load user private key. This is used for authenticating using certificate
         """
@@ -292,6 +300,21 @@ class Client:
             self.disconnect_socket()
             raise
 
+    async def connect_sessionless(self):
+        """
+        High level method
+        Connect without a session
+        """
+        _logger.info("connect")
+        await self.connect_socket()
+        try:
+            await self.send_hello()
+            await self.open_secure_channel()
+        except Exception:
+            # clean up open socket
+            self.disconnect_socket()
+            raise
+
     async def disconnect(self):
         """
         High level method
@@ -304,6 +327,17 @@ class Client:
         finally:
             self.disconnect_socket()
 
+    async def disconnect_sessionless(self):
+        """
+        High level method
+        Close secure channel and socket
+        """
+        _logger.info("disconnect")
+        try:
+            await self.close_secure_channel()
+        finally:
+            self.disconnect_socket()
+
     async def connect_socket(self):
         """
         connect to socket defined in url
@@ -311,7 +345,8 @@ class Client:
         await self.uaclient.connect_socket(self.server_url.hostname, self.server_url.port)
 
     def disconnect_socket(self):
-        self.uaclient.disconnect_socket()
+        if self.uaclient:
+            self.uaclient.disconnect_socket()
 
     async def send_hello(self):
         """
@@ -368,6 +403,25 @@ class Client:
             return await self.uaclient.register_server2(params)
         return await self.uaclient.register_server(serv)
 
+    async def unregister_server(self, server, discovery_configuration=None):
+        """
+        register a server to discovery server
+        if discovery_configuration is provided, the newer register_server2 service call is used
+        """
+        serv = ua.RegisteredServer()
+        serv.ServerUri = server.get_application_uri()
+        serv.ProductUri = server.product_uri
+        serv.DiscoveryUrls = [server.endpoint.geturl()]
+        serv.ServerType = server.application_type
+        serv.ServerNames = [ua.LocalizedText(server.name)]
+        serv.IsOnline = False
+        if discovery_configuration:
+            params = ua.RegisterServer2Parameters()
+            params.Server = serv
+            params.DiscoveryConfiguration = discovery_configuration
+            return await self.uaclient.unregister_server2(params)
+        return await self.uaclient.unregister_server(serv)
+
     async def find_servers(self, uris=None):
         """
         send a FindServer request to the server. The answer should be a list of
@@ -388,9 +442,10 @@ class Client:
     async def create_session(self):
         """
         send a CreateSessionRequest to server with reasonable parameters.
-        If you want o modify settings look at code of this methods
+        If you want to modify settings look at code of these methods
         and make your own
         """
+        self._closing = False
         desc = ua.ApplicationDescription()
         desc.ApplicationUri = self.application_uri
         desc.ProductUri = self.product_uri
@@ -414,9 +469,18 @@ class Client:
             data = self.security_policy.host_certificate + nonce
         self.security_policy.asymmetric_cryptography.verify(data, response.ServerSignature.Signature)
         self._server_nonce = response.ServerNonce
+        server_certificate = None
+        if response.ServerCertificate is not None:
+            # If a server has certificate chain, the certificates are chained
+            # this generates a error in our crypto part, so we strip everything after
+            # the server cert. To do this we read byte 2:4 and get the length - 4
+            cert_len_idx = 2
+            len_bytestr = response.ServerCertificate[cert_len_idx:cert_len_idx + 2]
+            cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
+            server_certificate = response.ServerCertificate[:cert_len]
         if not self.security_policy.peer_certificate:
-            self.security_policy.peer_certificate = response.ServerCertificate
-        elif self.security_policy.peer_certificate != response.ServerCertificate:
+            self.security_policy.peer_certificate = server_certificate
+        elif self.security_policy.peer_certificate != server_certificate:
             raise ua.UaError("Server certificate mismatch")
         # remember PolicyId's: we will use them in activate_session()
         ep = Client.find_endpoint(response.ServerEndpoints, self.security_policy.Mode, self.security_policy.URI)
@@ -448,35 +512,38 @@ class Client:
         """
         timeout = min(self.session_timeout / 1000 / 2, self._watchdog_intervall)
         try:
-            while True:
+            while not self._closing:
                 await asyncio.sleep(timeout)
                 # @FIXME handle state change
                 _ = await self.nodes.server_state.read_value()
-
-        except asyncio.CancelledError:
-            pass
+        except ConnectionError as e:
+            _logger.info("connection error in watchdog loop %s", e, exc_info=True)
+            await self.uaclient.inform_subscriptions(ua.StatusCodes.BadShutdown)
+            raise
         except Exception:
             _logger.exception("Error in watchdog loop")
+            await self.uaclient.inform_subscriptions(ua.StatusCodes.BadShutdown)
             raise
 
     async def _renew_channel_loop(self):
         """
         Renew the SecureChannel before the SecureChannelTimeout will happen.
-        In theory we could do that only if no session activity
-        but it does not cost much..
+        In theory, we could do that only if no session activity,
+        but it does not cost much.
         """
         try:
             # Part4 5.5.2.1:
             # Clients should request a new SecurityToken after 75 % of its lifetime has elapsed
             duration = self.secure_channel_timeout * 0.75 / 1000
-            while True:
+            while not self._closing:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
                 val = await self.nodes.server_state.read_value()
                 _logger.debug("server state is: %s ", val)
-        except asyncio.CancelledError:
-            pass
+        except ConnectionError as e:
+            _logger.info("connection error  in watchdog loop %s", e, exc_info=True)
+            raise
         except Exception:
             _logger.exception("Error while renewing session")
             raise
@@ -581,22 +648,25 @@ class Client:
         data, uri = security_policies.encrypt_asymmetric(pubkey, etoken, policy_uri)
         return data, uri
 
-    async def close_session(self) -> Coroutine:
+    async def close_session(self):
         """
         Close session
         """
+        self._closing = True
         if self._monitor_server_task:
             self._monitor_server_task.cancel()
             try:
                 await self._monitor_server_task
-            except Exception:
-                _logger.exception("Error while closing watch_task")
+            except (asyncio.CancelledError, Exception):
+                pass
+        # disable hook because we kill our monitor task, so we are going to get CancelledError at every request
+        self.uaclient.pre_request_hook = None
         if self._renew_channel_task:
             self._renew_channel_task.cancel()
             try:
                 await self._renew_channel_task
-            except Exception:
-                _logger.exception("Error while closing secure channel loop")
+            except (asyncio.CancelledError, Exception):
+                pass
         return await self.uaclient.close_session(True)
 
     def get_root_node(self):

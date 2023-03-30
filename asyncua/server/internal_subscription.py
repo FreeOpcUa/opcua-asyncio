@@ -18,17 +18,20 @@ class InternalSubscription:
     """
 
     def __init__(self, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
-                 callback=None, no_acks=False):
+                 callback, request_callback=None):
         """
         :param loop: Event loop instance
         :param data: Create Subscription Result
         :param aspace: Server Address Space
         :param callback: Callback for publishing
-        :param no_acks: If true no acknowledging will be expected (for server internal subscriptions)
+        :param request_callback: Callback for getting queued publish requests.
+            If None, publishing will be done without waiting for a token and no
+            acknowledging will be expected (for server internal subscriptions)
         """
         self.logger = logging.getLogger(__name__)
         self.data: ua.CreateSubscriptionResult = data
         self.pub_result_callback = callback
+        self.pub_request_callback = request_callback
         self.monitored_item_srv = MonitoredItemService(self, aspace)
         self._triggered_datachanges: Dict[int, List[ua.MonitoredItemNotification]] = {}
         self._triggered_events: Dict[int, List[ua.EventFieldList]] = {}
@@ -40,7 +43,6 @@ class InternalSubscription:
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
         self._task = None
-        self.no_acks = no_acks
 
     def __str__(self):
         return f"Subscription(id:{self.data.SubscriptionId})"
@@ -85,10 +87,11 @@ class InternalSubscription:
                 await self.publish_results()
         except asyncio.CancelledError:
             self.logger.info('exiting _subscription_loop for %s', self.data.SubscriptionId)
-            pass
+            raise
         except Exception:
             # seems this except is necessary to log errors
             self.logger.exception("Exception in subscription loop")
+            raise
 
     def has_published_results(self):
         if self._startup or self._triggered_datachanges or self._triggered_events:
@@ -100,26 +103,36 @@ class InternalSubscription:
         self._keep_alive_count += 1
         return False
 
-    async def publish_results(self):
+    async def publish_results(self, requestdata=None):
         """
         Publish all enqueued data changes, events and status changes though the callback.
+        This method gets first called without publish request from subscription loop.
+        It tries to get a publish request itself (if needed). If it doesn't succeed, method gets
+        queued to be called back with publish request when one is available.
         """
         if self._publish_cycles_count > self.data.RevisedLifetimeCount:
             self.logger.warning("Subscription %s has expired, publish cycle count(%s) > lifetime count (%s)", self,
                                 self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
             await self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
-        result = None
-        if self.has_published_results():
-            if not self.no_acks:
+        if not self.has_published_results():
+            return False
+        # called from loop and external request
+        if requestdata is None and self.pub_request_callback:
+            # get publish request or queue us to be called back
+            requestdata = self.pub_request_callback(self.data.SubscriptionId)
+            if requestdata is None:
                 self._publish_cycles_count += 1
-            result = self._pop_publish_result()
-        if result is not None:
-            # self.logger.info('publish_results for %s', self.data.SubscriptionId)
-            # The callback can be:
-            #    Subscription.publish_callback -> server internal subscription
-            #    UaProcessor.forward_publish_response -> client subscription
+                return False
+        result = self._pop_publish_result()
+        # self.logger.info('publish_results for %s', self.data.SubscriptionId)
+        if requestdata is None:
+            # Subscription.publish_callback -> server internal subscription
             await self.pub_result_callback(result)
+        else:
+            # UaProcessor.forward_publish_response -> client subscription
+            await self.pub_result_callback(result, requestdata)
+        return True
 
     def _pop_publish_result(self) -> ua.PublishResult:
         """
@@ -132,9 +145,10 @@ class InternalSubscription:
         self._pop_triggered_events(result)
         self._pop_triggered_statuschanges(result)
         self._keep_alive_count = 0
+        self._publish_cycles_count = 0
         self._startup = False
         result.NotificationMessage.SequenceNumber = self._notification_seq
-        if result.NotificationMessage.NotificationData and not self.no_acks:
+        if result.NotificationMessage.NotificationData and self.pub_request_callback:
             # Acknowledgement is only expected when the Subscription is for a client.
             self._notification_seq += 1
             self._not_acknowledged_results[result.NotificationMessage.SequenceNumber] = result
@@ -176,7 +190,6 @@ class InternalSubscription:
         :param acks: Sequence number of the PublishResults to acknowledge
         """
         # self.logger.info("publish request with acks %s", acks)
-        self._publish_cycles_count = 0
         for nb in acks:
             self._not_acknowledged_results.pop(nb, None)
 

@@ -10,10 +10,10 @@ from asyncua import ua, Node, uamethod
 from asyncua.common.structures104 import new_struct, new_struct_field
 from asyncua.ua import uaerrors
 
-logger = logging.getLogger("asyncua.common.xmlimporter")
-logger.setLevel(logging.DEBUG)
-logger = logging.getLogger("asyncua.common.xmlparser")
-logger.setLevel(logging.DEBUG)
+_logger = logging.getLogger("asyncua.common.xmlimporter")
+_logger.setLevel(logging.DEBUG)
+_logger = logging.getLogger("asyncua.common.xmlparser")
+_logger.setLevel(logging.DEBUG)
 
 pytestmark = pytest.mark.asyncio
 
@@ -23,6 +23,7 @@ CUSTOM_NODES_NS_XML_PATH = BASE_DIR / "custom_nodesns.xml"
 CUSTOM_NODES_NS_XML_PATH1 = BASE_DIR / "custom_nodesns_2.xml"
 CUSTOM_NODES_NS_XML_PATH2 = BASE_DIR / "custom_nodesns_3.xml"
 CUSTOM_NODES_NS_XML_PATH3 = BASE_DIR / "custom_nodesns_4.xml"
+CUSTOM_NS_META_ADD_XML_PATH = BASE_DIR / "custom_ns_meta_add.xml"
 CUSTOM_REQ_XML_PASS_PATH = BASE_DIR / "test_requirement_pass.xml"
 CUSTOM_REQ_XML_FAIL_PATH = BASE_DIR / "test_requirement_fail.xml"
 
@@ -195,7 +196,7 @@ async def test_xml_ns(opc, tmpdir):
     new_ns = await opc.opc.register_namespace("my_new_namespace")
     bname_ns = await opc.opc.register_namespace("bname_namespace")
 
-    nnode = Node(onew.server, ua.NodeId(Identifier=onew.nodeid.Identifier, NamespaceIndex=new_ns))
+    nnode = Node(onew.session, ua.NodeId(Identifier=onew.nodeid.Identifier, NamespaceIndex=new_ns))
     await nnode.read_browse_name()
     vnew2 = (await nnode.get_children())[0]
     assert vnew2.nodeid.NamespaceIndex == new_ns
@@ -487,7 +488,7 @@ async def _test_xml_var_type(opc, tmpdir, node: Node, typename: str, test_equali
     assert node == node
     assert dtype == await node2.read_data_type()
     if test_equality:
-        logger.debug(node, dv, node2, await node2.read_value())
+        _logger.debug(node, dv, node2, await node2.read_value())
         _ = await node2.read_value()
         assert dv.Value == (await node2.read_data_value()).Value
     assert rank == await node2.read_value_rank()
@@ -549,6 +550,64 @@ async def test_xml_struct_optional(opc, tmpdir):
     assert t.MyInt64 == 5
 
 
+async def test_xml_struct_with_value(opc, tmpdir):
+    idx = 4
+    my_struct, _ = await new_struct(opc.opc, idx, "MyStructWithValue", [
+        new_struct_field("int_value", ua.VariantType.Int64, optional=False),
+    ])
+    await opc.opc.load_data_type_definitions()
+    valnode = await opc.opc.nodes.objects.add_variable(idx, "my_struct", ua.Variant(ua.MyStructWithValue(), ua.VariantType.ExtensionObject))
+
+    new_value = ua.MyStructWithValue()
+    new_value.int_value = 14
+    await valnode.write_value(ua.Variant(new_value, ua.VariantType.ExtensionObject))
+
+    tmp_path = tmpdir.join("export-struct-with-value.xml").strpath
+    await opc.opc.export_xml([my_struct, valnode], tmp_path, export_values=True)
+    await opc.opc.delete_nodes([my_struct, valnode])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    imported_my_struct = opc.opc.get_node(new_nodes[0])
+    imported_valnode = opc.opc.get_node(new_nodes[1])
+    assert my_struct == imported_my_struct
+    assert valnode == imported_valnode
+    await opc.opc.load_data_type_definitions()
+
+    value = await valnode.read_value()
+    imported_value = await imported_valnode.read_value()
+    assert value == imported_value
+
+
+async def test_xml_struct_in_struct_with_value(opc, tmpdir):
+    idx = 4
+    inner_struct, _ = await new_struct(opc.opc, idx, "MyInnerStruct", [
+        new_struct_field("int_value", ua.VariantType.Int64, optional=False),
+    ])
+    outer_struct, _ = await new_struct(opc.opc, idx, "MyOuterStruct", [
+        new_struct_field("inner_struct_value", inner_struct, optional=False),
+    ])
+    await opc.opc.load_data_type_definitions()
+    valnode = await opc.opc.nodes.objects.add_variable(idx, "my_outer_struct", ua.Variant(ua.MyOuterStruct(), ua.VariantType.ExtensionObject))
+
+    new_value = ua.MyOuterStruct()
+    new_value.inner_struct_value.int_value = 42
+    await valnode.write_value(ua.Variant(new_value, ua.VariantType.ExtensionObject))
+
+    tmp_path = tmpdir.join("export-struct-in-struct-with-value.xml").strpath
+    await opc.opc.export_xml([outer_struct, inner_struct, valnode], tmp_path, export_values=True)
+    await opc.opc.delete_nodes([outer_struct, inner_struct, valnode])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    imported_outer_struct = opc.opc.get_node(new_nodes[0])
+    imported_inner_struct = opc.opc.get_node(new_nodes[1])
+    imported_valnode = opc.opc.get_node(new_nodes[2])
+    assert outer_struct == imported_outer_struct
+    assert inner_struct == imported_inner_struct
+    await opc.opc.load_data_type_definitions()
+
+    value = await valnode.read_value()
+    imported_value = await imported_valnode.read_value()
+    assert value == imported_value
+
+
 async def test_basetype_alias(opc):
     idx = 4
     # Alias double
@@ -592,3 +651,9 @@ async def test_disable_xml_export_without_value(opc, tmpdir):
     assert dv.Value != v.Value
     assert v.Value.Value is None
     await opc.opc.delete_nodes([o2])
+
+async def test_xml_namespace_meta_add(opc):
+    with pytest.raises(ValueError):
+        await opc.opc.get_namespace_index("http://foobar.org/struct_optional/")
+    await opc.opc.import_xml(CUSTOM_NS_META_ADD_XML_PATH)
+    assert await opc.opc.get_namespace_index("http://foobar.org/struct_optional/") > 0

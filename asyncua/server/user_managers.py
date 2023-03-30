@@ -1,6 +1,9 @@
-from asyncua.crypto import uacrypto
 import logging
-from asyncua.server.users import UserRole, User
+from pathlib import Path
+from typing import Union
+
+from asyncua.crypto import uacrypto
+from asyncua.server.users import User, UserRole
 
 
 class UserManager:
@@ -26,7 +29,7 @@ class CertificateUserManager:
     def __init__(self):
         self._trusted_certificates = {}
 
-    async def add_role(self, certificate_path: str, user_role: UserRole, name: str, format: str = None):
+    async def add_role(self, certificate_path: Path, user_role: UserRole, name: str, format: Union[str, None] = None):
         certificate = await uacrypto.load_certificate(certificate_path, format)
         if name is None:
             raise KeyError
@@ -48,8 +51,8 @@ class CertificateUserManager:
         else:
             return correct_users[0]
 
-    async def add_user(self, certificate_path: str, name: str, format: str = None):
+    async def add_user(self, certificate_path: Path, name: str, format: Union[str, None] = None):
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.User, name=name, format=format)
 
-    async def add_admin(self, certificate_path: str, name:str, format: str = None):
+    async def add_admin(self, certificate_path: Path, name:str, format: Union[str, None] = None):
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.Admin, name=name, format=format)

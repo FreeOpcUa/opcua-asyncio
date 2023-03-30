@@ -7,6 +7,7 @@ import logging
 from typing import Awaitable, Callable, Dict, List, Optional, Union
 
 from asyncua import ua
+from asyncua.common.session_interface import AbstractSession
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, BadUserAccessDenied, UaStructParsingError
 from ..common.connection import SecureConnection, TransportLimits
@@ -46,7 +47,7 @@ class UASocketProtocol(asyncio.Protocol):
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
         # passing back the processed response to the request so that it can return it.
         self._open_secure_channel_exchange: Union[ua.OpenSecureChannelResponse, ua.OpenSecureChannelParameters, None] = None
-        # Hook for upperlayer tasks before a request is send (optional)
+        # Hook for upper layer tasks before a request is sent (optional)
         self.pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
 
     def connection_made(self, transport: asyncio.Transport):  # type: ignore
@@ -152,8 +153,8 @@ class UASocketProtocol(asyncio.Protocol):
         """
         timeout = self.timeout if timeout is None else timeout
         if self.pre_request_hook:
-            # This will propagade exceptions from background tasks to the libary user before calling a request which will
-            # timeout then.
+            # This will propagate exceptions from background tasks to the library user before calling a request which will
+            # time out then.
             await self.pre_request_hook()
         try:
             data = await asyncio.wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
@@ -229,7 +230,7 @@ class UASocketProtocol(asyncio.Protocol):
     async def close_secure_channel(self):
         """
         Close secure channel.
-        It seems to trigger a shutdown of socket in most servers, so be prepare to reconnect.
+        It seems to trigger a shutdown of socket in most servers, so be prepared to reconnect.
         OPC UA specs Part 6, 7.1.4 say that Server does not send a CloseSecureChannel response
         and should just close socket.
         """
@@ -242,7 +243,7 @@ class UASocketProtocol(asyncio.Protocol):
         # some servers send a response here, most do not ... so we ignore
 
 
-class UaClient:
+class UaClient(AbstractSession):
     """
     low level OPC-UA client.
 
@@ -252,6 +253,7 @@ class UaClient:
     In this Python implementation  most of the structures are defined in
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
+
     def __init__(self, timeout: float = 1.0):
         """
         :param timeout: Timout in seconds
@@ -263,6 +265,7 @@ class UaClient:
         self.protocol: UASocketProtocol = None
         self._publish_task = None
         self._pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
+        self._closing: bool = False
 
     def set_security(self, policy: ua.SecurityPolicy):
         self.security_policy = policy
@@ -285,6 +288,7 @@ class UaClient:
     async def connect_socket(self, host: str, port: int):
         """Connect to server socket."""
         self.logger.info("opening connection")
+        self._closing: bool = False
         # Timeout the connection when the server isn't available
         await asyncio.wait_for(asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout)
 
@@ -306,7 +310,7 @@ class UaClient:
     async def close_secure_channel(self):
         """
         close secure channel. It seems to trigger a shutdown of socket
-        in most servers, so be prepare to reconnect
+        in most servers, so be prepared to reconnect
         """
         if not self.protocol or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("close_secure_channel was called but connection is closed")
@@ -315,6 +319,9 @@ class UaClient:
 
     async def create_session(self, parameters):
         self.logger.info("create_session")
+        self._closing = False
+        # FIXME: setting a value on an object to set it its state is suspicious,
+        # especially when that object has its own state
         self.protocol.closed = False
         request = ua.CreateSessionRequest()
         request.Parameters = parameters
@@ -341,6 +348,7 @@ class UaClient:
             self.logger.warning("close_session but connection wasn't established")
             return
         self.protocol.closed = True
+        self._closing = True
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
@@ -441,9 +449,29 @@ class UaClient:
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         # nothing to return for this service
+    
+    async def unregister_server(self, registered_server):
+        self.logger.debug("unregister_server")
+        request = ua.RegisterServerRequest()
+        request.Server = registered_server
+        data = await self.protocol.send_request(request)
+        response = struct_from_binary(ua.RegisterServerResponse, data)
+        self.logger.debug(response)
+        response.ResponseHeader.ServiceResult.check()
+        # nothing to return for this service
 
     async def register_server2(self, params):
         self.logger.debug("register_server2")
+        request = ua.RegisterServer2Request()
+        request.Parameters = params
+        data = await self.protocol.send_request(request)
+        response = struct_from_binary(ua.RegisterServer2Response, data)
+        self.logger.debug(response)
+        response.ResponseHeader.ServiceResult.check()
+        return response.ConfigurationResults
+
+    async def unregister_server2(self, params):
+        self.logger.debug("unregister_server2")
         request = ua.RegisterServer2Request()
         request.Parameters = params
         data = await self.protocol.send_request(request)
@@ -476,13 +504,32 @@ class UaClient:
             "create_subscription success SubscriptionId %s",
             response.Parameters.SubscriptionId
         )
-        if not self._publish_task or self._publish_task.done() :
-            # Start the publish loop if it is not yet running
+        if not self._publish_task or self._publish_task.done():
+            # Start the publishing loop if it is not yet running
             # The current strategy is to have only one open publish request per UaClient. This might not be enough
             # in high latency networks or in case many subscriptions are created. A Set of Tasks of `_publish_loop`
             # could be used if necessary.
             self._publish_task = asyncio.create_task(self._publish_loop())
         return response.Parameters
+
+    async def inform_subscriptions(self, status: ua.StatusCode):
+        """
+            Inform all current subscriptions with a status code. This calls the handler's status_change_notification
+        """
+        status_message = ua.StatusChangeNotification(Status=status)
+        notification_message = ua.NotificationMessage(NotificationData=[status_message])
+        for subid, callback in self._subscription_callbacks.items():
+            try:
+                parameters = ua.PublishResult(
+                    subid,
+                    NotificationMessage_=notification_message
+                )
+                if asyncio.iscoroutinefunction(callback):
+                    await callback(parameters)
+                else:
+                    callback(parameters)
+            except Exception:  # we call user code, catch everything!
+                self.logger.exception("Exception while calling user callback: %s")
 
     async def update_subscription(
         self, params: ua.ModifySubscriptionParameters
@@ -497,6 +544,8 @@ class UaClient:
             params.SubscriptionId
         )
         return response.Parameters
+
+    modify_subscription = update_subscription # legacy support
 
     async def delete_subscriptions(self, subscription_ids):
         self.logger.debug("delete_subscriptions %r", subscription_ids)
@@ -532,7 +581,7 @@ class UaClient:
         Forward the `PublishResult` to the matching `Subscription` by callback.
         """
         ack = None
-        while True:
+        while not self._closing:
             try:
                 response = await self.publish([ack] if ack else [])
             except BadTimeout:  # See Spec. Part 4, 7.28
@@ -541,7 +590,7 @@ class UaClient:
                 continue
             except BadNoSubscription:  # See Spec. Part 5, 13.8.1
                 # BadNoSubscription is expected to be received after deleting the last subscription.
-                # We use this as a signal to exit this task and stop sending PublishRequests. This is easier then
+                # We use this as a signal to exit this task and stop sending PublishRequests. This is easier than
                 # checking if there are no more subscriptions registered in this client (). A Publish response
                 # could still arrive before the DeleteSubscription response.
                 #
@@ -749,3 +798,8 @@ class UaClient:
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
+
+    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
+        # Subscriptions aren't bound to a Session and can be transferred!
+        # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
+        raise NotImplementedError

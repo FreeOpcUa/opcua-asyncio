@@ -53,7 +53,7 @@ async with Client(url='opc.tcp://localhost:4840/freeopcua/server/') as client:
         value = await node.read_value()
 ```
 
-Of course you can also call the `connect`, `disconnect` methods yourself if you do not want to use the context manager.
+Of course, you can also call the `connect`, `disconnect` methods yourself if you do not want to use the context manager.
 
 See the example folder and the code for more information on the client API.
 
@@ -73,8 +73,8 @@ The `Server` class provides a high level API for creation of OPC UA server insta
 
 The documentation is available here [ReadTheDocs](http://opcua-asyncio.readthedocs.org/en/latest/).
 
-The API remains mostly unchanged in regards to [python-opcua](https://github.com/FreeOpcUa/python-opcua).
-Main difference is that many methods have been refactored to return coroutines.
+The API remains mostly unchanged in regards to [python-opcua](http://opcua-asyncio.rtfd.io/).
+Main difference is that most methods are now async.
 Please have a look at [the examples](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/examples) and/or the code.
 
 A simple GUI client is available: https://github.com/FreeOpcUa/opcua-client-gui

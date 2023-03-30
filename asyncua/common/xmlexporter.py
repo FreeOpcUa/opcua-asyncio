@@ -14,8 +14,10 @@ from enum import Enum
 from asyncua import ua
 from asyncua.ua.uatypes import type_string_from_type
 from asyncua.ua.uaerrors import UaError
+from .. import Node
 from ..ua import object_ids as o_ids
 from .ua_utils import get_base_data_type
+from .utils import fields_with_resolved_types
 
 
 class XmlExporter:
@@ -235,9 +237,13 @@ class XmlExporter:
             self.aliases[dtype] = dtype_name
         else:
             dtype_name = self._node_to_string(dtype)
-        rank = await node.read_value_rank()
-        if rank != -1:
-            el.attrib["ValueRank"] = str(int(rank))
+        try:
+            rank = await node.read_value_rank()
+            if rank != -1:
+                el.attrib["ValueRank"] = str(int(rank))
+        except ua.uaerrors.BadAttributeIdInvalid:
+            pass
+
         dim = await node.read_attribute(ua.AttributeIds.ArrayDimensions, raise_on_bad_status=False)
         if dim is not None and dim.Value.Value:
             el.attrib["ArrayDimensions"] = ",".join([str(i) for i in dim.Value.Value])
@@ -316,7 +322,7 @@ class XmlExporter:
             elif isinstance(sdef, ua.EnumDefinition):
                 self._enum_fields_to_etree(sdef_el, sdef)
             else:
-                self.logger.warning("Unknown DataTypeSpecification elemnt: %s", sdef)
+                self.logger.warning("Unknown DataTypeSpecification element: %s", sdef)
 
     def _structure_fields_to_etree(self, sdef_el, sdef):
         for field in sdef.Fields:
@@ -373,13 +379,26 @@ class XmlExporter:
         member_el = Et.SubElement(el, "uax:" + name)
         if isinstance(val, (list, tuple)):
             for v in val:
-                await self._value_to_etree(member_el, ua.ObjectIdNames[dtype.Identifier], dtype, v)
+                try:
+                    type_name = ua.ObjectIdNames[dtype.Identifier]
+                except KeyError:
+                    dtype_node = self.server.get_node(dtype)
+                    enc_node = (
+                        await dtype_node.get_referenced_nodes(
+                            ua.ObjectIds.HasEncoding, ua.BrowseDirection.Forward
+                        )
+                    )[0]
+                    type_name = ua.extension_objects_by_typeid[enc_node.nodeid].__name__
+
+                await self._value_to_etree(member_el, type_name, dtype, v)
         else:
             await self._val_to_etree(member_el, dtype, val)
 
     async def _val_to_etree(self, el, dtype, val):
         if dtype == ua.NodeId(ua.ObjectIds.NodeId) or dtype == ua.NodeId(ua.ObjectIds.ExpandedNodeId):
             id_el = Et.SubElement(el, "uax:Identifier")
+            if val.NamespaceIndex in self._addr_idx_to_xml_idx:
+                val = ua.NodeId(val.Identifier, NamespaceIndex=self._addr_idx_to_xml_idx[val.NamespaceIndex])
             id_el.text = val.to_string()
         elif dtype == ua.NodeId(ua.ObjectIds.Guid):
             id_el = Et.SubElement(el, "uax:String")
@@ -430,7 +449,7 @@ class XmlExporter:
         if isinstance(val, (list, tuple)):
             if dtype.NamespaceIndex == 0 and dtype.Identifier <= 21:
                 elname = "uax:ListOf" + type_name
-            else:  # this is an extentionObject:
+            else:  # this is an extensionObject:
                 elname = "uax:ListOfExtensionObject"
 
             list_el = Et.SubElement(el, elname)
@@ -452,21 +471,57 @@ class XmlExporter:
                 await self._extobj_to_etree(el, type_name, dtype, val)
 
     async def _extobj_to_etree(self, val_el, name, dtype, val):
+        if "=" in name:
+            try:
+                name = ua.extension_objects_by_datatype[dtype].__name__
+            except KeyError:
+                try:
+                    name = ua.enums_by_datatype[dtype].__name__
+                except KeyError:
+                    node: Node = self.server.get_node(dtype)
+                    browse_name = await node.read_browse_name()
+                    name = browse_name.Name
         obj_el = Et.SubElement(val_el, "uax:ExtensionObject")
         type_el = Et.SubElement(obj_el, "uax:TypeId")
         id_el = Et.SubElement(type_el, "uax:Identifier")
-        id_el.text = dtype.to_string()
+        id_el.text = self._node_to_string(dtype)
         body_el = Et.SubElement(obj_el, "uax:Body")
         struct_el = Et.SubElement(body_el, "uax:" + name)
         await self._all_fields_to_etree(struct_el, val)
 
     async def _all_fields_to_etree(self, struct_el, val):
-        for field in fields(val):
-            # FIXME; what happend if we have a custom type which is not part of ObjectIds???
+        # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
+        #       it is possible that the type annotations also refere to classes defined in other modules.
+        for field in fields_with_resolved_types(val, globalns={"ua": ua}):
+            # FIXME; what happened if we have a custom type which is not part of ObjectIds???
             if field.name == "Encoding":
                 continue
             type_name = type_string_from_type(field.type)
-            await self.member_to_etree(struct_el, field.name, ua.NodeId(getattr(ua.ObjectIds, type_name)), getattr(val, field.name))
+            try:
+                dtype = ua.NodeId(getattr(ua.ObjectIds, type_name))
+            except AttributeError:
+                try:
+                    enc_node: Node = self.server.get_node(
+                        ua.extension_object_typeids[type_name]
+                    )
+                    dtype_node = (
+                        await enc_node.get_referenced_nodes(
+                            ua.ObjectIds.HasEncoding, ua.BrowseDirection.Inverse
+                        )
+                    )[0]
+                    dtype = dtype_node.nodeid
+                except KeyError:
+                    for cls in ua.enums_datatypes:
+                        if cls.__class__ == field.type.__class__:
+                            dtype = ua.enums_datatypes[cls]
+                            break
+                    self.logger.debug(
+                        f"could not find field type {field.type} in registered types"
+                    )
+                    return
+            await self.member_to_etree(
+                struct_el, field.name, dtype, getattr(val, field.name)
+            )
 
 
 def indent(elem, level=0):

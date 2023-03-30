@@ -13,7 +13,7 @@ except ImportError:
 
 
 POLICY_NONE_URI = 'http://opcfoundation.org/UA/SecurityPolicy#None'
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def require_cryptography(obj):
@@ -180,7 +180,7 @@ class Cryptography(CryptographyNone):
         if not self.use_prev_key:
             self.Verifier.verify(data, sig)
         else:
-            logger.debug(f"Message verification fallback: trying with previous secure channel key")
+            _logger.debug(f"Message verification fallback: trying with previous secure channel key")
             self.Prev_Verifier.verify(data, sig)
 
     def encrypt(self, data):
@@ -209,7 +209,7 @@ class Cryptography(CryptographyNone):
                 self.Prev_Decryptor = None
                 self.Prev_Verifier.reset()
                 self.Prev_Verifier = None
-                logger.debug(f"Expired secure_channel keys removed")
+                _logger.debug(f"Expired secure_channel keys removed")
 
     @property
     def use_prev_key(self):
@@ -538,7 +538,7 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
     - CertificateSignatureAlgorithm - Sha1
 
     If a certificate or any certificate in the chain is not signed with
-    a hash that is Sha1 or stronger then the certificate shall be rejected.
+    a hash that is Sha1 or stronger than the certificate shall be rejected.
     """
 
     URI = "http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15"
@@ -554,7 +554,7 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
 
     def __init__(self, peer_cert, host_cert, client_pk, mode,
                  permission_ruleset=None):
-        logger.warning("DEPRECATED! Do not use SecurityPolicyBasic128Rsa15 anymore!")
+        _logger.warning("DEPRECATED! Do not use SecurityPolicyBasic128Rsa15 anymore!")
 
         require_cryptography(self)
         if isinstance(peer_cert, bytes):
@@ -626,7 +626,7 @@ class SecurityPolicyBasic256(SecurityPolicy):
     - CertificateSignatureAlgorithm - Sha1
 
     If a certificate or any certificate in the chain is not signed with
-    a hash that is Sha1 or stronger then the certificate shall be rejected.
+    a hash that is Sha1 or stronger than the certificate shall be rejected.
     """
 
     URI = "http://opcfoundation.org/UA/SecurityPolicy#Basic256"
@@ -642,7 +642,7 @@ class SecurityPolicyBasic256(SecurityPolicy):
 
     def __init__(self, peer_cert, host_cert, client_pk, mode,
                  permission_ruleset=None):
-        logger.warning("DEPRECATED! Do not use SecurityPolicyBasic256 anymore!")
+        _logger.warning("DEPRECATED! Do not use SecurityPolicyBasic256 anymore!")
 
         require_cryptography(self)
         if isinstance(peer_cert, bytes):

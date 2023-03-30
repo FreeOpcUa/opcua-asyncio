@@ -59,7 +59,7 @@ if __name__ == "__main__":
             #var.write_value(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
             #var.write_value(3.9) # set node value using implicit data type
 
-            # gettting our namespace idx
+            # getting our namespace idx
             uri = "http://examples.freeopcua.github.io"
             idx = client.get_namespace_index(uri)
 

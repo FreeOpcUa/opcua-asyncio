@@ -14,7 +14,7 @@ from asyncua.common.manage_nodes import create_encoding, create_data_type
 if TYPE_CHECKING:
     from asyncua import Client, Server
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def new_struct_field(
@@ -43,7 +43,7 @@ def new_struct_field(
     else:
         raise ValueError(f"DataType of a field must be a NodeId, not {dtype} of type {type(dtype)}")
     if array:
-        field.ValueRank = ua.ValueRank.OneOrMoreDimensions
+        field.ValueRank = ua.ValueRank.OneDimension
         field.ArrayDimensions = [1]  # type: ignore
     else:
         field.ValueRank = ua.ValueRank.Scalar
@@ -78,14 +78,15 @@ async def new_struct(
     sdef = ua.StructureDefinition()
     if is_union:
         sdef.StructureType = ua.StructureType.Union
+        sdef.BaseDataType = server.nodes.base_union_type.nodeid
     else:
+        sdef.BaseDataType = server.nodes.base_structure_type.nodeid
         sdef.StructureType = ua.StructureType.Structure
         for sfield in fields:
             if sfield.IsOptional:
                 sdef.StructureType = ua.StructureType.StructureWithOptionalFields
                 break
     sdef.Fields = fields
-    sdef.BaseDataType = server.nodes.base_data_type.nodeid
     sdef.DefaultEncodingId = enc.nodeid
 
     await dtype.write_data_type_definition(sdef)
@@ -119,7 +120,7 @@ async def new_enum(
 def clean_name(name):
     """
     Remove characters that might be present in  OPC UA structures
-    but cannot be part of of Python class names
+    but cannot be part of Python class names
     """
     if keyword.iskeyword(name):
         return name + "_"
@@ -127,11 +128,14 @@ def clean_name(name):
         return name
     newname = re.sub(r'\W+', '_', name)
     newname = re.sub(r'^[0-9]+', r'_\g<0>', newname)
-    logger.warning("renamed %s to %s due to Python syntax", name, newname)
+    _logger.warning("renamed %s to %s due to Python syntax", name, newname)
     return newname
 
 
-def get_default_value(uatype, enums=None):
+def get_default_value(uatype, enums=None, hack=False, optional=False):
+    if optional:
+        return "None"
+
     if hasattr(ua, uatype):
         # That type is know, make sure this is not a subtype
         dtype = getattr(ua, uatype)
@@ -139,7 +143,7 @@ def get_default_value(uatype, enums=None):
     if enums is None:
         enums = {}
     if uatype == "String":
-        return "None"
+        return "ua.String()"
     if uatype == "Guid":
         return "uuid.uuid4()"
     if uatype in ("ByteString", "CharArray", "Char"):
@@ -147,16 +151,20 @@ def get_default_value(uatype, enums=None):
     if uatype == "Boolean":
         return "True"
     if uatype == "DateTime":
-        return "datetime.utcnow()"
+        return "datetime.utcnow() # type: ignore"
     if uatype in ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte", "SByte"):
-        return 0
+        return f"ua.{uatype}(0)"
     if uatype in enums:
         return f"ua.{uatype}({enums[uatype]})"
     if hasattr(ua, uatype) and issubclass(getattr(ua, uatype), Enum):
         # We have an enum, try to initilize it correctly
         val = list(getattr(ua, uatype).__members__)[0]
         return f"ua.{uatype}.{val}"
-    return f"ua.{uatype}()"
+    if hack:
+        # FIXME: This is horrible but necssary for old struc support until
+        # someone fixes dependencies og we deprecated it
+        return f"field(default_factory=lambda :ua.{uatype}())"
+    return f"field(default_factory=ua.{uatype})"
 
 
 def make_structure_code(data_type, struct_name, sdef, log_error=True):
@@ -200,23 +208,30 @@ class {struct_name}{base_class}:
             uatype = ua.enums_by_datatype[sfield.DataType].__name__
         elif sfield.DataType in ua.basetype_by_datatype:
             uatype = ua.basetype_by_datatype[sfield.DataType]
+        elif sfield.DataType == data_type:
+            uatype = struct_name
         else:
             if log_error:
-                logger.error(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
+                _logger.error(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
             raise RuntimeError(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
 
         if sfield.ValueRank >= 0:
             default_value = "field(default_factory=list)"
         else:
-            default_value = get_default_value(uatype)
+            default_value = get_default_value(uatype, optional=sfield.IsOptional)
 
-        uatype = f"ua.{uatype}"
+        if sfield.DataType != data_type:
+            uatype = f"ua.{uatype}"
+        else:
+            # when field point to itself datatype use forward reference for typing
+            uatype = f"'ua.{uatype}'"
         if sfield.ValueRank >= 1 and uatype == 'Char':
             uatype = 'String'
         elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
             uatype = f"List[{uatype}]"
-        elif sfield.IsOptional:
+        if sfield.IsOptional:
             uatype = f"Optional[{uatype}]"
+            default_value = 'None'
         fields.append((fname, uatype, default_value))
     if is_union:
         # Generate getter and setter to mimic opc ua union access
@@ -242,7 +257,6 @@ class {struct_name}{base_class}:
     else:
         for fname, uatype, default_value in fields:
             code += f"    {fname}: {uatype} = {default_value}\n"
-
     return code
 
 
@@ -280,12 +294,12 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False, opt
         code = make_enum_code(name, sdef, option_set)
     else:
         code = make_structure_code(data_type, name, sdef, log_error=log_fail)
-    logger.debug("Executing code: %s", code)
+    _logger.debug("Executing code: %s", code)
     try:
         exec(code, env)
     except Exception:
         if log_fail:
-            logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
+            _logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
         raise
     return env
 
@@ -313,7 +327,7 @@ class DataTypeSorter:
             if dep_nodeid not in self.dtype_index:
                 continue
             dep = self.dtype_index[dep_nodeid]
-            if dep.depends_on(other):
+            if dep != self and dep.depends_on(other):
                 return True
         return False
 
@@ -349,9 +363,9 @@ async def _get_parent_types(node: Node):
         refs = await tmp_node.get_references(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
         if not refs or refs[0].NodeId.NamespaceIndex == 0 and refs[0].NodeId.Identifier == 22:
             return parents
-        tmp_node = Node(tmp_node.server, refs[0])
+        tmp_node = Node(tmp_node.session, refs[0].NodeId)
         parents.append(tmp_node)
-    logger.warning("Went 10 layers up while look of subtype of given node %s, something is wrong: %s", node, parents)
+    _logger.warning("Went 10 layers up while look of subtype of given node %s, something is wrong: %s", node, parents)
 
 
 async def load_custom_struct(node: Node) -> Any:
@@ -359,7 +373,7 @@ async def load_custom_struct(node: Node) -> Any:
     name = (await node.read_browse_name()).Name
     for parent in await _get_parent_types(node):
         parent_sdef = await parent.read_data_type_definition()
-        for f in reversed(parent_sdef.fields):
+        for f in reversed(parent_sdef.Fields):
             sdef.Fields.insert(0, f)
     env = await _generate_object(name, sdef, data_type=node.nodeid)
     struct = env[name]
@@ -372,7 +386,7 @@ async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new
     for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
         name = clean_name(desc.BrowseName.Name)
         if parent_datatype not in 'Number':
-            # Don't insert Number alias, they should be allready insert because they have to be basetypes allready
+            # Don't insert Number alias, they should be already insert because they have to be basetypes already
             if not hasattr(ua, name):
                 env = make_basetype_code(name, parent_datatype)
                 ua.register_basetype(name, desc.NodeId, env[name])
@@ -389,12 +403,11 @@ def make_basetype_code(name, parent_datatype):
 """
     env = {}
     env['ua'] = ua
-    logger.debug("Executing code: %s", code)
-    print(code)
+    _logger.debug("Executing code: %s", code)
     try:
         exec(code, env)
     except Exception:
-        logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
+        _logger.exception("Failed to execute auto-generated code from UA datatype: %s", code)
         raise
     return env
 
@@ -411,7 +424,7 @@ async def _load_base_datatypes(server: Union["Server", "Client"]) -> Any:
 
 async def load_data_type_definitions(server: Union["Server", "Client"], base_node: Node = None, overwrite_existing=False) -> Dict:
     """
-    Read DataTypeDefition attribute on all Structure  and Enumeration  defined
+    Read DataTypeDefinition attribute on all Structure and Enumeration defined
     on server and generate Python objects in ua namespace to be used to talk with server
     """
     new_objects = await _load_base_datatypes(server)  # we need to load all basedatatypes alias first
@@ -433,7 +446,7 @@ async def load_data_type_definitions(server: Union["Server", "Client"], base_nod
                 ua.register_extension_object(dts.name, dts.encoding_id, env[dts.name], dts.data_type)
                 new_objects[dts.name] = env[dts.name]  # type: ignore
             except NotImplementedError:
-                logger.exception("Structure type %s not implemented", dts.sdef)
+                _logger.exception("Structure type %s not implemented", dts.sdef)
             except AttributeError:
                 # Failed to resolve datatypes
                 failed_types.append(dts)
@@ -457,15 +470,15 @@ async def _read_data_type_definition(server, desc: ua.ReferenceDescription, read
     # FIXME: this is fishy, we may have same name in different Namespaces
     if not read_existing and hasattr(ua, desc.BrowseName.Name):
         return None
-    logger.info("Registering data type %s %s", desc.NodeId, desc.BrowseName)
+    _logger.info("Registering data type %s %s", desc.NodeId, desc.BrowseName)
     node = server.get_node(desc.NodeId)
     try:
         sdef = await node.read_data_type_definition()
     except ua.uaerrors.BadAttributeIdInvalid:
-        logger.debug("%s has no DataTypeDefinition attribute", node)
+        _logger.debug("%s has no DataTypeDefinition attribute", node)
         return None
     except Exception:
-        logger.exception("Error getting datatype for node %s", node)
+        _logger.exception("Error getting datatype for node %s", node)
         return None
     return sdef
 
@@ -489,7 +502,6 @@ class {name}({enum_type}):
         name = clean_name(sfield.Name)
         value = sfield.Value if not option_set else (1 << sfield.Value)
         code += f"    {name} = {value}\n"
-    logger.error(f"{name} - {sfield} {option_set} {code}")
     return code
 
 
@@ -501,7 +513,7 @@ async def load_enums(server: Union["Server", "Client"], base_node: Node = None, 
         name = clean_name(desc.BrowseName.Name)
         if hasattr(ua, name):
             continue
-        logger.info("Registring Enum %s %s OptionSet=%s", desc.NodeId, name, option_set)
+        _logger.info("Registering Enum %s %s OptionSet=%s", desc.NodeId, name, option_set)
         edef = await _read_data_type_definition(server, desc)
         if not edef:
             continue

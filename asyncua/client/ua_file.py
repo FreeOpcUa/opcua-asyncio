@@ -8,6 +8,8 @@ class UaFile:
         self._handle = None
         if open_mode == 'r':
             self._init_open = ua.OpenFileMode.Read.value
+        elif open_mode == 'w':
+            self._init_open = ua.OpenFileMode.Write.value
         else:
             raise ValueError("file mode is not supported")
 
@@ -37,6 +39,13 @@ class UaFile:
         arg1 = ua.Variant(self._handle, ua.VariantType.UInt32)
         arg2 = ua.Variant(size, ua.VariantType.Int32)
         return await self._file_node.call_method(read_node, arg1, arg2)
+
+    async def write(self, data: bytes):
+        """ writes file contents """
+        write_node = await self._file_node.get_child("Write")
+        arg1 = ua.Variant(self._handle, ua.VariantType.UInt32)
+        arg2 = ua.Variant(data, ua.VariantType.ByteString)
+        return await self._file_node.call_method(write_node, arg1, arg2)
 
     async def get_size(self):
         """ gets size of file """

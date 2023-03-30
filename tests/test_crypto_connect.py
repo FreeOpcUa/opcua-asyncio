@@ -1,8 +1,11 @@
-import os
+from pathlib import Path
 import pytest
 import asyncio
 
 from asyncio import TimeoutError
+
+from asyncua.crypto.uacrypto import CertProperties
+
 from asyncua import Client
 from asyncua import Server
 from asyncua import ua
@@ -26,26 +29,26 @@ port_num3 = 48516
 uri_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num1)
 uri_no_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num2)
 uri_crypto_cert = "opc.tcp://127.0.0.1:{0:d}".format(port_num3)
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-EXAMPLE_PATH = os.path.join(BASE_DIR, "examples") + os.sep
-srv_crypto_params = [(f"{EXAMPLE_PATH}private-key-example.pem",
-                      f"{EXAMPLE_PATH}certificate-example.der"),
-                     (f"{EXAMPLE_PATH}private-key-3072-example.pem",
-                      f"{EXAMPLE_PATH}certificate-3072-example.der")]
+BASE_DIR = Path(__file__).parent.parent
+EXAMPLE_PATH = BASE_DIR / "examples"
+srv_crypto_params = [(EXAMPLE_PATH / "private-key-example.pem",
+                      EXAMPLE_PATH / "certificate-example.der"),
+                     (EXAMPLE_PATH / "private-key-3072-example.pem",
+                      EXAMPLE_PATH / "certificate-3072-example.der")]
 
 peer_creds = {
-    "certificate": f"{EXAMPLE_PATH}certificates/peer-certificate-example-1.der",
-    "private_key": f"{EXAMPLE_PATH}certificates/peer-private-key-example-1.pem"
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-1.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-1.pem"
 }
 
 unauthorized_peer_creds = {
-    "certificate": f"{EXAMPLE_PATH}certificates/peer-certificate-example-2.der",
-    "private_key": f"{EXAMPLE_PATH}certificates/peer-private-key-example-2.pem"
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-2.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-2.pem"
 }
 
 encrypted_private_key_peer_creds = {
-    "private_key": f"{EXAMPLE_PATH}certificates/peer-private-key-example-encrypted-private-key.pem",
-    "certificate": f"{EXAMPLE_PATH}certificates/peer-certificate-example-encrypted-private-key.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-encrypted-private-key.pem",
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-encrypted-private-key.der",
     "password": b"password"
 }
 
@@ -127,14 +130,14 @@ async def test_nocrypto_fail(srv_no_crypto):
     clt = Client(uri_no_crypto)
     with pytest.raises(ua.UaError):
         await clt.set_security_string(
-            f"Basic256Sha256,Sign,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem")
+            f"Basic256Sha256,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'}")
 
 
 async def test_basic256(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
     await clt.set_security_string(
-        f"Basic256Sha256,Sign,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem,{cert}"
+        f"Basic256Sha256,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}"
     )
     async with clt:
         assert await clt.nodes.objects.get_children()
@@ -144,7 +147,7 @@ async def test_basic256_encrypt(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
     await clt.set_security_string(
-        f"Basic256Sha256,SignAndEncrypt,{EXAMPLE_PATH}certificate-example.der,{EXAMPLE_PATH}private-key-example.pem,{cert}")
+        f"Basic256Sha256,SignAndEncrypt,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}")
     async with clt:
         assert await clt.nodes.objects.get_children()
 
@@ -154,12 +157,31 @@ async def test_basic256_encrypt_success(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     await clt.set_security(
         security_policies.SecurityPolicyBasic256Sha256,
-        f"{EXAMPLE_PATH}certificate-example.der",
-        f"{EXAMPLE_PATH}private-key-example.pem",
+        f"{EXAMPLE_PATH / 'certificate-example.der'}",
+        f"{EXAMPLE_PATH / 'private-key-example.pem'}",
         None,
         cert,
         ua.MessageSecurityMode.SignAndEncrypt
     )
+
+    async with clt:
+        assert await clt.nodes.objects.get_children()
+
+
+async def test_basic256_encrypt_use_certificate_bytes(srv_crypto_all_certs):
+    clt = Client(uri_crypto)
+    _, cert = srv_crypto_all_certs
+    with open(cert, 'rb') as server_cert, \
+            open(f"{EXAMPLE_PATH / 'certificate-example.der'}", 'rb') as user_cert, \
+            open(f"{EXAMPLE_PATH / 'private-key-example.pem'}", 'rb') as user_key:
+        await clt.set_security(
+            security_policies.SecurityPolicyBasic256Sha256,
+            user_cert.read(),
+            CertProperties(user_key.read(), extension="pem"),
+            None,
+            server_cert.read(),
+            ua.MessageSecurityMode.SignAndEncrypt
+        )
 
     async with clt:
         assert await clt.nodes.objects.get_children()
@@ -173,8 +195,8 @@ async def test_basic256_encrypt_fail(srv_crypto_all_certs):
     with pytest.raises(ua.UaError):
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
-            f"{EXAMPLE_PATH}certificate-example.der",
-            f"{EXAMPLE_PATH}private-key-example.pem",
+            f"{EXAMPLE_PATH / 'certificate-example.der'}",
+            f"{EXAMPLE_PATH / 'private-key-example.pem'}",
             None,
             None,
             mode=ua.MessageSecurityMode.None_
@@ -186,8 +208,8 @@ async def test_Aes128Sha256RsaOaep_encrypt_success(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     await clt.set_security(
         security_policies.SecurityPolicyAes128Sha256RsaOaep,
-        f"{EXAMPLE_PATH}certificate-example.der",
-        f"{EXAMPLE_PATH}private-key-example.pem",
+        f"{EXAMPLE_PATH / 'certificate-example.der'}",
+        f"{EXAMPLE_PATH / 'private-key-example.pem'}",
         None,
         cert,
         ua.MessageSecurityMode.SignAndEncrypt
@@ -232,7 +254,7 @@ async def test_encrypted_private_key_handling_success_with_cert_props(srv_crypto
     clt = Client(uri_crypto_cert)
     user_cert = uacrypto.CertProperties(encrypted_private_key_peer_creds['certificate'], "DER")
     user_key = uacrypto.CertProperties(
-        path=encrypted_private_key_peer_creds['private_key'],
+        path_or_content=encrypted_private_key_peer_creds['private_key'],
         password=encrypted_private_key_peer_creds['password'],
         extension="PEM",
     )
@@ -300,15 +322,14 @@ async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
             assert await clt.get_objects_node().get_children()
 
 
-@pytest.mark.skip("That test fails and hangs randomly on github so disabling for now")
 async def test_secure_channel_key_expiration(srv_crypto_one_cert, mocker):
-    timeout = 1
+    timeout = 3
     _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
     clt.secure_channel_timeout = timeout * 1000
     user_cert = uacrypto.CertProperties(peer_creds['certificate'], "DER")
     user_key = uacrypto.CertProperties(
-        path=peer_creds['private_key'],
+        path_or_content=peer_creds['private_key'],
         extension="PEM",
     )
     server_cert = uacrypto.CertProperties(cert)

@@ -2,6 +2,7 @@
 sync API of asyncua
 """
 import asyncio
+from pathlib import Path
 from threading import Thread, Condition
 import logging
 from typing import List, Tuple, Union, Optional
@@ -12,7 +13,7 @@ from asyncua import server
 from asyncua import common
 from asyncua.common import node, subscription, shortcuts, xmlexporter, type_dictionary_builder
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ThreadLoopNotRunning(Exception):
@@ -32,7 +33,7 @@ class ThreadLoop(Thread):
 
     def run(self):
         self.loop = asyncio.new_event_loop()
-        logger.debug("Threadloop: %s", self.loop)
+        _logger.debug("Threadloop: %s", self.loop)
         self.loop.call_soon_threadsafe(self._notify_start)
         self.loop.run_forever()
 
@@ -254,7 +255,11 @@ class Client:
         pass
 
     def __enter__(self):
-        self.connect()
+        try:
+            self.connect()
+        except Exception as ex:
+            self.disconnect()
+            raise ex
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -391,7 +396,7 @@ def new_node(sync_node, nodeid):
     """
     given a sync node, create a new SyncNode with the given nodeid
     """
-    return SyncNode(sync_node.tloop, node.Node(sync_node.aio_obj.server, nodeid))
+    return SyncNode(sync_node.tloop, node.Node(sync_node.aio_obj.session, nodeid))
 
 
 class SyncNode:
@@ -643,7 +648,7 @@ class XmlExporter:
         pass
 
     @syncmethod
-    def write_xml(self, xmlpath, pretty=True):
+    def write_xml(self, xmlpath: Path, pretty=True):
         pass
 
 

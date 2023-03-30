@@ -140,10 +140,11 @@ class Event:
         return name
 
 
-async def get_filter_from_event_type(eventtypes: List["Node"]):
+async def get_filter_from_event_type(eventtypes: List["Node"], where_clause_generation: bool = True):
     evfilter = ua.EventFilter()
     evfilter.SelectClauses = await select_clauses_from_evtype(eventtypes)
-    evfilter.WhereClause = await where_clause_from_evtype(eventtypes)
+    if where_clause_generation:
+        evfilter.WhereClause = await where_clause_from_evtype(eventtypes)
     return evfilter
 
 
@@ -165,11 +166,11 @@ async def _select_clause_from_childs(child: "Node", refs: List[ua.ReferenceDescr
                 await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [*browse_path] + [ref.BrowseName])
             else:
                 await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [*browse_path] + [ref.BrowseName])
-                var = child.new_node(child.server, ref.NodeId)
+                var = child.new_node(child.session, ref.NodeId)
                 refs = await var.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK)
                 await _select_clause_from_childs(var, refs, select_clauses, already_selected, browse_path + [ref.BrowseName])
         elif ref.NodeClass == ua.NodeClass.Object:
-            obj = child.new_node(child.server, ref.NodeId)
+            obj = child.new_node(child.session, ref.NodeId)
             refs = await obj.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK)
             await _select_clause_from_childs(obj, refs, select_clauses, already_selected, browse_path + [ref.BrowseName])
 
