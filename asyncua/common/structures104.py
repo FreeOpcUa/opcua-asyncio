@@ -381,6 +381,20 @@ async def load_custom_struct(node: Node) -> Any:
     return env[name]
 
 
+async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes):
+    """
+    This function is used to load custom structs from xmlimporter
+    """
+    name = attrs.DisplayName.Text
+    if hasattr(ua, name):
+        return getattr(ua, name)
+    sdef = attrs.DataTypeDefinition
+    env = await _generate_object(name, sdef, data_type=node_id)
+    struct = env[name]
+    ua.register_extension_object(name, sdef.DefaultEncodingId, struct, node_id)
+    return env[name]
+
+
 async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new_alias) -> Any:
 
     for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
@@ -392,6 +406,20 @@ async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new
                 ua.register_basetype(name, desc.NodeId, env[name])
                 new_alias[name] = env[name]
         await _recursive_parse_basedatatypes(server, server.get_node(desc.NodeId), name, new_alias)
+
+
+async def load_basetype_alias_xml_import(server, name, nodeid, parent_datatype_nid):
+    '''
+    Insert alias for a datatype used for xml import
+    '''
+    if hasattr(ua, name):
+        return getattr(ua, name)
+    parent = server.get_node(parent_datatype_nid)
+    bname = await parent.read_browse_name()
+    parent_datatype = clean_name(bname.Name)
+    env = make_basetype_code(name, parent_datatype)
+    ua.register_basetype(name, nodeid, env[name])
+    return env[name]
 
 
 def make_basetype_code(name, parent_datatype):
@@ -521,3 +549,15 @@ async def load_enums(server: Union["Server", "Client"], base_node: Node = None, 
         ua.register_enum(name, desc.NodeId, env[name])
         new_enums[name] = env[name]
     return new_enums
+
+
+async def load_enum_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes, option_set: bool):
+    """
+    This function is used to load enums from xmlimporter
+    """
+    name = attrs.DisplayName.Text
+    if hasattr(ua, name):
+        return getattr(ua, name)
+    env = await _generate_object(name, attrs.DataTypeDefinition, enum=True, option_set=option_set)
+    ua.register_enum(name, node_id, env[name])
+    return env[name]
