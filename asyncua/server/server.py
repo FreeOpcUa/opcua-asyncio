@@ -6,6 +6,7 @@ import asyncio
 import logging
 import math
 from datetime import timedelta, datetime
+import socket
 from urllib.parse import urlparse
 from typing import Coroutine, Optional, Tuple, Union
 from pathlib import Path
@@ -452,6 +453,9 @@ class Server:
         """
         Start to listen on network
         """
+        if self.certificate is not None:
+            # Log warnings about the certificate
+            uacrypto.check_certificate(self.certificate, self._application_uri, socket.gethostname())
         await self._setup_server_nodes()
         await self.iserver.start()
         try:

@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 import aiofiles
 from typing import Optional, Union
@@ -11,8 +12,9 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher
 from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
-from cryptography.exceptions import InvalidSignature
 from dataclasses import dataclass
+import logging
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -159,7 +161,7 @@ def decrypt_rsa15(private_key, data):
 
 
 def cipher_aes_cbc(key, init_vec):
-    # FIXME sonarlint reports critical vulnerability (python:S5542) 
+    # FIXME sonarlint reports critical vulnerability (python:S5542)
     return Cipher(algorithms.AES(key), modes.CBC(init_vec), default_backend())
 
 
@@ -254,3 +256,32 @@ def x509_to_string(cert):
         issuer = f', issuer: {x509_name_to_string(cert.issuer)}'
     # TODO: show more information
     return f"{x509_name_to_string(cert.subject)}{issuer}, {cert.not_valid_before} - {cert.not_valid_after}"
+
+
+def check_certificate(cert: x509.Certificate, application_uri: str, hostname: Optional[str] = None) -> bool:
+    """
+    check certificate if it matches the application_uri and log errors.
+    """
+    err = False
+    now = datetime.utcnow()
+    if cert.not_valid_after < now:
+        _logger.error(f'certificate is no longer valid: valid until {cert.not_valid_after}')
+        err = True
+    if cert.not_valid_before > now:
+        _logger.error(f'certificate is not yet vaild: valid after {cert.not_valid_before}')
+        err = True
+    try:
+        san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
+        san_uri = san.value.get_values_for_type(x509.UniformResourceIdentifier)
+        if application_uri is not san_uri:
+            _logger.error(f'certificate does not cotain the application uri ({application_uri}). Most applications will reject a connection without it.')
+            err = True
+        if hostname is not None:
+            san_dns_names = san.value.get_values_for_type(x509.DNSName)
+            if hostname is not san_dns_names:
+                _logger.error(f'certificate does not cotain the hostname in DNSNames {hostname}. Some applications will check this.')
+                err = True
+    except x509.ExtensionNotFound:
+        _logger.error('certificate has no SubjectAlternativeName this is need for application verification!')
+        err = True
+    return err
