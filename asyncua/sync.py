@@ -152,7 +152,9 @@ class _SubHandler:
 
     def event_notification(self, event):
         self.sync_handler.event_notification(event)
-
+        
+    def status_change_notification(self, status: ua.StatusChangeNotification):
+        self.sync_handler.status_change_notification(status)
 
 class Client:
     def __init__(self, url: str, timeout: int = 4, tloop=None):

@@ -54,8 +54,8 @@ async def test_client_connection_lost():
         def __init__(self) -> None:
             self.status = ua.StatusCodes.Good
 
-        def status_change_notification(self, status):
-            self.status = status
+        def status_change_notification(self, status: ua.StatusChangeNotification):
+            self.status = status.Status
     # Test the disconnect behavoir
     port = find_free_port()
     srv = Server()
