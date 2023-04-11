@@ -118,11 +118,11 @@ def fields_with_resolved_types(
             localns=localns
         )
     else:
-        resolved_fieldtypes = get_type_hints(
+        resolved_fieldtypes = get_type_hints(  # type: ignore[call-arg]
             class_or_instance,
             globalns=globalns,
             localns=localns,
-            include_extras=include_extras
+            include_extras=include_extras 
         )
     for field in fields_:
         try:
