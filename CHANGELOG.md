@@ -217,35 +217,27 @@ results in an exception
 ### Added
 - Add support for pre 1.04 optionsets
   [#900](https://github.com/FreeOpcUa/opcua-asyncio/pull/900)
-
 - Add modeling rule for method arguments
   [#939](https://github.com/FreeOpcUa/opcua-asyncio/pull/939)
-
 - XMLImport - add namespace meta if missing in nodeset
   [#971](https://github.com/FreeOpcUa/opcua-asyncio/pull/971)
-
 - Completion of the Sync api: add some missing methods
   [#975](https://github.com/FreeOpcUa/opcua-asyncio/pull/975)
 
 ### Changed 
 - Rework struct1_04 resolution
   [#901](https://github.com/FreeOpcUa/opcua-asyncio/pull/901)
-
 - Handle objects in EventTypes. If a EventType has a object as child, add it's
 variables and properties to the eventfilter. Also handles variables that contain
 nested variables or objects.
   [#906](https://github.com/FreeOpcUa/opcua-asyncio/pull/906)
-
 - XMLExport: make export values optional
   [#923](https://github.com/FreeOpcUa/opcua-asyncio/pull/923)
-
 - Parse all datatype nodes for children
   [#949](https://github.com/FreeOpcUa/opcua-asyncio/pull/949)
-
 - XMLImport relaxed mode: In non strict_mode most errors are just logged an the
 import continues.
   [#947](https://github.com/FreeOpcUa/opcua-asyncio/pull/947)
-
 - Speed up eventfilter creation
   [#919](https://github.com/FreeOpcUa/opcua-asyncio/pull/919)
 
@@ -255,36 +247,26 @@ import continues.
   [#911](https://github.com/FreeOpcUa/opcua-asyncio/pull/911)
 - Fix _open_secure_channel_exchange typehints
   [#920](https://github.com/FreeOpcUa/opcua-asyncio/pull/920)
-  
 - Fix: Value in DataValue can be optional 
   [#931](https://github.com/FreeOpcUa/opcua-asyncio/pull/931)
-
 - You can now call `activate_session()` without arguments without discarding a
 certificate previously set with `load_client_certificate()`.
   [#932](https://github.com/FreeOpcUa/opcua-asyncio/pull/932)
-
 - Use XmlExporter _node_to_string instead of Node.to_string
 _node_to_string correctly maps namespaces idxs
   [#948](https://github.com/FreeOpcUa/opcua-asyncio/pull/948)
-
 - Structs104: Fix alias of basetype
   [#954](https://github.com/FreeOpcUa/opcua-asyncio/pull/954)
-
 - Fixed XmlExporter raising BadAttributeIdInvalid on optional fields
   [#951](https://github.com/FreeOpcUa/opcua-asyncio/pull/951)
-
 - Fix XML import bottlenecks
   [#963](https://github.com/FreeOpcUa/opcua-asyncio/pull/963)
-
 - structures104: sort type dependencies correctly
   [#965](https://github.com/FreeOpcUa/opcua-asyncio/pull/965)
-
 - Always close SecureChannel: Fix cases where a secure channel can be leaked
   [#970](https://github.com/FreeOpcUa/opcua-asyncio/pull/970)
-
 - Use correct datatype for EncodingMask
   [#998](https://github.com/FreeOpcUa/opcua-asyncio/pull/998)
-
 - bugfix generating uaprotocol_auto
   [#984](https://github.com/FreeOpcUa/opcua-asyncio/pull/984)
 
@@ -303,7 +285,3 @@ _node_to_string correctly maps namespaces idxs
   [#898](https://github.com/FreeOpcUa/opcua-asyncio/pull/898)
 - Set Client locale 
   [#890](https://github.com/FreeOpcUa/opcua-asyncio/pull/890)
-
-
-
-  
