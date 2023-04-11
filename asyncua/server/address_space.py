@@ -452,9 +452,9 @@ class NodeManagementService:
         rdesc.IsForward = addref.IsForward
         rdesc.NodeId = addref.TargetNodeId
         if addref.TargetNodeClass == ua.NodeClass.Unspecified:
-            rdesc.NodeClass = self._aspace.read_attribute_value(
+            rdesc.NodeClass = self._aspace.read_attribute_value(   # type: ignore[union-attr]
                 addref.TargetNodeId, ua.AttributeIds.NodeClass
-            ).Value.Value  # type: ignore[union-attr]
+            ).Value.Value  
         else:
             rdesc.NodeClass = addref.TargetNodeClass
         bname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value   # type: ignore[union-attr]
