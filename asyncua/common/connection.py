@@ -68,6 +68,7 @@ class TransportLimits:
         msg.SendBufferSize = self.max_send_buffer
         msg.MaxChunkCount = self.max_chunk_count
         msg.MaxMessageSize = self.max_chunk_count
+        return msg
 
     def update_client_limits(self, msg: ua.Acknowledge) -> None:
         self.max_chunk_count = msg.MaxChunkCount

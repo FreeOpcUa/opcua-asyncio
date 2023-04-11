@@ -239,7 +239,8 @@ class HaClient:
     ) -> None:
 
         async with self._ideal_map_lock:
-            nodes = [n.nodeid.to_string() if isinstance(n, Node) else n for n in nodes]
+            # FIXME: nodeid can be None
+            nodes = [n.nodeid.to_string() if isinstance(n, Node) else n for n in nodes]  # type: ignore[union-attr]
             for url in self.urls:
                 vs = self.ideal_map[url].get(sub_name)
                 if not vs:
@@ -286,8 +287,9 @@ class HaClient:
             sub_to_nodes = {}
             first_url = self.urls[0]
             for sub_name, vs in self.ideal_map[first_url].items():
+                # FIXME: nodeid can be None
                 node_set = {
-                    n.nodeid.to_string() if isinstance(n, Node) else n for n in nodes
+                    n.nodeid.to_string() if isinstance(n, Node) else n for n in nodes  # type: ignore[union-attr]
                 }
                 to_del = node_set & vs.get_nodes()
                 if to_del:

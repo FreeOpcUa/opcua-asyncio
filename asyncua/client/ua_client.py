@@ -4,7 +4,7 @@ Low level binary client
 import asyncio
 import copy
 import logging
-from typing import Awaitable, Callable, Dict, List, Optional, Union
+from typing import Awaitable, Callable, Dict, List, Optional, Union, Coroutine, Any
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
@@ -39,7 +39,7 @@ class UASocketProtocol(asyncio.Protocol):
         if limits is None:
             limits = TransportLimits(65535, 65535, 0, 0)
         else:
-            limits = copy.deep_copy(limits)  # Make a copy because the limits can change in the session
+            limits = copy.deepcopy(limits)  # Make a copy because the limits can change in the session
         self._connection = SecureConnection(security_policy, limits)
 
         self.state = self.INITIALIZED
@@ -276,7 +276,7 @@ class UaClient(AbstractSession):
         return self.protocol
 
     @property
-    def pre_request_hook(self) -> Callable[[], Awaitable[None]]:
+    def pre_request_hook(self) -> Optional[Callable[[], Awaitable[None]]]:
         return self._pre_request_hook
 
     @pre_request_hook.setter
@@ -288,7 +288,7 @@ class UaClient(AbstractSession):
     async def connect_socket(self, host: str, port: int):
         """Connect to server socket."""
         self.logger.info("opening connection")
-        self._closing: bool = False
+        self._closing = False
         # Timeout the connection when the server isn't available
         await asyncio.wait_for(asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout)
 
@@ -490,9 +490,9 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def create_subscription(
-        self, params, callback
-    ) -> ua.CreateSubscriptionResult:
+    async def create_subscription(   # type: ignore[override]
+        self, params: ua.CreateSubscriptionParameters, callback
+    ) -> Coroutine[Any, Any, ua.CreateSubscriptionResult]:
         self.logger.debug("create_subscription")
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
@@ -517,7 +517,7 @@ class UaClient(AbstractSession):
             Inform all current subscriptions with a status code. This calls the handler's status_change_notification
         """
         status_message = ua.StatusChangeNotification(Status=status)
-        notification_message = ua.NotificationMessage(NotificationData=[status_message])
+        notification_message = ua.NotificationMessage(NotificationData=[status_message])  # type: ignore[list-item]
         for subid, callback in self._subscription_callbacks.items():
             try:
                 parameters = ua.PublishResult(

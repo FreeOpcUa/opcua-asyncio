@@ -576,10 +576,10 @@ def extensionobject_to_binary(obj):
 def _create_list_deserializer(uatype, recursive: bool = False):
     if recursive:
 
-        def _deserialize(data):
+        def _deserialize_recursive(data):
             size = Primitives.Int32.unpack(data)
             return [_create_type_deserializer(uatype, type(None))(data) for _ in range(size)]
-        return _deserialize
+        return _deserialize_recursive
     element_deserializer = _create_type_deserializer(uatype, type(None))
 
     def _deserialize(data):

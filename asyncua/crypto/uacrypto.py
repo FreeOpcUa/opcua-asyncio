@@ -12,6 +12,10 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher
 from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
+
+# We redefine InvalidSignature as part of this module. Do not remove this line.
+from cryptography.exceptions import InvalidSignature # noqa
+
 from dataclasses import dataclass
 import logging
 _logger = logging.getLogger(__name__)

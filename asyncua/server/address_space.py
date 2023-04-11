@@ -373,7 +373,7 @@ class NodeManagementService:
         addref.ReferenceTypeId = item.ReferenceTypeId
         addref.SourceNodeId = nodedata.nodeid
         addref.TargetNodeId = item.ParentNodeId
-        addref.TargetNodeClass = parentdata.attributes[ua.AttributeIds.NodeClass].value.Value.Value
+        addref.TargetNodeClass = parentdata.attributes[ua.AttributeIds.NodeClass].value.Value.Value # type: ignore[union-attr]
         addref.IsForward = False # FIXME in uaprotocol_auto.py
         self._add_reference_no_check(nodedata, addref) # FIXME return StatusCode is not evaluated
 
@@ -454,13 +454,14 @@ class NodeManagementService:
         if addref.TargetNodeClass == ua.NodeClass.Unspecified:
             rdesc.NodeClass = self._aspace.read_attribute_value(
                 addref.TargetNodeId, ua.AttributeIds.NodeClass
-            ).Value.Value
+            ).Value.Value  # type: ignore[union-attr]
         else:
             rdesc.NodeClass = addref.TargetNodeClass
-        bname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value
+        bname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value   # type: ignore[union-attr]
+
         if bname:
             rdesc.BrowseName = bname
-        dname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName).Value.Value
+        dname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName).Value.Value  # type: ignore[union-attr]
         if dname:
             rdesc.DisplayName = dname
         return self._add_unique_reference(sourcedata, rdesc)
@@ -799,21 +800,22 @@ class AddressSpace:
         return ua.StatusCode()
 
     def _is_expected_variant_type(self, value: ua.DataValue, attval: AttributeValue, node: NodeData) -> bool:
-        vtype = attval.value.Value.VariantType # FIXME Type hinting reveals that it is possible that Value (Optional) is None which would raise an exception
+        # FIXME Type hinting reveals that it is possible that Value (Optional) is None which would raise an exception
+        vtype = attval.value.Value.VariantType # type: ignore[union-attr] 
         if vtype == ua.VariantType.Null:
             # Node had a null value, many nodes are initialized with that value
             # we should check what the real type is
-            dtype = node.attributes[ua.AttributeIds.DataType].value.Value.Value
+            dtype = node.attributes[ua.AttributeIds.DataType].value.Value.Value # type: ignore[union-attr]
             if dtype.NamespaceIndex == 0 and dtype.Identifier <= 25:
                 vtype = ua.VariantType(dtype.Identifier)
             else:
                 # FIXME: should find the correct variant type given data type but
                 # this is a bit complicaed so trusting the first write
                 return True
-        if value.Value.VariantType == vtype:
+        if value.Value.VariantType == vtype:  # type: ignore[union-attr]
             return True
         _logger.warning("Write refused: Variant: %s with type %s does not have expected type: %s",
-                value.Value, value.Value.VariantType, attval.value.Value.VariantType)
+                value.Value, value.Value.VariantType, attval.value.Value.VariantType)  # type: ignore[union-attr] 
         return False
 
     def add_datachange_callback(self, nodeid: ua.NodeId, attr: ua.AttributeIds, callback: Callable) -> Tuple[ua.StatusCode, int]:

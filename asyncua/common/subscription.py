@@ -141,7 +141,8 @@ class Subscription:
                 continue
             data = self._monitored_items[item.ClientHandle]
             event_data = DataChangeNotif(data, item)
-            known_handles_args.append((data.node, item.Value.Value.Value, event_data))
+            # FIXME: Value can be None
+            known_handles_args.append((data.node, item.Value.Value.Value, event_data))  # type: ignore[union-attr]
 
         try:
             tasks = [
@@ -210,10 +211,10 @@ class Subscription:
         )
 
     async def _create_eventfilter(self, evtypes: Union[ua.ObjectIds, List[ua.ObjectIds], ua.NodeId, List[ua.NodeId]], where_clause_generation: bool = True):
-        if not type(evtypes) in (list, tuple):
+        if not isinstance(evtypes, (list, tuple)):
             evtypes = [evtypes]
-        evtypes = [Node(self.server, evtype) for evtype in evtypes]
-        evfilter = await get_filter_from_event_type(evtypes, where_clause_generation)
+        evtypes = [Node(self.server, evtype) for evtype in evtypes]  # type: ignore[union-attr]
+        evfilter = await get_filter_from_event_type(evtypes, where_clause_generation) # type: ignore[union-attr]
         return evfilter
 
     async def subscribe_events(

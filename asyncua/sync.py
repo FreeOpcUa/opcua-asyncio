@@ -690,18 +690,18 @@ def new_struct_field(
 
 
 @syncfunc(aio_func=common.structures104.new_enum)
-def new_enum(
+def new_enum(  # type: ignore[empty-body]
     server: Union["Server", "Client"],
     idx: Union[int, ua.NodeId],
     name: Union[int, ua.QualifiedName],
     values: List[str],
     optional: bool = False
-) -> SyncNode:
+) -> SyncNode:   
     pass
 
 
 @syncfunc(aio_func=common.structures104.new_struct)
-def new_struct(
+def new_struct(  # type: ignore[empty-body]
     server: Union["Server", "Client"],
     idx: Union[int, ua.NodeId],
     name: Union[int, ua.QualifiedName],
