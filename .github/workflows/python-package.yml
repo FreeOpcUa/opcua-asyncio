@@ -39,8 +39,8 @@ jobs:
         flake8 . --count --exit-zero --statistics
         # - name: Lint with mypy
         # run: |
-        # python -m pip install types-aiofiles types-python-dateutil types-pytz
-        # python -m mypy --show-error-code asyncua/
+        python -m pip install types-aiofiles types-python-dateutil types-pytz
+        python -m mypy asyncua/
     - name: Test with pytest
       run: |
         pytest -v -s
