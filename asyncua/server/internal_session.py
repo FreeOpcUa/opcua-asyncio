@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Coroutine, Iterable, Optional, List
+from typing import Coroutine, Iterable, Optional, List, Any
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
@@ -132,7 +132,7 @@ class InternalSession(AbstractSession):
                                                      ServerItemCallback(params, results, user, self.external))
         return results
 
-    async def history_read(self, params) -> Coroutine:
+    async def history_read(self, params) -> ua.HistoryReadResult:
         return await self.iserver.history_manager.read_history(params)
 
     async def write(self, params):

@@ -31,10 +31,10 @@ class MonitoredItemValues:
         # We need to clone the value, to prevent referencing the inner value
         self.current_dvalue = copy.deepcopy(cur_val)
 
-    def get_current_datavalue(self) -> ua.DataValue:
+    def get_current_datavalue(self) -> Optional[ua.DataValue]:
         return self.current_dvalue
 
-    def get_old_datavalue(self) -> ua.DataValue:
+    def get_old_datavalue(self) -> Optional[ua.DataValue]:
         return self.old_dvalue
 
 
@@ -118,7 +118,7 @@ class MonitoredItemService:
 
         result, mdata = self._make_monitored_item_common(params)
         ev_notify_byte = self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,
-                                                          ua.AttributeIds.EventNotifier).Value.Value
+                                                          ua.AttributeIds.EventNotifier).Value.Value  # type: ignore[union-attr]
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadServiceUnsupported)
@@ -178,8 +178,15 @@ class MonitoredItemService:
     def _is_data_changed(values: MonitoredItemValues, trg: ua.DataChangeTrigger) -> bool:
         old = values.get_old_datavalue()
         current = values.get_current_datavalue()
+        if old is None and current is None:
+            return False
+        elif (old is None) != (current is None):
+            return True
+        elif old is None or current is None:
+            # This should never happen with the above logic, adding this check for mypy
+            raise ValueError('This is an implementation error')
 
-        if old is None or old.StatusCode != current.StatusCode:
+        if old.StatusCode != current.StatusCode:
             return True
 
         if trg in [ua.DataChangeTrigger.StatusValue,ua.DataChangeTrigger.StatusValueTimestamp ] and \
@@ -220,7 +227,7 @@ class MonitoredItemService:
     def _is_deadband_exceeded(self, values: MonitoredItemValues, flt: ua.DataChangeFilter):
         if flt.DeadbandType == ua.DeadbandType.None_ or values.get_old_datavalue() is None:
             return True
-        delta = values.get_current_datavalue().Value.Value - values.get_old_datavalue().Value.Value
+        delta = values.get_current_datavalue().Value.Value - values.get_old_datavalue().Value.Value  # type: ignore[union-attr]
         if flt.DeadbandType == ua.DeadbandType.Absolute and ((abs(delta)) > flt.DeadbandValue):
             return True
         if flt.DeadbandType == ua.DeadbandType.Percent:

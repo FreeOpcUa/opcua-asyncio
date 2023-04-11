@@ -9,9 +9,11 @@ Part 5: Information Model - Annex C (normative) File Transfer
 https://reference.opcfoundation.org/Core/docs/Part5/C.1/
 """
 import logging
+from typing import Tuple
 
 from asyncua.common.node import Node
 from asyncua.ua import NodeId, OpenFileMode, Variant, VariantType 
+
 
 _logger = logging.getLogger(__name__)
 
@@ -194,7 +196,7 @@ class UaDirectory:
         arg1_directory_name = Variant(directory_name, VariantType.String)
         return await self._directory_node.call_method(create_directory_node, arg1_directory_name)
 
-    async def create_file(self, file_name: str, request_file_open: bool) -> [NodeId, int]:
+    async def create_file(self, file_name: str, request_file_open: bool) -> Tuple[NodeId, int]:
         """
         CreateFile is used to create a new FileType Object organized by this Object.
         The created file can be written using the Write Method of the FileType.

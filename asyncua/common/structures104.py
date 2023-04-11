@@ -388,7 +388,8 @@ async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAt
     name = attrs.DisplayName.Text
     if hasattr(ua, name):
         return getattr(ua, name)
-    sdef = attrs.DataTypeDefinition
+    # FIXME : mypy attribute not defined
+    sdef = attrs.DataTypeDefinition  # type: ignore[attr-defined]
     env = await _generate_object(name, sdef, data_type=node_id)
     struct = env[name]
     ua.register_extension_object(name, sdef.DefaultEncodingId, struct, node_id)
@@ -558,6 +559,7 @@ async def load_enum_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes,
     name = attrs.DisplayName.Text
     if hasattr(ua, name):
         return getattr(ua, name)
-    env = await _generate_object(name, attrs.DataTypeDefinition, enum=True, option_set=option_set)
+    # FIXME: DateTypeDefinition is not a known attribute for mypy
+    env = await _generate_object(name, attrs.DataTypeDefinition, enum=True, option_set=option_set)   # type: ignore[attr-defined]
     ua.register_enum(name, node_id, env[name])
     return env[name]
