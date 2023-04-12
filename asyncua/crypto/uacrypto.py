@@ -278,7 +278,7 @@ def check_certificate(cert: x509.Certificate, application_uri: str, hostname: Op
             err = True
         if hostname is not None:
             san_dns_names = san.value.get_values_for_type(x509.DNSName)
-            if hostname is not san_dns_names:
+            if not (hostname in san_dns_names):
                 _logger.error(f'certificate does not contain the hostname in DNSNames {hostname}. Some applications will check this.')
                 err = True
     except x509.ExtensionNotFound:
