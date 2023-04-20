@@ -231,7 +231,7 @@ class InternalServer:
 
     def find_servers(self, params, sockname=None):
         servers = []
-        params_server_uris = [uri.split(':') for uri in params.ServerUris]
+        params_server_uris = [uri.split(':') for uri in params.ServerUris] if params.ServerUris else []
         our_application_uris = [edp.Server.ApplicationUri for edp in self.endpoints]
         for desc in self._known_servers.values():
             if params_server_uris:
