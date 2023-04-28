@@ -21,6 +21,10 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
+class InvalidSignature(Exception):
+    pass
+
+
 @dataclass
 class CertProperties:
     path_or_content: Union[bytes, Path, str]
