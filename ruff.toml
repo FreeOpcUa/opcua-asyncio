@@ -1,0 +1,5 @@
+extend-exclude = ["docs", "nodeset", "schemas", "*_auto.py", "event_objects.py", "standard_address_space_services.py"]
+line-length = 999
+[per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"examples/*" = ["F841", "E402"]
