@@ -35,8 +35,8 @@ jobs:
     - name: Lint with ruff and mypy
       run: |
         ruff check .
-        # - name: Lint with mypy
-        # run: |
+    - name: Lint with mypy
+      run: |
         python -m pip install types-aiofiles types-python-dateutil types-pytz
         python -m mypy asyncua/
     - name: Test with pytest
