@@ -235,6 +235,10 @@ class Client:
         return Subscription(self.tloop, aio_sub)
 
     @syncmethod
+    def delete_subscriptions(self, subscription_ids):
+        pass
+
+    @syncmethod
     def get_namespace_index(self, url):
         pass
 

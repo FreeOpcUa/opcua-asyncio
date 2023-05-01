@@ -754,6 +754,12 @@ class Client:
             modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
             return modified_params
 
+    async def delete_subscriptions(self, subscription_ids):
+        """
+        Deletes the provided list of subscription_ids
+        """
+        await self.uaclient.delete_subscriptions(subscription_ids)
+
     def get_keepalive_count(self, period) -> int:
         """
         We request the server to send a Keepalive notification when
