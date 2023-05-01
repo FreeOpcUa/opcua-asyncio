@@ -21,7 +21,7 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class InvalidSignature(Exception):  # noqa: F811
+class InvalidSignature(Exception):  # type: ignore # noqa: F811
     pass
 
 
