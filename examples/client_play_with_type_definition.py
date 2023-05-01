@@ -5,8 +5,8 @@ import logging
 
 from IPython import embed
 
-from asyncua import Client, ua
-from asyncua.common.structures104 import make_structure_code, load_enums
+from asyncua import Client
+from asyncua.common.structures104 import load_enums
 
 
 async def main():

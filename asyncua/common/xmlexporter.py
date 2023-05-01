@@ -8,7 +8,7 @@ import functools
 from collections import OrderedDict
 import xml.etree.ElementTree as Et
 import base64
-from dataclasses import fields, is_dataclass
+from dataclasses import is_dataclass
 from enum import Enum
 
 from asyncua import ua

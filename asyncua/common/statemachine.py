@@ -239,7 +239,7 @@ class StateMachine(object):
         '''
         if not isinstance(state, State):
             raise ValueError(f"Statemachine: {self._name} -> state: {state} is not a instance of StateMachine.State class")
-        if not state_type in [ua.NodeId(2309, 0),ua.NodeId(2307, 0),ua.NodeId(15109,0)]:
+        if state_type not in [ua.NodeId(2309, 0), ua.NodeId(2307, 0), ua.NodeId(15109, 0)]:
             # unknown state type!
             raise ValueError(f"Statemachine: {self._name} -> state_type: {state_type} is not in list: [ua.NodeId(2309, 0),ua.NodeId(2307, 0),ua.NodeId(15109,0)]")
         if not state.name:

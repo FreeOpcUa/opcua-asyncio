@@ -2,7 +2,7 @@ import asyncio
 import logging
 import sys
 sys.path.insert(0, "..")
-from asyncua import Client, Node, ua
+from asyncua import Client
 from asyncua.crypto.security_policies import SecurityPolicyBasic256Sha256
 
 logging.basicConfig(level=logging.INFO)

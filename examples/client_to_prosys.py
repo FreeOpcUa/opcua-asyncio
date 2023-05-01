@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from asyncua import Client, ua
+from asyncua import Client
 
 
 class SubHandler(object):

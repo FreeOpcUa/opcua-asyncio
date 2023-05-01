@@ -10,7 +10,7 @@ from struct import unpack_from
 from pathlib import Path
 import logging
 from urllib.parse import urlparse
-from typing import Coroutine, Tuple
+from typing import Coroutine
 
 from asyncua import ua
 from .user_managers import PermissiveUserManager, UserManager

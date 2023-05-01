@@ -1,5 +1,5 @@
 """
-server side implementation of callback event 
+server side implementation of callback event
 """
 
 from collections import OrderedDict
@@ -84,9 +84,9 @@ class CallbackService(object):
         if not listener:
             del self._listeners[eventName]
         else:
-            for p, l in self._listeners[eventName].items():
-                if l is listener:
-                    self._listeners[eventName].pop(p)
+            for name, mylistener in self._listeners[eventName].items():
+                if mylistener is listener:
+                    self._listeners[eventName].pop(name)
                     return
 
     def addSubscriber(self, subscriber):

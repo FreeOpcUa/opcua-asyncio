@@ -8,7 +8,6 @@ sys.path.insert(0, "..")
 import time
 import asyncio
 
-from IPython import embed
 
 from asyncua import ua, Server
 

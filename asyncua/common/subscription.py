@@ -242,7 +242,7 @@ class Subscription:
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
-            if not type(evtypes) in (list, tuple) and evtypes == ua.ObjectIds.BaseEventType:
+            if type(evtypes) not in (list, tuple) and evtypes == ua.ObjectIds.BaseEventType:
                 # Remove where clause for base event type, for servers that have problems with long WhereClauses.
                 # Also because BaseEventType wants every event we can ommit it. Issue: #1205
                 where_clause_generation = False

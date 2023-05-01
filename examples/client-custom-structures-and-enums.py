@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from asyncua import Client, Node, ua
+from asyncua import Client, ua
 from asyncua.common.structures104 import load_custom_struct
 
 

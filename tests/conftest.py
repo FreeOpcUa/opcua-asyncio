@@ -91,7 +91,7 @@ class ServerProcess(Process):
 
     async def wait_for_start(self):
         with ThreadPoolExecutor() as pool:
-            result = await asyncio.get_running_loop().run_in_executor(pool, self.wait_for_start_sync)
+            await asyncio.get_running_loop().run_in_executor(pool, self.wait_for_start_sync)
 
     def wait_for_start_sync(self):
         with self.cond:

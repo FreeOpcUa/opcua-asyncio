@@ -14,14 +14,14 @@ from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
 
 # We redefine InvalidSignature as part of this module. Do not remove this line.
-from cryptography.exceptions import InvalidSignature # noqa
+from cryptography.exceptions import InvalidSignature  # noqa: F811
 
 from dataclasses import dataclass
 import logging
 _logger = logging.getLogger(__name__)
 
 
-class InvalidSignature(Exception):
+class InvalidSignature(Exception):  # noqa: F811
     pass
 
 
@@ -281,12 +281,12 @@ def check_certificate(cert: x509.Certificate, application_uri: str, hostname: Op
     try:
         san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
         san_uri = san.value.get_values_for_type(x509.UniformResourceIdentifier)
-        if not (application_uri in san_uri):
+        if application_uri not in san_uri:
             _logger.error(f'certificate does not contain the application uri ({application_uri}). Most applications will reject a connection without it.')
             err = True
         if hostname is not None:
             san_dns_names = san.value.get_values_for_type(x509.DNSName)
-            if not (hostname in san_dns_names):
+            if hostname not in san_dns_names:
                 _logger.error(f'certificate does not contain the hostname in DNSNames {hostname}. Some applications will check this.')
                 err = True
     except x509.ExtensionNotFound:

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from asyncua import Server, ua, Node
+from asyncua import Server, ua
 from asyncua.common.statemachine import FiniteStateMachine, State, Transition
 
 logging.basicConfig(level=logging.INFO)

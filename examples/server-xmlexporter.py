@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0, "..")
 import asyncio
 
-from asyncua import ua, Server
+from asyncua import Server
 from asyncua.common.instantiate_util import instantiate
 from asyncua.common.xmlexporter import XmlExporter
 

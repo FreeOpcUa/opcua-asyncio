@@ -625,7 +625,7 @@ def test_datavalue():
 
 def test_variant():
     dv = ua.Variant(True, ua.VariantType.Boolean)
-    assert dv.Value == True
+    assert dv.Value is True
     assert type(dv.Value) == bool
     now = datetime.utcnow()
     v = ua.Variant(now)
@@ -849,7 +849,7 @@ def test_struct_104():
         a: ua.Int32 = 1
         b: Optional[ua.Int32] = None
         c: Optional[ua.String] = None
-        l: List[ua.String] = None
+        l: List[ua.String] = None  # noqa: E741
 
     m = MyStruct()
     data = struct_to_binary(m)

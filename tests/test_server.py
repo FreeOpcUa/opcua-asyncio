@@ -211,7 +211,7 @@ async def test_get_event_from_type_node_Inhereted_AuditEvent(server):
     assert ev.EventType == ua.NodeId(ua.ObjectIds.AuditEventType)
     assert ev.Severity == 1
     assert ev.ActionTimeStamp is None
-    assert ev.Status == False
+    assert ev.Status is False
     assert ev.ServerId is None
     assert ev.ClientAuditEntryId is None
     assert ev.ClientUserId is None
@@ -318,7 +318,7 @@ async def test_eventgenerator_inherited_event(server):
     assert ua.NodeId(ua.ObjectIds.AuditEventType) == ev.EventType
     assert 1 == ev.Severity
     assert ev.ActionTimeStamp is None
-    assert False == ev.Status
+    assert False is ev.Status
     assert ev.ServerId is None
     assert ev.ClientAuditEntryId is None
     assert ev.ClientUserId is None

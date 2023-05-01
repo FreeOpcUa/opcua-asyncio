@@ -1,7 +1,6 @@
 # coding: utf-8
 import asyncio
 import pytest
-import asyncio
 import struct
 
 from asyncua import Client, Server, ua

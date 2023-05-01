@@ -23,7 +23,7 @@ class SubHandler:
             conditionId = event.NodeId.to_string()
             conditionKeys = self.currentConditions.keys()
             # A alarm/condition appears with Retain=True and disappears with Retain=False            
-            if event.Retain and not conditionId in conditionKeys:                          
+            if event.Retain and conditionId not in conditionKeys:                          
                 self.currentConditions[conditionId] = event
             if not event.Retain and conditionId in conditionKeys:
                 del self.currentConditions[conditionId]                

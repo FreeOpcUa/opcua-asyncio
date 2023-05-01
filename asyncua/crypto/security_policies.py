@@ -180,7 +180,7 @@ class Cryptography(CryptographyNone):
         if not self.use_prev_key:
             self.Verifier.verify(data, sig)
         else:
-            _logger.debug(f"Message verification fallback: trying with previous secure channel key")
+            _logger.debug("Message verification fallback: trying with previous secure channel key")
             self.Prev_Verifier.verify(data, sig)
 
     def encrypt(self, data):
@@ -209,7 +209,7 @@ class Cryptography(CryptographyNone):
                 self.Prev_Decryptor = None
                 self.Prev_Verifier.reset()
                 self.Prev_Verifier = None
-                _logger.debug(f"Expired secure_channel keys removed")
+                _logger.debug("Expired secure_channel keys removed")
 
     @property
     def use_prev_key(self):

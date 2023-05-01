@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Coroutine, Iterable, Optional, List, Any
+from typing import Iterable, Optional, List
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession

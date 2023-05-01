@@ -13,7 +13,7 @@ except ImportError:
         shell.interact()
 
 
-from asyncua import ua, Server
+from asyncua import Server
 from asyncua.common.callback import CallbackType
 
 
