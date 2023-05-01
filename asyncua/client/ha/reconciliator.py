@@ -7,7 +7,7 @@ from collections import defaultdict
 from dataclasses import astuple
 from enum import Enum
 from functools import partial
-from typing import TYPE_CHECKING, Dict, Set, Union, List, Optional
+from typing import TYPE_CHECKING, Dict, Set, Union, List
 from sortedcontainers import SortedDict  # type: ignore
 from asyncua import ua, Client
 from pickle import PicklingError

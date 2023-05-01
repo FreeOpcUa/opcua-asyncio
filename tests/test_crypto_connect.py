@@ -4,7 +4,7 @@ import asyncio
 
 from asyncio import TimeoutError
 
-from asyncua.crypto.uacrypto import CertProperties, check_certificate
+from asyncua.crypto.uacrypto import CertProperties
 
 from asyncua import Client
 from asyncua import Server

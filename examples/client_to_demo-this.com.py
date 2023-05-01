@@ -6,7 +6,6 @@ import asyncio
 from IPython import embed
 
 from asyncua import Client
-from asyncua import ua
 
 
 

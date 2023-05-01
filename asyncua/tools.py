@@ -4,7 +4,6 @@ import sys
 import argparse
 from datetime import datetime, timedelta
 import math
-import time
 import concurrent.futures
 
 try:
@@ -589,7 +588,7 @@ async def _uaclient():
 
     try:
         async with client:
-            mynode = await get_node(client, args)
+            await get_node(client, args)
     except (OSError, concurrent.futures.TimeoutError) as e:
         print(e)
         sys.exit(1)
@@ -669,8 +668,8 @@ async def _uaserver():
         await mywritablevar.set_writable()  # Set MyVariable to be writable by clients
         myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
         myarrayvar = await myobj.add_variable(idx, "MyVarArray", [6.7, 7.9])
-        myprop = await myobj.add_property(idx, "MyProperty", "I am a property")
-        mymethod = await myobj.add_method(
+        await myobj.add_property(idx, "MyProperty", "I am a property")
+        await myobj.add_method(
             idx,
             "MyMethod",
             multiply,

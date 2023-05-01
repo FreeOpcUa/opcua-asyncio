@@ -1,9 +1,7 @@
 import time
-import uvloop
 import asyncio
 import sys
 import logging
-import cProfile
 
 sys.path.insert(0, "..")
 from asyncua import Client, ua

@@ -5,7 +5,7 @@ Binary protocol specific functions and constants
 import functools
 import struct
 import logging
-from typing import Any, Callable, Union
+from typing import Any, Callable
 import typing
 import uuid
 from enum import Enum, IntFlag
@@ -284,7 +284,7 @@ def create_dataclass_serializer(dataclazz):
     #       it is possible that the type annotations also refere to classes defined in other modules.
     try:
         resolved_fieldtypes = typing.get_type_hints(dataclazz, {'ua': ua})
-    except NameError as e:
+    except NameError:
         resolved_fieldtypes = typing.get_type_hints(dataclazz)
 
     for f in data_fields:
@@ -657,7 +657,7 @@ def _create_dataclass_deserializer(objtype):
     #       its possible that the type annotations also refere to classes defined in other modules.
     try:
         resolved_fieldtypes = typing.get_type_hints(objtype, {'ua': ua})
-    except NameError as e:
+    except NameError:
         resolved_fieldtypes = typing.get_type_hints(objtype)
 
     for field in fields(objtype):

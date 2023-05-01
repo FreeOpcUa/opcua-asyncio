@@ -6,7 +6,6 @@ sys.path.insert(0, "..")
 from asyncua import Server
 from asyncua import ua
 from asyncua.crypto.permission_rules import SimpleRoleRuleset
-from asyncua.server.users import UserRole
 from asyncua.server.user_managers import CertificateUserManager
 
 logging.basicConfig(level=logging.INFO)

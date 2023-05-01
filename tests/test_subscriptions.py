@@ -5,7 +5,6 @@ from copy import copy
 from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta
 from asyncua.common.subscription import Subscription
-from typing import List
 try:
     from unittest.mock import AsyncMock
 except ImportError:

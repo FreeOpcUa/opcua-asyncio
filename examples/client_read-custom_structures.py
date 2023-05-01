@@ -1,13 +1,11 @@
 import sys
 sys.path.insert(0, "..")
-import time
 import logging
 import asyncio
 
 from IPython import embed
 
 from asyncua import Client
-from asyncua import ua
 
 
 async def main():

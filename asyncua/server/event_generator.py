@@ -64,7 +64,7 @@ class EventGenerator:
         ref.TargetNodeClass = ua.NodeClass.ObjectType
         ref.TargetNodeId = self.event.EventType
         refs.append(ref)
-        results = await self.isession.add_references(refs)
+        await self.isession.add_references(refs)
         # result.StatusCode.check()
 
         self.emitting_node = emitting_node

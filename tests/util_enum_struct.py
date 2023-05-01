@@ -4,6 +4,7 @@ from pathlib import Path
 
 from asyncua import Server, ua
 from asyncua.ua import uatypes
+import asyncua.ua
 
 TEST_DIR = Path(__file__).parent
 
@@ -14,10 +15,7 @@ class ExampleEnum(IntEnum):
     EnumVal3 = 2
 
 
-import asyncua.ua
-
 setattr(asyncua.ua, 'ExampleEnum', ExampleEnum)
-
 
 
 @dataclass

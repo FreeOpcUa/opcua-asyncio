@@ -10,7 +10,7 @@ from enum import Enum, IntEnum
 import uuid
 import re
 import itertools
-from datetime import datetime, timedelta, MAXYEAR, timezone
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 
 # hack to support python < 3.8

@@ -5,7 +5,6 @@ from typing import List
 from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
 from asyncua.common import utils
-from asyncua.ua.uatypes import AccessLevel
 
 OPC_TCP_SCHEME = 'opc.tcp'
 
@@ -82,7 +81,7 @@ class AsymmetricAlgorithmHeader:
     ReceiverCertificateThumbPrint: uatypes.ByteString = None
 
     def __str__(self):
-        size1 = len(self.SenderCertificate) if self.SenderCertificate is not None else None
+        len(self.SenderCertificate) if self.SenderCertificate is not None else None
         size2 = len(self.ReceiverCertificateThumbPrint) if self.ReceiverCertificateThumbPrint is not None else None
         return f'{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI},' \
                f' certificatesize:{size2}, receiverCertificatesize:{size2} )'

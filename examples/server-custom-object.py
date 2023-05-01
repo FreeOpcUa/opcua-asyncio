@@ -8,7 +8,6 @@ import sys
 sys.path.insert(0, "..")
 import asyncio
 
-import asyncua
 
 from asyncua import ua, Server
 

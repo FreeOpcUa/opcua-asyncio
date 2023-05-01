@@ -1,6 +1,5 @@
 import sys
 sys.path.insert(0, "..")
-import os
 # os.environ['PYOPCUA_NO_TYPO_CHECK'] = 'True'
 
 import asyncio
