@@ -154,6 +154,9 @@ class Subscription:
 
     async def _call_event(self, eventlist: ua.EventNotificationList):
         for event in eventlist.Events:
+            if event.ClientHandle not in self._monitored_items:
+                self.logger.warning("Received a notification for unknown handle: %s", event.ClientHandle)
+                continue
             data = self._monitored_items[event.ClientHandle]
             result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)
             result.server_handle = data.server_handle
