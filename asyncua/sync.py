@@ -615,7 +615,11 @@ class Subscription:
         self.aio_obj = sub
 
     @syncmethod
-    def subscribe_data_change(self, nodes, attr=ua.AttributeIds.Value, queuesize=0):
+    def subscribe_data_change(self, nodes: Union[Node, Iterable[Node]],
+                              attr=ua.AttributeIds.Value,
+                              queuesize=0,
+                              monitoring=ua.MonitoringMode.Reporting,
+                              sampling_interval=0.0):
         pass
 
     @syncmethod
