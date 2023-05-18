@@ -48,7 +48,7 @@ class Node:
     """
     def __init__(self, session: AbstractSession, nodeid: Union[ua.NodeId, str, int]):
         self.session = session
-        self.nodeid = None
+        self.nodeid: ua.NodeId
         if isinstance(nodeid, Node):
             self.nodeid = nodeid.nodeid
         elif isinstance(nodeid, ua.NodeId):
