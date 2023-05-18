@@ -865,13 +865,24 @@ class Client:
             node.nodeid = node.basenodeid
             node.basenodeid = None
 
-    async def read_values(self, nodes):
+    async def read_values(self, nodes, depth=2):
         """
         Read the value of multiple nodes in one ua call.
+
+        The 'depth' parameter defines how deep in the 'Value' attributes we
+        should extract
         """
+        if 0 > depth > 2:
+            raise ValueError("'depth' must be between 0 and 2")
         nodeids = [node.nodeid for node in nodes]
         results = await self.uaclient.read_attributes(nodeids, ua.AttributeIds.Value)
-        return [result.Value.Value for result in results]
+        vals = []
+        for r in results:
+            v = r
+            for _ in range(depth):
+                v = v.Value
+            vals.append(v)
+        return vals
 
     async def write_values(self, nodes, values):
         """

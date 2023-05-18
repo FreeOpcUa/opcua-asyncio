@@ -152,7 +152,7 @@ class _SubHandler:
 
     def event_notification(self, event):
         self.sync_handler.event_notification(event)
-        
+
     def status_change_notification(self, status: ua.StatusChangeNotification):
         self.sync_handler.status_change_notification(status)
 
@@ -253,7 +253,7 @@ class Client:
         pass
 
     @syncmethod
-    def read_values(self, nodes):
+    def read_values(self, nodes, depth=2):
         pass
 
     @syncmethod
@@ -704,7 +704,7 @@ def new_enum(  # type: ignore[empty-body]
     name: Union[int, ua.QualifiedName],
     values: List[str],
     optional: bool = False
-) -> SyncNode:   
+) -> SyncNode:
     pass
 
 
