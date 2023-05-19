@@ -878,7 +878,7 @@ class Client:
         """
         Read the value of multiple nodes in one ua call.
         """
-        res = self.read_attributes(nodes, attr=ua.AttributeIds.Value)
+        res = await self.read_attributes(nodes, attr=ua.AttributeIds.Value)
         return [r.Value.Value for r in res]
 
     async def write_values(self, nodes, values):
