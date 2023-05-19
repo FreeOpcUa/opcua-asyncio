@@ -253,7 +253,11 @@ class Client:
         pass
 
     @syncmethod
-    def read_values(self, nodes, depth=2):
+    def read_attributes(self, nodes, attr=ua.AttributeIds.Value):
+        pass
+
+    @syncmethod
+    def read_values(self, nodes):
         pass
 
     @syncmethod
