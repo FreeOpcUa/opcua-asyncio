@@ -865,14 +865,12 @@ class Client:
             node.nodeid = node.basenodeid
             node.basenodeid = None
 
-    async def read_attributes(self, nodes, attr=ua.AttributeIds.Value):
+    async def read_attributes(self, nodes: List[Node], attr=ua.AttributeIds.Value):
         """
         Read the attributes of multiple nodes.
         """
         nodeids = [node.nodeid for node in nodes]
-        return await self.uaclient.read_attributes(
-            nodeids, ua.AttributeIds.Value
-        )
+        return await self.uaclient.read_attributes(nodeids, attr)
 
     async def read_values(self, nodes):
         """
