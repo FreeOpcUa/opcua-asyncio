@@ -865,7 +865,7 @@ class Client:
             node.nodeid = node.basenodeid
             node.basenodeid = None
 
-    async def read_attributes(self, nodes: List[Node], attr=ua.AttributeIds.Value):
+    async def read_attributes(self, nodes: List[Node], attr: ua.AttributeIds = ua.AttributeIds.Value):
         """
         Read the attributes of multiple nodes.
         """
