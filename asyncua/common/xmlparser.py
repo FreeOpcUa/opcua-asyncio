@@ -459,7 +459,7 @@ class XMLParser:
                 date_time = model.attrib.get('PublicationDate')
                 if date_time is None:
                     date_time = ua.DateTime(1, 1, 1)
-                elif date_time and date_time[-1]=="Z":
+                elif date_time is not None and date_time[-1]=="Z":
                     date_time = ua.DateTime.strptime(date_time, "%Y-%m-%dT%H:%M:%SZ")
                 else:
                     date_time = ua.DateTime.strptime(date_time, "%Y-%m-%dT%H:%M:%S%z")
