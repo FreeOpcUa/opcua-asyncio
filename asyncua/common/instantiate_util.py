@@ -36,6 +36,7 @@ async def instantiate(parent, node_type, nodeid: ua.NodeId=None, bname: Union[st
                 instante_list.append(optional)
             else:
                 instante_list.append(ua.QualifiedName.from_string(optional))
+        instantiate_optional = False
     rdesc = await _rdesc_from_node(parent, node_type)
     rdesc.TypeDefinition = node_type.nodeid
     if rdesc.NodeClass in (ua.NodeClass.DataType, ua.NodeClass.ReferenceType, ua.NodeClass.ObjectType, ua.NodeClass.ReferenceType):
@@ -123,7 +124,7 @@ async def _instantiate_node(session,
                         # exclude nodes with optional ModellingRule if requested
                     if refs[0].nodeid in (ua.NodeId(ua.ObjectIds.ModellingRule_Optional), ua.NodeId(ua.ObjectIds.ModellingRule_OptionalPlaceholder)):
                         # instatiate optionals
-                        if not instantiate_optional or c_rdesc.BrowseName not in instantiate_optional_list:
+                        if not instantiate_optional and c_rdesc.BrowseName not in instantiate_optional_list:
                             _logger.info("Instantiate: Skip optional node %s as part of %s", c_rdesc.BrowseName,
                                 addnode.BrowseName)
                             continue
@@ -137,7 +138,8 @@ async def _instantiate_node(session,
                             c_rdesc,
                             nodeid=ua.NodeId(Identifier=inst_nodeid, NamespaceIndex=res.AddedNodeId.NamespaceIndex),
                             bname=c_rdesc.BrowseName,
-                            instantiate_optional=instantiate_optional
+                            instantiate_optional=instantiate_optional,
+                            instantiate_optional_list=instantiate_optional_list
                         )
                     else:
                         nodeids = await _instantiate_node(

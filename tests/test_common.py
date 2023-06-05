@@ -1029,12 +1029,40 @@ async def test_instantiate_string_nodeid(opc):
     assert "Running" == await prop.read_value()
     assert prop.nodeid != prop_t.nodeid
     await opc.opc.delete_nodes([dev_t])
+    await opc.opc.delete_nodes(nodes)
 
 
 async def test_instantiate_abstract(opc):
     finit_statemachine_type = opc.opc.get_node("ns=0;i=2771")  # IsAbstract=True
     with pytest.raises(ua.UaError):
         _ = await instantiate(opc.opc.nodes.objects, finit_statemachine_type, bname="2:TestFiniteStateMachine")
+
+
+async def test_optional_list(opc):
+    # Create device type
+    dev_t = await opc.opc.nodes.base_object_type.add_object_type(0, "MyDeviceOpt")
+    v_t = await dev_t.add_variable(0, "sensor", 1.0)
+    await v_t.set_modelling_rule(True)
+    p_t = await dev_t.add_property(0, "sensor_id", "0340")
+    await p_t.set_modelling_rule(False)
+    s_i = await dev_t.add_property(0, "sensor_info", "xx")
+    await s_i.set_modelling_rule(False)
+    ctrl_t = await dev_t.add_object(2, "controller")
+    await ctrl_t.set_modelling_rule(False)
+    prop_t = await ctrl_t.add_property(0, "state", "Running")
+    await prop_t.set_modelling_rule(False)
+    prop_t = await ctrl_t.add_property(0, "info", "ab")
+    await prop_t.set_modelling_rule(False)
+    nodes = await instantiate(opc.opc.nodes.objects, dev_t, nodeid=ua.NodeId("InstDeviceOpt", 2, ua.NodeIdType.String),
+                              bname="2:InstDeviceOpt", instantiate_optional_list=["sensor_id", ua.QualifiedName("controller", 2)])
+    mydevice = nodes[0]
+    await mydevice.get_child(["0:sensor_id"])
+    await mydevice.get_child([ua.QualifiedName("controller", 2)])
+    with pytest.raises(ua.UaError):
+        ch = await mydevice.get_child(["0:sensor_info"])
+        assert ch is None
+    await opc.opc.delete_nodes(nodes)
+    await opc.opc.delete_nodes([dev_t])
 
 
 async def test_variable_with_datatype(opc):
