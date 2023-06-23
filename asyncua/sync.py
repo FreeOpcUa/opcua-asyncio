@@ -507,6 +507,22 @@ class SyncNode:
         pass
 
     @syncmethod
+    def read_raw_history(self, starttime=None, endtime=None, numvalues=0, return_bounds=True):
+        pass
+
+    @syncmethod
+    def history_read(self, details, continuation_point=None):
+        pass
+
+    @syncmethod
+    def read_event_history(self, starttime=None, endtime=None, numvalues=0, evtypes=ua.ObjectIds.BaseEventType):
+        pass
+
+    @syncmethod
+    def history_read_events(self, details):
+        pass
+
+    @syncmethod
     def set_modelling_rule(self, mandatory: bool):
         pass
 
