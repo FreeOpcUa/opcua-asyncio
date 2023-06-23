@@ -543,7 +543,7 @@ class Node:
         details.ReturnBounds = return_bounds
         history = []
         continuation_point = None
-        while True:
+        while len(history) < numvalues:
             result = await self.history_read(details, continuation_point)
             result.StatusCode.check()
             continuation_point = result.ContinuationPoint
