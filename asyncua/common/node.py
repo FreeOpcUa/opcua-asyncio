@@ -551,7 +551,9 @@ class Node:
             # No more data available
             if continuation_point is None:
                 break
-
+            # No more data needed
+            if numvalues > 0:
+                break
         return history
 
     async def history_read(self, details, continuation_point=None):
