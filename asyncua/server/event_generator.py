@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 import time
 import uuid
-from typing import Optional
 import sys
 
 from asyncua import ua
@@ -25,9 +24,8 @@ class EventGenerator:
         self.logger = logging.getLogger(__name__)
         self.isession = isession
         self.event: event_objects.BaseEvent = None
-        self.emitting_node: Optional[Node] = None
 
-    async def init(self, etype=None, emitting_node=ua.ObjectIds.Server):
+    async def init(self, etype=None, emitting_node=ua.ObjectIds.Server, add_generates_event=True):
         node = None
 
         if isinstance(etype, event_objects.BaseEvent):
@@ -56,26 +54,27 @@ class EventGenerator:
             self.event.SourceName = (await Node(self.isession, self.event.SourceNode).read_browse_name()).Name
 
         await emitting_node.set_event_notifier([ua.EventNotifier.SubscribeToEvents])
-        refs = []
-        ref = ua.AddReferencesItem()
-        ref.IsForward = True
-        ref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.GeneratesEvent)
-        ref.SourceNodeId = emitting_node.nodeid
-        ref.TargetNodeClass = ua.NodeClass.ObjectType
-        ref.TargetNodeId = self.event.EventType
-        refs.append(ref)
-        await self.isession.add_references(refs)
-        # result.StatusCode.check()
 
-        self.emitting_node = emitting_node
+        if add_generates_event:
+            refs = []
+            ref = ua.AddReferencesItem()
+            ref.IsForward = True
+            ref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.GeneratesEvent)
+            ref.SourceNodeId = emitting_node.nodeid
+            ref.TargetNodeClass = ua.NodeClass.ObjectType
+            ref.TargetNodeId = self.event.EventType
+            refs.append(ref)
+            results = await self.isession.add_references(refs)
+            for result in results:
+                result.check()
 
     def __str__(self):
-        return f"EventGenerator(Type:{self.event.EventType}, Emitting Node:{self.emitting_node}, " \
+        return f"EventGenerator(Type:{self.event.EventType}, Emitting Node:{self.event.emitting_node.to_string()}, " \
                f"Time:{self.event.Time}, Message: {self.event.Message})"
 
     __repr__ = __str__
 
-    async def trigger(self, time_attr=None, message=None):
+    async def trigger(self, time_attr=None, message=None, subscription_id=None):
         """
         Trigger the event. This will send a notification to all subscribed clients
         """
@@ -100,4 +99,4 @@ class EventGenerator:
         elif not self.event.Message:
             self.event.Message = ua.LocalizedText((await Node(self.isession, self.event.SourceNode).read_browse_name()).Name).Text
 
-        await self.isession.subscription_service.trigger_event(self.event)
+        await self.isession.subscription_service.trigger_event(self.event, subscription_id=subscription_id)

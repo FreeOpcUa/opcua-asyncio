@@ -235,14 +235,18 @@ class MonitoredItemService:
             return True
         return False
 
-    async def trigger_event(self, event):
+    async def trigger_event(self, event, mid=None):
         if event.emitting_node not in self._monitored_events:
             self.logger.debug("%s has NO subscription for events %s from node: %s", self, event, event.emitting_node)
             return False
+
         self.logger.debug("%s has subscription for events %s from node: %s", self, event, event.emitting_node)
-        mids = self._monitored_events[event.emitting_node]
-        for mid in mids:
+        if mid is not None:
             await self._trigger_event(event, mid)
+        else:
+            mids = self._monitored_events[event.emitting_node]
+            for mid in mids:
+                await self._trigger_event(event, mid)
         return True
 
     async def _trigger_event(self, event, mid: int):
