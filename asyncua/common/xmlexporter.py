@@ -262,7 +262,7 @@ class XmlExporter:
         if useraccesslevel not in (0, ua.AccessLevel.CurrentRead.mask):
             var_el.attrib["UserAccessLevel"] = str(useraccesslevel)
 
-        var = await node.read_attribute(ua.AttributeIds.MinimumSamplingInterval)
+        var = await node.read_attribute(ua.AttributeIds.MinimumSamplingInterval, raise_on_bad_status=False)
         if var.Value.Value:
             var_el.attrib["MinimumSamplingInterval"] = str(var.Value.Value)
         var = await node.read_attribute(ua.AttributeIds.Historizing)
