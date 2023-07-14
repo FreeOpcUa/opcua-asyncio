@@ -70,7 +70,7 @@ async def test_client_connection_lost():
             # check if connection is alive
             await cl.check_connection()
         # check if the status_change_notification was triggered
-        assert myhandler.status == ua.StatusCodes.BadShutdown
+        assert myhandler.status.value == ua.StatusCodes.BadShutdown
         # check if exception is correct rethrown on second call
         with pytest.raises(ConnectionError):
             await cl.check_connection()
