@@ -520,11 +520,11 @@ class Client:
                 _ = await self.nodes.server_state.read_value()
         except ConnectionError as e:
             _logger.info("connection error in watchdog loop %s", e, exc_info=True)
-            await self.uaclient.inform_subscriptions(ua.StatusCodes.BadShutdown)
+            await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
             raise
         except Exception:
             _logger.exception("Error in watchdog loop")
-            await self.uaclient.inform_subscriptions(ua.StatusCodes.BadShutdown)
+            await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
             raise
 
     async def _renew_channel_loop(self):
