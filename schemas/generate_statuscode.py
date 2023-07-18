@@ -54,7 +54,7 @@ if __name__ == "__main__":
             if val & 1 << 31:
                 return 'Bad', 'Unknown StatusCode value: {}'.format(val)
             elif val & 1 << 30:
-                return 'UncertainIn', 'Unknown StatusCode value: {}'.format(val)
+                return 'Uncertain', 'Unknown StatusCode value: {}'.format(val)
             else:
                 return 'Good', 'Unknown StatusCode value: {}'.format(val)
     """)
