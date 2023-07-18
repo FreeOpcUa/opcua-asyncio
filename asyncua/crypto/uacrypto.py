@@ -8,7 +8,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import hmac
-from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers import Cipher
 from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
@@ -85,6 +85,16 @@ def der_from_x509(certificate):
         return b""
     return certificate.public_bytes(serialization.Encoding.DER)
 
+def pem_from_key(private_key: rsa.RSAPrivateKey) -> bytes:
+    """dumps a private key in PEM format
+
+    Args:
+        private_key (rsa.RSAPrivateKey): The privatekey to dump
+
+    Returns:
+        bytes: The private as PEM/PKCS8 format
+    """
+    return private_key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption())
 
 def sign_sha1(private_key, data):
     return private_key.sign(
