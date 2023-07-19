@@ -1,6 +1,4 @@
 """ Several tests for certificate /signing request generation"""
-import pytest
-
 from datetime import datetime, timedelta
 import socket
 from cryptography import x509
