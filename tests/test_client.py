@@ -103,11 +103,14 @@ async def test_multiple_read_and_write_value(server, client):
 
     vals = await client.read_values([v1, v2, v3])
     assert vals == [1, 2, 3]
-    await client.write_values([v1, v2, v3], [4, 5, 6])
+    rets = await client.write_values([v1, v2, v3], [4, 5, 6])
+    assert rets == [ua.StatusCode(value=ua.StatusCodes.Good), ua.StatusCode(value=ua.StatusCodes.Good), ua.StatusCode(value=ua.StatusCodes.Good)]
     vals = await client.read_values([v1, v2, v3])
     assert vals == [4, 5, 6]
     with pytest.raises(ua.uaerrors.BadUserAccessDenied):
         await client.write_values([v1, v2, v_ro], [4, 5, 6])
+    rets = await client.write_values([v1, v2, v_ro], [4, 5, 6], raise_on_partial_error=False)
+    assert rets == [ua.StatusCode(value=ua.StatusCodes.Good), ua.StatusCode(ua.StatusCodes.Good), ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)]
 
 
 async def test_read_and_write_status_check(server, client):

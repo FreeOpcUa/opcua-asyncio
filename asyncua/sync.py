@@ -261,7 +261,7 @@ class Client:
         pass
 
     @syncmethod
-    def write_values(self, nodes, values):
+    def write_values(self, nodes, values, raise_on_partial_error=True):
         pass
 
     def __enter__(self):

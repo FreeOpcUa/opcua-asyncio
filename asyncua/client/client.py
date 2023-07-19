@@ -879,15 +879,17 @@ class Client:
         res = await self.read_attributes(nodes, attr=ua.AttributeIds.Value)
         return [r.Value.Value for r in res]
 
-    async def write_values(self, nodes, values):
+    async def write_values(self, nodes, values, raise_on_partial_error=True):
         """
         Write values to multiple nodes in one ua call
         """
         nodeids = [node.nodeid for node in nodes]
         dvs = [value_to_datavalue(val) for val in values]
         results = await self.uaclient.write_attributes(nodeids, dvs, ua.AttributeIds.Value)
-        for result in results:
-            result.check()
+        if raise_on_partial_error:
+            for result in results:
+                result.check()
+        return results
 
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
