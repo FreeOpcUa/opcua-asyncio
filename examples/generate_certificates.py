@@ -1,5 +1,5 @@
 """ Example of several certficate creation helpers"""
-from typing import Dict
+from typing import Dict, List
 import asyncio
 from pathlib import Path
 import socket
@@ -41,7 +41,7 @@ def generate_private_key_for_myserver():
 
 
 async def generate_self_signed_certificate():
-    subject_alt_names: list[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{HOSTNAME}:foobar:myselfsignedserver"),
+    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{HOSTNAME}:foobar:myselfsignedserver"),
                                                  x509.DNSName(f"{HOSTNAME}")]
 
     # key: RSAPrivateKey = generate_private_key()
@@ -58,7 +58,7 @@ async def generate_self_signed_certificate():
 
 
 def generate_applicationgroup_ca():
-    subject_alt_names: list[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{HOSTNAME}:foobar:myserver"),
+    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{HOSTNAME}:foobar:myserver"),
                                                  x509.DNSName(f"{HOSTNAME}")]
 
     key: RSAPrivateKey = generate_private_key()
@@ -76,7 +76,7 @@ def generate_applicationgroup_ca():
 
 
 async def generate_csr():
-    subject_alt_names: list[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{HOSTNAME}:foobar:myserver"),
+    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{HOSTNAME}:foobar:myserver"),
                                                  x509.DNSName(f"{HOSTNAME}")]
 
     key: RSAPrivateKey = generate_private_key()
@@ -95,12 +95,6 @@ async def generate_csr():
 
 
 async def sign_csr():
-
-    # setup some common data (normally this differs for the CA and the CSR)
-
-    subject_alt_names: list[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{HOSTNAME}:foobar:myserver"),
-                                                 x509.DNSName(f"{HOSTNAME}")]
-
     issuer = await load_certificate(base_certs / 'ca_application.der')
     key_ca = await load_private_key(base_private / 'ca_application.pem')
     csr_file: Path = base_csr / 'myserver.csr'

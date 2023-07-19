@@ -1,4 +1,5 @@
 """ Several tests for certificate /signing request generation"""
+from typing import List
 from datetime import datetime, timedelta
 import socket
 from cryptography import x509
@@ -19,7 +20,7 @@ async def test_create_self_signed_app_certificate():
         'localityName': 'Foo',
         'organizationName': "Bar Ltd",
     }
-    subject_alt_names: list[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
+    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
                                                  x509.DNSName(f"{hostname}")]
 
     extended = [ExtendedKeyUsageOID.CLIENT_AUTH,
@@ -99,7 +100,7 @@ async def test_app_create_certificate_signing_request():
         'localityName': 'Foo',
         'organizationName': "Bar Ltd",
     }
-    subject_alt_names: list[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
+    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
                                                  x509.DNSName(f"{hostname}")]
 
     extended = [ExtendedKeyUsageOID.CLIENT_AUTH,
@@ -148,7 +149,7 @@ async def test_app_sign_certificate_request():
         'localityName': 'Foo',
         'organizationName': "Bar Ltd",
     }
-    subject_alt_names: list[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
+    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
                                                  x509.DNSName(f"{hostname}")]
 
     extended = [ExtendedKeyUsageOID.CLIENT_AUTH,
