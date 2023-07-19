@@ -1,7 +1,7 @@
 """
     crypothelper contains helper functions to isolate the lower level cryto stuff from the GDS client.
 """
-
+from typing import Dict
 import datetime
 
 from cryptography import x509
@@ -16,11 +16,11 @@ from cryptography.x509.extensions import _key_identifier_from_public_key as key_
 ONE_DAY = datetime.timedelta(1, 0, 0)
 """ Shorthand for delta of 1 day """
 
-OID_NAME_MAP: dict[str, x509.ObjectIdentifier] = {name: oid for oid, name in OID_NAMES.items()}
+OID_NAME_MAP: Dict[str, x509.ObjectIdentifier] = {name: oid for oid, name in OID_NAMES.items()}
 """ Create lookup table for x509.ObjectIdentifier based on textual name, by swapping key<>value of the available mapping"""
 
 
-def _names_to_nameattributes(names: dict[str, str]) -> list[x509.NameAttribute]:
+def _names_to_nameattributes(names: Dict[str, str]) -> list[x509.NameAttribute]:
     """Convert a dict with key/value of an x509.NameAttribute list
 
     Args:
@@ -59,7 +59,7 @@ def dump_private_key_as_pem(private_key: rsa.RSAPrivateKey) -> bytes:
 
 def generate_self_signed_app_certificate(private_key: rsa.RSAPrivateKey,
                                          common_name: str,
-                                         names: dict[str, str],
+                                         names: Dict[str, str],
                                          subject_alt_names: list[x509.GeneralName],
                                          extended: list[x509.ObjectIdentifier],
                                          days: int = 365) -> x509.Certificate:
@@ -137,7 +137,7 @@ def generate_self_signed_app_certificate(private_key: rsa.RSAPrivateKey,
 
 def generate_app_certificate_signing_request(private_key: rsa.RSAPrivateKey,
                                              common_name: str,
-                                             names: dict[str, str],
+                                             names: Dict[str, str],
                                              subject_alt_names: list[x509.GeneralName],
                                              extended: list[x509.ObjectIdentifier]
                                              ) -> x509.CertificateSigningRequest:
