@@ -1,4 +1,5 @@
 """ Example of several certficate creation helpers"""
+from typing import Dict
 import asyncio
 from pathlib import Path
 import socket
@@ -14,7 +15,7 @@ from asyncua.crypto.cert_gen import generate_private_key, generate_self_signed_a
 HOSTNAME: str = socket.gethostname()
 
 # used for subject common part
-NAMES: dict[str, str] = {
+NAMES: Dict[str, str] = {
     'countryName': 'NL',
     'stateOrProvinceName': 'ZH',
     'localityName': 'Foo',
