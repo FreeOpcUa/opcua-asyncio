@@ -399,6 +399,29 @@ async def test_get_node_by_nodeid(opc):
     assert server_time_node == correct
 
 
+async def test_get_children_by_path(opc):
+    root = opc.opc.nodes.root
+    [server_time_nodes] = await root.get_children_by_path([['0:Objects', '0:Server', '0:ServerStatus', '0:CurrentTime']])
+    correct = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
+    assert len(server_time_nodes) == 1
+    assert server_time_nodes[0] == correct
+    with pytest.raises(ua.UaStatusCodeError) as e:
+        await root.get_children_by_path([['0:Objects', '0:Server', '0:ServerStatus', '0:CurrentTime'], ['0:Objects', '0:Unknown']])
+    assert e.type == ua.UaStatusCodeErrors
+    assert e.value.codes == [ua.StatusCodes.Good, ua.StatusCodes.BadNoMatch]
+    assert e.value.code == ua.StatusCodes.BadNoMatch
+    [server_time_nodes, unknown] = await root.get_children_by_path(
+        [
+            ['0:Objects', '0:Server', '0:ServerStatus', '0:CurrentTime'],
+            ['0:Objects', '0:Unknown']
+        ],
+        raise_on_partial_error=False
+    )
+    assert len(server_time_nodes) == 1
+    assert server_time_nodes[0] == correct
+    assert unknown is None
+
+
 async def test_datetime_read_value(opc):
     time_node = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
     dt = await time_node.read_value()
@@ -553,6 +576,10 @@ async def test_same_browse_name(opc):
     o2 = await f.add_object('ns=2;i=204;', '2:MyBName')
     v2 = await o2.add_variable('ns=2;i=205;', '2:MyBNameTarget', 2.0)
     nodes = await objects.get_child(['2:MyBNameFolder', '2:MyBName', '2:MyBNameTarget'], return_all=True)
+    assert len(nodes) == 2
+    assert nodes[0] == v
+    assert nodes[1] == v2
+    [nodes] = await objects.get_children_by_path([['2:MyBNameFolder', '2:MyBName', '2:MyBNameTarget']])
     assert len(nodes) == 2
     assert nodes[0] == v
     assert nodes[1] == v2

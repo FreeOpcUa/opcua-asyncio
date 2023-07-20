@@ -508,6 +508,39 @@ class Node:
             return [Node(self.session, target.TargetId) for target in result.Targets]
         return Node(self.session, result.Targets[0].TargetId)
 
+    async def get_children_by_path(self, paths, raise_on_partial_error=True):
+        """
+        get children specified by their paths from this node.
+        A path might be:
+        * a string representing a qualified name.
+        * a qualified name
+        * a list of string
+        * a list of qualified names
+        """
+        bpaths = []
+        for path in paths:
+            if type(path) not in (list, tuple):
+                path = [path]
+            rpath = self._make_relative_path(path)
+            bpath = ua.BrowsePath()
+            bpath.StartingNode = self.nodeid
+            bpath.RelativePath = rpath
+            bpaths.append(bpath)
+
+        results = await self.session.translate_browsepaths_to_nodeids(bpaths)
+        try:
+            if raise_on_partial_error:
+                for result in results:
+                    result.StatusCode.check()
+        except ua.UaStatusCodeError:
+            codes = [result.StatusCode.value for result in results]
+            raise ua.UaStatusCodeErrors(codes)
+        return [
+            [Node(self.session, target.TargetId) for target in result.Targets]
+            if result.StatusCode.is_good() else None
+            for result in results
+        ]
+
     def _make_relative_path(self, path):
         rpath = ua.RelativePath()
         for item in path:

@@ -66,6 +66,36 @@ class UaStatusCodeError(UaError):
         return self.args[0]
 
 
+class UaStatusCodeErrors(UaStatusCodeError):
+    def __new__(cls, *args):
+        # use the default implementation
+        self = UaError.__new__(cls, *args)
+        return self
+
+    def __init__(self, codes):
+        """
+        :param codes: The codes of the results.
+        """
+        self.codes = codes
+
+    def __str__(self):
+        # import here to avoid circular import problems
+        import asyncua.ua.status_codes as status_codes
+
+        return "[{0}]".format(", ".join(["{1}({0})".format(*status_codes.get_name_and_doc(code)) for code in self.codes]))
+
+    @property
+    def code(self):
+        """
+        The code of the status error.
+        """
+        # import here to avoid circular import problems
+        from asyncua.ua.uatypes import StatusCode
+
+        error_codes = [code for code in self.codes if not StatusCode(code).is_good()]
+        return error_codes[0] if len(error_codes) > 0 else None
+
+
 class UaStringParsingError(UaError):
     pass
 

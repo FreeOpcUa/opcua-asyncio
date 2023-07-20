@@ -507,6 +507,10 @@ class SyncNode:
         pass
 
     @syncmethod
+    def get_children_by_path(self, paths, raise_on_partial_error=True):
+        pass
+
+    @syncmethod
     def read_raw_history(self, starttime=None, endtime=None, numvalues=0, return_bounds=True):
         pass
 
