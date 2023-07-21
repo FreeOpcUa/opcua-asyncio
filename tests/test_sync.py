@@ -4,7 +4,21 @@ import tempfile
 
 import pytest
 
-from asyncua.sync import Client, Server, ThreadLoop, SyncNode, call_method_full, XmlExporter, new_enum, new_struct, new_struct_field
+from asyncua.client import Client as AsyncClient
+from asyncua.client.ua_client import UaClient
+from asyncua.sync import (
+    Client,
+    Server,
+    ThreadLoop,
+    SyncNode,
+    call_method_full,
+    XmlExporter,
+    new_enum,
+    new_struct,
+    new_struct_field,
+    sync_async_client_method,
+    sync_uaclient_method,
+)
 from asyncua import ua, uamethod
 
 
@@ -59,6 +73,24 @@ def test_sync_client(client, idx):
     client.load_type_definitions()
     myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
     assert myvar.read_value() == 6.7
+
+
+def test_sync_uaclient_method(client, idx):
+    client.load_type_definitions()
+    myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
+    read_attributes = sync_uaclient_method(UaClient.read_attributes)(client)
+    results = read_attributes([myvar.nodeid], attr=ua.AttributeIds.Value)
+    assert len(results) == 1
+    assert results[0].Value.Value == 6.7
+
+
+def test_sync_async_client_method(client, idx):
+    client.load_type_definitions()
+    myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
+    read_attributes = sync_async_client_method(AsyncClient.read_attributes)(client)
+    results = read_attributes([myvar], attr=ua.AttributeIds.Value)
+    assert len(results) == 1
+    assert results[0].Value.Value == 6.7
 
 
 def test_sync_client_get_node(client):

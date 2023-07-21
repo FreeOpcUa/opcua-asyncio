@@ -2,6 +2,7 @@
 sync API of asyncua
 """
 import asyncio
+import functools
 from pathlib import Path
 from threading import Thread, Condition
 import logging
@@ -98,28 +99,73 @@ def syncmethod(func):
     return wrapper
 
 
+def sync_wrapper(aio_func):
+    def wrapper(*args, **kwargs):
+        if not args:
+            raise RuntimeError("first argument of function must a ThreadLoop object")
+        if isinstance(args[0], ThreadLoop):
+            tloop = args[0]
+            args = list(args)[1:]
+        elif hasattr(args[0], "tloop"):
+            tloop = args[0].tloop
+        else:
+            raise RuntimeError("first argument of function must a ThreadLoop object")
+        args, kwargs = _to_async(args, kwargs)
+        result = tloop.post(aio_func(*args, **kwargs))
+        return _to_sync(tloop, result)
+
+    return wrapper
+
+
 def syncfunc(aio_func):
     """
     decorator for sync function
     """
     def decorator(func, *args, **kwargs):
-        def wrapper(*args, **kwargs):
-            if not args:
-                raise RuntimeError("first argument of function must a ThreadLoop object")
-            if isinstance(args[0], ThreadLoop):
-                tloop = args[0]
-                args = list(args)[1:]
-            elif hasattr(args[0], "tloop"):
-                tloop = args[0].tloop
-            else:
-                raise RuntimeError("first argument of function must a ThreadLoop object")
-            args, kwargs = _to_async(args, kwargs)
-            result = tloop.post(aio_func(*args, **kwargs))
-            return _to_sync(tloop, result)
-
-        return wrapper
+        return sync_wrapper(aio_func)
 
     return decorator
+
+
+def sync_uaclient_method(aio_func):
+    """
+    Usage:
+
+    ```python
+    from asyncua.client.ua_client import UaClient
+    from asyncua.sync import Client
+
+    with Client('otp.tcp://localhost') as client:
+        read_attributes = sync_uaclient_method(UaClient.read_attributes)(client)
+        results = read_attributes(...)
+        ...
+    ```
+    """
+    def sync_method(client: 'Client'):
+        uaclient = client.aio_obj.uaclient
+        return functools.partial(sync_wrapper(aio_func), client.tloop, uaclient)
+
+    return sync_method
+
+
+def sync_async_client_method(aio_func):
+    """
+    Usage:
+
+    ```python
+    from asyncua.client import Client as AsyncClient
+    from asyncua.sync import Client
+
+    with Client('otp.tcp://localhost') as client:
+        read_attributes = sync_async_client_method(AsyncClient.read_attributes)(client)
+        results = read_attributes(...)
+        ...
+    ```
+    """
+    def sync_method(client: 'Client'):
+        return functools.partial(sync_wrapper(aio_func), client.tloop, client)
+
+    return sync_method
 
 
 @syncfunc(aio_func=common.methods.call_method_full)
