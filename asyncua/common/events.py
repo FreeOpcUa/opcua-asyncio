@@ -3,7 +3,7 @@ from typing import Dict, List, TYPE_CHECKING
 from asyncua import ua
 import asyncua
 from ..ua.uaerrors import UaError
-from .ua_utils import get_node_subtypes
+from .ua_utils import get_node_subtypes, is_subtype
 if TYPE_CHECKING:
     from asyncua.common.node import Node
 
@@ -178,10 +178,19 @@ async def _select_clause_from_childs(child: "Node", refs: List[ua.ReferenceDescr
 async def select_clauses_from_evtype(evtypes: List["Node"]):
     select_clauses = []
     already_selected = {}
+    add_condition_id = False
     for evtype in evtypes:
+        if not add_condition_id and await is_subtype(evtype, ua.NodeId(ua.ObjectIds.ConditionType)):
+            add_condition_id = True
         refs = await select_event_attributes_from_type_node(evtype, lambda n: n.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK))
         if refs:
             await _select_clause_from_childs(evtype, refs, select_clauses, already_selected, [])
+    if add_condition_id:
+        # also request ConditionId, which is not modelled as a component of the ConditionType
+        op = ua.SimpleAttributeOperand()
+        op.AttributeId = ua.AttributeIds.NodeId
+        op.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)
+        select_clauses.append(op)
     return select_clauses
 
 

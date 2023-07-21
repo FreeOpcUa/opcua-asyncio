@@ -39,6 +39,9 @@ class EventGenerator:
 
         if node:
             self.event = await events.get_event_obj_from_type_node(node)
+            if isinstance(self.event, event_objects.Condition):
+                # Add ConditionId, which is not modelled as a component of the ConditionType
+                self.event.add_property('NodeId', None, ua.VariantType.NodeId)
 
         if isinstance(emitting_node, Node):
             pass

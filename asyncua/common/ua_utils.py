@@ -211,6 +211,17 @@ async def get_node_supertype(node):
     return None
 
 
+async def is_subtype(node, supertype):
+    """
+    return if a node is a subtype of a specified nodeid
+    """
+    while node:
+        if node.nodeid == supertype:
+            return True
+        node = await get_node_supertype(node)
+    return False
+
+
 async def is_child_present(node, browsename):
     """
     return if a browsename is present a child from the provide node
