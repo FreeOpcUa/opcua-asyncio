@@ -601,6 +601,16 @@ async def test_get_event_attributes_from_type_node_AlarmConditionType(opc):
         assert child in allVariables
 
 
+async def test_get_filter(opc):
+    auditType = opc.opc.get_node(ua.ObjectIds.AuditEventType)
+    baseType = opc.opc.get_node(ua.ObjectIds.BaseEventType)
+    properties = await baseType.get_properties()
+    properties.extend(await auditType.get_properties())
+    evfilter = await asyncua.common.events.get_filter_from_event_type([auditType])
+    # Check number of elements in select clause
+    assert len(evfilter.SelectClauses) == len(properties)
+
+
 async def test_get_filter_from_ConditionType(opc):
     condType = opc.opc.get_node(ua.ObjectIds.ConditionType)
     baseType = opc.opc.get_node(ua.ObjectIds.BaseEventType)
@@ -613,13 +623,15 @@ async def test_get_filter_from_ConditionType(opc):
         subproperties.extend(await var.get_properties())
     evfilter = await asyncua.common.events.get_filter_from_event_type([condType])
     # Check number of elements in select clause
-    assert len(evfilter.SelectClauses) == (len(properties) + len(variables) + len(subproperties))
+    assert len(evfilter.SelectClauses) == (len(properties) + len(variables) + len(subproperties) + 1)
     # Check browse path variable with property
     browsePathList = [o.BrowsePath for o in evfilter.SelectClauses if o.BrowsePath]
     browsePathEnabledState = [ua.uatypes.QualifiedName("EnabledState")]
     browsePathEnabledStateId = [ua.uatypes.QualifiedName("EnabledState"), ua.uatypes.QualifiedName("Id")]
     assert browsePathEnabledState in browsePathList
     assert browsePathEnabledStateId in browsePathList
+    # Check for additional NodeId attribute, which is not directly contained in ConditionType
+    assert len([o for o in evfilter.SelectClauses if o.AttributeId == ua.AttributeIds.NodeId]) == 1
     # Check some subtypes in where clause
     alarmType = opc.opc.get_node(ua.ObjectIds.AlarmConditionType)
     systemType = opc.opc.get_node(ua.ObjectIds.SystemOffNormalAlarmType)

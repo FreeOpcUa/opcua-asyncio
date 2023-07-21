@@ -273,17 +273,7 @@ class Subscription:
         MaxUInt32 for max queue size
         :return: Handle for changing/cancelling of the subscription
         """
-        sourcenode = Node(self.server, sourcenode)
-        if evfilter is None:
-            evfilter = await self._create_eventfilter(evtypes)
-        # Add SimpleAttribute for NodeId if missing.
-        matches = [a for a in evfilter.SelectClauses if a.AttributeId == ua.AttributeIds.NodeId]
-        if not matches:
-            conditionIdOperand = ua.SimpleAttributeOperand()
-            conditionIdOperand.TypeDefinitionId = ua.NodeId(ua.ObjectIds.ConditionType)
-            conditionIdOperand.AttributeId = ua.AttributeIds.NodeId
-            evfilter.SelectClauses.append(conditionIdOperand)
-        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)  # type: ignore
+        return await self.subscribe_events(sourcenode, evtypes, evfilter, queuesize)
 
     async def _subscribe(
         self,
