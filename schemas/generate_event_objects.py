@@ -80,7 +80,7 @@ from .events import Event
             return "ua.LocalizedText(message)"
         elif reference.refBrowseName == "LocalTime":
             return "ua.uaprotocol_auto.TimeZoneDataType()"
-        elif reference.refDataType == "NodeId":
+        elif reference.refBrowseName == "EventType":
             return "ua.NodeId(ua.ObjectIds.{0})".format(
                 str(ob_ids.ObjectIdNames[int(str(reference.refId).split("=")[1])]).split("_")[0])
         else:

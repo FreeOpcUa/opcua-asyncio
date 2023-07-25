@@ -6,7 +6,7 @@ Model Uri:http://opcfoundation.org/UA/"
 Version:1.05.01"
 Publication date:2022-02-24T00:00:00Z"
 
-File creation Date:2022-09-22 16:18:40.843698"
+File creation Date:2023-07-25 09:08:45.084676"
 """
 from asyncua import ua
 from .events import Event
@@ -90,7 +90,7 @@ class AuditSessionEvent(AuditSecurityEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditSessionEventType)
-        self.add_property('SessionId', ua.NodeId(ua.ObjectIds.AuditSessionEventType), ua.VariantType.NodeId)
+        self.add_property('SessionId', None, ua.VariantType.NodeId)
 
 
 class AuditCreateSessionEvent(AuditSessionEvent):
@@ -272,7 +272,7 @@ class AuditHistoryUpdateEvent(AuditUpdateEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryUpdateEventType)
-        self.add_property('ParameterDataTypeId', ua.NodeId(ua.ObjectIds.AuditHistoryUpdateEventType), ua.VariantType.NodeId)
+        self.add_property('ParameterDataTypeId', None, ua.VariantType.NodeId)
 
 
 class AuditUpdateMethodEvent(AuditEvent):
@@ -282,7 +282,7 @@ class AuditUpdateMethodEvent(AuditEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditUpdateMethodEventType)
-        self.add_property('MethodId', ua.NodeId(ua.ObjectIds.AuditUpdateMethodEventType), ua.VariantType.NodeId)
+        self.add_property('MethodId', None, ua.VariantType.NodeId)
         self.add_property('InputArguments', None, ua.VariantType.Variant)
 
 
@@ -386,12 +386,12 @@ class Condition(BaseEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.ConditionType)
-        self.add_property('ConditionClassId', ua.NodeId(ua.ObjectIds.ConditionType), ua.VariantType.NodeId)
+        self.add_property('ConditionClassId', None, ua.VariantType.NodeId)
         self.add_property('ConditionClassName', None, ua.VariantType.LocalizedText)
-        self.add_property('ConditionSubClassId', ua.NodeId(ua.ObjectIds.ConditionType), ua.VariantType.NodeId)
+        self.add_property('ConditionSubClassId', None, ua.VariantType.NodeId)
         self.add_property('ConditionSubClassName', None, ua.VariantType.LocalizedText)
         self.add_property('ConditionName', None, ua.VariantType.String)
-        self.add_property('BranchId', ua.NodeId(ua.ObjectIds.ConditionType), ua.VariantType.NodeId)
+        self.add_property('BranchId', None, ua.VariantType.NodeId)
         self.add_property('Retain', None, ua.VariantType.Boolean)
         self.add_property('EnabledState/Id', None, ua.VariantType.Boolean)
         self.add_property('EnabledState/EffectiveDisplayName', None, ua.VariantType.LocalizedText)
@@ -524,7 +524,7 @@ class AlarmCondition(AcknowledgeableCondition):
         self.add_property('ActiveState/TrueState', None, ua.VariantType.LocalizedText)
         self.add_property('ActiveState/FalseState', None, ua.VariantType.LocalizedText)
         self.add_variable('ActiveState', None, ua.VariantType.LocalizedText)
-        self.add_property('InputNode', ua.NodeId(ua.ObjectIds.AlarmConditionType), ua.VariantType.NodeId)
+        self.add_property('InputNode', None, ua.VariantType.NodeId)
         self.add_property('SuppressedState/Id', None, ua.VariantType.Boolean)
         self.add_property('SuppressedState/TransitionTime', None, ua.NodeId(ua.ObjectIds.UtcTime))
         self.add_property('SuppressedState/TrueState', None, ua.VariantType.LocalizedText)
@@ -588,7 +588,7 @@ class AuditHistoryEventUpdateEvent(AuditHistoryUpdateEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryEventUpdateEventType)
-        self.add_property('UpdatedNode', ua.NodeId(ua.ObjectIds.AuditHistoryEventUpdateEventType), ua.VariantType.NodeId)
+        self.add_property('UpdatedNode', None, ua.VariantType.NodeId)
         self.add_property('PerformInsertReplace', None, ua.NodeId(ua.ObjectIds.PerformUpdateType))
         self.add_property('Filter', None, ua.NodeId(ua.ObjectIds.EventFilter))
         self.add_property('NewValues', None, ua.NodeId(ua.ObjectIds.HistoryEventFieldList))
@@ -602,7 +602,7 @@ class AuditHistoryValueUpdateEvent(AuditHistoryUpdateEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryValueUpdateEventType)
-        self.add_property('UpdatedNode', ua.NodeId(ua.ObjectIds.AuditHistoryValueUpdateEventType), ua.VariantType.NodeId)
+        self.add_property('UpdatedNode', None, ua.VariantType.NodeId)
         self.add_property('PerformInsertReplace', None, ua.NodeId(ua.ObjectIds.PerformUpdateType))
         self.add_property('NewValues', None, ua.NodeId(ua.ObjectIds.DataValue))
         self.add_property('OldValues', None, ua.NodeId(ua.ObjectIds.DataValue))
@@ -615,7 +615,7 @@ class AuditHistoryDeleteEvent(AuditHistoryUpdateEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditHistoryDeleteEventType)
-        self.add_property('UpdatedNode', ua.NodeId(ua.ObjectIds.AuditHistoryDeleteEventType), ua.VariantType.NodeId)
+        self.add_property('UpdatedNode', None, ua.VariantType.NodeId)
 
 
 class AuditHistoryRawModifyDeleteEvent(AuditHistoryDeleteEvent):
@@ -669,7 +669,7 @@ class ProgramTransitionAuditEvent(AuditUpdateStateEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.ProgramTransitionAuditEventType)
-        self.add_property('Transition/Id', ua.NodeId(ua.ObjectIds.ProgramTransitionAuditEventType), ua.VariantType.NodeId)
+        self.add_property('Transition/Id', None, ua.VariantType.NodeId)
         self.add_variable('Transition', None, ua.VariantType.LocalizedText)
 
 
@@ -742,8 +742,8 @@ class ExclusiveDeviationAlarm(ExclusiveLimitAlarm):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.ExclusiveDeviationAlarmType)
-        self.add_property('SetpointNode', ua.NodeId(ua.ObjectIds.ExclusiveDeviationAlarmType), ua.VariantType.NodeId)
-        self.add_property('BaseSetpointNode', ua.NodeId(ua.ObjectIds.ExclusiveDeviationAlarmType), ua.VariantType.NodeId)
+        self.add_property('SetpointNode', None, ua.VariantType.NodeId)
+        self.add_property('BaseSetpointNode', None, ua.VariantType.NodeId)
 
 
 class NonExclusiveLimitAlarm(LimitAlarm):
@@ -803,8 +803,8 @@ class NonExclusiveDeviationAlarm(NonExclusiveLimitAlarm):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.NonExclusiveDeviationAlarmType)
-        self.add_property('SetpointNode', ua.NodeId(ua.ObjectIds.NonExclusiveDeviationAlarmType), ua.VariantType.NodeId)
-        self.add_property('BaseSetpointNode', ua.NodeId(ua.ObjectIds.NonExclusiveDeviationAlarmType), ua.VariantType.NodeId)
+        self.add_property('SetpointNode', None, ua.VariantType.NodeId)
+        self.add_property('BaseSetpointNode', None, ua.VariantType.NodeId)
 
 
 class DiscreteAlarm(AlarmCondition):
@@ -823,7 +823,7 @@ class OffNormalAlarm(DiscreteAlarm):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.OffNormalAlarmType)
-        self.add_property('NormalState', ua.NodeId(ua.ObjectIds.OffNormalAlarmType), ua.VariantType.NodeId)
+        self.add_property('NormalState', None, ua.VariantType.NodeId)
 
 
 class TripAlarm(OffNormalAlarm):
@@ -901,8 +901,8 @@ class CertificateUpdatedAuditEvent(AuditUpdateMethodEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.CertificateUpdatedAuditEventType)
-        self.add_property('CertificateGroup', ua.NodeId(ua.ObjectIds.CertificateUpdatedAuditEventType), ua.VariantType.NodeId)
-        self.add_property('CertificateType', ua.NodeId(ua.ObjectIds.CertificateUpdatedAuditEventType), ua.VariantType.NodeId)
+        self.add_property('CertificateGroup', None, ua.VariantType.NodeId)
+        self.add_property('CertificateType', None, ua.VariantType.NodeId)
 
 
 class CertificateExpirationAlarm(SystemOffNormalAlarm):
@@ -914,7 +914,7 @@ class CertificateExpirationAlarm(SystemOffNormalAlarm):
         self.EventType = ua.NodeId(ua.ObjectIds.CertificateExpirationAlarmType)
         self.add_property('ExpirationDate', None, ua.VariantType.DateTime)
         self.add_property('ExpirationLimit', None, ua.NodeId(ua.ObjectIds.Duration))
-        self.add_property('CertificateType', ua.NodeId(ua.ObjectIds.CertificateExpirationAlarmType), ua.VariantType.NodeId)
+        self.add_property('CertificateType', None, ua.VariantType.NodeId)
         self.add_property('Certificate', None, ua.VariantType.ByteString)
 
 
@@ -934,8 +934,8 @@ class PubSubStatusEvent(SystemEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.PubSubStatusEventType)
-        self.add_property('ConnectionId', ua.NodeId(ua.ObjectIds.PubSubStatusEventType), ua.VariantType.NodeId)
-        self.add_property('GroupId', ua.NodeId(ua.ObjectIds.PubSubStatusEventType), ua.VariantType.NodeId)
+        self.add_property('ConnectionId', None, ua.VariantType.NodeId)
+        self.add_property('GroupId', None, ua.VariantType.NodeId)
         self.add_property('State', None, ua.NodeId(ua.ObjectIds.PubSubState))
 
 
@@ -967,7 +967,7 @@ class DiscrepancyAlarm(AlarmCondition):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.DiscrepancyAlarmType)
-        self.add_property('TargetValueNode', ua.NodeId(ua.ObjectIds.DiscrepancyAlarmType), ua.VariantType.NodeId)
+        self.add_property('TargetValueNode', None, ua.VariantType.NodeId)
         self.add_property('ExpectedTime', None, ua.NodeId(ua.ObjectIds.Duration))
         self.add_property('Tolerance', None, ua.VariantType.Double)
 
@@ -1074,7 +1074,7 @@ class TrustListOutOfDateAlarm(SystemOffNormalAlarm):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.TrustListOutOfDateAlarmType)
-        self.add_property('TrustListId', ua.NodeId(ua.ObjectIds.TrustListOutOfDateAlarmType), ua.VariantType.NodeId)
+        self.add_property('TrustListId', None, ua.VariantType.NodeId)
         self.add_property('LastUpdateTime', None, ua.NodeId(ua.ObjectIds.UtcTime))
         self.add_property('UpdateFrequency', None, ua.NodeId(ua.ObjectIds.Duration))
 
@@ -1096,8 +1096,8 @@ class AuditClientUpdateMethodResultEvent(AuditClientEvent):
     def __init__(self, sourcenode=None, message=None, severity=1):
         super().__init__(sourcenode, message, severity)
         self.EventType = ua.NodeId(ua.ObjectIds.AuditClientUpdateMethodResultEventType)
-        self.add_property('ObjectId', ua.NodeId(ua.ObjectIds.AuditClientUpdateMethodResultEventType), ua.VariantType.NodeId)
-        self.add_property('MethodId', ua.NodeId(ua.ObjectIds.AuditClientUpdateMethodResultEventType), ua.VariantType.NodeId)
+        self.add_property('ObjectId', None, ua.VariantType.NodeId)
+        self.add_property('MethodId', None, ua.VariantType.NodeId)
         self.add_property('StatusCodeId', None, ua.VariantType.StatusCode)
         self.add_property('InputArguments', None, ua.NodeId(ua.ObjectIds.Argument))
         self.add_property('OutputArguments', None, ua.NodeId(ua.ObjectIds.Argument))
