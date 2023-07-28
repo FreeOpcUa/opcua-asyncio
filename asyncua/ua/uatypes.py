@@ -683,7 +683,7 @@ class QualifiedName:
         return f"{self.NamespaceIndex}:{self.Name}"
 
     @staticmethod
-    def from_string(string):
+    def from_string(string, default_idx=0):
         if ":" in string:
             try:
                 idx, name = string.split(":", 1)
@@ -691,7 +691,7 @@ class QualifiedName:
             except (TypeError, ValueError) as ex:
                 raise UaStringParsingError(f"Error parsing string {string}", ex) from ex
         else:
-            idx = 0
+            idx = default_idx
             name = string
         return QualifiedName(Name=name, NamespaceIndex=idx)
 
