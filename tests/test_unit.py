@@ -451,6 +451,17 @@ def test_nodeid_string():
     # nid1 = ua.StringNodeId(1, 2)
 
 
+def test_qualifiedname_string():
+    qname1 = ua.QualifiedName.from_string("Name")
+    assert (0, "Name") == (qname1.NamespaceIndex, qname1.Name)
+    qname2 = ua.QualifiedName.from_string("1:Name")
+    assert (1, "Name") == (qname2.NamespaceIndex, qname2.Name)
+    qname3 = ua.QualifiedName.from_string("Name", default_idx=2)
+    assert (2, "Name") == (qname3.NamespaceIndex, qname3.Name)
+    qname4 = ua.QualifiedName.from_string("3:Name", default_idx=2)
+    assert (3, "Name") == (qname4.NamespaceIndex, qname4.Name)
+
+
 def test_bad_string():
     with pytest.raises(ua.UaStringParsingError):
         ua.NodeId.from_string("ns=r;s=yu")
