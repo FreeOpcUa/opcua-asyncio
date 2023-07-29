@@ -231,6 +231,11 @@ def test_string_to_variant_datetime_string():
     assert arr_datetime == string_to_val(s_arr_datetime, ua.VariantType.DateTime)
 
 
+def test_string_not_an_array():
+    s_not_an_array = "[this] is not an array"
+    assert s_not_an_array == string_to_val(s_not_an_array, ua.VariantType.String)
+
+
 def test_string_to_variant_nodeid():
     s_arr_nodeid = "[ns=2;i=56, i=45]"
     arr_nodeid = [ua.NodeId.from_string("ns=2;i=56"), ua.NodeId.from_string("i=45")]
