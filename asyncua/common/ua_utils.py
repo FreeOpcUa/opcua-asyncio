@@ -83,7 +83,7 @@ def string_to_val(string, vtype):
     Note: no error checking is done here, supplying null strings could raise exceptions (datetime and guid)
     """
     string = string.strip()
-    if string.startswith("["):
+    if string.startswith("[") and string.endswith("]"):
         string = string[1:-1]
         var = []
         for s in string.split(","):
