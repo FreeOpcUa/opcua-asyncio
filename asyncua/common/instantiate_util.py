@@ -4,7 +4,7 @@ Instantiate a new node and its child nodes from a node type.
 
 import logging
 
-from typing import Union
+from typing import Union, List
 
 from asyncua import ua
 from .ua_utils import get_node_supertypes, is_child_present
@@ -19,13 +19,24 @@ async def is_abstract(node_type) -> bool:
     return result.Value.Value
 
 
-async def instantiate(parent, node_type, nodeid: ua.NodeId=None, bname: Union[str, ua.QualifiedName]=None, dname: ua.LocalizedText=None, idx: int=0, instantiate_optional: bool=True):
+async def instantiate(parent, node_type, nodeid: ua.NodeId=None, bname: Union[str, ua.QualifiedName]=None, dname: ua.LocalizedText=None, idx: int=0, instantiate_optional: bool=True,
+                      instantiate_optional_list: List[Union[str, ua.QualifiedName]]=None):
     """
     instantiate a node type under a parent node.
     nodeid and browse name of new node can be specified, or just namespace index
     If they exists children of the node type, such as components, variables and
     properties are also instantiated
+    instantiate_optional: instantiate all optional nodes
+    instantiate_optional_list: list of optinal nodes to instantiate
     """
+    instante_list = []
+    if instantiate_optional_list is not None:
+        for optional in instantiate_optional_list:
+            if isinstance(optional, ua.QualifiedName):
+                instante_list.append(optional)
+            else:
+                instante_list.append(ua.QualifiedName.from_string(optional))
+        instantiate_optional = False
     rdesc = await _rdesc_from_node(parent, node_type)
     rdesc.TypeDefinition = node_type.nodeid
     if rdesc.NodeClass in (ua.NodeClass.DataType, ua.NodeClass.ReferenceType, ua.NodeClass.ObjectType, ua.NodeClass.ReferenceType):
@@ -48,7 +59,8 @@ async def instantiate(parent, node_type, nodeid: ua.NodeId=None, bname: Union[st
         nodeid,
         bname,
         dname=dname,
-        instantiate_optional=instantiate_optional)
+        instantiate_optional=instantiate_optional,
+        instantiate_optional_list=instante_list)
     return [make_node(parent.session, nid) for nid in nodeids]
 
 
@@ -60,7 +72,8 @@ async def _instantiate_node(session,
                             bname,
                             dname=None,
                             recursive=True,
-                            instantiate_optional=True):
+                            instantiate_optional=True,
+                            instantiate_optional_list=None):
     """
     instantiate a node type under parent
     """
@@ -111,7 +124,7 @@ async def _instantiate_node(session,
                         # exclude nodes with optional ModellingRule if requested
                     if refs[0].nodeid in (ua.NodeId(ua.ObjectIds.ModellingRule_Optional), ua.NodeId(ua.ObjectIds.ModellingRule_OptionalPlaceholder)):
                         # instatiate optionals
-                        if not instantiate_optional:
+                        if not instantiate_optional and c_rdesc.BrowseName not in instantiate_optional_list:
                             _logger.info("Instantiate: Skip optional node %s as part of %s", c_rdesc.BrowseName,
                                 addnode.BrowseName)
                             continue
@@ -125,7 +138,8 @@ async def _instantiate_node(session,
                             c_rdesc,
                             nodeid=ua.NodeId(Identifier=inst_nodeid, NamespaceIndex=res.AddedNodeId.NamespaceIndex),
                             bname=c_rdesc.BrowseName,
-                            instantiate_optional=instantiate_optional
+                            instantiate_optional=instantiate_optional,
+                            instantiate_optional_list=instantiate_optional_list
                         )
                     else:
                         nodeids = await _instantiate_node(
@@ -135,7 +149,8 @@ async def _instantiate_node(session,
                             c_rdesc,
                             nodeid=ua.NodeId(NamespaceIndex=res.AddedNodeId.NamespaceIndex),
                             bname=c_rdesc.BrowseName,
-                            instantiate_optional=instantiate_optional
+                            instantiate_optional=instantiate_optional,
+                            instantiate_optional_list=instantiate_optional_list
                         )
                     added_nodes.extend(nodeids)
     return added_nodes

@@ -184,7 +184,7 @@ def copy_node(parent, node, nodeid=None, recursive=True):
 
 
 @syncfunc(aio_func=common.instantiate_util.instantiate)
-def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, idx=0, instantiate_optional=True):
+def instantiate(parent, node_type, nodeid=None, bname=None, dname=None, idx=0, instantiate_optional=True, instantiate_optional_list: List[Union[str, ua.QualifiedName]]=None):
     pass
 
 
