@@ -70,6 +70,7 @@ class CodeGenerator:
         self.write('from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid')
         self.write('from asyncua.ua.uatypes import AccessLevel, EventNotifier  ')
         self.write('from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue')
+        self.write('from asyncua.ua.uatypes import RelativePath, RelativePathElement')
         self.write('from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo')
         self.write('from asyncua.ua.uatypes import extension_object_typeids, extension_objects_by_typeid')
         self.write('from asyncua.ua.object_ids import ObjectIds')
