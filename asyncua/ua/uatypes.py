@@ -56,6 +56,7 @@ def type_is_union(uatype):
 def type_is_list(uatype):
     return get_origin(uatype) == list
 
+
 def type_allow_subclass(uatype):
     return get_origin(uatype) not in [Union, list, None]
 
@@ -696,6 +697,55 @@ class QualifiedName:
         return QualifiedName(Name=name, NamespaceIndex=idx)
 
 
+@dataclass(frozen=False)
+class RelativePathElement:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.31
+
+    :ivar ReferenceTypeId:
+    :vartype ReferenceTypeId: NodeId
+    :ivar IsInverse:
+    :vartype IsInverse: Boolean
+    :ivar IncludeSubtypes:
+    :vartype IncludeSubtypes: Boolean
+    :ivar TargetName:
+    :vartype TargetName: QualifiedName
+    """
+
+    data_type = NodeId(537)
+
+    ReferenceTypeId: NodeId = field(default_factory=NodeId)
+    IsInverse: Boolean = True
+    IncludeSubtypes: Boolean = True
+    TargetName: QualifiedName = field(default_factory=QualifiedName)
+
+
+@dataclass(frozen=False)
+class RelativePath:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.31
+
+    :ivar Elements:
+    :vartype Elements: RelativePathElement
+    """
+
+    data_type = NodeId(540)
+
+    Elements: List[RelativePathElement] = field(default_factory=list)
+
+    @staticmethod
+    def from_string(string: str):
+        from asyncua.ua.relative_path import RelativePathFormatter
+
+        return RelativePathFormatter.parse(string).build()
+
+    def to_string(self) -> str:
+        from asyncua.ua.relative_path import RelativePathFormatter
+
+        # Note: RelativePathFormatter will raise ValueError if ReferenceType is non-standard.
+        return RelativePathFormatter(self).to_string()
+
+
 @dataclass(frozen=True, init=False)
 class LocalizedText:
     """
@@ -872,7 +922,7 @@ class Variant:
     def __post_init__(self):
 
         if self.is_array is None:
-            if isinstance(self.Value, (list, tuple)) or self.Dimensions :
+            if isinstance(self.Value, (list, tuple)) or self.Dimensions:
                 object.__setattr__(self, "is_array", True)
             else:
                 object.__setattr__(self, "is_array", False)
@@ -1027,7 +1077,7 @@ class DataValue:
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     Value: Optional[Variant] = None
     StatusCode_: Optional[StatusCode] = field(default_factory=StatusCode)
-    SourceTimestamp: Optional[DateTime] = None # FIXME type DateType raises type hinting errors because datetime is assigned
+    SourceTimestamp: Optional[DateTime] = None  # FIXME type DateType raises type hinting errors because datetime is assigned
     ServerTimestamp: Optional[DateTime] = None
     SourcePicoseconds: Optional[UInt16] = None
     ServerPicoseconds: Optional[UInt16] = None

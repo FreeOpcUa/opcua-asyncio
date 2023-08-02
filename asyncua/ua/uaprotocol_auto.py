@@ -13,6 +13,7 @@ from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int
 from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid
 from asyncua.ua.uatypes import AccessLevel, EventNotifier  
 from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue
+from asyncua.ua.uatypes import RelativePath, RelativePathElement
 from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo
 from asyncua.ua.uatypes import extension_object_typeids, extension_objects_by_typeid
 from asyncua.ua.object_ids import ObjectIds
@@ -6097,43 +6098,6 @@ class BrowseNextResponse:
     @ResponseHeader.setter
     def ResponseHeader(self, val):
         self.ResponseHeader_ = val
-
-
-@dataclass(frozen=FROZEN)
-class RelativePathElement:
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.31
-
-    :ivar ReferenceTypeId:
-    :vartype ReferenceTypeId: NodeId
-    :ivar IsInverse:
-    :vartype IsInverse: Boolean
-    :ivar IncludeSubtypes:
-    :vartype IncludeSubtypes: Boolean
-    :ivar TargetName:
-    :vartype TargetName: QualifiedName
-    """
-
-    data_type = NodeId(ObjectIds.RelativePathElement)
-
-    ReferenceTypeId: NodeId = field(default_factory=NodeId)
-    IsInverse: Boolean = True
-    IncludeSubtypes: Boolean = True
-    TargetName: QualifiedName = field(default_factory=QualifiedName)
-
-
-@dataclass(frozen=FROZEN)
-class RelativePath:
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.31
-
-    :ivar Elements:
-    :vartype Elements: RelativePathElement
-    """
-
-    data_type = NodeId(ObjectIds.RelativePath)
-
-    Elements: List[RelativePathElement] = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
