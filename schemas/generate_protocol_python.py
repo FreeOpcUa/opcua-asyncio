@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).absolute().parent.parent
 
 IgnoredEnums = ["NodeIdType"]
 IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "Variant", "DataValue",
-                  "ExtensionObject", "XmlElement", "LocalizedText"]
+                  "ExtensionObject", "XmlElement", "LocalizedText", "RelativePath", "RelativePathElement"]
 MyPyIgnoredStructs = ["Union"]
 
 
