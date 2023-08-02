@@ -1255,6 +1255,11 @@ async def test_custom_enum_with_bad_dtd(opc, caplog):
     # Set some garbage as type definition
     await dtype.write_data_type_definition(ua.StructureField())
 
+    # If leftover from previous test, it would be skipped, clear out
+    try:
+        del ua.MyEnum
+    except AttributeError:
+        pass
     # Does not raise
     await opc.opc.load_data_type_definitions()
     # Check that error was logged
