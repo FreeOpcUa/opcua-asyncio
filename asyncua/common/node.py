@@ -553,6 +553,44 @@ class Node:
                 break
 
         return history
+    
+    async def read_processed_history(aggregtype, aggregconfig, starttime=None, endtime=None, processing_interval=60000):
+            """
+            Read processed history of a node
+            result code from server is checked and an exception is raised in case of error
+            """
+
+            details = ua.ReadProcessedDetails()
+            details.AggregateConfiguration = ua.AggregateConfiguration(aggregconfig) #depends de l'aggregat à invoquer
+            details.ProcessingInterval = processing_interval #predefined
+            d0 = []
+            for i in aggregtype :
+                d0.append(ua.NodeId(i))
+
+            details.AggregateType =d0
+
+            if starttime:
+                details.StartTime = starttime
+            else:
+                details.StartTime = ua.get_win_epoch()
+            if endtime:
+                details.EndTime = endtime
+            else:
+                details.EndTime = ua.get_win_epoch()
+
+            history = []
+            continuation_point = None
+            while True:
+                result = await myvar.history_read(details, continuation_point)
+                result.StatusCode.check()
+                continuation_point = result.ContinuationPoint
+                history.extend(result.HistoryData.DataValues)
+                # No more data available
+                if continuation_point is None:
+                    break
+
+            return history
+
 
     async def history_read(self, details, continuation_point=None):
         """
