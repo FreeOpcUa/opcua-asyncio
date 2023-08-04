@@ -1280,6 +1280,27 @@ async def test_custom_option_set(opc):
     val = await var.read_value()
     assert val == (1 << 2) | (1 << 1)
 
+async def test_custom_option_set_as_structure_definition(opc):
+    """Option set defined via structure definition is understood.
+
+    This is arguably outside the standard but observed on some servers.
+    """
+    idx = 4
+    server = opc.opc
+    await new_enum(opc.opc, idx, "MyOptionSet", ["tata", "titi", "toto", "None"], True)
+    sdef = ua.StructureDefinition()
+    for name in ["tata", "titi", "toto", "None"]:
+        field = ua.StructureField()
+        field.Name = name
+        sdef.Fields.append(field)
+    dtype = await server.nodes.option_set_type.add_data_type(idx, name)
+    await dtype.write_data_type_definition(sdef)
+
+    await opc.opc.load_data_type_definitions()
+    assert ua.MyOptionSet.toto | ua.MyOptionSet.titi == ua.MyOptionSet((1 << 2) | (1 << 1))
+    var = await opc.opc.nodes.objects.add_variable(idx, "my_option", ua.MyOptionSet.toto | ua.MyOptionSet.titi)
+    val = await var.read_value()
+    assert val == (1 << 2) | (1 << 1)
 
 async def test_custom_struct_(opc):
     idx = 4

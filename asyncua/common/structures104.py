@@ -526,11 +526,23 @@ class {name}({enum_type}):
     '''
 
 """
+    for n, sfield in enumerate(edef.Fields):
+        fieldname = clean_name(sfield.Name)
+        if hasattr(sfield, "Value"):
+            value = sfield.Value if not option_set else (1 << sfield.Value)
+        else:
+            # Some servers represent the datatype as StructureDefinition instead of EnumDefinition.
+            # In this case the Value attribute is missing and we must guess.
+            # XXX: Assuming that counting starts with 1 for enumerations, which is by no means guaranteed.
+            value = n+1 if not option_set else (1 << n)
+            if n==0:
+                _logger.warning(
+                    "%s type %s: guessing field values since the server does not provide them.",
+                    "OptionSet" if option_set else "Enumeration",
+                    name
+                )
 
-    for sfield in edef.Fields:
-        name = clean_name(sfield.Name)
-        value = sfield.Value if not option_set else (1 << sfield.Value)
-        code += f"    {name} = {value}\n"
+        code += f"    {fieldname} = {value}\n"
     return code
 
 
