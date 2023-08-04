@@ -19,10 +19,10 @@ class SubHandler(object):
     """
 
     def datachange_notification(self, node, val, data):
-        _logger.warn("Python: New data change event %s %s", node, val)
+        _logger.warning("Python: New data change event %s %s", node, val)
 
     def event_notification(self, event):
-        _logger.warn("Python: New event %s", event)
+        _logger.warning("Python: New event %s", event)
 
 
 # method to be exposed through server
@@ -37,7 +37,7 @@ def func(parent, variant):
 # uses a decorator to automatically convert to and from variants
 @uamethod
 def multiply(parent, x, y):
-    _logger.warn("multiply method call with parameters: %s %s", x, y)
+    _logger.warning("multiply method call with parameters: %s %s", x, y)
     return x * y
 
 
