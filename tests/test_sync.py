@@ -93,7 +93,7 @@ def test_sync_async_client_method(client, idx):
     assert results[0].Value.Value == 6.7
 
 
-def test_sync_client_get_node(client):
+def test_sync_client_get_node(client, idx):
     node = client.get_node(85)
     assert node == client.nodes.objects
     nodes = node.get_children()
@@ -101,14 +101,26 @@ def test_sync_client_get_node(client):
     assert nodes[0] == client.nodes.server
     assert isinstance(nodes[0], SyncNode)
 
+    results = node.get_children_by_path([[f"{idx}:MyObject", f"{idx}:MyVariable"]])
+    assert len(results) == 1
+    vars = results[0]
+    assert len(vars) == 1
+    assert vars[0].read_value() == 6.7
 
-def test_sync_server_get_node(server):
+
+def test_sync_server_get_node(server, idx):
     node = server.get_node(85)
     assert node == server.nodes.objects
     nodes = node.get_children()
     assert len(nodes) > 2
     assert nodes[0] == server.nodes.server
     assert isinstance(nodes[0], SyncNode)
+
+    results = node.get_children_by_path([[f"{idx}:MyObject", f"{idx}:MyVariable"]])
+    assert len(results) == 1
+    vars = results[0]
+    assert len(vars) == 1
+    assert vars[0].read_value() == 6.7
 
 
 class MySubHandler:
