@@ -535,6 +535,7 @@ class {name}({enum_type}):
 
 
 async def load_enums(server: Union["Server", "Client"], base_node: Node = None, option_set: bool = False) -> Dict:
+    typename = "OptionSet" if option_set else "Enum"
     if base_node is None:
         base_node = server.nodes.enum_data_type
     new_enums = {}
@@ -542,11 +543,15 @@ async def load_enums(server: Union["Server", "Client"], base_node: Node = None, 
         name = clean_name(desc.BrowseName.Name)
         if hasattr(ua, name):
             continue
-        _logger.info("Registering Enum %s %s OptionSet=%s", desc.NodeId, name, option_set)
-        edef = await _read_data_type_definition(server, desc)
-        if not edef:
+        _logger.info("Registering %s %s %s", typename, desc.NodeId, name)
+        try:
+            edef = await _read_data_type_definition(server, desc)
+            if not edef:
+                continue
+            env = await _generate_object(name, edef, enum=True, option_set=option_set, log_fail=False)
+        except Exception:
+            _logger.exception("%s %s (NodeId: %s): Failed to generate class from UA datatype", typename, name, desc.NodeId)
             continue
-        env = await _generate_object(name, edef, enum=True, option_set=option_set)
         ua.register_enum(name, desc.NodeId, env[name])
         new_enums[name] = env[name]
     return new_enums

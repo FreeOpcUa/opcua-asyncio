@@ -1247,6 +1247,30 @@ async def test_custom_enum_x(opc):
     assert val == 1
 
 
+async def test_custom_enum_with_bad_dtd(opc, caplog):
+    """Enum with invalid type definition is skipped and an error is logged"""
+    caplog.set_level("ERROR")
+    idx = 4
+    dtype = await opc.opc.nodes.enum_data_type.add_data_type(idx, "MyEnum")
+    # Set some garbage as type definition
+    await dtype.write_data_type_definition(ua.StructureField())
+
+    # If leftover from previous test, it would be skipped, clear out
+    try:
+        del ua.MyEnum
+    except AttributeError:
+        pass
+    # Does not raise
+    await opc.opc.load_data_type_definitions()
+    # Check that error was logged
+    logs = [t for t in caplog.record_tuples if t[0].endswith(".structures104")]
+    assert len(logs) == 1
+    message = logs[0][2]
+    assert "MyEnum" in message
+    assert "Failed to generate class from UA datatype" in message
+
+
+
 async def test_custom_option_set(opc):
     idx = 4
     await new_enum(opc.opc, idx, "MyOptionSet", ["tata", "titi", "toto", "None"], True)
