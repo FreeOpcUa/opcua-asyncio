@@ -136,7 +136,7 @@ class StructGenerator(object):
         root = obj.getroot()
         self._make_model(root)
 
-    def _is_array_field(name):
+    def _is_array_field(self, name):
         if name.startswith("NoOf"):
             return True
         if name.startswith("__") and name.endswith("Length"):
