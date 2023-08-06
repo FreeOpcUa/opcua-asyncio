@@ -136,6 +136,14 @@ class StructGenerator(object):
         root = obj.getroot()
         self._make_model(root)
 
+    def _is_array_field(name):
+        if name.startswith("NoOf"):
+            return True
+        if name.startswith("__") and name.endswith("Length"):
+            # Codesys syntax
+            return True
+        return False
+
     def _make_model(self, root):
         enums = {}
         for child in root:
@@ -159,7 +167,7 @@ class StructGenerator(object):
                     if xmlfield.tag.endswith("Field"):
                         name = xmlfield.get("Name")
                         _clean_name = clean_name(name)
-                        if name.startswith("NoOf"):
+                        if self._is_array_field(name):
                             array = True
                             continue
                         _type = xmlfield.get("TypeName")
