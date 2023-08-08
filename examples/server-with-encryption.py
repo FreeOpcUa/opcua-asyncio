@@ -1,5 +1,7 @@
 import asyncio
 import sys
+from pathlib import Path
+import socket
 
 import logging
 sys.path.insert(0, "..")
@@ -7,11 +9,21 @@ from asyncua import Server
 from asyncua import ua
 from asyncua.crypto.permission_rules import SimpleRoleRuleset
 from asyncua.server.user_managers import CertificateUserManager
+from asyncua.crypto.cert_gen import setup_self_signed_certificate
+from cryptography.x509.oid import ExtendedKeyUsageOID
+
 
 logging.basicConfig(level=logging.INFO)
 
 
 async def main():
+    cert_base = Path(__file__).parent
+    server_cert = Path(cert_base / "certificates/server-certificate-example.der")
+    server_private_key = Path(cert_base / "certificates/server-private-key-example.pem")
+
+    host_name = socket.gethostname()
+    server_app_uri =   f"myselfsignedserver@{host_name}"
+
 
     cert_user_manager = CertificateUserManager()
     await cert_user_manager.add_user("certificates/peer-certificate-example-1.der", name='test_user')
@@ -20,14 +32,29 @@ async def main():
 
     await server.init()
 
+    await server.set_application_uri(server_app_uri)
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
     server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
                                permission_ruleset=SimpleRoleRuleset())
+
+    # Below is only required if the server should generate its own certificate,
+    # It will renew also when the valid datetime range is out of range (on startup, no on runtime)
+    await setup_self_signed_certificate(server_private_key,
+                                        server_cert,
+                                        server_app_uri,
+                                        host_name,
+                                        [ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH],
+                                        {
+                                            'countryName': 'CN',
+                                            'stateOrProvinceName': 'AState',
+                                            'localityName': 'Foo',
+                                            'organizationName': "Bar Ltd",
+                                        })
+
     # load server certificate and private key. This enables endpoints
     # with signing and encryption.
-
-    await server.load_certificate("certificate-example.der")
-    await server.load_private_key("private-key-example.pem")
+    await server.load_certificate(str(server_cert))
+    await server.load_private_key(str(server_private_key))
 
     idx = 0
 

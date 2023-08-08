@@ -3,6 +3,7 @@
 """
 from typing import Dict, List
 import datetime
+from pathlib import Path
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
@@ -12,6 +13,9 @@ from cryptography.hazmat._oid import _OID_NAMES as OID_NAMES
 from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
 from cryptography.x509.extensions import _key_identifier_from_public_key as key_identifier_from_public_key
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+
+from asyncua.crypto.uacrypto import load_certificate,  load_private_key, check_certificate
 
 ONE_DAY = datetime.timedelta(1, 0, 0)
 """ Shorthand for delta of 1 day """
@@ -244,3 +248,54 @@ def sign_certificate_request(csr: x509.CertificateSigningRequest,
     )
 
     return certificate
+
+
+async def setup_self_signed_certificate(key_file: Path,
+                                        cert_file: Path,
+                                        app_uri: str,
+                                        host_name: str,
+                                        cert_use : List[x509.ObjectIdentifier],
+                                        subject_attrs: Dict[str, str]):
+    """ Convenient helper for generating  a key and or basic certificate if needed:
+    - The key/certificate doesn't exists (when key is missing, always regenerate the certificate)
+    - If the certficate is invalid
+
+    The certificate is generated to be valid for one year.
+
+    Args:
+        key_file (Path): file with should contain key in PEM format
+        cert_file (Path): file that should contains the certificate in DER formar
+        app_uri (str): app uri for client or server
+        host_name (str): hostname used in certificate sub alternative names
+        cert_use (List[x509.ObjectIdentifier]): constains the use of the cert (ExtendedKeyUsageOID.CLIENT_AUTH and or ExtendedKeyUsageOID.SERVER_AUTH)
+        subject_attrs (Dict[str, str]): subject fields
+    """
+
+    generate_key = key_file.is_file() is False
+    generate_cert = generate_key or cert_file.is_file() is False
+
+    key: RSAPrivateKey
+    cert: x509.Certificate
+    if generate_key:
+        key = generate_private_key()
+        key_file.write_bytes(dump_private_key_as_pem(key))
+    else:
+        key = await load_private_key(key_file)
+
+    if generate_cert is False:
+        cert = await load_certificate(cert_file)
+        generate_cert = check_certificate(cert, app_uri, host_name)
+
+    if generate_cert:
+        subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(app_uri),
+                                                    x509.DNSName(f"{host_name}")]
+
+
+        cert = generate_self_signed_app_certificate(key,
+                                                                    app_uri,
+                                                                    subject_attrs,
+                                                                    subject_alt_names,
+                                                                    extended=cert_use,
+                                                                    days = 365)
+
+        cert_file.write_bytes(cert.public_bytes(encoding=Encoding.DER))
