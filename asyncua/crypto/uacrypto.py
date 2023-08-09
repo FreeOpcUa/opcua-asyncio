@@ -172,7 +172,7 @@ def decrypt_rsa_oaep(private_key, data):
 
 def decrypt_rsa15(private_key, data):
     text = private_key.decrypt(
-        data,
+        bytes(data),
         padding.PKCS1v15()
     )
     return text
