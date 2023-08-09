@@ -107,6 +107,21 @@ async def srv_crypto_one_cert(request):
     # stop the server
     await srv.stop()
 
+@pytest.fixture(params=srv_crypto_params)
+async def srv_crypto_all_cert_basic128rsa15(request):
+    # start our own server
+    srv = Server()
+    key, cert = request.param
+    await srv.init()
+    srv.set_endpoint(uri_crypto)
+    srv.set_security_policy([ua.SecurityPolicyType.Basic128Rsa15_Sign])
+    await srv.load_certificate(cert)
+    await srv.load_private_key(key)
+    await srv.start()
+    yield srv, cert
+    # stop the server
+    await srv.stop()
+
 
 @pytest.fixture()
 async def srv_no_crypto():
@@ -144,6 +159,17 @@ async def test_basic256(srv_crypto_all_certs):
     clt = Client(uri_crypto)
     await clt.set_security_string(
         f"Basic256Sha256,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}"
+    )
+    async with clt:
+        assert await clt.nodes.objects.get_children()
+
+
+async def test_basic128rsa15(srv_crypto_all_cert_basic128rsa15):
+    _, cert = srv_crypto_all_cert_basic128rsa15
+    clt = Client(uri_crypto)
+    print(await clt.connect_and_get_server_endpoints())
+    await clt.set_security_string(
+        f"Basic128Rsa15,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}"
     )
     async with clt:
         assert await clt.nodes.objects.get_children()
