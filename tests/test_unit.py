@@ -642,7 +642,7 @@ def test_datavalue():
 def test_variant():
     dv = ua.Variant(True, ua.VariantType.Boolean)
     assert dv.Value is True
-    assert type(dv.Value) == bool
+    assert isinstance(dv.Value, bool)
     now = datetime.utcnow()
     v = ua.Variant(now)
     assert v.Value == now
