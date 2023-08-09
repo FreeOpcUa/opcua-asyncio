@@ -401,6 +401,18 @@ class Server:
                     ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
                                              ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
                                              permission_ruleset=self._permission_ruleset))
+            if ua.SecurityPolicyType.Basic128Rsa15_Sign in self._security_policy:
+                self._set_endpoints(security_policies.SecurityPolicyBasic128Rsa15, ua.MessageSecurityMode.Sign)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15,
+                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
+            if ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt in self._security_policy:
+                self._set_endpoints(security_policies.SecurityPolicyBasic128Rsa15, ua.MessageSecurityMode.SignAndEncrypt)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15,
+                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate, self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
 
 
     @staticmethod
