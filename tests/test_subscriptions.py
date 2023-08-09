@@ -476,7 +476,7 @@ async def test_subscribe_server_time(opc):
     server_time_node = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
     sub = await opc.opc.create_subscription(200, myhandler)
     handle = await sub.subscribe_data_change(server_time_node)
-    assert type(handle) is int
+    assert isinstance(handle, int)
     node, val, data = await myhandler.result()
     assert server_time_node == node
     delta = datetime.utcnow() - val

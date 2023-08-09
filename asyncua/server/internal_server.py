@@ -91,7 +91,7 @@ class InternalServer:
             evgen = EventGenerator(self.isession)
             await evgen.init(etype, add_generates_event=False)
             # don't use isinstance(int), it also matches bool
-            if type(self.bind_condition_methods) is int:
+            if isinstance(self.bind_condition_methods, int):
                 evgen.event.Severity = self.bind_condition_methods
             self.subscription_service.standard_events[etype] = evgen
 
@@ -386,7 +386,7 @@ class InternalServer:
             except Exception:
                 self.logger.exception("Unable to decrypt password")
                 return False
-        elif type(password) == bytes:  # TODO check
+        elif isinstance(password, bytes):  # TODO check
             password = password.decode('utf-8')
 
         return user_name, password
