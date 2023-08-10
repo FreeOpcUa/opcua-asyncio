@@ -96,6 +96,10 @@ class UASocketProtocol(asyncio.Protocol):
                     return
                 # Buffer still has bytes left, try to process again
                 data = bytes(buf)
+            except ua.UaStatusCodeError as e:
+                self.logger.error('Got error status from server: {}'.format(e))
+                self.disconnect_socket()
+                return
             except Exception:
                 self.logger.exception('Exception raised while parsing message from server')
                 self.disconnect_socket()
@@ -111,6 +115,9 @@ class UASocketProtocol(asyncio.Protocol):
         elif isinstance(msg, ua.ErrorMessage):
             self.logger.fatal("Received an error: %r", msg)
             self.disconnect_socket()
+            if msg.Error is not None:
+                # Automatically print human-readable error text.
+                msg.Error.check()
         else:
             raise ua.UaError(f"Unsupported message type: {msg}")
 
