@@ -9,7 +9,6 @@ from asyncua.ua.object_ids import ObjectIds, ObjectIdNames
 _NS_IDX_PATTERN = re.compile(r"([0-9]*):")
 _REFERENCE_TYPE_PREFIX_CHARS = "/.<"
 _REFERENCE_TYPE_SUFFIX_CHAR = ">"
-_INVALID_NAME_CHARS = "!:<>/."
 _RESERVED_CHARS = "/.<>:#!&"
 
 
@@ -94,7 +93,7 @@ class RelativePathElementFormatter:
         name = []
         head: str = ""
         while len(rest) > 0:
-            head = _peek(rest)
+            head = rest[0]
 
             if is_reference:
                 if head == _REFERENCE_TYPE_SUFFIX_CHAR:
@@ -103,22 +102,23 @@ class RelativePathElementFormatter:
             elif head in _REFERENCE_TYPE_PREFIX_CHARS:
                 break
 
-            if head in _INVALID_NAME_CHARS:
-                raise ValueError(f"Unexpected character '{head}' in browse path.")
-
             if head == "&":
-                if len(rest) > 1:
-                    name.append(rest[1])
-                    rest = rest[2:]
-                    continue
+                rest = rest[1:]
+                if len(rest) > 0:
+                    head = rest[0]
+                    if head in _RESERVED_CHARS:
+                        name.append(head)
+                        rest = rest[1:]
+                        continue
+                    raise ValueError(f"Invalid escape sequence '&{head}' in browse path.")
                 else:
-                    raise ValueError("Missing escaped character following '&' in browse path.")
+                    raise ValueError("Unexpected end after escape character '&'.")
             else:
                 name.append(head)
                 rest = rest[1:]
 
         if is_reference and head != ">":
-            raise ValueError("Missing '>' for reference type name in browse path.")
+            raise ValueError("Missing closing '>' for reference type name in browse path.")
 
         if len(name) == 0:
             if is_reference:

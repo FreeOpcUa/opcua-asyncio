@@ -157,6 +157,9 @@ def test_relative_path_with_invalid_format():
         RelativePath.from_string("/1:Boiler&")  # '&' is appeared without a follwing character.
 
     with pytest.raises(ValueError):
+        RelativePath.from_string("/1:Boiler&Output")  # '&' is followed by a non-reserved char.
+
+    with pytest.raises(ValueError):
         RelativePath.from_string("<0:HasChild")  # Closing delimiter '>' is missing.
 
     with pytest.raises(ValueError):
