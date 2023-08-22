@@ -554,20 +554,19 @@ class Node:
 
         return history
     
-    async def read_processed_history(aggregtype, aggregconfig, starttime=None, endtime=None, processing_interval=60000):
+    async def read_processed_history(self, aggregate_type, aggregation_configuration, starttime=None, endtime=None, processing_interval=60000):
             """
             Read processed history of a node
             result code from server is checked and an exception is raised in case of error
+            exemples of values for the arguments : 
+            aggregate_type = [2000] //with 2000 is the 'average' nodeId in the opc ua server.
+            aggregation_configuration = 948 
             """
 
             details = ua.ReadProcessedDetails()
-            details.AggregateConfiguration = ua.AggregateConfiguration(aggregconfig) #depends de l'aggregat à invoquer
-            details.ProcessingInterval = processing_interval #predefined
-            d0 = []
-            for i in aggregtype :
-                d0.append(ua.NodeId(i))
-
-            details.AggregateType =d0
+            details.AggregateConfiguration = ua.AggregateConfiguration(aggregation_configuration)
+            details.ProcessingInterval = processing_interval
+            details.AggregateType = ua.NodeId(aggregate_type)
 
             if starttime:
                 details.StartTime = starttime
@@ -581,7 +580,7 @@ class Node:
             history = []
             continuation_point = None
             while True:
-                result = await myvar.history_read(details, continuation_point)
+                result = await self.history_read(details, continuation_point)
                 result.StatusCode.check()
                 continuation_point = result.ContinuationPoint
                 history.extend(result.HistoryData.DataValues)
