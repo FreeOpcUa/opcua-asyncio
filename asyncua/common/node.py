@@ -567,7 +567,7 @@ class Node:
             details.AggregateConfiguration = ua.AggregateConfiguration(aggregation_configuration)
             details.ProcessingInterval = processing_interval
             d0 = []
-            for i in aggregtype :
+            for i in aggregate_type :
                 d0.append(ua.NodeId(i))
             details.AggregateType =d0
 
