@@ -566,7 +566,10 @@ class Node:
             details = ua.ReadProcessedDetails()
             details.AggregateConfiguration = ua.AggregateConfiguration(aggregation_configuration)
             details.ProcessingInterval = processing_interval
-            details.AggregateType = ua.NodeId(aggregate_type)
+            d0 = []
+            for i in aggregtype :
+                d0.append(ua.NodeId(i))
+            details.AggregateType =d0
 
             if starttime:
                 details.StartTime = starttime
