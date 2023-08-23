@@ -292,7 +292,7 @@ class Client:
     def get_namespace_index(self, url):
         pass
 
-    def get_node(self, nodeid: Union["SyncNode", ua.NodeId, str, bytes, int]):
+    def get_node(self, nodeid: Union["SyncNode", ua.NodeId, str, int]):
         aio_nodeid = nodeid.aio_obj if isinstance(nodeid, SyncNode) else nodeid
         return SyncNode(self.tloop, self.aio_obj.get_node(aio_nodeid))
 
