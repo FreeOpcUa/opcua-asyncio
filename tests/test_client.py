@@ -158,3 +158,27 @@ async def test_browse_nodes(server, client):
     assert isinstance(results[1][0], Node)
     assert isinstance(results[0][1], ua.BrowseResult)
     assert isinstance(results[1][1], ua.BrowseResult)
+
+
+async def test_translate_browsepaths(server, client: Client):
+    server_node = await client.nodes.objects.get_child("Server")
+
+    relative_paths = ["/0:ServiceLevel", "/0:ServerStatus/0:State"]
+    results = await client.translate_browsepaths(server_node.nodeid, relative_paths)
+    assert len(results) == 2
+    assert isinstance(results, list)
+    assert results[0].StatusCode.value == ua.StatusCodes.Good
+    assert results[0].Targets[0].TargetId == ua.NodeId.from_string("ns=0;i=2267")
+    assert results[1].StatusCode.value == ua.StatusCodes.Good
+    assert results[1].Targets[0].TargetId == ua.NodeId.from_string("ns=0;i=2259")
+    for result in results:
+        assert isinstance(result, ua.BrowsePathResult)
+
+    results2 = await client.translate_browsepaths(server_node.nodeid, ["/0:UnknownPath"])
+    assert len(results2) == 1
+    assert isinstance(results2, list)
+    assert results2[0].StatusCode.value == ua.StatusCodes.BadNoMatch
+    assert len(results2[0].Targets) == 0
+
+    with pytest.raises(ua.UaStringParsingError):
+        await client.translate_browsepaths(server_node.nodeid, ["/1:<Boiler"])
