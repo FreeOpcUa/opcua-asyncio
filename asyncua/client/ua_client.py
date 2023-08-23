@@ -499,7 +499,7 @@ class UaClient(AbstractSession):
 
     async def create_subscription(   # type: ignore[override]
         self, params: ua.CreateSubscriptionParameters, callback
-    ) -> Coroutine[Any, Any, ua.CreateSubscriptionResult]:
+    ) -> ua.CreateSubscriptionResult:
         self.logger.debug("create_subscription")
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
@@ -780,7 +780,7 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def set_monitoring_mode(self, params) -> ua.uatypes.StatusCode:
+    async def set_monitoring_mode(self, params) -> List[ua.uatypes.StatusCode]:
         """
         Update the subscription monitoring mode
         """
@@ -793,7 +793,7 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
 
-    async def set_publishing_mode(self, params) -> ua.uatypes.StatusCode:
+    async def set_publishing_mode(self, params) -> List[ua.uatypes.StatusCode]:
         """
         Update the subscription publishing mode
         """

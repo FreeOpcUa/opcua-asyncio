@@ -53,7 +53,7 @@ class Node:
             self.nodeid = nodeid.nodeid
         elif isinstance(nodeid, ua.NodeId):
             self.nodeid = nodeid
-        elif type(nodeid) in (str, bytes):
+        elif isinstance(nodeid, str) or isinstance(nodeid, bytes):
             self.nodeid = ua.NodeId.from_string(nodeid)
         elif isinstance(nodeid, int):
             self.nodeid = ua.NodeId(nodeid, 0)
