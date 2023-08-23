@@ -46,7 +46,7 @@ class Node:
     OPC-UA protocol. Feel free to look at the code of this class and call
     directly UA services methods to optimize your code
     """
-    def __init__(self, session: AbstractSession, nodeid: Union[ua.NodeId, str, int]):
+    def __init__(self, session: AbstractSession, nodeid: Union["Node", ua.NodeId, str, bytes, int]):
         self.session = session
         self.nodeid: ua.NodeId
         if isinstance(nodeid, Node):

@@ -205,6 +205,7 @@ class _SubHandler:
     def status_change_notification(self, status: ua.StatusChangeNotification):
         self.sync_handler.status_change_notification(status)
 
+
 class Client:
     def __init__(self, url: str, timeout: int = 4, tloop=None):
         self.tloop = tloop
@@ -291,8 +292,9 @@ class Client:
     def get_namespace_index(self, url):
         pass
 
-    def get_node(self, nodeid):
-        return SyncNode(self.tloop, self.aio_obj.get_node(nodeid))
+    def get_node(self, nodeid: Union["SyncNode", ua.NodeId, str, bytes, int]):
+        aio_nodeid = nodeid.aio_obj if isinstance(nodeid, SyncNode) else nodeid
+        return SyncNode(self.tloop, self.aio_obj.get_node(aio_nodeid))
 
     def get_root_node(self):
         return SyncNode(self.tloop, self.aio_obj.get_root_node())
@@ -437,7 +439,6 @@ class Server:
         return Subscription(self.tloop, aio_sub)
 
 
-
 class EventGenerator:
     def __init__(self, tloop, aio_evgen):
         self.aio_obj = aio_evgen
@@ -459,7 +460,7 @@ def new_node(sync_node, nodeid):
 
 
 class SyncNode:
-    def __init__(self, tloop, aio_node):
+    def __init__(self, tloop: ThreadLoop, aio_node: node.Node):
         self.aio_obj = aio_node
         self.tloop = tloop
 
