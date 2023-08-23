@@ -681,7 +681,7 @@ class Client:
     def get_server_node(self):
         return self.get_node(ua.FourByteNodeId(ua.ObjectIds.Server))
 
-    def get_node(self, nodeid: Union[Node, ua.NodeId, str, bytes, int]) -> Node:
+    def get_node(self, nodeid: Union[Node, ua.NodeId, str, int]) -> Node:
         """
         Get node using NodeId object or a string representing a NodeId.
         """

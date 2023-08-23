@@ -4,7 +4,7 @@ Low level binary client
 import asyncio
 import copy
 import logging
-from typing import Awaitable, Callable, Dict, List, Optional, Union, Coroutine, Any
+from typing import Awaitable, Callable, Dict, List, Optional, Union
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
