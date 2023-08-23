@@ -316,7 +316,11 @@ class Client:
         pass
 
     @syncmethod
-    def translate_browsepaths(self, starting_node: ua.NodeId, relative_paths: List[Union[ua.RelativePath, str]]) -> List[ua.BrowsePathResult]:
+    def translate_browsepaths(  # type: ignore[empty-body]
+        self,
+        starting_node: ua.NodeId,
+        relative_paths: List[Union[ua.RelativePath, str]]
+    ) -> List[ua.BrowsePathResult]:
         pass
 
     def __enter__(self):
