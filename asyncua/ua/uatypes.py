@@ -915,7 +915,7 @@ class Variant:
 
     # FIXME: typing is wrong here
     Value: Any = None
-    VariantType: VariantType = None
+    VariantType: "VariantType" = None
     Dimensions: Optional[List[Int32]] = None
     is_array: Optional[bool] = None
 
