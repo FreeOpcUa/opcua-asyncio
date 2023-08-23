@@ -315,6 +315,10 @@ class Client:
     def write_values(self, nodes, values, raise_on_partial_error=True):
         pass
 
+    @syncmethod
+    def translate_browsepaths(self, starting_node: ua.NodeId, relative_paths: List[Union[ua.RelativePath, str]]) -> List[ua.BrowsePathResult]:
+        pass
+
     def __enter__(self):
         try:
             self.connect()
