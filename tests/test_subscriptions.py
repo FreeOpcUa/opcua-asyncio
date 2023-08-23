@@ -546,7 +546,7 @@ async def test_unsubscribe_two_objects_consecutively(opc):
     ]
     sub = await opc.opc.create_subscription(100, handler)
     handles = await sub.subscribe_data_change(nodes, queuesize=1)
-    assert type(handles) is list
+    assert isinstance(handles, list)
     await handler.done()
     for handle in handles:
         await sub.unsubscribe(handle)
