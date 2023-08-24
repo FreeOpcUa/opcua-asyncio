@@ -108,6 +108,22 @@ def test_sync_client_get_node(client, idx):
     assert vars[0].read_value() == 6.7
 
 
+def test_sync_client_browse_nodes(client: Client, idx):
+    nodes = [
+        client.get_node("ns=0;i=2267"),
+        client.get_node("ns=0;i=2259"),
+    ]
+    results = client.browse_nodes(nodes)
+    assert len(results) == 2
+    assert isinstance(results, list)
+    assert results[0][0] == nodes[0]
+    assert results[1][0] == nodes[1]
+    assert isinstance(results[0][0], SyncNode)
+    assert isinstance(results[1][0], SyncNode)
+    assert isinstance(results[0][1], ua.BrowseResult)
+    assert isinstance(results[1][1], ua.BrowseResult)
+
+
 def test_sync_server_get_node(server, idx):
     node = server.get_node(85)
     assert node == server.nodes.objects

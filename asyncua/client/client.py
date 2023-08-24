@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import socket
-from typing import List, Union, Coroutine, Optional, Type
+from typing import List, Tuple, Union, Coroutine, Optional, Type
 from urllib.parse import urlparse, unquote
 from pathlib import Path
 
@@ -894,7 +894,7 @@ class Client:
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
 
-    async def browse_nodes(self, nodes):
+    async def browse_nodes(self, nodes: List[Node]) -> List[Tuple[Node, ua.BrowseResult]]:
         """
         Browses multiple nodes in one ua call
         returns a List of Tuples(Node, BrowseResult)

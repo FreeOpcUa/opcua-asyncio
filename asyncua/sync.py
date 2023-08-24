@@ -77,11 +77,8 @@ def _to_async(args, kwargs):
 def _to_sync(tloop, result):
     if isinstance(result, node.Node):
         return SyncNode(tloop, result)
-    if isinstance(result, (list, tuple)) and len(result) > 0:
-        if isinstance(result[0], node.Node):
-            return [SyncNode(tloop, i) for i in result]
-        elif isinstance(result[0], (list, tuple)):
-            return [_to_sync(tloop, item) for item in result]
+    if isinstance(result, (list, tuple)):
+        return [_to_sync(tloop, item) for item in result]
     if isinstance(result, server.event_generator.EventGenerator):
         return EventGenerator(tloop, result)
     if isinstance(result, subscription.Subscription):
@@ -313,6 +310,10 @@ class Client:
 
     @syncmethod
     def write_values(self, nodes, values, raise_on_partial_error=True):
+        pass
+
+    @syncmethod
+    def browse_nodes(self, nodes: List["SyncNode"]) -> List[Tuple["SyncNode", ua.BrowseResult]]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
