@@ -681,7 +681,7 @@ class Client:
     def get_server_node(self):
         return self.get_node(ua.FourByteNodeId(ua.ObjectIds.Server))
 
-    def get_node(self, nodeid: Union[ua.NodeId, str]) -> Node:
+    def get_node(self, nodeid: Union[Node, ua.NodeId, str, int]) -> Node:
         """
         Get node using NodeId object or a string representing a NodeId.
         """
@@ -911,3 +911,17 @@ class Client:
         parameters.NodesToBrowse = nodestobrowse
         results = await self.uaclient.browse(parameters)
         return list(zip(nodes, results))
+
+    async def translate_browsepaths(self, starting_node: ua.NodeId, relative_paths: List[Union[ua.RelativePath, str]]) -> List[ua.BrowsePathResult]:
+        bpaths = []
+        for p in relative_paths:
+            try:
+                rpath = ua.RelativePath.from_string(p) if isinstance(p, str) else p
+            except ValueError as e:
+                raise ua.UaStringParsingError(f"Failed to parse one of RelativePath: {p}") from e
+            bpath = ua.BrowsePath()
+            bpath.StartingNode = starting_node
+            bpath.RelativePath = rpath
+            bpaths.append(bpath)
+
+        return await self.uaclient.translate_browsepaths_to_nodeids(bpaths)

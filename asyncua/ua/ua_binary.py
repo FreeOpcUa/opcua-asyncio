@@ -5,7 +5,7 @@ Binary protocol specific functions and constants
 import functools
 import struct
 import logging
-from typing import Any, Callable
+from typing import IO, Any, Callable, Optional, Sequence, Type, TypeVar, Union
 import typing
 import uuid
 from enum import Enum, IntFlag
@@ -16,6 +16,8 @@ from ..common.utils import Buffer
 from .uatypes import type_from_optional, type_is_list, type_is_union, type_from_list, types_or_list_from_union, type_allow_subclass
 
 logger = logging.getLogger('__name__')
+
+T = TypeVar('T')
 
 
 def test_bit(data, offset):
@@ -268,7 +270,7 @@ def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
         if ftype == dataclazz:
             if is_optional:
                 return lambda val: b'' if val is None else create_type_serializer(uatype)(val)
-            return lambda x:  create_type_serializer(uatype)(x)
+            return lambda x: create_type_serializer(uatype)(x)
         serializer = create_type_serializer(uatype)
         if is_optional:
             return lambda val: b'' if val is None else serializer(val)
@@ -373,7 +375,7 @@ def to_binary(uatype, val):
 
 
 @functools.lru_cache(maxsize=None)
-def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Any], bytes]:
+def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Optional[Sequence[Any]]], bytes]:
     """
     Given a type, return a function that takes a list of instances
     of that type and serializes it.
@@ -391,6 +393,7 @@ def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Any], b
         return recursive_serialize
 
     type_serializer = create_type_serializer(uatype)
+
     def serialize(val):
         if val is None:
             return none_val
@@ -686,7 +689,7 @@ def _create_dataclass_deserializer(objtype):
     return decode
 
 
-def struct_from_binary(objtype, data):
+def struct_from_binary(objtype: Union[Type[T], str], data: IO) -> T:
     """
     unpack an ua struct. Arguments are an objtype as Python dataclass or string
     """

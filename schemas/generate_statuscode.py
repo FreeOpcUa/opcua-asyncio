@@ -1,3 +1,4 @@
+import csv
 from pathlib import Path
 from datetime import datetime
 BASE_DIR = Path.cwd().parent
@@ -11,13 +12,17 @@ def status_codes():
     """
     with open(BASE_DIR / 'schemas' / 'StatusCodes_add.csv') as inputfile:
         additional = {}
-        for line in inputfile:
-            name, val, doc = line.split(",", 2)
+        for row in csv.reader(inputfile):
+            if len(row) > 3:
+                raise ValueError(f"Unexpected row: {row}")
+            name, val, doc = row
             additional[int(val, 0)] = (name, val, doc)
     with open(BASE_DIR / 'schemas' / 'UA-Nodeset-master' / 'Schema' / 'StatusCode.csv') as inputfile:
         result = []
-        for line in inputfile:
-            name, val, doc = line.split(",", 2)
+        for row in csv.reader(inputfile):
+            if len(row) > 3:
+                raise ValueError(f"Unexpected row: {row}")
+            name, val, doc = row
             result.append((name, val, doc))
             additional.pop(int(val, 0), None)
         add = [additional[k] for k in sorted(additional.keys())]
