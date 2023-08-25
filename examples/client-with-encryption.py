@@ -3,16 +3,20 @@ import logging
 import sys
 import socket
 from pathlib import Path
+from cryptography.x509.oid import ExtendedKeyUsageOID
 sys.path.insert(0, "..")
 from asyncua import Client
 from asyncua.crypto.security_policies import SecurityPolicyBasic256Sha256
 from asyncua.crypto.cert_gen import setup_self_signed_certificate
-from cryptography.x509.oid import ExtendedKeyUsageOID
+from asyncua.crypto.validator import CertificateValidator, CertificateValidatorOptions
+from asyncua.crypto.truststore import TrustStore
+from asyncua import ua
 
 
 logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger("asyncua")
+_logger = logging.getLogger(__name__)
 
+USE_TRUST_STORE = True
 
 cert_idx = 4
 cert_base = Path(__file__).parent
@@ -43,12 +47,23 @@ async def task(loop):
         private_key=str(private_key),
         server_certificate="certificate-example.der"
     )
-    async with client:
-        objects = client.nodes.objects
-        child = await objects.get_child(['0:MyObject', '0:MyVariable'])
-        print(await child.get_value())
-        await child.set_value(42)
-        print(await child.get_value())
+
+    if USE_TRUST_STORE:
+        trust_store = TrustStore([Path('examples') / 'certificates' / 'trusted' / 'certs'], [])
+        await trust_store.load()
+        validator =CertificateValidator(CertificateValidatorOptions.TRUSTED_VALIDATION|CertificateValidatorOptions.PEER_SERVER, trust_store)
+    else:
+        validator =CertificateValidator(CertificateValidatorOptions.EXT_VALIDATION|CertificateValidatorOptions.PEER_SERVER)
+    client.certificate_validator = validator
+    try:
+        async with client:
+            objects = client.nodes.objects
+            child = await objects.get_child(['0:MyObject', '0:MyVariable'])
+            print(await child.get_value())
+            await child.set_value(42)
+            print(await child.get_value())
+    except ua.UaError as exp:
+        _logger.error(exp)
 
 
 def main():

@@ -29,7 +29,7 @@ from ..common.structures104 import load_data_type_definitions
 from ..common.ua_utils import get_nodes_of_namespace
 from ..common.connection import TransportLimits
 
-from ..crypto import security_policies, uacrypto
+from ..crypto import security_policies, uacrypto, validator
 
 _logger = logging.getLogger(__name__)
 
@@ -824,3 +824,17 @@ class Server:
         directly read datavalue of the Attribute
         """
         return self.iserver.read_attribute_value(nodeid, attr)
+
+    def set_certificate_validator(self, validator: validator.CertificateValidatorMethod):
+        """
+        Assign a method to be called when certificate needs to be validated.
+
+        Function is called with certificate and application description and should raise the correct status code
+        when invalid.
+
+            async def example_validation_method(certificate: x509.Certificate, app_description: ua.ApplicationDescription):
+                ...
+                if not_valid_condition:
+                    raise ServiceError(ua.StatusCodes.BadCertificateInvalid)
+        """
+        self.iserver.certificate_validator = validator

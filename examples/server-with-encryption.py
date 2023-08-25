@@ -10,11 +10,15 @@ from asyncua import ua
 from asyncua.crypto.permission_rules import SimpleRoleRuleset
 from asyncua.server.user_managers import CertificateUserManager
 from asyncua.crypto.cert_gen import setup_self_signed_certificate
+from asyncua.crypto.validator import CertificateValidator, CertificateValidatorOptions
 from cryptography.x509.oid import ExtendedKeyUsageOID
+from asyncua.crypto.truststore import TrustStore
 
 
 logging.basicConfig(level=logging.INFO)
 
+
+USE_TRUST_STORE = False
 
 async def main():
     cert_base = Path(__file__).parent
@@ -55,6 +59,15 @@ async def main():
     # with signing and encryption.
     await server.load_certificate(str(server_cert))
     await server.load_private_key(str(server_private_key))
+
+    if USE_TRUST_STORE:
+        trust_store = TrustStore([Path('examples') / 'certificates' / 'trusted' / 'certs'], [])
+        await trust_store.load()
+        validator = CertificateValidator(options=CertificateValidatorOptions.TRUSTED_VALIDATION | CertificateValidatorOptions.PEER_CLIENT,
+                                         trust_store = trust_store)
+    else:
+        validator = CertificateValidator(options=CertificateValidatorOptions.EXT_VALIDATION | CertificateValidatorOptions.PEER_CLIENT)
+    server.set_certificate_validator(validator)
 
     idx = 0
 

@@ -2,7 +2,7 @@
 Internal server implementing opcu-ua interface.
 Can be used on server side or to implement binary/https opc-ua servers
 """
-
+from typing import Optional
 import asyncio
 from datetime import datetime, timedelta
 from copy import copy
@@ -22,6 +22,7 @@ from .standard_address_space import standard_address_space
 from .users import User, UserRole
 from .internal_session import InternalSession
 from .event_generator import EventGenerator
+from ..crypto.validator import CertificateValidatorMethod
 
 try:
     from asyncua.crypto import uacrypto
@@ -66,6 +67,8 @@ class InternalServer:
             _logger.info("No user manager specified. Using default permissive manager instead.")
             user_manager = PermissiveUserManager()
         self.user_manager = user_manager
+        self.certificate_validator: Optional[CertificateValidatorMethod]= None
+        """hook to validate a certificate, raises a ServiceError when not valid"""
         # create a session to use on server side
         self.isession = InternalSession(
             self, self.aspace, self.subscription_service, "Internal", user=User(role=UserRole.Admin)

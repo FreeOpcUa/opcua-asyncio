@@ -12,6 +12,7 @@ from asyncua import Server
 from asyncua import ua
 from asyncua.server.user_managers import CertificateUserManager
 from asyncua.crypto.security_policies import Verifier, Decryptor
+from asyncua.crypto.validator import CertificateValidator, CertificateValidatorOptions
 
 try:
     from asyncua.crypto import uacrypto
@@ -506,3 +507,36 @@ async def test_security_level_endpoints(srv_crypto_all_certs: Tuple[Server, str]
 
     for end_point in end_points:
         assert end_point.SecurityLevel == Server.determine_security_level(end_point.SecurityPolicyUri, end_point.SecurityMode)
+
+async def test_certificate_validator(srv_crypto_one_cert):
+    # the used certificate is not compliant with a valid OPC UA certificate so only unhappy flow can be tested!
+
+    srv, cert = srv_crypto_one_cert
+
+    validator = CertificateValidator(options=CertificateValidatorOptions.BASIC_VALIDATION | CertificateValidatorOptions.PEER_CLIENT)
+    srv.set_certificate_validator(validator)
+
+    clt = Client(uri_crypto_cert)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        peer_creds['certificate'],
+        peer_creds['private_key'],
+        None,
+        cert,
+        mode=ua.MessageSecurityMode.SignAndEncrypt
+    )
+
+    validator.set_validate_options(options=CertificateValidatorOptions.URI | CertificateValidatorOptions.PEER_CLIENT)
+    with pytest.raises(ua.uaerrors.BadCertificateInvalid):
+        async with clt:
+            assert await clt.get_objects_node().get_children()
+
+    validator.set_validate_options(options=CertificateValidatorOptions.TIME_RANGE | CertificateValidatorOptions.PEER_CLIENT)
+    with pytest.raises(ua.uaerrors.BadCertificateTimeInvalid):
+        async with clt:
+            assert await clt.get_objects_node().get_children()
+
+    validator.set_validate_options(options=CertificateValidatorOptions.KEY_USAGE | CertificateValidatorOptions.EXT_KEY_USAGE | CertificateValidatorOptions.PEER_CLIENT)
+    with pytest.raises(ua.uaerrors.BadCertificateInvalid):
+        async with clt:
+            assert await clt.get_objects_node().get_children()
