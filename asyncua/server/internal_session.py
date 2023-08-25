@@ -1,14 +1,18 @@
 import logging
 from enum import Enum
-from typing import Iterable, Optional, List
+from typing import Iterable, Optional, List, Tuple, TYPE_CHECKING
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
 from ..common.callback import CallbackType, ServerItemCallback
 from ..common.utils import create_nonce, ServiceError
+from ..crypto.uacrypto import x509
 from .address_space import AddressSpace
 from .users import User, UserRole
 from .subscription_service import SubscriptionService
+
+if TYPE_CHECKING:
+    from .internal_server import InternalServer
 
 
 class SessionState(Enum):
@@ -26,10 +30,10 @@ class InternalSession(AbstractSession):
     _counter = 10
     _auth_counter = 1000
 
-    def __init__(self, internal_server, aspace: AddressSpace, submgr: SubscriptionService, name,
+    def __init__(self, internal_server: "InternalServer", aspace: AddressSpace, submgr: SubscriptionService, name,
                  user=User(role=UserRole.Anonymous), external=False):
         self.logger = logging.getLogger(__name__)
-        self.iserver = internal_server
+        self.iserver: "InternalServer" = internal_server
         # define if session is external, we need to copy some objects if it is internal
         self.external = external
         self.aspace: AddressSpace = aspace
@@ -55,13 +59,17 @@ class InternalSession(AbstractSession):
     def is_activated(self) -> bool:
         return self.state == SessionState.Activated
 
-    async def create_session(self, params, sockname=None):
+    async def create_session(self, params: ua.CreateSessionParameters, sockname: Optional[Tuple[str, int]]=None):
         self.logger.info('Create session request')
         result = ua.CreateSessionResult()
         result.SessionId = self.session_id
         result.AuthenticationToken = self.auth_token
         result.RevisedSessionTimeout = params.RequestedSessionTimeout
         result.MaxRequestMessageSize = 65536
+
+        if self.iserver.certificate_validator and params.ClientCertificate:
+            await self.iserver.certificate_validator(x509.load_der_x509_certificate(params.ClientCertificate), params.ClientDescription)
+
         self.nonce = create_nonce(32)
         result.ServerNonce = self.nonce
 
@@ -151,7 +159,7 @@ class InternalSession(AbstractSession):
         return self.iserver.view_service.browse(params)
 
     async def browse_next(self, parameters: ua.BrowseNextParameters) -> List[ua.BrowseResult]:
-        # TODO 
+        # TODO
         # ContinuationPoint: https://reference.opcfoundation.org/v104/Core/docs/Part4/7.6/
         # Add "ContinuationPoints" and some form of management for them to current sessionimplementation
         # BrowseNext: https://reference.opcfoundation.org/Core/Part4/v104/5.8.3/

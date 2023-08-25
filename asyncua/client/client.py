@@ -15,9 +15,11 @@ from ..common.subscription import Subscription
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
 from ..common.structures104 import load_data_type_definitions
-from ..common.utils import create_nonce
+from ..common.utils import create_nonce, ServiceError
 from ..common.ua_utils import value_to_datavalue, copy_dataclass_attr
 from ..crypto import uacrypto, security_policies
+from ..crypto.validator import CertificateValidatorMethod
+from ..crypto.uacrypto import x509
 
 _logger = logging.getLogger(__name__)
 
@@ -83,6 +85,8 @@ class Client:
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
         self._closing: bool = False
+        self.certificate_validator: Optional[CertificateValidatorMethod]= None
+        """hook to validate a certificate, raises a ServiceError when not valid"""
 
     async def __aenter__(self):
         await self.connect()
@@ -486,6 +490,15 @@ class Client:
             raise ua.UaError("Server certificate mismatch")
         # remember PolicyId's: we will use them in activate_session()
         ep = Client.find_endpoint(response.ServerEndpoints, self.security_policy.Mode, self.security_policy.URI)
+
+        if self.certificate_validator and server_certificate:
+            try:
+                await self.certificate_validator(x509.load_der_x509_certificate(server_certificate), ep.Server)
+            except ServiceError as exp:
+                status = ua.StatusCode(exp.code)
+                _logger.error("create_session fault response: %s (%s)", status.doc, status.name)
+                raise ua.UaStatusCodeError(exp.code) from exp
+
         self._policy_ids = ep.UserIdentityTokens
         #  Actual maximum number of milliseconds that a Session shall remain open without activity
         if self.session_timeout != response.RevisedSessionTimeout:
