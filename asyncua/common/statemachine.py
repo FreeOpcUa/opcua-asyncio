@@ -78,7 +78,7 @@ class StateMachine(object):
     LastTransition: Optional "TransitionVariableType"
     Generates TransitionEvent's
     '''
-    def __init__(self, server: Server=None, parent: Node=None, idx: int=None, name: str=None):
+    def __init__(self, server: Server=None, parent: Node=None, idx: int=None, name: str=None, typeid: ua.NodeId=ua.NodeId(2299, 0)):
         if not isinstance(server, Server): 
             raise ValueError(f"server: {type(server)} is not a instance of Server class")
         if not isinstance(parent, Node): 
@@ -91,7 +91,7 @@ class StateMachine(object):
         self._server = server
         self._parent = parent
         self._state_machine_node: Node = None
-        self._state_machine_type = ua.NodeId(2299, 0) #StateMachineType
+        self._state_machine_type = typeid
         self._name = name
         self._idx = idx
         self._optionals = False
@@ -122,7 +122,7 @@ class StateMachine(object):
             )
         if self._optionals:
             self._last_transition_node = await self._state_machine_node.get_child(["LastTransition"])
-            children = await self._last_transition_node.get_children()
+            children: List[Node] = await self._last_transition_node.get_children()
             childnames = []
             for each in children:
                 childnames.append(await each.read_browse_name())
@@ -141,9 +141,9 @@ class StateMachine(object):
         initialize and get subnodes
         '''
         self._current_state_node = await statemachine.get_child(["CurrentState"])
-        current_state_props = await self._current_state_node.get_properties()
+        current_state_props: List[Node] = await self._current_state_node.get_properties()
         for prop in current_state_props:
-            dn = await prop.read_display_name()
+            dn: ua.LocalizedText = await prop.read_display_name()
             if dn.Text == "Id":
                 self._current_state_id_node = await self._current_state_node.get_child(["Id"])
             elif dn.Text == "Name":
@@ -156,9 +156,9 @@ class StateMachine(object):
                 _logger.warning(f"{await statemachine.read_browse_name()} CurrentState Unknown property: {dn.Text}")
         if self._optionals:
             self._last_transition_node = await statemachine.get_child(["LastTransition"])
-            last_transition_props = await self._last_transition_node.get_properties()
+            last_transition_props: List[Node] = await self._last_transition_node.get_properties()
             for prop in last_transition_props:
-                dn = await prop.read_display_name()
+                dn: ua.LocalizedText = await prop.read_display_name()
                 if dn.Text == "Id":
                     self._last_transition_id_node = await self._last_transition_node.get_child(["Id"])
                 elif dn.Text == "Name":
@@ -213,7 +213,6 @@ class StateMachine(object):
     async def _write_transition(self, transition: Transition):
         '''
         transition: Transition
-        issub: boolean (true if it is a transition between substates)
         '''
         if not isinstance(transition, Transition):
             raise ValueError(f"Statemachine: {self._name} -> state: {transition} is not a instance of StateMachine.Transition class")
@@ -283,14 +282,51 @@ class FiniteStateMachine(StateMachine):
     '''
     Implementation of an FiniteStateMachineType a little more advanced than the basic one
     if you need to know the available states and transition from clientside
+    The FiniteStateMachineType is Abstract and can't be instantiated
     '''
-    def __init__(self, server: Server=None, parent: Node=None, idx: int=None, name: str=None):
+    def __init__(self, server: Server=None, parent: Node=None, idx: int=None, name: str=None, typeid: ua.NodeId=ua.NodeId(2299, 0)):
         super().__init__(server, parent, idx, name)
         if name is None:
             self._name = "FiniteStateMachine"
-        self._state_machine_type = ua.NodeId(2771, 0)
+        self._state_machine_type = typeid
         self._available_states_node: Node = None
         self._available_transitions_node: Node = None
+        self._finitestatemachine_nodeid = ua.NodeId(2771, 0)
+
+    async def install(self, optionals: bool=False):
+        if await self._is_subtype_of_finitestatemachine():
+            await super().install(optionals)
+            pass
+        else:
+            raise ua.UaError(f"NodeId: {self._state_machine_type} is not a subtype of FiniteStateMachine!")
+
+    async def _is_subtype_of_finitestatemachine(self):
+        result = False
+        type_node = self._server.get_node(self._state_machine_type)  
+        parent = await type_node.get_parent()
+        if not parent:
+            raise ua.UaError("Node does not have a Parent!")
+        if parent.nodeid == self._finitestatemachine_nodeid:
+            result = True
+        else:
+            while not parent.nodeid == self._finitestatemachine_nodeid:
+                parent = await parent.get_parent()
+                if not parent:
+                    result = False
+                    break
+                if parent.nodeid == self._finitestatemachine_nodeid:
+                    result = True
+                    break
+                if parent.nodeid == self._server.nodes.root.nodeid:
+                    result = False
+                    break
+        return result
+
+    async def add_state(self, state: State, state_type: ua.NodeId=ua.NodeId(2307, 0), optionals: bool=False):
+        raise ua.UaError("Unable to add a state to a FiniteStateMachine all states and transitions are defined in the SubType of FiniteStateMachineType")
+
+    async def add_transition(self, transition: Transition, transition_type: ua.NodeId=ua.NodeId(2310, 0), optionals: bool=False):
+        raise ua.UaError("Unable to add a transition to a FiniteStateMachine all states and transitions are defined in the SubType of FiniteStateMachineType")
 
     async def set_available_states(self, states: List[ua.NodeId]):
         if not self._available_states_node:
