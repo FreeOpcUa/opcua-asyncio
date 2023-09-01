@@ -5,6 +5,7 @@ import uuid
 import sys
 
 from asyncua import ua
+from asyncua.server.internal_session import InternalSession
 from ..common import events, event_objects, Node
 
 
@@ -20,7 +21,7 @@ class EventGenerator:
         etype: The event type, either an objectId, a NodeId or a Node object
     """
 
-    def __init__(self, isession):
+    def __init__(self, isession: InternalSession):
         self.logger = logging.getLogger(__name__)
         self.isession = isession
         self.event: event_objects.BaseEvent = None
@@ -91,7 +92,7 @@ class EventGenerator:
         self.event.LocalTime = ua.uaprotocol_auto.TimeZoneDataType()
         if sys.version_info.major > 2:
             localtime = time.localtime(self.event.Time.timestamp())
-            self.event.LocalTime.Offset = localtime.tm_gmtoff//60
+            self.event.LocalTime.Offset = localtime.tm_gmtoff // 60
         else:
             localtime = time.localtime(time.mktime(self.event.Time.timetuple()))
             self.event.LocalTime.Offset = -(time.altzone if localtime.tm_isdst else time.timezone)

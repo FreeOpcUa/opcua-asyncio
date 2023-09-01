@@ -24,7 +24,7 @@ if TYPE_CHECKING:
         VariableAttributes,
         ObjectTypeAttributes,
         ObjectAttributes
-    ] # FIXME Check, if there are missing attribute types.
+    ]  # FIXME Check, if there are missing attribute types.
 
 from asyncua import ua
 
@@ -203,8 +203,8 @@ class ViewService(object):
             return res
         for nodeid in target_nodeids:
             target = ua.BrowsePathTarget()
-            target.TargetId = nodeid # FIXME <<<< Type conflict
-            target.RemainingPathIndex = ua.Index(4294967295) # FIXME: magic number, why not Index.MAX?
+            target.TargetId = nodeid  # FIXME <<<< Type conflict
+            target.RemainingPathIndex = ua.Index(4294967295)  # FIXME: magic number, why not Index.MAX?
             res.Targets.append(target)
         # FIXME: might need to order these one way or another
         return res
@@ -274,7 +274,7 @@ class NodeManagementService:
             # the namespace of the nodeid, this is an extention of the spec to allow
             # to requests the server to generate a new nodeid in a specified namespace
             # self.logger.debug("RequestedNewNodeId has null identifier, generating Identifier")
-            item.RequestedNewNodeId = self._aspace.generate_nodeid(item.RequestedNewNodeId.NamespaceIndex) # FIXME type conflict
+            item.RequestedNewNodeId = self._aspace.generate_nodeid(item.RequestedNewNodeId.NamespaceIndex)  # FIXME type conflict
         else:
             if item.RequestedNewNodeId in self._aspace:
                 self.logger.warning("AddNodesItem: Requested NodeId %s already exists", item.RequestedNewNodeId)
@@ -365,26 +365,26 @@ class NodeManagementService:
         desc.BrowseName = item.BrowseName
         desc.DisplayName = item.NodeAttributes.DisplayName
         desc.TypeDefinition = item.TypeDefinition
-        desc.IsForward = True # FIXME in uaprotocol_auto.py
-        self._add_unique_reference(parentdata, desc) # FIXME return StatusCode is not evaluated
+        desc.IsForward = True  # FIXME in uaprotocol_auto.py
+        self._add_unique_reference(parentdata, desc)  # FIXME return StatusCode is not evaluated
 
     def _add_ref_to_parent(self, nodedata: NodeData, item: ua.AddNodesItem, parentdata: NodeData):
         addref = ua.AddReferencesItem()
         addref.ReferenceTypeId = item.ReferenceTypeId
         addref.SourceNodeId = nodedata.nodeid
         addref.TargetNodeId = item.ParentNodeId
-        addref.TargetNodeClass = parentdata.attributes[ua.AttributeIds.NodeClass].value.Value.Value # type: ignore[union-attr]
-        addref.IsForward = False # FIXME in uaprotocol_auto.py
-        self._add_reference_no_check(nodedata, addref) # FIXME return StatusCode is not evaluated
+        addref.TargetNodeClass = parentdata.attributes[ua.AttributeIds.NodeClass].value.Value.Value  # type: ignore[union-attr]
+        addref.IsForward = False  # FIXME in uaprotocol_auto.py
+        self._add_reference_no_check(nodedata, addref)  # FIXME return StatusCode is not evaluated
 
     def _add_type_definition(self, nodedata: NodeData, item: ua.AddNodesItem):
         addref = ua.AddReferencesItem()
         addref.SourceNodeId = nodedata.nodeid
-        addref.IsForward = True # FIXME in uaprotocol_auto.py
+        addref.IsForward = True  # FIXME in uaprotocol_auto.py
         addref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasTypeDefinition)
         addref.TargetNodeId = item.TypeDefinition
         addref.TargetNodeClass = ua.NodeClass.DataType
-        self._add_reference_no_check(nodedata, addref) # FIXME return StatusCode is not evaluated
+        self._add_reference_no_check(nodedata, addref)  # FIXME return StatusCode is not evaluated
 
     def delete_nodes(
         self,
@@ -427,7 +427,7 @@ class NodeManagementService:
                         "Error calling delete node callback callback %s, %s, %s", nodedata, ua.AttributeIds.Value, ex
                     )
 
-    def add_references(self, refs: List[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)): # FIXME return type
+    def add_references(self, refs: List[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)):  # FIXME return type
         result = [self._add_reference(ref, user) for ref in refs]
         return result
 
@@ -612,7 +612,7 @@ class AddressSpace:
     https://reference.opcfoundation.org/Core/docs/Part3/
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
         self.force_server_timestamp: bool = True
         self._nodes: Dict[ua.NodeId, NodeData] = {}
@@ -625,7 +625,7 @@ class AddressSpace:
         return self._nodes.__getitem__(nodeid)
 
     def get(self, nodeid: ua.NodeId) -> Union[NodeData, None]:
-        return self._nodes.get(nodeid, None) # Fixme This is another behaviour than __getitem__ where an KeyError exception is thrown, right?
+        return self._nodes.get(nodeid, None)  # Fixme This is another behaviour than __getitem__ where an KeyError exception is thrown, right?
 
     def __setitem__(self, nodeid: ua.NodeId, value: NodeData):
         return self._nodes.__setitem__(nodeid, value)
@@ -801,11 +801,11 @@ class AddressSpace:
 
     def _is_expected_variant_type(self, value: ua.DataValue, attval: AttributeValue, node: NodeData) -> bool:
         # FIXME Type hinting reveals that it is possible that Value (Optional) is None which would raise an exception
-        vtype = attval.value.Value.VariantType # type: ignore[union-attr] 
+        vtype = attval.value.Value.VariantType  # type: ignore[union-attr]
         if vtype == ua.VariantType.Null:
             # Node had a null value, many nodes are initialized with that value
             # we should check what the real type is
-            dtype = node.attributes[ua.AttributeIds.DataType].value.Value.Value # type: ignore[union-attr]
+            dtype = node.attributes[ua.AttributeIds.DataType].value.Value.Value  # type: ignore[union-attr]
             if dtype.NamespaceIndex == 0 and dtype.Identifier <= 25:
                 vtype = ua.VariantType(dtype.Identifier)
             else:
@@ -814,8 +814,12 @@ class AddressSpace:
                 return True
         if value.Value.VariantType == vtype:  # type: ignore[union-attr]
             return True
-        _logger.warning("Write refused: Variant: %s with type %s does not have expected type: %s",
-                value.Value, value.Value.VariantType, attval.value.Value.VariantType)  # type: ignore[union-attr] 
+        _logger.warning(
+            "Write refused: Variant: %s with type %s does not have expected type: %s",
+            value.Value,
+            value.Value.VariantType if value.Value else None,
+            attval.value.Value.VariantType if attval.value.Value else None,
+        )
         return False
 
     def add_datachange_callback(self, nodeid: ua.NodeId, attr: ua.AttributeIds, callback: Callable) -> Tuple[ua.StatusCode, int]:

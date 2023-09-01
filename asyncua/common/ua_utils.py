@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from enum import Enum, IntEnum, IntFlag
 
-from dateutil import parser
+from dateutil import parser  # type: ignore[attr-defined]
 
 from asyncua import ua
 
@@ -314,6 +314,7 @@ def data_type_to_string(dtype):
     else:
         string = dtype.to_string()
     return string
+
 
 def copy_dataclass_attr(dc_source, dc_dest) -> None:
     """

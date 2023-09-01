@@ -10,7 +10,6 @@ from struct import unpack_from
 from pathlib import Path
 import logging
 from urllib.parse import urlparse
-from typing import Coroutine
 
 from asyncua import ua
 from .user_managers import PermissiveUserManager, UserManager
@@ -151,7 +150,7 @@ class InternalServer:
             # path was supplied, but file doesn't exist - create one for next start up
             await asyncio.get_running_loop().run_in_executor(None, self.aspace.make_aspace_shelf, shelf_file)
 
-    async def _address_space_fixes(self) -> Coroutine:  # type: ignore
+    async def _address_space_fixes(self):  # type: ignore
         """
         Looks like the xml definition of address space has some error. This is a good place to fix them
         """

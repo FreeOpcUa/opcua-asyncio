@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from asyncua.common.ua_utils import copy_dataclass_attr
 
 
-def test_copy_dataclass_attr():
+def test_copy_dataclass_attr() -> None:
     @dataclass
     class A:
         x: int = 1

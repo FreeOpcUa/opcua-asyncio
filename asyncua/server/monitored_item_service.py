@@ -22,7 +22,7 @@ class MonitoredItemData:
 
 
 class MonitoredItemValues:
-    def __init__(self):
+    def __init__(self) -> None:
         self.current_dvalue: Optional[ua.DataValue] = None
         self.old_dvalue: Optional[ua.DataValue] = None
 
@@ -117,8 +117,8 @@ class MonitoredItemService:
                          params.ItemToMonitor.AttributeId)
 
         result, mdata = self._make_monitored_item_common(params)
-        ev_notify_byte = self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,   # type: ignore[union-attr]
-                                                          ua.AttributeIds.EventNotifier).Value.Value 
+        ev_notify_byte = self.aspace.read_attribute_value(params.ItemToMonitor.NodeId,  # type: ignore[union-attr]
+                                                          ua.AttributeIds.EventNotifier).Value.Value
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadServiceUnsupported)
@@ -189,13 +189,12 @@ class MonitoredItemService:
         if old.StatusCode != current.StatusCode:
             return True
 
-        if trg in [ua.DataChangeTrigger.StatusValue,ua.DataChangeTrigger.StatusValueTimestamp ] and \
-                old.Value != current.Value:
+        if trg in [ua.DataChangeTrigger.StatusValue, ua.DataChangeTrigger.StatusValueTimestamp] and old.Value != current.Value:
             return True
 
-        if trg == ua.DataChangeTrigger.StatusValueTimestamp and \
-                (old.SourceTimestamp != current.SourceTimestamp or
-                 old.SourcePicoseconds != current.SourcePicoseconds):
+        if trg == ua.DataChangeTrigger.StatusValueTimestamp and (
+            old.SourceTimestamp != current.SourceTimestamp or old.SourcePicoseconds != current.SourcePicoseconds
+        ):
             return True
 
         return False
@@ -213,8 +212,9 @@ class MonitoredItemService:
             mdata = self._monitored_items[mid]
             mdata.mvalue.set_current_datavalue(value)
             if mdata.filter:
-                deadband_flag_pass = self._is_data_changed(mdata.mvalue, mdata.filter.Trigger) and \
-                                     self._is_deadband_exceeded(mdata.mvalue, mdata.filter)
+                deadband_flag_pass = self._is_data_changed(
+                    mdata.mvalue, mdata.filter.Trigger
+                ) and self._is_deadband_exceeded(mdata.mvalue, mdata.filter)
             else:
                 # Trigger defaults to StatusValue
                 deadband_flag_pass = self._is_data_changed(mdata.mvalue, ua.DataChangeTrigger.StatusValue)

@@ -8,7 +8,7 @@ import math
 from datetime import timedelta, datetime
 import socket
 from urllib.parse import urlparse
-from typing import Coroutine, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 from pathlib import Path
 
 from asyncua import ua
@@ -124,7 +124,7 @@ class Server:
         await self.set_application_uri(self._application_uri)
         sa_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerArray))
         await sa_node.write_value([self._application_uri])
-        #TODO: ServiceLevel is 255 default, should be calculated in later Versions
+        # TODO: ServiceLevel is 255 default, should be calculated in later Versions
         sl_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServiceLevel))
         await sl_node.write_value(ua.Variant(255, ua.VariantType.Byte))
 
@@ -165,7 +165,7 @@ class Server:
             product_name,
             software_version,
             build_number
-            ]):
+        ]):
             raise TypeError(f"""Expected all str got
                 product_uri: {type(product_uri)},
                 manufacturer_name: {type(manufacturer_name)},
@@ -306,7 +306,7 @@ class Server:
     async def _renew_registration(self):
         for client in self._discovery_clients.values():
             await client.connect_sessionless()
-            await client.register_server(self)  #FIXME discovery_configuration?
+            await client.register_server(self)  # FIXME discovery_configuration?
             await client.disconnect_sessionless()
 
     def allow_remote_admin(self, allow):
@@ -318,7 +318,7 @@ class Server:
     def set_endpoint(self, url):
         self.endpoint = urlparse(url)
 
-    async def get_endpoints(self) -> Coroutine:
+    async def get_endpoints(self):
         return await self.iserver.get_endpoints()
 
     def set_security_policy(self, security_policy, permission_ruleset=None):
@@ -414,9 +414,8 @@ class Server:
                                              ua.MessageSecurityMode.SignAndEncrypt, self.certificate, self.iserver.private_key,
                                              permission_ruleset=self._permission_ruleset))
 
-
     @staticmethod
-    def lookup_security_level_for_policy_type( security_policy_type: ua.SecurityPolicyType ) -> ua.Byte:
+    def lookup_security_level_for_policy_type(security_policy_type: ua.SecurityPolicyType) -> ua.Byte:
         """Returns the security level for an ua.SecurityPolicyType.
 
         This is endpoint & server implementation specific!
@@ -426,20 +425,19 @@ class Server:
         """
 
         return ua.Byte({
-            ua.SecurityPolicyType.NoSecurity : 0,
-            ua.SecurityPolicyType.Basic128Rsa15_Sign : 1,
-            ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt : 2,
-            ua.SecurityPolicyType.Basic256_Sign : 11,
-            ua.SecurityPolicyType.Basic256_SignAndEncrypt : 21,
-            ua.SecurityPolicyType.Basic256Sha256_Sign : 50,
-            ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt : 70,
-            ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign : 55,
-            ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt : 75
+            ua.SecurityPolicyType.NoSecurity: 0,
+            ua.SecurityPolicyType.Basic128Rsa15_Sign: 1,
+            ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt: 2,
+            ua.SecurityPolicyType.Basic256_Sign: 11,
+            ua.SecurityPolicyType.Basic256_SignAndEncrypt: 21,
+            ua.SecurityPolicyType.Basic256Sha256_Sign: 50,
+            ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt: 70,
+            ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign: 55,
+            ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt: 75
         }[security_policy_type])
 
-
     @staticmethod
-    def determine_security_level(security_policy_uri:str, security_mode: ua.MessageSecurityMode) -> ua.Byte:
+    def determine_security_level(security_policy_uri: str, security_mode: ua.MessageSecurityMode) -> ua.Byte:
         """Determine the security level of an EndPoint.
         The security level indicates how secure an EndPoint is, compared to other EndPoints of the same server.
         Value 0 is a special value; EndPoint isn't recommended, typical for ua.MessageSecurityMode.None_.
@@ -569,7 +567,7 @@ class Server:
         """
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.ObjectsFolder))
 
-    def get_node(self, nodeid):
+    def get_node(self, nodeid: Union[Node, ua.NodeId, str, int]) -> Node:
         """
         Get a specific node using NodeId object or a string representing a NodeId
         """
@@ -629,7 +627,7 @@ class Server:
         return ev_gen
 
     async def create_custom_data_type(self, idx, name, basetype=ua.ObjectIds.BaseDataType,
-                                      properties=None, description=None) -> Coroutine:
+                                      properties=None, description=None):
         if properties is None:
             properties = []
         base_t = _get_node(self.iserver.isession, basetype)
@@ -644,7 +642,7 @@ class Server:
         return custom_t
 
     async def create_custom_event_type(self, idx, name,
-                                       basetype=ua.ObjectIds.BaseEventType, properties=None) -> Coroutine:
+                                       basetype=ua.ObjectIds.BaseEventType, properties=None):
         if properties is None:
             properties = []
         return await self._create_custom_type(idx, name, basetype, properties, [], [])
@@ -655,7 +653,7 @@ class Server:
                                         basetype=ua.ObjectIds.BaseObjectType,
                                         properties=None,
                                         variables=None,
-                                        methods=None) -> Coroutine:
+                                        methods=None):
         if properties is None:
             properties = []
         if variables is None:
@@ -673,7 +671,7 @@ class Server:
                                           basetype=ua.ObjectIds.BaseVariableType,
                                           properties=None,
                                           variables=None,
-                                          methods=None) -> Coroutine:
+                                          methods=None):
         if properties is None:
             properties = []
         if variables is None:
@@ -701,7 +699,7 @@ class Server:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
 
-    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Coroutine:
+    async def import_xml(self, path=None, xmlstring=None, strict_mode=True):
         """
         Import nodes defined in xml
         """
@@ -731,7 +729,7 @@ class Server:
         nodes = await get_nodes_of_namespace(self, namespaces)
         await self.export_xml(nodes, path, export_values=export_values)
 
-    async def delete_nodes(self, nodes, recursive=False) -> Coroutine:
+    async def delete_nodes(self, nodes, recursive=False):
         return await delete_nodes(self.iserver.isession, nodes, recursive)
 
     async def historize_node_data_change(self, node, period=timedelta(days=7), count=0):
@@ -789,7 +787,7 @@ class Server:
         """
         self.iserver.isession.add_method_callback(node.nodeid, callback)
 
-    async def load_type_definitions(self, nodes=None) -> Coroutine:
+    async def load_type_definitions(self, nodes=None):
         """
         load custom structures from our server.
         Server side this can be used to create python objects from custom structures
@@ -806,7 +804,7 @@ class Server:
         """
         return await load_data_type_definitions(self, node)
 
-    async def load_enums(self) -> Coroutine:
+    async def load_enums(self):
         """
         load UA structures and generate python Enums in ua module for custom enums in server
         """

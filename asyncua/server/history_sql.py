@@ -22,7 +22,7 @@ class HistorySQLite(HistoryStorageInterface):
     note that PARSE_DECLTYPES is active so certain data types (such as datetime) will not be BLOBs
     """
 
-    def __init__(self, path="history.db", max_history_data_response_size=10000):
+    def __init__(self, path="history.db", max_history_data_response_size=10000) -> None:
         self.max_history_data_response_size = max_history_data_response_size
         self.logger = logging.getLogger(__name__)
         self._datachanges_period = {}
