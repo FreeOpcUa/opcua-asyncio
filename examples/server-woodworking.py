@@ -5,7 +5,7 @@ import asyncio
 import logging
 import random
 from asyncua import ua, Server
-from asyncua.common.instantiate_util import instantiate 
+from asyncua.common.instantiate_util import instantiate
 
 
 class HelloServer:
@@ -56,15 +56,14 @@ async def main():
         "FreeOpcUa Example Server",
         script_dir,
     ) as server:
-        
+
         while True:
-            await asyncio.sleep(1)  
+            await asyncio.sleep(1)
             a, b = random.randint(0,5), random.randint(0,4)
             # Update variables
             await server.get_node('ns=4;i=7830').write_value(a) #CurrentMode
             await server.get_node('ns=4;i=7831').write_value(b) #CurrentState
             await asyncio.sleep(5)
-            
 
 
 if __name__ == "__main__":

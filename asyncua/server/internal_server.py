@@ -380,7 +380,7 @@ class InternalServer:
                     # raise  # Should I raise a significant exception?
                     return user_name, password
                 length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
-                password = raw_pw[4 : 4 + length]
+                password = raw_pw[4:4 + length]
                 password = password.decode('utf-8')
             except Exception:
                 self.logger.exception("Unable to decrypt password")

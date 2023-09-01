@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat
 from cryptography.x509.extensions import _key_identifier_from_public_key as key_identifier_from_public_key
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 
-from asyncua.crypto.uacrypto import load_certificate,  load_private_key, check_certificate
+from asyncua.crypto.uacrypto import load_certificate, load_private_key, check_certificate
 
 ONE_DAY = datetime.timedelta(1, 0, 0)
 """ Shorthand for delta of 1 day """
@@ -254,7 +254,7 @@ async def setup_self_signed_certificate(key_file: Path,
                                         cert_file: Path,
                                         app_uri: str,
                                         host_name: str,
-                                        cert_use : List[x509.ObjectIdentifier],
+                                        cert_use: List[x509.ObjectIdentifier],
                                         subject_attrs: Dict[str, str]):
     """ Convenient helper for generating  a key and or basic certificate if needed:
     - The key/certificate doesn't exists (when key is missing, always regenerate the certificate)
@@ -288,14 +288,8 @@ async def setup_self_signed_certificate(key_file: Path,
 
     if generate_cert:
         subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(app_uri),
-                                                    x509.DNSName(f"{host_name}")]
+                                                     x509.DNSName(f"{host_name}")]
 
-
-        cert = generate_self_signed_app_certificate(key,
-                                                                    app_uri,
-                                                                    subject_attrs,
-                                                                    subject_alt_names,
-                                                                    extended=cert_use,
-                                                                    days = 365)
+        cert = generate_self_signed_app_certificate(key, app_uri, subject_attrs, subject_alt_names, extended=cert_use, days=365)
 
         cert_file.write_bytes(cert.public_bytes(encoding=Encoding.DER))

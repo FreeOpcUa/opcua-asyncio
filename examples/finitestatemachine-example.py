@@ -12,7 +12,7 @@ if __name__ == "__main__":
         await server.init()
         server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         idx = await server.register_namespace("http://examples.freeopcua.github.io")
-        
+
         # get a instance of the FiniteStateMachine-Class def "__init__(self, server=None, parent=None, idx=None, name=None):"
         mystatemachine = FiniteStateMachine(server, server.nodes.objects, idx, "FiniteStateMachine")
         # call statemachine.install() to instantiate the statemachinetype (with or without optional nodes)
@@ -42,8 +42,8 @@ if __name__ == "__main__":
             state5.node.nodeid
         ])
 
-        # setup your transition helperclass 
-        # if the transition node already exist for example from xml model you can assign it here: node=<TransitionNode> 
+        # setup your transition helperclass
+        # if the transition node already exist for example from xml model you can assign it here: node=<TransitionNode>
         trans1 = Transition("Transition-Id-1", "to Idle", 1)
         # adds the transition (TransitionType) to the statemachine childs - this is optional for the FiniteStateMachine
         await mystatemachine.add_transition(trans1)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         ])
 
         # initialise the FiniteStateMachine by call change_state() with the InitialState
-        # if the statechange should trigger an TransitionEvent the Message can be assigned here 
+        # if the statechange should trigger an TransitionEvent the Message can be assigned here
         # if event_msg is None no event will be triggered
         await mystatemachine.change_state(state1, trans1, f"{mystatemachine._name}: Idle", 300)
 

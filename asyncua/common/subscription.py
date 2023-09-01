@@ -31,10 +31,10 @@ class DataChangeNotif:
     """
 
     def __init__(
-            self,
-            subscription_data: SubscriptionItemData,
-            monitored_item: ua.MonitoredItemNotification
-        ):
+        self,
+        subscription_data: SubscriptionItemData,
+        monitored_item: ua.MonitoredItemNotification
+    ):
         self.monitored_item = monitored_item
         self.subscription_data = subscription_data
 
@@ -217,7 +217,7 @@ class Subscription:
         if not isinstance(evtypes, (list, tuple)):
             evtypes = [evtypes]
         evtypes = [Node(self.server, evtype) for evtype in evtypes]  # type: ignore[union-attr]
-        evfilter = await get_filter_from_event_type(evtypes, where_clause_generation) # type: ignore[union-attr]
+        evfilter = await get_filter_from_event_type(evtypes, where_clause_generation)  # type: ignore[union-attr]
         return evfilter
 
     async def subscribe_events(
@@ -278,7 +278,7 @@ class Subscription:
     async def _subscribe(
         self,
         nodes: Union[Node, Iterable[Node]],
-        attr = ua.AttributeIds.Value,
+        attr=ua.AttributeIds.Value,
         mfilter: ua.MonitoringFilter = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
@@ -434,12 +434,12 @@ class Subscription:
         return results
 
     def _modify_monitored_item_request(
-            self,
-            new_queuesize: int,
-            new_samp_time: ua.Duration,
-            mod_filter: ua.DataChangeFilter,
-            client_handle: ua.IntegerId
-        ):
+        self,
+        new_queuesize: int,
+        new_samp_time: ua.Duration,
+        mod_filter: ua.DataChangeFilter,
+        client_handle: ua.IntegerId
+    ):
         req_params = ua.MonitoringParameters()
         req_params.ClientHandle = client_handle
         req_params.QueueSize = new_queuesize
@@ -448,13 +448,13 @@ class Subscription:
         return req_params
 
     def deadband_monitor(
-            self,
-            var: Union[Node, Iterable[Node]],
-            deadband_val: ua.Double,
-            deadbandtype: ua.UInt32 = 1,
-            queuesize: int = 0,
-            attr: ua.AttributeIds = ua.AttributeIds.Value
-        ):
+        self,
+        var: Union[Node, Iterable[Node]],
+        deadband_val: ua.Double,
+        deadbandtype: ua.UInt32 = 1,
+        queuesize: int = 0,
+        attr: ua.AttributeIds = ua.AttributeIds.Value
+    ):
         """
         Method to create a subscription with a Deadband Value.
         Default deadband value type is absolute.

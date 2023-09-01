@@ -62,7 +62,7 @@ def test_std_address_space_references():
             (r.ReferenceTypeId.to_string(), r.NodeId.to_string(), r.IsForward) for r in aspace[k].references
         )
         xml_refs = set(
-            (r.attrib['ReferenceType'], r.text, r.attrib.get('IsForward', 'true') == 'true') for r in
-                       find_elem(std_nodes[k.to_string()], 'References')
+            (r.attrib['ReferenceType'], r.text, r.attrib.get('IsForward', 'true') == 'true')
+            for r in find_elem(std_nodes[k.to_string()], 'References')
         )
         assert 0 == len(xml_refs - refs)

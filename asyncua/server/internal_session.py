@@ -151,7 +151,7 @@ class InternalSession(AbstractSession):
         return self.iserver.view_service.browse(params)
 
     async def browse_next(self, parameters: ua.BrowseNextParameters) -> List[ua.BrowseResult]:
-        # TODO 
+        # TODO
         # ContinuationPoint: https://reference.opcfoundation.org/v104/Core/docs/Part4/7.6/
         # Add "ContinuationPoints" and some form of management for them to current sessionimplementation
         # BrowseNext: https://reference.opcfoundation.org/Core/Part4/v104/5.8.3/

@@ -12,7 +12,7 @@ import logging
 from typing import Tuple
 
 from asyncua.common.node import Node
-from asyncua.ua import NodeId, OpenFileMode, Variant, VariantType 
+from asyncua.ua import NodeId, OpenFileMode, Variant, VariantType
 
 
 _logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class UaFile:
         """
         self._file_node = file_node
         self._open_mode = open_mode
-        
+
         self._file_handle = None
         self._read_node = None
         self._write_node = None

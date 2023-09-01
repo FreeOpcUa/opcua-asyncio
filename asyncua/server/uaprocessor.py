@@ -365,7 +365,7 @@ class UaProcessor:
                 response = ua.ModifySubscriptionResponse()
                 response.Parameters = result
 
-                #_logger.info("sending modify subscription response")
+                # _logger.info("sending modify subscription response")
                 self.send_response(requesthdr.RequestHandle, seqhdr, response)
 
             elif typeid == ua.NodeId(ua.ObjectIds.DeleteSubscriptionsRequest_Encoding_DefaultBinary):

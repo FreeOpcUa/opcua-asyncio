@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from asyncua.common.node import Node
 
 
-_BROWSE_MASK =  ua.BrowseResultMask.NodeClass |  ua.BrowseResultMask.ReferenceTypeId |  ua.BrowseResultMask.BrowseName
+_BROWSE_MASK = ua.BrowseResultMask.NodeClass | ua.BrowseResultMask.ReferenceTypeId | ua.BrowseResultMask.BrowseName
 
 
 class Event:
@@ -214,7 +214,7 @@ async def where_clause_from_evtype(evtypes: List["Node"]):
             subtypes.append(st.nodeid)
     subtypes = list(set(subtypes))  # remove duplicates
     for subtypeid in subtypes:
-        op = ua.LiteralOperand(Value = ua.Variant(subtypeid))
+        op = ua.LiteralOperand(Value=ua.Variant(subtypeid))
         el.FilterOperands.append(op)
     el.FilterOperator = ua.FilterOperator.InList
     cf.Elements.append(el)
