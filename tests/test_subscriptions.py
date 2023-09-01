@@ -8,9 +8,11 @@ from asyncua.common.subscription import Subscription
 try:
     from unittest.mock import AsyncMock
 except ImportError:
-    from asynctest import CoroutineMock as AsyncMock
+    from asynctest import CoroutineMock as AsyncMock  # type: ignore[no-redef]
 import asyncua
 from asyncua import ua, Client
+
+from .conftest import Opc
 
 
 class MySubHandler:
@@ -245,7 +247,8 @@ async def test_subscription_data_change(opc):
         await sub.unsubscribe(handle1)  # sub does not exist anymore
     await opc.opc.delete_nodes([v1])
 
-async def test_subscription_monitored_item(opc):
+
+async def test_subscription_monitored_item(opc: Opc):
     """
     test subscriptions with a monitored item with a datachange filter.
 
@@ -258,12 +261,11 @@ async def test_subscription_monitored_item(opc):
     v1 = await o.add_variable(3, 'SubscriptionVariableV1', startv1)
     sub: Subscription = await opc.opc.create_subscription(100, myhandler)
 
-
     mfilter = ua.DataChangeFilter(Trigger=ua.DataChangeTrigger.StatusValueTimestamp)
 
-    #For creating monitor items create_monitored_items is availablem, but that one is not very easy in use.
-    #So use the internal function instead.
-    #TODO: Should there be an easy shorthand for making monitored items with filter?
+    # For creating monitor items create_monitored_items is availablem, but that one is not very easy in use.
+    # So use the internal function instead.
+    # TODO: Should there be an easy shorthand for making monitored items with filter?
     handles = await sub._subscribe(nodes=v1, mfilter=mfilter)
 
     # # Now check we get the start value
@@ -1043,6 +1045,7 @@ async def test_publish(opc, mocker):
 
     publish_event = asyncio.Event()
     publish_org = client.uaclient.publish
+
     async def publish(acks):
         await publish_event.wait()
         publish_event.clear()

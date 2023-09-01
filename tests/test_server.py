@@ -189,6 +189,7 @@ async def test_references_for_added_nodes_method(server):
     assert await m.get_parent() == o
     await server.delete_nodes([o])
 
+
 async def test_get_event_from_type_node_BaseEvent(server):
     """
     This should work for following BaseEvent tests to work
@@ -299,6 +300,7 @@ async def test_eventgenerator_sourceMyObject(server):
     await check_event_generator_object(evgen, o)
     await server.delete_nodes([o])
 
+
 async def test_eventgenerator_source_collision(server):
     objects = server.nodes.objects
     o = await objects.add_object(3, 'MyObject')
@@ -307,6 +309,7 @@ async def test_eventgenerator_source_collision(server):
     await check_eventgenerator_base_event(evgen, server)
     await check_event_generator_object(evgen, o, emitting_node=asyncua.Node(server.iserver.isession, ua.ObjectIds.Server))
     await server.delete_nodes([o])
+
 
 async def test_eventgenerator_inherited_event(server):
     evgen = await server.get_event_generator(ua.ObjectIds.AuditEventType)
@@ -402,8 +405,7 @@ async def test_create_custom_event_type_node_id(server):
 
 
 async def test_create_custom_event_type_node(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent1', asyncua.Node(server.iserver.isession,
-                                                                           ua.NodeId(ua.ObjectIds.BaseEventType)),
+    etype = await server.create_custom_event_type(2, 'MyEvent1', asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)),
                                                   [('PropertyNum', ua.VariantType.Int32),
                                                    ('PropertyString', ua.VariantType.String)])
     await check_custom_type(etype, ua.ObjectIds.BaseEventType, server)
@@ -440,8 +442,7 @@ async def test_eventgenerator_custom_event_with_variables(server):
                   ('PropertyString', ua.VariantType.String)]
     variables = [('VariableString', ua.VariantType.String),
                  ('MyEnumVar', ua.VariantType.Int32, ua.NodeId(ua.ObjectIds.ApplicationType))]
-    etype = await server.create_custom_object_type(2, 'MyEvent33', ua.ObjectIds.BaseEventType,
-                                                       properties, variables)
+    etype = await server.create_custom_object_type(2, 'MyEvent33', ua.ObjectIds.BaseEventType, properties, variables)
     evgen = await server.get_event_generator(etype, ua.ObjectIds.Server)
     check_eventgenerator_custom_event(evgen, etype, server)
     await check_eventgenerator_source_server(evgen, server)
@@ -555,8 +556,11 @@ async def test_get_node_by_ns(server):
 
 async def test_load_enum_strings(server):
     dt = await server.nodes.enum_data_type.add_data_type(0, "MyStringEnum")
-    await dt.add_property(0, "EnumStrings", [ua.LocalizedText("e1"), ua.LocalizedText("e2"), ua.LocalizedText("e3"),
-                                       ua.LocalizedText("e 4")])
+    await dt.add_property(
+        0,
+        "EnumStrings",
+        [ua.LocalizedText("e1"), ua.LocalizedText("e2"), ua.LocalizedText("e3"), ua.LocalizedText("e 4")]
+    )
     await server.load_enums()
     e = getattr(ua, "MyStringEnum")
     assert isinstance(e, EnumMeta)
@@ -567,18 +571,9 @@ async def test_load_enum_strings(server):
 
 async def test_load_enum_values(server):
     dt = await server.nodes.enum_data_type.add_data_type(0, "MyValuesEnum")
-    v1 = ua.EnumValueType(
-            DisplayName=ua.LocalizedText("v1"),
-            Value=2,
-            )
-    v2 = ua.EnumValueType(
-            DisplayName=ua.LocalizedText("v2"),
-            Value=3,
-            )
-    v3 = ua.EnumValueType(
-            DisplayName=ua.LocalizedText("v 3 "),
-            Value=4.
-            )
+    v1 = ua.EnumValueType(DisplayName=ua.LocalizedText("v1"), Value=2)
+    v2 = ua.EnumValueType(DisplayName=ua.LocalizedText("v2"), Value=3)
+    v3 = ua.EnumValueType(DisplayName=ua.LocalizedText("v 3 "), Value=4.)
     await dt.add_property(0, "EnumValues", [v1, v2, v3])
     await server.load_enums()
     e = getattr(ua, "MyValuesEnum")
@@ -645,8 +640,7 @@ def check_custom_event(ev, etype):
 async def check_custom_type(ntype, base_type, server: Server, node_class=None):
     base = asyncua.Node(server.iserver.isession, ua.NodeId(base_type))
     assert ntype in await base.get_children()
-    nodes = await ntype.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse,
-                                            includesubtypes=True)
+    nodes = await ntype.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse, includesubtypes=True)
     assert base == nodes[0]
     if node_class:
         assert node_class == await ntype.read_node_class()
@@ -657,6 +651,7 @@ async def check_custom_type(ntype, base_type, server: Server, node_class=None):
     assert (await(await ntype.get_child("2:PropertyNum")).read_data_value()).Value.VariantType == ua.VariantType.Int32
     assert await ntype.get_child("2:PropertyString") in properties
     assert (await(await ntype.get_child("2:PropertyString")).read_data_value()).Value.VariantType == ua.VariantType.String
+
 
 async def test_server_read_write_attribute_value(server: Server):
     node = await server.get_objects_node().add_variable(0, "0:TestVar", 0, varianttype=ua.VariantType.Int64)
@@ -672,6 +667,7 @@ async def test_server_read_write_attribute_value(server: Server):
 @pytest.fixture(scope="function")
 def restore_transport_limits_server(server: Server):
     # Restore limits after test
+    assert server.bserver is not None
     max_recv = server.bserver.limits.max_recv_buffer
     max_chunk_count = server.bserver.limits.max_chunk_count
     yield server
@@ -681,6 +677,7 @@ def restore_transport_limits_server(server: Server):
 
 async def test_message_limits_fail_write(restore_transport_limits_server: Server):
     server = restore_transport_limits_server
+    assert server.bserver is not None
     server.bserver.limits.max_recv_buffer = 1024
     server.bserver.limits.max_send_buffer = 10240000
     server.bserver.limits.max_chunk_count = 10
@@ -698,6 +695,7 @@ async def test_message_limits_fail_write(restore_transport_limits_server: Server
 
 async def test_message_limits_fail_read(restore_transport_limits_server: Server):
     server = restore_transport_limits_server
+    assert server.bserver is not None
     server.bserver.limits.max_recv_buffer = 10240000
     server.bserver.limits.max_send_buffer = 1024
     server.bserver.limits.max_chunk_count = 10
@@ -716,6 +714,7 @@ async def test_message_limits_fail_read(restore_transport_limits_server: Server)
 async def test_message_limits_works(restore_transport_limits_server: Server):
     server = restore_transport_limits_server
     # server.bserver.limits.max_recv_buffer = 1024
+    assert server.bserver is not None
     server.bserver.limits.max_send_buffer = 1024
     server.bserver.limits.max_chunk_count = 10
     n = await server.nodes.objects.add_variable(1, "MyLimitVariable2", "t")
@@ -727,7 +726,6 @@ async def test_message_limits_works(restore_transport_limits_server: Server):
         test_string = 'a' * (1024 * 5)
         await n.write_value(test_string, ua.VariantType.String)
         await n.read_value()
-
 
 
 """
@@ -755,6 +753,7 @@ class TestServerCaching(unittest.TestCase):
 
 """
 
+
 async def test_null_auth(server):
     """
     OPC-UA Specification Part 4, 5.6.3 specifies that a:
@@ -763,6 +762,7 @@ async def test_null_auth(server):
     Ensure a Null token is accepted as an anonymous connection token.
     """
     client = Client(server.endpoint.geturl())
+
     # Modify the authentication creation in the client request
     def _add_null_auth(self, params):
         params.UserIdentityToken = ua.ExtensionObject(ua.NodeId(ua.ObjectIds.Null))
@@ -772,11 +772,11 @@ async def test_null_auth(server):
         pass
 
 
-async def test_start_server_when_port_is_in_use(server: str):
+async def test_start_server_when_port_is_in_use(server: Server):
     server2 = Server()
     await server2.init()
     url = server.endpoint.geturl()
-    server2.set_endpoint(url) # try to bind on the same endpoint as an already running server
+    server2.set_endpoint(url)  # try to bind on the same endpoint as an already running server
     with pytest.raises(OSError):
         await server2.start()
     # now it should still be possible to stop the server with exceptions

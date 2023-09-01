@@ -11,6 +11,7 @@ from asyncua import ua
 from .monitored_item_service import MonitoredItemService
 from .address_space import AddressSpace
 
+
 class InternalSubscription:
     """
     Server internal subscription.

@@ -85,6 +85,7 @@ def der_from_x509(certificate):
         return b""
     return certificate.public_bytes(serialization.Encoding.DER)
 
+
 def pem_from_key(private_key: rsa.RSAPrivateKey) -> bytes:
     """dumps a private key in PEM format
 
@@ -95,6 +96,7 @@ def pem_from_key(private_key: rsa.RSAPrivateKey) -> bytes:
         bytes: The private as PEM/PKCS8 format
     """
     return private_key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption())
+
 
 def sign_sha1(private_key, data):
     return private_key.sign(

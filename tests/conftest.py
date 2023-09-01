@@ -19,14 +19,11 @@ from asyncua.server.history_sql import HistorySQLite
 from .test_common import add_server_methods
 from .util_enum_struct import add_server_custom_enum_struct
 
-
-
-
-
 RETRY = 20
 SLEEP = 0.4
 PORTS_USED = set()
-Opc = namedtuple('opc', ['opc', 'server'])
+Opc = namedtuple('Opc', ['opc', 'server'])
+
 
 def find_free_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
@@ -38,6 +35,7 @@ def find_free_port():
             return port
         else:
             return find_free_port()
+
 
 port_num = find_free_port()
 port_num1 = find_free_port()
@@ -265,6 +263,7 @@ async def history_server(request):
         srv = await create_history_server(sqlite=True)
         yield srv
         await srv.srv.stop()
+
 
 @pytest.fixture(scope="session")
 def client_key_and_cert(request):

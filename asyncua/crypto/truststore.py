@@ -57,7 +57,7 @@ class TrustStore:
 
     async def load_trust(self):
         """(re)load the trusted certificates"""
-        self._trust_store: crypto.X509Store = crypto.X509Store()
+        self._trust_store = crypto.X509Store()
         for location in self._trust_locations:
             await self._load_trust_location(location)
 
@@ -113,7 +113,7 @@ class TrustStore:
         for revoked in self._revoked_list:
             if revoked.serial_number == certificate.serial_number:
                 subject_cn = certificate.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
-                _logger.warning('Found revoked serial "%s" [CN=%s]', hex(certificate.serial_number),  subject_cn)
+                _logger.warning('Found revoked serial "%s" [CN=%s]', hex(certificate.serial_number), subject_cn)
                 is_revoked = True
                 break
         return is_revoked

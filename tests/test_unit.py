@@ -11,7 +11,7 @@ import pytest
 import logging
 from datetime import datetime
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, cast
 
 from asyncua import ua
 from asyncua.ua import ua_binary
@@ -773,7 +773,7 @@ def test_where_clause():
     op.BrowsePath.append(ua.QualifiedName("property", 2))
     el.FilterOperands.append(op)
     for i in range(10):
-        op = ua.LiteralOperand(Value = ua.Variant(i))
+        op = ua.LiteralOperand(Value=ua.Variant(i))
         el.FilterOperands.append(op)
     el.FilterOperator = ua.FilterOperator.InList
     cf.Elements.append(el)
@@ -858,7 +858,7 @@ def test_expandedNodeId():
     assert nid.Identifier == 85
 
 
-def test_struct_104():
+def test_struct_104() -> None:
     @dataclass
     class MyStruct:
         Encoding: ua.Byte = field(default=0, repr=False, init=False)
@@ -872,7 +872,7 @@ def test_struct_104():
     m2 = struct_from_binary(MyStruct, ua.utils.Buffer(data))
     assert m == m2
 
-    m = MyStruct(a=4, b=5, c="lkjkæl", l=["a", "b", "c"])
+    m = MyStruct(a=4, b=5, c="lkjkæl", l=[cast(ua.String, "a"), cast(ua.String, "b"), cast(ua.String, "c")])
     data = struct_to_binary(m)
     m2 = struct_from_binary(MyStruct, ua.utils.Buffer(data))
     assert m == m2

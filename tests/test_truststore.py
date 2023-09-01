@@ -132,12 +132,12 @@ def trust_store(tmp_path) -> TrustStore:
     return _trust_store
 
 
-async def test_selfsigned_not_in_trust_store(cert_files, trust_store):
+async def test_selfsigned_not_in_trust_store(cert_files, trust_store) -> None:
     cert_self_signed: x509.Certificate = await load_certificate(cert_files / SERVER_CERT_SELF_SIGNED_FILE)
     assert trust_store.is_trusted(cert_self_signed) is False
 
 
-async def test_selfsigned_in_trust_store(cert_files, trust_store):
+async def test_selfsigned_in_trust_store(cert_files, trust_store) -> None:
     shutil.copyfile(cert_files / SERVER_CERT_SELF_SIGNED_FILE, trust_store.trust_locations[0] / SERVER_CERT_SELF_SIGNED_FILE)
     await trust_store.load()
 
@@ -145,12 +145,12 @@ async def test_selfsigned_in_trust_store(cert_files, trust_store):
     assert trust_store.is_trusted(cert_self_signed) is True
 
 
-async def test_ca_not_in_trust_store(cert_files, trust_store):
+async def test_ca_not_in_trust_store(cert_files, trust_store) -> None:
     cert_self_signed: x509.Certificate = await load_certificate(cert_files / SERVER_CERT_SELF_SIGNED_FILE)
     assert trust_store.is_trusted(cert_self_signed) is False
 
 
-async def test_ca_in_trust_store(cert_files, trust_store):
+async def test_ca_in_trust_store(cert_files, trust_store) -> None:
     shutil.copyfile(cert_files / CA_CERT_FILE, trust_store.trust_locations[0] / CA_CERT_FILE)
     await trust_store.load()
 
@@ -158,7 +158,7 @@ async def test_ca_in_trust_store(cert_files, trust_store):
     assert trust_store.is_trusted(cert_server) is True
 
 
-async def test_empty_crl(cert_files, trust_store):
+async def test_empty_crl(cert_files, trust_store) -> None:
     shutil.copyfile(cert_files / CA_CERT_FILE, trust_store.trust_locations[0] / CA_CERT_FILE)
     shutil.copyfile(cert_files / 'ca_empty_crl.der', trust_store.crl_locations[0] / 'ca_empty_crl.der')
     await trust_store.load()
@@ -172,7 +172,7 @@ async def test_empty_crl(cert_files, trust_store):
     assert trust_store.validate(cert_server) is True
 
 
-async def test_cert_in_crl(cert_files, trust_store):
+async def test_cert_in_crl(cert_files, trust_store) -> None:
     shutil.copyfile(cert_files / CA_CERT_FILE, trust_store.trust_locations[0] / CA_CERT_FILE)
     shutil.copyfile(cert_files / 'ca_crl.der', trust_store.crl_locations[0] / 'ca_crl.der')
     await trust_store.load()

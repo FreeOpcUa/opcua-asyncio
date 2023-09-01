@@ -6,3 +6,5 @@ pytest-mock
 asynctest
 types-aiofiles
 types-pyOpenSSL
+types-python-dateutil
+types-pytz

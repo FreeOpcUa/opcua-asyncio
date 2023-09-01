@@ -14,8 +14,10 @@ from ..ua.uaerrors import UaError
 
 _logger = logging.getLogger(__name__)
 
+
 def _parse_version(version_string: str) -> List[int]:
     return [int(v) for v in version_string.split('.')]
+
 
 class XmlImporter:
 
@@ -162,7 +164,7 @@ class XmlImporter:
                                   ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
         dangling_refs_to_missing_nodes = set(new_nodes)
 
-        RefSpecKey = Tuple[ua.NodeId, ua.NodeId, ua.NodeId] # (source_node_id, target_node_id, ref_type_id)
+        RefSpecKey = Tuple[ua.NodeId, ua.NodeId, ua.NodeId]  # (source_node_id, target_node_id, ref_type_id)
         node_reference_map: Dict[RefSpecKey, ua.ReferenceDescription] = {}
 
         for new_node_id in new_nodes:
@@ -189,8 +191,12 @@ class XmlImporter:
 
                 _logger.debug("Adding missing reference: %s <-> %s (%s)", target_node_id, source_node_id, ref.ReferenceTypeId)
 
-                new_ref = ua.AddReferencesItem(SourceNodeId=target_node_id, TargetNodeId=source_node_id,
-                    ReferenceTypeId=ref_type, IsForward=(not ref.IsForward))
+                new_ref = ua.AddReferencesItem(
+                    SourceNodeId=target_node_id,
+                    TargetNodeId=source_node_id,
+                    ReferenceTypeId=ref_type,
+                    IsForward=(not ref.IsForward)
+                )
                 reference_fixes.append(new_ref)
         await self._add_references(reference_fixes)
 

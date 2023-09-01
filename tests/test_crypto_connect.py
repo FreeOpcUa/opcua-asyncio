@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Tuple
 import pytest
 import asyncio
 
@@ -106,6 +107,7 @@ async def srv_crypto_one_cert(request):
     yield srv, cert
     # stop the server
     await srv.stop()
+
 
 @pytest.fixture(params=srv_crypto_params)
 async def srv_crypto_all_cert_basic128rsa15(request):
@@ -479,6 +481,7 @@ async def test_anonymous_rejection():
         await clt.connect()
     await srv.stop()
 
+
 async def test_security_level_all():
     assert Server.determine_security_level(ua.SecurityPolicy.URI, ua.MessageSecurityMode.None_) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.NoSecurity)
 
@@ -495,7 +498,8 @@ async def test_security_level_all():
     assert Server.determine_security_level(security_policies.SecurityPolicyBasic256.URI, ua.MessageSecurityMode.Sign) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256_Sign)
     assert Server.determine_security_level(security_policies.SecurityPolicyBasic256.URI, ua.MessageSecurityMode.SignAndEncrypt) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256_SignAndEncrypt)
 
-async def test_security_level_endpoints(srv_crypto_all_certs):
+
+async def test_security_level_endpoints(srv_crypto_all_certs: Tuple[Server, str]):
     srv = srv_crypto_all_certs[0]
 
     end_points: list[ua.EndpointDescription] = await srv.get_endpoints()

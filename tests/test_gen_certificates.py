@@ -9,7 +9,7 @@ from cryptography.x509.extensions import _key_identifier_from_public_key as key_
 from asyncua.crypto.cert_gen import generate_private_key, generate_app_certificate_signing_request, generate_self_signed_app_certificate, sign_certificate_request
 
 
-async def test_create_self_signed_app_certificate():
+async def test_create_self_signed_app_certificate() -> None:
     """ Checks if the self signed certificate complies to OPC 10000-6 6.2.2"""
 
     hostname = socket.gethostname()
@@ -52,7 +52,7 @@ async def test_create_self_signed_app_certificate():
 
     # check valid time range
     assert dt_before_generation <= cert.not_valid_before <= dt_after_generation
-    assert (dt_before_generation+timedelta(days_valid)) <= cert.not_valid_after <= (dt_after_generation+timedelta(days_valid))
+    assert (dt_before_generation + timedelta(days_valid)) <= cert.not_valid_after <= (dt_after_generation + timedelta(days_valid))
 
     # check issuer
     assert cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value == f"myserver@{hostname}"
@@ -63,6 +63,8 @@ async def test_create_self_signed_app_certificate():
     # check Authority Key Identifier
     auth_key_identifier: x509.AuthorityKeyIdentifier = cert.extensions.get_extension_for_class(x509.AuthorityKeyIdentifier).value
     assert auth_key_identifier
+    assert isinstance(auth_key_identifier.authority_cert_issuer, list)
+    assert len(auth_key_identifier.authority_cert_issuer) > 0
     issuer: x509.Name = auth_key_identifier.authority_cert_issuer[0].value
     assert issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value == f"myserver@{hostname}"
     assert auth_key_identifier.authority_cert_serial_number == cert.serial_number
@@ -89,7 +91,7 @@ async def test_create_self_signed_app_certificate():
     assert cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value == x509.ExtendedKeyUsage(extended)
 
 
-async def test_app_create_certificate_signing_request():
+async def test_app_create_certificate_signing_request() -> None:
     """ Checks if the self signed certificate complies to OPC 10000-6 6.2.2"""
 
     hostname = socket.gethostname()
@@ -139,7 +141,7 @@ async def test_app_create_certificate_signing_request():
     assert csr.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value == x509.ExtendedKeyUsage(extended)
 
 
-async def test_app_sign_certificate_request():
+async def test_app_sign_certificate_request() -> None:
     """Check the correct signing of certificate signing request"""
     hostname = socket.gethostname()
 
@@ -180,6 +182,8 @@ async def test_app_sign_certificate_request():
     # check authority Key Identifier
     auth_key_identifier: x509.AuthorityKeyIdentifier = cert.extensions.get_extension_for_class(x509.AuthorityKeyIdentifier).value
     assert auth_key_identifier
+    assert isinstance(auth_key_identifier.authority_cert_issuer, list)
+    assert len(auth_key_identifier.authority_cert_issuer) > 0
     assert auth_key_identifier.authority_cert_issuer[0].value == issuer.subject
     assert auth_key_identifier.authority_cert_serial_number == issuer.serial_number
     assert auth_key_identifier.key_identifier == key_identifier_from_public_key(key_ca.public_key())
