@@ -485,7 +485,7 @@ class SecurityPolicyAes128Sha256RsaOaep(SecurityPolicy):
         if permission_ruleset is None:
             from asyncua.crypto.permission_rules import SimpleRoleRuleset
             permission_ruleset = SimpleRoleRuleset()
-        
+
         self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):
@@ -576,7 +576,7 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
         if permission_ruleset is None:
             from asyncua.crypto.permission_rules import SimpleRoleRuleset
             permission_ruleset = SimpleRoleRuleset()
-        
+
         self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):
@@ -664,7 +664,7 @@ class SecurityPolicyBasic256(SecurityPolicy):
         if permission_ruleset is None:
             from asyncua.crypto.permission_rules import SimpleRoleRuleset
             permission_ruleset = SimpleRoleRuleset()
-        
+
         self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):
@@ -751,7 +751,7 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         if permission_ruleset is None:
             from asyncua.crypto.permission_rules import SimpleRoleRuleset
             permission_ruleset = SimpleRoleRuleset()
-        
+
         self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):

@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     # after the UA server is started initialize the mirrored object
     my_python_obj = MyObj(server, myobj)
-    
+
     try:
         while True:
             # from an OPC UA client write a value to this node to see it show up in the python object

@@ -51,4 +51,3 @@ class UaFile:
         """ gets size of file """
         size_node = await self._file_node.get_child("Size")
         return await size_node.read_value()
-

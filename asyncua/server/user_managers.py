@@ -54,5 +54,5 @@ class CertificateUserManager:
     async def add_user(self, certificate_path: Path, name: str, format: Union[str, None] = None):
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.User, name=name, format=format)
 
-    async def add_admin(self, certificate_path: Path, name:str, format: Union[str, None] = None):
+    async def add_admin(self, certificate_path: Path, name: str, format: Union[str, None] = None):
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.Admin, name=name, format=format)

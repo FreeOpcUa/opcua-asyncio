@@ -684,6 +684,7 @@ async def test_disable_xml_export_without_value(opc, tmpdir):
     assert v.Value.Value is None
     await opc.opc.delete_nodes([o2])
 
+
 async def test_xml_namespace_meta_add(opc):
     with pytest.raises(ValueError):
         await opc.opc.get_namespace_index("http://foobar.org/struct_optional/")

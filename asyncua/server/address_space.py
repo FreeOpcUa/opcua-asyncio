@@ -17,7 +17,7 @@ if TYPE_CHECKING:
         ObjectAttributes, DataTypeAttributes, ReferenceTypeAttributes,
         VariableTypeAttributes, VariableAttributes, ObjectTypeAttributes
     )
-    __TYPE_ATTRIBUTES = Union[    
+    __TYPE_ATTRIBUTES = Union[
         DataTypeAttributes,
         ReferenceTypeAttributes,
         VariableTypeAttributes,
@@ -454,7 +454,7 @@ class NodeManagementService:
         if addref.TargetNodeClass == ua.NodeClass.Unspecified:
             rdesc.NodeClass = self._aspace.read_attribute_value(   # type: ignore[union-attr]
                 addref.TargetNodeId, ua.AttributeIds.NodeClass
-            ).Value.Value  
+            ).Value.Value
         else:
             rdesc.NodeClass = addref.TargetNodeClass
         bname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value   # type: ignore[union-attr]

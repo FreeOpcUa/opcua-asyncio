@@ -160,7 +160,7 @@ class BinaryServer:
                 await self.cleanup_task
             except asyncio.CancelledError:
                 pass
-            
+
         await self._close_tasks()
 
         if self._server:

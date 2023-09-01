@@ -55,12 +55,12 @@ async def main():
 
     method_parent = await obj.add_object(idx, "Methods")
     method_node = await method_parent.add_method(
-        idx, 
-        "SetAxisInformation", 
-        callback, 
+        idx,
+        "SetAxisInformation",
+        callback,
         [
             inarg_extobj
-        ], 
+        ],
         [
             outarg_extobj,
             status

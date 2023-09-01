@@ -1,3 +1,4 @@
+select = ["E", "F", "W"]
 extend-exclude = ["docs", "nodeset", "schemas", "*_auto.py", "event_objects.py", "standard_address_space_services.py"]
 line-length = 999
 [per-file-ignores]

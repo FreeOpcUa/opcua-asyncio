@@ -122,7 +122,7 @@ def fields_with_resolved_types(
             class_or_instance,
             globalns=globalns,
             localns=localns,
-            include_extras=include_extras 
+            include_extras=include_extras
         )
     for field in fields_:
         try:

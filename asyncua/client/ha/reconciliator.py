@@ -457,4 +457,3 @@ class Reconciliator:
     def hook_del_from_map(self, fut: asyncio.Task, url: str, **kwargs):
         """placeholder for easily superclass the HaClient and implement custom logic
         """
-
