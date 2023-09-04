@@ -5,6 +5,7 @@ High level interface to pure python OPC-UA server
 import asyncio
 import logging
 import math
+from cryptography import x509
 from datetime import timedelta, datetime
 import socket
 from urllib.parse import urlparse
@@ -90,14 +91,14 @@ class Server:
         self.manufacturer_name = "FreeOpcUa"
         self.application_type = ua.ApplicationType.ClientAndServer
         self.default_timeout: int = 60 * 60 * 1000
-        self.iserver = iserver if iserver else InternalServer(user_manager=user_manager)
+        self.iserver: InternalServer = iserver if iserver else InternalServer(user_manager=user_manager)
         self.bserver: Optional[BinaryServer] = None
         self.socket_address: Optional[Tuple[str, int]] = None
         self._discovery_clients = {}
         self._discovery_period = 60
         self._discovery_handle = None
         self._policies = []
-        self.nodes = Shortcuts(self.iserver.isession)
+        self.nodes: Shortcuts = Shortcuts(self.iserver.isession)
         # enable all endpoints by default
         self._security_policy = [
             ua.SecurityPolicyType.NoSecurity, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
@@ -107,11 +108,11 @@ class Server:
         # allow all certificates by default
         self._permission_ruleset = None
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep"]
-        self.certificate = None
+        self.certificate: Optional[x509.Certificate] = None
         # Use acceptable limits
         buffer_sz = 65535
         max_msg_sz = 100 * 1024 * 1024  # 100mb
-        self.limits = TransportLimits(
+        self.limits: TransportLimits = TransportLimits(
             max_recv_buffer=buffer_sz,
             max_send_buffer=buffer_sz,
             max_chunk_count=math.ceil(max_msg_sz / buffer_sz),  # Round up to allow max msg size
