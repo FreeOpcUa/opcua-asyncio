@@ -6,6 +6,35 @@ class Shortcuts:
     """
     This object contains Node objects to some commonly used nodes
     """
+
+    root: Node
+    objects: Node
+    server: Node
+    base_object_type: Node
+    base_data_type: Node
+    base_event_type: Node
+    base_variable_type: Node
+    folder_type: Node
+    enum_data_type: Node
+    option_set_type: Node
+    types: Node
+    data_types: Node
+    event_types: Node
+    reference_types: Node
+    variable_types: Node
+    object_types: Node
+    namespace_array: Node
+    namespaces: Node
+    opc_binary: Node
+    base_structure_type: Node
+    base_union_type: Node
+    server_state: Node
+    service_level: Node
+    HasComponent: Node
+    HasProperty: Node
+    Organizes: Node
+    HasEncoding: Node
+
     def __init__(self, server):
         self.root = Node(server, ObjectIds.RootFolder)
         self.objects = Node(server, ObjectIds.ObjectsFolder)
