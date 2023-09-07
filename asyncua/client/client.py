@@ -35,7 +35,13 @@ class Client:
     _username = None
     _password = None
 
-    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
+    def __init__(
+        self,
+        url: str,
+        timeout: float = 4,
+        watchdog_intervall: float = 1.0,
+        strip_url_credentials: bool = True
+    ):
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -45,6 +51,10 @@ class Client:
             time. The timeout is specified in seconds.
         :param watchdog_intervall:
             The time between checking if the server is still alive. The timeout is specified in seconds.
+        :param strip_url_credentials:
+            If True, strip credentials from the url before connecting, preventing them from
+            being sent unencrypted. Disabling this is not recommended for security reasons.
+
         Some other client parameters can be changed by setting
         attributes on the constructed object:
         See the source code for the exhaustive list.
@@ -58,7 +68,8 @@ class Client:
             if have_password:
                 self._password = unquote(password)
             # remove credentials from url, preventing them to be sent unencrypted in e.g. send_hello
-            self.server_url = self.server_url.__class__(self.server_url[0], hostinfo, *self.server_url[2:])
+            if strip_url_credentials:
+                self.server_url = self.server_url.__class__(self.server_url[0], hostinfo, *self.server_url[2:])
 
         self.name = "Pure Python Async. Client"
         self.description = self.name
@@ -82,6 +93,7 @@ class Client:
         self._monitor_server_task = None
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
+        self.strip_url_credentials = strip_url_credentials
         self._closing: bool = False
 
     async def __aenter__(self):
