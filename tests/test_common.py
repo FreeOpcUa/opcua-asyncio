@@ -1034,16 +1034,6 @@ async def test_path_string(opc):
     assert ["1:titif", "3:opath"] == path
 
 
-async def test_path_as_string(opc):
-    o = await (await opc.opc.nodes.objects.add_folder(1, "titif")).add_object(
-        3, "opath"
-    )
-    path = await o.get_path_as_string()
-    assert ["0:Root", "0:Objects", "1:titif", "3:opath"] == path
-    path = await o.get_path_as_string(2)
-    assert ["1:titif", "3:opath"] == path
-
-
 async def test_path(opc):
     of = await opc.opc.nodes.objects.add_folder(1, "titif")
     op = await of.add_object(3, "opath")

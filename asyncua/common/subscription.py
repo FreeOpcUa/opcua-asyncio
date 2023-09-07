@@ -214,7 +214,7 @@ class Subscription:
         )
 
     async def _create_eventfilter(self, evtypes: Union[ua.ObjectIds, List[ua.ObjectIds], ua.NodeId, List[ua.NodeId]], where_clause_generation: bool = True):
-        if not isinstance(evtypes, (list, tuple)):
+        if not isinstance(evtypes, collections.abc.Sequence):
             evtypes = [evtypes]
         evtypes = [Node(self.server, evtype) for evtype in evtypes]  # type: ignore[union-attr]
         evfilter = await get_filter_from_event_type(evtypes, where_clause_generation)  # type: ignore[union-attr]
@@ -245,7 +245,7 @@ class Subscription:
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
-            if not isinstance(evtypes, (list, tuple)) and evtypes == ua.ObjectIds.BaseEventType:
+            if not isinstance(evtypes, collections.abc.Sequence) and evtypes == ua.ObjectIds.BaseEventType:
                 # Remove where clause for base event type, for servers that have problems with long WhereClauses.
                 # Also because BaseEventType wants every event we can ommit it. Issue: #1205
                 where_clause_generation = False

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
 import asyncua
 from asyncua import ua
@@ -11,8 +13,8 @@ _logger = logging.getLogger(__name__)
 
 
 async def copy_node(
-    parent: "asyncua.Node", node: "asyncua.Node", nodeid: Optional[ua.NodeId] = None, recursive: bool = True
-) -> List["asyncua.Node"]:
+    parent: asyncua.Node, node: asyncua.Node, nodeid: Optional[ua.NodeId] = None, recursive: bool = True
+) -> Sequence[asyncua.Node]:
     """
     Copy a node or node tree as child of parent node
     """
@@ -46,7 +48,7 @@ async def _copy_node(session: AbstractSession, parent_nodeid: ua.NodeId, rdesc: 
     return added_nodes
 
 
-async def _rdesc_from_node(parent: "asyncua.Node", node: "asyncua.Node") -> ua.ReferenceDescription:
+async def _rdesc_from_node(parent: asyncua.Node, node: asyncua.Node) -> ua.ReferenceDescription:
     results = await node.read_attributes([
         ua.AttributeIds.NodeClass, ua.AttributeIds.BrowseName, ua.AttributeIds.DisplayName,
     ])
@@ -71,7 +73,7 @@ async def _rdesc_from_node(parent: "asyncua.Node", node: "asyncua.Node") -> ua.R
     return rdesc
 
 
-async def _read_and_copy_attrs(node_type: "asyncua.Node", struct: Any, addnode: ua.AddNodesItem) -> None:
+async def _read_and_copy_attrs(node_type: asyncua.Node, struct: Any, addnode: ua.AddNodesItem) -> None:
     names = [name for name in struct.__dict__.keys() if not name.startswith("_") and name not in (
         "BodyLength", "TypeId", "SpecifiedAttributes", "Encoding", "IsAbstract", "EventNotifier",
     )]

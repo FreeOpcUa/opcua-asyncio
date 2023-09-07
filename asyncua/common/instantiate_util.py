@@ -2,9 +2,11 @@
 Instantiate a new node and its child nodes from a node type.
 """
 
+from __future__ import annotations
+
 import logging
 
-from typing import List, Optional, Union
+from typing import Optional, Sequence, Union
 
 import asyncua
 from asyncua import ua
@@ -21,14 +23,14 @@ async def is_abstract(node_type) -> bool:
 
 
 async def instantiate(
-    parent: "asyncua.Node",
-    node_type: "asyncua.Node",
+    parent: asyncua.Node,
+    node_type: asyncua.Node,
     nodeid: Optional[ua.NodeId] = None,
     bname: Optional[Union[ua.QualifiedName, str]] = None,
     dname: Optional[ua.LocalizedText] = None,
     idx: int = 0,
     instantiate_optional: bool = True,
-) -> List["asyncua.Node"]:
+) -> Sequence[asyncua.Node]:
     """
     instantiate a node type under a parent node.
     nodeid and browse name of new node can be specified, or just namespace index

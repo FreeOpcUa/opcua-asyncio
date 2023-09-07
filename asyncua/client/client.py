@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import socket
-from typing import List, Tuple, Union, Coroutine, Optional, Type
+from typing import Iterable, List, Tuple, Union, Coroutine, Optional, Sequence, Type
 from urllib.parse import urlparse, unquote
 from pathlib import Path
 
@@ -782,7 +782,7 @@ class Client:
         _logger.info("get_namespace_index %s %r", type(uries), uries)
         return uries.index(uri)
 
-    async def delete_nodes(self, nodes: List[Node], recursive=False) -> Tuple[List[Node], List[ua.StatusCode]]:
+    async def delete_nodes(self, nodes: Iterable[Node], recursive=False) -> Tuple[Sequence[Node], Sequence[ua.StatusCode]]:
         return await delete_nodes(self.uaclient, nodes, recursive)
 
     async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Coroutine:

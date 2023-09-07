@@ -4,7 +4,7 @@ format is the one from opc-ua specification
 """
 import logging
 import uuid
-from typing import Set, Union, Dict, List, Tuple
+from typing import Set, Union, Dict, List, Sequence, Tuple
 from dataclasses import fields, is_dataclass
 from asyncua.common.structures104 import load_custom_struct_xml_import, load_enum_xml_import, load_basetype_alias_xml_import
 import asyncua
@@ -16,7 +16,7 @@ from ..ua.uaerrors import UaError
 _logger = logging.getLogger(__name__)
 
 
-def _parse_version(version_string: str) -> List[int]:
+def _parse_version(version_string: str) -> Sequence[int]:
     return [int(v) for v in version_string.split('.')]
 
 
@@ -157,7 +157,7 @@ class XmlImporter:
         await self._check_if_namespace_meta_information_is_added()
         return nodes
 
-    async def _add_missing_reverse_references(self, new_nodes: List[Node]) -> Set[Node]:
+    async def _add_missing_reverse_references(self, new_nodes: Sequence[Node]) -> Set[Node]:
         __unidirectional_types = {ua.ObjectIds.GuardVariableType, ua.ObjectIds.HasGuard,
                                   ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType,
                                   ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType,

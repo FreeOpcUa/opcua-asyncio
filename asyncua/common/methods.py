@@ -2,6 +2,8 @@
 High level method related functions
 """
 
+from __future__ import annotations
+
 from asyncio import iscoroutinefunction
 from typing import Any, Union
 
@@ -9,7 +11,7 @@ import asyncua
 from asyncua import ua
 
 
-async def call_method(parent: "asyncua.Node", methodid: Union[ua.NodeId, ua.QualifiedName, str], *args) -> Any:
+async def call_method(parent: asyncua.Node, methodid: Union[ua.NodeId, ua.QualifiedName, str], *args) -> Any:
     """
     Call an OPC-UA method. methodid is browse name of child method or the
     nodeid of method as a NodeId object
@@ -28,7 +30,7 @@ async def call_method(parent: "asyncua.Node", methodid: Union[ua.NodeId, ua.Qual
         return result.OutputArguments
 
 
-async def call_method_full(parent: "asyncua.Node", methodid: Union[ua.NodeId, ua.QualifiedName, str], *args) -> ua.CallMethodResult:
+async def call_method_full(parent: asyncua.Node, methodid: Union[ua.NodeId, ua.QualifiedName, str], *args) -> ua.CallMethodResult:
     """
     Call an OPC-UA method. methodid is browse name of child method or the
     nodeid of method as a NodeId object
