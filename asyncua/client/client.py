@@ -3,7 +3,7 @@ import logging
 import socket
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast
 from urllib.parse import urlparse, unquote
 from pathlib import Path
 
@@ -100,7 +100,7 @@ class Client:
     __repr__ = __str__
 
     @staticmethod
-    def find_endpoint(endpoints: List[ua.EndpointDescription], security_mode: ua.MessageSecurityMode, policy_uri: str) -> ua.EndpointDescription:
+    def find_endpoint(endpoints: Iterable[ua.EndpointDescription], security_mode: ua.MessageSecurityMode, policy_uri: str) -> ua.EndpointDescription:
         """
         Find endpoint with required security mode and policy URI
         """
@@ -126,7 +126,7 @@ class Client:
             raise TypeError(f"Password must be a string, got {pwd} of type {type(pwd)}")
         self._password = pwd
 
-    def set_locale(self, locale: List[str]) -> None:
+    def set_locale(self, locale: Sequence[str]) -> None:
         """
         Sets the preferred locales of the client, the server chooses which locale he can provide.
         Normally the first matching locale in the list will be chosen, by the server.
@@ -230,7 +230,7 @@ class Client:
         """
         self.user_private_key = await uacrypto.load_private_key(path, password, extension)
 
-    async def connect_and_get_server_endpoints(self) -> List[ua.EndpointDescription]:
+    async def connect_and_get_server_endpoints(self) -> Sequence[ua.EndpointDescription]:
         """
         Connect, ask server for endpoints, and disconnect
         """
@@ -246,7 +246,7 @@ class Client:
             self.disconnect_socket()
         return endpoints
 
-    async def connect_and_find_servers(self) -> List[ua.ApplicationDescription]:
+    async def connect_and_find_servers(self) -> Sequence[ua.ApplicationDescription]:
         """
         Connect, ask server for a list of known servers, and disconnect
         """
@@ -262,7 +262,7 @@ class Client:
             self.disconnect_socket()
         return servers
 
-    async def connect_and_find_servers_on_network(self) -> List[ua.FindServersOnNetworkResult]:
+    async def connect_and_find_servers_on_network(self) -> Sequence[ua.FindServersOnNetworkResult]:
         """
         Connect, ask server for a list of known servers on network, and disconnect
         """
@@ -382,7 +382,7 @@ class Client:
     async def close_secure_channel(self):
         return await self.uaclient.close_secure_channel()
 
-    async def get_endpoints(self) -> List[ua.EndpointDescription]:
+    async def get_endpoints(self) -> Sequence[ua.EndpointDescription]:
         """Get a list of OPC-UA endpoints."""
 
         params = ua.GetEndpointsParameters()
@@ -427,7 +427,7 @@ class Client:
             return await self.uaclient.unregister_server2(params)
         return await self.uaclient.unregister_server(serv)
 
-    async def find_servers(self, uris: Optional[List[str]] = None) -> List[ua.ApplicationDescription]:
+    async def find_servers(self, uris: Optional[Iterable[str]] = None) -> Sequence[ua.ApplicationDescription]:
         """
         send a FindServer request to the server. The answer should be a list of
         servers the server knows about
@@ -437,10 +437,10 @@ class Client:
             uris = []
         params = ua.FindServersParameters()
         params.EndpointUrl = self.server_url.geturl()
-        params.ServerUris = uris
+        params.ServerUris = list(uris)
         return await self.uaclient.find_servers(params)
 
-    async def find_servers_on_network(self) -> List[ua.FindServersOnNetworkResult]:
+    async def find_servers_on_network(self) -> Sequence[ua.FindServersOnNetworkResult]:
         params = ua.FindServersOnNetworkParameters()
         return await self.uaclient.find_servers_on_network(params)
 
@@ -757,7 +757,7 @@ class Client:
             modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
             return modified_params
 
-    async def delete_subscriptions(self, subscription_ids: List[int]) -> List[ua.StatusCode]:
+    async def delete_subscriptions(self, subscription_ids: Iterable[int]) -> Sequence[ua.StatusCode]:
         """
         Deletes the provided list of subscription_ids
         """
@@ -776,7 +776,7 @@ class Client:
         period = period or 1000
         return int((self.session_timeout / period) * 0.75)
 
-    async def get_namespace_array(self) -> List[str]:
+    async def get_namespace_array(self) -> Sequence[str]:
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
         return await ns_node.read_value()
 
@@ -785,10 +785,10 @@ class Client:
         _logger.info("get_namespace_index %s %r", type(uries), uries)
         return uries.index(uri)
 
-    async def delete_nodes(self, nodes: List[Node], recursive=False) -> Tuple[List[Node], List[ua.StatusCode]]:
+    async def delete_nodes(self, nodes: Iterable[Node], recursive=False) -> Tuple[Sequence[Node], Sequence[ua.StatusCode]]:
         return await delete_nodes(self.uaclient, nodes, recursive)
 
-    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> List[ua.NodeId]:
+    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Sequence[ua.NodeId]:
         """
         Import nodes defined in xml
         """
@@ -843,7 +843,7 @@ class Client:
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_enums(self)
 
-    async def register_nodes(self, nodes: List[Node]) -> List[Node]:
+    async def register_nodes(self, nodes: Iterable[Node]) -> Sequence[Node]:
         """
         Register nodes for faster read and write access (if supported by server)
         Rmw: This call modifies the nodeid of the nodes, the original nodeid is
@@ -854,9 +854,9 @@ class Client:
         for node, nodeid in zip(nodes, nodeids):
             node.basenodeid = node.nodeid
             node.nodeid = nodeid
-        return nodes
+        return list(nodes)
 
-    async def unregister_nodes(self, nodes: List[Node]) -> None:
+    async def unregister_nodes(self, nodes: Iterable[Node]) -> None:
         """
         Unregister nodes
         """
@@ -868,21 +868,21 @@ class Client:
             node.nodeid = node.basenodeid
             node.basenodeid = None
 
-    async def read_attributes(self, nodes: List[Node], attr: ua.AttributeIds = ua.AttributeIds.Value) -> List[ua.DataValue]:
+    async def read_attributes(self, nodes: Iterable[Node], attr: ua.AttributeIds = ua.AttributeIds.Value) -> Sequence[ua.DataValue]:
         """
         Read the attributes of multiple nodes.
         """
         nodeids = [node.nodeid for node in nodes]
         return await self.uaclient.read_attributes(nodeids, attr)
 
-    async def read_values(self, nodes: List[Node]) -> List[Any]:
+    async def read_values(self, nodes: Iterable[Node]) -> Sequence[Any]:
         """
         Read the value of multiple nodes in one ua call.
         """
         res = await self.read_attributes(nodes, attr=ua.AttributeIds.Value)
         return [r.Value.Value if r.Value else None for r in res]
 
-    async def write_values(self, nodes: List[Node], values: List[Any], raise_on_partial_error: bool = True) -> List[ua.StatusCode]:
+    async def write_values(self, nodes: Iterable[Node], values: Iterable[Any], raise_on_partial_error: bool = True) -> Sequence[ua.StatusCode]:
         """
         Write values to multiple nodes in one ua call
         """
@@ -897,7 +897,7 @@ class Client:
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
 
-    async def browse_nodes(self, nodes: List[Node]) -> List[Tuple[Node, ua.BrowseResult]]:
+    async def browse_nodes(self, nodes: Iterable[Node]) -> Sequence[Tuple[Node, ua.BrowseResult]]:
         """
         Browses multiple nodes in one ua call
         returns a List of Tuples(Node, BrowseResult)
@@ -915,7 +915,7 @@ class Client:
         results = await self.uaclient.browse(parameters)
         return list(zip(nodes, results))
 
-    async def translate_browsepaths(self, starting_node: ua.NodeId, relative_paths: List[Union[ua.RelativePath, str]]) -> List[ua.BrowsePathResult]:
+    async def translate_browsepaths(self, starting_node: ua.NodeId, relative_paths: Iterable[Union[ua.RelativePath, str]]) -> Sequence[ua.BrowsePathResult]:
         bpaths = []
         for p in relative_paths:
             try:
