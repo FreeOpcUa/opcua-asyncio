@@ -7,7 +7,7 @@ from cryptography import x509
 from pathlib import Path
 from threading import Thread, Condition
 import logging
-from typing import Any, Dict, List, Tuple, Type, Union, Optional
+from typing import Any, Dict, Iterable, List, Sequence, Tuple, Type, Union, Optional
 
 from asyncua import ua
 from asyncua import client
@@ -269,7 +269,7 @@ class Client:
     def set_password(self, pwd: str) -> None:
         self.aio_obj.set_password(pwd)
 
-    def set_locale(self, locale: List[str]) -> None:
+    def set_locale(self, locale: Sequence[str]) -> None:
         self.aio_obj.set_locale(locale)
 
     @syncmethod
@@ -289,7 +289,7 @@ class Client:
         pass
 
     @syncmethod
-    def get_namespace_array(self) -> List[str]:  # type: ignore[empty-body]
+    def get_namespace_array(self) -> Sequence[str]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -313,7 +313,7 @@ class Client:
         return self.aio_obj.get_subscription_revised_params(params, results)
 
     @syncmethod
-    def delete_subscriptions(self, subscription_ids: List[int]) -> List[ua.StatusCode]:  # type: ignore[empty-body]
+    def delete_subscriptions(self, subscription_ids: Iterable[int]) -> Sequence[ua.StatusCode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -334,15 +334,15 @@ class Client:
         return SyncNode(self.tloop, self.aio_obj.get_server_node())
 
     @syncmethod
-    def connect_and_get_server_endpoints(self) -> List[ua.EndpointDescription]:  # type: ignore[empty-body]
+    def connect_and_get_server_endpoints(self) -> Sequence[ua.EndpointDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def connect_and_find_servers(self) -> List[ua.ApplicationDescription]:  # type: ignore[empty-body]
+    def connect_and_find_servers(self) -> Sequence[ua.ApplicationDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def connect_and_find_servers_on_network(self) -> List[ua.FindServersOnNetworkResult]:  # type: ignore[empty-body]
+    def connect_and_find_servers_on_network(self) -> Sequence[ua.FindServersOnNetworkResult]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -358,7 +358,7 @@ class Client:
         pass
 
     @syncmethod
-    def get_endpoints(self) -> List[ua.EndpointDescription]:  # type: ignore[empty-body]
+    def get_endpoints(self) -> Sequence[ua.EndpointDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -378,11 +378,11 @@ class Client:
         pass
 
     @syncmethod
-    def find_servers(self, uris: Optional[List[str]] = None) -> List[ua.ApplicationDescription]:  # type: ignore[empty-body]
+    def find_servers(self, uris: Optional[Iterable[str]] = None) -> Sequence[ua.ApplicationDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def find_servers_on_network(self) -> List[ua.FindServersOnNetworkResult]:  # type: ignore[empty-body]
+    def find_servers_on_network(self) -> Sequence[ua.FindServersOnNetworkResult]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -416,11 +416,11 @@ class Client:
         return self.aio_obj.get_keepalive_count(period)
 
     @syncmethod
-    def delete_nodes(self, nodes: List["SyncNode"], recursive=False) -> Tuple[List["SyncNode"], List[ua.StatusCode]]:  # type: ignore[empty-body]
+    def delete_nodes(self, nodes: Iterable["SyncNode"], recursive=False) -> Tuple[Sequence["SyncNode"], Sequence[ua.StatusCode]]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> List[ua.NodeId]:  # type: ignore[empty-body]
+    def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Sequence[ua.NodeId]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -432,35 +432,35 @@ class Client:
         pass
 
     @syncmethod
-    def register_nodes(self, nodes: List["SyncNode"]) -> List["SyncNode"]:  # type: ignore[empty-body]
+    def register_nodes(self, nodes: Iterable["SyncNode"]) -> Sequence["SyncNode"]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def unregister_nodes(self, nodes: List["SyncNode"]):  # type: ignore[empty-body]
+    def unregister_nodes(self, nodes: Iterable["SyncNode"]):  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_attributes(self, nodes: List["SyncNode"], attr: ua.AttributeIds = ua.AttributeIds.Value) -> List[ua.DataValue]:  # type: ignore[empty-body]
+    def read_attributes(self, nodes: Iterable["SyncNode"], attr: ua.AttributeIds = ua.AttributeIds.Value) -> Sequence[ua.DataValue]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_values(self, nodes: List["SyncNode"]) -> List[Any]:  # type: ignore[empty-body]
+    def read_values(self, nodes: Iterable["SyncNode"]) -> Sequence[Any]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def write_values(self, nodes: List["SyncNode"], values: List[Any], raise_on_partial_error: bool = True) -> List[ua.StatusCode]:  # type: ignore[empty-body]
+    def write_values(self, nodes: Iterable["SyncNode"], values: Iterable[Any], raise_on_partial_error: bool = True) -> Sequence[ua.StatusCode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def browse_nodes(self, nodes: List["SyncNode"]) -> List[Tuple["SyncNode", ua.BrowseResult]]:  # type: ignore[empty-body]
+    def browse_nodes(self, nodes: Iterable["SyncNode"]) -> Sequence[Tuple["SyncNode", ua.BrowseResult]]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
     def translate_browsepaths(  # type: ignore[empty-body]
         self,
         starting_node: ua.NodeId,
-        relative_paths: List[Union[ua.RelativePath, str]]
-    ) -> List[ua.BrowsePathResult]:
+        relative_paths: Iterable[Union[ua.RelativePath, str]]
+    ) -> Sequence[ua.BrowsePathResult]:
         pass
 
     def __enter__(self):
