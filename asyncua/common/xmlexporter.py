@@ -6,11 +6,13 @@ import logging
 import asyncio
 import functools
 from collections import OrderedDict
+from typing import Any
 import xml.etree.ElementTree as Et
 import base64
 from dataclasses import is_dataclass
 from enum import Enum
 
+import asyncua
 from asyncua import ua
 from asyncua.ua.uatypes import type_string_from_type
 from asyncua.ua.uaerrors import UaError
@@ -35,7 +37,7 @@ class XmlExporter:
         ]
     }
 
-    def __init__(self, server, export_values: bool = False):
+    def __init__(self, server: "asyncua.Server", export_values: bool = False):
         """
         param: export_values: exports values from variants (CustomDataTypes are not support!)
         """
@@ -442,11 +444,12 @@ class XmlExporter:
             val_el = Et.SubElement(el, 'Value')
             await self._value_to_etree(val_el, dtype_name, dtype, var.Value.Value)
 
-    async def _value_to_etree(self, el, type_name, dtype, val):
+    async def _value_to_etree(self, el: Et.Element, type_name: str, dtype: ua.NodeId, val: Any) -> None:
         if val is None:
             return
 
         if isinstance(val, (list, tuple)):
+            assert isinstance(dtype.Identifier, int), f"Expected int, got {type(dtype.Identifier)}"
             if dtype.NamespaceIndex == 0 and dtype.Identifier <= 21:
                 elname = "uax:ListOf" + type_name
             else:  # this is an extensionObject:
@@ -470,7 +473,7 @@ class XmlExporter:
             else:
                 await self._extobj_to_etree(el, type_name, dtype, val)
 
-    async def _extobj_to_etree(self, val_el, name, dtype, val):
+    async def _extobj_to_etree(self, val_el: Et.Element, name: str, dtype: ua.NodeId, val: Any) -> None:
         if "=" in name:
             try:
                 name = ua.extension_objects_by_datatype[dtype].__name__
@@ -489,7 +492,7 @@ class XmlExporter:
         struct_el = Et.SubElement(body_el, "uax:" + name)
         await self._all_fields_to_etree(struct_el, val)
 
-    async def _all_fields_to_etree(self, struct_el, val):
+    async def _all_fields_to_etree(self, struct_el: Et.Element, val: Any) -> None:
         # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
         #       it is possible that the type annotations also refere to classes defined in other modules.
         for field in fields_with_resolved_types(val, globalns={"ua": ua}):

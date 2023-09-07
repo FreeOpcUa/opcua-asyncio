@@ -4,10 +4,11 @@ format is the one from opc-ua specification
 """
 import logging
 import uuid
-from typing import Union, Dict, List, Tuple
+from typing import Set, Union, Dict, List, Tuple
 from dataclasses import fields, is_dataclass
 from asyncua.common.structures104 import load_custom_struct_xml_import, load_enum_xml_import, load_basetype_alias_xml_import
-from asyncua import ua
+import asyncua
+from asyncua import ua, Node
 from asyncua.ua.uatypes import type_is_union, types_from_union, type_is_list, type_from_list
 from .xmlparser import XMLParser, ua_type_to_python
 from ..ua.uaerrors import UaError
@@ -21,7 +22,7 @@ def _parse_version(version_string: str) -> List[int]:
 
 class XmlImporter:
 
-    def __init__(self, server, strict_mode=True):
+    def __init__(self, server: "asyncua.Server", strict_mode: bool = True):
         '''
         strict_mode: stop on an error, if False only an error message is logged,
                      but the import continues
@@ -156,7 +157,7 @@ class XmlImporter:
         await self._check_if_namespace_meta_information_is_added()
         return nodes
 
-    async def _add_missing_reverse_references(self, new_nodes):
+    async def _add_missing_reverse_references(self, new_nodes: List[Node]) -> Set[Node]:
         __unidirectional_types = {ua.ObjectIds.GuardVariableType, ua.ObjectIds.HasGuard,
                                   ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType,
                                   ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType,
@@ -176,7 +177,7 @@ class XmlImporter:
                 dangling_refs_to_missing_nodes.discard(ref.NodeId)
 
                 if ref.ReferenceTypeId.NamespaceIndex != 0 or ref.ReferenceTypeId.Identifier not in __unidirectional_types:
-                    ref_key = (new_node_id, ref.NodeId, ref.ReferenceTypeId)
+                    ref_key: RefSpecKey = (new_node_id, ref.NodeId, ref.ReferenceTypeId)
                     node_reference_map[ref_key] = ref
 
         for node in dangling_refs_to_missing_nodes:

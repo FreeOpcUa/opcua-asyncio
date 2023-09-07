@@ -782,7 +782,7 @@ class Client:
         _logger.info("get_namespace_index %s %r", type(uries), uries)
         return uries.index(uri)
 
-    async def delete_nodes(self, nodes, recursive=False) -> Coroutine:
+    async def delete_nodes(self, nodes: List[Node], recursive=False) -> Tuple[List[Node], List[ua.StatusCode]]:
         return await delete_nodes(self.uaclient, nodes, recursive)
 
     async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Coroutine:

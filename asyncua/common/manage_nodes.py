@@ -4,8 +4,11 @@ High level functions to create nodes
 import logging
 from enum import Enum
 import inspect
+from typing import Any, List, Optional, Tuple, Union
 
+import asyncua
 from asyncua import ua
+from asyncua.common.session_interface import AbstractSession
 from .instantiate_util import instantiate
 from .node_factory import make_node
 
@@ -40,7 +43,7 @@ def _parse_nodeid_qname(*args):
         )
 
 
-async def create_folder(parent, nodeid, bname):
+async def create_folder(parent: "asyncua.Node", nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]) -> "asyncua.Node":
     """
     create a child node folder
     arguments are nodeid, browsename
@@ -53,7 +56,13 @@ async def create_folder(parent, nodeid, bname):
     )
 
 
-async def create_object(parent, nodeid, bname, objecttype=None, instantiate_optional=True):
+async def create_object(
+    parent: "asyncua.Node",
+    nodeid: Union[ua.NodeId, str],
+    bname: Union[ua.QualifiedName, str],
+    objecttype: Optional[Union[ua.NodeId, int]] = None,
+    instantiate_optional: bool = True,
+) -> "asyncua.Node":
     """
     create a child node object
     arguments are nodeid, browsename, [objecttype]
@@ -62,9 +71,9 @@ async def create_object(parent, nodeid, bname, objecttype=None, instantiate_opti
     """
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
     if objecttype is not None:
-        objecttype = make_node(parent.session, objecttype)
+        objecttype_node = make_node(parent.session, objecttype)
         dname = ua.LocalizedText(qname.Name)
-        nodes = await instantiate(parent, objecttype, nodeid, bname=qname, dname=dname, instantiate_optional=instantiate_optional)
+        nodes = await instantiate(parent, objecttype_node, nodeid, bname=qname, dname=dname, instantiate_optional=instantiate_optional)
         return nodes[0]
     else:
         return make_node(
@@ -73,7 +82,14 @@ async def create_object(parent, nodeid, bname, objecttype=None, instantiate_opti
         )
 
 
-async def create_property(parent, nodeid, bname, val, varianttype=None, datatype=None):
+async def create_property(
+    parent: "asyncua.Node",
+    nodeid: Union[ua.NodeId, str],
+    bname: Union[ua.QualifiedName, str],
+    val: Any,
+    varianttype: Optional[ua.VariantType] = None,
+    datatype: Optional[Union[ua.NodeId, int]] = None,
+) -> "asyncua.Node":
     """
     create a child node property
     args are nodeid, browsename, value, [variant type]
@@ -91,7 +107,14 @@ async def create_property(parent, nodeid, bname, val, varianttype=None, datatype
     )
 
 
-async def create_variable(parent, nodeid, bname, val, varianttype=None, datatype=None):
+async def create_variable(
+    parent: "asyncua.Node",
+    nodeid: Union[ua.NodeId, str],
+    bname: Union[ua.QualifiedName, str],
+    val: Any,
+    varianttype: Optional[ua.VariantType] = None,
+    datatype: Optional[Union[ua.NodeId, int]] = None,
+) -> "asyncua.Node":
     """
     create a child node variable
     args are nodeid, browsename, value, [variant type], [data type]
@@ -110,7 +133,9 @@ async def create_variable(parent, nodeid, bname, val, varianttype=None, datatype
     )
 
 
-async def create_variable_type(parent, nodeid, bname, datatype):
+async def create_variable_type(
+    parent: "asyncua.Node", nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], datatype: Union[ua.NodeId, int]
+) -> "asyncua.Node":
     """
     Create a new variable type
     args are nodeid, browsename and datatype
@@ -128,7 +153,9 @@ async def create_variable_type(parent, nodeid, bname, datatype):
     )
 
 
-async def create_reference_type(parent, nodeid, bname, symmetric=True, inversename=None):
+async def create_reference_type(
+    parent: "asyncua.Node", nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], symmetric: bool = True, inversename: Optional[str] = None
+) -> "asyncua.Node":
     """
     Create a new reference type
     args are nodeid and browsename
@@ -141,7 +168,7 @@ async def create_reference_type(parent, nodeid, bname, symmetric=True, inversena
     )
 
 
-async def create_object_type(parent, nodeid, bname):
+async def create_object_type(parent: "asyncua.Node", nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]):
     """
     Create a new object type to be instantiated in address space.
     arguments are nodeid, browsename
@@ -151,7 +178,7 @@ async def create_object_type(parent, nodeid, bname):
     return make_node(parent.session, await _create_object_type(parent.session, parent.nodeid, nodeid, qname))
 
 
-async def create_method(parent, *args):
+async def create_method(parent: "asyncua.Node", *args) -> "asyncua.Node":
     """
     create a child method object
     This is only possible on server side!!
@@ -308,7 +335,9 @@ async def _create_variable_type(session, parentnodeid, nodeid, qname, datatype, 
     return results[0].AddedNodeId
 
 
-async def create_data_type(parent, nodeid, bname, description=None):
+async def create_data_type(
+    parent: "asyncua.Node", nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], description: Optional[str] = None
+) -> "asyncua.Node":
     """
     Create a new data type to be used in new variables, etc ..
     arguments are nodeid, browsename
@@ -349,7 +378,7 @@ async def create_data_type(parent, nodeid, bname, description=None):
     return make_node(parent.session, new_node_id)
 
 
-async def create_encoding(parent, nodeid, bname):
+async def create_encoding(parent, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]) -> "asyncua.Node":
     """
     Create a new encoding object to be instantiated in address space.
     arguments are nodeid, browsename
@@ -445,11 +474,11 @@ def _vtype_to_argument(vtype):
     return arg
 
 
-def _guess_datatype(variant):
+def _guess_datatype(variant: ua.Variant):
     if variant.VariantType == ua.VariantType.ExtensionObject:
         if variant.Value is None:
             raise ua.UaError("Cannot guess DataType from Null ExtensionObject")
-        if type(variant.Value) in (list, tuple):
+        if isinstance(variant.Value, (list, tuple)):
             if len(variant.Value) == 0:
                 raise ua.UaError("Cannot guess DataType from Null ExtensionObject")
             extobj = variant.Value[0]
@@ -465,13 +494,15 @@ def _guess_datatype(variant):
         return ua.NodeId(getattr(ua.ObjectIds, variant.VariantType.name))
 
 
-async def delete_nodes(session, nodes, recursive=False, delete_target_references=True):
+async def delete_nodes(
+    session: AbstractSession, nodes: List["asyncua.Node"], recursive: bool = False, delete_target_references: bool = True
+) -> Tuple[List["asyncua.Node"], List[ua.StatusCode]]:
     """
     Delete specified nodes. Optionally delete recursively all nodes with a
     downward hierachic references to the node
     return the list of deleted node and the result
     """
-    nodestodelete = []
+    nodestodelete: List[ua.DeleteNodesItem] = []
     if recursive:
         nodes = await _add_childs(nodes)
     for mynode in nodes:
@@ -484,7 +515,7 @@ async def delete_nodes(session, nodes, recursive=False, delete_target_references
     return nodes, await session.delete_nodes(params)
 
 
-async def _add_childs(nodes):
+async def _add_childs(nodes: List["asyncua.Node"]) -> List["asyncua.Node"]:
     results = []
     for mynode in nodes:
         results += await _add_childs(await mynode.get_children())

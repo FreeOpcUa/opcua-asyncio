@@ -132,7 +132,7 @@ class InternalSession(AbstractSession):
                                                      ServerItemCallback(params, results, user, self.external))
         return results
 
-    async def history_read(self, params) -> ua.HistoryReadResult:
+    async def history_read(self, params) -> List[ua.HistoryReadResult]:
         return await self.iserver.history_manager.read_history(params)
 
     async def write(self, params):
