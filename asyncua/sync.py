@@ -3,10 +3,11 @@ sync API of asyncua
 """
 import asyncio
 import functools
+from cryptography import x509
 from pathlib import Path
 from threading import Thread, Condition
 import logging
-from typing import List, Tuple, Union, Optional
+from typing import Any, Dict, Iterable, List, Sequence, Tuple, Type, Union, Optional
 
 from asyncua import ua
 from asyncua import client
@@ -83,6 +84,8 @@ def _to_sync(tloop, result):
         return EventGenerator(tloop, result)
     if isinstance(result, subscription.Subscription):
         return Subscription(tloop, result)
+    if isinstance(result, server.Server):
+        return Server(tloop, result)
     return result
 
 
@@ -228,28 +231,53 @@ class Client:
         self.aio_obj.application_uri = value
 
     @syncmethod
-    def connect(self):
+    def connect(self) -> None:
         pass
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         try:
             self.tloop.post(self.aio_obj.disconnect())
         finally:
             if self.close_tloop:
                 self.tloop.stop()
 
-    def set_user(self, username: str):
-        self.aio_obj.set_user(username)
+    @syncmethod
+    def connect_sessionless(self) -> None:
+        pass
 
-    def set_password(self, pwd: str):
-        self.aio_obj.set_password(pwd)
+    def disconnect_sessionless(self) -> None:
+        try:
+            self.tloop.post(self.aio_obj.disconnect_sessionless())
+        finally:
+            if self.close_tloop:
+                self.tloop.stop()
 
     @syncmethod
-    async def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
+    def connect_socket(self) -> None:
+        pass
+
+    def disconnect_socket(self) -> None:
+        try:
+            self.aio_obj.disconnect_socket()
+        finally:
+            if self.close_tloop:
+                self.tloop.stop()
+
+    def set_user(self, username: str) -> None:
+        self.aio_obj.set_user(username)
+
+    def set_password(self, pwd: str) -> None:
+        self.aio_obj.set_password(pwd)
+
+    def set_locale(self, locale: Sequence[str]) -> None:
+        self.aio_obj.set_locale(locale)
+
+    @syncmethod
+    def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None) -> None:
         pass
 
     @syncmethod
-    async def load_client_certificate(self, path: str, extension: Optional[str] = None):
+    def load_client_certificate(self, path: str, extension: Optional[str] = None) -> None:
         pass
 
     @syncmethod
@@ -257,71 +285,182 @@ class Client:
         pass
 
     @syncmethod
-    def load_data_type_definitions(self, node=None):
+    def load_data_type_definitions(self, node: Optional["SyncNode"] = None, overwrite_existing: bool = False) -> Dict[str, Type]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def get_namespace_array(self):
+    def get_namespace_array(self) -> Sequence[str]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def set_security(self):
+    def set_security(self) -> None:
         pass
 
     @syncmethod
-    def set_security_string(self, string):
+    def set_security_string(self, string: str) -> None:
         pass
 
     @syncmethod
-    def load_enums(self):
+    def load_enums(self) -> Dict[str, Type]:  # type: ignore[empty-body]
         pass
 
-    def create_subscription(self, period, handler):
-        coro = self.aio_obj.create_subscription(period, _SubHandler(self.tloop, handler))
+    def create_subscription(self, period: Union[ua.CreateSubscriptionParameters, float], handler: subscription.SubHandler, publishing: bool = True) -> "Subscription":
+        coro = self.aio_obj.create_subscription(period, _SubHandler(self.tloop, handler), publishing)
         aio_sub = self.tloop.post(coro)
         return Subscription(self.tloop, aio_sub)
 
+    def get_subscription_revised_params(self, params: ua.CreateSubscriptionParameters, results: ua.CreateSubscriptionResult) -> Optional[ua.ModifySubscriptionParameters]:  # type: ignore
+        return self.aio_obj.get_subscription_revised_params(params, results)
+
     @syncmethod
-    def delete_subscriptions(self, subscription_ids):
+    def delete_subscriptions(self, subscription_ids: Iterable[int]) -> Sequence[ua.StatusCode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def get_namespace_index(self, url):
+    def get_namespace_index(self, uri: str) -> int:  # type: ignore[empty-body]
         pass
 
-    def get_node(self, nodeid: Union["SyncNode", ua.NodeId, str, int]):
+    def get_node(self, nodeid: Union["SyncNode", ua.NodeId, str, int]) -> "SyncNode":
         aio_nodeid = nodeid.aio_obj if isinstance(nodeid, SyncNode) else nodeid
         return SyncNode(self.tloop, self.aio_obj.get_node(aio_nodeid))
 
-    def get_root_node(self):
+    def get_root_node(self) -> "SyncNode":
         return SyncNode(self.tloop, self.aio_obj.get_root_node())
 
+    def get_objects_node(self) -> "SyncNode":
+        return SyncNode(self.tloop, self.aio_obj.get_objects_node())
+
+    def get_server_node(self) -> "SyncNode":
+        return SyncNode(self.tloop, self.aio_obj.get_server_node())
+
     @syncmethod
-    def connect_and_get_server_endpoints(self):
+    def connect_and_get_server_endpoints(self) -> Sequence[ua.EndpointDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_attributes(self, nodes, attr=ua.AttributeIds.Value):
+    def connect_and_find_servers(self) -> Sequence[ua.ApplicationDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_values(self, nodes):
+    def connect_and_find_servers_on_network(self) -> Sequence[ua.FindServersOnNetworkResult]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def write_values(self, nodes, values, raise_on_partial_error=True):
+    def send_hello(self) -> None:
         pass
 
     @syncmethod
-    def browse_nodes(self, nodes: List["SyncNode"]) -> List[Tuple["SyncNode", ua.BrowseResult]]:  # type: ignore[empty-body]
+    def open_secure_channel(self, renew=False) -> None:
+        pass
+
+    @syncmethod
+    def close_secure_channel(self) -> None:
+        pass
+
+    @syncmethod
+    def get_endpoints(self) -> Sequence[ua.EndpointDescription]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def register_server(
+        self,
+        server: "Server",
+        discovery_configuration: Optional[ua.DiscoveryConfiguration] = None,
+    ) -> None:
+        pass
+
+    @syncmethod
+    def unregister_server(
+        self,
+        server: "Server",
+        discovery_configuration: Optional[ua.DiscoveryConfiguration] = None,
+    ) -> None:
+        pass
+
+    @syncmethod
+    def find_servers(self, uris: Optional[Iterable[str]] = None) -> Sequence[ua.ApplicationDescription]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def find_servers_on_network(self) -> Sequence[ua.FindServersOnNetworkResult]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def create_session(self) -> ua.CreateSessionResult:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def check_connection(self) -> None:
+        pass
+
+    def server_policy_id(self, token_type: ua.UserTokenType, default: str) -> str:
+        return self.aio_obj.server_policy_id(token_type, default)
+
+    def server_policy_uri(self, token_type: ua.UserTokenType) -> str:
+        return self.aio_obj.server_policy_uri(token_type)
+
+    @syncmethod
+    def activate_session(  # type: ignore[empty-body]
+        self,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        certificate: Optional[x509.Certificate] = None,
+    ) -> ua.ActivateSessionResult:
+        pass
+
+    @syncmethod
+    def close_session(self) -> None:
+        pass
+
+    def get_keepalive_count(self, period: float) -> int:
+        return self.aio_obj.get_keepalive_count(period)
+
+    @syncmethod
+    def delete_nodes(self, nodes: Iterable["SyncNode"], recursive=False) -> Tuple[Sequence["SyncNode"], Sequence[ua.StatusCode]]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Sequence[ua.NodeId]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def export_xml(self, nodes, path, export_values: bool = False) -> None:
+        pass
+
+    @syncmethod
+    def register_namespace(self, uri: str) -> int:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def register_nodes(self, nodes: Iterable["SyncNode"]) -> Sequence["SyncNode"]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def unregister_nodes(self, nodes: Iterable["SyncNode"]):  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def read_attributes(self, nodes: Iterable["SyncNode"], attr: ua.AttributeIds = ua.AttributeIds.Value) -> Sequence[ua.DataValue]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def read_values(self, nodes: Iterable["SyncNode"]) -> Sequence[Any]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def write_values(self, nodes: Iterable["SyncNode"], values: Iterable[Any], raise_on_partial_error: bool = True) -> Sequence[ua.StatusCode]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def browse_nodes(self, nodes: Iterable["SyncNode"]) -> Sequence[Tuple["SyncNode", ua.BrowseResult]]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
     def translate_browsepaths(  # type: ignore[empty-body]
         self,
         starting_node: ua.NodeId,
-        relative_paths: List[Union[ua.RelativePath, str]]
-    ) -> List[ua.BrowsePathResult]:
+        relative_paths: Iterable[Union[ua.RelativePath, str]]
+    ) -> Sequence[ua.BrowsePathResult]:
         pass
 
     def __enter__(self):
@@ -337,6 +476,34 @@ class Client:
 
 
 class Shortcuts:
+    root: "SyncNode"
+    objects: "SyncNode"
+    server: "SyncNode"
+    base_object_type: "SyncNode"
+    base_data_type: "SyncNode"
+    base_event_type: "SyncNode"
+    base_variable_type: "SyncNode"
+    folder_type: "SyncNode"
+    enum_data_type: "SyncNode"
+    option_set_type: "SyncNode"
+    types: "SyncNode"
+    data_types: "SyncNode"
+    event_types: "SyncNode"
+    reference_types: "SyncNode"
+    variable_types: "SyncNode"
+    object_types: "SyncNode"
+    namespace_array: "SyncNode"
+    namespaces: "SyncNode"
+    opc_binary: "SyncNode"
+    base_structure_type: "SyncNode"
+    base_union_type: "SyncNode"
+    server_state: "SyncNode"
+    service_level: "SyncNode"
+    HasComponent: "SyncNode"
+    HasProperty: "SyncNode"
+    Organizes: "SyncNode"
+    HasEncoding: "SyncNode"
+
     def __init__(self, tloop, aio_server):
         self.tloop = tloop
         self.aio_obj = shortcuts.Shortcuts(aio_server)

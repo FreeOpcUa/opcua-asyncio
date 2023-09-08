@@ -108,6 +108,54 @@ def test_sync_client_get_node(client, idx):
     assert vars[0].read_value() == 6.7
 
 
+def test_sync_delete_nodes(client):
+    obj = client.nodes.objects
+    var = obj.add_variable(2, "VarToDelete", 9.1)
+    childs = obj.get_children()
+    assert var in childs
+    nodes, statuses = client.delete_nodes([var])
+    assert len(nodes) == len(statuses) == 1
+    assert isinstance(nodes[0], SyncNode)
+    assert nodes[0] == var
+    assert statuses[0].is_good()
+
+
+async def test_sync_import_xml(client):
+    nodes = client.import_xml("tests/custom_struct.xml")
+    assert all([isinstance(node, ua.NodeId) for node in nodes])
+
+
+def test_sync_read_attributes(client: Client, idx):
+    client.load_type_definitions()
+    myvar = client.nodes.root.get_child(
+        ["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"]
+    )
+    assert isinstance(myvar, SyncNode)
+    results = client.read_attributes([myvar], attr=ua.AttributeIds.Value)
+    assert len(results) == 1
+    assert results[0].Value.Value == 6.7
+
+
+def test_sync_read_values(client: Client, idx):
+    client.load_type_definitions()
+    myvar = client.nodes.root.get_child(
+        ["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"]
+    )
+    assert isinstance(myvar, SyncNode)
+    results = client.read_values([myvar])
+    assert len(results) == 1
+    assert results[0] == 6.7
+
+
+def test_sync_write_values(client: Client):
+    myvar = client.nodes.objects.add_variable(3, "a", 1)
+    myvar.set_writable()
+    assert isinstance(myvar, SyncNode)
+    rets = client.write_values([myvar], [4])
+    assert rets == [ua.StatusCode(value=ua.StatusCodes.Good)]
+    assert myvar.read_value() == 4
+
+
 def test_sync_client_browse_nodes(client: Client, idx):
     nodes = [
         client.get_node("ns=0;i=2267"),

@@ -1,17 +1,20 @@
 import asyncio
 import logging
 import socket
-from typing import Iterable, List, Tuple, Union, Coroutine, Optional, Sequence, Type
+from cryptography import x509
+from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast
 from urllib.parse import urlparse, unquote
 from pathlib import Path
 
+import asyncua
 from asyncua import ua
 from .ua_client import UaClient
 from ..common.xmlimporter import XmlImporter
 from ..common.xmlexporter import XmlExporter
 from ..common.node import Node
 from ..common.manage_nodes import delete_nodes
-from ..common.subscription import Subscription
+from ..common.subscription import SubHandler, Subscription
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
 from ..common.structures104 import load_data_type_definitions
@@ -68,14 +71,14 @@ class Client:
         self.secure_channel_id = None
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
-        self._policy_ids = []
+        self._policy_ids: List[ua.UserTokenPolicy] = []
         self.uaclient: UaClient = UaClient(timeout)
         self.uaclient.pre_request_hook = self.check_connection
-        self.user_certificate = None
-        self.user_private_key = None
+        self.user_certificate: Optional[x509.Certificate] = None
+        self.user_private_key: Optional[PrivateKeyTypes] = None
         self._server_nonce = None
         self._session_counter = 1
-        self.nodes = Shortcuts(self.uaclient)
+        self.nodes: Shortcuts = Shortcuts(self.uaclient)
         self.max_messagesize = 0  # No limits
         self.max_chunkcount = 0  # No limits
         self._renew_channel_task = None
@@ -97,7 +100,7 @@ class Client:
     __repr__ = __str__
 
     @staticmethod
-    def find_endpoint(endpoints, security_mode, policy_uri):
+    def find_endpoint(endpoints: Iterable[ua.EndpointDescription], security_mode: ua.MessageSecurityMode, policy_uri: str) -> ua.EndpointDescription:
         """
         Find endpoint with required security mode and policy URI
         """
@@ -107,14 +110,14 @@ class Client:
                 return ep
         raise ua.UaError(f"No matching endpoints: {security_mode}, {policy_uri}")
 
-    def set_user(self, username: str):
+    def set_user(self, username: str) -> None:
         """
         Set user name for the connection.
         initial user from the URL will be overwritten
         """
         self._username = username
 
-    def set_password(self, pwd: str):
+    def set_password(self, pwd: str) -> None:
         """
         Set user password for the connection.
         initial password from the URL will be overwritten
@@ -123,7 +126,7 @@ class Client:
             raise TypeError(f"Password must be a string, got {pwd} of type {type(pwd)}")
         self._password = pwd
 
-    def set_locale(self, locale: List[str]) -> None:
+    def set_locale(self, locale: Sequence[str]) -> None:
         """
         Sets the preferred locales of the client, the server chooses which locale he can provide.
         Normally the first matching locale in the list will be chosen, by the server.
@@ -131,7 +134,7 @@ class Client:
         """
         self._locale = locale
 
-    async def set_security_string(self, string: str):
+    async def set_security_string(self, string: str) -> None:
         """
         Set SecureConnection mode.
         :param string: Mode format ``Policy,Mode,certificate,private_key[,server_private_key]``
@@ -166,7 +169,7 @@ class Client:
         private_key_password: Optional[Union[str, bytes]] = None,
         server_certificate: Optional[Union[str, uacrypto.CertProperties, bytes]] = None,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
-    ):
+    ) -> None:
         """
         Set SecureConnection mode.
         Call this before connect()
@@ -201,7 +204,7 @@ class Client:
         private_key: uacrypto.CertProperties,
         server_cert: uacrypto.CertProperties,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
-    ):
+    ) -> None:
 
         if isinstance(server_cert, uacrypto.CertProperties):
             server_cert = await uacrypto.load_certificate(server_cert.path_or_content, server_cert.extension)
@@ -215,19 +218,19 @@ class Client:
         self.security_policy = policy(server_cert, cert, pk, mode)  # type: ignore
         self.uaclient.set_security(self.security_policy)
 
-    async def load_client_certificate(self, path: str, extension: Optional[str] = None):
+    async def load_client_certificate(self, path: str, extension: Optional[str] = None) -> None:
         """
         load our certificate from file, either pem or der
         """
         self.user_certificate = await uacrypto.load_certificate(path, extension)
 
-    async def load_private_key(self, path: Path, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
+    async def load_private_key(self, path: Path, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None) -> None:
         """
         Load user private key. This is used for authenticating using certificate
         """
         self.user_private_key = await uacrypto.load_private_key(path, password, extension)
 
-    async def connect_and_get_server_endpoints(self):
+    async def connect_and_get_server_endpoints(self) -> Sequence[ua.EndpointDescription]:
         """
         Connect, ask server for endpoints, and disconnect
         """
@@ -243,7 +246,7 @@ class Client:
             self.disconnect_socket()
         return endpoints
 
-    async def connect_and_find_servers(self):
+    async def connect_and_find_servers(self) -> Sequence[ua.ApplicationDescription]:
         """
         Connect, ask server for a list of known servers, and disconnect
         """
@@ -259,7 +262,7 @@ class Client:
             self.disconnect_socket()
         return servers
 
-    async def connect_and_find_servers_on_network(self):
+    async def connect_and_find_servers_on_network(self) -> Sequence[ua.FindServersOnNetworkResult]:
         """
         Connect, ask server for a list of known servers on network, and disconnect
         """
@@ -275,7 +278,7 @@ class Client:
             self.disconnect_socket()
         return servers
 
-    async def connect(self):
+    async def connect(self) -> None:
         """
         High level method
         Connect, create and activate session
@@ -302,7 +305,7 @@ class Client:
             self.disconnect_socket()
             raise
 
-    async def connect_sessionless(self):
+    async def connect_sessionless(self) -> None:
         """
         High level method
         Connect without a session
@@ -317,7 +320,7 @@ class Client:
             self.disconnect_socket()
             raise
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         """
         High level method
         Close session, secure channel and socket
@@ -329,7 +332,7 @@ class Client:
         finally:
             self.disconnect_socket()
 
-    async def disconnect_sessionless(self):
+    async def disconnect_sessionless(self) -> None:
         """
         High level method
         Close secure channel and socket
@@ -340,17 +343,17 @@ class Client:
         finally:
             self.disconnect_socket()
 
-    async def connect_socket(self):
+    async def connect_socket(self) -> None:
         """
         connect to socket defined in url
         """
         await self.uaclient.connect_socket(self.server_url.hostname, self.server_url.port)
 
-    def disconnect_socket(self):
+    def disconnect_socket(self) -> None:
         if self.uaclient:
             self.uaclient.disconnect_socket()
 
-    async def send_hello(self):
+    async def send_hello(self) -> None:
         """
         Send OPC-UA hello to server
         """
@@ -358,7 +361,7 @@ class Client:
         if isinstance(ack, ua.UaStatusCodeError):
             raise ack
 
-    async def open_secure_channel(self, renew=False):
+    async def open_secure_channel(self, renew: bool = False) -> None:
         """
         Open secure channel, if renew is True, renew channel
         """
@@ -379,14 +382,14 @@ class Client:
     async def close_secure_channel(self):
         return await self.uaclient.close_secure_channel()
 
-    async def get_endpoints(self) -> list:
+    async def get_endpoints(self) -> Sequence[ua.EndpointDescription]:
         """Get a list of OPC-UA endpoints."""
 
         params = ua.GetEndpointsParameters()
         params.EndpointUrl = self.server_url.geturl()
         return await self.uaclient.get_endpoints(params)
 
-    async def register_server(self, server, discovery_configuration=None):
+    async def register_server(self, server: "asyncua.server.Server", discovery_configuration: Optional[ua.DiscoveryConfiguration] = None) -> None:
         """
         register a server to discovery server
         if discovery_configuration is provided, the newer register_server2 service call is used
@@ -394,7 +397,7 @@ class Client:
         serv = ua.RegisteredServer()
         serv.ServerUri = server.get_application_uri()
         serv.ProductUri = server.product_uri
-        serv.DiscoveryUrls = [server.endpoint.geturl()]
+        serv.DiscoveryUrls = [cast(ua.String, server.endpoint.geturl())]
         serv.ServerType = server.application_type
         serv.ServerNames = [ua.LocalizedText(server.name)]
         serv.IsOnline = True
@@ -405,7 +408,7 @@ class Client:
             return await self.uaclient.register_server2(params)
         return await self.uaclient.register_server(serv)
 
-    async def unregister_server(self, server, discovery_configuration=None):
+    async def unregister_server(self, server: "asyncua.server.Server", discovery_configuration: Optional[ua.DiscoveryConfiguration] = None) -> None:
         """
         register a server to discovery server
         if discovery_configuration is provided, the newer register_server2 service call is used
@@ -413,7 +416,7 @@ class Client:
         serv = ua.RegisteredServer()
         serv.ServerUri = server.get_application_uri()
         serv.ProductUri = server.product_uri
-        serv.DiscoveryUrls = [server.endpoint.geturl()]
+        serv.DiscoveryUrls = [cast(ua.String, server.endpoint.geturl())]
         serv.ServerType = server.application_type
         serv.ServerNames = [ua.LocalizedText(server.name)]
         serv.IsOnline = False
@@ -424,7 +427,7 @@ class Client:
             return await self.uaclient.unregister_server2(params)
         return await self.uaclient.unregister_server(serv)
 
-    async def find_servers(self, uris=None):
+    async def find_servers(self, uris: Optional[Iterable[str]] = None) -> Sequence[ua.ApplicationDescription]:
         """
         send a FindServer request to the server. The answer should be a list of
         servers the server knows about
@@ -434,14 +437,14 @@ class Client:
             uris = []
         params = ua.FindServersParameters()
         params.EndpointUrl = self.server_url.geturl()
-        params.ServerUris = uris
+        params.ServerUris = list(uris)
         return await self.uaclient.find_servers(params)
 
-    async def find_servers_on_network(self):
+    async def find_servers_on_network(self) -> Sequence[ua.FindServersOnNetworkResult]:
         params = ua.FindServersOnNetworkParameters()
         return await self.uaclient.find_servers_on_network(params)
 
-    async def create_session(self):
+    async def create_session(self) -> ua.CreateSessionResult:
         """
         send a CreateSessionRequest to server with reasonable parameters.
         If you want to modify settings look at code of these methods
@@ -495,7 +498,7 @@ class Client:
         self._monitor_server_task = asyncio.create_task(self._monitor_server_loop())
         return response
 
-    async def check_connection(self):
+    async def check_connection(self) -> None:
         # can be used to check if the client is still connected
         # if not it throws the underlying exception
         if self._renew_channel_task is not None:
@@ -550,7 +553,7 @@ class Client:
             _logger.exception("Error while renewing session")
             raise
 
-    def server_policy_id(self, token_type, default):
+    def server_policy_id(self, token_type: ua.UserTokenType, default: str) -> str:
         """
         Find PolicyId of server's UserTokenPolicy by token_type.
         Return default if there's no matching UserTokenPolicy.
@@ -560,7 +563,7 @@ class Client:
                 return policy.PolicyId
         return default
 
-    def server_policy_uri(self, token_type):
+    def server_policy_uri(self, token_type: ua.UserTokenType) -> str:
         """
         Find SecurityPolicyUri of server's UserTokenPolicy by token_type.
         If SecurityPolicyUri is empty, use default SecurityPolicyUri
@@ -574,7 +577,7 @@ class Client:
                 return self.security_policy.URI
         return self.security_policy.URI
 
-    async def activate_session(self, username: str = None, password: str = None, certificate=None):
+    async def activate_session(self, username: Optional[str] = None, password: Optional[str] = None, certificate: Optional[x509.Certificate] = None) -> ua.ActivateSessionResult:
         """
         Activate session using either username and password or private_key
         """
@@ -650,7 +653,7 @@ class Client:
         data, uri = security_policies.encrypt_asymmetric(pubkey, etoken, policy_uri)
         return data, uri
 
-    async def close_session(self):
+    async def close_session(self) -> None:
         """
         Close session
         """
@@ -671,14 +674,14 @@ class Client:
                 pass
         return await self.uaclient.close_session(True)
 
-    def get_root_node(self):
+    def get_root_node(self) -> Node:
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.RootFolder))
 
-    def get_objects_node(self):
+    def get_objects_node(self) -> Node:
         _logger.info("get_objects_node")
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.ObjectsFolder))
 
-    def get_server_node(self):
+    def get_server_node(self) -> Node:
         return self.get_node(ua.FourByteNodeId(ua.ObjectIds.Server))
 
     def get_node(self, nodeid: Union[Node, ua.NodeId, str, int]) -> Node:
@@ -688,7 +691,7 @@ class Client:
         return Node(self.uaclient, nodeid)
 
     async def create_subscription(
-        self, period, handler, publishing=True
+        self, period: Union[ua.CreateSubscriptionParameters, float], handler: SubHandler, publishing: bool = True
     ) -> Subscription:
         """
         Create a subscription.
@@ -754,13 +757,13 @@ class Client:
             modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
             return modified_params
 
-    async def delete_subscriptions(self, subscription_ids):
+    async def delete_subscriptions(self, subscription_ids: Iterable[int]) -> Sequence[ua.StatusCode]:
         """
         Deletes the provided list of subscription_ids
         """
-        await self.uaclient.delete_subscriptions(subscription_ids)
+        return await self.uaclient.delete_subscriptions(subscription_ids)
 
-    def get_keepalive_count(self, period) -> int:
+    def get_keepalive_count(self, period: float) -> int:
         """
         We request the server to send a Keepalive notification when
         no notification has been received for 75% of the session lifetime.
@@ -773,11 +776,11 @@ class Client:
         period = period or 1000
         return int((self.session_timeout / period) * 0.75)
 
-    async def get_namespace_array(self):
+    async def get_namespace_array(self) -> Sequence[str]:
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
         return await ns_node.read_value()
 
-    async def get_namespace_index(self, uri):
+    async def get_namespace_index(self, uri: str) -> int:
         uries = await self.get_namespace_array()
         _logger.info("get_namespace_index %s %r", type(uries), uries)
         return uries.index(uri)
@@ -785,14 +788,14 @@ class Client:
     async def delete_nodes(self, nodes: Iterable[Node], recursive=False) -> Tuple[Sequence[Node], Sequence[ua.StatusCode]]:
         return await delete_nodes(self.uaclient, nodes, recursive)
 
-    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Coroutine:
+    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> Sequence[ua.NodeId]:
         """
         Import nodes defined in xml
         """
         importer = XmlImporter(self, strict_mode=strict_mode)
         return await importer.import_xml(path, xmlstring)
 
-    async def export_xml(self, nodes, path, export_values: bool = False):
+    async def export_xml(self, nodes, path, export_values: bool = False) -> None:
         """
         Export defined nodes to xml
         :param export_values: exports values from variants
@@ -801,7 +804,7 @@ class Client:
         await exp.build_etree(nodes)
         await exp.write_xml(path)
 
-    async def register_namespace(self, uri):
+    async def register_namespace(self, uri: str) -> int:
         """
         Register a new namespace. Nodes should in custom namespace, not 0.
         This method is mainly implemented for symmetry with server
@@ -824,7 +827,7 @@ class Client:
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_type_definitions(self, nodes)
 
-    async def load_data_type_definitions(self, node=None, overwrite_existing=False):
+    async def load_data_type_definitions(self, node: Optional[Node] = None, overwrite_existing: bool = False) -> Dict[str, Type]:
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
@@ -832,7 +835,7 @@ class Client:
         """
         return await load_data_type_definitions(self, node, overwrite_existing=overwrite_existing)
 
-    async def load_enums(self):
+    async def load_enums(self) -> Dict[str, Type]:
         """
         generate Python enums for custom enums on server.
         This enums will be available in ua module
@@ -840,7 +843,7 @@ class Client:
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_enums(self)
 
-    async def register_nodes(self, nodes):
+    async def register_nodes(self, nodes: Iterable[Node]) -> Sequence[Node]:
         """
         Register nodes for faster read and write access (if supported by server)
         Rmw: This call modifies the nodeid of the nodes, the original nodeid is
@@ -851,9 +854,9 @@ class Client:
         for node, nodeid in zip(nodes, nodeids):
             node.basenodeid = node.nodeid
             node.nodeid = nodeid
-        return nodes
+        return list(nodes)
 
-    async def unregister_nodes(self, nodes):
+    async def unregister_nodes(self, nodes: Iterable[Node]) -> None:
         """
         Unregister nodes
         """
@@ -865,21 +868,21 @@ class Client:
             node.nodeid = node.basenodeid
             node.basenodeid = None
 
-    async def read_attributes(self, nodes: List[Node], attr: ua.AttributeIds = ua.AttributeIds.Value):
+    async def read_attributes(self, nodes: Iterable[Node], attr: ua.AttributeIds = ua.AttributeIds.Value) -> Sequence[ua.DataValue]:
         """
         Read the attributes of multiple nodes.
         """
         nodeids = [node.nodeid for node in nodes]
         return await self.uaclient.read_attributes(nodeids, attr)
 
-    async def read_values(self, nodes):
+    async def read_values(self, nodes: Iterable[Node]) -> Sequence[Any]:
         """
         Read the value of multiple nodes in one ua call.
         """
         res = await self.read_attributes(nodes, attr=ua.AttributeIds.Value)
-        return [r.Value.Value for r in res]
+        return [r.Value.Value if r.Value else None for r in res]
 
-    async def write_values(self, nodes, values, raise_on_partial_error=True):
+    async def write_values(self, nodes: Iterable[Node], values: Iterable[Any], raise_on_partial_error: bool = True) -> Sequence[ua.StatusCode]:
         """
         Write values to multiple nodes in one ua call
         """
@@ -894,7 +897,7 @@ class Client:
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
 
-    async def browse_nodes(self, nodes: List[Node]) -> List[Tuple[Node, ua.BrowseResult]]:
+    async def browse_nodes(self, nodes: Iterable[Node]) -> Sequence[Tuple[Node, ua.BrowseResult]]:
         """
         Browses multiple nodes in one ua call
         returns a List of Tuples(Node, BrowseResult)
@@ -912,7 +915,7 @@ class Client:
         results = await self.uaclient.browse(parameters)
         return list(zip(nodes, results))
 
-    async def translate_browsepaths(self, starting_node: ua.NodeId, relative_paths: List[Union[ua.RelativePath, str]]) -> List[ua.BrowsePathResult]:
+    async def translate_browsepaths(self, starting_node: ua.NodeId, relative_paths: Iterable[Union[ua.RelativePath, str]]) -> Sequence[ua.BrowsePathResult]:
         bpaths = []
         for p in relative_paths:
             try:
