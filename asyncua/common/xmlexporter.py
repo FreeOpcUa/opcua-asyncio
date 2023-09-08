@@ -2,6 +2,8 @@
 from a list of nodes in the address space, build an XML file
 format is the one from opc-ua specification
 """
+from __future__ import annotations
+
 import logging
 import asyncio
 import functools
@@ -37,7 +39,7 @@ class XmlExporter:
         ]
     }
 
-    def __init__(self, server: "asyncua.Server", export_values: bool = False):
+    def __init__(self, server: asyncua.Server, export_values: bool = False):
         """
         param: export_values: exports values from variants (CustomDataTypes are not support!)
         """

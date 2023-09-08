@@ -20,17 +20,17 @@ logger = logging.getLogger('__name__')
 T = TypeVar('T')
 
 
-def test_bit(data, offset: int) -> bool:
+def test_bit(data: int, offset: int) -> int:
     mask = 1 << offset
     return data & mask
 
 
-def set_bit(data, offset: int) -> int:
+def set_bit(data: int, offset: int) -> int:
     mask = 1 << offset
     return data | mask
 
 
-def unset_bit(data, offset: int) -> int:
+def unset_bit(data: int, offset: int) -> int:
     mask = 1 << offset
     return data & ~mask
 

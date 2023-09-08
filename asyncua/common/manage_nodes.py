@@ -3,7 +3,6 @@ High level functions to create nodes
 """
 from __future__ import annotations
 
-import collections.abc
 import logging
 from enum import Enum
 import inspect
@@ -292,7 +291,7 @@ async def _create_variable(session, parentnodeid, nodeid, qname, var, datatype=N
         attrs.DataType = _guess_datatype(var)
 
     attrs.Value = var
-    if not isinstance(var.Value, collections.abc.Sequence):
+    if not isinstance(var.Value, (list, tuple)):
         attrs.ValueRank = ua.ValueRank.Scalar
         attrs.ArrayDimensions = None
     else:
@@ -325,7 +324,7 @@ async def _create_variable_type(session, parentnodeid, nodeid, qname, datatype, 
     attrs.IsAbstract = False
     if value:
         attrs.Value = value
-        if isinstance(value, collections.abc.Sequence):
+        if isinstance(value, (list, tuple)):
             attrs.ValueRank = ua.ValueRank.OneDimension
         else:
             attrs.ValueRank = ua.ValueRank.Scalar
@@ -481,7 +480,7 @@ def _guess_datatype(variant: ua.Variant):
     if variant.VariantType == ua.VariantType.ExtensionObject:
         if variant.Value is None:
             raise ua.UaError("Cannot guess DataType from Null ExtensionObject")
-        if isinstance(variant.Value, collections.abc.Sequence):
+        if isinstance(variant.Value, (list, tuple)):
             if len(variant.Value) == 0:
                 raise ua.UaError("Cannot guess DataType from Null ExtensionObject")
             extobj = variant.Value[0]

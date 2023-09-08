@@ -2,6 +2,8 @@
 add nodes defined in XML to address space
 format is the one from opc-ua specification
 """
+from __future__ import annotations
+
 import logging
 import uuid
 from typing import Set, Union, Dict, List, Sequence, Tuple
@@ -22,7 +24,7 @@ def _parse_version(version_string: str) -> Sequence[int]:
 
 class XmlImporter:
 
-    def __init__(self, server: "asyncua.Server", strict_mode: bool = True):
+    def __init__(self, server: asyncua.Server, strict_mode: bool = True):
         '''
         strict_mode: stop on an error, if False only an error message is logged,
                      but the import continues

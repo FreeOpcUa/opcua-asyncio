@@ -3,7 +3,6 @@ High level node object, to access node attribute
 and browse address space
 """
 
-import collections.abc
 from datetime import datetime
 import logging
 import sys
@@ -561,7 +560,7 @@ class Node:
         * a list of string
         * a list of qualified names
         """
-        if isinstance(path, str) or not isinstance(path, collections.abc.Iterable):
+        if isinstance(path, (ua.QualifiedName, str)):
             path = [path]
         rpath = self._make_relative_path(path)
         bpath = ua.BrowsePath()
@@ -589,7 +588,7 @@ class Node:
         """
         bpaths: List[ua.BrowsePath] = []
         for path in paths:
-            if isinstance(path, str) or not isinstance(path, collections.abc.Iterable):
+            if isinstance(path, (ua.QualifiedName, str)):
                 path = [path]
             rpath = self._make_relative_path(path)
             bpath = ua.BrowsePath()
@@ -686,7 +685,7 @@ class Node:
         starttime: datetime = None,
         endtime: datetime = None,
         numvalues: int = 0,
-        evtypes: Union[int, Iterable[int]] = ua.ObjectIds.BaseEventType
+        evtypes: Union["Node", ua.NodeId, str, int, Iterable[Union["Node", ua.NodeId, str, int]]] = ua.ObjectIds.BaseEventType
     ) -> Sequence[Event]:
         """
         Read event history of a source node
@@ -704,7 +703,7 @@ class Node:
         else:
             details.EndTime = ua.get_win_epoch()
         details.NumValuesPerNode = numvalues
-        if not isinstance(evtypes, collections.abc.Iterable):
+        if isinstance(evtypes, (Node, ua.NodeId, str, int)):
             evtypes = [evtypes]
         evtype_nodes = [Node(self.session, evtype) for evtype in evtypes]
         evfilter = await get_filter_from_event_type(evtype_nodes)
