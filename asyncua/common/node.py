@@ -6,7 +6,7 @@ and browse address space
 from datetime import datetime
 import logging
 import sys
-from typing import Any, Iterable, List, Optional, Set, Sequence, Union, overload
+from typing import Any, Iterable, List, Optional, Set, Union, overload
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -306,7 +306,7 @@ class Node:
         result = await self.session.write(params)
         result[0].check()
 
-    async def write_params(self, params: ua.WriteParameters) -> Sequence[ua.StatusCode]:
+    async def write_params(self, params: ua.WriteParameters) -> List[ua.StatusCode]:
         result = await self.session.write(params)
         return result
 
@@ -328,7 +328,7 @@ class Node:
             result[0].StatusCode.check()
         return result[0]
 
-    async def read_attributes(self, attrs: Iterable[ua.AttributeIds]) -> Sequence[ua.DataValue]:
+    async def read_attributes(self, attrs: Iterable[ua.AttributeIds]) -> List[ua.DataValue]:
         """
         Read several attributes of a node
         list of DataValue is returned
@@ -343,13 +343,13 @@ class Node:
         results = await self.session.read(params)
         return results
 
-    async def read_params(self, params: ua.ReadParameters) -> Sequence[ua.DataValue]:
+    async def read_params(self, params: ua.ReadParameters) -> List[ua.DataValue]:
         result = await self.session.read(params)
         return result
 
     async def get_children(
         self, refs: int = ua.ObjectIds.HierarchicalReferences, nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
-    ) -> Sequence["Node"]:
+    ) -> List["Node"]:
         """
         Get all children of a node. By default hierarchical references and all node classes are returned.
         Other reference types may be given:
@@ -373,7 +373,7 @@ class Node:
         """
         return await self.get_referenced_nodes(refs, ua.BrowseDirection.Forward, nodeclassmask)
 
-    async def get_properties(self) -> Sequence["Node"]:
+    async def get_properties(self) -> List["Node"]:
         """
         return properties of node.
         properties are child nodes with a reference of type HasProperty and a NodeClass of Variable
@@ -381,14 +381,14 @@ class Node:
         """
         return await self.get_children(refs=ua.ObjectIds.HasProperty, nodeclassmask=ua.NodeClass.Variable)
 
-    async def get_variables(self) -> Sequence["Node"]:
+    async def get_variables(self) -> List["Node"]:
         """
         return variables of node.
         variables are child nodes with a reference of type HasComponent and a NodeClass of Variable
         """
         return await self.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Variable)
 
-    async def get_methods(self) -> Sequence["Node"]:
+    async def get_methods(self) -> List["Node"]:
         """
         return methods of node.
         methods are child nodes with a reference of type HasComponent and a NodeClass of Method
@@ -401,13 +401,13 @@ class Node:
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
         includesubtypes: bool = True,
         result_mask: ua.BrowseResultMask = ua.BrowseResultMask.All
-    ) -> Sequence[ua.ReferenceDescription]:
+    ) -> List[ua.ReferenceDescription]:
         return await self.get_references(refs, ua.BrowseDirection.Forward, nodeclassmask, includesubtypes, result_mask)
 
-    async def get_encoding_refs(self) -> Sequence["Node"]:
+    async def get_encoding_refs(self) -> List["Node"]:
         return await self.get_referenced_nodes(ua.ObjectIds.HasEncoding, ua.BrowseDirection.Forward)
 
-    async def get_description_refs(self) -> Sequence["Node"]:
+    async def get_description_refs(self) -> List["Node"]:
         return await self.get_referenced_nodes(ua.ObjectIds.HasDescription, ua.BrowseDirection.Forward)
 
     async def get_references(
@@ -417,7 +417,7 @@ class Node:
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
         includesubtypes: bool = True,
         result_mask: ua.BrowseResultMask = ua.BrowseResultMask.All
-    ) -> Sequence[ua.ReferenceDescription]:
+    ) -> List[ua.ReferenceDescription]:
         """
         returns references of the node based on specific filter defined with:
 
@@ -442,7 +442,7 @@ class Node:
         references = await self._browse_next(results)
         return references
 
-    async def _browse_next(self, results: Iterable[ua.BrowseResult]) -> Sequence[ua.ReferenceDescription]:
+    async def _browse_next(self, results: Iterable[ua.BrowseResult]) -> List[ua.ReferenceDescription]:
         head = next(iter(results))
         references = head.References
         while head.ContinuationPoint:
@@ -459,7 +459,7 @@ class Node:
         direction: ua.BrowseDirection = ua.BrowseDirection.Both,
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
         includesubtypes: bool = True,
-    ) -> Sequence["Node"]:
+    ) -> List["Node"]:
         """
         returns referenced nodes based on specific filter
         Parameters are the same as for get_references
@@ -482,14 +482,14 @@ class Node:
         return references[0].NodeId
 
     @overload
-    async def get_path(self, max_length: int = 20, as_string: Literal[False] = False) -> Sequence["Node"]:
+    async def get_path(self, max_length: int = 20, as_string: Literal[False] = False) -> List["Node"]:
         ...
 
     @overload
-    async def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> Sequence["str"]:
+    async def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> List["str"]:
         ...
 
-    async def get_path(self, max_length: int = 20, as_string: bool = False) -> Union[Sequence["Node"], Sequence[str]]:
+    async def get_path(self, max_length: int = 20, as_string: bool = False) -> Union[List["Node"], List[str]]:
         """
         Attempt to find path of node from root node and return it as a list of Nodes.
         There might several possible paths to a node, this function will return one
@@ -504,7 +504,7 @@ class Node:
             return [(await el.read_browse_name()).to_string() for el in nodes]
         return nodes
 
-    async def _get_path(self, max_length: int = 20) -> Sequence[ua.ReferenceDescription]:
+    async def _get_path(self, max_length: int = 20) -> List[ua.ReferenceDescription]:
         """
         Attempt to find path of node from root node and return it as a list of Nodes.
         There might several possible paths to a node, this function will return one
@@ -546,12 +546,12 @@ class Node:
     @overload
     async def get_child(
         self, path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]], return_all: Literal[True] = True
-    ) -> Sequence["Node"]:
+    ) -> List["Node"]:
         ...
 
     async def get_child(
         self, path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]], return_all: bool = False
-    ) -> Union["Node", Sequence["Node"]]:
+    ) -> Union["Node", List["Node"]]:
         """
         get a child specified by its path from this node.
         A path might be:
@@ -577,7 +577,7 @@ class Node:
         self,
         paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]],
         raise_on_partial_error: bool = True
-    ) -> Sequence[Sequence[Optional["Node"]]]:
+    ) -> List[List[Optional["Node"]]]:
         """
         get children specified by their paths from this node.
         A path might be:
@@ -630,7 +630,7 @@ class Node:
         endtime: Optional[datetime] = None,
         numvalues: int = 0,
         return_bounds: bool = True
-    ) -> Sequence[ua.DataValue]:
+    ) -> List[ua.DataValue]:
         """
         Read raw history of a node
         result code from server is checked and an exception is raised in case of error
@@ -686,7 +686,7 @@ class Node:
         endtime: datetime = None,
         numvalues: int = 0,
         evtypes: Union["Node", ua.NodeId, str, int, Iterable[Union["Node", ua.NodeId, str, int]]] = ua.ObjectIds.BaseEventType
-    ) -> Sequence[Event]:
+    ) -> List[Event]:
         """
         Read event history of a source node
         result code from server is checked and an exception is raised in case of error
@@ -730,7 +730,7 @@ class Node:
         params.NodesToRead.append(valueid)
         return (await self.session.history_read(params))[0]
 
-    async def delete(self, delete_references: bool = True, recursive: bool = False) -> Sequence["Node"]:
+    async def delete(self, delete_references: bool = True, recursive: bool = False) -> List["Node"]:
         """
         Delete node from address space
         """

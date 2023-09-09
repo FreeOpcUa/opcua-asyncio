@@ -6,7 +6,7 @@ from __future__ import annotations
 import logging
 from enum import Enum
 import inspect
-from typing import Any, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Iterable, List, Optional, Tuple, Union
 
 import asyncua
 from asyncua import ua
@@ -498,7 +498,7 @@ def _guess_datatype(variant: ua.Variant):
 
 async def delete_nodes(
     session: AbstractSession, nodes: Iterable[asyncua.Node], recursive: bool = False, delete_target_references: bool = True
-) -> Tuple[Sequence[asyncua.Node], Sequence[ua.StatusCode]]:
+) -> Tuple[List[asyncua.Node], List[ua.StatusCode]]:
     """
     Delete specified nodes. Optionally delete recursively all nodes with a
     downward hierachic references to the node

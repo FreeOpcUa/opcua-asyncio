@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 
-from typing import Optional, Sequence, Union
+from typing import List, Optional, Union
 
 import asyncua
 from asyncua import ua
@@ -30,7 +30,7 @@ async def instantiate(
     dname: Optional[ua.LocalizedText] = None,
     idx: int = 0,
     instantiate_optional: bool = True,
-) -> Sequence[asyncua.Node]:
+) -> List[asyncua.Node]:
     """
     instantiate a node type under a parent node.
     nodeid and browse name of new node can be specified, or just namespace index

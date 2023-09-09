@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional
 
 import asyncua
 from asyncua import ua
@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 async def copy_node(
     parent: asyncua.Node, node: asyncua.Node, nodeid: Optional[ua.NodeId] = None, recursive: bool = True
-) -> Sequence[asyncua.Node]:
+) -> List[asyncua.Node]:
     """
     Copy a node or node tree as child of parent node
     """
