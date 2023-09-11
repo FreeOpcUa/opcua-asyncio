@@ -8,7 +8,7 @@ import logging
 import asyncio
 import functools
 from collections import OrderedDict
-from typing import Any
+from typing import Any, Union
 import xml.etree.ElementTree as Et
 import base64
 from dataclasses import is_dataclass
@@ -39,7 +39,7 @@ class XmlExporter:
         ]
     }
 
-    def __init__(self, server: asyncua.Server, export_values: bool = False):
+    def __init__(self, server: Union[asyncua.Server, asyncua.Client], export_values: bool = False):
         """
         param: export_values: exports values from variants (CustomDataTypes are not support!)
         """

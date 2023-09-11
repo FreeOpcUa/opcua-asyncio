@@ -24,7 +24,7 @@ def _parse_version(version_string: str) -> List[int]:
 
 class XmlImporter:
 
-    def __init__(self, server: asyncua.Server, strict_mode: bool = True):
+    def __init__(self, server: Union[asyncua.Server, asyncua.Client], strict_mode: bool = True):
         '''
         strict_mode: stop on an error, if False only an error message is logged,
                      but the import continues
