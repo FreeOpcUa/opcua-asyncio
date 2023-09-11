@@ -92,7 +92,7 @@ class AbstractSession(ABC):
         '''
 
     @abstractmethod
-    async def history_read(self, params: ua.HistoryReadParameters) -> ua.HistoryReadResult:
+    async def history_read(self, params: ua.HistoryReadParameters) -> List[ua.HistoryReadResult]:
         '''
         https://reference.opcfoundation.org/Core/Part4/v104/5.10.3/
 

@@ -2,10 +2,13 @@
 Instantiate a new node and its child nodes from a node type.
 """
 
+from __future__ import annotations
+
 import logging
 
-from typing import Union
+from typing import List, Optional, Union
 
+import asyncua
 from asyncua import ua
 from .ua_utils import get_node_supertypes, is_child_present
 from .copy_node_util import _rdesc_from_node, _read_and_copy_attrs
@@ -19,7 +22,15 @@ async def is_abstract(node_type) -> bool:
     return result.Value.Value
 
 
-async def instantiate(parent, node_type, nodeid: ua.NodeId = None, bname: Union[str, ua.QualifiedName] = None, dname: ua.LocalizedText = None, idx: int = 0, instantiate_optional: bool = True):
+async def instantiate(
+    parent: asyncua.Node,
+    node_type: asyncua.Node,
+    nodeid: Optional[ua.NodeId] = None,
+    bname: Optional[Union[ua.QualifiedName, str]] = None,
+    dname: Optional[ua.LocalizedText] = None,
+    idx: int = 0,
+    instantiate_optional: bool = True,
+) -> List[asyncua.Node]:
     """
     instantiate a node type under a parent node.
     nodeid and browse name of new node can be specified, or just namespace index

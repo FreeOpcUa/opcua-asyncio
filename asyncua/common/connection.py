@@ -340,7 +340,7 @@ class SecureConnection:
         Validates the symmetric header of the message chunk and revolves the
         security token if needed.
         """
-        assert isinstance(security_hdr, ua.SymmetricAlgorithmHeader), f"Expected SymAlgHeader, got: {security_hdr}"
+        assert isinstance(security_hdr, ua.SymmetricAlgorithmHeader), f"Expected SymAlgHeader, got: {type(security_hdr)}"
 
         if security_hdr.TokenId == self.security_token.TokenId:
             return

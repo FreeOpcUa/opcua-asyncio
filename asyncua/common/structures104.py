@@ -370,6 +370,7 @@ async def _get_parent_types(node: Node):
 
 async def load_custom_struct(node: Node) -> Any:
     sdef = await node.read_data_type_definition()
+    assert isinstance(sdef, ua.StructureDefinition), f"Expected StructureDefinition, got: {type(sdef)}"
     name = (await node.read_browse_name()).Name
     for parent in await _get_parent_types(node):
         parent_sdef = await parent.read_data_type_definition()
