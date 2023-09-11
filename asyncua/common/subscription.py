@@ -245,7 +245,7 @@ class Subscription:
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
-            if type(evtypes) not in (list, tuple) and evtypes == ua.ObjectIds.BaseEventType:
+            if not isinstance(evtypes, (list, tuple)) and evtypes == ua.ObjectIds.BaseEventType:
                 # Remove where clause for base event type, for servers that have problems with long WhereClauses.
                 # Also because BaseEventType wants every event we can ommit it. Issue: #1205
                 where_clause_generation = False
@@ -313,7 +313,7 @@ class Subscription:
             # Return results for multiple nodes
             return mids
         # Check and return result for single node (raise `UaStatusCodeError` if subscription failed)
-        if type(mids[0]) == ua.StatusCode:
+        if isinstance(mids[0], ua.StatusCode):
             mids[0].check()
         return mids[0]  # type: ignore
 

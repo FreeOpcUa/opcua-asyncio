@@ -22,7 +22,6 @@ from ..common.utils import create_nonce, ServiceError
 from ..common.ua_utils import value_to_datavalue, copy_dataclass_attr
 from ..crypto import uacrypto, security_policies
 from ..crypto.validator import CertificateValidatorMethod
-from ..crypto.uacrypto import x509
 
 _logger = logging.getLogger(__name__)
 
@@ -88,7 +87,7 @@ class Client:
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
         self._closing: bool = False
-        self.certificate_validator: Optional[CertificateValidatorMethod]= None
+        self.certificate_validator: Optional[CertificateValidatorMethod] = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
 
     async def __aenter__(self):
