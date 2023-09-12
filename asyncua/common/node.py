@@ -765,7 +765,9 @@ class Node:
         ditem = self._fill_delete_reference_item(rdesc, bidirectional)
         (await self.session.delete_references([ditem]))[0].check()
 
-    async def add_reference(self, target: Union["Node", ua.NodeId, str, int], reftype, forward=True, bidirectional=True) -> None:
+    async def add_reference(
+        self, target: Union["Node", ua.NodeId, str, int], reftype: int, forward: bool = True, bidirectional: bool = True,
+    ) -> None:
         """
         Add reference to node
         """
