@@ -51,9 +51,6 @@ class Client:
             time. The timeout is specified in seconds.
         :param watchdog_intervall:
             The time between checking if the server is still alive. The timeout is specified in seconds.
-        :param strip_url_credentials:
-            If True, strip credentials from the url before connecting, preventing them from
-            being sent unencrypted. Disabling this is not recommended for security reasons.
 
         Some other client parameters can be changed by setting
         attributes on the constructed object:
@@ -109,7 +106,8 @@ class Client:
     def server_url(self):
         """Return the server URL with stripped credentials
 
-        if self.strip_url_credentials is True
+        if self.strip_url_credentials is True.  Disabling this
+        is not recommended for security reasons.
         """
         url = self._server_url
         userinfo, have_info, hostinfo = url.netloc.rpartition('@')
