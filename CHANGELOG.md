@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 
-- Add `strip_url_credentials` parameter to `Client`, with a default to True.
+- Add `strip_url_credentials` attribute to `Client`, with a default to True.
   Setting it to False is significantly less secure but may be necessary with some servers
   [#1429](https://github.com/FreeOpcUa/opcua-asyncio/pull/1429)
 

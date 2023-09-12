@@ -59,17 +59,14 @@ class Client:
         attributes on the constructed object:
         See the source code for the exhaustive list.
         """
-        self.server_url = urlparse(url)
+        self._server_url = urlparse(url)
         # take initial username and password from the url
-        userinfo, have_info, hostinfo = self.server_url.netloc.rpartition('@')
+        userinfo, have_info, _ = self._server_url.netloc.rpartition('@')
         if have_info:
             username, have_password, password = userinfo.partition(':')
             self._username = unquote(username)
             if have_password:
                 self._password = unquote(password)
-            # remove credentials from url, preventing them to be sent unencrypted in e.g. send_hello
-            if strip_url_credentials:
-                self.server_url = self.server_url.__class__(self.server_url[0], hostinfo, *self.server_url[2:])
 
         self.name = "Pure Python Async. Client"
         self.description = self.name
@@ -107,6 +104,20 @@ class Client:
         return f"Client({self.server_url.geturl()})"
 
     __repr__ = __str__
+
+    @property
+    def server_url(self):
+        """Return the server URL with stripped credentials
+        
+        if self.strip_url_credentials is True
+        """
+        url = self._server_url
+        userinfo, have_info, hostinfo = url.netloc.rpartition('@')
+        if have_info:
+            # remove credentials from url, preventing them to be sent unencrypted in e.g. send_hello
+            if self.strip_url_credentials:
+                url = url.__class__(url[0], hostinfo, *url[2:])
+        return url
 
     @staticmethod
     def find_endpoint(endpoints, security_mode, policy_uri):
@@ -356,6 +367,7 @@ class Client:
         """
         connect to socket defined in url
         """
+        
         await self.uaclient.connect_socket(self.server_url.hostname, self.server_url.port)
 
     def disconnect_socket(self):

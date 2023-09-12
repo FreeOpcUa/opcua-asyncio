@@ -190,5 +190,6 @@ async def test_strip_credentials_in_url():
     client = Client('opc.tcp://user:password@dummy_address:10000')
     assert client.server_url.netloc == 'dummy_address:10000'
 
-    client = Client('opc.tcp://user:password@dummy_address:10000', strip_url_credentials=False)
+    client = Client('opc.tcp://user:password@dummy_address:10000')
+    client.strip_url_credentials = False
     assert client.server_url.netloc == 'user:password@dummy_address:10000'
