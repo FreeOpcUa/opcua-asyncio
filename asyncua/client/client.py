@@ -108,7 +108,7 @@ class Client:
     @property
     def server_url(self):
         """Return the server URL with stripped credentials
-        
+
         if self.strip_url_credentials is True
         """
         url = self._server_url
@@ -367,7 +367,7 @@ class Client:
         """
         connect to socket defined in url
         """
-        
+
         await self.uaclient.connect_socket(self.server_url.hostname, self.server_url.port)
 
     def disconnect_socket(self):
