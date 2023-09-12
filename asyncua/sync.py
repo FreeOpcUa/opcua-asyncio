@@ -1,19 +1,30 @@
 """
 sync API of asyncua
 """
+from __future__ import annotations
+
 import asyncio
+from datetime import datetime
 import functools
+import sys
 from cryptography import x509
 from pathlib import Path
 from threading import Thread, Condition
 import logging
-from typing import Any, Dict, Iterable, List, Sequence, Tuple, Type, Union, Optional
+from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple, Type, Union, Optional, overload
+
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 from asyncua import ua
 from asyncua import client
 from asyncua import server
 from asyncua import common
 from asyncua.common import node, subscription, shortcuts, xmlexporter, type_dictionary_builder
+from asyncua.common.events import Event
 
 _logger = logging.getLogger(__name__)
 
@@ -285,7 +296,7 @@ class Client:
         pass
 
     @syncmethod
-    def load_data_type_definitions(self, node: Optional["SyncNode"] = None, overwrite_existing: bool = False) -> Dict[str, Type]:  # type: ignore[empty-body]
+    def load_data_type_definitions(self, node: Optional[SyncNode] = None, overwrite_existing: bool = False) -> Dict[str, Type]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -320,17 +331,17 @@ class Client:
     def get_namespace_index(self, uri: str) -> int:  # type: ignore[empty-body]
         pass
 
-    def get_node(self, nodeid: Union["SyncNode", ua.NodeId, str, int]) -> "SyncNode":
+    def get_node(self, nodeid: Union[SyncNode, ua.NodeId, str, int]) -> SyncNode:
         aio_nodeid = nodeid.aio_obj if isinstance(nodeid, SyncNode) else nodeid
         return SyncNode(self.tloop, self.aio_obj.get_node(aio_nodeid))
 
-    def get_root_node(self) -> "SyncNode":
+    def get_root_node(self) -> SyncNode:
         return SyncNode(self.tloop, self.aio_obj.get_root_node())
 
-    def get_objects_node(self) -> "SyncNode":
+    def get_objects_node(self) -> SyncNode:
         return SyncNode(self.tloop, self.aio_obj.get_objects_node())
 
-    def get_server_node(self) -> "SyncNode":
+    def get_server_node(self) -> SyncNode:
         return SyncNode(self.tloop, self.aio_obj.get_server_node())
 
     @syncmethod
@@ -416,7 +427,7 @@ class Client:
         return self.aio_obj.get_keepalive_count(period)
 
     @syncmethod
-    def delete_nodes(self, nodes: Iterable["SyncNode"], recursive=False) -> Tuple[List["SyncNode"], List[ua.StatusCode]]:  # type: ignore[empty-body]
+    def delete_nodes(self, nodes: Iterable[SyncNode], recursive=False) -> Tuple[List[SyncNode], List[ua.StatusCode]]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -432,27 +443,27 @@ class Client:
         pass
 
     @syncmethod
-    def register_nodes(self, nodes: Iterable["SyncNode"]) -> List["SyncNode"]:  # type: ignore[empty-body]
+    def register_nodes(self, nodes: Iterable[SyncNode]) -> List[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def unregister_nodes(self, nodes: Iterable["SyncNode"]):  # type: ignore[empty-body]
+    def unregister_nodes(self, nodes: Iterable[SyncNode]):  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_attributes(self, nodes: Iterable["SyncNode"], attr: ua.AttributeIds = ua.AttributeIds.Value) -> List[ua.DataValue]:  # type: ignore[empty-body]
+    def read_attributes(self, nodes: Iterable[SyncNode], attr: ua.AttributeIds = ua.AttributeIds.Value) -> List[ua.DataValue]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_values(self, nodes: Iterable["SyncNode"]) -> List[Any]:  # type: ignore[empty-body]
+    def read_values(self, nodes: Iterable[SyncNode]) -> List[Any]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def write_values(self, nodes: Iterable["SyncNode"], values: Iterable[Any], raise_on_partial_error: bool = True) -> List[ua.StatusCode]:  # type: ignore[empty-body]
+    def write_values(self, nodes: Iterable[SyncNode], values: Iterable[Any], raise_on_partial_error: bool = True) -> List[ua.StatusCode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def browse_nodes(self, nodes: Iterable["SyncNode"]) -> List[Tuple["SyncNode", ua.BrowseResult]]:  # type: ignore[empty-body]
+    def browse_nodes(self, nodes: Iterable[SyncNode]) -> List[Tuple[SyncNode, ua.BrowseResult]]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -476,33 +487,33 @@ class Client:
 
 
 class Shortcuts:
-    root: "SyncNode"
-    objects: "SyncNode"
-    server: "SyncNode"
-    base_object_type: "SyncNode"
-    base_data_type: "SyncNode"
-    base_event_type: "SyncNode"
-    base_variable_type: "SyncNode"
-    folder_type: "SyncNode"
-    enum_data_type: "SyncNode"
-    option_set_type: "SyncNode"
-    types: "SyncNode"
-    data_types: "SyncNode"
-    event_types: "SyncNode"
-    reference_types: "SyncNode"
-    variable_types: "SyncNode"
-    object_types: "SyncNode"
-    namespace_array: "SyncNode"
-    namespaces: "SyncNode"
-    opc_binary: "SyncNode"
-    base_structure_type: "SyncNode"
-    base_union_type: "SyncNode"
-    server_state: "SyncNode"
-    service_level: "SyncNode"
-    HasComponent: "SyncNode"
-    HasProperty: "SyncNode"
-    Organizes: "SyncNode"
-    HasEncoding: "SyncNode"
+    root: SyncNode
+    objects: SyncNode
+    server: SyncNode
+    base_object_type: SyncNode
+    base_data_type: SyncNode
+    base_event_type: SyncNode
+    base_variable_type: SyncNode
+    folder_type: SyncNode
+    enum_data_type: SyncNode
+    option_set_type: SyncNode
+    types: SyncNode
+    data_types: SyncNode
+    event_types: SyncNode
+    reference_types: SyncNode
+    variable_types: SyncNode
+    object_types: SyncNode
+    namespace_array: SyncNode
+    namespaces: SyncNode
+    opc_binary: SyncNode
+    base_structure_type: SyncNode
+    base_union_type: SyncNode
+    server_state: SyncNode
+    service_level: SyncNode
+    HasComponent: SyncNode
+    HasProperty: SyncNode
+    Organizes: SyncNode
+    HasEncoding: SyncNode
 
     def __init__(self, tloop, aio_server):
         self.tloop = tloop
@@ -661,201 +672,376 @@ class SyncNode:
     def __set_nodeid(self, value):
         self.aio_obj.nodeid = value
 
-    nodeid = property(__get_nodeid, __set_nodeid)
+    nodeid: ua.NodeId = property(__get_nodeid, __set_nodeid)
 
     @syncmethod
-    def read_type_definition(self):
+    def read_type_definition(self) -> Optional[ua.NodeId]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def get_parent(self):
+    def get_parent(self) -> Optional[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_node_class(self):
+    def read_node_class(self) -> ua.NodeClass:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_attribute(self, attr):
-        pass
-
-    @syncmethod
-    def write_attribute(self, attributeid, datavalue, indexrange=None):
-        pass
-
-    @syncmethod
-    def read_browse_name(self):
-        pass
-
-    @syncmethod
-    def read_display_name(self):
-        pass
-
-    @syncmethod
-    def read_data_type(self):
-        pass
-
-    @syncmethod
-    def read_array_dimensions(self):
-        pass
-
-    @syncmethod
-    def read_value_rank(self):
-        pass
-
-    @syncmethod
-    def delete(self):
-        pass
-
-    @syncmethod
-    def get_children(self, refs=ua.ObjectIds.HierarchicalReferences, nodeclassmask=ua.NodeClass.Unspecified):
-        pass
-
-    @syncmethod
-    def get_properties(self):
-        pass
-
-    @syncmethod
-    def get_children_descriptions(
+    def read_attribute(  # type: ignore[empty-body]
         self,
-        refs=ua.ObjectIds.HierarchicalReferences,
-        nodeclassmask=ua.NodeClass.Unspecified,
-        includesubtypes=True,
-    ):
+        attr: ua.AttributeIds,
+        indexrange: Optional[str] = None,
+        raise_on_bad_status: bool = True,
+    ) -> ua.DataValue:
         pass
 
     @syncmethod
-    def get_user_access_level(self):
+    def write_attribute(
+        self,
+        attributeid: ua.AttributeIds,
+        datavalue: ua.DataValue,
+        indexrange: Optional[str] = None,
+    ) -> None:
         pass
 
     @syncmethod
-    def get_child(self, path):
+    def read_browse_name(self) -> ua.QualifiedName:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def get_children_by_path(self, paths, raise_on_partial_error=True):
+    def read_display_name(self) -> ua.LocalizedText:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_raw_history(self, starttime=None, endtime=None, numvalues=0, return_bounds=True):
+    def read_data_type(self) -> ua.NodeId:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def history_read(self, details, continuation_point=None):
+    def read_array_dimensions(self) -> int:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_event_history(self, starttime=None, endtime=None, numvalues=0, evtypes=ua.ObjectIds.BaseEventType):
+    def read_value_rank(self) -> int:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def history_read_events(self, details):
+    def delete(self, delete_references: bool = True, recursive: bool = False) -> List[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def set_modelling_rule(self, mandatory: bool):
+    def get_children(  # type: ignore[empty-body]
+        self,
+        refs: int = ua.ObjectIds.HierarchicalReferences,
+        nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
+    ) -> List[SyncNode]:
         pass
 
     @syncmethod
-    def add_variable(self, ns, name, val):
+    def get_properties(self) -> List[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def add_property(self, ns, name, val):
+    def get_children_descriptions(  # type: ignore[empty-body]
+        self,
+        refs: int = ua.ObjectIds.HierarchicalReferences,
+        nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
+        includesubtypes: bool = True,
+        result_mask: ua.BrowseResultMask = ua.BrowseResultMask.All,
+    ) -> List[ua.ReferenceDescription]:
         pass
 
     @syncmethod
-    def add_object(self, ns, name):
+    def get_user_access_level(self) -> Set[ua.AccessLevel]:  # type: ignore[empty-body]
+        pass
+
+    @overload
+    def get_child(
+        self,
+        path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]],
+        return_all: Literal[False] = False,
+    ) -> SyncNode:
+        ...
+
+    @overload
+    def get_child(
+        self,
+        path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]],
+        return_all: Literal[True] = True,
+    ) -> List[SyncNode]:
+        ...
+
+    @syncmethod
+    def get_child(  # type: ignore[empty-body]
+        self,
+        path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]],
+        return_all: bool = False,
+    ) -> Union[SyncNode, List[SyncNode]]:
         pass
 
     @syncmethod
-    def add_object_type(self, ns, name):
+    def get_children_by_path(  # type: ignore[empty-body]
+        self,
+        paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]],
+        raise_on_partial_error: bool = True
+    ) -> List[List[Optional[SyncNode]]]:
         pass
 
     @syncmethod
-    def add_variable_type(self, ns, name, datatype):
+    def read_raw_history(  # type: ignore[empty-body]
+        self,
+        starttime: Optional[datetime] = None,
+        endtime: Optional[datetime] = None,
+        numvalues: int = 0,
+        return_bounds: bool = True,
+    ) -> List[ua.DataValue]:
         pass
 
     @syncmethod
-    def add_folder(self, ns, name):
+    def history_read(  # type: ignore[empty-body]
+        self,
+        details: ua.ReadRawModifiedDetails,
+        continuation_point: Optional[bytes] = None,
+    ) -> ua.HistoryReadResult:
         pass
 
     @syncmethod
-    def add_method(self, *args):
+    def read_event_history(  # type: ignore[empty-body]
+        self,
+        starttime: datetime = None,
+        endtime: datetime = None,
+        numvalues: int = 0,
+        evtypes: Union[SyncNode, ua.NodeId, str, int, Iterable[Union[SyncNode, ua.NodeId, str, int]]] = ua.ObjectIds.BaseEventType,
+    ) -> List[Event]:
         pass
 
     @syncmethod
-    def add_data_type(self, *args):
+    def history_read_events(self, details: Iterable[ua.ReadEventDetails]) -> ua.HistoryReadResult:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def set_writable(self, writable=True):
+    def set_modelling_rule(self, mandatory: bool) -> None:
         pass
 
     @syncmethod
-    def write_value(self, val):
+    def add_variable(  # type: ignore[empty-body]
+        self,
+        nodeid: Union[ua.NodeId, str],
+        bname: Union[ua.QualifiedName, str],
+        val: Any,
+        varianttype: Optional[ua.VariantType] = None,
+        datatype: Optional[Union[ua.NodeId, int]] = None,
+    ) -> SyncNode:
+        pass
+
+    @syncmethod
+    def add_property(  # type: ignore[empty-body]
+        self,
+        nodeid: Union[ua.NodeId, str],
+        bname: Union[ua.QualifiedName, str],
+        val: Any,
+        varianttype: Optional[ua.VariantType] = None,
+        datatype: Optional[Union[ua.NodeId, int]] = None,
+    ) -> SyncNode:
+        pass
+
+    @syncmethod
+    def add_object(  # type: ignore[empty-body]
+        self, nodeid: Union[ua.NodeId, str],
+        bname: Union[ua.QualifiedName, str],
+        objecttype: Optional[int] = None,
+        instantiate_optional: bool = True,
+    ) -> SyncNode:
+        pass
+
+    @syncmethod
+    def add_object_type(self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]) -> SyncNode:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def add_variable_type(  # type: ignore[empty-body]
+        self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], datatype: Union[ua.NodeId, int]
+    ) -> SyncNode:
+        pass
+
+    @syncmethod
+    def add_folder(self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]) -> SyncNode:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def add_method(self, *args) -> SyncNode:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def add_data_type(  # type: ignore[empty-body]
+        self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], description: Optional[str] = None
+    ) -> SyncNode:
+        pass
+
+    @syncmethod
+    def set_writable(self, writable: bool = True) -> None:
+        pass
+
+    @syncmethod
+    def write_value(self, value: Any, varianttype: Optional[ua.VariantType] = None) -> None:
         pass
 
     set_value = write_value  # legacy
 
     @syncmethod
-    def write_params(self, params):
+    def write_params(self, params: ua.WriteParameters) -> List[ua.StatusCode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_params(self, params):
+    def read_params(self, params: ua.ReadParameters) -> List[ua.DataValue]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_value(self):
+    def read_value(self) -> Any:
         pass
 
     get_value = read_value  # legacy
 
     @syncmethod
-    def read_data_value(self):
+    def read_data_value(self, raise_on_bad_status: bool = True) -> ua.DataValue:  # type: ignore[empty-body]
         pass
 
     get_data_value = read_data_value  # legacy
 
     @syncmethod
-    def read_data_type_as_variant_type(self):
+    def read_data_type_as_variant_type(self) -> ua.VariantType:  # type: ignore[empty-body]
         pass
 
     get_data_type_as_variant_type = read_data_type_as_variant_type  # legacy
 
     @syncmethod
-    def call_method(self, methodid, *args):
+    def call_method(self, methodid: Union[ua.NodeId, ua.QualifiedName, str], *args) -> Any:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def get_references(
+    def get_references(  # type: ignore[empty-body]
         self,
-        refs=ua.ObjectIds.References,
-        direction=ua.BrowseDirection.Both,
-        nodeclassmask=ua.NodeClass.Unspecified,
-        includesubtypes=True,
-    ):
+        refs: int = ua.ObjectIds.References,
+        direction: ua.BrowseDirection = ua.BrowseDirection.Both,
+        nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
+        includesubtypes: bool = True,
+        result_mask: ua.BrowseResultMask = ua.BrowseResultMask.All,
+    ) -> List[ua.ReferenceDescription]:
         pass
 
     @syncmethod
-    def add_reference(self, target, reftype, forward=True, bidirectional=True):
+    def add_reference(
+        self, target: Union[SyncNode, ua.NodeId, str, int], reftype: int, forward: bool = True, bidirectional: bool = True
+    ) -> None:
         pass
 
     @syncmethod
-    def read_description(self):
+    def read_description(self) -> ua.LocalizedText:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def get_variables(self):
+    def get_variables(self) -> List[SyncNode]:  # type: ignore[empty-body]
+        pass
+
+    @overload
+    def get_path(self, max_length: int = 20, as_string: Literal[False] = False) -> List[SyncNode]:
+        ...
+
+    @overload
+    def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> List["str"]:
+        ...
+
+    @syncmethod
+    def get_path(self, max_length: int = 20, as_string: bool = False) -> Union[List[SyncNode], List[str]]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def get_path(self):
+    def read_attributes(self, attrs: Iterable[ua.AttributeIds]) -> List[ua.DataValue]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_attributes(self, attrs):
+    def add_reference_type(  # type: ignore[empty-body]
+        self,
+        nodeid: Union[ua.NodeId, str],
+        bname: Union[ua.QualifiedName, str],
+        symmetric: bool = True,
+        inversename: Optional[str] = None,
+    ) -> SyncNode:
+        pass
+
+    @syncmethod
+    def delete_reference(  # type: ignore[empty-body]
+        self,
+        target: Union[SyncNode, ua.NodeId, str, int],
+        reftype: int,
+        forward: bool = True,
+        bidirectional: bool = True,
+    ) -> None:
+        pass
+
+    @syncmethod
+    def get_access_level(self) -> Set[ua.AccessLevel]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def get_description_refs(self) -> List[SyncNode]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def get_encoding_refs(self) -> List[SyncNode]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def get_methods(self) -> List[SyncNode]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def get_referenced_nodes(  # type: ignore[empty-body]
+        self,
+        refs: int = ua.ObjectIds.References,
+        direction: ua.BrowseDirection = ua.BrowseDirection.Both,
+        nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
+        includesubtypes: bool = True,
+    ) -> List[SyncNode]:
+        pass
+
+    @syncmethod
+    def read_data_type_definition(self) -> ua.DataTypeDefinition:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def read_event_notifier(self) -> Set[ua.EventNotifier]:  # type: ignore[empty-body]
+        pass
+
+    @syncmethod
+    def register(self) -> None:
+        pass
+
+    @syncmethod
+    def set_attr_bit(self, attr: ua.AttributeIds, bit: int) -> None:
+        pass
+
+    @syncmethod
+    def set_event_notifier(self, values) -> None:
+        pass
+
+    @syncmethod
+    def unregister(self) -> None:
+        pass
+
+    @syncmethod
+    def unset_attr_bit(self, attr: ua.AttributeIds, bit: int) -> None:
+        pass
+
+    @syncmethod
+    def write_array_dimensions(self, value: int) -> None:
+        pass
+
+    @syncmethod
+    def write_data_type_definition(self, sdef: ua.DataTypeDefinition) -> None:
+        pass
+
+    @syncmethod
+    def write_value_rank(self, value: int) -> None:
         pass
 
 
