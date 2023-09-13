@@ -38,6 +38,7 @@ class Client:
 
     _username = None
     _password = None
+    strip_url_credentials = True
 
     def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
         """
@@ -49,20 +50,19 @@ class Client:
             time. The timeout is specified in seconds.
         :param watchdog_intervall:
             The time between checking if the server is still alive. The timeout is specified in seconds.
+
         Some other client parameters can be changed by setting
         attributes on the constructed object:
         See the source code for the exhaustive list.
         """
-        self.server_url = urlparse(url)
+        self._server_url = urlparse(url)
         # take initial username and password from the url
-        userinfo, have_info, hostinfo = self.server_url.netloc.rpartition('@')
+        userinfo, have_info, _ = self._server_url.netloc.rpartition('@')
         if have_info:
             username, have_password, password = userinfo.partition(':')
             self._username = unquote(username)
             if have_password:
                 self._password = unquote(password)
-            # remove credentials from url, preventing them to be sent unencrypted in e.g. send_hello
-            self.server_url = self.server_url.__class__(self.server_url[0], hostinfo, *self.server_url[2:])
 
         self.name = "Pure Python Async. Client"
         self.description = self.name
@@ -101,6 +101,21 @@ class Client:
         return f"Client({self.server_url.geturl()})"
 
     __repr__ = __str__
+
+    @property
+    def server_url(self):
+        """Return the server URL with stripped credentials
+
+        if self.strip_url_credentials is True.  Disabling this
+        is not recommended for security reasons.
+        """
+        url = self._server_url
+        userinfo, have_info, hostinfo = url.netloc.rpartition('@')
+        if have_info:
+            # remove credentials from url, preventing them to be sent unencrypted in e.g. send_hello
+            if self.strip_url_credentials:
+                url = url.__class__(url[0], hostinfo, *url[2:])
+        return url
 
     @staticmethod
     def find_endpoint(endpoints: Iterable[ua.EndpointDescription], security_mode: ua.MessageSecurityMode, policy_uri: str) -> ua.EndpointDescription:
@@ -350,6 +365,7 @@ class Client:
         """
         connect to socket defined in url
         """
+
         await self.uaclient.connect_socket(self.server_url.hostname, self.server_url.port)
 
     def disconnect_socket(self) -> None:

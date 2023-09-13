@@ -182,3 +182,14 @@ async def test_translate_browsepaths(server, client: Client):
 
     with pytest.raises(ua.UaStringParsingError):
         await client.translate_browsepaths(server_node.nodeid, ["/1:<Boiler"])
+
+
+async def test_strip_credentials_in_url():
+    """Check that the credentials are correctly stripped in the server url"""
+
+    client = Client('opc.tcp://user:password@dummy_address:10000')
+    assert client.server_url.netloc == 'dummy_address:10000'
+
+    client = Client('opc.tcp://user:password@dummy_address:10000')
+    client.strip_url_credentials = False
+    assert client.server_url.netloc == 'user:password@dummy_address:10000'
