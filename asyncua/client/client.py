@@ -34,14 +34,9 @@ class Client:
 
     _username = None
     _password = None
+    strip_url_credentials = True
 
-    def __init__(
-        self,
-        url: str,
-        timeout: float = 4,
-        watchdog_intervall: float = 1.0,
-        strip_url_credentials: bool = True
-    ):
+    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -87,7 +82,6 @@ class Client:
         self._monitor_server_task = None
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
-        self.strip_url_credentials = strip_url_credentials
         self._closing: bool = False
 
     async def __aenter__(self):
