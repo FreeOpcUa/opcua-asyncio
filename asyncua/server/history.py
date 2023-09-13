@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 from datetime import timedelta
 from datetime import datetime
 
 from asyncua import ua
-from ..common.subscription import Subscription, SubHandler
+from asyncua.common import subscription
+from asyncua.common.subscription import Subscription, SubscriptionHandler
 from ..common.utils import Buffer
 
 
@@ -213,8 +216,8 @@ class HistoryDict(HistoryStorageInterface):
         pass
 
 
-class SubHandler(SubHandler):  # type: ignore
-    def __init__(self, storage):
+class SubHandler(subscription.SubHandler):
+    def __init__(self, storage: HistoryStorageInterface):
         self.storage = storage
 
     def datachange_notification(self, node, val, data):
@@ -240,7 +243,7 @@ class HistoryManager:
         """
         self.storage = storage
 
-    async def _create_subscription(self, handler):
+    async def _create_subscription(self, handler: SubscriptionHandler):
         params = ua.CreateSubscriptionParameters()
         params.RequestedPublishingInterval = 10
         params.RequestedLifetimeCount = 3000
