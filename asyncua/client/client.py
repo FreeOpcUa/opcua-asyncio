@@ -14,7 +14,7 @@ from ..common.xmlimporter import XmlImporter
 from ..common.xmlexporter import XmlExporter
 from ..common.node import Node
 from ..common.manage_nodes import delete_nodes
-from ..common.subscription import SubHandler, Subscription
+from ..common.subscription import Subscription, SubscriptionHandler
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_type_definitions, load_enums
 from ..common.structures104 import load_data_type_definitions
@@ -703,7 +703,7 @@ class Client:
         return Node(self.uaclient, nodeid)
 
     async def create_subscription(
-        self, period: Union[ua.CreateSubscriptionParameters, float], handler: SubHandler, publishing: bool = True
+        self, period: Union[ua.CreateSubscriptionParameters, float], handler: SubscriptionHandler, publishing: bool = True
     ) -> Subscription:
         """
         Create a subscription.

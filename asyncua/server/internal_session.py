@@ -59,7 +59,7 @@ class InternalSession(AbstractSession):
     def is_activated(self) -> bool:
         return self.state == SessionState.Activated
 
-    async def create_session(self, params: ua.CreateSessionParameters, sockname: Optional[Tuple[str, int]]=None):
+    async def create_session(self, params: ua.CreateSessionParameters, sockname: Optional[Tuple[str, int]] = None):
         self.logger.info('Create session request')
         result = ua.CreateSessionResult()
         result.SessionId = self.session_id
