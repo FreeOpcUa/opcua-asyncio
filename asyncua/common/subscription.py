@@ -286,9 +286,11 @@ class Subscription:
         )
 
     async def _create_eventfilter(
-        self, evtypes: Union[int, ua.NodeId, Iterable[Union[int, ua.NodeId]]], where_clause_generation: bool = True
+        self,
+        evtypes: Union[Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]],
+        where_clause_generation: bool = True,
     ) -> ua.EventFilter:
-        if isinstance(evtypes, (int, ua.NodeId)):
+        if isinstance(evtypes, (int, str, ua.NodeId, Node)):
             evtypes = [evtypes]
         evtypes = [Node(self.server, evtype) for evtype in evtypes]  # type: ignore[union-attr]
         evfilter = await get_filter_from_event_type(evtypes, where_clause_generation)  # type: ignore[union-attr]
@@ -297,7 +299,7 @@ class Subscription:
     async def subscribe_events(
         self,
         sourcenode: Union[Node, ua.NodeId, str, int] = ua.ObjectIds.Server,
-        evtypes: Union[int, ua.NodeId, Iterable[Union[ua.NodeId, int]]] = ua.ObjectIds.BaseEventType,
+        evtypes: Union[Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]] = ua.ObjectIds.BaseEventType,
         evfilter: Optional[ua.EventFilter] = None,
         queuesize: int = 0,
         where_clause_generation: bool = True
@@ -309,8 +311,8 @@ class Subscription:
         If evtypes is a list or tuple of custom event types, the events will be filtered to the supplied types.
         A handle (integer value) is returned which can be used to modify/cancel the subscription.
 
-        :param sourcenode: Node
-        :param evtypes: ua.ObjectIds or ua.NodeId
+        :param sourcenode: int, str, ua.NodeId or Node
+        :param evtypes: ua.ObjectIds, str, ua.NodeId or Node
         :param evfilter: ua.EventFilter which provides the SelectClauses and WhereClause
         :param queuesize: 0 for default queue size, 1 for minimum queue size, n for FIFO queue,
         MaxUInt32 for max queue size
@@ -319,7 +321,10 @@ class Subscription:
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
-            if evtypes == ua.ObjectIds.BaseEventType or evtypes == ua.NodeId(ua.ObjectIds.BaseEventType):
+            if (
+                isinstance(evtypes, (int, str, ua.NodeId, Node))
+                and Node(self.server, evtypes).nodeid == ua.NodeId(ua.ObjectIds.BaseEventType)
+            ):
                 # Remove where clause for base event type, for servers that have problems with long WhereClauses.
                 # Also because BaseEventType wants every event we can ommit it. Issue: #1205
                 where_clause_generation = False
@@ -329,7 +334,7 @@ class Subscription:
     async def subscribe_alarms_and_conditions(
         self,
         sourcenode: Union[Node, ua.NodeId, str, int] = ua.ObjectIds.Server,
-        evtypes: Union[int, ua.NodeId, Iterable[Union[int, ua.NodeId]]] = ua.ObjectIds.ConditionType,
+        evtypes: Union[Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]] = ua.ObjectIds.ConditionType,
         evfilter: Optional[ua.EventFilter] = None,
         queuesize: int = 0
     ) -> int:
@@ -340,8 +345,8 @@ class Subscription:
         If evtypes is a list or tuple of custom event types, the events will be filtered to the supplied types.
         A handle (integer value) is returned which can be used to modify/cancel the subscription.
 
-        :param sourcenode: Node
-        :param evtypes: ua.ObjectIds or ua.NodeId
+        :param sourcenode: int, str, ua.NodeId or Node
+        :param evtypes: ua.ObjectIds, str, ua.NodeId or Node
         :param evfilter: ua.EventFilter which provides the SelectClauses and WhereClause
         :param queuesize: 0 for default queue size, 1 for minimum queue size, n for FIFO queue,
         MaxUInt32 for max queue size
