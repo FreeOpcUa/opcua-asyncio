@@ -223,6 +223,13 @@ class Client:
         self.tloop = tloop
         self.close_tloop = False
         if not self.tloop:
+            # setting timeout here in sync layer is not very correct, that timeout is in reality
+            # used for every network calls. Operations like connect() generate several calls
+            # but anyway that timeout must be much longer than network latency so that default
+            # should work for everyone
+            if timeout > 0:
+                # we do not want to go into timeout at the same time as lower level async code
+                timeout = timeout * 0.1
             self.tloop = ThreadLoop(timeout)
             self.tloop.start()
             self.close_tloop = True
