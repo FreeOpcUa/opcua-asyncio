@@ -34,10 +34,11 @@ class ThreadLoopNotRunning(Exception):
 
 
 class ThreadLoop(Thread):
-    def __init__(self):
+    def __init__(self, timeout=None):
         Thread.__init__(self)
         self.loop = None
         self._cond = Condition()
+        self.timeout = timeout
 
     def start(self):
         with self._cond:
@@ -63,7 +64,7 @@ class ThreadLoop(Thread):
         if not self.loop or not self.loop.is_running():
             raise ThreadLoopNotRunning(f"could not post {coro}")
         futur = asyncio.run_coroutine_threadsafe(coro, loop=self.loop)
-        return futur.result()
+        return futur.result(self.timeout)
 
     def __enter__(self):
         self.start()
@@ -222,7 +223,7 @@ class Client:
         self.tloop = tloop
         self.close_tloop = False
         if not self.tloop:
-            self.tloop = ThreadLoop()
+            self.tloop = ThreadLoop(timeout)
             self.tloop.start()
             self.close_tloop = True
         self.aio_obj = client.Client(url, timeout)
