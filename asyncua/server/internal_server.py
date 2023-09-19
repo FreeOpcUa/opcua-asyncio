@@ -2,7 +2,7 @@
 Internal server implementing opcu-ua interface.
 Can be used on server side or to implement binary/https opc-ua servers
 """
-from typing import Optional
+from typing import Callable, Optional
 import asyncio
 from datetime import datetime, timedelta
 from copy import copy
@@ -67,7 +67,7 @@ class InternalServer:
             _logger.info("No user manager specified. Using default permissive manager instead.")
             user_manager = PermissiveUserManager()
         self.user_manager = user_manager
-        self.certificate_validator: Optional[CertificateValidatorMethod]= None
+        self.certificate_validator: Optional[CertificateValidatorMethod] = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
         # create a session to use on server side
         self.isession = InternalSession(
@@ -340,6 +340,18 @@ class InternalServer:
         so it is a little faster
         """
         await self.aspace.write_attribute_value(nodeid, attr, datavalue)
+
+    def set_attribute_value_callback(
+        self,
+        nodeid: ua.NodeId,
+        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
+        attr=ua.AttributeIds.Value
+    ) -> None:
+        """
+        Set a callback function to the Attribute that returns a value for read_attribute_value() instead of the
+        written value. Note that it does not trigger the datachange_callbacks unlike write_attribute_value().
+        """
+        self.aspace.set_attribute_value_callback(nodeid, attr, callback)
 
     def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
         """
