@@ -114,6 +114,17 @@ def sign_sha256(private_key, data):
     )
 
 
+def sign_pss_sha256(private_key, data):
+    return private_key.sign(
+        data,
+        padding.PSS(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256(),
+    )
+
+
 def verify_sha1(certificate, data, signature):
     certificate.public_key().verify(
         signature,
@@ -129,6 +140,18 @@ def verify_sha256(certificate, data, signature):
         data,
         padding.PKCS1v15(),
         hashes.SHA256())
+
+
+def verify_pss_sha256(certificate, data, signature):
+    certificate.public_key().verify(
+        signature,
+        data,
+        padding.PSS(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256(),
+    )
 
 
 def encrypt_basic256(public_key, data):
@@ -153,6 +176,18 @@ def encrypt_rsa_oaep(public_key, data):
     return ciphertext
 
 
+def encrypt_rsa_oaep_sha256(public_key, data):
+    ciphertext = public_key.encrypt(
+        data,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        ),
+    )
+    return ciphertext
+
+
 def encrypt_rsa15(public_key, data):
     ciphertext = public_key.encrypt(
         data,
@@ -168,6 +203,18 @@ def decrypt_rsa_oaep(private_key, data):
             mgf=padding.MGF1(algorithm=hashes.SHA1()),
             algorithm=hashes.SHA1(),
             label=None)
+    )
+    return text
+
+
+def decrypt_rsa_oaep_sha256(private_key, data):
+    text = private_key.decrypt(
+        bytes(data),
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        ),
     )
     return text
 

@@ -1272,7 +1272,10 @@ class SecurityPolicyType(Enum):
     "Basic256_SignAndEncrypt"
     "Basic256Sha256_Sign"
     "Basic256Sha256_SignAndEncrypt"
-
+    "Aes128_Sha256_RsaOaep_Sign"
+    "Aes128_Sha256_RsaOaep_SignAndEncrypt"
+    "Aes256_Sha256_RsaPss_Sign"
+    "Aes256_Sha256_RsaPss_SignAndEncrypt"
     """
 
     NoSecurity = 0
@@ -1284,3 +1287,5 @@ class SecurityPolicyType(Enum):
     Basic256Sha256_SignAndEncrypt = 6
     Aes128Sha256RsaOaep_Sign = 7
     Aes128Sha256RsaOaep_SignAndEncrypt = 8
+    Aes256Sha256RsaPss_Sign = 9
+    Aes256Sha256RsaPss_SignAndEncrypt = 10
