@@ -9,7 +9,7 @@ from cryptography import x509
 from datetime import timedelta, datetime
 import socket
 from urllib.parse import urlparse
-from typing import Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 from pathlib import Path
 
 from asyncua import ua
@@ -835,6 +835,18 @@ class Server:
         so it is a little faster
         """
         return await self.iserver.write_attribute_value(nodeid, datavalue, attr)
+
+    def set_attribute_value_callback(
+        self,
+        nodeid: ua.NodeId,
+        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
+        attr=ua.AttributeIds.Value
+    ) -> None:
+        """
+        Set a callback function to the Attribute that returns a value for read_attribute_value() instead of the
+        written value. Note that it does not trigger the datachange_callbacks unlike write_attribute_value().
+        """
+        self.iserver.set_attribute_value_callback(nodeid, callback, attr)
 
     def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
         """
