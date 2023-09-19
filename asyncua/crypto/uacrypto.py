@@ -119,7 +119,7 @@ def sign_pss_sha256(private_key, data):
         data,
         padding.PSS(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            salt_length=padding.PSS.MAX_LENGTH
+            salt_length=32
         ),
         hashes.SHA256(),
     )
@@ -148,7 +148,7 @@ def verify_pss_sha256(certificate, data, signature):
         data,
         padding.PSS(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            salt_length=padding.PSS.MAX_LENGTH
+            salt_length=32
         ),
         hashes.SHA256(),
     )
