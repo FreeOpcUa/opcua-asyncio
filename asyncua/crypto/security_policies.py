@@ -427,6 +427,32 @@ class VerifierHMac256(Verifier):
             raise uacrypto.InvalidSignature
 
 
+class SignerPssSha256(Signer):
+    def __init__(self, client_pk):
+        require_cryptography(self)
+        self.client_pk = client_pk
+        self.key_size = self.client_pk.key_size // 8
+
+    def signature_size(self):
+        return self.key_size
+
+    def signature(self, data):
+        return uacrypto.sign_pss_sha256(self.client_pk, data)
+
+
+class VerifierPssSha256(Verifier):
+    def __init__(self, server_cert):
+        require_cryptography(self)
+        self.server_cert = server_cert
+        self.key_size = self.server_cert.public_key().key_size // 8
+
+    def signature_size(self):
+        return self.key_size
+
+    def verify(self, data, signature):
+        uacrypto.verify_pss_sha256(self.server_cert, data, signature)
+
+
 class SecurityPolicyAes128Sha256RsaOaep(SecurityPolicy):
     """
     Security Aes128 Sha256 RsaOaep
@@ -506,6 +532,91 @@ class SecurityPolicyAes128Sha256RsaOaep(SecurityPolicy):
             self.symmetric_cryptography.Prev_Verifier = self.symmetric_cryptography.Verifier
             self.symmetric_cryptography.Prev_Decryptor = self.symmetric_cryptography.Decryptor
             self.symmetric_cryptography.prev_key_expiration = self.symmetric_cryptography.key_expiration
+
+        # lifetime is in ms
+        self.symmetric_cryptography.key_expiration = time.time() + (lifetime * 0.001)
+        self.symmetric_cryptography.Verifier = VerifierHMac256(sigkey)
+        self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
+
+
+class SecurityPolicyAes256Sha256RsaPss(SecurityPolicy):
+    """Security policy Aes256_Sha256_RsaPss implementation
+
+    - SymmetricSignatureAlgorithm_HMAC-SHA2-256
+      https://tools.ietf.org/html/rfc4634
+    - SymmetricEncryptionAlgorithm_AES256-CBC
+      http://www.w3.org/2001/04/xmlenc#aes256-cbc
+    - AsymmetricSignatureAlgorithm_RSA-PSS-SHA2-256
+      http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
+    - AsymmetricEncryptionAlgorithm_RSA-OAEP-SHA2-256
+      http://www.w3.org/2001/04/xmlenc#rsa-oaep
+    - KeyDerivationAlgorithm_P-SHA2-256
+      http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512/dk/p_sha256
+    - CertificateSignatureAlgorithm_RSA-PKCS15-SHA2-256
+      http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
+    - Aes256Sha256RsaPss_Limits
+        -> DerivedSignatureKeyLength: 256 bits
+        -> MinAsymmetricKeyLength: 2048 bits
+        -> MaxAsymmetricKeyLength: 4096 bits
+        -> SecureChannelNonceLength: 32 bytes
+    """
+
+    URI = "http://opcfoundation.org/UA/SecurityPolicy#Aes256_Sha256_RsaPss"
+    signature_key_size = 32
+    symmetric_key_size = 32
+    secure_channel_nonce_length = 32
+    AsymmetricEncryptionURI = "http://opcfoundation.org/UA/security/rsa-oaep-sha2-256"
+    AsymmetricSignatureURI = "http://opcfoundation.org/UA/security/rsa-pss-sha2-256"
+
+    @staticmethod
+    def encrypt_asymmetric(pubkey, data):
+        return uacrypto.encrypt_rsa_oaep_sha256(pubkey, data)
+
+    def __init__(self, peer_cert, host_cert, client_pk, mode, permission_ruleset=None):
+        require_cryptography(self)
+        if isinstance(peer_cert, bytes):
+            peer_cert = uacrypto.x509_from_der(peer_cert)
+        # even in Sign mode we need to asymmetrically encrypt secrets
+        # transmitted in OpenSecureChannel. So SignAndEncrypt here
+        self.asymmetric_cryptography = Cryptography(MessageSecurityMode.SignAndEncrypt)
+        self.asymmetric_cryptography.Signer = SignerPssSha256(client_pk)
+        self.asymmetric_cryptography.Verifier = VerifierPssSha256(peer_cert)
+        self.asymmetric_cryptography.Encryptor = EncryptorRsa(
+            peer_cert, uacrypto.encrypt_rsa_oaep_sha256, 66
+        )
+        self.asymmetric_cryptography.Decryptor = DecryptorRsa(
+            client_pk, uacrypto.decrypt_rsa_oaep_sha256, 66
+        )
+        self.symmetric_cryptography = Cryptography(mode)
+        self.Mode = mode
+        self.peer_certificate = uacrypto.der_from_x509(peer_cert)
+        self.host_certificate = uacrypto.der_from_x509(host_cert)
+        if permission_ruleset is None:
+            from asyncua.crypto.permission_rules import SimpleRoleRuleset
+
+            permission_ruleset = SimpleRoleRuleset()
+
+        self.permissions = permission_ruleset
+
+    def make_local_symmetric_key(self, secret, seed):
+        # specs part 6, 6.7.5
+        key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
+
+        (sigkey, key, init_vec) = uacrypto.p_sha256(secret, seed, key_sizes)
+        self.symmetric_cryptography.Signer = SignerHMac256(sigkey)
+        self.symmetric_cryptography.Encryptor = EncryptorAesCbc(key, init_vec)
+
+    def make_remote_symmetric_key(self, secret, seed, lifetime):
+        # specs part 6, 6.7.5
+        key_sizes = (self.signature_key_size, self.symmetric_key_size, 16)
+
+        (sigkey, key, init_vec) = uacrypto.p_sha256(secret, seed, key_sizes)
+        if self.symmetric_cryptography.Verifier or self.symmetric_cryptography.Decryptor:
+            self.symmetric_cryptography.Prev_Verifier = self.symmetric_cryptography.Verifier
+            self.symmetric_cryptography.Prev_Decryptor = self.symmetric_cryptography.Decryptor
+            self.symmetric_cryptography.prev_key_expiration = (
+                self.symmetric_cryptography.key_expiration
+            )
 
         # lifetime is in ms
         self.symmetric_cryptography.key_expiration = time.time() + (lifetime * 0.001)
@@ -786,7 +897,8 @@ def encrypt_asymmetric(pubkey, data, policy_uri):
     Returns a tuple (encrypted_data, algorithm_uri)
     """
     for cls in [SecurityPolicyBasic256Sha256, SecurityPolicyBasic256,
-                SecurityPolicyBasic128Rsa15, SecurityPolicyAes128Sha256RsaOaep]:
+                SecurityPolicyBasic128Rsa15, SecurityPolicyAes128Sha256RsaOaep,
+                SecurityPolicyAes256Sha256RsaPss]:
         if policy_uri == cls.URI:
             return (cls.encrypt_asymmetric(pubkey, data),
                     cls.AsymmetricEncryptionURI)

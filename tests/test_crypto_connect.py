@@ -254,6 +254,22 @@ async def test_Aes128Sha256RsaOaep_encrypt_success(srv_crypto_all_certs):
         assert await clt.nodes.objects.get_children()
 
 
+async def test_Aes256Sha256RsaPss_encrypt_success(srv_crypto_all_certs):
+    clt = Client(uri_crypto)
+    _, cert = srv_crypto_all_certs
+    await clt.set_security(
+        security_policies.SecurityPolicyAes256Sha256RsaPss,
+        f"{EXAMPLE_PATH / 'certificate-example.der'}",
+        f"{EXAMPLE_PATH / 'private-key-example.pem'}",
+        None,
+        cert,
+        ua.MessageSecurityMode.SignAndEncrypt
+    )
+
+    async with clt:
+        assert await clt.nodes.objects.get_children()
+
+
 async def test_certificate_handling_success(srv_crypto_one_cert):
     _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
@@ -491,6 +507,9 @@ async def test_security_level_all():
 
     assert Server.determine_security_level(security_policies.SecurityPolicyAes128Sha256RsaOaep.URI, ua.MessageSecurityMode.Sign) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign)
     assert Server.determine_security_level(security_policies.SecurityPolicyAes128Sha256RsaOaep.URI, ua.MessageSecurityMode.SignAndEncrypt) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt)
+
+    assert Server.determine_security_level(security_policies.SecurityPolicyAes256Sha256RsaPss.URI, ua.MessageSecurityMode.Sign) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign)
+    assert Server.determine_security_level(security_policies.SecurityPolicyAes256Sha256RsaPss.URI, ua.MessageSecurityMode.SignAndEncrypt) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt)
 
     # For the sake of completeness also the old, not recommended, protocols Basic128Rsa15 and Basic256
     assert Server.determine_security_level(security_policies.SecurityPolicyBasic128Rsa15.URI, ua.MessageSecurityMode.Sign) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic128Rsa15_Sign)

@@ -103,11 +103,12 @@ class Server:
         self._security_policy = [
             ua.SecurityPolicyType.NoSecurity, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
             ua.SecurityPolicyType.Basic256Sha256_Sign, ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt,
-            ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign
+            ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign, ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign,
+            ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt
         ]
         # allow all certificates by default
         self._permission_ruleset = None
-        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep"]
+        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep", "Aes256Sha256RsaPss"]
         self.certificate: Optional[x509.Certificate] = None
         # Use acceptable limits
         buffer_sz = 65535
@@ -414,6 +415,20 @@ class Server:
                     ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15,
                                              ua.MessageSecurityMode.SignAndEncrypt, self.certificate, self.iserver.private_key,
                                              permission_ruleset=self._permission_ruleset))
+            if ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt in self._security_policy:
+                self._set_endpoints(security_policies.SecurityPolicyAes256Sha256RsaPss,
+                                    ua.MessageSecurityMode.SignAndEncrypt)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes256Sha256RsaPss,
+                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
+                                             self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
+            if ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign in self._security_policy:
+                self._set_endpoints(security_policies.SecurityPolicyAes256Sha256RsaPss, ua.MessageSecurityMode.Sign)
+                self._policies.append(
+                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes256Sha256RsaPss,
+                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
+                                             permission_ruleset=self._permission_ruleset))
 
     @staticmethod
     def lookup_security_level_for_policy_type(security_policy_type: ua.SecurityPolicyType) -> ua.Byte:
@@ -434,7 +449,9 @@ class Server:
             ua.SecurityPolicyType.Basic256Sha256_Sign: 50,
             ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt: 70,
             ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign: 55,
-            ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt: 75
+            ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt: 75,
+            ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign: 60,
+            ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt: 80
         }[security_policy_type])
 
     @staticmethod
