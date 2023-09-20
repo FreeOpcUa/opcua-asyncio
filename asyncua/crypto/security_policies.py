@@ -547,9 +547,9 @@ class SecurityPolicyAes256Sha256RsaPss(SecurityPolicy):
     - SymmetricEncryptionAlgorithm_AES256-CBC
       http://www.w3.org/2001/04/xmlenc#aes256-cbc
     - AsymmetricSignatureAlgorithm_RSA-PSS-SHA2-256
-      http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
+      http://opcfoundation.org/UA/security/rsa-pss-sha2-256
     - AsymmetricEncryptionAlgorithm_RSA-OAEP-SHA2-256
-      http://www.w3.org/2001/04/xmlenc#rsa-oaep
+      http://opcfoundation.org/UA/security/rsa-oaep-sha2-256
     - KeyDerivationAlgorithm_P-SHA2-256
       http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512/dk/p_sha256
     - CertificateSignatureAlgorithm_RSA-PKCS15-SHA2-256
