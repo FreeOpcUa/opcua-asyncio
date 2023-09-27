@@ -9,7 +9,7 @@ import shelve
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from typing import Callable, Dict, List, Union, Tuple, Generator
@@ -769,6 +769,10 @@ class AddressSpace:
             dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
             return dv
         attval = node.attributes[attr]
+        if attr == ua.AttributeIds.DataTypeDefinition and not _datatypedefinition_is_valid(attval.value):
+            # DataTypeDefinition should be a subtype of DataTypeDefinition
+            dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
+            return dv
         if attval.value_callback:
             return attval.value_callback()
         return attval.value
@@ -844,3 +848,15 @@ class AddressSpace:
     def add_method_callback(self, methodid: ua.NodeId, callback: Callable):
         node = self._nodes[methodid]
         node.call = callback
+
+
+def _datatypedefinition_is_valid(val: Optional[ua.DataValue]) -> bool:
+    # Check if DataValue contains SubType of DataTypeDefinition
+    if val.Value is None:
+        # Retain statuscode if set
+        return val.StatusCode is not None
+    if val.Value.VariantType != ua.VariantType.ExtensionObject:
+        return False
+    if issubclass(type(val.Value.Value), ua.DataTypeDefinition):
+        return True
+    return False
