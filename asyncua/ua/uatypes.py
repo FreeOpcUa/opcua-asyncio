@@ -2,6 +2,7 @@
 implement ua datatypes
 """
 
+import binascii
 import sys
 from typing import Optional, Any, Union, Generic, List
 import collections
@@ -12,6 +13,7 @@ import re
 import itertools
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
+from base64 import b64encode, b64decode
 
 # hack to support python < 3.8
 if sys.version_info.minor < 10:
@@ -548,9 +550,15 @@ class NodeId:
             elif k == "b":
                 ntype = NodeIdType.ByteString
                 if v[0:2] == '0x':
+                    # our custom handling, normaly all bytestring nodes are base64
                     identifier = bytes.fromhex(v[2:])
                 else:
-                    identifier = v.encode()
+                    try:
+                        # this should be the default case base64
+                        identifier = b64decode(v.encode("ascii"))
+                    except (binascii.Error, ValueError):
+                        # fallback for backwards compatiblity just use the bytestring
+                        identifier = v.encode('ascii')
             elif k == "srv":
                 srv = int(v.strip())
             elif k == "nsu":
@@ -579,7 +587,7 @@ class NodeId:
             ntype = "g"
         elif self.NodeIdType == NodeIdType.ByteString:
             ntype = "b"
-            identifier = '0x' + identifier.hex()
+            identifier = b64encode(identifier).decode('ascii')
         string.append(f"{ntype}={identifier}")
         return ";".join(string)
 
