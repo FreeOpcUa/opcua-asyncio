@@ -12,7 +12,7 @@ import math
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-
+from base64 import b64encode
 import pytest
 
 from asyncua import Node, ua, uamethod
@@ -181,6 +181,8 @@ async def test_node_bytestring(opc):
         ua.UInt16(9),
     )
     node = opc.opc.get_node("ns=2;b=VarByteString")
+    assert node == var
+    node = opc.opc.get_node(f"ns=2;b={b64encode(b'VarByteString').decode()}")
     assert node == var
     node = opc.opc.get_node(f"ns=2;b=0x{b'VarByteString'.hex()}")
     assert node == var
