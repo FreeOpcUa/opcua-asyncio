@@ -253,6 +253,7 @@ class Client:
     def connect(self) -> None:
         pass
 
+    @syncmethod
     def disconnect(self) -> None:
         try:
             self.tloop.post(self.aio_obj.disconnect())
