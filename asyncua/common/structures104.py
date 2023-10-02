@@ -5,7 +5,8 @@ import uuid
 import logging
 import re
 import keyword
-from typing import Union, List, TYPE_CHECKING, Tuple, Optional, Any, Dict, Set
+import typing
+from typing import Union, List, TYPE_CHECKING, Tuple, Any, Dict, Set
 from dataclasses import dataclass, field
 
 from asyncua import ua
@@ -228,22 +229,22 @@ class {struct_name}{base_class}:
         if sfield.ValueRank >= 1 and uatype == 'Char':
             uatype = 'String'
         elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
-            uatype = f"List[{uatype}]"
+            uatype = f"typing.List[{uatype}]"
         if sfield.IsOptional:
-            uatype = f"Optional[{uatype}]"
+            uatype = f"typing.Optional[{uatype}]"
             default_value = 'None'
         fields.append((fname, uatype, default_value))
     if is_union:
         # Generate getter and setter to mimic opc ua union access
         names = [f[1] for f in fields]
         code += "    _union_types = [" + ','.join(names) + "]\n"
-        code += "    Value: Union[None, " + ','.join(names) + "] = field(default=None, init=False)"
+        code += "    Value: typing.Union[None, " + ','.join(names) + "] = field(default=None, init=False)"
         for enc_idx, fd in enumerate(fields):
             name, uatype, _ = fd
             code += f'''
 
     @property
-    def {name}(self) -> Optional[{uatype}]:
+    def {name}(self) -> typing.Optional[{uatype}]:
         if self.Encoding == {enc_idx + 1}:
             return self.Value
         return None
@@ -281,14 +282,10 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False, opt
         env['IntFlag'] = IntFlag
     if "dataclass" not in env:
         env['dataclass'] = dataclass
-    if "Optional" not in env:
-        env['Optional'] = Optional
-    if "List" not in env:
-        env['List'] = List
+    if "typing" not in env:
+        env['typing'] = typing
     if "field" not in env:
         env['field'] = field
-    if "Union" not in env:
-        env['Union'] = Union
     # generate classe add it to env dict
     if enum:
         code = make_enum_code(name, sdef, option_set)

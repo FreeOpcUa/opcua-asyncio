@@ -2036,6 +2036,7 @@ async def test_custom_struct_with_strange_chars(opc):
         [
             new_struct_field('My"Bool', ua.VariantType.Boolean),
             new_struct_field("My'UInt32", ua.VariantType.UInt32, array=True),
+            new_struct_field("List", ua.VariantType.UInt32, array=True),
         ],
     )
 
