@@ -534,12 +534,11 @@ class NodeId:
                 continue
             k, v = el.split("=", 1)
             k = k.strip()
-            v = v.strip()
             if k == "ns":
-                namespace = int(v)
+                namespace = int(v.strip())
             elif k == "i":
                 ntype = NodeIdType.Numeric
-                identifier = int(v)
+                identifier = int(v.strip())
             elif k == "s":
                 ntype = NodeIdType.String
                 identifier = v
@@ -553,7 +552,7 @@ class NodeId:
                 else:
                     identifier = v.encode()
             elif k == "srv":
-                srv = int(v)
+                srv = int(v.strip())
             elif k == "nsu":
                 nsu = v
         if identifier is None:
