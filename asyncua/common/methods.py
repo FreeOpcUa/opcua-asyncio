@@ -5,7 +5,7 @@ High level method related functions
 from __future__ import annotations
 
 from asyncio import iscoroutinefunction
-from typing import Any, Union
+from typing import Any, Iterable, List, Union
 
 import asyncua
 from asyncua import ua
@@ -114,8 +114,9 @@ def _format_call_outputs(result):
         return to_variant(result)
 
 
-def to_variant(*args):
-    uaargs = []
+def to_variant(*args: Iterable) -> List[ua.Variant]:
+    """Create a list of ua.Variants from a given iterable of arguments."""
+    uaargs: List[ua.Variant] = []
     for arg in args:
         if not isinstance(arg, ua.Variant):
             arg = ua.Variant(arg)
