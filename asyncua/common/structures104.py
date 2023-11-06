@@ -338,27 +338,25 @@ class DataTypeSorter:
     def __str__(self):
         return f"<{self.__class__.__name__}: {self.name!r}>"
 
-async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_existing=True):
+async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_existing=False):
     ch = await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype)
 
-    requests = []
-    for desc in ch:
-        name = clean_name(desc.BrowseName.Name)
-        requests.append(_read_data_type_definition(server, desc, read_existing=add_existing))
+    requests = [_read_data_type_definition(server, desc, read_existing=add_existing) for desc in ch]
     results = await asyncio.gather(*requests)
 
-    requests = []
-    for sdef, desc in zip(results, ch):
+    def __add_recursion(sdef, desc):
         name = clean_name(desc.BrowseName.Name)
         if sdef:
-
             if parent_sdef:
                 for sfield in reversed(parent_sdef.Fields):
                     sdef.Fields.insert(0, sfield)
             dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
-            requests.append(_recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef, add_existing=add_existing,))
+            return _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef, add_existing=add_existing,)
         else:
-            requests.append(_recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef, add_existing=add_existing,))
+            return _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef, add_existing=add_existing,)
+
+    requests = [ __add_recursion(sdef, desc) for sdef,desc in zip(results,ch)]
+
     await asyncio.gather(*requests)
 
 
