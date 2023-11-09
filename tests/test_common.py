@@ -132,6 +132,19 @@ async def add_server_methods(srv):
         [],
     )
 
+    @uamethod
+    async def func7(parent, val, mybytes):
+        return (val, [mybytes[0], mybytes[1]])
+
+    o = srv.nodes.objects
+    await o.add_method(
+        ua.NodeId("ServerMethodByteArray", 2),
+        ua.QualifiedName("ServerMethodByteArray", 2),
+        func7,
+        [ua.VariantType.Byte, [ua.VariantType.Byte, ua.VariantType.Byte, ua.VariantType.Byte]],
+        [ua.VariantType.Boolean, [ua.VariantType.Byte, ua.VariantType.Byte]],
+    )
+
 
 async def test_find_servers(opc):
     await opc.opc.find_servers()
@@ -871,6 +884,14 @@ async def test_method_async(opc):
     m = await o.get_child("2:ServerMethodAsync")
     await o.call_method(m)
     await call_method_full(o, m)
+
+
+async def test_method_byte_array(opc):
+    o = opc.opc.nodes.objects
+    m = await o.get_child("2:ServerMethodByteArray")
+    val, mybytes = await o.call_method(m, 1, [2, 3, 4])
+    assert val == 1
+    assert mybytes == [2, 3]
 
 
 async def test_add_nodes(opc):
