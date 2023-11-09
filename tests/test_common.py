@@ -889,7 +889,7 @@ async def test_method_async(opc):
 async def test_method_byte_array(opc):
     o = opc.opc.nodes.objects
     m = await o.get_child("2:ServerMethodByteArray")
-    val, mybytes = await o.call_method(m, 1, [2, 3, 4])
+    val, mybytes = await o.call_method(m, 1, (2, 3, 4))
     assert val == 1
     assert mybytes == [2, 3]
 
