@@ -459,6 +459,8 @@ def _vtype_to_argument(vtype):
     if isinstance(vtype, ua.Argument):
         return vtype
     arg = ua.Argument()
+    if isinstance(vtype, (list, tuple)) and len(vtype) > 0:
+        vtype = vtype[0]
     if hasattr(vtype, "data_type"):
         arg.DataType = vtype.data_type
     elif inspect.isclass(vtype) and issubclass(vtype, Enum):
