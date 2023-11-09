@@ -894,6 +894,14 @@ async def test_method_byte_array(opc):
     assert mybytes == [2, 3]
 
 
+async def test_method_byte_array_better(opc):
+    o = opc.opc.nodes.objects
+    m = await o.get_child("2:ServerMethodByteArray")
+    val, mybytes = await o.call_method(m, 1, (ua.Variant((2, 3, 4), ua.VariantType.Byte)))
+    assert val == 1
+    assert mybytes == [2, 3]
+
+
 async def test_add_nodes(opc):
     objects = opc.opc.nodes.objects
     f = await objects.add_folder(3, "MyFolder")
