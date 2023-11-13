@@ -45,7 +45,7 @@ def _parse_nodeid_qname(*args):
         )
 
 
-async def create_folder(parent: asyncua.Node, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]) -> asyncua.Node:
+async def create_folder(parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str]) -> asyncua.Node:
     """
     create a child node folder
     arguments are nodeid, browsename
@@ -60,7 +60,7 @@ async def create_folder(parent: asyncua.Node, nodeid: Union[ua.NodeId, str], bna
 
 async def create_object(
     parent: asyncua.Node,
-    nodeid: Union[ua.NodeId, str],
+    nodeid: Union[ua.NodeId, str, int],
     bname: Union[ua.QualifiedName, str],
     objecttype: Optional[Union[ua.NodeId, int]] = None,
     instantiate_optional: bool = True,
@@ -86,7 +86,7 @@ async def create_object(
 
 async def create_property(
     parent: asyncua.Node,
-    nodeid: Union[ua.NodeId, str],
+    nodeid: Union[ua.NodeId, str, int],
     bname: Union[ua.QualifiedName, str],
     val: Any,
     varianttype: Optional[ua.VariantType] = None,
@@ -111,7 +111,7 @@ async def create_property(
 
 async def create_variable(
     parent: asyncua.Node,
-    nodeid: Union[ua.NodeId, str],
+    nodeid: Union[ua.NodeId, str, int],
     bname: Union[ua.QualifiedName, str],
     val: Any,
     varianttype: Optional[ua.VariantType] = None,
@@ -136,7 +136,7 @@ async def create_variable(
 
 
 async def create_variable_type(
-    parent: asyncua.Node, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], datatype: Union[ua.NodeId, int]
+    parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], datatype: Union[ua.NodeId, int]
 ) -> asyncua.Node:
     """
     Create a new variable type
@@ -156,7 +156,7 @@ async def create_variable_type(
 
 
 async def create_reference_type(
-    parent: asyncua.Node, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], symmetric: bool = True, inversename: Optional[str] = None
+    parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str, int], symmetric: bool = True, inversename: Optional[str] = None
 ) -> asyncua.Node:
     """
     Create a new reference type
@@ -170,7 +170,7 @@ async def create_reference_type(
     )
 
 
-async def create_object_type(parent: asyncua.Node, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]):
+async def create_object_type(parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str]):
     """
     Create a new object type to be instantiated in address space.
     arguments are nodeid, browsename
@@ -338,7 +338,7 @@ async def _create_variable_type(session, parentnodeid, nodeid, qname, datatype, 
 
 
 async def create_data_type(
-    parent: asyncua.Node, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], description: Optional[str] = None
+    parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], description: Optional[str] = None
 ) -> asyncua.Node:
     """
     Create a new data type to be used in new variables, etc ..
@@ -380,7 +380,7 @@ async def create_data_type(
     return make_node(parent.session, new_node_id)
 
 
-async def create_encoding(parent, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]) -> asyncua.Node:
+async def create_encoding(parent, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str]) -> asyncua.Node:
     """
     Create a new encoding object to be instantiated in address space.
     arguments are nodeid, browsename
