@@ -809,7 +809,7 @@ class Node:
         self,
         nodeid: Union[ua.NodeId, str, int],
         bname: Union[ua.QualifiedName, str],
-        objecttype: Optional[int] = None,
+        objecttype: Optional[Union[ua.NodeId, int]] = None,
         instantiate_optional: bool = True,
     ) -> "Node":
         return await create_object(self, nodeid, bname, objecttype, instantiate_optional)
