@@ -802,12 +802,12 @@ class Node:
             rule = ua.ObjectIds.ModellingRule_Mandatory if mandatory else ua.ObjectIds.ModellingRule_Optional
             await self.add_reference(rule, ua.ObjectIds.HasModellingRule, True, False)
 
-    async def add_folder(self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]) -> "Node":
+    async def add_folder(self, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str]) -> "Node":
         return await create_folder(self, nodeid, bname)
 
     async def add_object(
         self,
-        nodeid: Union[ua.NodeId, str],
+        nodeid: Union[ua.NodeId, str, int],
         bname: Union[ua.QualifiedName, str],
         objecttype: Optional[int] = None,
         instantiate_optional: bool = True,
@@ -816,7 +816,7 @@ class Node:
 
     async def add_variable(
         self,
-        nodeid: Union[ua.NodeId, str],
+        nodeid: Union[ua.NodeId, str, int],
         bname: Union[ua.QualifiedName, str],
         val: Any,
         varianttype: Optional[ua.VariantType] = None,
@@ -824,18 +824,18 @@ class Node:
     ) -> "Node":
         return await create_variable(self, nodeid, bname, val, varianttype, datatype)
 
-    async def add_object_type(self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]) -> "Node":
+    async def add_object_type(self, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str]) -> "Node":
         return await create_object_type(self, nodeid, bname)
 
-    async def add_variable_type(self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], datatype: Union[ua.NodeId, int]) -> "Node":
+    async def add_variable_type(self, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], datatype: Union[ua.NodeId, int]) -> "Node":
         return await create_variable_type(self, nodeid, bname, datatype)
 
-    async def add_data_type(self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], description: Optional[str] = None) -> "Node":
+    async def add_data_type(self, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], description: Optional[str] = None) -> "Node":
         return await create_data_type(self, nodeid, bname, description=description)
 
     async def add_property(
         self,
-        nodeid: Union[ua.NodeId, str],
+        nodeid: Union[ua.NodeId, str, int],
         bname: Union[ua.QualifiedName, str],
         val: Any,
         varianttype: Optional[ua.VariantType] = None,
@@ -847,7 +847,7 @@ class Node:
         return await create_method(self, *args)
 
     async def add_reference_type(
-        self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], symmetric: bool = True, inversename: Optional[str] = None
+        self, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], symmetric: bool = True, inversename: Optional[str] = None
     ) -> "Node":
         return await create_reference_type(self, nodeid, bname, symmetric, inversename)
 
