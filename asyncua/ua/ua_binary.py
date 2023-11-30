@@ -15,7 +15,7 @@ from .uaerrors import UaError
 from ..common.utils import Buffer
 from .uatypes import type_from_optional, type_is_list, type_is_union, type_from_list, types_or_list_from_union, type_allow_subclass
 
-logger = logging.getLogger('__name__')
+logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
 
