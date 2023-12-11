@@ -15,7 +15,7 @@ from .uaerrors import UaError
 from ..common.utils import Buffer
 from .uatypes import type_from_optional, type_is_list, type_is_union, type_from_list, types_or_list_from_union, type_allow_subclass
 
-logger = logging.getLogger('__name__')
+_logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
 
@@ -134,7 +134,7 @@ class _Primitive1:
         if data is None:
             return Primitives.Int32.pack(-1)
         if not isinstance(data, (tuple, list)):
-            logger.warning('ua_binary.py > _Primitive1 > pack_array > data: %s is not a instance of "list"!', data)
+            _logger.warning('ua_binary.py > _Primitive1 > pack_array > data: %s is not a instance of "list"!', data)
             return Primitives.Int32.pack(-1)  # to prevent crashing while runtime
         size_data = Primitives.Int32.pack(len(data))
         return size_data + struct.pack(self._fmt.format(len(data)), *data)
