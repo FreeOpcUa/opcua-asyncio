@@ -1074,7 +1074,7 @@ async def test_publish(opc, mocker):
     mocker.patch.object(asyncua.common.subscription.Subscription, "publish_callback", publish_callback.set_result)
     mocker.patch.object(client.uaclient, "publish", publish)
 
-    sub = await client.create_subscription(30, None)
+    sub = await client.create_subscription(1, None)
     await sub.subscribe_data_change(var, queuesize=2)
 
     with pytest.raises(asyncio.TimeoutError):
