@@ -16,7 +16,7 @@ async def main():
 
         # Get the variable node for read / write
         var = await client.nodes.root.get_child(
-            ["0:Objects", f"{nsidx}:MyObject", f"{nsidx}:MyVariable"]
+            f"0:Objects/{nsidx}:MyObject/{nsidx}:MyVariable"
         )
         value = await var.read_value()
         print(f"Value of MyVariable ({var}): {value}")

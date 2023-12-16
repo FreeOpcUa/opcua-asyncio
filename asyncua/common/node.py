@@ -574,14 +574,17 @@ class Node:
         """
         get a child specified by its path from this node.
         A path might be:
-        * a string representing a qualified name.
+        * a string representing a relative path as per UA spec
         * a qualified name
-        * a list of string
+        * a list of string representing browsenames (legacy)
         * a list of qualified names
         """
-        if isinstance(path, (ua.QualifiedName, str)):
-            path = [path]
-        rpath = self._make_relative_path(path)
+        if isinstance(path, str):
+            rpath = ua.RelativePath.from_string(path)
+        else:
+            if isinstance(path, ua.QualifiedName):
+                path = [path]
+            rpath = self._make_relative_path(path)
         bpath = ua.BrowsePath()
         bpath.StartingNode = self.nodeid
         bpath.RelativePath = rpath
@@ -600,16 +603,19 @@ class Node:
         """
         get children specified by their paths from this node.
         A path might be:
-        * a string representing a qualified name.
+        * a string representing a relative path as per UA spec
         * a qualified name
-        * a list of string
+        * a list of string representing browsenames (legacy)
         * a list of qualified names
         """
         bpaths: List[ua.BrowsePath] = []
         for path in paths:
-            if isinstance(path, (ua.QualifiedName, str)):
-                path = [path]
-            rpath = self._make_relative_path(path)
+            if isinstance(path, str):
+                rpath = ua.RelativePath.from_string(path)
+            else:
+                if isinstance(path, (ua.QualifiedName, str)):
+                    path = [path]
+                rpath = self._make_relative_path(path)
             bpath = ua.BrowsePath()
             bpath.StartingNode = self.nodeid
             bpath.RelativePath = rpath
