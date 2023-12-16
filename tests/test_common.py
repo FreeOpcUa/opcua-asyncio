@@ -442,8 +442,8 @@ async def test_browse_references(opc):
 
 async def test_browsename_with_spaces(opc):
     o = opc.opc.nodes.objects
-    v = await o.add_variable(3, "BNVariable with spaces and %&+?/", 1.3)
-    v2 = await o.get_child("3:BNVariable with spaces and %&+?/")
+    v = await o.add_variable(3, "BNVariable with spaces and %+?", 1.3)
+    v2 = await o.get_child("/3:BNVariable with spaces and %+?")
     assert v == v2
     await opc.opc.delete_nodes([v])
 
@@ -451,7 +451,7 @@ async def test_browsename_with_spaces(opc):
 async def test_non_existing_path(opc):
     root = opc.opc.nodes.root
     with pytest.raises(ua.UaStatusCodeError):
-        await root.get_child(["0:Objects", "0:Server", "0:nonexistingnode"])
+        await root.get_child("0:Objects/0:Server/0:nonexistingnode")
 
 
 async def test_bad_attribute(opc):
@@ -463,7 +463,7 @@ async def test_bad_attribute(opc):
 async def test_get_node_by_nodeid(opc):
     root = opc.opc.nodes.root
     server_time_node = await root.get_child(
-        ["0:Objects", "0:Server", "0:ServerStatus", "0:CurrentTime"]
+        "/Objects/Server/ServerStatus.CurrentTime"
     )
     correct = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
     assert server_time_node == correct
@@ -657,13 +657,13 @@ async def test_same_browse_name(opc):
     o2 = await f.add_object("ns=2;i=204;", "2:MyBName")
     v2 = await o2.add_variable("ns=2;i=205;", "2:MyBNameTarget", 2.0)
     nodes = await objects.get_child(
-        ["2:MyBNameFolder", "2:MyBName", "2:MyBNameTarget"], return_all=True
+        "/2:MyBNameFolder/2:MyBName/2:MyBNameTarget", return_all=True
     )
     assert len(nodes) == 2
     assert nodes[0] == v
     assert nodes[1] == v2
     [nodes] = await objects.get_children_by_path(
-        [["2:MyBNameFolder", "2:MyBName", "2:MyBNameTarget"]]
+        ["/2:MyBNameFolder/2:MyBName/2:MyBNameTarget"]
     )
     assert len(nodes) == 2
     assert nodes[0] == v
