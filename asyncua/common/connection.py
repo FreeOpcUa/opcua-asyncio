@@ -5,6 +5,7 @@ import logging
 import copy
 
 from asyncua import ua
+from asyncua.ua.uaerrors import UaInvalidParameterError
 from ..ua.ua_binary import struct_from_binary, struct_to_binary, header_from_binary, header_to_binary
 
 try:
@@ -340,7 +341,8 @@ class SecureConnection:
         Validates the symmetric header of the message chunk and revolves the
         security token if needed.
         """
-        assert isinstance(security_hdr, ua.SymmetricAlgorithmHeader), f"Expected SymAlgHeader, got: {type(security_hdr)}"
+        if not isinstance(security_hdr, ua.SymmetricAlgorithmHeader):
+            raise UaInvalidParameterError(f"Expected SymAlgHeader, got: {type(security_hdr)}")
 
         if security_hdr.TokenId == self.security_token.TokenId:
             return
