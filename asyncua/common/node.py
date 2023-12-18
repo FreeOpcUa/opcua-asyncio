@@ -450,6 +450,7 @@ class Node:
             params.ContinuationPoints = [head.ContinuationPoint]
             params.ReleaseContinuationPoints = False
             results = await self.session.browse_next(params)
+            head = next(iter(results))
             references.extend(head.References)
         return references
 
