@@ -458,15 +458,18 @@ class Node:
         references = await self._browse_next(results)
         return references
 
-    async def _browse_next(self, results: Iterable[ua.BrowseResult]) -> List[ua.ReferenceDescription]:
-        head = next(iter(results))
-        references = head.References
-        while head.ContinuationPoint:
+    async def _browse_next(self, results: List[ua.BrowseResult]) -> List[ua.ReferenceDescription]:
+        if not results:
+            return []
+        references = results[0].References
+        while results[0].ContinuationPoint:
             params = ua.BrowseNextParameters()
-            params.ContinuationPoints = [head.ContinuationPoint]
+            params.ContinuationPoints = [results[0].ContinuationPoint]
             params.ReleaseContinuationPoints = False
             results = await self.session.browse_next(params)
-            references.extend(head.References)
+            if not results:
+                break
+            references.extend(results[0].References)
         return references
 
     async def get_referenced_nodes(
