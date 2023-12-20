@@ -9,7 +9,7 @@ import shelve
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from typing import Callable, Dict, List, Union, Tuple, Generator
@@ -38,12 +38,12 @@ class AttributeValue(object):
     The class holds the value(s) of an attribute and callbacks.
     """
     def __init__(self, value: ua.DataValue):
-        self.value = value
-        self.value_callback: Union[Callable[[], ua.DataValue], None] = None
+        self.value: Optional[ua.DataValue] = value
+        self.value_callback: Optional[Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue]] = None
         self.datachange_callbacks = {}
 
     def __str__(self) -> str:
-        return f"AttributeValue({self.value})"
+        return f"AttributeValue({self.value})" if not self.value_callback else f"AttributeValue({self.value_callback})"
 
     __repr__ = __str__
 
@@ -769,9 +769,10 @@ class AddressSpace:
             dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
             return dv
         attval = node.attributes[attr]
+        # TODO: async support by using asyncio.iscoroutinefunction()
         if attval.value_callback:
-            return attval.value_callback()
-        return attval.value
+            return attval.value_callback(nodeid, attr)
+        return attval.value  # type: ignore[return-value] # .value must be filled
 
     async def write_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds, value: ua.DataValue) -> ua.StatusCode:
         # self.logger.debug("set attr val: %s %s %s", nodeid, attr, value)
@@ -790,6 +791,7 @@ class AddressSpace:
             return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
 
         attval.value = value
+        attval.value_callback = None
 
         for k, v in attval.datachange_callbacks.items():
             try:
@@ -800,6 +802,9 @@ class AddressSpace:
         return ua.StatusCode()
 
     def _is_expected_variant_type(self, value: ua.DataValue, attval: AttributeValue, node: NodeData) -> bool:
+        if attval.value is None:
+            return True  # None data value can be overwritten anytime.
+
         # FIXME Type hinting reveals that it is possible that Value (Optional) is None which would raise an exception
         vtype = attval.value.Value.VariantType  # type: ignore[union-attr]
         if vtype == ua.VariantType.Null:
@@ -821,6 +826,26 @@ class AddressSpace:
             attval.value.Value.VariantType if attval.value.Value else None,
         )
         return False
+
+    def set_attribute_value_callback(
+        self,
+        nodeid: ua.NodeId,
+        attr: ua.AttributeIds,
+        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
+    ) -> ua.StatusCode:
+        node = self._nodes.get(nodeid, None)
+        if node is None:
+            return ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown)
+        attval = node.attributes.get(attr, None)
+        if attval is None:
+            return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
+
+        attval.value = None
+        attval.value_callback = callback
+
+        # Note: It does not trigger the datachange_callbacks unlike write_attribute_value.
+
+        return ua.StatusCode()
 
     def add_datachange_callback(self, nodeid: ua.NodeId, attr: ua.AttributeIds, callback: Callable) -> Tuple[ua.StatusCode, int]:
         # self.logger.debug("set attr callback: %s %s %s", nodeid, attr, callback)

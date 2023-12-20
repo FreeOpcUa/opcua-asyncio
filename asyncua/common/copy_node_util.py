@@ -6,6 +6,7 @@ from typing import Any, List, Optional
 import asyncua
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
+from asyncua.ua.uaerrors import UaInvalidParameterError
 from .node_factory import make_node
 
 
@@ -55,7 +56,8 @@ async def _rdesc_from_node(parent: asyncua.Node, node: asyncua.Node) -> ua.Refer
     variants: List[ua.Variant] = []
     for res in results:
         res.StatusCode.check()
-        assert res.Value is not None, "Value must not be None if the result is in Good status"
+        if res.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         variants.append(res.Value)
     nclass, qname, dname = [v.Value for v in variants]
     rdesc = ua.ReferenceDescription()
@@ -82,7 +84,8 @@ async def _read_and_copy_attrs(node_type: asyncua.Node, struct: Any, addnode: ua
     for idx, name in enumerate(names):
         if results[idx].StatusCode.is_good():
             variant = results[idx].Value
-            assert variant is not None, "Value must not be None if the result is in Good status"
+            if variant is None:
+                raise UaInvalidParameterError("Value must not be None if the result is in Good status")
             if name == "Value":
                 setattr(struct, name, variant)
             else:

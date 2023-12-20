@@ -13,6 +13,7 @@ import asyncio
 from asyncua import ua
 from asyncua import Node
 from asyncua.common.manage_nodes import create_encoding, create_data_type
+from asyncua.ua.uaerrors import UaInvalidParameterError
 if TYPE_CHECKING:
     from asyncua import Client, Server
 
@@ -374,7 +375,8 @@ async def _get_parent_types(node: Node):
 
 async def load_custom_struct(node: Node) -> Any:
     sdef = await node.read_data_type_definition()
-    assert isinstance(sdef, ua.StructureDefinition), f"Expected StructureDefinition, got: {type(sdef)}"
+    if not isinstance(sdef, ua.StructureDefinition):
+        raise UaInvalidParameterError(f"Expected StructureDefinition, got: {type(sdef)}")
     name = (await node.read_browse_name()).Name
     for parent in await _get_parent_types(node):
         parent_sdef = await parent.read_data_type_definition()

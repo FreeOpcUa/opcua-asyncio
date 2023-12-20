@@ -30,7 +30,7 @@ async def main():
     client = Client(url='opc.tcp://localhost:4840/freeopcua/server/')
     async with client:
         idx = await client.get_namespace_index(uri="http://examples.freeopcua.github.io")
-        var = await client.nodes.objects.get_child([f"{idx}:MyObject", f"{idx}:MyVariable"])
+        var = await client.nodes.objects.get_child(f"{idx}:MyObject/{idx}:MyVariable")
         handler = SubscriptionHandler()
         # We create a Client Subscription.
         subscription = await client.create_subscription(500, handler)

@@ -15,6 +15,7 @@ else:
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
+from asyncua.ua.uaerrors import UaInvalidParameterError
 from .ua_utils import value_to_datavalue
 
 from .events import Event, get_filter_from_event_type
@@ -91,7 +92,8 @@ class Node:
         composed of a string(name) and a namespace index.
         """
         result = await self.read_attribute(ua.AttributeIds.BrowseName)
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return result.Value.Value
 
     async def read_display_name(self) -> ua.LocalizedText:
@@ -99,7 +101,8 @@ class Node:
         get DisplayName attribute of node
         """
         result = await self.read_attribute(ua.AttributeIds.DisplayName)
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return result.Value.Value
 
     async def read_data_type(self) -> ua.NodeId:
@@ -107,7 +110,8 @@ class Node:
         get data type of node as NodeId
         """
         result = await self.read_attribute(ua.AttributeIds.DataType)
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return result.Value.Value
 
     async def read_data_type_as_variant_type(self) -> ua.VariantType:
@@ -117,7 +121,8 @@ class Node:
         may not be convertible to VariantType
         """
         result = await self.read_attribute(ua.AttributeIds.DataType)
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return await data_type_to_variant_type(Node(self.session, result.Value.Value))
 
     async def get_access_level(self) -> Set[ua.AccessLevel]:
@@ -125,7 +130,8 @@ class Node:
         Get the access level attribute of the node as a set of AccessLevel enum values.
         """
         result = await self.read_attribute(ua.AttributeIds.AccessLevel)
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return ua.AccessLevel.parse_bitfield(result.Value.Value)
 
     async def get_user_access_level(self) -> Set[ua.AccessLevel]:
@@ -133,7 +139,8 @@ class Node:
         Get the user access level attribute of the node as a set of AccessLevel enum values.
         """
         result = await self.read_attribute(ua.AttributeIds.UserAccessLevel)
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return ua.AccessLevel.parse_bitfield(result.Value.Value)
 
     async def read_event_notifier(self) -> Set[ua.EventNotifier]:
@@ -141,7 +148,8 @@ class Node:
         Get the event notifier attribute of the node as a set of EventNotifier enum values.
         """
         result = await self.read_attribute(ua.AttributeIds.EventNotifier)
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return ua.EventNotifier.parse_bitfield(result.Value.Value)
 
     async def set_event_notifier(self, values) -> None:
@@ -158,7 +166,8 @@ class Node:
         get node class attribute of node
         """
         result = await self.read_attribute(ua.AttributeIds.NodeClass)
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return ua.NodeClass(result.Value.Value)
 
     async def read_data_type_definition(self) -> ua.DataTypeDefinition:
@@ -167,7 +176,8 @@ class Node:
         only DataType nodes following spec >= 1.04 have that attribute
         """
         result = await self.read_attribute(ua.AttributeIds.DataTypeDefinition)
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return result.Value.Value
 
     async def write_data_type_definition(self, sdef: ua.DataTypeDefinition) -> None:
@@ -183,7 +193,8 @@ class Node:
         get description attribute class of node
         """
         result = await self.read_attribute(ua.AttributeIds.Description)
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return result.Value.Value
 
     async def read_value(self) -> Any:
@@ -194,7 +205,8 @@ class Node:
         Do not modify it if it is a mutable object unless you know what you are doing
         """
         result = await self.read_data_value()
-        assert result.Value is not None, "Value must not be None if the result is in Good status"
+        if result.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return result.Value.Value
 
     get_value = read_value  # legacy compatibility
@@ -220,7 +232,8 @@ class Node:
         Read and return ArrayDimensions attribute of node
         """
         res = await self.read_attribute(ua.AttributeIds.ArrayDimensions)
-        assert res.Value is not None, "Value must not be None if the result is in Good status"
+        if res.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return res.Value.Value
 
     async def write_value_rank(self, value: int) -> None:
@@ -235,7 +248,8 @@ class Node:
         Read and return ValueRank attribute of node
         """
         res = await self.read_attribute(ua.AttributeIds.ValueRank)
-        assert res.Value is not None, "Value must not be None if the result is in Good status"
+        if res.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return ua.ValueRank(res.Value.Value)
 
     async def write_value(self, value: Any, varianttype: Optional[ua.VariantType] = None) -> None:
@@ -271,13 +285,15 @@ class Node:
 
     async def set_attr_bit(self, attr: ua.AttributeIds, bit: int) -> None:
         dv = await self.read_attribute(attr)
-        assert dv.Value is not None, "Value must not be None if the result is in Good status"
+        if dv.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         val = ua.ua_binary.set_bit(dv.Value.Value, bit)
         await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
     async def unset_attr_bit(self, attr: ua.AttributeIds, bit: int) -> None:
         dv = await self.read_attribute(attr)
-        assert dv.Value is not None, "Value must not be None if the result is in Good status"
+        if dv.Value is None:
+            raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         val = ua.ua_binary.unset_bit(dv.Value.Value, bit)
         await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
@@ -442,15 +458,18 @@ class Node:
         references = await self._browse_next(results)
         return references
 
-    async def _browse_next(self, results: Iterable[ua.BrowseResult]) -> List[ua.ReferenceDescription]:
-        head = next(iter(results))
-        references = head.References
-        while head.ContinuationPoint:
+    async def _browse_next(self, results: List[ua.BrowseResult]) -> List[ua.ReferenceDescription]:
+        if not results:
+            return []
+        references = results[0].References
+        while results[0].ContinuationPoint:
             params = ua.BrowseNextParameters()
-            params.ContinuationPoints = [head.ContinuationPoint]
+            params.ContinuationPoints = [results[0].ContinuationPoint]
             params.ReleaseContinuationPoints = False
             results = await self.session.browse_next(params)
-            references.extend(head.References)
+            if not results:
+                break
+            references.extend(results[0].References)
         return references
 
     async def get_referenced_nodes(
@@ -555,14 +574,17 @@ class Node:
         """
         get a child specified by its path from this node.
         A path might be:
-        * a string representing a qualified name.
+        * a string representing a relative path as per UA spec
         * a qualified name
-        * a list of string
+        * a list of string representing browsenames (legacy)
         * a list of qualified names
         """
-        if isinstance(path, (ua.QualifiedName, str)):
-            path = [path]
-        rpath = self._make_relative_path(path)
+        if isinstance(path, str):
+            rpath = ua.RelativePath.from_string(path)
+        else:
+            if isinstance(path, ua.QualifiedName):
+                path = [path]
+            rpath = self._make_relative_path(path)
         bpath = ua.BrowsePath()
         bpath.StartingNode = self.nodeid
         bpath.RelativePath = rpath
@@ -581,16 +603,19 @@ class Node:
         """
         get children specified by their paths from this node.
         A path might be:
-        * a string representing a qualified name.
+        * a string representing a relative path as per UA spec
         * a qualified name
-        * a list of string
+        * a list of string representing browsenames (legacy)
         * a list of qualified names
         """
         bpaths: List[ua.BrowsePath] = []
         for path in paths:
-            if isinstance(path, (ua.QualifiedName, str)):
-                path = [path]
-            rpath = self._make_relative_path(path)
+            if isinstance(path, str):
+                rpath = ua.RelativePath.from_string(path)
+            else:
+                if isinstance(path, (ua.QualifiedName, str)):
+                    path = [path]
+                rpath = self._make_relative_path(path)
             bpath = ua.BrowsePath()
             bpath.StartingNode = self.nodeid
             bpath.RelativePath = rpath

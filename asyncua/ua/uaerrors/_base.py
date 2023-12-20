@@ -103,3 +103,7 @@ class UaStringParsingError(UaError):
 
 class UaStructParsingError(UaError):
     pass
+
+
+class UaInvalidParameterError(UaError):
+    pass

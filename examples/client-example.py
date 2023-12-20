@@ -44,8 +44,8 @@ async def main():
         #await var.write_value(3.9) # set node value using implicit data type
 
         # Now getting a variable node using its browse path
-        myvar = await client.nodes.root.get_child(["0:Objects", "2:MyObject", "2:MyVariable"])
-        obj = await client.nodes.root.get_child(["0:Objects", "2:MyObject"])
+        myvar = await client.nodes.root.get_child("/Objects/2:MyObject/2:MyVariable")
+        obj = await client.nodes.root.get_child("Objects/2:MyObject")
         _logger.info("myvar is: %r", myvar)
 
         # subscribing to a variable node

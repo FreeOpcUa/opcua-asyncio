@@ -17,7 +17,7 @@ from enum import Enum
 import asyncua
 from asyncua import ua
 from asyncua.ua.uatypes import type_string_from_type
-from asyncua.ua.uaerrors import UaError
+from asyncua.ua.uaerrors import UaError, UaInvalidParameterError
 from .. import Node
 from ..ua import object_ids as o_ids
 from .ua_utils import get_base_data_type
@@ -451,7 +451,8 @@ class XmlExporter:
             return
 
         if isinstance(val, (list, tuple)):
-            assert isinstance(dtype.Identifier, int), f"Expected int, got {type(dtype.Identifier)}"
+            if not isinstance(dtype.Identifier, int):
+                raise UaInvalidParameterError(f"Expected int, got {type(dtype.Identifier)}")
             if dtype.NamespaceIndex == 0 and dtype.Identifier <= 21:
                 elname = "uax:ListOf" + type_name
             else:  # this is an extensionObject:

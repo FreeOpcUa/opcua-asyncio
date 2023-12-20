@@ -11,8 +11,7 @@ from cryptography import x509
 from pathlib import Path
 from threading import Thread, Condition
 import logging
-from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple, Type, Union, Optional, overload
-
+from typing import Any, Callable, Dict, Iterable, List, Sequence, Set, Tuple, Type, Union, Optional, overload
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -646,6 +645,14 @@ class Server:
     @syncmethod
     def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         pass
+
+    def set_attribute_value_callback(
+        self,
+        nodeid: ua.NodeId,
+        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
+        attr=ua.AttributeIds.Value
+    ) -> None:
+        self.aio_obj.set_attribute_value_callback(nodeid, callback, attr)
 
     def create_subscription(self, period, handler):
         coro = self.aio_obj.create_subscription(period, _SubHandler(self.tloop, handler))

@@ -3,6 +3,7 @@ import re
 from typing import List, Optional, Tuple
 
 from asyncua.ua.uatypes import NodeId, NodeIdType, RelativePath, RelativePathElement, QualifiedName
+from asyncua.ua.uaerrors import UaInvalidParameterError
 from asyncua.ua.object_ids import ObjectIds, ObjectIdNames
 
 
@@ -45,7 +46,8 @@ class RelativePathElementFormatter:
                     self._element_type = RelativePathElementType.InverseReference
                 self._reference_type_name = _find_reference_type_name(element.ReferenceTypeId)
 
-            assert self._element_type is not None
+            if self._element_type is None:
+                raise UaInvalidParameterError("RelativePathElementType is not specified.")
 
     @staticmethod
     def parse(string: str) -> Tuple['RelativePathElementFormatter', str]:

@@ -1,5 +1,5 @@
 pytest
-pytest-asyncio
+pytest-asyncio == 0.21.1
 coverage
 pytest-cov
 pytest-mock
