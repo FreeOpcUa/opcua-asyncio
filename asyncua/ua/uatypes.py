@@ -957,6 +957,7 @@ class Variant:
                     VariantType.String,
                     VariantType.DateTime,
                     VariantType.ExtensionObject,
+                    VariantType.ByteString,
             ):
                 raise UaError(
                     f"Non array Variant of type {self.VariantType} cannot have value None"
