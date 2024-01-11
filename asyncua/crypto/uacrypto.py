@@ -332,21 +332,21 @@ def check_certificate(cert: x509.Certificate, application_uri: str, hostname: Op
     err = False
     now = datetime.utcnow()
     if cert.not_valid_after < now:
-        _logger.error(f'certificate is no longer valid: valid until {cert.not_valid_after}')
+        _logger.error('certificate is no longer valid: valid until %s', cert.not_valid_after)
         err = True
     if cert.not_valid_before > now:
-        _logger.error(f'certificate is not yet vaild: valid after {cert.not_valid_before}')
+        _logger.error('certificate is not yet vaild: valid after %s', cert.not_valid_before)
         err = True
     try:
         san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
         san_uri = san.value.get_values_for_type(x509.UniformResourceIdentifier)
         if application_uri not in san_uri:
-            _logger.warning(f'certificate does not contain the application uri ({application_uri}). Most applications will reject a connection without it.')
+            _logger.warning('certificate does not contain the application uri (%s). Most applications will reject a connection without it.', application_uri)
             err = True
         if hostname is not None:
             san_dns_names = san.value.get_values_for_type(x509.DNSName)
             if hostname not in san_dns_names:
-                _logger.warning(f'certificate does not contain the hostname in DNSNames {hostname}. Some applications will check this.')
+                _logger.warning('certificate does not contain the hostname in DNSNames %s. Some applications will check this.', hostname)
                 err = True
     except x509.ExtensionNotFound:
         _logger.warning('certificate has no SubjectAlternativeName this is need for application verification!')
