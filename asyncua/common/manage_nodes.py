@@ -398,13 +398,13 @@ async def _create_encoding(session, parentnodeid, nodeid, qname):
     addnode.BrowseName = qname
     addnode.ParentNodeId = parentnodeid
     addnode.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasEncoding)
-    addnode.NodeClass = ua.NodeClass.ObjectType
-    attrs = ua.ObjectTypeAttributes()
-    attrs.IsAbstract = False
+    addnode.NodeClass = ua.NodeClass.Object
+    attrs = ua.ObjectAttributes()
     attrs.Description = ua.LocalizedText(qname.Name)
     attrs.DisplayName = ua.LocalizedText(qname.Name)
     attrs.WriteMask = 0
     attrs.UserWriteMask = 0
+    attrs.EventNotifier = 0
     addnode.NodeAttributes = attrs
     results = await session.add_nodes([addnode])
     results[0].StatusCode.check()
