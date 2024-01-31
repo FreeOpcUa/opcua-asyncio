@@ -477,7 +477,7 @@ class Server:
         security_level: ua.Byte = ua.Byte(0)
 
         if security_mode != ua.MessageSecurityMode.None_:
-            security_policy_name = f'{security_policy_uri.split("#")[1].replace("_","")}_{security_mode.name}'
+            security_policy_name = f'{security_policy_uri.split("#")[1].replace("_", "")}_{security_mode.name}'
 
             try:
                 security_policy_type: ua.SecurityPolicyType = ua.SecurityPolicyType[security_policy_name]
