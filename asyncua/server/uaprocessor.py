@@ -135,7 +135,7 @@ class UaProcessor:
         _logger.debug('process_message %r %r', typeid, requesthdr)
         try:
             return await self._process_message(typeid, requesthdr, seqhdr, body)
-        except ServiceError as e:
+        except (ServiceError, ua.uaerrors.UaStatusCodeError) as e:
             status = ua.StatusCode(e.code)
             response = ua.ServiceFault()
             response.ResponseHeader.ServiceResult = status
