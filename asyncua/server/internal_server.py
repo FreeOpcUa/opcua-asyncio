@@ -16,7 +16,7 @@ from .user_managers import PermissiveUserManager, UserManager
 from ..common.callback import CallbackService
 from ..common.node import Node
 from .history import HistoryManager
-from .address_space import AddressSpace, AttributeService, ViewService, NodeManagementService, MethodService
+from .address_space import NodeData, AddressSpace, AttributeService, ViewService, NodeManagementService, MethodService
 from .subscription_service import SubscriptionService
 from .standard_address_space import standard_address_space
 from .users import User, UserRole
@@ -352,6 +352,20 @@ class InternalServer:
         written value. Note that it does not trigger the datachange_callbacks unlike write_attribute_value().
         """
         self.aspace.set_attribute_value_callback(nodeid, attr, callback)
+
+    def set_attribute_value_setter(
+        self,
+        nodeid: ua.NodeId,
+        setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None],
+        attr=ua.AttributeIds.Value
+    ) -> None:
+        """
+        Set a setter function for the Attribute. This setter will be called when a new value is set using
+        write_attribute_value() instead of directly writing the value. This is useful, for example, if you want to
+        intercept writes to certain attributes to perform some kind of validation of the value to be written and return
+        appropriate status codes to the client.
+        """
+        self.aspace.set_attribute_value_setter(nodeid, attr, setter)
 
     def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
         """

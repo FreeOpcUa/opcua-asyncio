@@ -684,6 +684,35 @@ async def test_server_read_set_attribute_value_callback(server: Server):
     await server.delete_nodes([node])
 
 
+async def test_server_read_set_attribute_value_setter(server: Server):
+    node = await server.get_objects_node().add_variable(0, "0:TestVar", 0, varianttype=ua.VariantType.Int64)
+    dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value.Value == 0
+
+    def setter(node_data, attr, value):
+        if value.Value.Value > 100:
+            raise ua.uaerrors.BadOutOfRange()
+        else:
+            node_data.attributes[attr].value = value
+
+    server.set_attribute_value_setter(node.nodeid, setter, attr=ua.AttributeIds.Value)
+
+    dv = ua.DataValue(Value=ua.Variant(Value=10, VariantType=ua.VariantType.Int64))
+    await server.write_attribute_value(node.nodeid, dv, attr=ua.AttributeIds.Value)
+    dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value.Value == 10
+
+    dv = ua.DataValue(Value=ua.Variant(Value=101, VariantType=ua.VariantType.Int64))
+    try:
+        await server.write_attribute_value(node.nodeid, dv, attr=ua.AttributeIds.Value)
+    except Exception as e:
+        assert isinstance(e, ua.uaerrors.BadOutOfRange)
+    dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value.Value == 10
+
+    await server.delete_nodes([node])
+
+
 @pytest.fixture(scope="function")
 def restore_transport_limits_server(server: Server):
     # Restore limits after test
