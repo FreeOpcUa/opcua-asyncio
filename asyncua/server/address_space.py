@@ -40,6 +40,7 @@ class AttributeValue(object):
     def __init__(self, value: ua.DataValue):
         self.value: Optional[ua.DataValue] = value
         self.value_callback: Optional[Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue]] = None
+        self.value_setter: Optional[Callable[["NodeData", ua.AttributeIds, ua.DataValue], None]] = None
         self.datachange_callbacks = {}
 
     def __str__(self) -> str:
@@ -790,7 +791,10 @@ class AddressSpace:
             # Only check datatype if no bad StatusCode is set
             return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
 
-        attval.value = value
+        if attval.value_setter is not None:
+            attval.value_setter(node, attr, value)
+        else:
+            attval.value = value
         attval.value_callback = None
 
         for k, v in attval.datachange_callbacks.items():
@@ -845,6 +849,21 @@ class AddressSpace:
 
         # Note: It does not trigger the datachange_callbacks unlike write_attribute_value.
 
+        return ua.StatusCode()
+
+    def set_attribute_value_setter(
+        self,
+        nodeid: ua.NodeId,
+        attr: ua.AttributeIds,
+        setter: Callable[[NodeData, ua.AttributeIds], ua.DataValue],
+    ) -> ua.StatusCode:
+        node = self._nodes.get(nodeid, None)
+        if node is None:
+            return ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown)
+        attval = node.attributes.get(attr, None)
+        if attval is None:
+            return ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid)
+        attval.value_setter = setter
         return ua.StatusCode()
 
     def add_datachange_callback(self, nodeid: ua.NodeId, attr: ua.AttributeIds, callback: Callable) -> Tuple[ua.StatusCode, int]:

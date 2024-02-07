@@ -13,6 +13,7 @@ from typing import Callable, Optional, Tuple, Union
 from pathlib import Path
 
 from asyncua import ua
+from .address_space import NodeData
 from .binary_server_asyncio import BinaryServer
 from .internal_server import InternalServer
 from .event_generator import EventGenerator
@@ -847,6 +848,20 @@ class Server:
         written value. Note that it does not trigger the datachange_callbacks unlike write_attribute_value().
         """
         self.iserver.set_attribute_value_callback(nodeid, callback, attr)
+
+    def set_attribute_value_setter(
+        self,
+        nodeid: ua.NodeId,
+        setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None],
+        attr=ua.AttributeIds.Value
+    ) -> None:
+        """
+        Set a setter function for the Attribute. This setter will be called when a new value is set using
+        write_attribute_value() instead of directly writing the value. This is useful, for example, if you want to
+        intercept writes to certain attributes to perform some kind of validation of the value to be written and return
+        appropriate status codes to the client.
+        """
+        self.iserver.set_attribute_value_setter(nodeid, setter, attr)
 
     def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
         """
