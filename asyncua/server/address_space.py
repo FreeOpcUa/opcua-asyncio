@@ -792,7 +792,10 @@ class AddressSpace:
             return ua.StatusCode(ua.StatusCodes.BadTypeMismatch)
 
         if attval.value_setter is not None:
-            attval.value_setter(node, attr, value)
+            if asyncio.iscoroutinefunction(attval.value_setter):
+                await attval.value_setter(node, attr, value)
+            else:
+                attval.value_setter(node, attr, value)
         else:
             attval.value = value
         attval.value_callback = None
