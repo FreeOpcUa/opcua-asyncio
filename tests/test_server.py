@@ -3,6 +3,9 @@ Run common tests on server side
 Tests that can only be run on server side must be defined here
 """
 import asyncio
+import shelve
+from pathlib import Path
+
 import pytest
 import logging
 from datetime import timedelta
@@ -777,30 +780,24 @@ async def test_message_limits_works(restore_transport_limits_server: Server):
         await n.read_value()
 
 
-"""
-class TestServerCaching(unittest.TestCase):
-    def runTest(self):
-        return # FIXME broken
-        tmpfile = NamedTemporaryFile()
-        path = tmpfile.name
-        tmpfile.close()
+@pytest.mark.xfail(reason="FIXME broken", strict=True)
+async def test_runTest(tmp_path: Path):
+    demo_shelf_file: Path = tmp_path / "some_shelf"
 
-        # create cache file
-        server = Server(shelffile=path)
+    # create cache file
+    server = Server()
+    await server.init(shelf_file=demo_shelf_file)
 
-        # modify cache content
-        id = ua.NodeId(ua.ObjectIds.Server_ServerStatus_SecondsTillShutdown)
-        s = shelve.open(path, "w", writeback=True)
-        s[id.to_string()].attributes[ua.AttributeIds.Value].value = ua.DataValue(123)
-        s.close()
+    # modify cache content
+    id = ua.NodeId(ua.ObjectIds.Server_ServerStatus_SecondsTillShutdown)
+    s = shelve.open(str(demo_shelf_file), "w", writeback=True)
+    s[id.to_string()].attributes[ua.AttributeIds.Value].value = ua.DataValue(123)
+    s.close()
 
-        # ensure that we are actually loading from the cache
-        server = Server(shelffile=path)
-        assert server.get_node(id).read_value(), 123)
-
-        os.remove(path)
-
-"""
+    # ensure that we are actually loading from the cache
+    server = Server()
+    await server.init(shelf_file=demo_shelf_file)
+    assert await server.get_node(id).read_value() == 123
 
 
 async def test_null_auth(server):
