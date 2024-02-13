@@ -139,7 +139,7 @@ class InternalServer:
         if shelf_file:
             is_file = await asyncio.get_running_loop().run_in_executor(
                 None, Path.is_file, shelf_file
-            ) or await asyncio.get_running_loop().run_in_executor(None, Path.is_file, f'{shelf_file}.db')
+            ) or await asyncio.get_running_loop().run_in_executor(None, Path.is_file, shelf_file / '.db')
             if is_file:
                 # import address space from shelf
                 await asyncio.get_running_loop().run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
