@@ -724,7 +724,7 @@ class AddressSpace:
         class LazyLoadingDict(collections.abc.MutableMapping):
             """
             Special dict that only loads nodes as they are accessed. If a node is accessed it gets copied from the
-            shelve to the cache dict. All user nodes are saved in the cache ONLY. Saving data back to the shelf
+            shelf to the cache dict. All user nodes are saved in the cache ONLY. Saving data back to the shelf
             is currently NOT supported
             """
 
