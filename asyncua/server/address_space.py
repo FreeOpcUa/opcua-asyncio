@@ -707,7 +707,7 @@ class AddressSpace:
 
         Note: Intended for slow devices, such as Raspberry Pi, to greatly improve start up time
         """
-        with shelve.open(path, 'n', protocol=pickle.HIGHEST_PROTOCOL) as s:
+        with shelve.open(str(path), 'n', protocol=pickle.HIGHEST_PROTOCOL) as s:
             for nodeid, ndata in self._nodes.items():
                 s[nodeid.to_string()] = ndata
 

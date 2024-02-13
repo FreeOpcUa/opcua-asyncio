@@ -187,9 +187,6 @@ def test_sync_server_get_node(server, idx):
     assert vars[0].read_value() == 6.7
 
 
-@pytest.mark.xfail(
-        raises=AttributeError, reason="asyncua introduced a regression, likely when we switched to pathlib", strict=True
-    )
 async def test_sync_server_creating_shelf_files_works(tloop: ThreadLoop, tmp_path: Path) -> None:
     shelf_file_path: Path = tmp_path / "shelf_file"
 
