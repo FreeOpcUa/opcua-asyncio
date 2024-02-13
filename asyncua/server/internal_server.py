@@ -80,7 +80,7 @@ class InternalServer:
         self.match_discovery_source_ip: bool = True
         self.supported_tokens = []
 
-    async def init(self, shelffile=None):
+    async def init(self, shelffile: Optional[Path] = None):
         await self.load_standard_address_space(shelffile)
         await self._address_space_fixes()
         await self.setup_nodes()
@@ -135,7 +135,7 @@ class InternalServer:
         result = await self.isession.write(params)
         result[0].check()
 
-    async def load_standard_address_space(self, shelf_file=None):
+    async def load_standard_address_space(self, shelf_file: Optional[Path] = None):
         if shelf_file:
             is_file = await asyncio.get_running_loop().run_in_executor(
                 None, Path.is_file, shelf_file

@@ -121,7 +121,7 @@ class Server:
             max_message_size=max_msg_sz
         )
 
-    async def init(self, shelf_file=None):
+    async def init(self, shelf_file: Optional[Path] = None):
         await self.iserver.init(shelf_file)
         # setup some expected values
         await self.set_application_uri(self._application_uri)

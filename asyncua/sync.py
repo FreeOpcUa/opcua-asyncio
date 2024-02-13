@@ -537,7 +537,7 @@ class Server:
     waits for an async call to return. defualt is 120s and hopefully should fit most applications
     """
 
-    def __init__(self, shelf_file=None, tloop=None, sync_wrapper_timeout: Optional[float] = 120,):
+    def __init__(self, shelf_file: Optional[Path] = None, tloop=None, sync_wrapper_timeout: Optional[float] = 120,):
         self.tloop = tloop
         self.close_tloop = False
         if not self.tloop:

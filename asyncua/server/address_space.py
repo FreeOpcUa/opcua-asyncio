@@ -9,6 +9,7 @@ import shelve
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -697,7 +698,7 @@ class AddressSpace:
         with open(path, 'rb') as f:
             self._nodes = pickle.load(f)
 
-    def make_aspace_shelf(self, path):
+    def make_aspace_shelf(self, path: Path):
         """
         Make a shelf for containing the nodes from the standard address space; this is typically only done on first
         start of the server. Subsequent server starts will load the shelf, nodes are then moved to a cache
