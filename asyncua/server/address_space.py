@@ -711,7 +711,7 @@ class AddressSpace:
             for nodeid, ndata in self._nodes.items():
                 s[nodeid.to_string()] = ndata
 
-    def load_aspace_shelf(self, path):
+    def load_aspace_shelf(self, path: Path):
         """
         Load the standard address space nodes from a python shelve via LazyLoadingDict as needed.
         The dump() method can no longer be used if the address space is being loaded from a shelf
@@ -728,8 +728,8 @@ class AddressSpace:
             is currently NOT supported
             """
 
-            def __init__(self, source):
-                self.source = source  # python shelf
+            def __init__(self, source: shelve.Shelf):
+                self.source: shelve.Shelf = source  # python shelf
                 self.cache = {}  # internal dict
 
             def __getitem__(self, key):
