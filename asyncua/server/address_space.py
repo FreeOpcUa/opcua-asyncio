@@ -759,7 +759,7 @@ class AddressSpace:
                 # only returns the length of items in the cache, not unaccessed items in the shelf
                 return len(self.cache)
 
-        self._nodes = LazyLoadingDict(shelve.open(path, "r"))
+        self._nodes = LazyLoadingDict(shelve.open(str(path), "r"))
 
     def read_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds) -> ua.DataValue:
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
