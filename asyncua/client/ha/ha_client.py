@@ -450,29 +450,36 @@ class KeepAlive:
             f"Starting keepalive loop for {server_info.url}, checking every {self.timer}sec"
         )
         while self.is_running:
-            try:
-                status, slevel = await client.read_values([status_node, slevel_node])
-                if status != ua.ServerState.Running:
-                    _logger.info("ServerState is not running")
+            if client.uaclient.protocol is None:
+                server_info.status = ConnectionStates.NO_DATA
+                _logger.info("No active client")
+            else:
+                try:
+                    status, slevel = await client.read_values([status_node, slevel_node])
+                    if status != ua.ServerState.Running:
+                        _logger.info("ServerState is not running")
+                        server_info.status = ConnectionStates.NO_DATA
+                    else:
+                        server_info.status = slevel
+                except BadSessionNotActivated:
+                    _logger.warning("Session is not yet activated.")
                     server_info.status = ConnectionStates.NO_DATA
-                else:
-                    server_info.status = slevel
-            except BadSessionNotActivated:
-                _logger.warning("Session is not yet activated.")
-                server_info.status = ConnectionStates.NO_DATA
-            except BadSessionClosed:
-                _logger.warning("Session is closed.")
-                server_info.status = ConnectionStates.NO_DATA
-            except asyncio.TimeoutError:
-                _logger.warning("Timeout when fetching state")
-                server_info.status = ConnectionStates.NO_DATA
-            except asyncio.CancelledError:
-                _logger.warning("CancelledError, this means we should shutdown")
-                server_info.status = ConnectionStates.NO_DATA
-                # FIXME: It cannot be correct to catch CancelledError here, we should re-raise
-            except Exception:
-                _logger.exception("Unknown exception during keepalive liveness check")
-                server_info.status = ConnectionStates.NO_DATA
+                except BadSessionClosed :
+                    _logger.warning("Session is closed.")
+                    server_info.status = ConnectionStates.NO_DATA
+                except ConnectionError :
+                    _logger.warning("No connection.")
+                    server_info.status = ConnectionStates.NO_DATA
+                except asyncio.TimeoutError:
+                    _logger.warning("Timeout when fetching state")
+                    server_info.status = ConnectionStates.NO_DATA
+                except asyncio.CancelledError:
+                    _logger.warning("CancelledError, this means we should shutdown")
+                    server_info.status = ConnectionStates.NO_DATA
+                    # FIXME: It cannot be correct to catch CancelledError here, we should re-raise
+                except Exception:
+                    _logger.exception("Unknown exception during keepalive liveness check")
+                    server_info.status = ConnectionStates.NO_DATA
 
             _logger.info(f"ServiceLevel for {server_info.url}: {server_info.status}")
             if await event_wait(self.stop_event, self.timer):
