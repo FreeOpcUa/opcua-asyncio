@@ -531,7 +531,8 @@ class NodeId:
         ntype = None
         srv = None
         nsu = None
-        for el in elements:
+        while elements:
+            el = elements.pop(0)  # consume exactly one part of the node name, left-to-right
             if not el:
                 continue
             k, v = el.split("=", 1)
@@ -543,7 +544,11 @@ class NodeId:
                 identifier = int(v.strip())
             elif k == "s":
                 ntype = NodeIdType.String
-                identifier = v
+                # As per https://reference.opcfoundation.org/Core/Part3/v105/docs/8.2.4 and https://reference.opcfoundation.org/Core/Part3/v104/docs/8.2.4,
+                # strings may contain arbitrary non-control unicode characters, even semicolons and equals.
+                # We must now consume the whole rest of the identifier.
+                identifier = String(";".join((v, *elements)))
+                elements = []  # consume everything immediately
             elif k == "g":
                 ntype = NodeIdType.Guid
                 identifier = uuid.UUID(f"urn:uuid:{v}")

@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from base64 import b64encode
 import pytest
+from asyncua.ua import NodeId, String, NodeIdType, Int16
 
 from asyncua import Node, ua, uamethod
 from asyncua.common import ua_utils
@@ -2097,3 +2098,10 @@ async def test_sql_injection():
     table = "user'"
     with pytest.raises(SqlInjectionError) as _:
         validate_table_name(table)
+
+
+async def test_parse_nodeid_name_contains_multiple_dividers():
+    raw_node_name = "ns=9;s=Line1.nsuri=MACHINE.NS;s=MACHINE.NS.State.Running"
+    expected_node_id = NodeId(Identifier=String("Line1.nsuri=MACHINE.NS;s=MACHINE.NS.State.Running"), NamespaceIndex=Int16(9), NodeIdType=NodeIdType.String)
+    got_node_id = NodeId.from_string(string=raw_node_name)
+    assert got_node_id == expected_node_id
