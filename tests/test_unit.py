@@ -612,13 +612,13 @@ def test_numeric_nodeid():
 
 
 def test_qualifiedstring_nodeid():
-    nid = ua.NodeId.from_string('ns=2;s=PLC1.Manufacturer;')
+    nid = ua.NodeId.from_string('ns=2;s=PLC1.Manufacturer')
     assert nid.NamespaceIndex == 2
     assert nid.Identifier == 'PLC1.Manufacturer'
 
 
 def test_strrepr_nodeid():
-    nid = ua.NodeId.from_string('ns=2;s=PLC1.Manufacturer;')
+    nid = ua.NodeId.from_string('ns=2;s=PLC1.Manufacturer')
     assert nid.to_string() == 'ns=2;s=PLC1.Manufacturer'
     # assert repr(nid) == 'ns=2;s=PLC1.Manufacturer;'
 

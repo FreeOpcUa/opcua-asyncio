@@ -562,7 +562,7 @@ async def test_add_numeric_variable(opc):
 
 async def test_add_string_variable(opc):
     objects = opc.opc.nodes.objects
-    v = await objects.add_variable("ns=3;s=stringid;", "3:stringnodefromstring", [68])
+    v = await objects.add_variable("ns=3;s=stringid", "3:stringnodefromstring", [68])
     nid = ua.NodeId("stringid", 3)
     qn = ua.QualifiedName("stringnodefromstring", 3)
     assert nid == v.nodeid
@@ -612,7 +612,7 @@ async def test_variable_data_type(opc):
 
 async def test_add_string_array_variable(opc):
     objects = opc.opc.nodes.objects
-    v = await objects.add_variable("ns=3;s=stringarrayid;", "9:stringarray", ["l", "b"])
+    v = await objects.add_variable("ns=3;s=stringarrayid", "9:stringarray", ["l", "b"])
     nid = ua.NodeId("stringarrayid", 3)
     qn = ua.QualifiedName("stringarray", 9)
     assert nid == v.nodeid
