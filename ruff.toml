@@ -1,6 +1,6 @@
-select = ["E", "F", "G004", "W"]
+lint.select = ["E", "F", "G004", "W"]
 extend-exclude = ["docs", "nodeset", "schemas", "*_auto.py", "event_objects.py", "standard_address_space_services.py"]
 line-length = 999
-[per-file-ignores]
+[lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
 "examples/*" = ["F841", "E402"]
