@@ -744,7 +744,7 @@ class Client:
         new_params = self.get_subscription_revised_params(params, results)
         if new_params:
             results = await subscription.update(new_params)
-            _logger.info(f"Result from subscription update: {results}")
+            _logger.info("Result from subscription update: %s", results)
         return subscription
 
     def get_subscription_revised_params(  # type: ignore
@@ -759,7 +759,7 @@ class Client:
         ):
             return  # type: ignore
         _logger.warning(
-            f"Revised values returned differ from subscription values: {results}"
+            "Revised values returned differ from subscription values: %s", results
         )
         revised_interval = results.RevisedPublishingInterval
         # Adjust the MaxKeepAliveCount based on the RevisedPublishInterval when necessary
@@ -769,8 +769,8 @@ class Client:
             and new_keepalive_count != params.RequestedMaxKeepAliveCount
         ):
             _logger.info(
-                f"KeepAliveCount will be updated to {new_keepalive_count} "
-                f"for consistency with RevisedPublishInterval"
+                "KeepAliveCount will be updated to %s "
+                "for consistency with RevisedPublishInterval", new_keepalive_count
             )
             modified_params = ua.ModifySubscriptionParameters()
             # copy the existing subscription parameters

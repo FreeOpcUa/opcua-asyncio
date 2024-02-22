@@ -307,9 +307,9 @@ class NodeManagementService:
                 if ref.ReferenceTypeId == ua.NodeId(ua.ObjectIds.HasProperty):
                     if item.BrowseName.Name == ref.BrowseName.Name:
                         self.logger.warning(
-                            f"AddNodesItem: Requested Browsename {item.BrowseName.Name}"
-                            f" already exists in Parent Node. ParentID:{item.ParentNodeId} --- "
-                            f"ItemId:{item.RequestedNewNodeId}"
+                            "AddNodesItem: Requested Browsename %s"
+                            " already exists in Parent Node. ParentID:%s --- "
+                            "ItemId:%s", item.BrowseName.Name, item.ParentNodeId, item.RequestedNewNodeId
                         )
                         result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
                         return result

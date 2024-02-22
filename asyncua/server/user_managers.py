@@ -37,8 +37,8 @@ class CertificateUserManager:
         user = User(role=user_role, name=name)
 
         if name in self._trusted_certificates:
-            logging.warning(f"certificate with name {name} "
-                            f"attempted to be added multiple times, only the last version will be kept.")
+            logging.warning("certificate with name %s "
+                            "attempted to be added multiple times, only the last version will be kept.", name)
         self._trusted_certificates[name] = {'certificate': uacrypto.der_from_x509(certificate), 'user': user}
 
     def get_user(self, iserver, username=None, password=None, certificate=None):

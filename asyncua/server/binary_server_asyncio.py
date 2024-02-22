@@ -72,7 +72,7 @@ class OPCUAProtocol(asyncio.Protocol):
                     return
                 if header.header_size + header.body_size <= header.header_size:
                     # malformed header prevent invalid access of your buffer
-                    _logger.error(f'Got malformed header {header}')
+                    _logger.error('Got malformed header %s', header)
                     self.transport.close()
                     return
                 else:

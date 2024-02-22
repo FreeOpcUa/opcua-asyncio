@@ -522,7 +522,7 @@ class XmlExporter:
                             dtype = ua.enums_datatypes[cls]
                             break
                     self.logger.debug(
-                        f"could not find field type {field.type} in registered types"
+                        "could not find field type %s in registered types", field.type
                     )
                     return
             await self.member_to_etree(

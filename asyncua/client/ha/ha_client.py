@@ -245,7 +245,7 @@ class HaClient:
                 vs = self.ideal_map[url].get(sub_name)
                 if not vs:
                     _logger.warning(
-                        f"The subscription specified for the data_change: {sub_name} doesn't exist in ideal_map"
+                        "The subscription specified for the data_change: %s doesn't exist in ideal_map", sub_name
                     )
                     return
                 vs.subscribe_data_change(nodes, attr, queuesize)
@@ -261,7 +261,7 @@ class HaClient:
                         self.ideal_map[url].pop(sub_name)
                     else:
                         _logger.warning(
-                            f"No subscription named {sub_name} in ideal_map"
+                            "No subscription named %s in ideal_map", sub_name
                         )
                 self.sub_names.remove(sub_name)
 
@@ -447,7 +447,7 @@ class KeepAlive:
         await asyncio.sleep(3)
         self.is_running = True
         _logger.info(
-            f"Starting keepalive loop for {server_info.url}, checking every {self.timer}sec"
+            "Starting keepalive loop for %s, checking every %dsec", server_info.url, self.timer
         )
         while self.is_running:
             if client.uaclient.protocol is None:
@@ -481,7 +481,7 @@ class KeepAlive:
                     _logger.exception("Unknown exception during keepalive liveness check")
                     server_info.status = ConnectionStates.NO_DATA
 
-            _logger.info(f"ServiceLevel for {server_info.url}: {server_info.status}")
+            _logger.info("ServiceLevel for %s: %s", server_info.url, server_info.status)
             if await event_wait(self.stop_event, self.timer):
                 self.is_running = False
                 break
@@ -511,7 +511,7 @@ class HaManager:
         reconnect = getattr(self, reco_func)
         self.is_running = True
 
-        _logger.info(f"Starting HaManager loop, checking every {self.timer}sec")
+        _logger.info("Starting HaManager loop, checking every %dsec", self.timer)
         while self.is_running:
 
             # failover happens here
@@ -535,7 +535,7 @@ class HaManager:
         if primary_client != active_client:
             # disable monitoring and reporting when the service_level goes below 200
             _logger.info(
-                f"Failing over active client from {active_client} to {primary_client}"
+                "Failing over active client from %s to %s", active_client, primary_client
             )
             secondaries = (
                 set(clients) - {primary_client} if primary_client else set(clients)
@@ -557,12 +557,12 @@ class HaManager:
                 or client.uaclient.protocol
                 and client.uaclient.protocol.state == UASocketProtocol.CLOSED
             ):
-                _logger.info(f"Virtually reconnecting and resubscribing {client}")
+                _logger.info("Virtually reconnecting and resubscribing %s", client)
                 await self.ha_client.reconnect(client=client)
 
         def log_exception(client: Client, fut: asyncio.Task):
             if fut.exception():
-                _logger.warning(f"Error when reconnecting {client}: {fut.exception()}")
+                _logger.warning("Error when reconnecting %s: %s", client, fut.exception())
 
         tasks = []
         for client in healthy:

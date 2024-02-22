@@ -94,7 +94,7 @@ def parse_args(parser, requirenodeid=False):
     # logging.basicConfig(format="%(levelname)s: %(message)s", level=getattr(logging, args.loglevel))
     logging.basicConfig(level=getattr(logging, args.loglevel))
     if args.url and "://" not in args.url:
-        logging.info(f"Adding default scheme {ua.OPC_TCP_SCHEME} to URL {args.url}")
+        logging.info("Adding default scheme %s to URL %s", ua.OPC_TCP_SCHEME, args.url)
         args.url = ua.OPC_TCP_SCHEME + "://" + args.url
     if requirenodeid:
         _require_nodeid(parser, args)

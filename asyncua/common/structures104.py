@@ -215,7 +215,7 @@ class {struct_name}{base_class}:
             uatype = struct_name
         else:
             if log_error:
-                _logger.error(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
+                _logger.error("Unknown datatype for field: %s in structure:%s, please report", sfield, struct_name)
             raise RuntimeError(f"Unknown datatype for field: {sfield} in structure:{struct_name}, please report")
 
         if sfield.ValueRank >= 0:
