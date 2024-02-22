@@ -426,7 +426,7 @@ class SecureConnection:
             return msg
         if header.MessageType == ua.MessageType.Error:
             msg = struct_from_binary(ua.ErrorMessage, body)
-            _logger.warning(f"Received an error: {msg}")
+            _logger.warning("Received an error: %s", msg)
             return msg
         raise ua.UaError(f"Unsupported message type {header.MessageType}")
 
@@ -444,7 +444,7 @@ class SecureConnection:
             return None
         if msg.MessageHeader.ChunkType == ua.ChunkType.Abort:
             err = struct_from_binary(ua.ErrorMessage, ua.utils.Buffer(msg.Body))
-            _logger.warning(f"Message {msg} aborted: {err}")
+            _logger.warning("Message %s aborted: %s", msg, err)
             # specs Part 6, 6.7.3 say that aborted message shall be ignored
             # and SecureChannel should not be closed
             self._incoming_parts = []

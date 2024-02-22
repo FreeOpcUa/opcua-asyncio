@@ -154,7 +154,7 @@ class StateMachine(object):
             elif dn.Text == "EffectiveDisplayName":
                 self._current_state_effective_display_name_node = await self._current_state_node.get_child(["EffectiveDisplayName"])
             else:
-                _logger.warning(f"{await statemachine.read_browse_name()} CurrentState Unknown property: {dn.Text}")
+                _logger.warning("%s CurrentState Unknown property: %s", await statemachine.read_browse_name(), dn.Text)
         if self._optionals:
             self._last_transition_node = await statemachine.get_child(["LastTransition"])
             last_transition_props = await self._last_transition_node.get_properties()
@@ -169,7 +169,7 @@ class StateMachine(object):
                 elif dn.Text == "TransitionTime":
                     self._last_transition_transitiontime_node = await self._last_transition_node.get_child(["TransitionTime"])
                 else:
-                    _logger.warning(f"{await statemachine.read_browse_name()} LastTransition Unknown property: {dn.Text}")
+                    _logger.warning("%s LastTransition Unknown property: %s", await statemachine.read_browse_name(), dn.Text)
         self._evgen = await self._server.get_event_generator(self.evtype, self._state_machine_node)
 
     async def change_state(self, state: State, transition: Transition = None, event_msg: Union[str, ua.LocalizedText] = None, severity: int = 500):

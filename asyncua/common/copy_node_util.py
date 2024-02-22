@@ -91,6 +91,6 @@ async def _read_and_copy_attrs(node_type: asyncua.Node, struct: Any, addnode: ua
             else:
                 setattr(struct, name, variant.Value)
         else:
-            _logger.warning(f"Instantiate: while copying attributes from node type {str(node_type)},"
-                            f" attribute {str(name)}, statuscode is {str(results[idx].StatusCode)}")
+            _logger.warning("Instantiate: while copying attributes from node type %s,"
+                            " attribute %s, statuscode is %s", str(node_type), str(name), str(results[idx].StatusCode))
     addnode.NodeAttributes = struct
