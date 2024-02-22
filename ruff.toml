@@ -1,4 +1,4 @@
-select = ["E", "F", "W"]
+select = ["E", "F", "G004", "W"]
 extend-exclude = ["docs", "nodeset", "schemas", "*_auto.py", "event_objects.py", "standard_address_space_services.py"]
 line-length = 999
 [per-file-ignores]
