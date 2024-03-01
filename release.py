@@ -30,11 +30,12 @@ def release():
         if ans in ("", "y", "yes"):
             os.system("git push")
             os.system("git push --tags")
-        #ans = input("upload to pip?(Y/n)")
-        #if ans in ("", "y", "yes"):
-            #os.system("rm -rf dist/*")
-            #os.system("python3 setup.py sdist bdist_wheel")
-            #os.system("twine upload dist/*")
+        ans = input("upload to pip?(Y/n)")
+        if ans in ("", "y", "yes"):
+            os.system("rm -rf dist/*")
+            os.system("python3 setup.py sdist bdist_wheel")
+            os.system("twine upload dist/*")
+            os.system("git log -s --format=oneline")
 
 
 if __name__ == "__main__":
