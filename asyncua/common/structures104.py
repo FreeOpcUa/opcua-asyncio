@@ -339,6 +339,7 @@ class DataTypeSorter:
     def __str__(self):
         return f"<{self.__class__.__name__}: {self.name!r}>"
 
+
 async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_existing=False):
     ch = await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype)
 
@@ -356,7 +357,7 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_exis
         else:
             return _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef, add_existing=add_existing,)
 
-    requests = [ __add_recursion(sdef, desc) for sdef,desc in zip(results,ch)]
+    requests = [__add_recursion(sdef, desc) for sdef, desc in zip(results, ch)]
 
     await asyncio.gather(*requests)
 

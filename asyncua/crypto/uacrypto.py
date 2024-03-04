@@ -331,10 +331,10 @@ def check_certificate(cert: x509.Certificate, application_uri: str, hostname: Op
     """
     err = False
     now = datetime.utcnow()
-    if cert.not_valid_after < now:
+    if cert.not_valid_after_utc < now:
         _logger.error('certificate is no longer valid: valid until %s', cert.not_valid_after)
         err = True
-    if cert.not_valid_before > now:
+    if cert.not_valid_before_utc > now:
         _logger.error('certificate is not yet vaild: valid after %s', cert.not_valid_before)
         err = True
     try:

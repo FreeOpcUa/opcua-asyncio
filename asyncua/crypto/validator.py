@@ -14,6 +14,7 @@ _logger = logging.getLogger(__name__)
 # Use for storing method that can validate a certificate on a create_session
 CertificateValidatorMethod = Callable[[x509.Certificate, ApplicationDescription], Awaitable[None]]
 
+
 class CertificateValidatorOptions(Flag):
     """
     Flags for which certificate validation should be performed
@@ -93,9 +94,9 @@ class CertificateValidator:
 
                 key_usage = cert.extensions.get_extension_for_class(x509.KeyUsage).value
                 if key_usage.data_encipherment is False or \
-                key_usage.digital_signature is False or \
-                key_usage.content_commitment is False or \
-                key_usage.key_encipherment is False:
+                        key_usage.digital_signature is False or \
+                        key_usage.content_commitment is False or \
+                        key_usage.key_encipherment is False:
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
             if CertificateValidatorOptions.EXT_KEY_USAGE in self._options:
                 oid = ExtendedKeyUsageOID.SERVER_AUTH if CertificateValidatorOptions.PEER_SERVER in self._options else ExtendedKeyUsageOID.CLIENT_AUTH
@@ -104,14 +105,13 @@ class CertificateValidator:
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
 
                 if CertificateValidatorOptions.PEER_SERVER in self._options and \
-                    app_description.ApplicationType not in [ua.ApplicationType.Server, ua.ApplicationType.ClientAndServer]:
+                        app_description.ApplicationType not in [ua.ApplicationType.Server, ua.ApplicationType.ClientAndServer]:
                     _logger.warning('mismatch between application type and certificate ExtendedKeyUsage')
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
                 elif CertificateValidatorOptions.PEER_CLIENT in self._options and \
-                    app_description.ApplicationType not in [ua.ApplicationType.Client, ua.ApplicationType.ClientAndServer]:
+                        app_description.ApplicationType not in [ua.ApplicationType.Client, ua.ApplicationType.ClientAndServer]:
                     _logger.warning('mismatch between application type and certificate ExtendedKeyUsage')
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
-
 
             # if hostname is not None:
             #     san_dns_names = san.value.get_values_for_type(x509.DNSName)
