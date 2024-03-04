@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import aiofiles
 from typing import Optional, Union
@@ -330,12 +330,12 @@ def check_certificate(cert: x509.Certificate, application_uri: str, hostname: Op
     check certificate if it matches the application_uri and log errors.
     """
     err = False
-    now = datetime.utcnow()
-    if cert.not_valid_after < now:
-        _logger.error('certificate is no longer valid: valid until %s', cert.not_valid_after)
+    now = datetime.now(timezone.utc)
+    if cert.not_valid_after_utc < now:
+        _logger.error("certificate is no longer valid: valid until %s", cert.not_valid_after_utc)
         err = True
-    if cert.not_valid_before > now:
-        _logger.error('certificate is not yet vaild: valid after %s', cert.not_valid_before)
+    if cert.not_valid_before_utc > now:
+        _logger.error("certificate is not yet vaild: valid after %s", cert.not_valid_before_utc)
         err = True
     try:
         san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
