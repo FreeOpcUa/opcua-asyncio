@@ -1327,8 +1327,12 @@ async def test_guid_node_id():
 
 
 async def test_import_xml_data_type_definition(opc):
+    if hasattr(ua, "MySubstruct"):
+        delattr(ua, "MySubstruct")
+    if hasattr(ua, "MyStruct"):
+        delattr(ua, "MyStruct")
+
     nodes = await opc.opc.import_xml("tests/substructs.xml")
-    await opc.opc.load_data_type_definitions()
     assert hasattr(ua, "MySubstruct")
     assert hasattr(ua, "MyStruct")
 
@@ -1362,6 +1366,19 @@ async def test_import_xml_data_type_definition(opc):
     [n.append(opc.opc.get_node(node)) for node in nodes]
     await opc.opc.delete_nodes(n)
 
+async def test_import_xml_data_no_auto_load_type_definition(opc):
+    # if al present in ua remove it (left overs of other tests)
+    if hasattr(ua, "MySubstruct"):
+        delattr(ua, "MySubstruct")
+    if hasattr(ua, "MyStruct"):
+        delattr(ua, "MyStruct")
+    if hasattr(ua, "MyEnum"):
+        delattr(ua, "MyEnum")
+    await opc.opc.import_xml("tests/substructs.xml", auto_load_definitions = False)
+    assert hasattr(ua, "MySubstruct") is False
+    assert hasattr(ua, "MyStruct") is False
+    assert hasattr(ua, "MyEnum") is False
+
 
 async def test_struct_data_type(opc):
     assert isinstance(ua.AddNodesItem.data_type, ua.NodeId)
@@ -1372,8 +1389,10 @@ async def test_struct_data_type(opc):
 
 
 async def test_import_xml_enum_data_type_definition(opc):
+    if hasattr(ua, "MyEnum"):
+        delattr(ua, "MyEnum")
+
     nodes = await opc.opc.import_xml("tests/testenum104.xml")
-    await opc.opc.load_data_type_definitions()
     assert hasattr(ua, "MyEnum")
     e = ua.MyEnum.val2
     var = await opc.opc.nodes.objects.add_variable(

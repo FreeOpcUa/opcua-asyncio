@@ -816,11 +816,11 @@ class Client:
     async def delete_nodes(self, nodes: Iterable[Node], recursive=False) -> Tuple[List[Node], List[ua.StatusCode]]:
         return await delete_nodes(self.uaclient, nodes, recursive)
 
-    async def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> List[ua.NodeId]:
+    async def import_xml(self, path=None, xmlstring=None, strict_mode=True, auto_load_definitions: bool = True) -> List[ua.NodeId]:
         """
         Import nodes defined in xml
         """
-        importer = XmlImporter(self, strict_mode=strict_mode)
+        importer = XmlImporter(self, strict_mode=strict_mode, auto_load_definitions=auto_load_definitions)
         return await importer.import_xml(path, xmlstring)
 
     async def export_xml(self, nodes, path, export_values: bool = False) -> None:
