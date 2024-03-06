@@ -24,10 +24,11 @@ def _parse_version(version_string: str) -> List[int]:
 
 class XmlImporter:
 
-    def __init__(self, server: Union[asyncua.Server, asyncua.Client], strict_mode: bool = True):
+    def __init__(self, server: Union[asyncua.Server, asyncua.Client], strict_mode: bool = True, auto_load_definitions: bool = True):
         '''
         strict_mode: stop on an error, if False only an error message is logged,
                      but the import continues
+        auto_load_definitions: auto generate code stubs on the fly for enum and structs
         '''
         self.parser = None
         self.session = server
@@ -36,6 +37,7 @@ class XmlImporter:
         self._unmigrated_aliases: Dict[str, str] = {}  # Dict[name, nodeId string]
         self.refs = None
         self.strict_mode = strict_mode
+        self.auto_load_definitions = auto_load_definitions
 
     async def _map_namespaces(self):
         """
@@ -413,9 +415,12 @@ class XmlImporter:
     async def _make_ext_obj(self, obj):
         try:
             extclass = self._get_ext_class(obj.objname)
-        except Exception:
-            await self.session.load_data_type_definitions()      # load new data type definitions since a customn class should be created
-            extclass = self._get_ext_class(obj.objname)
+        except Exception as exp:
+            if self.auto_load_definitions:
+                await self.session.load_data_type_definitions()      # load new data type definitions since a customn class should be created
+                extclass = self._get_ext_class(obj.objname)
+            else:
+                raise exp
         args = {}
         for name, val in obj.body:
             if not isinstance(val, list):
@@ -627,13 +632,14 @@ class XmlImporter:
         res = await self._get_server().add_nodes([node])
         res[0].StatusCode.check()
         await self._add_refs(obj)
-        if is_struct:
-            await load_custom_struct_xml_import(node.RequestedNewNodeId, attrs)
-        if is_enum:
-            await load_enum_xml_import(node.RequestedNewNodeId, attrs, is_option_set)
-        if is_alias:
-            if node.ParentNodeId != ua.NodeId(ua.ObjectIds.Structure):
-                await load_basetype_alias_xml_import(self.session, node.BrowseName.Name, node.RequestedNewNodeId, node.ParentNodeId)
+        if self.auto_load_definitions:
+            if is_struct:
+                await load_custom_struct_xml_import(node.RequestedNewNodeId, attrs)
+            if is_enum:
+                await load_enum_xml_import(node.RequestedNewNodeId, attrs, is_option_set)
+            if is_alias:
+                if node.ParentNodeId != ua.NodeId(ua.ObjectIds.Structure):
+                    await load_basetype_alias_xml_import(self.session, node.BrowseName.Name, node.RequestedNewNodeId, node.ParentNodeId)
         return res[0].AddedNodeId
 
     async def _add_refs(self, obj):
