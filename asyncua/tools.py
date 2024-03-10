@@ -2,7 +2,7 @@ import asyncio
 import logging
 import sys
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import math
 import concurrent.futures
 
@@ -770,7 +770,7 @@ def str_to_datetime(s, default=None):
     if not s:
         if default is not None:
             return default
-        return datetime.utcnow()
+        return datetime.now(UTC)
     # FIXME: try different datetime formats
     for fmt in ["%Y-%m-%d", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]:
         try:
@@ -813,8 +813,8 @@ async def _uahistoryread():
     await client.connect()
     try:
         node = await get_node(client, args)
-        starttime = str_to_datetime(args.starttime, datetime.utcnow() - timedelta(days=1))
-        endtime = str_to_datetime(args.endtime, datetime.utcnow())
+        starttime = str_to_datetime(args.starttime, datetime.now(UTC) - timedelta(days=1))
+        endtime = str_to_datetime(args.endtime, datetime.now(UTC))
         print(
             f"Reading raw history of node {node} at {args.url}; start at {starttime}, end at {endtime}\n"
         )

@@ -11,7 +11,7 @@ from enum import Enum, IntEnum
 import uuid
 import re
 import itertools
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 from dataclasses import dataclass, field
 from base64 import b64encode, b64decode
 
@@ -1176,7 +1176,7 @@ def get_default_value(vtype):
     if vtype == VariantType.String:
         return None  # a string can be null
     if vtype == VariantType.DateTime:
-        return datetime.utcnow()
+        return datetime.now(UTC)
     if vtype == VariantType.Guid:
         return uuid.uuid4()
     if vtype == VariantType.XmlElement:

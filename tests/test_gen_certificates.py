@@ -1,6 +1,6 @@
 """ Several tests for certificate /signing request generation"""
 from typing import List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import socket
 from cryptography import x509
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
@@ -29,7 +29,7 @@ async def test_create_self_signed_app_certificate() -> None:
     days_valid = 100
 
     key: RSAPrivateKey = generate_private_key()
-    dt_before_generation = datetime.utcnow()
+    dt_before_generation = datetime.now(UTC)
     dt_before_generation -= timedelta(microseconds=dt_before_generation.microsecond)
     cert: x509.Certificate = generate_self_signed_app_certificate(key,
                                                                   f"myserver@{hostname}",
@@ -37,7 +37,7 @@ async def test_create_self_signed_app_certificate() -> None:
                                                                   subject_alt_names,
                                                                   extended=extended,
                                                                   days=days_valid)
-    dt_after_generation = datetime.utcnow()
+    dt_after_generation = datetime.now(UTC)
     dt_after_generation -= timedelta(microseconds=dt_after_generation.microsecond)
 
     # check if it is version 3

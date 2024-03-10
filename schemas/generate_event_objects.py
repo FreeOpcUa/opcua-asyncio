@@ -46,7 +46,7 @@ Model Uri:{model_.attrib['ModelUri']}"
 Version:{model_.attrib['Version']}"
 Publication date:{model_.attrib['PublicationDate']}"
 
-File creation Date:{datetime.datetime.utcnow()}"
+File creation Date:{datetime.datetime.now(UTC)}"
 """
 from asyncua import ua
 from .events import Event

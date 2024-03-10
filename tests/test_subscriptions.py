@@ -3,7 +3,7 @@ import asyncio
 import pytest
 from copy import copy
 from asyncio import Future, sleep, wait_for, TimeoutError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from asyncua.common.subscription import Subscription
 try:
     from unittest.mock import AsyncMock
@@ -481,7 +481,7 @@ async def test_subscribe_server_time(opc):
     assert isinstance(handle, int)
     node, val, data = await myhandler.result()
     assert server_time_node == node
-    delta = datetime.utcnow() - val
+    delta = datetime.now(UTC) - val
     assert delta < timedelta(seconds=2)
     await sub.unsubscribe(handle)
     await sub.delete()
@@ -674,7 +674,7 @@ async def test_events_default(opc):
     myhandler = MySubHandler()
     sub = await opc.opc.create_subscription(100, myhandler)
     handle = await sub.subscribe_events()
-    tid = datetime.utcnow()
+    tid = datetime.now(UTC)
     msg = "this is my msg "
     await evgen.trigger(tid, msg)
     ev = await myhandler.result()
@@ -696,7 +696,7 @@ async def test_events_MyObject(opc):
     myhandler = MySubHandler()
     sub = await opc.opc.create_subscription(100, myhandler)
     handle = await sub.subscribe_events(o)
-    tid = datetime.utcnow()
+    tid = datetime.now(UTC)
     msg = "this is my msg "
     await evgen.trigger(tid, msg)
     ev = await myhandler.result()
@@ -719,7 +719,7 @@ async def test_events_wrong_source(opc):
     myhandler = MySubHandler()
     sub = await opc.opc.create_subscription(100, myhandler)
     handle = await sub.subscribe_events()
-    tid = datetime.utcnow()
+    tid = datetime.now(UTC)
     msg = "this is my msg "
     await evgen.trigger(tid, msg)
     with pytest.raises(TimeoutError):  # we should not receive event
@@ -744,7 +744,7 @@ async def test_events_CustomEvent(opc):
     evgen.event.PropertyString = propertystring
     serverity = 500
     evgen.event.Severity = serverity
-    tid = datetime.utcnow()
+    tid = datetime.now(UTC)
     msg = "this is my msg "
     await evgen.trigger(tid, msg)
     ev = await myhandler.result()
@@ -831,7 +831,7 @@ async def test_events_CustomEvent_MyObject(opc):
     propertystring = "This is my test"
     evgen.event.PropertyNum = propertynum
     evgen.event.PropertyString = propertystring
-    tid = datetime.utcnow()
+    tid = datetime.now(UTC)
     msg = "this is my msg "
     await evgen.trigger(tid, msg)
     ev = await myhandler.result()

@@ -147,7 +147,7 @@ class CodeGenerator:
             f'''Version:{model.attrib["Version"]}\n'''
             f'''Publication date:{model.attrib["PublicationDate"]}\n'''
             f'''\n'''
-            f'''File creation Date:{datetime.datetime.utcnow()}\n'''
+            f'''File creation Date:{datetime.datetime.now(UTC)}\n'''
             f'''"""\n'''
             f'''import datetime\n'''
             f'''from dateutil.tz import tzutc\n'''

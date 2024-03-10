@@ -4,7 +4,7 @@ Test an OPC-UA server with freeopcua python client
 import sys
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 
 from asyncua import ua
 from asyncua import Client
@@ -120,7 +120,7 @@ def test_subscribe_server_time(self, client):
 
     node, val, data = msclt.future.result()
     self.assertEqual(node, server_time_node)
-    delta = datetime.utcnow() - val
+    delta = datetime.now(UTC) - val
     print("Timedelta is ", delta)
     #assert delta < timedelta(seconds=2))
 

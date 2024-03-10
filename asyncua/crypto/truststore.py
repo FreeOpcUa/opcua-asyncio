@@ -9,7 +9,7 @@ Use of cryptography module is prefered, but  doesn't provide functionality for t
 from typing import List
 from pathlib import Path
 import re
-from datetime import datetime
+from datetime import datetime, UTC
 import logging
 from cryptography import x509
 from OpenSSL import crypto
@@ -89,7 +89,7 @@ class TrustStore:
             bool: Returns True when the now lays in valid range of the certificate
         """
         valid: bool = True
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         if certificate.not_valid_after < now:
             _logger.error('certificate is no longer valid: valid until %s', certificate.not_valid_after)
             valid = False

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import timedelta
-from datetime import datetime
+from datetime import datetime, UTC
 
 from asyncua import ua
 from asyncua.common import subscription
@@ -114,7 +114,7 @@ class HistoryDict(HistoryStorageInterface):
         data = self._datachanges[node_id]
         period, count = self._datachanges_period[node_id]
         data.append(datavalue)
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         if period:
             while len(data) and now - data[0].SourceTimestamp > period:
                 data.pop(0)
@@ -172,7 +172,7 @@ class HistoryDict(HistoryStorageInterface):
         evts = self._events[event.emitting_node]
         evts.append(event)
         period, count = self._events_periods[event.emitting_node]
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         if period:
             while len(evts) and now - evts[0].Time > period:
                 evts.pop(0)
