@@ -68,7 +68,7 @@ class Transition:
             self.id = id  # in this case it needs to be added with add_transition which takes the nodeid returen from add_transition
         self.name = name
         self.number = number
-        self._transitiontime = datetime.datetime.utcnow()  # will be overwritten from _write_transition()
+        self._transitiontime = datetime.datetime.now(datetime.UTC)  # will be overwritten from _write_transition()
         self.node: Node = node  # will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
 
 
@@ -131,7 +131,7 @@ class StateMachine(object):
                 self._last_transition_transitiontime_node = await self._last_transition_node.add_property(
                     0,
                     "TransitionTime",
-                    ua.Variant(datetime.datetime.utcnow(), VariantType=ua.VariantType.DateTime)
+                    ua.Variant(datetime.datetime.now(datetime.UTC), VariantType=ua.VariantType.DateTime)
                 )
             else:
                 self._last_transition_transitiontime_node = await self._last_transition_node.get_child("TransitionTime")
@@ -218,7 +218,7 @@ class StateMachine(object):
         '''
         if not isinstance(transition, Transition):
             raise ValueError(f"Statemachine: {self._name} -> state: {transition} is not a instance of StateMachine.Transition class")
-        transition._transitiontime = datetime.datetime.utcnow()
+        transition._transitiontime = datetime.datetime.now(datetime.UTC)
         await self._last_transition_node.write_value(ua.LocalizedText(transition.name, self.locale), ua.VariantType.LocalizedText)
         if self._optionals:
             if self._last_transition_id_node:

@@ -4,7 +4,7 @@ Can be used on server side or to implement binary/https opc-ua servers
 """
 from typing import Callable, Optional
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from copy import copy
 from struct import unpack_from
 from pathlib import Path
@@ -129,7 +129,7 @@ class InternalServer:
             attr.Value = ua.DataValue(
                 ua.Variant(10000, ua.VariantType.UInt32),
                 StatusCode_=ua.StatusCode(ua.StatusCodes.Good),
-                SourceTimestamp=datetime.utcnow(),
+                SourceTimestamp=datetime.now(UTC),
             )
             params.NodesToWrite.append(attr)
         result = await self.isession.write(params)
@@ -194,7 +194,7 @@ class InternalServer:
         await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(
             ua.ServerState.Running, ua.VariantType.Int32
         )
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.utcnow())
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.now(UTC))
         if not self.disabled_clock:
             self.time_task = asyncio.create_task(self._set_current_time_loop())
 
@@ -209,7 +209,7 @@ class InternalServer:
 
     async def _set_current_time_loop(self):
         while not self._time_task_stop:
-            await self.current_time_node.write_value(datetime.utcnow())
+            await self.current_time_node.write_value(datetime.now(UTC))
             await asyncio.sleep(1)
 
     def get_new_channel_id(self):

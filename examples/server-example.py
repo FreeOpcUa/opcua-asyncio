@@ -1,7 +1,7 @@
 import asyncio
 import copy
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 import time
 from math import sin
 
@@ -85,7 +85,7 @@ async def main():
     await myvar.set_writable()  # Set MyVariable to be writable by clients
     mystringvar = await myobj.add_variable(idx, "MyStringVariable", "Really nice string")
     await mystringvar.set_writable()  # Set MyVariable to be writable by clients
-    mydtvar = await myobj.add_variable(idx, "MyDateTimeVar", datetime.utcnow())
+    mydtvar = await myobj.add_variable(idx, "MyDateTimeVar", datetime.now(UTC))
     await mydtvar.set_writable()  # Set MyVariable to be writable by clients
     myarrayvar = await myobj.add_variable(idx, "myarrayvar", [6.7, 7.9])
     myuintvar = await myobj.add_variable(idx, "myuintvar", ua.UInt16(4))

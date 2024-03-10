@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 import time
 import uuid
 import sys
@@ -86,8 +86,8 @@ class EventGenerator:
         if time_attr:
             self.event.Time = time_attr
         else:
-            self.event.Time = datetime.utcnow()
-        self.event.ReceiveTime = datetime.utcnow()
+            self.event.Time = datetime.now(UTC)
+        self.event.ReceiveTime = datetime.now(UTC)
 
         self.event.LocalTime = ua.uaprotocol_auto.TimeZoneDataType()
         if sys.version_info.major > 2:

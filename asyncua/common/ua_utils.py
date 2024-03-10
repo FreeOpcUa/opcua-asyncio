@@ -4,7 +4,7 @@ Useful methods and classes not belonging anywhere and depending on asyncua libra
 
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from enum import Enum, IntEnum, IntFlag
 
 from dateutil import parser  # type: ignore[attr-defined]
@@ -21,8 +21,8 @@ def value_to_datavalue(val, varianttype=None):
     if isinstance(val, ua.DataValue):
         return val
     if isinstance(val, ua.Variant):
-        return ua.DataValue(val, SourceTimestamp=datetime.utcnow())
-    return ua.DataValue(ua.Variant(val, varianttype), SourceTimestamp=datetime.utcnow())
+        return ua.DataValue(val, SourceTimestamp=datetime.now(UTC))
+    return ua.DataValue(ua.Variant(val, varianttype), SourceTimestamp=datetime.now(UTC))
 
 
 def val_to_string(val, truncate=False):
