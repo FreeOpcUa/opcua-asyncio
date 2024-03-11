@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2022-09-22 18:18:39.272455
+Date:2023-09-17 15:19:08.055896
 """
 
 from datetime import datetime
@@ -44,6 +44,15 @@ BitFieldMaskDataType = UInt64
 
 
 SemanticVersionString = String
+
+
+Handle = UInt32
+
+
+TrimmedString = String
+
+
+EncodedTicket = String
 
 
 NormalizedString = String
@@ -158,8 +167,62 @@ class IdentityCriteriaType(IntEnum):
     X509Subject = 8
 
 
+class AlarmMask(IntFlag):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part9/8.3
+
+    :ivar Active:
+    :vartype Active: Bit: 0
+    :ivar Unacknowledged:
+    :vartype Unacknowledged: Bit: 1
+    :ivar Unconfirmed:
+    :vartype Unconfirmed: Bit: 2
+    """
+    Active = 1<<0
+    Unacknowledged = 1<<1
+    Unconfirmed = 1<<2
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt16"
+
+
+class TrustListValidationOptions(IntFlag):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.8
+
+    :ivar SuppressCertificateExpired:
+    :vartype SuppressCertificateExpired: Bit: 0
+    :ivar SuppressHostNameInvalid:
+    :vartype SuppressHostNameInvalid: Bit: 1
+    :ivar SuppressRevocationStatusUnknown:
+    :vartype SuppressRevocationStatusUnknown: Bit: 2
+    :ivar SuppressIssuerCertificateExpired:
+    :vartype SuppressIssuerCertificateExpired: Bit: 3
+    :ivar SuppressIssuerRevocationStatusUnknown:
+    :vartype SuppressIssuerRevocationStatusUnknown: Bit: 4
+    :ivar CheckRevocationStatusOnline:
+    :vartype CheckRevocationStatusOnline: Bit: 5
+    :ivar CheckRevocationStatusOffline:
+    :vartype CheckRevocationStatusOffline: Bit: 6
+    """
+    SuppressCertificateExpired = 1<<0
+    SuppressHostNameInvalid = 1<<1
+    SuppressRevocationStatusUnknown = 1<<2
+    SuppressIssuerCertificateExpired = 1<<3
+    SuppressIssuerRevocationStatusUnknown = 1<<4
+    CheckRevocationStatusOnline = 1<<5
+    CheckRevocationStatusOffline = 1<<6
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
+
+
 class TrustListMasks(IntEnum):
     """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.7
+
     :ivar None_:
     :vartype None_: 0
     :ivar TrustedCertificates:
@@ -1477,7 +1540,7 @@ class TimestampsToReturn(IntEnum):
 
 class HistoryUpdateType(IntEnum):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.6
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6
 
     :ivar Insert:
     :vartype Insert: 1
@@ -1496,7 +1559,7 @@ class HistoryUpdateType(IntEnum):
 
 class PerformUpdateType(IntEnum):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.7
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.7
 
     :ivar Insert:
     :vartype Insert: 1
@@ -1653,7 +1716,7 @@ class AxisScaleEnumeration(IntEnum):
 
 class ExceptionDeviationFormat(IntEnum):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/5.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/5.2.2
 
     :ivar AbsoluteValue:
     :vartype AbsoluteValue: 0
@@ -1931,6 +1994,8 @@ class CurrencyUnitType:
 @dataclass(frozen=FROZEN)
 class TrustListDataType:
     """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.6
+
     :ivar SpecifiedLists:
     :vartype SpecifiedLists: UInt32
     :ivar TrustedCertificates:
@@ -1950,6 +2015,26 @@ class TrustListDataType:
     TrustedCrls: List[ByteString] = field(default_factory=list)
     IssuerCertificates: List[ByteString] = field(default_factory=list)
     IssuerCrls: List[ByteString] = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class TransactionErrorType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.12
+
+    :ivar TargetId:
+    :vartype TargetId: NodeId
+    :ivar Error:
+    :vartype Error: StatusCode
+    :ivar Message:
+    :vartype Message: LocalizedText
+    """
+
+    data_type = NodeId(ObjectIds.TransactionErrorType)
+
+    TargetId: NodeId = field(default_factory=NodeId)
+    Error: StatusCode = field(default_factory=StatusCode)
+    Message: LocalizedText = field(default_factory=LocalizedText)
 
 
 @dataclass(frozen=FROZEN)
@@ -2915,6 +3000,49 @@ class PriorityMappingEntryType:
     PriorityLabel: String = None
     PriorityValue_PCP: Byte = 0
     PriorityValue_DSCP: UInt32 = 0
+
+
+@dataclass(frozen=FROZEN)
+class ReferenceDescriptionDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part23/5.5.1
+
+    :ivar SourceNode:
+    :vartype SourceNode: NodeId
+    :ivar ReferenceType:
+    :vartype ReferenceType: NodeId
+    :ivar IsForward:
+    :vartype IsForward: Boolean
+    :ivar TargetNode:
+    :vartype TargetNode: ExpandedNodeId
+    """
+
+    data_type = NodeId(ObjectIds.ReferenceDescriptionDataType)
+
+    SourceNode: NodeId = field(default_factory=NodeId)
+    ReferenceType: NodeId = field(default_factory=NodeId)
+    IsForward: Boolean = True
+    TargetNode: ExpandedNodeId = field(default_factory=ExpandedNodeId)
+
+
+@dataclass(frozen=FROZEN)
+class ReferenceListEntryDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part23/5.5.2
+
+    :ivar ReferenceType:
+    :vartype ReferenceType: NodeId
+    :ivar IsForward:
+    :vartype IsForward: Boolean
+    :ivar TargetNode:
+    :vartype TargetNode: ExpandedNodeId
+    """
+
+    data_type = NodeId(ObjectIds.ReferenceListEntryDataType)
+
+    ReferenceType: NodeId = field(default_factory=NodeId)
+    IsForward: Boolean = True
+    TargetNode: ExpandedNodeId = field(default_factory=ExpandedNodeId)
 
 
 @dataclass(frozen=FROZEN)
@@ -7133,7 +7261,7 @@ class HistoryReadDetails:
 @dataclass(frozen=FROZEN)
 class ReadRawModifiedDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.3/#6.4.3.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.4.3/#6.4.3.1
 
     :ivar IsReadModified:
     :vartype IsReadModified: Boolean
@@ -7159,7 +7287,7 @@ class ReadRawModifiedDetails(HistoryReadDetails):
 @dataclass(frozen=FROZEN)
 class ReadAtTimeDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.5/#6.4.5.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.4.5/#6.4.5.1
 
     :ivar ReqTimes:
     :vartype ReqTimes: UtcTime
@@ -7176,7 +7304,7 @@ class ReadAtTimeDetails(HistoryReadDetails):
 @dataclass(frozen=FROZEN)
 class ReadAnnotationDataDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.6/#6.4.6.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.4.6/#6.4.6.1
 
     :ivar ReqTimes:
     :vartype ReqTimes: UtcTime
@@ -7190,7 +7318,7 @@ class ReadAnnotationDataDetails(HistoryReadDetails):
 @dataclass(frozen=FROZEN)
 class HistoryData:
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.2
 
     :ivar DataValues:
     :vartype DataValues: DataValue
@@ -7204,7 +7332,7 @@ class HistoryData:
 @dataclass(frozen=FROZEN)
 class ModificationInfo:
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.5.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.3
 
     :ivar ModificationTime:
     :vartype ModificationTime: UtcTime
@@ -7224,7 +7352,7 @@ class ModificationInfo:
 @dataclass(frozen=FROZEN)
 class HistoryModifiedData(HistoryData):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.5.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.3
 
     :ivar DataValues:
     :vartype DataValues: DataValue
@@ -7449,7 +7577,7 @@ class HistoryUpdateDetails:
 @dataclass(frozen=FROZEN)
 class UpdateDataDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.2/#6.8.2.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.8.2/#6.8.2.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7477,7 +7605,7 @@ class UpdateDataDetails(HistoryUpdateDetails):
 @dataclass(frozen=FROZEN)
 class UpdateStructureDataDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.3/#6.8.3.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.8.3/#6.8.3.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7505,7 +7633,7 @@ class UpdateStructureDataDetails(HistoryUpdateDetails):
 @dataclass(frozen=FROZEN)
 class DeleteRawModifiedDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.5/#6.8.5.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.8.5/#6.8.5.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7536,7 +7664,7 @@ class DeleteRawModifiedDetails(HistoryUpdateDetails):
 @dataclass(frozen=FROZEN)
 class DeleteAtTimeDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.6/#6.8.6.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.8.6/#6.8.6.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7561,7 +7689,7 @@ class DeleteAtTimeDetails(HistoryUpdateDetails):
 @dataclass(frozen=FROZEN)
 class DeleteEventDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.7/#6.8.7.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.8.7/#6.8.7.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7850,7 +7978,7 @@ class EventFilter(MonitoringFilter):
 @dataclass(frozen=FROZEN)
 class ReadEventDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.2/#6.4.2.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.4.2/#6.4.2.1
 
     :ivar NumValuesPerNode:
     :vartype NumValuesPerNode: Counter
@@ -7873,7 +8001,7 @@ class ReadEventDetails(HistoryReadDetails):
 @dataclass(frozen=FROZEN)
 class AggregateConfiguration:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.4
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.4.4/#6.4.4.1
 
     :ivar UseServerCapabilitiesDefaults:
     :vartype UseServerCapabilitiesDefaults: Boolean
@@ -7899,7 +8027,7 @@ class AggregateConfiguration:
 @dataclass(frozen=FROZEN)
 class ReadProcessedDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.4/#6.4.4.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.4.4/#6.4.4.1
 
     :ivar StartTime:
     :vartype StartTime: UtcTime
@@ -8973,7 +9101,7 @@ class HistoryEvent:
 @dataclass(frozen=FROZEN)
 class UpdateEventDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.4/#6.8.4.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.8.4/#6.8.4.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -10163,7 +10291,7 @@ class ProgramDiagnostic2DataType:
 @dataclass(frozen=FROZEN)
 class Annotation:
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/5.5
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/5.5
 
     :ivar Message:
     :vartype Message: String
@@ -10231,6 +10359,9 @@ extension_object_typeids['CurrencyUnitType'] = nid
 nid = FourByteNodeId(ObjectIds.TrustListDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = TrustListDataType
 extension_object_typeids['TrustListDataType'] = nid
+nid = FourByteNodeId(ObjectIds.TransactionErrorType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = TransactionErrorType
+extension_object_typeids['TransactionErrorType'] = nid
 nid = FourByteNodeId(ObjectIds.DecimalDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = DecimalDataType
 extension_object_typeids['DecimalDataType'] = nid
@@ -10387,6 +10518,12 @@ extension_object_typeids['UserManagementDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PriorityMappingEntryType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PriorityMappingEntryType
 extension_object_typeids['PriorityMappingEntryType'] = nid
+nid = FourByteNodeId(ObjectIds.ReferenceDescriptionDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ReferenceDescriptionDataType
+extension_object_typeids['ReferenceDescriptionDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ReferenceListEntryDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ReferenceListEntryDataType
+extension_object_typeids['ReferenceListEntryDataType'] = nid
 nid = FourByteNodeId(ObjectIds.RolePermissionType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RolePermissionType
 extension_object_typeids['RolePermissionType'] = nid
@@ -10690,12 +10827,6 @@ extension_object_typeids['BrowseNextRequest'] = nid
 nid = FourByteNodeId(ObjectIds.BrowseNextResponse_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = BrowseNextResponse
 extension_object_typeids['BrowseNextResponse'] = nid
-nid = FourByteNodeId(ObjectIds.RelativePathElement_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = RelativePathElement
-extension_object_typeids['RelativePathElement'] = nid
-nid = FourByteNodeId(ObjectIds.RelativePath_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = RelativePath
-extension_object_typeids['RelativePath'] = nid
 nid = FourByteNodeId(ObjectIds.BrowsePath_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = BrowsePath
 extension_object_typeids['BrowsePath'] = nid
