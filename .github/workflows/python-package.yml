@@ -41,4 +41,4 @@ jobs:
         python -m mypy asyncua/
     - name: Test with pytest
       run: |
-        pytest -v
+        pytest -v -n auto

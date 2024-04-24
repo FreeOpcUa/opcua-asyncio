@@ -3,6 +3,7 @@ pytest-asyncio == 0.21.1
 coverage
 pytest-cov
 pytest-mock
+pytest-xdist == 3.5.0
 asynctest
 types-aiofiles
 types-pyOpenSSL
