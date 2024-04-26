@@ -26,8 +26,8 @@ else:
 pytestmark = pytest.mark.asyncio
 
 port_num1 = 48515
-port_num2 = 48512
 port_num3 = 48516
+port_num2 = 0
 uri_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num1)
 uri_no_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num2)
 uri_crypto_cert = "opc.tcp://127.0.0.1:{0:d}".format(port_num3)
@@ -145,13 +145,15 @@ async def test_cert_warning():
 
 
 async def test_nocrypto(srv_no_crypto):
-    clt = Client(uri_no_crypto)
+    port = srv_no_crypto.bserver.port
+    clt = Client(f"opc.tcp://127.0.0.1:{port}")
     async with clt:
         await clt.nodes.objects.get_children()
 
 
 async def test_nocrypto_fail(srv_no_crypto):
-    clt = Client(uri_no_crypto)
+    port = srv_no_crypto.bserver.port
+    clt = Client(f"opc.tcp://127.0.0.1:{port}")
     with pytest.raises(ua.UaError):
         await clt.set_security_string(
             f"Basic256Sha256,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'}")
