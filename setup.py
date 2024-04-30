@@ -25,8 +25,11 @@ setup(
     license="GNU Lesser General Public License v3 or later",
     install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", "cryptography>40.0.1", "sortedcontainers", "importlib-metadata;python_version<'3.8'", "pyOpenSSL>23.2.0", "typing-extensions"],
     classifiers=[
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
