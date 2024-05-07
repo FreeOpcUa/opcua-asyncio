@@ -182,8 +182,8 @@ class Client:
     async def set_security(
         self,
         policy: Type[ua.SecurityPolicy],
-        certificate: Union[str, uacrypto.CertProperties, bytes],
-        private_key: Union[str, uacrypto.CertProperties, bytes],
+        certificate: Union[str, uacrypto.CertProperties, bytes, Path],
+        private_key: Union[str, uacrypto.CertProperties, bytes, Path],
         private_key_password: Optional[Union[str, bytes]] = None,
         server_certificate: Optional[Union[str, uacrypto.CertProperties, bytes]] = None,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,

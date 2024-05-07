@@ -226,7 +226,7 @@ class Server:
         return f"OPC UA Server({self.endpoint.geturl()})"
     __repr__ = __str__
 
-    async def load_certificate(self, path_or_content: Union[str, bytes], format: str = None):
+    async def load_certificate(self, path_or_content: Union[str, bytes, Path], format: str = None):
         """
         load server certificate from file, either pem or der
         """
