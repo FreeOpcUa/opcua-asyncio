@@ -116,6 +116,7 @@ class InternalSubscription:
                                 self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
             await self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
+            await self.stop()
         if not self.has_published_results():
             return False
         # called from loop and external request
