@@ -66,7 +66,7 @@ class InternalSession(AbstractSession):
 
     def is_activated(self) -> bool:
         return self.state == SessionState.Activated
-    
+
     def update_last_action_time(func):
         """Decorator to set last action time."""
         if asyncio.iscoroutinefunction(func):
@@ -82,7 +82,7 @@ class InternalSession(AbstractSession):
                 result = func(self, *args, **kwargs)
                 return result
         return wrapper
-    
+
     async def _session_watchdog_loop(self):
         """
         Checks if the session is alive
