@@ -1,6 +1,9 @@
+import asyncio
 import logging
+from datetime import datetime, timedelta
 from enum import Enum
-from typing import Iterable, Optional, List, Tuple, TYPE_CHECKING
+from functools import wraps
+from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
@@ -48,6 +51,11 @@ class InternalSession(AbstractSession):
         self.auth_token = ua.NodeId(self._auth_counter)
         InternalSession._auth_counter += 1
         self.logger.info('Created internal session %s', self.name)
+        self.session_timeout = None
+        self._closing: bool = False
+        self._session_watchdog_task: Optional[asyncio.Task] = None
+        self._watchdog_interval: float = 1.0
+        self._last_action_time: Optional[datetime] = None
 
     def __str__(self):
         return f'InternalSession(name:{self.name},' \
@@ -58,7 +66,37 @@ class InternalSession(AbstractSession):
 
     def is_activated(self) -> bool:
         return self.state == SessionState.Activated
+    
+    def update_last_action_time(func):
+        """Decorator to set last action time."""
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def wrapper(self, *args, **kwargs):
+                self._last_action_time = datetime.now()
+                result = await func(self, *args, **kwargs)
+                return result
+        else:
+            @wraps(func)
+            def wrapper(self, *args, **kwargs):
+                self._last_action_time = datetime.now()
+                result = func(self, *args, **kwargs)
+                return result
+        return wrapper
+    
+    async def _session_watchdog_loop(self):
+        """
+        Checks if the session is alive
+        """
+        timeout = min(self.session_timeout / 2, self._watchdog_interval)
+        timeout_timedelta = timedelta(seconds=self.session_timeout)
+        while not self._closing:
+            await asyncio.sleep(timeout)
+            print(self._last_action_time)
+            if (datetime.now() - timeout_timedelta) > self._last_action_time:
+                self.logger.warning('Session timed out after %ss of inactivity', timeout_timedelta.total_seconds())
+                await self.close_session()
 
+    @update_last_action_time
     async def create_session(self, params: ua.CreateSessionParameters, sockname: Optional[Tuple[str, int]] = None):
         self.logger.info('Create session request')
         result = ua.CreateSessionResult()
@@ -66,6 +104,7 @@ class InternalSession(AbstractSession):
         result.AuthenticationToken = self.auth_token
         result.RevisedSessionTimeout = params.RequestedSessionTimeout
         result.MaxRequestMessageSize = 65536
+        self.session_timeout = result.RevisedSessionTimeout / 1000
 
         if self.iserver.certificate_validator and params.ClientCertificate:
             await self.iserver.certificate_validator(x509.load_der_x509_certificate(params.ClientCertificate), params.ClientDescription)
@@ -76,18 +115,22 @@ class InternalSession(AbstractSession):
         ep_params = ua.GetEndpointsParameters()
         ep_params.EndpointUrl = params.EndpointUrl
         result.ServerEndpoints = await self.get_endpoints(params=ep_params, sockname=sockname)
-
+        self._session_watchdog_task = asyncio.create_task(self._session_watchdog_loop())
         return result
 
+    @update_last_action_time
     async def close_session(self, delete_subs=True):
         self.logger.info('close session %s', self.name)
+        self._closing = True
         if self.state == SessionState.Activated:
             InternalSession._current_connections -= 1
         if InternalSession._current_connections < 0:
             InternalSession._current_connections = 0
         self.state = SessionState.Closed
-        await self.delete_subscriptions(self.subscriptions)
+        if delete_subs:
+            await self.delete_subscriptions(self.subscriptions)
 
+    @update_last_action_time
     def activate_session(self, params, peer_certificate):
         self.logger.info('activate session')
         result = ua.ActivateSessionResult()
@@ -128,6 +171,7 @@ class InternalSession(AbstractSession):
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)
         return result
 
+    @update_last_action_time
     async def read(self, params):
         if self.user is None:
             user = User()
@@ -140,9 +184,11 @@ class InternalSession(AbstractSession):
                                                      ServerItemCallback(params, results, user, self.external))
         return results
 
+    @update_last_action_time
     async def history_read(self, params) -> List[ua.HistoryReadResult]:
         return await self.iserver.history_manager.read_history(params)
 
+    @update_last_action_time
     async def write(self, params):
         if self.user is None:
             user = User()
@@ -155,9 +201,11 @@ class InternalSession(AbstractSession):
                                                      ServerItemCallback(params, write_result, user, self.external))
         return write_result
 
+    @update_last_action_time
     async def browse(self, params):
         return self.iserver.view_service.browse(params)
 
+    @update_last_action_time
     async def browse_next(self, parameters: ua.BrowseNextParameters) -> List[ua.BrowseResult]:
         # TODO
         # ContinuationPoint: https://reference.opcfoundation.org/v104/Core/docs/Part4/7.6/
@@ -165,41 +213,52 @@ class InternalSession(AbstractSession):
         # BrowseNext: https://reference.opcfoundation.org/Core/Part4/v104/5.8.3/
         raise NotImplementedError
 
+    @update_last_action_time
     async def register_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
         self.logger.info("Node registration not implemented")
         return nodes
 
+    @update_last_action_time
     async def unregister_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
         self.logger.info("Node registration not implemented")
         return nodes
 
+    @update_last_action_time
     async def translate_browsepaths_to_nodeids(self, params):
         return self.iserver.view_service.translate_browsepaths_to_nodeids(params)
 
+    @update_last_action_time
     async def add_nodes(self, params):
         return self.iserver.node_mgt_service.add_nodes(params, self.user)
 
+    @update_last_action_time
     async def delete_nodes(self, params):
         return self.iserver.node_mgt_service.delete_nodes(params, self.user)
 
+    @update_last_action_time
     async def add_references(self, params):
         return self.iserver.node_mgt_service.add_references(params, self.user)
 
+    @update_last_action_time
     async def delete_references(self, params):
         return self.iserver.node_mgt_service.delete_references(params, self.user)
 
+    @update_last_action_time
     def add_method_callback(self, methodid, callback):
         return self.aspace.add_method_callback(methodid, callback)
 
+    @update_last_action_time
     async def call(self, params):
         """COROUTINE"""
         return await self.iserver.method_service.call(params)
 
+    @update_last_action_time
     async def create_subscription(self, params, callback, request_callback=None):
         result = await self.subscription_service.create_subscription(params, callback, request_callback=request_callback)
         self.subscriptions.append(result.SubscriptionId)
         return result
 
+    @update_last_action_time
     async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
@@ -208,6 +267,7 @@ class InternalSession(AbstractSession):
                                                                         self.external))
         return subscription_result
 
+    @update_last_action_time
     async def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
         await self.iserver.callback_service.dispatch(CallbackType.ItemSubscriptionModified,
@@ -215,13 +275,16 @@ class InternalSession(AbstractSession):
                                                                         self.external))
         return subscription_result
 
+    @update_last_action_time
     def republish(self, params):
         return self.subscription_service.republish(params)
 
+    @update_last_action_time
     async def delete_subscriptions(self, ids):
         # This is an async method, dues to symmetry with client code
         return await self.subscription_service.delete_subscriptions(ids)
 
+    @update_last_action_time
     async def delete_monitored_items(self, params):
         # This is an async method, dues to symmetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
@@ -231,12 +294,15 @@ class InternalSession(AbstractSession):
 
         return subscription_result
 
+    @update_last_action_time
     def publish(self, acks: Optional[Iterable[ua.SubscriptionAcknowledgement]] = None):
         return self.subscription_service.publish(acks or [])
 
+    @update_last_action_time
     def modify_subscription(self, params):
         return self.subscription_service.modify_subscription(params)
 
+    @update_last_action_time
     async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
         # Subscriptions aren't bound to a Session and can be transfered!
         # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
