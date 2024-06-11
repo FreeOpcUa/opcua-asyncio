@@ -4,7 +4,7 @@ import pytest
 import struct
 
 from asyncua import Client, Server, ua
-from asyncua.ua.uaerrors import BadMaxConnectionsReached
+from asyncua.ua.uaerrors import BadMaxConnectionsReached, BadSessionNotActivated
 from .conftest import port_num, find_free_port
 
 pytestmark = pytest.mark.asyncio
@@ -77,3 +77,20 @@ async def test_client_connection_lost():
         # check if a exception is thrown when a normal function is called
         with pytest.raises(ConnectionError):
             await cl.get_namespace_array()
+
+
+async def test_session_watchdog():
+    port = find_free_port()
+    srv = Server()
+    await srv.init()
+    srv.set_endpoint(f"opc.tcp://127.0.0.1:{port}")
+    await srv.start()
+    client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=0.5, watchdog_intervall=1)
+    client.session_timeout = 1000  # 1 second
+    await client.connect()
+    client._closing = True  # Kill the keepalive tasks
+    await asyncio.sleep(2)  # Wait for the watchdog to terminate the session due to inactivity
+    with pytest.raises(BadSessionNotActivated):
+        server_time_node = client.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
+        await server_time_node.read_value()
+    await client.disconnect()
