@@ -429,7 +429,7 @@ class NodeIdType(IntEnum):
 _NodeIdType = NodeIdType  # ugly hack
 
 
-@dataclass(frozen=True, eq=False, order=False)
+@dataclass(slots=True, frozen=True, eq=False, order=False)
 class NodeId:
     """
     NodeId Object
@@ -439,16 +439,6 @@ class NodeId:
         namespaceidx(int): The index of the namespace
         nodeidtype(NodeIdType): The type of the nodeid if it cannot be guessed, or you want something
         special like twobyte nodeid or fourbytenodeid
-
-
-    :ivar Identifier:
-    :vartype Identifier: NodeId
-    :ivar NamespaceIndex:
-    :vartype NamespaceIndex: Int
-    :ivar NamespaceUri:
-    :vartype NamespaceUri: String
-    :ivar ServerIndex:
-    :vartype ServerIndex: Int
     """
 
     Identifier: Union[Int32, String, Guid, ByteString] = 0

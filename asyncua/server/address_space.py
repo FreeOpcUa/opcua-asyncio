@@ -34,6 +34,13 @@ from .users import User, UserRole
 _logger = logging.getLogger(__name__)
 
 
+# usefull const NodeIds: avoid constructing multiple times for comparsion purpose
+NODE_ID_HAS_PROPERTY = ua.NodeId(ua.ObjectIds.HasProperty)
+NODE_ID_NULL = ua.NodeId(ua.ObjectIds.Null)
+NODE_ID_HASSUBTYPE = ua.NodeId(ua.ObjectIds.HasSubtype)
+NODE_ID_DEFAULT = ua.NodeId()
+
+
 class AttributeValue(object):
     """
     The class holds the value(s) of an attribute and callbacks.
@@ -57,7 +64,7 @@ class NodeData:
     def __init__(self, nodeid: ua.NodeId):
         self.nodeid = nodeid
         self.attributes: Dict[ua.AttributeIds, AttributeValue] = {}
-        self.references: List[ua.ReferenceDescription] = []
+        self.references: set[ua.ReferenceDescription] = set()   # use a set because it guaranties uniqueness
         self.call = None
 
     def __str__(self) -> str:
@@ -154,7 +161,7 @@ class ViewService(object):
         return True
 
     def _suitable_reftype(self, ref1: ua.NodeId, ref2: ua.NodeId, subtypes: bool) -> bool:
-        if ref1 == ua.NodeId(ua.ObjectIds.Null):
+        if ref1 == NODE_ID_NULL:
             # If ReferenceTypeId is not specified in the BrowseDescription,
             # all References are returned and includeSubtypes is ignored.
             return True
@@ -168,7 +175,8 @@ class ViewService(object):
         nodedata = self._aspace.get(ref)
         if nodedata is not None:
             for ref_desc in nodedata.references:
-                if ref_desc.ReferenceTypeId == ua.NodeId(ua.ObjectIds.HasSubtype) and ref_desc.IsForward:
+                # first compare the bool, as it is faster, if false we save time
+                if ref_desc.IsForward and ref_desc.ReferenceTypeId == NODE_ID_HASSUBTYPE:
                     yield ref_desc.NodeId
                     yield from self._get_sub_ref(ref_desc.NodeId)
 
@@ -304,7 +312,7 @@ class NodeManagementService:
 
             # check properties
             for ref in self._aspace[item.ParentNodeId].references:
-                if ref.ReferenceTypeId == ua.NodeId(ua.ObjectIds.HasProperty):
+                if ref.ReferenceTypeId == NODE_ID_HAS_PROPERTY:
                     if item.BrowseName.Name == ref.BrowseName.Name:
                         self.logger.warning(
                             "AddNodesItem: Requested Browsename %s"
@@ -326,7 +334,7 @@ class NodeManagementService:
             self._add_ref_to_parent(nodedata, item, parentdata)
 
         # add type definition
-        if item.TypeDefinition != ua.NodeId():
+        if item.TypeDefinition != NODE_ID_DEFAULT:
             self._add_type_definition(nodedata, item)
 
         result.StatusCode = ua.StatusCode()
@@ -349,14 +357,7 @@ class NodeManagementService:
         self._add_nodeattributes(item.NodeAttributes, nodedata, add_timestamps)
 
     def _add_unique_reference(self, nodedata: NodeData, desc: ua.ReferenceDescription):
-        for r in nodedata.references:
-            if r.ReferenceTypeId == desc.ReferenceTypeId and r.NodeId == desc.NodeId:
-                if r.IsForward != desc.IsForward:
-                    self.logger.error("Cannot add conflicting reference %s ", str(desc))
-                    return ua.StatusCode(ua.StatusCodes.BadReferenceNotAllowed)
-                break  # ref already exists
-        else:
-            nodedata.references.append(desc)
+        nodedata.references.add(desc)
         return ua.StatusCode()
 
     def _add_ref_from_parent(self, nodedata, item, parentdata):
