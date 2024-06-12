@@ -34,7 +34,9 @@ class InternalSubscription:
         :param request_callback: Callback for getting queued publish requests.
             If None, publishing will be done without waiting for a token and no
             acknowledging will be expected (for server internal subscriptions)
-        :param delete_callback: Optional callback to delete the subscription
+        :param delete_callback: Optional callback to call when the subscription
+            is stopped due to the publish count exceeding the
+            RevisedLifetimeCount.
         """
         self.logger = logging.getLogger(__name__)
         self.data: ua.CreateSubscriptionResult = data
