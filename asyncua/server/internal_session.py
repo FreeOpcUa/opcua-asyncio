@@ -196,7 +196,12 @@ class InternalSession(AbstractSession):
         return await self.iserver.method_service.call(params)
 
     async def create_subscription(self, params, callback, request_callback=None):
-        result = await self.subscription_service.create_subscription(params, callback, request_callback=request_callback)
+        result = await self.subscription_service.create_subscription(
+            params,
+            callback,
+            request_callback=request_callback,
+            delete_callback=self.delete_subscriptions,
+        )
         self.subscriptions.append(result.SubscriptionId)
         return result
 
@@ -220,6 +225,7 @@ class InternalSession(AbstractSession):
 
     async def delete_subscriptions(self, ids):
         # This is an async method, dues to symmetry with client code
+        self.subscriptions = [id for id in self.subscriptions if id not in ids]
         return await self.subscription_service.delete_subscriptions(ids)
 
     async def delete_monitored_items(self, params):

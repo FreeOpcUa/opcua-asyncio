@@ -18,8 +18,14 @@ class InternalSubscription:
     Runs the publication loop and stores the Publication Results until they are acknowledged.
     """
 
-    def __init__(self, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
-                 callback, request_callback=None):
+    def __init__(
+        self,
+        data: ua.CreateSubscriptionResult,
+        aspace: AddressSpace,
+        callback,
+        request_callback=None,
+        delete_callback=None,
+    ):
         """
         :param loop: Event loop instance
         :param data: Create Subscription Result
@@ -28,12 +34,14 @@ class InternalSubscription:
         :param request_callback: Callback for getting queued publish requests.
             If None, publishing will be done without waiting for a token and no
             acknowledging will be expected (for server internal subscriptions)
+        :param delete_callback: Optional callback to delete the subscription
         """
         self.logger = logging.getLogger(__name__)
         self.data: ua.CreateSubscriptionResult = data
         self.pub_result_callback = callback
         self.pub_request_callback = request_callback
         self.monitored_item_srv = MonitoredItemService(self, aspace)
+        self.delete_callback = delete_callback
         self._triggered_datachanges: Dict[int, List[ua.MonitoredItemNotification]] = {}
         self._triggered_events: Dict[int, List[ua.EventFieldList]] = {}
         self._triggered_statuschanges: list = []
@@ -115,8 +123,10 @@ class InternalSubscription:
             self.logger.warning("Subscription %s has expired, publish cycle count(%s) > lifetime count (%s)", self,
                                 self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
-            await self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
-            await self.stop()
+            if self.delete_callback:
+                await self.delete_callback()
+            else:
+                await self.stop()
         if not self.has_published_results():
             return False
         # called from loop and external request
