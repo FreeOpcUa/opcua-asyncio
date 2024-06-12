@@ -70,7 +70,10 @@ class InternalSubscription:
             try:
                 await self._task
             except asyncio.CancelledError:
-                pass
+                if asyncio.current_task() == self._task:
+                    # This error needs to be re-raised so it's caught within _subscription_loop,
+                    # otherwise the loop will continue on
+                    raise
             self._task = None
         self.monitored_item_srv.delete_all_monitored_items()
 
@@ -129,6 +132,7 @@ class InternalSubscription:
                 await self.delete_callback()
             else:
                 await self.stop()
+            return False
         if not self.has_published_results():
             return False
         # called from loop and external request
