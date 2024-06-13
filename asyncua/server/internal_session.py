@@ -44,7 +44,6 @@ class InternalSession(AbstractSession):
         self.state = SessionState.Created
         self.session_id = ua.NodeId(self._counter)
         InternalSession._counter += 1
-        self.subscriptions = []
         self.auth_token = ua.NodeId(self._auth_counter)
         InternalSession._auth_counter += 1
         self.logger.info('Created internal session %s', self.name)
@@ -86,7 +85,7 @@ class InternalSession(AbstractSession):
         if InternalSession._current_connections < 0:
             InternalSession._current_connections = 0
         self.state = SessionState.Closed
-        await self.delete_subscriptions(self.subscriptions)
+        await self.delete_subscriptions(self.subscription_service.subscriptions.keys())
 
     def activate_session(self, params, peer_certificate):
         self.logger.info('activate session')
@@ -200,9 +199,7 @@ class InternalSession(AbstractSession):
             params,
             callback,
             request_callback=request_callback,
-            delete_callback=self.delete_subscriptions,
         )
-        self.subscriptions.append(result.SubscriptionId)
         return result
 
     async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
@@ -225,7 +222,6 @@ class InternalSession(AbstractSession):
 
     async def delete_subscriptions(self, ids):
         # This is an async method, dues to symmetry with client code
-        self.subscriptions = [id for id in self.subscriptions if id not in ids]
         return await self.subscription_service.delete_subscriptions(ids)
 
     async def delete_monitored_items(self, params):

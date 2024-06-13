@@ -41,7 +41,7 @@ class SubscriptionService:
             self.aspace,
             callback,
             request_callback=request_callback,
-            delete_callback=lambda: delete_callback([result.SubscriptionId]),
+            delete_callback=lambda: self.subscriptions.pop([result.SubscriptionId], None),
         )
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub

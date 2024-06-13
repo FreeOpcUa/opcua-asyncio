@@ -128,10 +128,9 @@ class InternalSubscription:
             self.logger.warning("Subscription %s has expired, publish cycle count(%s) > lifetime count (%s)", self,
                                 self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
+            await self.stop()
             if self.delete_callback:
-                await self.delete_callback()
-            else:
-                await self.stop()
+                self.delete_callback()
             return False
         if not self.has_published_results():
             return False
