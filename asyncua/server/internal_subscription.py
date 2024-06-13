@@ -54,6 +54,7 @@ class InternalSubscription:
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
         self._task = None
+        self._closing = False
 
     def __str__(self):
         return f"Subscription(id:{self.data.SubscriptionId})"
@@ -61,19 +62,18 @@ class InternalSubscription:
     async def start(self):
         self.logger.debug("starting subscription %s", self.data.SubscriptionId)
         if self.data.RevisedPublishingInterval > 0.0:
+            self._closing = False
             self._task = asyncio.create_task(self._subscription_loop())
 
     async def stop(self):
         if self._task:
             self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
+            self._closing = True
             self._task.cancel()
             try:
                 await self._task
             except asyncio.CancelledError:
-                if asyncio.current_task() == self._task:
-                    # This error needs to be re-raised so it's caught within _subscription_loop,
-                    # otherwise the loop will continue on
-                    raise
+                pass
             self._task = None
         self.monitored_item_srv.delete_all_monitored_items()
 
@@ -93,7 +93,7 @@ class InternalSubscription:
         period = self.data.RevisedPublishingInterval / 1000.0
         try:
             await self.publish_results()
-            while True:
+            while not self._closing:
                 next_ts = ts + period
                 sleep_time = next_ts - time.time()
                 ts = next_ts
@@ -129,9 +129,13 @@ class InternalSubscription:
                                 self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
             await self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
-            await self.stop()
+            # Stop the subscription
+            if self._task:
+                self._closing = True
+                self._task = None
             if self.delete_callback:
                 self.delete_callback()
+            self.monitored_item_srv.delete_all_monitored_items()
             return False
         if not self.has_published_results():
             return False

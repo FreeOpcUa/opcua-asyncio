@@ -195,11 +195,7 @@ class InternalSession(AbstractSession):
         return await self.iserver.method_service.call(params)
 
     async def create_subscription(self, params, callback, request_callback=None):
-        result = await self.subscription_service.create_subscription(
-            params,
-            callback,
-            request_callback=request_callback,
-        )
+        result = await self.subscription_service.create_subscription(params, callback, request_callback=request_callback)
         return result
 
     async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
