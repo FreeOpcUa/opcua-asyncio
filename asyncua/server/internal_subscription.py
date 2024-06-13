@@ -128,6 +128,7 @@ class InternalSubscription:
             self.logger.warning("Subscription %s has expired, publish cycle count(%s) > lifetime count (%s)", self,
                                 self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
+            await self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
             await self.stop()
             if self.delete_callback:
                 self.delete_callback()
