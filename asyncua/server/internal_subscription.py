@@ -23,6 +23,7 @@ class InternalSubscription:
         data: ua.CreateSubscriptionResult,
         aspace: AddressSpace,
         callback,
+        session_id,
         request_callback=None,
         delete_callback=None,
     ):
@@ -31,6 +32,7 @@ class InternalSubscription:
         :param data: Create Subscription Result
         :param aspace: Server Address Space
         :param callback: Callback for publishing
+        :param session_id: Id of the session that owns this subscription.
         :param request_callback: Callback for getting queued publish requests.
             If None, publishing will be done without waiting for a token and no
             acknowledging will be expected (for server internal subscriptions)
@@ -44,6 +46,7 @@ class InternalSubscription:
         self.pub_request_callback = request_callback
         self.monitored_item_srv = MonitoredItemService(self, aspace)
         self.delete_callback = delete_callback
+        self.session_id = session_id
         self._triggered_datachanges: Dict[int, List[ua.MonitoredItemNotification]] = {}
         self._triggered_events: Dict[int, List[ua.EventFieldList]] = {}
         self._triggered_statuschanges: list = []

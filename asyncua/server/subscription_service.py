@@ -27,7 +27,7 @@ class SubscriptionService:
         self._conditions = {}
 
     async def create_subscription(
-        self, params, callback, request_callback=None, delete_callback=None
+        self, params, callback, session_id, request_callback=None
     ):
         self.logger.info("create subscription")
         result = ua.CreateSubscriptionResult()
@@ -40,6 +40,7 @@ class SubscriptionService:
             result,
             self.aspace,
             callback,
+            session_id,
             request_callback=request_callback,
             delete_callback=lambda: self.subscriptions.pop(result.SubscriptionId, None),
         )
