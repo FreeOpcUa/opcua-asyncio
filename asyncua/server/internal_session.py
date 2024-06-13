@@ -85,7 +85,7 @@ class InternalSession(AbstractSession):
         if InternalSession._current_connections < 0:
             InternalSession._current_connections = 0
         self.state = SessionState.Closed
-        await self.delete_subscriptions(self.subscription_service.subscriptions.keys())
+        await self.delete_subscriptions(list(self.subscription_service.subscriptions.keys()))
 
     def activate_session(self, params, peer_certificate):
         self.logger.info('activate session')
