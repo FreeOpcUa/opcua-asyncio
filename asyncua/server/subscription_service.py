@@ -26,7 +26,9 @@ class SubscriptionService:
         self.standard_events = {}
         self._conditions = {}
 
-    async def create_subscription(self, params, callback, request_callback=None):
+    async def create_subscription(
+        self, params, callback, session_id, request_callback=None
+    ):
         self.logger.info("create subscription")
         result = ua.CreateSubscriptionResult()
         result.RevisedPublishingInterval = params.RequestedPublishingInterval
@@ -34,7 +36,14 @@ class SubscriptionService:
         result.RevisedMaxKeepAliveCount = params.RequestedMaxKeepAliveCount
         self._sub_id_counter += 1
         result.SubscriptionId = self._sub_id_counter
-        internal_sub = InternalSubscription(result, self.aspace, callback, request_callback=request_callback)
+        internal_sub = InternalSubscription(
+            result,
+            self.aspace,
+            callback,
+            session_id,
+            request_callback=request_callback,
+            delete_callback=lambda: self.subscriptions.pop(result.SubscriptionId, None),
+        )
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub
         return result

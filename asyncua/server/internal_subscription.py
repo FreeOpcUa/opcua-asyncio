@@ -18,22 +18,35 @@ class InternalSubscription:
     Runs the publication loop and stores the Publication Results until they are acknowledged.
     """
 
-    def __init__(self, data: ua.CreateSubscriptionResult, aspace: AddressSpace,
-                 callback, request_callback=None):
+    def __init__(
+        self,
+        data: ua.CreateSubscriptionResult,
+        aspace: AddressSpace,
+        callback,
+        session_id,
+        request_callback=None,
+        delete_callback=None,
+    ):
         """
         :param loop: Event loop instance
         :param data: Create Subscription Result
         :param aspace: Server Address Space
         :param callback: Callback for publishing
+        :param session_id: Id of the session that owns this subscription.
         :param request_callback: Callback for getting queued publish requests.
             If None, publishing will be done without waiting for a token and no
             acknowledging will be expected (for server internal subscriptions)
+        :param delete_callback: Optional callback to call when the subscription
+            is stopped due to the publish count exceeding the
+            RevisedLifetimeCount.
         """
         self.logger = logging.getLogger(__name__)
         self.data: ua.CreateSubscriptionResult = data
         self.pub_result_callback = callback
         self.pub_request_callback = request_callback
         self.monitored_item_srv = MonitoredItemService(self, aspace)
+        self.delete_callback = delete_callback
+        self.session_id = session_id
         self._triggered_datachanges: Dict[int, List[ua.MonitoredItemNotification]] = {}
         self._triggered_events: Dict[int, List[ua.EventFieldList]] = {}
         self._triggered_statuschanges: list = []
@@ -44,6 +57,7 @@ class InternalSubscription:
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
         self._task = None
+        self._closing = False
 
     def __str__(self):
         return f"Subscription(id:{self.data.SubscriptionId})"
@@ -51,11 +65,13 @@ class InternalSubscription:
     async def start(self):
         self.logger.debug("starting subscription %s", self.data.SubscriptionId)
         if self.data.RevisedPublishingInterval > 0.0:
+            self._closing = False
             self._task = asyncio.create_task(self._subscription_loop())
 
     async def stop(self):
         if self._task:
             self.logger.info("stopping internal subscription %s", self.data.SubscriptionId)
+            self._closing = True
             self._task.cancel()
             try:
                 await self._task
@@ -80,7 +96,7 @@ class InternalSubscription:
         period = self.data.RevisedPublishingInterval / 1000.0
         try:
             await self.publish_results()
-            while True:
+            while not self._closing:
                 next_ts = ts + period
                 sleep_time = next_ts - time.time()
                 ts = next_ts
@@ -116,7 +132,14 @@ class InternalSubscription:
                                 self._publish_cycles_count, self.data.RevisedLifetimeCount)
             # FIXME this will never be send since we do not have publish request anyway
             await self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
-            await self.stop()
+            # Stop the subscription
+            if self._task:
+                self._closing = True
+                self._task = None
+            if self.delete_callback:
+                self.delete_callback()
+            self.monitored_item_srv.delete_all_monitored_items()
+            return False
         if not self.has_published_results():
             return False
         # called from loop and external request
