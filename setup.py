@@ -52,5 +52,5 @@ setup(
         ]
     },
     setup_requires=[] + pytest_runner,
-    tests_require=['pytest', 'pytest-mock', 'asynctest'],
+    tests_require=['pytest', 'pytest-mock', 'pytest-xdist', 'asynctest'],
 )
