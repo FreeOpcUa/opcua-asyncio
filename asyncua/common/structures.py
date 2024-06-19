@@ -300,7 +300,7 @@ def _generate_python_class(model, env=None):
         env['ua'] = ua
     if "datetime" not in env:
         env['datetime'] = datetime
-        env['datetime'] = timezone
+        env['timezone'] = timezone
     if "uuid" not in env:
         env['uuid'] = uuid
     if "enum" not in env:
