@@ -3,7 +3,7 @@ Autogenerate code from xml spec
 Date:2022-09-22 18:18:39.272455
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
 from typing import Union, List, Optional, Type
 from dataclasses import dataclass, field
@@ -3444,7 +3444,7 @@ class RequestHeader:
     data_type = NodeId(ObjectIds.RequestHeader)
 
     AuthenticationToken: SessionAuthenticationToken = field(default_factory=NodeId)
-    Timestamp: UtcTime = field(default_factory=datetime.utcnow)
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     RequestHandle: IntegerId = 0
     ReturnDiagnostics: UInt32 = 0
     AuditEntryId: String = None
@@ -3473,7 +3473,7 @@ class ResponseHeader:
 
     data_type = NodeId(ObjectIds.ResponseHeader)
 
-    Timestamp: UtcTime = field(default_factory=datetime.utcnow)
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     RequestHandle: IntegerId = 0
     ServiceResult: StatusCode = field(default_factory=StatusCode)
     ServiceDiagnostics: DiagnosticInfo = field(default_factory=DiagnosticInfo)
@@ -3700,7 +3700,7 @@ class FindServersOnNetworkResult:
     :vartype Servers: ServerOnNetwork
     """
 
-    LastCounterResetTime: UtcTime = field(default_factory=datetime.utcnow)
+    LastCounterResetTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     Servers: List[ServerOnNetwork] = field(default_factory=list)
 
 
@@ -4410,7 +4410,7 @@ class ChannelSecurityToken:
 
     ChannelId: UInt32 = 0
     TokenId: UInt32 = 0
-    CreatedAt: UtcTime = field(default_factory=datetime.utcnow)
+    CreatedAt: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     RevisedLifetime: UInt32 = 0
 
 
@@ -5820,7 +5820,7 @@ class ViewDescription:
     data_type = NodeId(ObjectIds.ViewDescription)
 
     ViewId: NodeId = field(default_factory=NodeId)
-    Timestamp: UtcTime = field(default_factory=datetime.utcnow)
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     ViewVersion: UInt32 = 0
 
 
@@ -7150,8 +7150,8 @@ class ReadRawModifiedDetails(HistoryReadDetails):
     data_type = NodeId(ObjectIds.ReadRawModifiedDetails)
 
     IsReadModified: Boolean = True
-    StartTime: UtcTime = field(default_factory=datetime.utcnow)
-    EndTime: UtcTime = field(default_factory=datetime.utcnow)
+    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     NumValuesPerNode: Counter = 0
     ReturnBounds: Boolean = True
 
@@ -7216,7 +7216,7 @@ class ModificationInfo:
 
     data_type = NodeId(ObjectIds.ModificationInfo)
 
-    ModificationTime: UtcTime = field(default_factory=datetime.utcnow)
+    ModificationTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     UpdateType: HistoryUpdateType = HistoryUpdateType.Insert
     UserName: String = None
 
@@ -7521,8 +7521,8 @@ class DeleteRawModifiedDetails(HistoryUpdateDetails):
 
     NodeId_: NodeId = field(default_factory=NodeId)
     IsDeleteModified: Boolean = True
-    StartTime: UtcTime = field(default_factory=datetime.utcnow)
-    EndTime: UtcTime = field(default_factory=datetime.utcnow)
+    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def NodeId(self):
@@ -7865,8 +7865,8 @@ class ReadEventDetails(HistoryReadDetails):
     data_type = NodeId(ObjectIds.ReadEventDetails)
 
     NumValuesPerNode: Counter = 0
-    StartTime: UtcTime = field(default_factory=datetime.utcnow)
-    EndTime: UtcTime = field(default_factory=datetime.utcnow)
+    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     Filter: EventFilter = field(default_factory=EventFilter)
 
 
@@ -7915,8 +7915,8 @@ class ReadProcessedDetails(HistoryReadDetails):
 
     data_type = NodeId(ObjectIds.ReadProcessedDetails)
 
-    StartTime: UtcTime = field(default_factory=datetime.utcnow)
-    EndTime: UtcTime = field(default_factory=datetime.utcnow)
+    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     ProcessingInterval: Duration = 0
     AggregateType: List[NodeId] = field(default_factory=list)
     AggregateConfiguration_: AggregateConfiguration = field(default_factory=AggregateConfiguration)
@@ -7947,7 +7947,7 @@ class AggregateFilter(MonitoringFilter):
 
     data_type = NodeId(ObjectIds.AggregateFilter)
 
-    StartTime: UtcTime = field(default_factory=datetime.utcnow)
+    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     AggregateType: NodeId = field(default_factory=NodeId)
     ProcessingInterval: Duration = 0
     AggregateConfiguration_: AggregateConfiguration = field(default_factory=AggregateConfiguration)
@@ -8004,7 +8004,7 @@ class AggregateFilterResult(MonitoringFilterResult):
 
     data_type = NodeId(ObjectIds.AggregateFilterResult)
 
-    RevisedStartTime: UtcTime = field(default_factory=datetime.utcnow)
+    RevisedStartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     RevisedProcessingInterval: Duration = 0
     RevisedAggregateConfiguration: AggregateConfiguration = field(default_factory=AggregateConfiguration)
 
@@ -8865,7 +8865,7 @@ class NotificationMessage:
     data_type = NodeId(ObjectIds.NotificationMessage)
 
     SequenceNumber: Counter = 0
-    PublishTime: UtcTime = field(default_factory=datetime.utcnow)
+    PublishTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     NotificationData: List[ExtensionObject] = field(default_factory=list)
 
 
@@ -9420,7 +9420,7 @@ class BuildInfo:
     ProductName: String = None
     SoftwareVersion: String = None
     BuildNumber: String = None
-    BuildDate: UtcTime = field(default_factory=datetime.utcnow)
+    BuildDate: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass(frozen=FROZEN)
@@ -9573,8 +9573,8 @@ class ServerStatusDataType:
 
     data_type = NodeId(ObjectIds.ServerStatusDataType)
 
-    StartTime: UtcTime = field(default_factory=datetime.utcnow)
-    CurrentTime: UtcTime = field(default_factory=datetime.utcnow)
+    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    CurrentTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     State: ServerState = ServerState.Running
     BuildInfo_: BuildInfo = field(default_factory=BuildInfo)
     SecondsTillShutdown: UInt32 = 0
@@ -9747,8 +9747,8 @@ class SessionDiagnosticsDataType:
     LocaleIds: List[LocaleId] = field(default_factory=list)
     ActualSessionTimeout: Duration = 0
     MaxResponseMessageSize: UInt32 = 0
-    ClientConnectionTime: UtcTime = field(default_factory=datetime.utcnow)
-    ClientLastContactTime: UtcTime = field(default_factory=datetime.utcnow)
+    ClientConnectionTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    ClientLastContactTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     CurrentSubscriptionsCount: UInt32 = 0
     CurrentMonitoredItemsCount: UInt32 = 0
     CurrentPublishRequestsInQueue: UInt32 = 0
@@ -10103,13 +10103,13 @@ class ProgramDiagnosticDataType:
 
     CreateSessionId: NodeId = field(default_factory=NodeId)
     CreateClientName: String = None
-    InvocationCreationTime: UtcTime = field(default_factory=datetime.utcnow)
-    LastTransitionTime: UtcTime = field(default_factory=datetime.utcnow)
+    InvocationCreationTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    LastTransitionTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     LastMethodCall: String = None
     LastMethodSessionId: NodeId = field(default_factory=NodeId)
     LastMethodInputArguments: List[Argument] = field(default_factory=list)
     LastMethodOutputArguments: List[Argument] = field(default_factory=list)
-    LastMethodCallTime: UtcTime = field(default_factory=datetime.utcnow)
+    LastMethodCallTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     LastMethodReturnStatus: StatusResult = field(default_factory=StatusResult)
 
 
@@ -10148,15 +10148,15 @@ class ProgramDiagnostic2DataType:
 
     CreateSessionId: NodeId = field(default_factory=NodeId)
     CreateClientName: String = None
-    InvocationCreationTime: UtcTime = field(default_factory=datetime.utcnow)
-    LastTransitionTime: UtcTime = field(default_factory=datetime.utcnow)
+    InvocationCreationTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    LastTransitionTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     LastMethodCall: String = None
     LastMethodSessionId: NodeId = field(default_factory=NodeId)
     LastMethodInputArguments: List[Argument] = field(default_factory=list)
     LastMethodOutputArguments: List[Argument] = field(default_factory=list)
     LastMethodInputValues: List[Variant] = field(default_factory=list)
     LastMethodOutputValues: List[Variant] = field(default_factory=list)
-    LastMethodCallTime: UtcTime = field(default_factory=datetime.utcnow)
+    LastMethodCallTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
     LastMethodReturnStatus: StatusCode = field(default_factory=StatusCode)
 
 
@@ -10177,7 +10177,7 @@ class Annotation:
 
     Message: String = None
     UserName: String = None
-    AnnotationTime: UtcTime = field(default_factory=datetime.utcnow)
+    AnnotationTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 nid = FourByteNodeId(ObjectIds.Union_Encoding_DefaultBinary)

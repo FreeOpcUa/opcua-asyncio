@@ -60,7 +60,7 @@ class CodeGenerator:
         self.write(f'Autogenerate code from xml spec\nDate:{datetime.datetime.now(datetime.timezone.utc)}')
         self.write('"""')
         self.write('')
-        self.write('from datetime import datetime')
+        self.write('from datetime import datetime, timezone')
         self.write('from enum import IntEnum, IntFlag')
         self.write('from typing import Union, List, Optional, Type')
         self.write('from dataclasses import dataclass, field')
@@ -207,7 +207,7 @@ class CodeGenerator:
         if dtype == "Guid":
             return 'Guid(int=0)'
         if dtype == 'DateTime':
-            return 'field(default_factory=datetime.utcnow)'
+            return 'field(default_factory=lambda: datetime.now(timezone.utc))'
         if dtype in ('Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'Double', 'Float', 'Byte'):
             return 0
         if dtype in 'ExtensionObject':
