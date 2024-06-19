@@ -1,0 +1,36 @@
+From 7a5311b4f1094dff434df43acc46ead4d1b2d7a0 Mon Sep 17 00:00:00 2001
+From: Dr Terrence McGuckin <terrence@ephemeron-labs.com>
+Date: Wed, 19 Jun 2024 18:55:18 -0400
+Subject: [PATCH] changed sytate machine to work with example
+
+---
+ asyncua/common/statemachine.py | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/asyncua/common/statemachine.py b/asyncua/common/statemachine.py
+index 37fcf6e..943da74 100644
+--- a/asyncua/common/statemachine.py
++++ b/asyncua/common/statemachine.py
+@@ -203,7 +203,8 @@ class StateMachine(object):
+         await self._current_state_node.write_value(ua.LocalizedText(state.name, self.locale), ua.VariantType.LocalizedText)
+         if state.node:
+             if self._current_state_id_node:
+-                await self._current_state_id_node.write_value(state.node.nodeid, varianttype=ua.VariantType.NodeId)
++                await self._current_state_id_node.write_value(state.name,ua.VariantType.String)
++                #await self._current_state_id_node.write_value(state.node.nodeid, varianttype=ua.VariantType.NodeId)
+             if self._current_state_name_node and state.name:
+                 await self._current_state_name_node.write_value(state.name, ua.VariantType.QualifiedName)
+             if self._current_state_number_node and state.number:
+@@ -222,7 +223,8 @@ class StateMachine(object):
+         await self._last_transition_node.write_value(ua.LocalizedText(transition.name, self.locale), ua.VariantType.LocalizedText)
+         if self._optionals:
+             if self._last_transition_id_node:
+-                await self._last_transition_id_node.write_value(transition.node.nodeid, varianttype=ua.VariantType.NodeId)
++                await self._last_transition_id_node.write_value(transition.name, ua.VariantType.String)
++                #await self._last_transition_id_node.write_value(transition.node.nodeid, varianttype=ua.VariantType.NodeId)
+             if self._last_transition_name_node and transition.name:
+                 await self._last_transition_name_node.write_value(ua.QualifiedName(transition.name, self._idx), ua.VariantType.QualifiedName)
+             if self._last_transition_number_node and transition.number:
+-- 
+2.34.1
+
