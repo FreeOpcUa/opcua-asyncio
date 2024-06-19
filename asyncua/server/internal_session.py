@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
+from typing import Iterable, Optional, List, Tuple, TYPE_CHECKING
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
