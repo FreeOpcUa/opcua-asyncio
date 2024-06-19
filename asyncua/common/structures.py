@@ -7,7 +7,7 @@ for custom structures
 import uuid
 import logging
 # The next two imports are for generated code
-from datetime import datetime, timezone  # noqa: F401
+from datetime import datetime, timezone
 from enum import IntEnum, EnumMeta
 from dataclasses import dataclass, field
 from typing import List, Optional
@@ -300,6 +300,7 @@ def _generate_python_class(model, env=None):
         env['ua'] = ua
     if "datetime" not in env:
         env['datetime'] = datetime
+        env['datetime'] = timezone
     if "uuid" not in env:
         env['uuid'] = uuid
     if "enum" not in env:

@@ -1,7 +1,6 @@
 from enum import Enum
 from enum import IntEnum, IntFlag
-# timezone import is for generated code
-from datetime import datetime, timezone  # noqa: F401
+from datetime import datetime, timezone
 import uuid
 import logging
 import re
@@ -278,6 +277,7 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False, opt
         env['ua'] = ua
     if "datetime" not in env:
         env['datetime'] = datetime
+        env['timezone'] = timezone
     if "uuid" not in env:
         env['uuid'] = uuid
     if "enum" not in env:
