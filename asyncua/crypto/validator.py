@@ -1,6 +1,6 @@
 from typing import Callable, Awaitable, Optional
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Flag, auto
 from cryptography import x509
 from cryptography.x509.oid import ExtendedKeyUsageOID
@@ -78,7 +78,7 @@ class CertificateValidator:
         """
 
         if CertificateValidatorOptions.TIME_RANGE in self._options:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             if cert.not_valid_after < now:
                 raise ServiceError(ua.StatusCodes.BadCertificateTimeInvalid)
             elif cert.not_valid_before > now:

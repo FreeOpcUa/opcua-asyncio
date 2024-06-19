@@ -57,7 +57,7 @@ class CodeGenerator:
 
     def make_header(self):
         self.write('"""')
-        self.write(f'Autogenerate code from xml spec\nDate:{datetime.datetime.now()}')
+        self.write(f'Autogenerate code from xml spec\nDate:{datetime.datetime.now(datetime.timezone.utc)}')
         self.write('"""')
         self.write('')
         self.write('from datetime import datetime')

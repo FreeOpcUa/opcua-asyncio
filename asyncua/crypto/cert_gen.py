@@ -91,8 +91,8 @@ def generate_self_signed_app_certificate(private_key: rsa.RSAPrivateKey,
     builder = x509.CertificateBuilder()
     builder = builder.subject_name(x509.Name(name_attributes))
     builder = builder.issuer_name(x509.Name(name_attributes))
-    builder = builder.not_valid_before(datetime.datetime.utcnow())
-    builder = builder.not_valid_after(datetime.datetime.utcnow() + (ONE_DAY * days))
+    builder = builder.not_valid_before(datetime.datetime.now(datetime.timezone.utc))
+    builder = builder.not_valid_after(datetime.datetime.now(datetime.timezone.utc) + (ONE_DAY * days))
     builder = builder.serial_number(serial_number)
     builder = builder.public_key(public_key)
     builder = builder.add_extension(
@@ -212,8 +212,8 @@ def sign_certificate_request(csr: x509.CertificateSigningRequest,
     builder = x509.CertificateBuilder()
     builder = builder.subject_name(csr.subject)
     builder = builder.issuer_name(issuer.subject)
-    builder = builder.not_valid_before(datetime.datetime.utcnow())
-    builder = builder.not_valid_after(datetime.datetime.utcnow() + (ONE_DAY * days))
+    builder = builder.not_valid_before(datetime.datetime.now(datetime.timezone.utc))
+    builder = builder.not_valid_after(datetime.datetime.now(datetime.timezone.utc) + (ONE_DAY * days))
     builder = builder.serial_number(serial_number)
     builder = builder.public_key(public_key)
     builder = builder.add_extension(

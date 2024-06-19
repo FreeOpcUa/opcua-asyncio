@@ -1177,7 +1177,7 @@ def get_default_value(vtype):
     if vtype == VariantType.String:
         return None  # a string can be null
     if vtype == VariantType.DateTime:
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
     if vtype == VariantType.Guid:
         return uuid.uuid4()
     if vtype == VariantType.XmlElement:

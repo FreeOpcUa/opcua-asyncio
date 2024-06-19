@@ -7,7 +7,7 @@ import logging
 import pickle
 import shelve
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -103,7 +103,7 @@ class AttributeService:
                     res.append(ua.StatusCode(ua.StatusCodes.BadUserAccessDenied))
                     continue
             if writevalue.AttributeId == ua.AttributeIds.Value and self._aspace.force_server_timestamp:
-                dv = dataclasses.replace(writevalue.Value, ServerTimestamp=datetime.utcnow(), ServerPicoseconds=None)
+                dv = dataclasses.replace(writevalue.Value, ServerTimestamp=datetime.now(timezone.utc), ServerPicoseconds=None)
             else:
                 dv = writevalue.Value
             res.append(
@@ -512,8 +512,8 @@ class NodeManagementService:
         if attributes.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
             dv = ua.DataValue(
                 ua.Variant(getattr(attributes, name), vtype, is_array=is_array),
-                SourceTimestamp=datetime.utcnow() if add_timestamps else None,
-                ServerTimestamp=datetime.utcnow() if add_timestamps and self._aspace.force_server_timestamp else None,
+                SourceTimestamp=datetime.now(timezone.utc) if add_timestamps else None,
+                ServerTimestamp=datetime.now(timezone.utc) if add_timestamps and self._aspace.force_server_timestamp else None,
             )
             nodedata.attributes[getattr(ua.AttributeIds, name)] = AttributeValue(dv)
 
