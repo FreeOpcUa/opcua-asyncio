@@ -79,9 +79,9 @@ class CertificateValidator:
 
         if CertificateValidatorOptions.TIME_RANGE in self._options:
             now = datetime.now(timezone.utc)
-            if cert.not_valid_after < now:
+            if cert.not_valid_after_utc < now:
                 raise ServiceError(ua.StatusCodes.BadCertificateTimeInvalid)
-            elif cert.not_valid_before > now:
+            elif cert.not_valid_before_utc > now:
                 raise ServiceError(ua.StatusCodes.BadCertificateTimeInvalid)
         try:
             san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)

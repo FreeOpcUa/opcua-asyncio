@@ -51,8 +51,8 @@ async def test_create_self_signed_app_certificate() -> None:
     assert cert.subject.get_attributes_for_oid(NameOID.ORGANIZATION_NAME)[0].value == "Bar Ltd"
 
     # check valid time range
-    assert dt_before_generation <= cert.not_valid_before <= dt_after_generation
-    assert (dt_before_generation + timedelta(days_valid)) <= cert.not_valid_after <= (dt_after_generation + timedelta(days_valid))
+    assert dt_before_generation <= cert.not_valid_before_utc <= dt_after_generation
+    assert (dt_before_generation + timedelta(days_valid)) <= cert.not_valid_after_utc <= (dt_after_generation + timedelta(days_valid))
 
     # check issuer
     assert cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value == f"myserver@{hostname}"

@@ -80,7 +80,7 @@ class TrustStore:
         return self.is_trusted(certificate) and self.is_revoked(certificate) is False and self.check_date_range(certificate)
 
     def check_date_range(self, certificate: x509.Certificate) -> bool:
-        """ Checks if the certificate not_valid_before and not_valid_after are valid.
+        """ Checks if the certificate not_valid_before_utc and not_valid_after_utc are valid.
 
         Args:
             certificate (x509.Certificate): Certificate to check
@@ -90,11 +90,11 @@ class TrustStore:
         """
         valid: bool = True
         now = datetime.now(timezone.utc)
-        if certificate.not_valid_after < now:
-            _logger.error('certificate is no longer valid: valid until %s', certificate.not_valid_after)
+        if certificate.not_valid_after_utc < now:
+            _logger.error('certificate is no longer valid: valid until %s', certificate.not_valid_after_utc)
             valid = False
-        if certificate.not_valid_before > now:
-            _logger.error('certificate is not yet vaild: valid after %s', certificate.not_valid_before)
+        if certificate.not_valid_before_utc > now:
+            _logger.error('certificate is not yet vaild: valid after %s', certificate.not_valid_before_utc)
             valid = False
         return valid
 
