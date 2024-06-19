@@ -1,6 +1,7 @@
 from enum import Enum
 from enum import IntEnum, IntFlag
-from datetime import datetime
+# timezone import is for generated code
+from datetime import datetime, timezone  # noqa: F401
 import uuid
 import logging
 import re
