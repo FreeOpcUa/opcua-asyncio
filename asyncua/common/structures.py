@@ -7,7 +7,7 @@ for custom structures
 import uuid
 import logging
 # The next two imports are for generated code
-from datetime import datetime, timezone
+from datetime import datetime, timezone  # noqa: F401
 from enum import IntEnum, EnumMeta
 from dataclasses import dataclass, field
 from typing import List, Optional
