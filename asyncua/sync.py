@@ -225,14 +225,14 @@ class Client:
     waits for an async call to return. defualt is 120s and hopefully should fit most applications
     """
 
-    def __init__(self, url: str, timeout: int = 4, tloop=None, sync_wrapper_timeout: Optional[float] = 120,) -> None:
+    def __init__(self, url: str, timeout: float = 4, tloop=None, sync_wrapper_timeout: Optional[float] = 120, watchdog_intervall: float = 1.0) -> None:
         self.tloop = tloop
         self.close_tloop = False
         if not self.tloop:
             self.tloop = ThreadLoop(sync_wrapper_timeout)
             self.tloop.start()
             self.close_tloop = True
-        self.aio_obj = client.Client(url, timeout)
+        self.aio_obj = client.Client(url, timeout, watchdog_intervall)
         self.nodes = Shortcuts(self.tloop, self.aio_obj.uaclient)
 
     def __str__(self):
