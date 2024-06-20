@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 import copy
 
@@ -256,7 +256,7 @@ class SecureConnection:
             self.security_token.TokenId = 13  # random value
             self.security_token.ChannelId = server.get_new_channel_id()
             self.security_token.RevisedLifetime = params.RequestedLifetime
-            self.security_token.CreatedAt = datetime.utcnow()
+            self.security_token.CreatedAt = datetime.now(timezone.utc)
 
             response.SecurityToken = self.security_token
 
@@ -270,7 +270,7 @@ class SecureConnection:
             self.next_security_token = copy.deepcopy(self.security_token)
             self.next_security_token.TokenId += 1
             self.next_security_token.RevisedLifetime = params.RequestedLifetime
-            self.next_security_token.CreatedAt = datetime.utcnow()
+            self.next_security_token.CreatedAt = datetime.now(timezone.utc)
 
             response.SecurityToken = self.next_security_token
 
@@ -358,8 +358,8 @@ class SecureConnection:
             # network delays.
             timeout = self.prev_security_token.CreatedAt + \
                 timedelta(milliseconds=self.prev_security_token.RevisedLifetime * 1.25)
-            if timeout < datetime.utcnow():
-                raise ua.UaError(f"Security token id {security_hdr.TokenId} has timed out " f"({timeout} < {datetime.utcnow()})")
+            if timeout < datetime.now(timezone.utc):
+                raise ua.UaError(f"Security token id {security_hdr.TokenId} has timed out " f"({timeout} < {datetime.now(timezone.utc)})")
             return
 
         expected_tokens = [self.security_token.TokenId, self.next_security_token.TokenId]

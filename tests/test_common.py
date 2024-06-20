@@ -10,7 +10,7 @@ import asyncio
 import contextlib
 import math
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from base64 import b64encode
 import pytest
@@ -505,13 +505,13 @@ async def test_datetime_read_value(opc):
         ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime)
     )
     dt = await time_node.read_value()
-    utcnow = datetime.utcnow()
+    utcnow = datetime.now(timezone.utc)
     delta = utcnow - dt
     assert delta < timedelta(seconds=1)
 
 
 async def test_datetime_write_value(opc):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     objects = opc.opc.nodes.objects
     v1 = await objects.add_variable(4, "test_datetime", now)
     tid = await v1.read_value()

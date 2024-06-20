@@ -322,7 +322,7 @@ def x509_to_string(cert):
     else:
         issuer = f', issuer: {x509_name_to_string(cert.issuer)}'
     # TODO: show more information
-    return f"{x509_name_to_string(cert.subject)}{issuer}, {cert.not_valid_before} - {cert.not_valid_after}"
+    return f"{x509_name_to_string(cert.subject)}{issuer}, {cert.not_valid_before_utc} - {cert.not_valid_after_utc}"
 
 
 def check_certificate(cert: x509.Certificate, application_uri: str, hostname: Optional[str] = None) -> bool:

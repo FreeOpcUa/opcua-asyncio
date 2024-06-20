@@ -225,10 +225,10 @@ def get_win_epoch():
 def win_epoch_to_datetime(epch):
     if epch >= MAX_OPC_FILETIME:
         # FILETIMEs after 31 Dec 9999 are truncated to max value
-        return MAX_FILETIME_EPOCH_DATETIME
+        return MAX_FILETIME_EPOCH_AS_UTC_DATETIME
     if epch < 0:
-        return FILETIME_EPOCH_AS_DATETIME
-    return FILETIME_EPOCH_AS_DATETIME + timedelta(microseconds=epch // 10)
+        return FILETIME_EPOCH_AS_UTC_DATETIME
+    return FILETIME_EPOCH_AS_UTC_DATETIME + timedelta(microseconds=epch // 10)
 
 
 FROZEN: bool = False
@@ -1177,7 +1177,7 @@ def get_default_value(vtype):
     if vtype == VariantType.String:
         return None  # a string can be null
     if vtype == VariantType.DateTime:
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
     if vtype == VariantType.Guid:
         return uuid.uuid4()
     if vtype == VariantType.XmlElement:

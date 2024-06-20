@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from asyncua import ua
 
 pytestmark = pytest.mark.asyncio
@@ -12,7 +12,7 @@ async def result_count(history):
 
 
 def add_value(history, age):
-    value = ua.DataValue(SourceTimestamp=datetime.utcnow() - timedelta(hours=age))
+    value = ua.DataValue(SourceTimestamp=datetime.now(timezone.utc) - timedelta(hours=age))
     return history.save_node_value(NODE_ID, value)
 
 

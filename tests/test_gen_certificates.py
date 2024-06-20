@@ -1,6 +1,6 @@
 """ Several tests for certificate /signing request generation"""
 from typing import List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import socket
 from cryptography import x509
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
@@ -29,7 +29,7 @@ async def test_create_self_signed_app_certificate() -> None:
     days_valid = 100
 
     key: RSAPrivateKey = generate_private_key()
-    dt_before_generation = datetime.utcnow()
+    dt_before_generation = datetime.now(timezone.utc)
     dt_before_generation -= timedelta(microseconds=dt_before_generation.microsecond)
     cert: x509.Certificate = generate_self_signed_app_certificate(key,
                                                                   f"myserver@{hostname}",
@@ -37,7 +37,7 @@ async def test_create_self_signed_app_certificate() -> None:
                                                                   subject_alt_names,
                                                                   extended=extended,
                                                                   days=days_valid)
-    dt_after_generation = datetime.utcnow()
+    dt_after_generation = datetime.now(timezone.utc)
     dt_after_generation -= timedelta(microseconds=dt_after_generation.microsecond)
 
     # check if it is version 3
@@ -51,8 +51,8 @@ async def test_create_self_signed_app_certificate() -> None:
     assert cert.subject.get_attributes_for_oid(NameOID.ORGANIZATION_NAME)[0].value == "Bar Ltd"
 
     # check valid time range
-    assert dt_before_generation <= cert.not_valid_before <= dt_after_generation
-    assert (dt_before_generation + timedelta(days_valid)) <= cert.not_valid_after <= (dt_after_generation + timedelta(days_valid))
+    assert dt_before_generation <= cert.not_valid_before_utc <= dt_after_generation
+    assert (dt_before_generation + timedelta(days_valid)) <= cert.not_valid_after_utc <= (dt_after_generation + timedelta(days_valid))
 
     # check issuer
     assert cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value == f"myserver@{hostname}"
