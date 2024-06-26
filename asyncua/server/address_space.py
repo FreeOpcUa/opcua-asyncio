@@ -794,7 +794,7 @@ class AddressSpace:
             attval.value_setter(node, attr, value)
         else:
             attval.value = value
-        attval.value_callback = None
+            attval.value_callback = None
 
         for k, v in attval.datachange_callbacks.items():
             try:
