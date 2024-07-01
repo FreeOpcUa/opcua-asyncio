@@ -519,8 +519,12 @@ class UaProcessor:
         """
         _logger.info("Cleanup client connection: %s", self.name)
         self._closing = True
-        if self.session:
-            await self.session.close_session(True)
+        try:
+            if self._session_watchdog_task:
+                await self._session_watchdog_task
+        finally:
+            if self.session:
+                await self.session.close_session(True)
 
     async def _session_watchdog_loop(self):
         """
