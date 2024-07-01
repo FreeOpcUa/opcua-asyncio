@@ -2059,7 +2059,7 @@ async def test_alias(opc):
         ],
     )
     await opc.opc.load_data_type_definitions()
-    assert type(ua.MyString()) == ua.String
+    assert type(ua.MyString()) is ua.String
     var = await opc.opc.nodes.objects.add_variable(
         idx, "AliasedString", "1234", datatype=dt_str.nodeid
     )
