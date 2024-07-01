@@ -79,6 +79,31 @@ async def test_client_connection_lost():
             await cl.get_namespace_array()
 
 
+async def test_client_connection_lost_callback():
+    port = find_free_port()
+    srv = Server()
+    await srv.init()
+    srv.set_endpoint(f'opc.tcp://127.0.0.1:{port}')
+    await srv.start()
+    class Clb:
+        def __init__(self):
+            self.called = False
+            self.ex = None
+
+        async def clb(self, ex):
+            self.called = True
+            self.ex = ex
+
+    clb = Clb()
+
+    async with Client(f'opc.tcp://127.0.0.1:{port}', timeout=0.5, watchdog_intervall=1) as cl:
+        cl.connection_lost_callback = clb.clb
+        await srv.stop()
+        await asyncio.sleep(2)
+        assert clb.called
+        assert isinstance(clb.ex, Exception)
+
+
 async def test_session_watchdog():
     port = find_free_port()
     srv = Server()

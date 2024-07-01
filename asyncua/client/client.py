@@ -3,7 +3,7 @@ import logging
 import socket
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast, Callable
 from urllib.parse import urlparse, unquote
 from pathlib import Path
 
@@ -72,6 +72,7 @@ class Client:
         self.secure_channel_id = None
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
+        self.connection_lost_callback: Optional[Callable[[Exception], None]] = None
         self._policy_ids: List[ua.UserTokenPolicy] = []
         self.uaclient: UaClient = UaClient(timeout)
         self.uaclient.pre_request_hook = self.check_connection
@@ -551,12 +552,22 @@ class Client:
                 _ = await self.nodes.server_state.read_value()
         except ConnectionError as e:
             _logger.info("connection error in watchdog loop %s", e, exc_info=True)
+            await self._lost_connection(e)
             await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
             raise
-        except Exception:
+        except Exception as e:
             _logger.exception("Error in watchdog loop")
+            await self._lost_connection(e)
             await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
             raise
+
+    async def _lost_connection(self, ex: BaseException):
+        if not self.connection_lost_callback:
+            return
+        try:
+            await self.connection_lost_callback(ex)
+        except Exception as ex:
+            _logger.exception("Error calling connection_lost_callbak")
 
     async def _renew_channel_loop(self):
         """
