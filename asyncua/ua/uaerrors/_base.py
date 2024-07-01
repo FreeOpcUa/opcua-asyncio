@@ -107,3 +107,15 @@ class UaStructParsingError(UaError):
 
 class UaInvalidParameterError(UaError):
     pass
+
+
+class UaClientRenewChannelError(UaError):
+    pass
+
+
+class UaClientConnectionLostError(UaError):
+    pass
+
+
+class UaClientSubscriptionWatchdogError(UaError):
+    pass

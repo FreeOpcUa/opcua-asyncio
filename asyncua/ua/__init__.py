@@ -6,4 +6,4 @@ from .status_codes import StatusCodes
 from .uaprotocol_auto import *
 from .uaprotocol_hand import *
 from .uatypes import *  # TODO: This should be renamed to uatypes_hand
-from .uaerrors import UaStatusCodeErrors
+from .uaerrors import UaStatusCodeErrors, UaClientConnectionLostError, UaClientRenewChannelError, UaClientSubscriptionWatchdogError

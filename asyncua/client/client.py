@@ -9,6 +9,7 @@ from pathlib import Path
 
 import asyncua
 from asyncua import ua
+from asyncua.ua.uaerrors import UaClientRenewChannelError, UaClientConnectionLostError, UaClientSubscriptionWatchdogError
 from .ua_client import UaClient
 from ..common.xmlimporter import XmlImporter
 from ..common.xmlexporter import XmlExporter
@@ -531,13 +532,22 @@ class Client:
         # if not it throws the underlying exception
         if self._renew_channel_task is not None:
             if self._renew_channel_task.done():
-                await self._renew_channel_task
+                try:
+                    await self._renew_channel_task
+                except Exception as ex:
+                    raise UaClientRenewChannelError() from ex
         if self._monitor_server_task is not None:
             if self._monitor_server_task.done():
-                await self._monitor_server_task
+                try:
+                    await self._monitor_server_task
+                except Exception as ex:
+                    raise UaClientConnectionLostError() from ex
         if self.uaclient._publish_task is not None:
             if self.uaclient._publish_task.done():
-                await self.uaclient._publish_task
+                try:
+                    await self.uaclient._publish_task
+                except Exception as ex:
+                    raise UaClientSubscriptionWatchdogError() from ex
 
     async def _monitor_server_loop(self):
         """
