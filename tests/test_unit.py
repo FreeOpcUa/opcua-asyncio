@@ -633,7 +633,7 @@ def test_qualified_name():
 def test_datavalue():
     dv = ua.DataValue(123, SourceTimestamp=datetime.now(timezone.utc))
     assert dv.Value == ua.Variant(123)
-    assert type(dv.Value) == ua.Variant
+    assert type(dv.Value) is ua.Variant
     dv = ua.DataValue('abc', SourceTimestamp=datetime.now(timezone.utc))
     assert dv.Value == ua.Variant('abc')
     assert isinstance(dv.SourceTimestamp, datetime)

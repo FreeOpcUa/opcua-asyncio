@@ -57,7 +57,7 @@ def type_is_union(uatype):
 
 
 def type_is_list(uatype):
-    return get_origin(uatype) == list
+    return get_origin(uatype) is list
 
 
 def type_allow_subclass(uatype):

@@ -500,7 +500,7 @@ async def test_modify_monitored_item(opc):
     results = await sub.modify_monitored_item(handle, 2000)
     assert results
     assert len(results) == 1
-    assert type(results[0]) == ua.MonitoredItemModifyResult
+    assert type(results[0]) is ua.MonitoredItemModifyResult
     assert results[0].RevisedSamplingInterval == 2000
     await sub.unsubscribe(handle)
     await sub.delete()
