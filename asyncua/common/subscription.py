@@ -81,35 +81,41 @@ class StatusChangeNotificationHandler(Protocol):
         ...
 
 
-SubscriptionHandler = Union[DataChangeNotificationHandler, EventNotificationHandler, StatusChangeNotificationHandler]
-"""
-Protocol class representing subscription handlers to receive events from server.
-"""
-
-
-class SubHandler:
-    """
-    Subscription Handler. To receive events from server for a subscription
-    This class is just a sample class. Whatever class having these methods can be used
-    """
-
-    def datachange_notification(self, node: Node, val: Any, data: DataChangeNotif) -> None:
+class DataChangeNotificationHandlerAsync(Protocol):
+    async def datachange_notification(self, node: Node, val: Any, data: DataChangeNotif) -> None:
         """
         called for every datachange notification from server
         """
-        pass
+        ...
 
-    def event_notification(self, event: ua.EventNotificationList) -> None:
+
+class EventNotificationHandlerAsync(Protocol):
+    async def event_notification(self, event: ua.EventNotificationList) -> None:
         """
         called for every event notification from server
         """
-        pass
+        ...
 
-    def status_change_notification(self, status: ua.StatusChangeNotification) -> None:
+
+class StatusChangeNotificationHandlerAsync(Protocol):
+    async def status_change_notification(self, status: ua.StatusChangeNotification) -> None:
         """
         called for every status change notification from server
         """
-        pass
+        ...
+
+
+SubscriptionHandler = Union[
+        DataChangeNotificationHandler,
+        EventNotificationHandler,
+        StatusChangeNotificationHandler,
+        DataChangeNotificationHandlerAsync,
+        EventNotificationHandlerAsync,
+        StatusChangeNotificationHandlerAsync,
+        ]
+"""
+Protocol class representing subscription handlers to receive events from server.
+"""
 
 
 class Subscription:
