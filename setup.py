@@ -13,7 +13,7 @@ pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 setup(
     name="asyncua",
-    version="1.1.0",
+    version="1.1.1",
     description="Pure Python OPC-UA client and server library",
     long_description=long_description,
     long_description_content_type='text/markdown',
