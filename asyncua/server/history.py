@@ -7,7 +7,6 @@ from datetime import timedelta
 from datetime import timezone
 
 from asyncua import ua
-from asyncua.common import subscription
 from asyncua.common.subscription import Subscription, SubscriptionHandler
 from ..common.utils import Buffer
 
@@ -217,7 +216,7 @@ class HistoryDict(HistoryStorageInterface):
         pass
 
 
-class SubHandler(subscription.SubHandler):
+class SubHandler:
     def __init__(self, storage: HistoryStorageInterface):
         self.storage = storage
 
