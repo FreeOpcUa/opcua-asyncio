@@ -322,7 +322,7 @@ class Client:
     def load_enums(self) -> Dict[str, Type]:  # type: ignore[empty-body]
         pass
 
-    def create_subscription(self, period: Union[ua.CreateSubscriptionParameters, float], handler: subscription.SubHandler, publishing: bool = True) -> "Subscription":
+    def create_subscription(self, period: Union[ua.CreateSubscriptionParameters, float], handler: subscription.SubscriptionHandler, publishing: bool = True) -> "Subscription":
         coro = self.aio_obj.create_subscription(period, _SubHandler(self.tloop, handler), publishing)
         aio_sub = self.tloop.post(coro)
         return Subscription(self.tloop, aio_sub)
