@@ -3,7 +3,7 @@ import logging
 import socket
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast, Callable
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast, Callable, Coroutine
 from urllib.parse import urlparse, unquote
 from pathlib import Path
 
@@ -72,7 +72,7 @@ class Client:
         self.secure_channel_id = None
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
-        self.connection_lost_callback: Optional[Callable[[Exception], None]] = None
+        self.connection_lost_callback: Optional[Callable[[Exception], Coroutine[Any, Any, None]]] = None
         self._policy_ids: List[ua.UserTokenPolicy] = []
         self.uaclient: UaClient = UaClient(timeout)
         self.uaclient.pre_request_hook = self.check_connection
@@ -561,7 +561,7 @@ class Client:
             await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
             raise
 
-    async def _lost_connection(self, ex: BaseException):
+    async def _lost_connection(self, ex: Exception):
         if not self.connection_lost_callback:
             return
         try:
