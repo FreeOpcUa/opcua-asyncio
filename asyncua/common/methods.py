@@ -5,6 +5,7 @@ High level method related functions
 from __future__ import annotations
 
 from asyncio import iscoroutinefunction
+from functools import wraps
 from typing import Any, Iterable, List, Union
 
 import asyncua
@@ -77,12 +78,14 @@ def uamethod(func):
     """
 
     if iscoroutinefunction(func):
+        @wraps(func)
         async def wrapper(parent, *args):
             func_args = _format_call_inputs(parent, *args)
             result = await func(*func_args)
             return _format_call_outputs(result)
 
     else:
+        @wraps(func)
         def wrapper(parent, *args):
             func_args = _format_call_inputs(parent, *args)
             result = func(*func_args)
