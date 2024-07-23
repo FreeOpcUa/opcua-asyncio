@@ -25,7 +25,7 @@ class CallbackType(Enum):
     PostRead = 7
 
 
-class Callback(object):
+class Callback:
     def __init__(self):
         self.__name = None
 
@@ -44,12 +44,12 @@ class ServerItemCallback(Callback):
         self.user = user
 
 
-class CallbackSubscriberInterface(object):
+class CallbackSubscriberInterface:
     def getSubscribedEvents(self):
         raise NotImplementedError()
 
 
-class CallbackService(object):
+class CallbackService:
     def __init__(self):
         self._listeners = {}
 

@@ -155,7 +155,7 @@ def sync_uaclient_method(aio_func):
         ...
     ```
     """
-    def sync_method(client: 'Client'):
+    def sync_method(client: Client):
         uaclient = client.aio_obj.uaclient
         return functools.partial(sync_wrapper(aio_func), client.tloop, uaclient)
 
@@ -176,7 +176,7 @@ def sync_async_client_method(aio_func):
         ...
     ```
     """
-    def sync_method(client: 'Client'):
+    def sync_method(client: Client):
         return functools.partial(sync_wrapper(aio_func), client.tloop, client)
 
     return sync_method
@@ -322,7 +322,7 @@ class Client:
     def load_enums(self) -> Dict[str, Type]:  # type: ignore[empty-body]
         pass
 
-    def create_subscription(self, period: Union[ua.CreateSubscriptionParameters, float], handler: subscription.SubscriptionHandler, publishing: bool = True) -> "Subscription":
+    def create_subscription(self, period: Union[ua.CreateSubscriptionParameters, float], handler: subscription.SubscriptionHandler, publishing: bool = True) -> Subscription:
         coro = self.aio_obj.create_subscription(period, _SubHandler(self.tloop, handler), publishing)
         aio_sub = self.tloop.post(coro)
         return Subscription(self.tloop, aio_sub)
@@ -382,7 +382,7 @@ class Client:
     @syncmethod
     def register_server(
         self,
-        server: "Server",
+        server: Server,
         discovery_configuration: Optional[ua.DiscoveryConfiguration] = None,
     ) -> None:
         pass
@@ -390,7 +390,7 @@ class Client:
     @syncmethod
     def unregister_server(
         self,
-        server: "Server",
+        server: Server,
         discovery_configuration: Optional[ua.DiscoveryConfiguration] = None,
     ) -> None:
         pass
@@ -969,7 +969,7 @@ class SyncNode:
         ...
 
     @overload
-    def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> List["str"]:
+    def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> List[str]:
         ...
 
     @syncmethod
@@ -1157,7 +1157,7 @@ def new_struct_field(
 
 @syncfunc(aio_func=common.structures104.new_enum)
 def new_enum(  # type: ignore[empty-body]
-    server: Union["Server", "Client"],
+    server: Union[Server, Client],
     idx: Union[int, ua.NodeId],
     name: Union[int, ua.QualifiedName],
     values: List[str],
@@ -1168,7 +1168,7 @@ def new_enum(  # type: ignore[empty-body]
 
 @syncfunc(aio_func=common.structures104.new_struct)
 def new_struct(  # type: ignore[empty-body]
-    server: Union["Server", "Client"],
+    server: Union[Server, Client],
     idx: Union[int, ua.NodeId],
     name: Union[int, ua.QualifiedName],
     fields: List[ua.StructureField],

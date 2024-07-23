@@ -28,7 +28,7 @@ class MySubHandler:
         self.future.set_result(event)
 
 
-class MySubHandler2(object):
+class MySubHandler2:
     def __init__(self):
         self.results = []
 

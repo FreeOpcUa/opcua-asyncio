@@ -341,7 +341,7 @@ async def test_xml_expanded_nodeid_array(opc, tmpdir):
 
 
 async def test_xml_bytestring(opc, tmpdir):
-    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext", "mytext".encode("utf8"), ua.VariantType.ByteString)
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext", b"mytext", ua.VariantType.ByteString)
     await _test_xml_var_type(opc, tmpdir, o, "bytestring")
     await opc.opc.delete_nodes([o])
 
@@ -360,7 +360,7 @@ async def test_xml_statuscode_array(opc, tmpdir):
 
 async def test_xml_bytestring_array(opc, tmpdir):
     o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array",
-                                                 ["mytext".encode("utf8"), "errsadf".encode("utf8")],
+                                                 [b"mytext", b"errsadf"],
                                                  ua.VariantType.ByteString)
     await _test_xml_var_type(opc, tmpdir, o, "bytestring_array")
     await opc.opc.delete_nodes([o])

@@ -18,7 +18,7 @@ except ImportError:
 from asyncua.sync import Client, ThreadLoop
 
 
-class SubHandler(object):
+class SubHandler:
 
     """
     Subscription Handler. To receive events from server for a subscription

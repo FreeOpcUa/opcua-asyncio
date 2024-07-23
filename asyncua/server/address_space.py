@@ -34,14 +34,14 @@ from .users import User, UserRole
 _logger = logging.getLogger(__name__)
 
 
-class AttributeValue(object):
+class AttributeValue:
     """
     The class holds the value(s) of an attribute and callbacks.
     """
     def __init__(self, value: ua.DataValue):
         self.value: Optional[ua.DataValue] = value
         self.value_callback: Optional[Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue]] = None
-        self.value_setter: Optional[Callable[["NodeData", ua.AttributeIds, ua.DataValue], None]] = None
+        self.value_setter: Optional[Callable[[NodeData, ua.AttributeIds, ua.DataValue], None]] = None
         self.datachange_callbacks = {}
 
     def __str__(self) -> str:
@@ -112,7 +112,7 @@ class AttributeService:
         return res
 
 
-class ViewService(object):
+class ViewService:
     """
     This class implements the view service set defined in the opc ua standard.
     https://reference.opcfoundation.org/v104/Core/docs/Part4/5.8.1/

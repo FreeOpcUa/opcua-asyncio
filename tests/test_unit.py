@@ -1,4 +1,3 @@
-# encoding: utf-8
 # ! /usr/bin/env python
 """
 Simple unit test that do not need to setup a server or a client
@@ -519,7 +518,7 @@ def test_null_string():
 def test_empty_extension_object():
     obj = ua.ExtensionObject()
     obj2 = extensionobject_from_binary(ua.utils.Buffer(extensionobject_to_binary(obj)))
-    assert type(obj) == type(obj2)
+    assert type(obj) is type(obj2)
     assert obj == obj2
 
 
@@ -528,12 +527,12 @@ def test_extension_object():
     obj.UserName = "admin"
     obj.Password = b"pass"
     obj2 = extensionobject_from_binary(ua.utils.Buffer(extensionobject_to_binary(obj)))
-    assert type(obj) == type(obj2)
+    assert type(obj) is type(obj2)
     assert obj.UserName == obj2.UserName
     assert obj.Password == obj2.Password
     v1 = ua.Variant(obj)
     v2 = variant_from_binary(ua.utils.Buffer(variant_to_binary(v1)))
-    assert type(v1) == type(v2)
+    assert type(v1) is type(v2)
     assert v1.VariantType == v2.VariantType
 
 
@@ -545,7 +544,7 @@ def test_unknown_extension_object():
 
     data = ua.utils.Buffer(extensionobject_to_binary(obj))
     obj2 = extensionobject_from_binary(data)
-    assert type(obj2) == ua.ExtensionObject
+    assert type(obj2) is ua.ExtensionObject
     assert obj2.TypeId == obj.TypeId
     assert obj2.Body == b'example of data in custom format'
 

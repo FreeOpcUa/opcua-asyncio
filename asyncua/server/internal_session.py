@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from enum import Enum
 from typing import Iterable, Optional, List, Tuple, TYPE_CHECKING
@@ -30,10 +32,10 @@ class InternalSession(AbstractSession):
     _counter = 10
     _auth_counter = 1000
 
-    def __init__(self, internal_server: "InternalServer", aspace: AddressSpace, submgr: SubscriptionService, name,
+    def __init__(self, internal_server: InternalServer, aspace: AddressSpace, submgr: SubscriptionService, name,
                  user=User(role=UserRole.Anonymous), external=False):
         self.logger = logging.getLogger(__name__)
-        self.iserver: "InternalServer" = internal_server
+        self.iserver: InternalServer = internal_server
         # define if session is external, we need to copy some objects if it is internal
         self.external = external
         self.aspace: AddressSpace = aspace

@@ -23,7 +23,7 @@ from asyncua import ua, uamethod
 from asyncua.sync import Server, ThreadLoop
 
 
-class SubHandler(object):
+class SubHandler:
 
     """
     Subscription Handler. To receive events from server for a subscription

@@ -17,7 +17,7 @@ from asyncua import ua, Server
 # Be aware that subscription calls are asynchronous.
 
 
-class SubHandler(object):
+class SubHandler:
     """
     Subscription Handler. To receive events from server for a subscription.
     The handler forwards updates to it's referenced python object
@@ -33,7 +33,7 @@ class SubHandler(object):
         setattr(self.obj, _node_name.Name, data.monitored_item.Value.Value.Value)
 
 
-class UaObject(object):
+class UaObject:
     """
     Python object which mirrors an OPC UA object
     Child UA variables/properties are auto subscribed to to synchronize python with UA server

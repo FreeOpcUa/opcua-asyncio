@@ -1063,7 +1063,7 @@ async def test_publish(opc, mocker):
             if publish_result.NotificationMessage.NotificationData is not None:
                 for notif in publish_result.NotificationMessage.NotificationData:
                     if isinstance(notif, ua.DataChangeNotification):
-                        values.extend((item.Value.Value.Value for item in notif.MonitoredItems))
+                        values.extend(item.Value.Value.Value for item in notif.MonitoredItems)
             self.fut.set_result(values)
 
         async def result(self):

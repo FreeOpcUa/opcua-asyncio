@@ -228,7 +228,7 @@ class HistorySQLite(HistoryStorageInterface):
         # get all fields from the event types that are to be historized
         ev_aggregate_fields = []
         for event_type in evtypes:
-            ev_aggregate_fields.extend((await get_event_properties_from_type_node(event_type)))
+            ev_aggregate_fields.extend(await get_event_properties_from_type_node(event_type))
         ev_fields = []
         for field in set(ev_aggregate_fields):
             ev_fields.append((await field.read_display_name()).Text)

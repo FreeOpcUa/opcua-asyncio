@@ -21,7 +21,7 @@ from .structures104 import get_default_value, clean_name
 _logger = logging.getLogger(__name__)
 
 
-class EnumType(object):
+class EnumType:
     def __init__(self, name):
         self.name = clean_name(name)
         self.fields = []
@@ -109,7 +109,7 @@ class {self.name}:
         return code
 
 
-class Field(object):
+class Field:
     def __init__(self, name):
         self.name = name
         self.uatype = None
@@ -123,7 +123,7 @@ class Field(object):
     __repr__ = __str__
 
 
-class StructGenerator(object):
+class StructGenerator:
     def __init__(self):
         self.model = []
 
