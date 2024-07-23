@@ -10,6 +10,7 @@ from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, BadUserAccessDenied, UaStructParsingError
+from ..ua.uaprotocol_auto import OpenSecureChannelResult, SubscriptionAcknowledgement
 from ..common.connection import SecureConnection, TransportLimits
 
 
@@ -50,7 +51,7 @@ class UASocketProtocol(asyncio.Protocol):
         # Hook for upper layer tasks before a request is sent (optional)
         self.pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
 
-    def connection_made(self, transport: asyncio.Transport):  # type: ignore
+    def connection_made(self, transport: asyncio.Transport):   # type: ignore[override]
         self.state = self.OPEN
         self.transport = transport
 
@@ -59,13 +60,13 @@ class UASocketProtocol(asyncio.Protocol):
         self.state = self.CLOSED
         self.transport = None
 
-    def data_received(self, data: bytes):
+    def data_received(self, data: bytes) -> None:
         if self.receive_buffer:
             data = self.receive_buffer + data
             self.receive_buffer = None
         self._process_received_data(data)
 
-    def _process_received_data(self, data: bytes):
+    def _process_received_data(self, data: bytes) -> None:
         """
         Try to parse received data as asyncua message. Data may be chunked but will be in correct order.
         See: https://docs.python.org/3/library/asyncio-protocol.html#asyncio.Protocol.data_received
@@ -222,7 +223,7 @@ class UASocketProtocol(asyncio.Protocol):
             self.transport.write(uatcp_to_binary(ua.MessageType.Hello, hello))
         return await asyncio.wait_for(ack, self.timeout)
 
-    async def open_secure_channel(self, params):
+    async def open_secure_channel(self, params) -> OpenSecureChannelResult:
         self.logger.info("open_secure_channel")
         request = ua.OpenSecureChannelRequest()
         request.Parameters = params
@@ -230,7 +231,7 @@ class UASocketProtocol(asyncio.Protocol):
             raise RuntimeError('Two Open Secure Channel requests can not happen too close to each other. ' 'The response must be processed and returned before the next request can be sent.')
         self._open_secure_channel_exchange = params
         await asyncio.wait_for(self._send_request(request, message_type=ua.MessageType.SecureOpen), self.timeout)
-        _return = self._open_secure_channel_exchange.Parameters
+        _return = self._open_secure_channel_exchange.Parameters # type: ignore[union-attr]
         self._open_secure_channel_exchange = None
         return _return
 
@@ -587,7 +588,7 @@ class UaClient(AbstractSession):
         Start a loop that sends a publish requests and waits for the publish responses.
         Forward the `PublishResult` to the matching `Subscription` by callback.
         """
-        ack = None
+        ack: Optional[SubscriptionAcknowledgement] = None
         while not self._closing:
             try:
                 response = await self.publish([ack] if ack else [])

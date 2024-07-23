@@ -740,7 +740,7 @@ async def test_value(opc):
     assert 1.98 == await v.read_value()
     dvar = ua.DataValue(var)
     dv = await v.read_data_value()
-    assert ua.DataValue == type(dv)
+    assert ua.DataValue is type(dv)
     assert dvar.Value == dv.Value
     assert dvar.Value == var
     await opc.opc.delete_nodes([v])

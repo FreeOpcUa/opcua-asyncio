@@ -5,6 +5,7 @@ Binary protocol specific functions and constants
 import functools
 import struct
 import logging
+from io import BytesIO
 from typing import IO, Any, Callable, Optional, Sequence, Type, TypeVar, Union
 import typing
 import uuid
@@ -437,7 +438,7 @@ def nodeid_to_binary(nodeid):
     return data
 
 
-def nodeid_from_binary(data):
+def nodeid_from_binary(data: Union[BytesIO, Buffer]) -> Union[ua.NodeId, ua.ExpandedNodeId]:
     encoding = ord(data.read(1))
     nidtype = ua.NodeIdType(encoding & 0b00111111)
     uri = None
@@ -518,7 +519,7 @@ def _reshape(flat, dims):
     return [_reshape(flat[i:i + subsize], subdims) for i in range(0, len(flat), subsize)]
 
 
-def extensionobject_from_binary(data):
+def extensionobject_from_binary(data: Buffer) -> ua.ExtensionObject:
     """
     Convert binary-coded ExtensionObject to a Python object.
     Returns an object, or None if TypeId is zero
