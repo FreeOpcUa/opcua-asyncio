@@ -3,7 +3,7 @@ import logging
 from asyncua.sync import Client
 
 
-class SubHandler(object):
+class SubHandler:
 
     """
     Client to subscription. It will receive events from server

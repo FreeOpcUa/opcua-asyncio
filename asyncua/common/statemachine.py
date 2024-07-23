@@ -72,7 +72,7 @@ class Transition:
         self.node: Node = node  # will be written from statemachine.add_state() or you need to overwrite it if the state is part of xml
 
 
-class StateMachine(object):
+class StateMachine:
     '''
     Implementation of an StateMachineType (most basic type)
     CurrentState: Mandatory "StateVariableType"

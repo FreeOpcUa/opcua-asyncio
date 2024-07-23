@@ -462,7 +462,7 @@ async def _lsprint_long(pnode, depth, indent=""):
             await _lsprint_long(node, depth - 1, indent + "  ")
 
 
-class SubHandler(object):
+class SubHandler:
     def datachange_notification(self, node, val, data):
         print("New data change event", node, val, data)
 

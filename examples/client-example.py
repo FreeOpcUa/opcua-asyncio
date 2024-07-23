@@ -6,7 +6,7 @@ from asyncua import Client
 _logger = logging.getLogger(__name__)
 
 
-class SubHandler(object):
+class SubHandler:
     """
     Subscription Handler. To receive events from server for a subscription
     data_change and event methods are called directly from receiving thread.

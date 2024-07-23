@@ -25,7 +25,7 @@ def require_cryptography(obj):
         raise UaError(f"Can't use {obj.__class__.__name__}, cryptography module is not installed")
 
 
-class Signer(object):
+class Signer:
     """
     Abstract base class for cryptographic signature algorithm
     """
@@ -41,7 +41,7 @@ class Signer(object):
         pass
 
 
-class Verifier(object):
+class Verifier:
     """
     Abstract base class for cryptographic signature verification
     """
@@ -62,7 +62,7 @@ class Verifier(object):
             attrs[k] = None
 
 
-class Encryptor(object):
+class Encryptor:
     """
     Abstract base class for encryption algorithm
     """
@@ -82,7 +82,7 @@ class Encryptor(object):
         pass
 
 
-class Decryptor(object):
+class Decryptor:
     """
     Abstract base class for decryption algorithm
     """

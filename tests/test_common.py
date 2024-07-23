@@ -1,4 +1,3 @@
-# encoding: utf-8
 
 """
 Tests that will be run twice. Once on server side and once on

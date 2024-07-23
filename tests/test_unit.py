@@ -1,4 +1,3 @@
-# encoding: utf-8
 # ! /usr/bin/env python
 """
 Simple unit test that do not need to setup a server or a client

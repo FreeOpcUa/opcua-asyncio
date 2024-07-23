@@ -6,7 +6,7 @@ import logging
 from asyncua import Client
 
 
-class SubHandler(object):
+class SubHandler:
 
     """
     Subscription Handler. To receive events from server for a subscription
