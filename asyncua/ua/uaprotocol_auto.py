@@ -5,7 +5,7 @@ Date:2022-09-22 18:18:39.272455
 
 from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
-from typing import Union, List, Optional, Type
+from typing import List, Optional, Type
 from dataclasses import dataclass, field
 
 from asyncua.ua.uatypes import FROZEN
@@ -1673,8 +1673,8 @@ class ExceptionDeviationFormat(IntEnum):
     Unknown = 4
 
 
-@dataclass(frozen=FROZEN) # type: ignore
-class Union: # type: ignore
+@dataclass(frozen=FROZEN)
+class Union:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.12
 

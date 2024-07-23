@@ -10,7 +10,7 @@ from sortedcontainers import SortedDict  # type: ignore
 from asyncua import Node, ua, Client
 from asyncua.client.ua_client import UASocketProtocol
 from asyncua.ua.uaerrors import BadSessionClosed, BadSessionNotActivated
-from typing import Dict, Generator, Iterable, List, Optional, Set, Tuple, Type, Union
+from typing import Dict, Generator, Iterable, List, Optional, Set, Tuple, Type, Union, Sequence
 
 from .reconciliator import Reconciliator
 from .common import ClientNotFound, event_wait
@@ -169,7 +169,7 @@ class HaClient:
         self.is_running = True
 
     async def stop(self):
-        to_stop = chain(
+        to_stop: Sequence[Union[KeepAlive, HaManager, Reconciliator]] = chain(
             self._keepalive_task, self._manager_task, self._reconciliator_task
         )
         stop = [p.stop() for p in to_stop]

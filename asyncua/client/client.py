@@ -4,7 +4,7 @@ import socket
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast, Callable, Coroutine
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, ParseResult
 from pathlib import Path
 
 import asyncua
@@ -36,9 +36,9 @@ class Client:
     which offers the raw OPC-UA services interface.
     """
 
-    _username = None
-    _password = None
-    strip_url_credentials = True
+    _username: Optional[str] = None
+    _password: Optional[str] = None
+    strip_url_credentials: bool = True
 
     def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
         """
@@ -104,7 +104,7 @@ class Client:
     __repr__ = __str__
 
     @property
-    def server_url(self):
+    def server_url(self) -> ParseResult:
         """Return the server URL with stripped credentials
 
         if self.strip_url_credentials is True.  Disabling this
@@ -681,7 +681,7 @@ class Client:
             params.UserIdentityToken.EncryptionAlgorithm = uri
         params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.UserName, "username_basic256")
 
-    def _encrypt_password(self, password: str, policy_uri):
+    def _encrypt_password(self, password: str, policy_uri) -> Tuple[bytes, str]:
         pubkey = uacrypto.x509_from_der(self.security_policy.peer_certificate).public_key()
         # see specs part 4, 7.36.3: if the token is encrypted, password
         # shall be converted to UTF-8 and serialized with server nonce
@@ -758,7 +758,7 @@ class Client:
             _logger.info("Result from subscription update: %s", results)
         return subscription
 
-    def get_subscription_revised_params(  # type: ignore
+    def get_subscription_revised_params(
         self,
         params: ua.CreateSubscriptionParameters,
         results: ua.CreateSubscriptionResult,
@@ -768,7 +768,7 @@ class Client:
             and results.RevisedLifetimeCount == params.RequestedLifetimeCount
             and results.RevisedMaxKeepAliveCount == params.RequestedMaxKeepAliveCount
         ):
-            return  # type: ignore
+            return None
         _logger.warning(
             "Revised values returned differ from subscription values: %s", results
         )
@@ -795,6 +795,7 @@ class Client:
             # update LifetimeCount but chances are it will be re-revised again
             modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
             return modified_params
+        return None
 
     async def delete_subscriptions(self, subscription_ids: Iterable[int]) -> List[ua.StatusCode]:
         """
