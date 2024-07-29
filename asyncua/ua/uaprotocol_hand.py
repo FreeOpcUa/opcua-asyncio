@@ -311,3 +311,9 @@ class XmlElement:
     """
 
     Value: uatypes.String = ""
+
+
+# Default is StatusValue -> https://reference.opcfoundation.org/Core/Part4/v105/docs/7.10#Table134
+@dataclass
+class DataChangeFilter(auto.DataChangeFilter):
+    Trigger = auto.DataChangeTrigger.StatusValue
