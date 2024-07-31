@@ -739,7 +739,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def read_array_dimensions(self) -> int:  # type: ignore[empty-body]
+    def read_array_dimensions(self) -> List[int]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
