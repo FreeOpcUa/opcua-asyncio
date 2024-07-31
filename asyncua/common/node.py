@@ -227,7 +227,7 @@ class Node:
         v = ua.Variant(value, ua.VariantType.UInt32)
         await self.write_attribute(ua.AttributeIds.ArrayDimensions, ua.DataValue(v))
 
-    async def read_array_dimensions(self) -> list[int]:
+    async def read_array_dimensions(self) -> List[int]:
         """
         Read and return ArrayDimensions attribute of node
         """
