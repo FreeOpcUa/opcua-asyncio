@@ -17,7 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix inconsistent type annotations as reported by mypy
   [#1277](https://github.com/FreeOpcUa/opcua-asyncio/pull/1277)
-
+- Fixed incorrect function signature in Node and it's Sync wrapper
+  [#1690](https://github.com/FreeOpcUa/opcua-asyncio/pull/1690)
+  
 ## [1.0.2] - 2022-04-05
 
 ### Added
