@@ -186,7 +186,7 @@ class Subscription:
         attr: ua.AttributeIds = ua.AttributeIds.Value,
         queuesize: int = 0,
         monitoring=ua.MonitoringMode.Reporting,
-        sampling_interval: ua.Duration = 0.0
+        sampling_interval: ua.Duration = 50.0
     ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Subscribe to data change events of one or multiple nodes.
