@@ -2,12 +2,13 @@
 Helper function and classes that do not rely on asyncua library.
 Helper function and classes depending on ua object are in ua_utils.py
 """
-
-import os
+import asyncio
 import logging
+import os
 import sys
 from dataclasses import Field, fields
-from typing import get_type_hints, Dict, Tuple, Any, Optional
+from typing import Any, Awaitable, Dict, get_type_hints, Optional, Tuple, TypeVar, Union
+
 from ..ua.uaerrors import UaError
 
 _logger = logging.getLogger(__name__)
@@ -132,3 +133,17 @@ def fields_with_resolved_types(
             pass
 
     return fields_
+
+
+_T = TypeVar('_T')
+
+
+async def wait_for(aw: Awaitable[_T], timeout: Union[int, float, None]) -> _T:
+    """
+    Wrapped version of asyncio.wait_for that does not swallow cancellations
+    """
+    if sys.version_info >= (3, 12):
+        return await asyncio.wait_for(aw, timeout)
+
+    import wait_for2
+    return await wait_for2.wait_for(aw, timeout)
