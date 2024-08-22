@@ -141,6 +141,11 @@ _T = TypeVar('_T')
 async def wait_for(aw: Awaitable[_T], timeout: Union[int, float, None]) -> _T:
     """
     Wrapped version of asyncio.wait_for that does not swallow cancellations
+
+    There is a bug in asyncio.wait_for before Python version 3.12 that prevents the inner awaitable from being cancelled
+    when the task is cancelled from the outside.
+
+    See https://github.com/python/cpython/issues/87555 and https://github.com/python/cpython/issues/86296
     """
     if sys.version_info >= (3, 12):
         return await asyncio.wait_for(aw, timeout)
