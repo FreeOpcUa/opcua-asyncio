@@ -5,6 +5,7 @@ import pickle
 
 from itertools import chain, islice
 
+from asyncua.common.utils import wait_for
 
 _logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class ClientNotFound(Exception):
 
 async def event_wait(evt, timeout) -> bool:
     try:
-        await asyncio.wait_for(evt.wait(), timeout)
+        await wait_for(evt.wait(), timeout)
     except asyncio.TimeoutError:
         pass
     return evt.is_set()

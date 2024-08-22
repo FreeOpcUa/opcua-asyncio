@@ -8,6 +8,7 @@ from typing import Awaitable, Callable, Dict, List, Optional, Union
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
+from ..common.utils import wait_for
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, BadUserAccessDenied, UaStructParsingError
 from ..ua.uaprotocol_auto import OpenSecureChannelResult, SubscriptionAcknowledgement
@@ -165,7 +166,7 @@ class UASocketProtocol(asyncio.Protocol):
             # time out then.
             await self.pre_request_hook()
         try:
-            data = await asyncio.wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
+            data = await wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
         except Exception:
             if self.state != self.OPEN:
                 raise ConnectionError("Connection is closed") from None
@@ -221,7 +222,7 @@ class UASocketProtocol(asyncio.Protocol):
         self._callbackmap[0] = ack
         if self.transport is not None:
             self.transport.write(uatcp_to_binary(ua.MessageType.Hello, hello))
-        return await asyncio.wait_for(ack, self.timeout)
+        return await wait_for(ack, self.timeout)
 
     async def open_secure_channel(self, params) -> OpenSecureChannelResult:
         self.logger.info("open_secure_channel")
@@ -230,7 +231,7 @@ class UASocketProtocol(asyncio.Protocol):
         if self._open_secure_channel_exchange is not None:
             raise RuntimeError('Two Open Secure Channel requests can not happen too close to each other. ' 'The response must be processed and returned before the next request can be sent.')
         self._open_secure_channel_exchange = params
-        await asyncio.wait_for(self._send_request(request, message_type=ua.MessageType.SecureOpen), self.timeout)
+        await wait_for(self._send_request(request, message_type=ua.MessageType.SecureOpen), self.timeout)
         _return = self._open_secure_channel_exchange.Parameters # type: ignore[union-attr]
         self._open_secure_channel_exchange = None
         return _return

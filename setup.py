@@ -23,7 +23,7 @@ setup(
     packages=find_packages(exclude=["tests"]),
     provides=["asyncua"],
     license="GNU Lesser General Public License v3 or later",
-    install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", "cryptography>42.0.0", "sortedcontainers", "importlib-metadata;python_version<'3.8'", "pyOpenSSL>23.2.0", "typing-extensions"],
+    install_requires=["aiofiles", "aiosqlite", "python-dateutil", "pytz", "cryptography>42.0.0", "sortedcontainers", "importlib-metadata;python_version<'3.8'", "pyOpenSSL>23.2.0", "typing-extensions", 'wait_for2==0.3.2'],
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
