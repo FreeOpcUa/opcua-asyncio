@@ -213,6 +213,8 @@ class {struct_name}{base_class}:
             uatype = ua.basetype_by_datatype[sfield.DataType]
         elif sfield.DataType == data_type:
             uatype = struct_name
+        elif sfield.DataType != data_type and isinstance(sfield, ua.uaprotocol_auto.StructureField):
+            uatype = "uaprotocol_auto.StructureField" #field name is also a structure
         else:
             if log_error:
                 _logger.error("Unknown datatype for field: %s in structure:%s, please report", sfield, struct_name)
@@ -260,6 +262,7 @@ class {struct_name}{base_class}:
     else:
         for fname, uatype, default_value in fields:
             code += f"    {fname}: {uatype} = {default_value}\n"
+    print(f"testprint: structure {fname} has Python class {code}")
     return code
 
 
