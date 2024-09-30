@@ -61,7 +61,7 @@ def get_new_nodeset(timeout: float = 120, tag: Optional[str] = None, branch: Opt
         rm_tree(backup_v2)
     rm_tree(target_v2 / ".git")
     rm_tree(target_v2 / ".github")
-    (target_v2 / "PublishNodeSets.bat").unlink()
+    #(target_v2 / "PublishNodeSets.bat").unlink()
 
 
 def generate_standard_nodesets():
