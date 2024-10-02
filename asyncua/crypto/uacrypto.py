@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 import aiofiles
-from typing import Optional, Union
+from typing import Optional, Sequence, Union, List, Tuple
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -18,6 +18,8 @@ from cryptography.exceptions import InvalidSignature  # noqa: F811
 
 from dataclasses import dataclass
 import logging
+
+
 _logger = logging.getLogger(__name__)
 
 
@@ -80,7 +82,7 @@ async def load_private_key(path_or_content: Union[str, Path, bytes],
         return serialization.load_der_private_key(content, password=password, backend=default_backend())
 
 
-def der_from_x509(certificate):
+def der_from_x509(certificate: x509.Certificate) -> bytes:
     if certificate is None:
         return b""
     return certificate.public_bytes(serialization.Encoding.DER)
@@ -98,7 +100,7 @@ def pem_from_key(private_key: rsa.RSAPrivateKey) -> bytes:
     return private_key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption())
 
 
-def sign_sha1(private_key, data):
+def sign_sha1(private_key: rsa.RSAPrivateKey, data: bytes) -> bytes:
     return private_key.sign(
         data,
         padding.PKCS1v15(),
@@ -106,7 +108,7 @@ def sign_sha1(private_key, data):
     )
 
 
-def sign_sha256(private_key, data):
+def sign_sha256(private_key: rsa.RSAPrivateKey, data: bytes) -> bytes:
     return private_key.sign(
         data,
         padding.PKCS1v15(),
@@ -114,7 +116,7 @@ def sign_sha256(private_key, data):
     )
 
 
-def sign_pss_sha256(private_key, data):
+def sign_pss_sha256(private_key: rsa.RSAPrivateKey, data: bytes) -> bytes:
     return private_key.sign(
         data,
         padding.PSS(
@@ -125,8 +127,10 @@ def sign_pss_sha256(private_key, data):
     )
 
 
-def verify_sha1(certificate, data, signature):
-    certificate.public_key().verify(
+def verify_sha1(certificate: x509.Certificate, data: bytes, signature: bytes) -> None:
+    pub_key = certificate.public_key()
+    assert isinstance(pub_key,rsa.RSAPublicKey)
+    pub_key.verify(
         signature,
         data,
         padding.PKCS1v15(),
@@ -134,16 +138,20 @@ def verify_sha1(certificate, data, signature):
     )
 
 
-def verify_sha256(certificate, data, signature):
-    certificate.public_key().verify(
+def verify_sha256(certificate: x509.Certificate, data: bytes, signature: bytes) -> None:
+    pub_key = certificate.public_key()
+    assert isinstance(pub_key,rsa.RSAPublicKey)
+    pub_key.verify(
         signature,
         data,
         padding.PKCS1v15(),
         hashes.SHA256())
 
 
-def verify_pss_sha256(certificate, data, signature):
-    certificate.public_key().verify(
+def verify_pss_sha256(certificate: x509.Certificate, data: bytes, signature: bytes) -> None:
+    pub_key = certificate.public_key()
+    assert isinstance(pub_key,rsa.RSAPublicKey)
+    pub_key.verify(
         signature,
         data,
         padding.PSS(
@@ -154,7 +162,7 @@ def verify_pss_sha256(certificate, data, signature):
     )
 
 
-def encrypt_basic256(public_key, data):
+def encrypt_basic256(public_key: rsa.RSAPublicKey, data: bytes) -> bytes:
     ciphertext = public_key.encrypt(
         data,
         padding.OAEP(
@@ -165,7 +173,7 @@ def encrypt_basic256(public_key, data):
     return ciphertext
 
 
-def encrypt_rsa_oaep(public_key, data):
+def encrypt_rsa_oaep(public_key: rsa.RSAPublicKey, data: bytes) -> bytes:
     ciphertext = public_key.encrypt(
         data,
         padding.OAEP(
@@ -176,7 +184,7 @@ def encrypt_rsa_oaep(public_key, data):
     return ciphertext
 
 
-def encrypt_rsa_oaep_sha256(public_key, data):
+def encrypt_rsa_oaep_sha256(public_key: rsa.RSAPublicKey, data: bytes) -> bytes:
     ciphertext = public_key.encrypt(
         data,
         padding.OAEP(
@@ -188,7 +196,7 @@ def encrypt_rsa_oaep_sha256(public_key, data):
     return ciphertext
 
 
-def encrypt_rsa15(public_key, data):
+def encrypt_rsa15(public_key: rsa.RSAPublicKey, data: bytes) -> bytes:
     ciphertext = public_key.encrypt(
         data,
         padding.PKCS1v15()
@@ -196,7 +204,7 @@ def encrypt_rsa15(public_key, data):
     return ciphertext
 
 
-def decrypt_rsa_oaep(private_key, data):
+def decrypt_rsa_oaep(private_key: rsa.RSAPrivateKey, data: bytes) -> bytes:
     text = private_key.decrypt(
         bytes(data),
         padding.OAEP(
@@ -207,7 +215,7 @@ def decrypt_rsa_oaep(private_key, data):
     return text
 
 
-def decrypt_rsa_oaep_sha256(private_key, data):
+def decrypt_rsa_oaep_sha256(private_key: rsa.RSAPrivateKey, data: bytes) -> bytes:
     text = private_key.decrypt(
         bytes(data),
         padding.OAEP(
@@ -219,7 +227,7 @@ def decrypt_rsa_oaep_sha256(private_key, data):
     return text
 
 
-def decrypt_rsa15(private_key, data):
+def decrypt_rsa15(private_key: rsa.RSAPrivateKey, data: bytes) -> bytes:
     text = private_key.decrypt(
         bytes(data),
         padding.PKCS1v15()
@@ -227,28 +235,28 @@ def decrypt_rsa15(private_key, data):
     return text
 
 
-def cipher_aes_cbc(key, init_vec):
+def cipher_aes_cbc(key: bytes, init_vec: bytes) -> Cipher:
     # FIXME sonarlint reports critical vulnerability (python:S5542)
     return Cipher(algorithms.AES(key), modes.CBC(init_vec), default_backend())
 
 
-def cipher_encrypt(cipher, data):
+def cipher_encrypt(cipher: Cipher, data: bytes) -> bytes:
     encryptor = cipher.encryptor()
     return encryptor.update(data) + encryptor.finalize()
 
 
-def cipher_decrypt(cipher, data):
+def cipher_decrypt(cipher: Cipher, data: bytes) -> bytes:
     decryptor = cipher.decryptor()
     return decryptor.update(data) + decryptor.finalize()
 
 
-def hmac_sha1(key, message):
+def hmac_sha1(key: bytes, message: bytes) -> bytes:
     hasher = hmac.HMAC(key, hashes.SHA1(), backend=default_backend())
     hasher.update(message)
     return hasher.finalize()
 
 
-def hmac_sha256(key, message):
+def hmac_sha256(key: bytes, message: bytes) -> bytes:
     hasher = hmac.HMAC(key, hashes.SHA256(), backend=default_backend())
     hasher.update(message)
     return hasher.finalize()
@@ -262,7 +270,7 @@ def sha256_size():
     return hashes.SHA256.digest_size
 
 
-def p_sha1(secret, seed, sizes=()):
+def p_sha1(secret: bytes, seed: bytes, sizes: Sequence[int]=()) -> Tuple[bytes,...]:
     """
     Derive one or more keys from secret and seed.
     (See specs part 6, 6.7.5 and RFC 2246 - TLS v1.0)
@@ -278,14 +286,14 @@ def p_sha1(secret, seed, sizes=()):
         accum = hmac_sha1(secret, accum)
         result += hmac_sha1(secret, accum + seed)
 
-    parts = []
+    parts: List[bytes] = []
     for size in sizes:
         parts.append(result[:size])
         result = result[size:]
     return tuple(parts)
 
 
-def p_sha256(secret, seed, sizes=()):
+def p_sha256(secret: bytes, seed: bytes, sizes: Sequence[int]=()) -> Tuple[bytes,...]:
     """
     Derive one or more keys from secret and seed.
     (See specs part 6, 6.7.5 and RFC 2246 - TLS v1.0)
@@ -301,19 +309,19 @@ def p_sha256(secret, seed, sizes=()):
         accum = hmac_sha256(secret, accum)
         result += hmac_sha256(secret, accum + seed)
 
-    parts = []
+    parts: List[bytes] = []
     for size in sizes:
         parts.append(result[:size])
         result = result[size:]
     return tuple(parts)
 
 
-def x509_name_to_string(name):
-    parts = [f"{attr.oid._name}={attr.value}" for attr in name]
+def x509_name_to_string(name: x509.Name) -> str:
+    parts = [f"{attr.oid._name}={str(attr.value)}" for attr in name]
     return ', '.join(parts)
 
 
-def x509_to_string(cert):
+def x509_to_string(cert: x509.Certificate) -> str:
     """
     Convert x509 certificate to human-readable string
     """

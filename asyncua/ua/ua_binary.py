@@ -690,14 +690,14 @@ def _create_dataclass_deserializer(objtype):
     return decode
 
 
-def struct_from_binary(objtype: Union[Type[T], str], data: IO) -> T:
+def struct_from_binary(objtype: Union[Type[T], str], data: Union[IO,Buffer]) -> T:
     """
     unpack an ua struct. Arguments are an objtype as Python dataclass or string
     """
     return _create_dataclass_deserializer(objtype)(data)
 
 
-def header_to_binary(hdr):
+def header_to_binary(hdr) -> bytes:
     b = [struct.pack("<3ss", hdr.MessageType, hdr.ChunkType)]
     size = hdr.body_size + 8
     if hdr.MessageType in (ua.MessageType.SecureOpen, ua.MessageType.SecureClose, ua.MessageType.SecureMessage):
@@ -708,7 +708,7 @@ def header_to_binary(hdr):
     return b"".join(b)
 
 
-def header_from_binary(data):
+def header_from_binary(data) -> "ua.Header":
     hdr = ua.Header()
     hdr.MessageType, hdr.ChunkType, hdr.packet_size = struct.unpack("<3scI", data.read(8))
     hdr.body_size = hdr.packet_size - 8
@@ -719,7 +719,7 @@ def header_from_binary(data):
     return hdr
 
 
-def uatcp_to_binary(message_type, message):
+def uatcp_to_binary(message_type, message) -> bytes:
     """
     Convert OPC UA TCP message (see OPC UA specs Part 6, 7.1) to binary.
     The only supported types are Hello, Acknowledge and ErrorMessage

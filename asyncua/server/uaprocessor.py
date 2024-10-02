@@ -2,7 +2,7 @@ import asyncio
 import copy
 import time
 import logging
-from typing import Deque, Optional, Dict
+from typing import Deque, Optional, Dict, TYPE_CHECKING
 from collections import deque
 from datetime import datetime, timedelta, timezone
 
@@ -11,6 +11,9 @@ from ..ua.ua_binary import nodeid_from_binary, struct_from_binary, struct_to_bin
 from .internal_server import InternalServer, InternalSession
 from ..common.connection import SecureConnection, TransportLimits
 from ..common.utils import ServiceError
+
+if TYPE_CHECKING:
+    from asyncua.common.utils import Buffer
 
 _logger = logging.getLogger(__name__)
 
@@ -40,13 +43,13 @@ class UaProcessor:
         # queue for publish results callbacks (using SubscriptionId)
         # rely on dict insertion order (therefore can't use set())
         self._publish_results_subs: Dict[ua.IntegerId, bool] = {}
-        self._limits = copy.deepcopy(limits)  # Copy limits because they get overriden
+        self._limits: TransportLimits = copy.deepcopy(limits)  # Copy limits because they get overriden
         self._connection = SecureConnection(ua.SecurityPolicy(), self._limits)
         self._closing: bool = False
         self._session_watchdog_task: Optional[asyncio.Task] = None
         self._watchdog_interval: float = 1.0
 
-    def set_policies(self, policies):
+    def set_policies(self, policies) -> None:
         self._connection.set_policy_factories(policies)
 
     def send_response(self, requesthandle, seqhdr, response, msgtype=ua.MessageType.SecureMessage):
@@ -70,7 +73,7 @@ class UaProcessor:
         response.Parameters = channel
         self.send_response(request.RequestHeader.RequestHandle, seqhdr, response, ua.MessageType.SecureOpen)
 
-    def get_publish_request(self, subscription_id: ua.IntegerId):
+    def get_publish_request(self, subscription_id: ua.IntegerId) -> Optional[PublishRequestData]:
         while True:
             if not self._publish_requests:
                 # only store one callback per subscription
@@ -132,7 +135,7 @@ class UaProcessor:
             raise ServiceError(ua.StatusCodes.BadTcpMessageTypeInvalid)
         return True
 
-    async def process_message(self, seqhdr, body):
+    async def process_message(self, seqhdr, body: "Buffer"):
         """
         Process incoming messages.
         """

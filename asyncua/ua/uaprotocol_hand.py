@@ -1,10 +1,15 @@
 import struct
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, TYPE_CHECKING, Optional, Union
 
 from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
 from asyncua.common import utils
+
+if TYPE_CHECKING:
+    from asyncua.common.connection import MessageChunk
+    from cryptography import x509
+    from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 
 OPC_TCP_SCHEME = 'opc.tcp'
 
@@ -195,17 +200,23 @@ class SecurityPolicyFactory:
     Server has one certificate and private key, but needs a separate
     SecurityPolicy for every client and client's certificate
     """
-    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None, permission_ruleset=None):
+    def __init__(self,
+                 cls=SecurityPolicy,
+                 mode=auto.MessageSecurityMode.None_,
+                 certificate: "Optional[x509.Certificate]"=None,
+                 private_key: "Optional[PrivateKeyTypes]"=None,
+                 permission_ruleset=None
+    ) -> None:
         self.cls = cls
-        self.mode = mode
-        self.certificate = certificate
-        self.private_key = private_key
+        self.mode: auto.MessageSecurityMode = mode
+        self.certificate: Optional[x509.Certificate] = certificate
+        self.private_key: Optional[PrivateKeyTypes] = private_key
         self.permission_ruleset = permission_ruleset
 
-    def matches(self, uri, mode=None):
+    def matches(self, uri: str, mode=None) -> bool:
         return self.cls.URI == uri and (mode is None or self.mode == mode)
 
-    def create(self, peer_certificate):
+    def create(self, peer_certificate) -> SecurityPolicy:
         if self.cls is SecurityPolicy:
             return self.cls(permissions=self.permission_ruleset)
         else:
@@ -213,19 +224,19 @@ class SecurityPolicyFactory:
 
 
 class Message:
-    def __init__(self, chunks):
-        self._chunks = chunks
+    def __init__(self, chunks: "List[MessageChunk]") -> None:
+        self._chunks: List[MessageChunk] = chunks
 
-    def request_id(self):
+    def request_id(self) -> auto.UInt32:
         return self._chunks[0].SequenceHeader.RequestId
 
-    def SequenceHeader(self):
+    def SequenceHeader(self) -> SequenceHeader:
         return self._chunks[0].SequenceHeader
 
-    def SecurityHeader(self):
+    def SecurityHeader(self) -> Union[SymmetricAlgorithmHeader, AsymmetricAlgorithmHeader]:
         return self._chunks[0].SecurityHeader
 
-    def body(self):
+    def body(self) -> utils.Buffer:
         body = b"".join([c.Body for c in self._chunks])
         return utils.Buffer(body)
 

@@ -49,14 +49,14 @@ class Verifier:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def signature_size(self):
+    def signature_size(self) -> None:
         pass
 
     @abstractmethod
-    def verify(self, data, signature):
+    def verify(self, data, signature) -> None:
         pass
 
-    def reset(self):
+    def reset(self) -> None:
         attrs = self.__dict__
         for k in attrs:
             attrs[k] = None
@@ -70,11 +70,11 @@ class Encryptor:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def plain_block_size(self):
+    def plain_block_size(self) -> int:
         pass
 
     @abstractmethod
-    def encrypted_block_size(self):
+    def encrypted_block_size(self) -> int:
         pass
 
     @abstractmethod
@@ -90,18 +90,18 @@ class Decryptor:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def plain_block_size(self):
+    def plain_block_size(self) -> int:
         pass
 
     @abstractmethod
-    def encrypted_block_size(self):
+    def encrypted_block_size(self) -> int:
         pass
 
     @abstractmethod
     def decrypt(self, data):
         pass
 
-    def reset(self):
+    def reset(self) -> None:
         attrs = self.__dict__
         for k in attrs:
             attrs[k] = None
