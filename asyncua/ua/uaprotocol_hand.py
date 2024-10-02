@@ -1,6 +1,6 @@
 import struct
 from dataclasses import dataclass, field
-from typing import List, TYPE_CHECKING, Optional
+from typing import List, TYPE_CHECKING, Optional, Union
 
 from asyncua.common.connection import MessageChunk
 from asyncua.ua import uaprotocol_auto as auto
@@ -234,7 +234,7 @@ class Message:
     def SequenceHeader(self) -> SequenceHeader:
         return self._chunks[0].SequenceHeader
 
-    def SecurityHeader(self) -> SymmetricAlgorithmHeader | AsymmetricAlgorithmHeader:
+    def SecurityHeader(self) -> Union[SymmetricAlgorithmHeader, AsymmetricAlgorithmHeader]:
         return self._chunks[0].SecurityHeader
 
     def body(self) -> utils.Buffer:
