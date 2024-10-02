@@ -12,8 +12,6 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers import Cipher
 from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
-from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
-from cryptography.hazmat.primitives.asymmetric.x448 import X448PublicKey
 
 # We redefine InvalidSignature as part of this module. Do not remove this line.
 from cryptography.exceptions import InvalidSignature  # noqa: F811

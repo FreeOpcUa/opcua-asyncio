@@ -210,8 +210,8 @@ class SecurityPolicyFactory:
     ) -> None:
         self.cls = cls
         self.mode: auto.MessageSecurityMode = mode
-        self.certificate: "Optional[x509.Certificate]" = certificate
-        self.private_key: "Optional[PrivateKeyTypes]" = private_key
+        self.certificate: Optional[x509.Certificate] = certificate
+        self.private_key: Optional[PrivateKeyTypes] = private_key
         self.permission_ruleset = permission_ruleset
 
     def matches(self, uri: str, mode=None) -> bool:
@@ -226,7 +226,7 @@ class SecurityPolicyFactory:
 
 class Message:
     def __init__(self, chunks: "List[MessageChunk]") -> None:
-        self._chunks: "List[MessageChunk]" = chunks
+        self._chunks: List[MessageChunk] = chunks
 
     def request_id(self) -> auto.UInt32:
         return self._chunks[0].SequenceHeader.RequestId

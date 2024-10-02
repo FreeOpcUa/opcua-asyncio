@@ -213,8 +213,8 @@ class SecureConnection:
         self._sequence_number: int = 0
         self._peer_sequence_number: Optional[int] = None
         self._incoming_parts: List[MessageChunk] = []
-        self.security_policy: "SecurityPolicy" = security_policy
-        self._policies: "List[SecurityPolicyFactory]" = []
+        self.security_policy: SecurityPolicy = security_policy
+        self._policies: List[SecurityPolicyFactory] = []
         self._open: bool = False
         self.security_token = ua.ChannelSecurityToken()
         self.next_security_token = ua.ChannelSecurityToken()
