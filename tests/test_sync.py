@@ -38,7 +38,7 @@ def tloop():
 def server(tloop):
     s = Server(tloop=tloop)
     s.disable_clock(True)
-    s.set_endpoint('opc.tcp://0.0.0.0:8840/freeopcua/server/')
+    s.set_endpoint('opc.tcp://0.0.0.0:0/freeopcua/server/')
     uri = "http://examples.freeopcua.github.io"
     ns_idx = s.register_namespace(uri)
     myobj = s.nodes.objects.add_object(ns_idx, "MyObject")
@@ -51,14 +51,16 @@ def server(tloop):
 
 @pytest.fixture
 def client(tloop, server):
-    c = Client("opc.tcp://admin@localhost:8840/freeopcua/server", tloop=tloop)
+    port = server.aio_obj.bserver.port
+    c = Client(f"opc.tcp://admin@localhost:{port}/freeopcua/server", tloop=tloop)
     with c:
         yield c
 
 
 @pytest.fixture
 def client_no_tloop(server):
-    with Client("opc.tcp://admin@localhost:8840/freeopcua/server") as c:
+    port = server.aio_obj.bserver.port
+    with Client(f"opc.tcp://admin@localhost:{port}/freeopcua/server") as c:
         yield c
 
 

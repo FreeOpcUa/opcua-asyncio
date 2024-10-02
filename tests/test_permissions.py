@@ -18,12 +18,7 @@ else:
 
 pytestmark = pytest.mark.asyncio
 
-port_num1 = 48515
-port_num2 = 48512
-port_num3 = 48516
-uri_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num1)
-uri_no_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num2)
-uri_crypto_cert = "opc.tcp://127.0.0.1:{0:d}".format(port_num3)
+uri = "opc.tcp://127.0.0.1:0"
 BASE_DIR = Path(__file__).parent.parent
 EXAMPLE_PATH = BASE_DIR / "examples"
 srv_crypto_params = [(EXAMPLE_PATH / "private-key-example.pem",
@@ -57,7 +52,7 @@ async def srv_crypto_one_cert(request):
     await cert_user_manager.add_role(anonymous_peer_certificate, name='Anonymous', user_role=UserRole.Anonymous)
     srv = Server(user_manager=cert_user_manager)
 
-    srv.set_endpoint(uri_crypto_cert)
+    srv.set_endpoint(uri)
     srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
                             permission_ruleset=SimpleRoleRuleset())
     await srv.init()
@@ -76,7 +71,8 @@ async def srv_crypto_one_cert(request):
 
 
 async def test_permissions_admin(srv_crypto_one_cert):
-    clt = Client(uri_crypto_cert)
+    port = srv_crypto_one_cert.bserver.port
+    clt = Client(f"opc.tcp://127.0.0.1:{port}")
     await clt.set_security(
         security_policies.SecurityPolicyBasic256Sha256,
         admin_peer_creds['certificate'],
@@ -95,7 +91,8 @@ async def test_permissions_admin(srv_crypto_one_cert):
 
 
 async def test_permissions_user(srv_crypto_one_cert):
-    clt = Client(uri_crypto_cert)
+    port = srv_crypto_one_cert.bserver.port
+    clt = Client(f"opc.tcp://127.0.0.1:{port}")
     await clt.set_security(
         security_policies.SecurityPolicyBasic256Sha256,
         user_peer_creds['certificate'],
@@ -114,7 +111,8 @@ async def test_permissions_user(srv_crypto_one_cert):
 
 
 async def test_permissions_anonymous(srv_crypto_one_cert):
-    clt = Client(uri_crypto_cert)
+    port = srv_crypto_one_cert.bserver.port
+    clt = Client(f"opc.tcp://127.0.0.1:{port}")
     await clt.set_security(
         security_policies.SecurityPolicyBasic256Sha256,
         anonymous_peer_creds['certificate'],
