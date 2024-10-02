@@ -6,7 +6,7 @@ import functools
 import struct
 import logging
 from io import BytesIO
-from typing import IO, Any, Callable, Optional, Sequence, Type, TypeVar, Union, TYPE_CHECKING
+from typing import IO, Any, Callable, Optional, Sequence, Type, TypeVar, Union
 import typing
 import uuid
 from enum import Enum, IntFlag
@@ -15,9 +15,6 @@ from asyncua import ua
 from .uaerrors import UaError
 from ..common.utils import Buffer
 from .uatypes import type_from_optional, type_is_list, type_is_union, type_from_list, types_or_list_from_union, type_allow_subclass
-
-if TYPE_CHECKING:
-    from asyncua.common.utils import Buffer
 
 _logger = logging.getLogger(__name__)
 
@@ -711,7 +708,7 @@ def header_to_binary(hdr) -> bytes:
     return b"".join(b)
 
 
-def header_from_binary(data) -> ua.Header:
+def header_from_binary(data) -> "ua.Header":
     hdr = ua.Header()
     hdr.MessageType, hdr.ChunkType, hdr.packet_size = struct.unpack("<3scI", data.read(8))
     hdr.body_size = hdr.packet_size - 8

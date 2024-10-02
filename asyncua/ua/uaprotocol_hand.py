@@ -2,7 +2,6 @@ import struct
 from dataclasses import dataclass, field
 from typing import List, TYPE_CHECKING, Optional, Union
 
-from asyncua.common.connection import MessageChunk
 from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
 from asyncua.common import utils

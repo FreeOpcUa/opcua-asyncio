@@ -56,7 +56,7 @@ class TransportLimits:
             _logger.error("Number of message chunks: %s is > configured max chunk count: %s", sz, self.max_chunk_count)
         return within_limit
 
-    def create_acknowledge_and_set_limits(self, msg: ua.Hello) -> ua.Acknowledge:
+    def create_acknowledge_and_set_limits(self, msg: "ua.Hello") -> "ua.Acknowledge":
         ack = ua.Acknowledge()
         ack.ReceiveBufferSize = min(msg.ReceiveBufferSize, self.max_send_buffer)
         ack.SendBufferSize = min(msg.SendBufferSize, self.max_recv_buffer)
@@ -69,14 +69,14 @@ class TransportLimits:
         _logger.info("updating server limits to: %s", self)
         return ack
 
-    def create_hello_limits(self, msg: ua.Hello) -> ua.Hello:
+    def create_hello_limits(self, msg: "ua.Hello") -> "ua.Hello":
         msg.ReceiveBufferSize = self.max_recv_buffer
         msg.SendBufferSize = self.max_send_buffer
         msg.MaxChunkCount = self.max_chunk_count
         msg.MaxMessageSize = self.max_chunk_count
         return msg
 
-    def update_client_limits(self, msg: ua.Acknowledge) -> None:
+    def update_client_limits(self, msg: "ua.Acknowledge") -> None:
         self.max_chunk_count = msg.MaxChunkCount
         self.max_recv_buffer = msg.ReceiveBufferSize
         self.max_send_buffer = msg.SendBufferSize
@@ -394,7 +394,7 @@ class SecureConnection:
                     raise ua.UaError(f"Received chunk: {chunk} with wrong sequence expecting:" f" {self._peer_sequence_number}, received: {seq_num}," f" spec says to close connection")
         self._peer_sequence_number = seq_num
 
-    def receive_from_header_and_body(self, header: ua.Header, body: "Buffer") -> Union[None,ua.Message,ua.Hello,ua.Acknowledge,ua.ErrorMessage]:
+    def receive_from_header_and_body(self, header: ua.Header, body: "Buffer") -> Union[None,ua.Message,"ua.Hello",ua.Acknowledge,ua.ErrorMessage]:
         """
         Convert MessageHeader and binary body to OPC UA TCP message (see OPC UA
         specs Part 6, 7.1: Hello, Acknowledge or ErrorMessage), or a Message
