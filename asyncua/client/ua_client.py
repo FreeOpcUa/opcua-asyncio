@@ -88,7 +88,7 @@ class UASocketProtocol(asyncio.Protocol):
                     return
                 msg = self._connection.receive_from_header_and_body(header, buf)
                 self._process_received_message(msg)
-                if header.MessageType == ua.MessageType.SecureOpen:
+                if header.MessageType == ua.MessageType.SecureOpen and isinstance(msg,ua.Message):
                     params: ua.OpenSecureChannelParameters = self._open_secure_channel_exchange
                     response: ua.OpenSecureChannelResponse = struct_from_binary(ua.OpenSecureChannelResponse, msg.body())
                     response.ResponseHeader.ServiceResult.check()
@@ -107,7 +107,7 @@ class UASocketProtocol(asyncio.Protocol):
                 self.disconnect_socket()
                 return
 
-    def _process_received_message(self, msg: Union[ua.Message, ua.Acknowledge, ua.ErrorMessage]):
+    def _process_received_message(self, msg: Union[None,ua.Message, ua.Acknowledge, ua.ErrorMessage]):
         if msg is None:
             pass
         elif isinstance(msg, ua.Message):

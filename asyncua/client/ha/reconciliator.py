@@ -150,7 +150,8 @@ class Reconciliator:
             for url in valid_urls:
                 digest_ideal = get_digest(ideal_map[url])
                 digest_real = get_digest(real_map[url])
-                if url not in real_map or digest_ideal != digest_real:
+                #if url not in real_map or digest_ideal != digest_real:
+                if url not in real_map or ideal_map[url] != real_map[url]:
                     targets.add(url)
             if not targets:
                 _logger.info(

@@ -1,7 +1,15 @@
+from abc import abstractmethod
 from asyncua import ua
 from asyncua.server.users import UserRole
+from abc import ABC
 
-WRITE_TYPES = [
+from typing import TYPE_CHECKING, Tuple, Dict, Set
+
+if TYPE_CHECKING:
+    from asyncua.server.users import User
+    from asyncua.common.utils import Buffer
+
+WRITE_TYPES: Tuple[int,...] = (
     ua.ObjectIds.WriteRequest_Encoding_DefaultBinary,
     ua.ObjectIds.RegisterServerRequest_Encoding_DefaultBinary,
     ua.ObjectIds.RegisterServer2Request_Encoding_DefaultBinary,
@@ -11,9 +19,9 @@ WRITE_TYPES = [
     ua.ObjectIds.DeleteReferencesRequest_Encoding_DefaultBinary,
     ua.ObjectIds.RegisterNodesRequest_Encoding_DefaultBinary,
     ua.ObjectIds.UnregisterNodesRequest_Encoding_DefaultBinary
-]
+)
 
-READ_TYPES = [
+READ_TYPES: Tuple[int,...] = (
     ua.ObjectIds.CreateSessionRequest_Encoding_DefaultBinary,
     ua.ObjectIds.CloseSessionRequest_Encoding_DefaultBinary,
     ua.ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary,
@@ -33,16 +41,17 @@ READ_TYPES = [
     ua.ObjectIds.CloseSecureChannelRequest_Encoding_DefaultBinary,
     ua.ObjectIds.CallRequest_Encoding_DefaultBinary,
     ua.ObjectIds.SetMonitoringModeRequest_Encoding_DefaultBinary,
-    ua.ObjectIds.SetPublishingModeRequest_Encoding_DefaultBinary
-]
+    ua.ObjectIds.SetPublishingModeRequest_Encoding_DefaultBinary,
+)
 
 
-class PermissionRuleset:
+class PermissionRuleset(ABC):
     """
     Base class for permission ruleset
     """
 
-    def check_validity(self, user, action_type, body):
+    @abstractmethod
+    def check_validity(self, user: "User", action_type_id: ua.NodeId, body: "Buffer") -> bool:
         raise NotImplementedError
 
 
@@ -52,16 +61,16 @@ class SimpleRoleRuleset(PermissionRuleset):
     Admins alone can write, admins and users can read, and anonymous users can't do anything.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         write_ids = list(map(ua.NodeId, WRITE_TYPES))
         read_ids = list(map(ua.NodeId, READ_TYPES))
-        self._permission_dict = {
+        self._permission_dict: Dict[UserRole, Set[ua.NodeId]] = {
             UserRole.Admin: set().union(write_ids, read_ids),
             UserRole.User: set().union(read_ids),
             UserRole.Anonymous: set()
         }
 
-    def check_validity(self, user, action_type_id, body):
+    def check_validity(self, user: "User", action_type_id: ua.NodeId, body: "Buffer") -> bool:
         if action_type_id in self._permission_dict[user.role]:
             return True
         else:
