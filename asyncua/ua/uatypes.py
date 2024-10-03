@@ -13,7 +13,8 @@ from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import IntEnum
-from typing import Any, Generic, List, Optional, Union
+from typing import Any, Generic, List, Optional, Union, SupportsInt, SupportsIndex
+
 
 # hack to support python < 3.8
 if sys.version_info.minor < 10:
@@ -52,15 +53,15 @@ MAX_OPC_FILETIME = int((MAX_FILETIME_EPOCH_DATETIME - FILETIME_EPOCH_AS_DATETIME
 MAX_INT64 = 2**63 - 1
 
 
-def type_is_union(uatype):
+def type_is_union(uatype) -> bool:
     return get_origin(uatype) == Union
 
 
-def type_is_list(uatype):
+def type_is_list(uatype) -> bool:
     return get_origin(uatype) is list
 
 
-def type_allow_subclass(uatype):
+def type_allow_subclass(uatype) -> bool:
     return get_origin(uatype) not in [Union, list, None]
 
 
@@ -166,8 +167,42 @@ class UInt64(int):
 
 
 class Boolean:  # Boolean(bool) is not supported in Python
-    pass
+    value: bool
 
+    def __init__(self, value: str  | SupportsInt | SupportsIndex) -> None:
+        if isinstance(value, bool):
+            self.value = value
+        else:
+            self.value = bool(int(value))
+
+    def __bool__(self) -> bool:
+        return self.value
+
+    def __repr__(self) -> str:
+        return f"Boolean({self.value})"
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Boolean):
+            return self.value == other.value
+        return self.value == other
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
+    def __and__(self, other: "Boolean") -> "Boolean":
+        return Boolean(self.value and bool(other))
+
+    def __or__(self, other: "Boolean") -> "Boolean":
+        return Boolean(self.value or bool(other))
+
+    def __xor__(self, other: "Boolean") -> "Boolean":
+        return Boolean(self.value ^ bool(other))
+
+    def __int__(self) -> int:
+        return int(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
 
 class Double(float):
     pass
