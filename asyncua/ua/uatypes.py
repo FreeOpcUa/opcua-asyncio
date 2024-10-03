@@ -13,8 +13,8 @@ from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import IntEnum
-from typing import Any, Generic, List, Optional, Union, SupportsInt, SupportsIndex
-
+from typing import Any, Generic, List, Optional, Union
+from typing_extensions import SupportsIndex, SupportsInt
 
 # hack to support python < 3.8
 if sys.version_info.minor < 10:
