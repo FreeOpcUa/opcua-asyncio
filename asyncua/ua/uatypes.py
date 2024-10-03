@@ -169,7 +169,7 @@ class UInt64(int):
 class Boolean:  # Boolean(bool) is not supported in Python
     value: bool
 
-    def __init__(self, value: str  | SupportsInt | SupportsIndex) -> None:
+    def __init__(self, value: Union[str, SupportsInt, SupportsIndex]) -> None:
         if isinstance(value, bool):
             self.value = value
         else:
