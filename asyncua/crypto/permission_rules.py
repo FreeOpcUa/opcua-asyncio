@@ -9,8 +9,6 @@ WRITE_TYPES = [
     ua.ObjectIds.DeleteNodesRequest_Encoding_DefaultBinary,
     ua.ObjectIds.AddReferencesRequest_Encoding_DefaultBinary,
     ua.ObjectIds.DeleteReferencesRequest_Encoding_DefaultBinary,
-    ua.ObjectIds.RegisterNodesRequest_Encoding_DefaultBinary,
-    ua.ObjectIds.UnregisterNodesRequest_Encoding_DefaultBinary
 ]
 
 READ_TYPES = [
@@ -33,7 +31,9 @@ READ_TYPES = [
     ua.ObjectIds.CloseSecureChannelRequest_Encoding_DefaultBinary,
     ua.ObjectIds.CallRequest_Encoding_DefaultBinary,
     ua.ObjectIds.SetMonitoringModeRequest_Encoding_DefaultBinary,
-    ua.ObjectIds.SetPublishingModeRequest_Encoding_DefaultBinary
+    ua.ObjectIds.SetPublishingModeRequest_Encoding_DefaultBinary,
+    ua.ObjectIds.RegisterNodesRequest_Encoding_DefaultBinary,
+    ua.ObjectIds.UnregisterNodesRequest_Encoding_DefaultBinary,
 ]
 
 
