@@ -513,10 +513,8 @@ def application_to_strings(app):
 def cert_to_string(der):
     if not der:
         return "[no certificate]"
-    try:
-        from .crypto import uacrypto
-    except ImportError:
-        return f"{len(der)} bytes"
+    from .crypto import uacrypto
+
     cert = uacrypto.x509_from_der(der)
     return uacrypto.x509_to_string(cert)
 

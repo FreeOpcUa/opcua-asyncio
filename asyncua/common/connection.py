@@ -7,13 +7,7 @@ import copy
 from asyncua import ua
 from asyncua.ua.uaerrors import UaInvalidParameterError
 from ..ua.ua_binary import struct_from_binary, struct_to_binary, header_from_binary, header_to_binary
-
-try:
-    from ..crypto.uacrypto import InvalidSignature
-except ImportError:
-
-    class InvalidSignature(Exception):  # type: ignore
-        pass
+from ..crypto.uacrypto import InvalidSignature
 
 
 _logger = logging.getLogger("asyncua.uaprotocol")

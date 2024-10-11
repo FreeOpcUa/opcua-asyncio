@@ -24,12 +24,7 @@ from .users import User, UserRole
 from .internal_session import InternalSession
 from .event_generator import EventGenerator
 from ..crypto.validator import CertificateValidatorMethod
-
-try:
-    from asyncua.crypto import uacrypto
-except ImportError:
-    logging.getLogger(__name__).warning("cryptography is not installed, use of crypto disabled")
-    uacrypto = False
+from ..crypto import uacrypto
 
 _logger = logging.getLogger(__name__)
 
@@ -403,9 +398,6 @@ class InternalServer:
 
         # decrypt password if we can
         if str(token.EncryptionAlgorithm) != "None":
-            if not uacrypto:
-                # raise  # Should I raise a significant exception?
-                return False
             try:
                 if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
                     raw_pw = uacrypto.decrypt_rsa15(self.private_key, password)
