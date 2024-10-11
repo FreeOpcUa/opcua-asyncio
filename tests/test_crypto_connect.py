@@ -11,7 +11,7 @@ from asyncua import Client
 from asyncua import Server
 from asyncua import ua
 from asyncua.server.user_managers import CertificateUserManager
-from asyncua.crypto.security_policies import Verifier, Decryptor
+from asyncua.crypto.security_policies import Verifier, Decryptor, SECURITY_POLICY_TYPE_MAP
 from asyncua.crypto.validator import CertificateValidator, CertificateValidatorOptions
 from asyncua.crypto import uacrypto, security_policies
 
@@ -493,57 +493,19 @@ async def test_anonymous_rejection():
     await srv.stop()
 
 
-async def test_security_level_all():
-    assert Server.determine_security_level(
-        ua.SecurityPolicy.URI, ua.MessageSecurityMode.None_
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.NoSecurity)
-
-    assert Server.determine_security_level(
-        security_policies.SecurityPolicyBasic256Sha256.URI, ua.MessageSecurityMode.Sign
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256Sha256_Sign)
-    assert Server.determine_security_level(
-        security_policies.SecurityPolicyBasic256Sha256.URI, ua.MessageSecurityMode.SignAndEncrypt
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt)
-
-    assert Server.determine_security_level(
-        security_policies.SecurityPolicyAes128Sha256RsaOaep.URI, ua.MessageSecurityMode.Sign
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign)
-    assert Server.determine_security_level(
-        security_policies.SecurityPolicyAes128Sha256RsaOaep.URI, ua.MessageSecurityMode.SignAndEncrypt
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt)
-
-    assert Server.determine_security_level(
-        security_policies.SecurityPolicyAes256Sha256RsaPss.URI, ua.MessageSecurityMode.Sign
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign)
-    assert Server.determine_security_level(
-        security_policies.SecurityPolicyAes256Sha256RsaPss.URI, ua.MessageSecurityMode.SignAndEncrypt
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt)
-
-    # For the sake of completeness also the old, not recommended, protocols Basic128Rsa15 and Basic256
-    assert Server.determine_security_level(
-        security_policies.SecurityPolicyBasic128Rsa15.URI, ua.MessageSecurityMode.Sign
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic128Rsa15_Sign)
-    assert Server.determine_security_level(
-        security_policies.SecurityPolicyBasic128Rsa15.URI, ua.MessageSecurityMode.SignAndEncrypt
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt)
-
-    assert Server.determine_security_level(
-        security_policies.SecurityPolicyBasic256.URI, ua.MessageSecurityMode.Sign
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256_Sign)
-    assert Server.determine_security_level(
-        security_policies.SecurityPolicyBasic256.URI, ua.MessageSecurityMode.SignAndEncrypt
-    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256_SignAndEncrypt)
-
-
 async def test_security_level_endpoints(srv_crypto_all_certs: Tuple[Server, str]):
     srv = srv_crypto_all_certs[0]
 
     end_points: list[ua.EndpointDescription] = await srv.get_endpoints()
 
     for end_point in end_points:
-        assert end_point.SecurityLevel == Server.determine_security_level(
-            end_point.SecurityPolicyUri, end_point.SecurityMode
-        )
+        if end_point.SecurityMode == ua.MessageSecurityMode.None_:
+            policy_type = ua.SecurityPolicyType.NoSecurity
+        else:
+            policy_type = ua.SecurityPolicyType[
+                f'{end_point.SecurityPolicyUri.split("#")[1].replace("_", "")}_{end_point.SecurityMode.name}'
+            ]
+        assert end_point.SecurityLevel == SECURITY_POLICY_TYPE_MAP[policy_type][2]
 
 
 async def test_certificate_validator(srv_crypto_one_cert):
