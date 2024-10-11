@@ -78,7 +78,7 @@ class InternalServer:
         self._time_task_stop = False
         self.match_discovery_endpoint_url: bool = True
         self.match_discovery_source_ip: bool = True
-        self.supported_tokens = []
+        self.supported_tokens = (ua.AnonymousIdentityToken, ua.X509IdentityToken, ua.UserNameIdentityToken)
 
     async def init(self, shelffile: Optional[Path] = None):
         await self.load_standard_address_space(shelffile)
