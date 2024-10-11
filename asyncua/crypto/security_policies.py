@@ -3,7 +3,7 @@ import struct
 import time
 
 from abc import ABCMeta, abstractmethod
-from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError
+from ..ua import CryptographyNone, SecurityPolicyType, SecurityPolicy, MessageSecurityMode, UaError
 from ..crypto import uacrypto
 
 
@@ -814,3 +814,35 @@ def encrypt_asymmetric(pubkey, data, policy_uri):
     if not policy_uri or policy_uri == POLICY_NONE_URI:
         return data, ""
     raise UaError(f"Unsupported security policy `{policy_uri}`")
+
+
+# policy, mode, security_level
+SECURITY_POLICY_TYPE_MAP = {
+    SecurityPolicyType.NoSecurity: [SecurityPolicy, MessageSecurityMode.None_, 0],
+    SecurityPolicyType.Basic128Rsa15_Sign: [SecurityPolicyBasic128Rsa15, MessageSecurityMode.Sign, 1],
+    SecurityPolicyType.Basic128Rsa15_SignAndEncrypt: [
+        SecurityPolicyBasic128Rsa15,
+        MessageSecurityMode.SignAndEncrypt,
+        2,
+    ],
+    SecurityPolicyType.Basic256_Sign: [SecurityPolicyBasic256, MessageSecurityMode.Sign, 11],
+    SecurityPolicyType.Basic256_SignAndEncrypt: [SecurityPolicyBasic256, MessageSecurityMode.SignAndEncrypt, 21],
+    SecurityPolicyType.Basic256Sha256_Sign: [SecurityPolicyBasic256Sha256, MessageSecurityMode.Sign, 50],
+    SecurityPolicyType.Basic256Sha256_SignAndEncrypt: [
+        SecurityPolicyBasic256Sha256,
+        MessageSecurityMode.SignAndEncrypt,
+        70,
+    ],
+    SecurityPolicyType.Aes128Sha256RsaOaep_Sign: [SecurityPolicyAes128Sha256RsaOaep, MessageSecurityMode.Sign, 55],
+    SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt: [
+        SecurityPolicyAes128Sha256RsaOaep,
+        MessageSecurityMode.SignAndEncrypt,
+        75,
+    ],
+    SecurityPolicyType.Aes256Sha256RsaPss_Sign: [SecurityPolicyAes256Sha256RsaPss, MessageSecurityMode.Sign, 60],
+    SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt: [
+        SecurityPolicyAes256Sha256RsaPss,
+        MessageSecurityMode.SignAndEncrypt,
+        80,
+    ],
+}
