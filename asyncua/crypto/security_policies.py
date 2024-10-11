@@ -4,26 +4,11 @@ import time
 
 from abc import ABCMeta, abstractmethod
 from ..ua import CryptographyNone, SecurityPolicy, MessageSecurityMode, UaError
-
-try:
-    from ..crypto import uacrypto
-
-    CRYPTOGRAPHY_AVAILABLE = True
-except ImportError:
-    CRYPTOGRAPHY_AVAILABLE = False
+from ..crypto import uacrypto
 
 
 POLICY_NONE_URI = "http://opcfoundation.org/UA/SecurityPolicy#None"
 _logger = logging.getLogger(__name__)
-
-
-def require_cryptography(obj):
-    """
-    Raise exception if cryptography module is not available.
-    Call this function in constructors.
-    """
-    if not CRYPTOGRAPHY_AVAILABLE:
-        raise UaError(f"Can't use {obj.__class__.__name__}, cryptography module is not installed")
 
 
 class Signer:
@@ -237,7 +222,6 @@ class Cryptography(CryptographyNone):
 
 class SignerRsa(Signer):
     def __init__(self, client_pk):
-        require_cryptography(self)
         self.client_pk = client_pk
         self.key_size = self.client_pk.key_size // 8
 
@@ -250,7 +234,6 @@ class SignerRsa(Signer):
 
 class VerifierRsa(Verifier):
     def __init__(self, server_cert):
-        require_cryptography(self)
         self.server_cert = server_cert
         self.key_size = self.server_cert.public_key().key_size // 8
 
@@ -263,7 +246,6 @@ class VerifierRsa(Verifier):
 
 class EncryptorRsa(Encryptor):
     def __init__(self, server_cert, enc_fn, padding_size):
-        require_cryptography(self)
         self.server_cert = server_cert
         self.key_size = self.server_cert.public_key().key_size // 8
         self.encryptor = enc_fn
@@ -285,7 +267,6 @@ class EncryptorRsa(Encryptor):
 
 class DecryptorRsa(Decryptor):
     def __init__(self, client_pk, dec_fn, padding_size):
-        require_cryptography(self)
         self.client_pk = client_pk
         self.key_size = self.client_pk.key_size // 8
         self.decryptor = dec_fn
@@ -307,7 +288,6 @@ class DecryptorRsa(Decryptor):
 
 class SignerAesCbc(Signer):
     def __init__(self, key):
-        require_cryptography(self)
         self.key = key
 
     def signature_size(self):
@@ -319,7 +299,6 @@ class SignerAesCbc(Signer):
 
 class VerifierAesCbc(Verifier):
     def __init__(self, key):
-        require_cryptography(self)
         self.key = key
 
     def signature_size(self):
@@ -333,7 +312,6 @@ class VerifierAesCbc(Verifier):
 
 class EncryptorAesCbc(Encryptor):
     def __init__(self, key, init_vec):
-        require_cryptography(self)
         self.cipher = uacrypto.cipher_aes_cbc(key, init_vec)
 
     def plain_block_size(self):
@@ -348,7 +326,6 @@ class EncryptorAesCbc(Encryptor):
 
 class DecryptorAesCbc(Decryptor):
     def __init__(self, key, init_vec):
-        require_cryptography(self)
         self.cipher = uacrypto.cipher_aes_cbc(key, init_vec)
 
     def plain_block_size(self):
@@ -363,7 +340,6 @@ class DecryptorAesCbc(Decryptor):
 
 class SignerSha256(Signer):
     def __init__(self, client_pk):
-        require_cryptography(self)
         self.client_pk = client_pk
         self.key_size = self.client_pk.key_size // 8
 
@@ -376,7 +352,6 @@ class SignerSha256(Signer):
 
 class VerifierSha256(Verifier):
     def __init__(self, server_cert):
-        require_cryptography(self)
         self.server_cert = server_cert
         self.key_size = self.server_cert.public_key().key_size // 8
 
@@ -389,7 +364,6 @@ class VerifierSha256(Verifier):
 
 class SignerHMac256(Signer):
     def __init__(self, key):
-        require_cryptography(self)
         self.key = key
 
     def signature_size(self):
@@ -401,7 +375,6 @@ class SignerHMac256(Signer):
 
 class VerifierHMac256(Verifier):
     def __init__(self, key):
-        require_cryptography(self)
         self.key = key
 
     def signature_size(self):
@@ -415,7 +388,6 @@ class VerifierHMac256(Verifier):
 
 class SignerPssSha256(Signer):
     def __init__(self, client_pk):
-        require_cryptography(self)
         self.client_pk = client_pk
         self.key_size = self.client_pk.key_size // 8
 
@@ -428,7 +400,6 @@ class SignerPssSha256(Signer):
 
 class VerifierPssSha256(Verifier):
     def __init__(self, server_cert):
-        require_cryptography(self)
         self.server_cert = server_cert
         self.key_size = self.server_cert.public_key().key_size // 8
 
@@ -476,7 +447,6 @@ class SecurityPolicyAes128Sha256RsaOaep(SecurityPolicy):
         return uacrypto.encrypt_rsa_oaep(pubkey, data)
 
     def __init__(self, peer_cert, host_cert, client_pk, mode, permission_ruleset=None):
-        require_cryptography(self)
         if isinstance(peer_cert, bytes):
             peer_cert = uacrypto.x509_from_der(peer_cert)
         # even in Sign mode we need to asymmetrically encrypt secrets
@@ -550,7 +520,6 @@ class SecurityPolicyAes256Sha256RsaPss(SecurityPolicy):
         return uacrypto.encrypt_rsa_oaep_sha256(pubkey, data)
 
     def __init__(self, peer_cert, host_cert, client_pk, mode, permission_ruleset=None):
-        require_cryptography(self)
         if isinstance(peer_cert, bytes):
             peer_cert = uacrypto.x509_from_der(peer_cert)
         # even in Sign mode we need to asymmetrically encrypt secrets
@@ -632,7 +601,6 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
     def __init__(self, peer_cert, host_cert, client_pk, mode, permission_ruleset=None):
         _logger.warning("DEPRECATED! Do not use SecurityPolicyBasic128Rsa15 anymore!")
 
-        require_cryptography(self)
         if isinstance(peer_cert, bytes):
             peer_cert = uacrypto.x509_from_der(peer_cert)
         # even in Sign mode we need to asymmetrically encrypt secrets
@@ -712,7 +680,6 @@ class SecurityPolicyBasic256(SecurityPolicy):
     def __init__(self, peer_cert, host_cert, client_pk, mode, permission_ruleset=None):
         _logger.warning("DEPRECATED! Do not use SecurityPolicyBasic256 anymore!")
 
-        require_cryptography(self)
         if isinstance(peer_cert, bytes):
             peer_cert = uacrypto.x509_from_der(peer_cert)
         # even in Sign mode we need to asymmetrically encrypt secrets
@@ -790,7 +757,6 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         return uacrypto.encrypt_rsa_oaep(pubkey, data)
 
     def __init__(self, peer_cert, host_cert, client_pk, mode, permission_ruleset=None):
-        require_cryptography(self)
         if isinstance(peer_cert, bytes):
             peer_cert = uacrypto.x509_from_der(peer_cert)
         # even in Sign mode we need to asymmetrically encrypt secrets
