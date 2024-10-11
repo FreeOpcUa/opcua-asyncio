@@ -508,10 +508,6 @@ class SecurityPolicyAes128Sha256RsaOaep(SecurityPolicy):
         self.Mode = mode
         self.peer_certificate = uacrypto.der_from_x509(peer_cert)
         self.host_certificate = uacrypto.der_from_x509(host_cert)
-        if permission_ruleset is None:
-            from asyncua.crypto.permission_rules import SimpleRoleRuleset
-            permission_ruleset = SimpleRoleRuleset()
-
         self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):
@@ -591,11 +587,6 @@ class SecurityPolicyAes256Sha256RsaPss(SecurityPolicy):
         self.Mode = mode
         self.peer_certificate = uacrypto.der_from_x509(peer_cert)
         self.host_certificate = uacrypto.der_from_x509(host_cert)
-        if permission_ruleset is None:
-            from asyncua.crypto.permission_rules import SimpleRoleRuleset
-
-            permission_ruleset = SimpleRoleRuleset()
-
         self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):
@@ -684,10 +675,6 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
         self.Mode = mode
         self.peer_certificate = uacrypto.der_from_x509(peer_cert)
         self.host_certificate = uacrypto.der_from_x509(host_cert)
-        if permission_ruleset is None:
-            from asyncua.crypto.permission_rules import SimpleRoleRuleset
-            permission_ruleset = SimpleRoleRuleset()
-
         self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):
@@ -772,10 +759,6 @@ class SecurityPolicyBasic256(SecurityPolicy):
         self.Mode = mode
         self.peer_certificate = uacrypto.der_from_x509(peer_cert)
         self.host_certificate = uacrypto.der_from_x509(host_cert)
-        if permission_ruleset is None:
-            from asyncua.crypto.permission_rules import SimpleRoleRuleset
-            permission_ruleset = SimpleRoleRuleset()
-
         self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):
@@ -859,10 +842,6 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
         self.Mode = mode
         self.peer_certificate = uacrypto.der_from_x509(peer_cert)
         self.host_certificate = uacrypto.der_from_x509(host_cert)
-        if permission_ruleset is None:
-            from asyncua.crypto.permission_rules import SimpleRoleRuleset
-            permission_ruleset = SimpleRoleRuleset()
-
         self.permissions = permission_ruleset
 
     def make_local_symmetric_key(self, secret, seed):

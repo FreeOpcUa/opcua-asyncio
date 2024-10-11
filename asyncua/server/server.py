@@ -31,6 +31,7 @@ from ..common.ua_utils import get_nodes_of_namespace
 from ..common.connection import TransportLimits
 
 from ..crypto import security_policies, uacrypto, validator
+from ..crypto.permission_rules import SimpleRoleRuleset
 
 _logger = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ class Server:
             ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt
         ]
         # allow all certificates by default
-        self._permission_ruleset = None
+        self._permission_ruleset = SimpleRoleRuleset()
         self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep", "Aes256Sha256RsaPss"]
         self.certificate: Optional[x509.Certificate] = None
         # Use acceptable limits
@@ -343,7 +344,8 @@ class Server:
 
         """
         self._security_policy = security_policy
-        self._permission_ruleset = permission_ruleset
+        if permission_ruleset is not None:
+            self._permission_ruleset = permission_ruleset
 
     def set_security_IDs(self, policy_ids):
         """

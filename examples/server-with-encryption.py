@@ -7,7 +7,6 @@ import logging
 sys.path.insert(0, "..")
 from asyncua import Server
 from asyncua import ua
-from asyncua.crypto.permission_rules import SimpleRoleRuleset
 from asyncua.server.user_managers import CertificateUserManager
 from asyncua.crypto.cert_gen import setup_self_signed_certificate
 from asyncua.crypto.validator import CertificateValidator, CertificateValidatorOptions
@@ -38,8 +37,7 @@ async def main():
 
     await server.set_application_uri(server_app_uri)
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
-    server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
-                               permission_ruleset=SimpleRoleRuleset())
+    server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt])
 
     # Below is only required if the server should generate its own certificate,
     # It will renew also when the valid datetime range is out of range (on startup, no on runtime)
