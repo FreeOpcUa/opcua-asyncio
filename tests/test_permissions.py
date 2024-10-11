@@ -4,7 +4,6 @@ import pytest
 from asyncua import Client
 from asyncua import Server
 from asyncua import ua
-from asyncua.crypto.permission_rules import SimpleRoleRuleset
 from asyncua.server.users import UserRole
 from asyncua.server.user_managers import CertificateUserManager
 
@@ -58,8 +57,7 @@ async def srv_crypto_one_cert(request):
     srv = Server(user_manager=cert_user_manager)
 
     srv.set_endpoint(uri_crypto_cert)
-    srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt],
-                            permission_ruleset=SimpleRoleRuleset())
+    srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt])
     await srv.init()
     await srv.load_certificate(cert)
     await srv.load_private_key(key)
