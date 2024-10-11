@@ -1,8 +1,7 @@
 from asyncua import ua
 from asyncua.server.users import UserRole
 
-WRITE_TYPES = [
-    ua.ObjectIds.WriteRequest_Encoding_DefaultBinary,
+ADMIN_TYPES = [
     ua.ObjectIds.RegisterServerRequest_Encoding_DefaultBinary,
     ua.ObjectIds.RegisterServer2Request_Encoding_DefaultBinary,
     ua.ObjectIds.AddNodesRequest_Encoding_DefaultBinary,
@@ -11,11 +10,12 @@ WRITE_TYPES = [
     ua.ObjectIds.DeleteReferencesRequest_Encoding_DefaultBinary,
 ]
 
-READ_TYPES = [
+USER_TYPES = [
     ua.ObjectIds.CreateSessionRequest_Encoding_DefaultBinary,
     ua.ObjectIds.CloseSessionRequest_Encoding_DefaultBinary,
     ua.ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary,
     ua.ObjectIds.ReadRequest_Encoding_DefaultBinary,
+    ua.ObjectIds.WriteRequest_Encoding_DefaultBinary,
     ua.ObjectIds.BrowseRequest_Encoding_DefaultBinary,
     ua.ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary,
     ua.ObjectIds.FindServersRequest_Encoding_DefaultBinary,
@@ -49,15 +49,15 @@ class PermissionRuleset:
 class SimpleRoleRuleset(PermissionRuleset):
     """
     Standard simple role-based ruleset.
-    Admins alone can write, admins and users can read, and anonymous users can't do anything.
+    Admins alone can change address space, admins and users can read/write, and anonymous users can't do anything.
     """
 
     def __init__(self):
-        write_ids = list(map(ua.NodeId, WRITE_TYPES))
-        read_ids = list(map(ua.NodeId, READ_TYPES))
+        admin_ids = list(map(ua.NodeId, ADMIN_TYPES))
+        user_ids = list(map(ua.NodeId, USER_TYPES))
         self._permission_dict = {
-            UserRole.Admin: set().union(write_ids, read_ids),
-            UserRole.User: set().union(read_ids),
+            UserRole.Admin: set().union(admin_ids, user_ids),
+            UserRole.User: set().union(user_ids),
             UserRole.Anonymous: set()
         }
 

@@ -88,9 +88,9 @@ async def test_permissions_admin(srv_crypto_one_cert):
         assert await clt.get_objects_node().get_children()
         objects = clt.nodes.objects
         child = await objects.get_child(['0:MyObject', '0:MyVariable'])
-        await child.read_value()
         await child.set_value(42.0)
-
+        assert await child.read_value() == 42.0
+        await child.add_property(0, "MyProperty1", 3)
 
 async def test_permissions_user(srv_crypto_one_cert):
     clt = Client(uri_crypto_cert)
@@ -106,9 +106,10 @@ async def test_permissions_user(srv_crypto_one_cert):
         assert await clt.get_objects_node().get_children()
         objects = clt.nodes.objects
         child = await objects.get_child(['0:MyObject', '0:MyVariable'])
-        await child.read_value()
+        await child.set_value(44.0)
+        assert await child.read_value() == 44.0
         with pytest.raises(ua.uaerrors.BadUserAccessDenied):
-            await child.set_value(42)
+            await child.add_property(0, "MyProperty2", 3)
 
 
 async def test_permissions_anonymous(srv_crypto_one_cert):
@@ -121,6 +122,7 @@ async def test_permissions_anonymous(srv_crypto_one_cert):
         server_certificate=srv_crypto_params[0][1],
         mode=ua.MessageSecurityMode.SignAndEncrypt
     )
-    await clt.connect()
-    await clt.get_endpoints()
-    await clt.disconnect()
+    async with clt:
+        await clt.get_endpoints()
+        with pytest.raises(ua.uaerrors.BadUserAccessDenied):
+            await clt.nodes.objects.get_children()
