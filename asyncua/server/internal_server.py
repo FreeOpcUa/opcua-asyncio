@@ -404,6 +404,8 @@ class InternalServer:
                     raw_pw = uacrypto.decrypt_rsa15(self.private_key, password)
                 elif token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-oaep":
                     raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, password)
+                elif token.EncryptionAlgorithm == "http://opcfoundation.org/UA/security/rsa-oaep-sha2-256":
+                    raw_pw = uacrypto.decrypt_rsa_oaep_sha256(self.private_key, password)
                 else:
                     self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
                     # raise  # Should I raise a significant exception?
