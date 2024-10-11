@@ -704,7 +704,8 @@ class Client:
             # then the password only contains UTF-8 encoded password
             # and EncryptionAlgorithm is null
             if self._password:
-                _logger.warning("Sending plain-text password")
+                if self.security_policy.Mode != ua.MessageSecurityMode.SignAndEncrypt:
+                    _logger.warning("Sending plain-text password")
                 params.UserIdentityToken.Password = password.encode("utf8")
             params.UserIdentityToken.EncryptionAlgorithm = None
         elif self._password:

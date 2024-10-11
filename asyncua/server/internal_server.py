@@ -382,40 +382,30 @@ class InternalServer:
         """
         self.user_manager = user_manager
 
-    def check_user_token(self, isession, token):
+    def decrypt_user_token(self, isession, token):
         """
         unpack the username and password for the benefit of the user defined user manager
         """
         user_name = token.UserName
         password = token.Password
 
-        # TODO Support all Token Types
-        # AnonimousIdentityToken
-        # UserIdentityToken
-        # UserNameIdentityToken
-        # X509IdentityToken
-        # IssuedIdentityToken
+        # TODO check if algorithm is allowed, throw BadSecurityPolicyRejected if not
 
         # decrypt password if we can
-        if str(token.EncryptionAlgorithm) != "None":
-            try:
-                if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
-                    raw_pw = uacrypto.decrypt_rsa15(self.private_key, password)
-                elif token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-oaep":
-                    raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, password)
-                elif token.EncryptionAlgorithm == "http://opcfoundation.org/UA/security/rsa-oaep-sha2-256":
-                    raw_pw = uacrypto.decrypt_rsa_oaep_sha256(self.private_key, password)
-                else:
-                    self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
-                    # raise  # Should I raise a significant exception?
-                    return user_name, password
-                length = unpack_from("<I", raw_pw)[0] - len(isession.nonce)
-                password = raw_pw[4 : 4 + length]
-                password = password.decode("utf-8")
-            except Exception:
-                self.logger.exception("Unable to decrypt password")
-                return False
-        elif isinstance(password, bytes):  # TODO check
+        if token.EncryptionAlgorithm:
+            if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
+                raw_pw = uacrypto.decrypt_rsa15(self.private_key, password)
+            elif token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-oaep":
+                raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, password)
+            elif token.EncryptionAlgorithm == "http://opcfoundation.org/UA/security/rsa-oaep-sha2-256":
+                raw_pw = uacrypto.decrypt_rsa_oaep_sha256(self.private_key, password)
+            else:
+                self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
+                raise ValueError("Unknown password encoding")
+            length = unpack_from("<I", raw_pw)[0] - len(isession.nonce)
+            password = raw_pw[4 : 4 + length]
+            password = password.decode("utf-8")
+        elif isinstance(password, bytes):
             password = password.decode("utf-8")
 
         return user_name, password

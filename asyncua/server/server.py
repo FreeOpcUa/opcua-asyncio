@@ -410,21 +410,41 @@ class Server:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "anonymous"
             idtoken.TokenType = ua.UserTokenType.Anonymous
-            idtoken.SecurityPolicyUri = policy.URI
+            idtoken.SecurityPolicyUri = security_policies.SecurityPolicyNone.URI
             idtokens.append(idtoken)
 
         if ua.X509IdentityToken in tokens:
             idtoken = ua.UserTokenPolicy()
-            idtoken.PolicyId = "certificate_basic256sha256"
+            idtoken.PolicyId = "certificate"
             idtoken.TokenType = ua.UserTokenType.Certificate
             idtoken.SecurityPolicyUri = policy.URI
+            # TODO request signing if mode == ua.MessageSecurityMode.None_ (also need to verify signature then)
             idtokens.append(idtoken)
 
         if ua.UserNameIdentityToken in tokens:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "username"
             idtoken.TokenType = ua.UserTokenType.UserName
-            idtoken.SecurityPolicyUri = policy.URI
+            if mode == ua.MessageSecurityMode.SignAndEncrypt:
+                # channel is encrypted, no need to encrypt password again
+                idtoken.SecurityPolicyUri = security_policies.SecurityPolicyNone.URI
+            elif mode == ua.MessageSecurityMode.Sign:
+                # use same policy for encryption
+                idtoken.SecurityPolicyUri = policy.URI
+            # try to avoid plaintext password, find first policy with encryption
+            elif self.certificate and self.iserver.private_key:
+                for token_policy_type in self._security_policy:
+                    token_policy, token_mode, _ = security_policies.SECURITY_POLICY_TYPE_MAP[token_policy_type]
+                    if token_mode != ua.MessageSecurityMode.SignAndEncrypt:
+                        continue
+                    idtoken.SecurityPolicyUri = token_policy.URI
+                    break
+                else:
+                    _logger.warning("No encrypting policy available, password may get transferred in plaintext")
+                    idtoken.SecurityPolicyUri = security_policies.SecurityPolicyNone.URI
+            else:
+                _logger.warning("No encrypting policy available, password may get transferred in plaintext")
+                idtoken.SecurityPolicyUri = security_policies.SecurityPolicyNone.URI
             idtokens.append(idtoken)
 
         appdesc = ua.ApplicationDescription()
