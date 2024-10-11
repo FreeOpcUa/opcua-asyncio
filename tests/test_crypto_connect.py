@@ -481,7 +481,7 @@ async def test_anonymous_rejection():
     await srv.init()
     srv.set_endpoint(uri_crypto_cert)
     srv.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt])
-    srv.set_security_IDs(["Username", "Basic256Sha256"])
+    srv.set_identity_tokens([ua.UserNameIdentityToken, ua.X509IdentityToken])
     await srv.load_certificate(cert)
     await srv.load_private_key(key)
     await srv.start()

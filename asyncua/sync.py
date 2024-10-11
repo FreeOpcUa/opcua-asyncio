@@ -580,6 +580,9 @@ class Server:
     def set_security_IDs(self, policy_ids):
         return self.aio_obj.set_security_IDs(policy_ids)
 
+    def set_identity_tokens(self, tokens):
+        return self.aio_obj.set_identity_tokens(tokens)
+
     def disable_clock(self, val: bool = True):
         return self.aio_obj.disable_clock(val)
 

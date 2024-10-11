@@ -110,7 +110,6 @@ class Server:
         ]
         # allow all certificates by default
         self._permission_ruleset = SimpleRoleRuleset()
-        self._policyIDs = ["Anonymous", "Basic256Sha256", "Username", "Aes128Sha256RsaOaep", "Aes256Sha256RsaPss"]
         self.certificate: Optional[x509.Certificate] = None
         # Use acceptable limits
         buffer_sz = 65535
@@ -349,19 +348,29 @@ class Server:
 
     def set_security_IDs(self, policy_ids):
         """
-            Method setting up the security endpoints for identification
-            of clients. During server object initialization, all possible
-            endpoints are enabled:
-
-            self._policyIDs = ["Anonymous", "Basic256Sha256", "Username"]
-
-            E.g. to limit the number of IDs and disable anonymous clients:
-
-                set_security_IDs(["Basic256Sha256"])
-
-        (Implementation for ID check is currently not finalized...)
+            DEPRECATED!
+            Only available for backwards compatibility.
+            Use set_identity_tokens instead.
         """
-        self._policyIDs = policy_ids
+        _logger.warning("set_security_IDs is deprecated, use set_identity_tokens instead!")
+        tokens = []
+        if "Anonymous" in policy_ids:
+            tokens.append(ua.AnonymousIdentityToken)
+        if "Basic256Sha256" in policy_ids:
+            tokens.append(ua.X509IdentityToken)
+        if "Username" in policy_ids:
+            tokens.append(ua.UserNameIdentityToken)
+        self.set_identity_tokens(tokens)
+
+    def set_identity_tokens(self, tokens):
+        """
+        Method setting up allowed identity token types for authentication.
+
+        E.g. to disable anonymous clients:
+
+            set_identity_tokens([ua.X509IdentityToken, ua.UserNameIdentityToken])
+        """
+        self.iserver.supported_tokens = tuple(tokens)
 
     async def _setup_server_nodes(self):
         # to be called just before starting server since it needs all parameters to be setup
@@ -492,30 +501,27 @@ class Server:
 
     def _set_endpoints(self, policy=ua.SecurityPolicy, mode=ua.MessageSecurityMode.None_):
         idtokens = []
-        supported_token_classes = []
-        if "Anonymous" in self._policyIDs:
+        tokens = self.iserver.supported_tokens
+        if ua.AnonymousIdentityToken in tokens:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "anonymous"
             idtoken.TokenType = ua.UserTokenType.Anonymous
             idtoken.SecurityPolicyUri = policy.URI
             idtokens.append(idtoken)
-            supported_token_classes.append(ua.AnonymousIdentityToken)
 
-        if "Basic256Sha256" in self._policyIDs:
+        if ua.X509IdentityToken in tokens:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = 'certificate_basic256sha256'
             idtoken.TokenType = ua.UserTokenType.Certificate
             idtoken.SecurityPolicyUri = policy.URI
             idtokens.append(idtoken)
-            supported_token_classes.append(ua.X509IdentityToken)
 
-        if "Username" in self._policyIDs:
+        if ua.UserNameIdentityToken in tokens:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "username"
             idtoken.TokenType = ua.UserTokenType.UserName
             idtoken.SecurityPolicyUri = policy.URI
             idtokens.append(idtoken)
-            supported_token_classes.append(ua.UserNameIdentityToken)
 
         appdesc = ua.ApplicationDescription()
         appdesc.ApplicationName = ua.LocalizedText(self.name)
@@ -535,7 +541,6 @@ class Server:
         edp.TransportProfileUri = "http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary"
         edp.SecurityLevel = Server.determine_security_level(policy.URI, mode)
         self.iserver.add_endpoint(edp)
-        self.iserver.supported_tokens = tuple(supported_token_classes)
 
     def set_server_name(self, name):
         self.name = name

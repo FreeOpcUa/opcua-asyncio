@@ -19,7 +19,7 @@ class UserManager:
 async def srv_user():
     srv = Server(user_manager=UserManager())
     srv.set_endpoint(uri)
-    srv.set_security_IDs(["Username"])
+    srv.set_identity_tokens([ua.UserNameIdentityToken])
 
     await srv.init()
     await srv.start()
