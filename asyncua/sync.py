@@ -436,11 +436,8 @@ class Client:
     def check_connection(self) -> None:
         pass
 
-    def server_policy_id(self, token_type: ua.UserTokenType, default: str) -> str:
-        return self.aio_obj.server_policy_id(token_type, default)
-
-    def server_policy_uri(self, token_type: ua.UserTokenType) -> str:
-        return self.aio_obj.server_policy_uri(token_type)
+    def server_policy(self, token_type: ua.UserTokenType) -> ua.UserTokenPolicy:
+        return self.aio_obj.server_policy(token_type)
 
     @syncmethod
     def activate_session(  # type: ignore[empty-body]
