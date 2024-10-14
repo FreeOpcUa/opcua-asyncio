@@ -495,6 +495,7 @@ class Server:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "anonymous"
             idtoken.TokenType = ua.UserTokenType.Anonymous
+            idtoken.SecurityPolicyUri = policy.URI
             idtokens.append(idtoken)
             supported_token_classes.append(ua.AnonymousIdentityToken)
 
@@ -502,6 +503,7 @@ class Server:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = 'certificate_basic256sha256'
             idtoken.TokenType = ua.UserTokenType.Certificate
+            idtoken.SecurityPolicyUri = policy.URI
             idtokens.append(idtoken)
             supported_token_classes.append(ua.X509IdentityToken)
 
@@ -509,6 +511,7 @@ class Server:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "username"
             idtoken.TokenType = ua.UserTokenType.UserName
+            idtoken.SecurityPolicyUri = policy.URI
             idtokens.append(idtoken)
             supported_token_classes.append(ua.UserNameIdentityToken)
 
