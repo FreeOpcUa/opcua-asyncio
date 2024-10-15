@@ -857,5 +857,3 @@ class BadMaxConnectionsReached(UaStatusCodeError):
 
 class BadDataSetIdInvalid(UaStatusCodeError):
     code = 0x80E70000
-
-

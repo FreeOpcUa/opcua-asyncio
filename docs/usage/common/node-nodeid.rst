@@ -6,7 +6,7 @@ The NodeId Class
 ================
 
 :class:`asyncua.ua.uatypes.NodeId` objects are used as unique ids for :class:`~asyncua.common.node.Node`'s
-and are therefore used on the server and client side to access specific nodes. The two classes 
+and are therefore used on the server and client side to access specific nodes. The two classes
 :class:`~asyncua.ua.uatypes.NodeId` and :class:`~asyncua.common.node.Node` should not
 be confused: The NodeId is the unique identifier of an actual Node. While the NodeId is used to identify
 a specific node, the Node object can be used to access the underlying data.
@@ -17,7 +17,7 @@ A NodeId contains two main pieces of information that allow a unique mapping in 
 The :attr:`~asyncua.ua.uatypes.NodeId.Identifier` and the :attr:`~asyncua.ua.uatypes.NodeId.NamespaceIndex`.
 In addition there is the :attr:`~asyncua.ua.uatypes.NodeId.NodeIdType` attribute which is used
 to specify which opc-ua type is used for the Identifier. In addition to the :class:`~asyncua.ua.uatypes.NodeId`
-class, there is also the a :class:`~asyncua.ua.uatypes.ExpandedNodeId` which adds the 
+class, there is also the a :class:`~asyncua.ua.uatypes.ExpandedNodeId` which adds the
 :attr:`~asyncua.ua.uatypes.ExpandedNodeId.NamespaceUri` and :attr:`~asyncua.ua.uatypes.ExpandedNodeId.ServerIndex`
 attributes to make the ID unique across different servers and namespaces.
 
@@ -55,7 +55,7 @@ The following keys are supported:
 ns
     The ns key will map to the Namespace of the NodeId
 i, s, g, b
-    These keys will map to the Identifier of the NodeId. The character specifies the 
+    These keys will map to the Identifier of the NodeId. The character specifies the
     type: Numeric, String, Guid or Bytes.
 srv, nsu:
     If one of this keys is set, a :class:`~asyncua.ua.uatypes.ExpandedNodeId` will be returned
@@ -98,11 +98,11 @@ and client side. Therefore, both, the server and client, provide a :code:`get_no
 :meth:`asyncua.client.client.Client.get_node` & :meth:`asyncua.server.server.Server.get_node`.
 These functions can be used to get a node by it's NodeId, for example:
 
-.. code-block:: 
+.. code-block::
 
     >>> client.get_node("ns=2;i=2")
     Node(NodeId(Identifier=2, NamespaceIndex=2, NodeIdType=<NodeIdType.Numeric: 2>))
-    
+
 Note that using :code:`get_node` does not check if the node actually exists! The method
 just creates a new node which later can be used to query data.
 
@@ -111,7 +111,7 @@ just creates a new node which later can be used to query data.
 
 The node now can be used to read / write / ... data from the server:
 
-.. code-block:: 
+.. code-block::
 
     >>> node = client.get_node("ns=2;i=2")
     >>> name = (await node.read_browse_name()).Name
@@ -134,13 +134,13 @@ result in a error as the sent datatype does not match the expected type on the s
 The node object can also be used to browse to other nodes. There are several methods available
 as shown in the following short example:
 
-.. code-block:: 
+.. code-block::
 
     >>> # Get the parent of a node
     >>> parent = await node.get_parent()
     >>> print(parent)
     Node(NodeId(Identifier=1, NamespaceIndex=2, NodeIdType=<NodeIdType.FourByte: 1>))
-    
+
     >>> # Get all children of a node
     >>> await parent.get_children()
     [Node(NodeId(Identifier=2, NamespaceIndex=2, NodeIdType=<NodeIdType.FourByte: 1>))]
@@ -153,7 +153,7 @@ Note that in the last example we use the browse path of child as argument to
 :meth:`~asyncua.common.node.Node.get_child`. With the same method it's also possible
 to access a child several levels deeper than the current node:
 
-.. code-block:: 
+.. code-block::
 
     >>> await c.nodes.objects.get_child(['2:MyObject', '2:MyVariable'])
     Node(NodeId(Identifier=2, NamespaceIndex=2, NodeIdType=<NodeIdType.FourByte: 1>))
@@ -162,4 +162,4 @@ Here we start at the objects node an traverse via MyObject to MyVariable. Always
 mind that browsing through the nodes will create network traffic and server load. If
 you already know the NodeId using :meth:`~asyncua.client.client.Client.get_node` should
 be preferred. You might also consider caching NodeIds which you found through browsing
-to reduce the traffic. 
+to reduce the traffic.

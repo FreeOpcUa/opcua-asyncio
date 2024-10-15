@@ -36,4 +36,3 @@ asyncua.client.ha.virtual\_subscription module
    :members:
    :undoc-members:
    :show-inheritance:
-

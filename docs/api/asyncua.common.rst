@@ -172,4 +172,3 @@ asyncua.common.xmlparser module
    :members:
    :undoc-members:
    :show-inheritance:
-

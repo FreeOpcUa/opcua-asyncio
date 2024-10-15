@@ -9,7 +9,7 @@ assignees: ''
 
 ### Please read, before you post!
 
-This is a _**BUG REPORT for issues in the existing code**_. 
+This is a _**BUG REPORT for issues in the existing code**_.
 
 If you have general questions, code handling problems or ideas, please use the:
 

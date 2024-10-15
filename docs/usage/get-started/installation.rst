@@ -25,7 +25,7 @@ Once the installation is completed, the package is ready to be used. To verify t
 or the report the version if you create a bugreport, the following code can be run in a python interpreter:
 
 .. code-block:: python
- 
+
     import asyncua
     print(asyncua.__version__)
 
@@ -33,12 +33,12 @@ or the report the version if you create a bugreport, the following code can be r
 Command Line Tools
 ==================
 
-Alongside the package some utility command line tools are installed: 
+Alongside the package some utility command line tools are installed:
 
-:code:`uabrowse`: 
+:code:`uabrowse`:
     Browse OPC-UA node and print result
 
-:code:`uacall`: 
+:code:`uacall`:
     Call method of a node
 
 :code:`uaclient`:

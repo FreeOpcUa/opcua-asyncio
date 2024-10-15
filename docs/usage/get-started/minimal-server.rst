@@ -44,14 +44,14 @@ the server. The following session gives you an idea how the tools can be used.
     7.599999999999997
     $ uaread --url=opc.tcp://127.0.0.1:4840 --path "0:Objects,2:MyObject,2:MyVariable" # By BrowsePath
     12.199999999999996
-    
+
 Seems like our server is working and we can browse through the nodes, read values, ...
 So let's start working through the code!
 
 Imports, Basic Setup & Configuration
 ====================================
 
-In the first few lines the relevant packages, classes and methods are imported. 
+In the first few lines the relevant packages, classes and methods are imported.
 While the :mod:`logging` module is optional (just remove all calls to the logging module),
 :mod:`asyncio` is required to actually run our main function. From the :mod:`asyncua`
 package we need the :class:`~asyncua.server.server.Server`, the :mod:`asyncua.ua`
@@ -83,7 +83,7 @@ Creating Objects and Variables
 In the next lines, the custom object "MyObject" is created and a variable is added to this object.
 Note that by default all variables are read-only, so we need to be explicit and make it writable.
 The :meth:`~asyncua.common.node.Node.add_object` / :meth:`~asyncua.common.node.Node.add_variable` calls
-are actually just calling :meth:`~asyncua.common.manage_nodes.create_object`, respectively 
+are actually just calling :meth:`~asyncua.common.manage_nodes.create_object`, respectively
 :meth:`~asyncua.common.manage_nodes.create_variable` internally. You can find more information on
 how nodes and variables are created in the API docs of these methods.
 
@@ -96,7 +96,7 @@ by clients:
 
 .. literalinclude:: ../../../examples/server-minimal.py
     :caption: server-minimal.py, Line 8 - 11
-    :lines: 8 - 11 
+    :lines: 8 - 11
 
 .. literalinclude:: ../../../examples/server-minimal.py
     :caption: server-minimal.py, Line 30 - 36
@@ -114,7 +114,7 @@ Starting the Server
     :caption: server-minimal.py, Line 37 -
     :lines: 37 -
 
-Using the server as a context manager with :code:`async with server: ...` allows us to 
+Using the server as a context manager with :code:`async with server: ...` allows us to
 hide starting and shutting down the server nicely. In order to keep the server alive
 a endless loop must be present. In this example the loop is also used to periodically
 update the variable in our custom object.

@@ -24,5 +24,3 @@ Browsing and accessing nodes
 ============================
 
 .. todo:: Usage of shortcut objects (root, objects, ...)
-
-

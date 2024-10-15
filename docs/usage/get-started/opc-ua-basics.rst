@@ -2,8 +2,8 @@
 OPC-UA Basics
 =============
 
-.. todo:: How much should be in this chapter? 
-    
+.. todo:: How much should be in this chapter?
+
     Are we only going to link to external references and skip explaining the OPC-UA basics?
     The `open62541 documentation <http://www.open62541.org/doc/master/>`_ for example
     contains a lot of information about how OPC-UA works but in many chapters it also
@@ -16,7 +16,7 @@ OPC-UA Basics
 External References
 ===================
 
-.. note:: We are open to suggestions for this section! 
+.. note:: We are open to suggestions for this section!
     You know good tutorials, help pages, blogs or other resources? Share them with us!
 
 
@@ -33,4 +33,3 @@ https://www.open62541.org
 https://www.unified-automation.com
     Unified Automation provides different products for the OPC-UA ecosystem. Most of the
     tools are available as a free download with an evaluation license (non commercial use).
-

@@ -33,7 +33,7 @@ Read / Write Variables
 ======================
 
 To read or write a variable of an object, we first need to get the :class:`~asyncua.common.node.Node`
-of the variable. The :meth:`~asyncua.common.node.Node.get_child` method of the root node 
+of the variable. The :meth:`~asyncua.common.node.Node.get_child` method of the root node
 (which is just a regular node) is used to transform the known path to a Node.
 
 .. note:: Using :meth:`~asyncua.common.node.Node.get_child` will perform a server request
@@ -41,7 +41,7 @@ of the variable. The :meth:`~asyncua.common.node.Node.get_child` method of the r
     create a lot of network traffic which is not strictly required if the node id is known.
     If you know the node id it's better to use the :meth:`~asyncua.client.client.Client.get_node`
     method of the client. For example :code:`client.get_node("ns=2;i=2")` or
-    :code:`client.get_node(ua.NodeId(2, 2))` could be used in the example. 
+    :code:`client.get_node(ua.NodeId(2, 2))` could be used in the example.
     Note that the latter call is not :code:`async`!
 
 Once we have our node object, the variable value can be read or written directly using

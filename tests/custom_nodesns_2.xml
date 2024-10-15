@@ -137,7 +137,7 @@
         <DisplayName>MyBaseObject</DisplayName>
         <References>
             <Reference ReferenceType="HasComponent" IsForward="false">ns=2;i=5002</Reference>
-            <Reference ReferenceType="HasComponent">ns=1;i=6001</Reference>            
+            <Reference ReferenceType="HasComponent">ns=1;i=6001</Reference>
         </References>
    </UAObject>
    <UAVariable DataType="Int32" ParentNodeId="ns=1;i=5002" NodeId="ns=1;i=6001" BrowseName="1:MySecondLevelVar">
@@ -149,5 +149,5 @@
        <Value>
            <Int32>0</Int32>
        </Value>
-   </UAVariable>    
+   </UAVariable>
 </UANodeSet>
