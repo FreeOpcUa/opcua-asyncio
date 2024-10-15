@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [#1277](https://github.com/FreeOpcUa/opcua-asyncio/pull/1277)
 - Fixed incorrect function signature in Node and it's Sync wrapper
   [#1690](https://github.com/FreeOpcUa/opcua-asyncio/pull/1690)
-  
+
 ## [1.0.2] - 2022-04-05
 
 ### Added
@@ -68,16 +68,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixes
 
-- Fix publishing in high load situations 
+- Fix publishing in high load situations
   [#1265](https://github.com/FreeOpcUa/opcua-asyncio/pull/1265)
 - Fix MonitoredItemServer._is_data_changed, when as trigger
   ua.DataChangeTrigger.StatusValueTimestamp is used
   [#1253](https://github.com/FreeOpcUa/opcua-asyncio/pull/1253)
 - fix monitoritem for mutable values
   [#1243](https://github.com/FreeOpcUa/opcua-asyncio/pull/1243)
-- Respect EndpointUrl request parameter in GetEndpoints, FindServers and CreateSession 
+- Respect EndpointUrl request parameter in GetEndpoints, FindServers and CreateSession
   [#1232](https://github.com/FreeOpcUa/opcua-asyncio/pull/1232)
-- fix server history save event; init list before use 
+- fix server history save event; init list before use
   [#1222](https://github.com/FreeOpcUa/opcua-asyncio/pull/1222)
 - xmlexporter: fix extensionobjects typeid indentifier missing namespace mapping to idx_in_exported_file
   [#1201](https://github.com/FreeOpcUa/opcua-asyncio/pull/1201)
@@ -129,7 +129,7 @@ in `__enter__` in sync wrapper
 ### Added
 - add feat: subscription.py optional param for sampling_interval
   [#1087](https://github.com/FreeOpcUa/opcua-asyncio/pull/1087)
-  
+
 
 ### Changed
 
@@ -154,7 +154,7 @@ in `__enter__` in sync wrapper
 - Fix typo in in XmlImporte._check_if_namespace_meta_information_is_add ed which
 results in an exception
   [#1066](https://github.com/FreeOpcUa/opcua-asyncio/pull/1066)
-  
+
 
 ## [0.9.98] - 2022-09-27
 
@@ -165,7 +165,7 @@ results in an exception
 - enhance nodeset generator: add Windows support and allow targeting a branch
   [#1049](https://github.com/FreeOpcUa/opcua-asyncio/pull/1049)
 
-### Changed 
+### Changed
 - review all big exception handlings and try to better follow best practices
   [#1048](https://github.com/FreeOpcUa/opcua-asyncio/pull/1048)
 - update schema to v1.05.01 2022-02-24
@@ -209,7 +209,7 @@ results in an exception
   [#1005](https://github.com/FreeOpcUa/opcua-asyncio/pull/1005)
 - Properly close session if `connect` fails in `activate_session`
   [#1001](https://github.com/FreeOpcUa/opcua-asyncio/pull/1001)
-- xmlimport change datatype field default 
+- xmlimport change datatype field default
   [#1008](https://github.com/FreeOpcUa/opcua-asyncio/pull/1008)
 - fixed an UnboundLocalError
   [#1012](https://github.com/FreeOpcUa/opcua-asyncio/pull/1012)
@@ -237,7 +237,7 @@ results in an exception
 - Completion of the Sync api: add some missing methods
   [#975](https://github.com/FreeOpcUa/opcua-asyncio/pull/975)
 
-### Changed 
+### Changed
 - Rework struct1_04 resolution
   [#901](https://github.com/FreeOpcUa/opcua-asyncio/pull/901)
 - Handle objects in EventTypes. If a EventType has a object as child, add it's
@@ -260,7 +260,7 @@ import continues.
   [#911](https://github.com/FreeOpcUa/opcua-asyncio/pull/911)
 - Fix _open_secure_channel_exchange typehints
   [#920](https://github.com/FreeOpcUa/opcua-asyncio/pull/920)
-- Fix: Value in DataValue can be optional 
+- Fix: Value in DataValue can be optional
   [#931](https://github.com/FreeOpcUa/opcua-asyncio/pull/931)
 - You can now call `activate_session()` without arguments without discarding a
 certificate previously set with `load_client_certificate()`.
@@ -294,7 +294,7 @@ _node_to_string correctly maps namespaces idxs
 
 - Fix default value for structs with lists
   [#894](https://github.com/FreeOpcUa/opcua-asyncio/pull/894)
-- Fix enum regression 
+- Fix enum regression
   [#898](https://github.com/FreeOpcUa/opcua-asyncio/pull/898)
-- Set Client locale 
+- Set Client locale
   [#890](https://github.com/FreeOpcUa/opcua-asyncio/pull/890)

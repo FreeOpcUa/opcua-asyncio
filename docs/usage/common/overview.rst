@@ -31,5 +31,3 @@ asyncua.crypto package
 
 Code related to permissions, security and encryption is located in the :mod:`asyncua.crypto`
 package.
-
-

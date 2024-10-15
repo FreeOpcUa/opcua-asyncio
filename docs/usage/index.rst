@@ -2,7 +2,7 @@
 Usage Guide
 ===========
 
-.. toctree:: 
+.. toctree::
     :maxdepth: 2
     :caption: Get started
 
@@ -11,14 +11,14 @@ Usage Guide
     get-started/minimal-server
     get-started/minimal-client
 
-.. toctree:: 
+.. toctree::
     :maxdepth: 2
     :caption: Common
 
     common/overview
     common/node-nodeid
 
-.. toctree:: 
+.. toctree::
     :maxdepth: 2
     :caption: Client
 
@@ -30,7 +30,7 @@ Usage Guide
 
     server/overview
 
-.. toctree:: 
+.. toctree::
     :maxdepth: 2
     :caption: Sync Interface
 

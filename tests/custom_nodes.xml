@@ -51,26 +51,26 @@
 
   <UAVariable NodeId="ns=1;i=30006" BrowseName="1:MyXMLVariableWithoutValue" DataType="String">
     <References>
-    
+
       <Reference ReferenceType="HasTypeDefinition">i=69</Reference>
       <Reference ReferenceType="Organizes" IsForward="false">ns=1;i=30002</Reference>
     </References>
   </UAVariable>
-  
+
   <UADataType NodeId="ns=1;i=3008" BrowseName="1:MyCustomString">
     <DisplayName>MyCustomString</DisplayName>
       <References>
           <Reference ReferenceType="HasSubtype" IsForward="false">i=12</Reference>
     </References>
   </UADataType>
-	
+
   <UAVariable NodeId="ns=1;i=30007" BrowseName="1:MyCustomTypeVar" DataType="MyCustomString">
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=69</Reference>
       <Reference ReferenceType="Organizes" IsForward="false">ns=1;i=30002</Reference>
     </References>
   </UAVariable>
-  
+
   <!-- test data Enumeration with EnumStrings -->
   <UADataType NodeId="ns=1;i=3010" BrowseName="1:MyEnum">
         <DisplayName>MyEnum</DisplayName>
@@ -85,7 +85,7 @@
             <Field Name="error" Value="2"/>
         </Definition>
   </UADataType>
-    
+
   <UAVariable DataType="LocalizedText" ParentNodeId="ns=1;i=3010" ValueRank="1" NodeId="ns=1;i=6001" ArrayDimensions="3" BrowseName="EnumStrings">
         <DisplayName>EnumStrings</DisplayName>
         <References>
@@ -107,8 +107,8 @@
             </uax:ListOfLocalizedText>
         </Value>
   </UAVariable>
-  
-  <!-- test data Enumeration with EnumValues -->  
+
+  <!-- test data Enumeration with EnumValues -->
   <UADataType NodeId="ns=1;i=3011" BrowseName="1:MyEnumVal">
         <DisplayName>MyEnumVal</DisplayName>
         <References>
@@ -120,7 +120,7 @@
             <Field Name="error" Value="4"/>
         </Definition>
   </UADataType>
-  
+
   <UAVariable DataType="EnumValueType" ParentNodeId="i=120" ValueRank="1" NodeId="ns=1;i=99002" ArrayDimensions="3" BrowseName="EnumValues1">
         <DisplayName>EnumValues</DisplayName>
         <References>
@@ -323,6 +323,6 @@
               </uax:ExtensionObject>
           </uax:ListOfExtensionObject>
       </Value>
-  </UAVariable>    
-      
+  </UAVariable>
+
 </UANodeSet>

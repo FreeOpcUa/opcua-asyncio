@@ -210,3 +210,15 @@ Or
 ```
 ./run-test.sh -v -s --cov asyncua --cov-report=html
 ```
+
+## Linting
+
+To apply linting checks (including ruff, and mypy) at each commit run,
+```bash
+pip install pre-commit
+pre-commit install
+```
+You can also run all linters on all files with,
+```bash
+pre-commit run -a
+```

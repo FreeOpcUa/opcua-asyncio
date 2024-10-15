@@ -44,4 +44,3 @@ asyncua.client.ua\_file\_transfer module
    :members:
    :undoc-members:
    :show-inheritance:
-

@@ -66,8 +66,8 @@ class Parser(object):
         node = Node_struct()
         for child in root:
             if nodeId == child.attrib.get('NodeId'):
-                # The xml-tag is the type of an xml-element e.g. <Reference> then tag is Reference. 
-                # The tag also includes the namespace which needs to be removed 
+                # The xml-tag is the type of an xml-element e.g. <Reference> then tag is Reference.
+                # The tag also includes the namespace which needs to be removed
                 # e.g. '{http://opcfoundation.org/UA/2011/03/UANodeSet.xsd}Reference'
                 node.tag = child.tag.split(self.nameSpace)[1]
                 node.browseName = str(child.attrib.get('BrowseName'))
