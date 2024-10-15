@@ -482,7 +482,7 @@ class XmlImporter:
                     self._set_attr(sub_atttype, subargs, attname2, v2)
             if "Encoding" in subargs:
                 del subargs["Encoding"]
-            fargs[attname] = atttype(**subargs)
+            fargs[attname] = atttype(**subargs)  # type: ignore[operator]
         else:
             raise RuntimeError(f"Could not handle type {atttype} of type {type(atttype)}")
 

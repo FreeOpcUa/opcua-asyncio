@@ -6,7 +6,9 @@ from cryptography import x509
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.x509.extensions import _key_identifier_from_public_key as key_identifier_from_public_key
-from asyncua.crypto.cert_gen import generate_private_key, generate_app_certificate_signing_request, generate_self_signed_app_certificate, sign_certificate_request
+
+from asyncua.crypto.uacrypto import load_private_key
+from asyncua.crypto.cert_gen import generate_private_key, generate_app_certificate_signing_request, generate_self_signed_app_certificate, sign_certificate_request, dump_private_key_as_pem
 
 
 async def test_create_self_signed_app_certificate() -> None:
@@ -198,3 +200,11 @@ async def test_app_sign_certificate_request() -> None:
 
     assert cert.extensions.get_extension_for_class(
         x509.ExtendedKeyUsage).value == csr.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value
+
+async def test_generate_load_private_key_pem(tmp_path):
+    key_path = tmp_path / "cert.pem"
+    key = generate_private_key()
+    key_path.write_bytes(dump_private_key_as_pem(key))
+
+    key2 = await load_private_key(key_path)
+    assert dump_private_key_as_pem(key) ==  dump_private_key_as_pem(key2)
