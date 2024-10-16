@@ -248,8 +248,8 @@ class TestHaClient:
             await wait_clients_socket(ha_client, UASocketProtocol.OPEN)
 
             for client in ha_client.get_clients():
-                assert isinstance(client.security_policy, ua.SecurityPolicy)
-                assert isinstance(client.uaclient.security_policy, ua.SecurityPolicy)
+                assert isinstance(client.security_policy, security_policies.SecurityPolicy)
+                assert isinstance(client.uaclient.security_policy, security_policies.SecurityPolicy)
                 assert client.security_policy.Mode == security_mode
                 assert client.security_policy.peer_certificate
 

@@ -384,12 +384,14 @@ class Server:
         no_cert = False
         for policy_type in self._security_policy:
             policy, mode, level = security_policies.SECURITY_POLICY_TYPE_MAP[policy_type]
-            if policy is not ua.SecurityPolicy and not (self.certificate and self.iserver.private_key):
+            if policy is not security_policies.SecurityPolicyNone and not (
+                self.certificate and self.iserver.private_key
+            ):
                 no_cert = True
                 continue
             self._set_endpoints(policy, mode, level)
             self._policies.append(
-                ua.SecurityPolicyFactory(
+                security_policies.SecurityPolicyFactory(
                     policy,
                     mode,
                     self.certificate,

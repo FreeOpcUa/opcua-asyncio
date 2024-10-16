@@ -16,6 +16,7 @@ from .reconciliator import Reconciliator
 from .common import ClientNotFound, event_wait
 from .virtual_subscription import TypeSubHandler, VirtualSubscription
 from ...crypto.uacrypto import CertProperties
+from ...crypto.security_policies import SecurityPolicy
 
 
 _logger = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ class ServerInfo:
 
 @dataclass(frozen=True, eq=True)
 class HaSecurityConfig:
-    policy: Optional[Type[ua.SecurityPolicy]] = None
+    policy: Optional[Type[SecurityPolicy]] = None
     certificate: Optional[CertProperties] = None
     private_key: Optional[CertProperties] = None
     server_certificate: Optional[CertProperties] = None
@@ -190,7 +191,7 @@ class HaClient:
 
     def set_security(
         self,
-        policy: Type[ua.SecurityPolicy],
+        policy: Type[SecurityPolicy],
         certificate: CertProperties,
         private_key: CertProperties,
         server_certificate: Optional[CertProperties] = None,

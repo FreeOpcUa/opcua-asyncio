@@ -68,7 +68,7 @@ class Client:
         self.description = self.name
         self.application_uri = "urn:freeopcua:client"
         self.product_uri = "urn:freeopcua.github.io:client"
-        self.security_policy = ua.SecurityPolicy()
+        self.security_policy = security_policies.SecurityPolicyNone()
         self.secure_channel_id = None
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
@@ -162,7 +162,7 @@ class Client:
     async def set_security_string(self, string: str) -> None:
         """
         Set SecureConnection mode.
-        :param string: Mode format ``Policy,Mode,certificate,private_key[,server_private_key]``
+        :param string: Mode format ``Policy,Mode,certificate,private_key[,server_certificate]``
         where:
         - ``Policy`` is ``Basic128Rsa15``, ``Basic256`` or ``Basic256Sha256``
         - ``Mode`` is ``Sign`` or ``SignAndEncrypt``
@@ -190,7 +190,7 @@ class Client:
 
     async def set_security(
         self,
-        policy: Type[ua.SecurityPolicy],
+        policy: Type[security_policies.SecurityPolicy],
         certificate: Union[str, uacrypto.CertProperties, bytes, Path],
         private_key: Union[str, uacrypto.CertProperties, bytes, Path],
         private_key_password: Optional[Union[str, bytes]] = None,
@@ -203,7 +203,7 @@ class Client:
         """
         if server_certificate is None:
             # Force unencrypted/unsigned SecureChannel to list the endpoints
-            new_policy = ua.SecurityPolicy()
+            new_policy = security_policies.SecurityPolicyNone()
             self.security_policy = new_policy
             self.uaclient.security_policy = new_policy
             # load certificate from server's list of endpoints
@@ -226,7 +226,7 @@ class Client:
 
     async def _set_security(
         self,
-        policy: Type[ua.SecurityPolicy],
+        policy: Type[security_policies.SecurityPolicy],
         certificate: uacrypto.CertProperties,
         private_key: uacrypto.CertProperties,
         server_cert: uacrypto.CertProperties,
@@ -699,7 +699,7 @@ class Client:
         params.UserIdentityToken = ua.UserNameIdentityToken()
         params.UserIdentityToken.UserName = username
         policy_uri = self.server_policy_uri(ua.UserTokenType.UserName)
-        if not policy_uri or policy_uri == security_policies.POLICY_NONE_URI:
+        if not policy_uri or policy_uri == security_policies.SecurityPolicyNone.URI:
             # see specs part 4, 7.36.3: if the token is NOT encrypted,
             # then the password only contains UTF-8 encoded password
             # and EncryptionAlgorithm is null
