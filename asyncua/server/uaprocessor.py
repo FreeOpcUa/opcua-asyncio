@@ -11,6 +11,7 @@ from ..ua.ua_binary import nodeid_from_binary, struct_from_binary, struct_to_bin
 from .internal_server import InternalServer, InternalSession
 from ..common.connection import SecureConnection, TransportLimits
 from ..common.utils import ServiceError
+from ..crypto.security_policies import SecurityPolicyNone
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class UaProcessor:
         # rely on dict insertion order (therefore can't use set())
         self._publish_results_subs: Dict[ua.IntegerId, bool] = {}
         self._limits = copy.deepcopy(limits)  # Copy limits because they get overriden
-        self._connection = SecureConnection(ua.SecurityPolicy(), self._limits)
+        self._connection = SecureConnection(SecurityPolicyNone(), self._limits)
         self._closing: bool = False
         self._session_watchdog_task: Optional[asyncio.Task] = None
         self._watchdog_interval: float = 1.0

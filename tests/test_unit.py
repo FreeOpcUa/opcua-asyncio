@@ -25,6 +25,7 @@ from asyncua.common.ua_utils import string_to_val, val_to_string
 from asyncua.ua.uatypes import _MaskEnum
 from asyncua.common.structures import StructGenerator
 from asyncua.common.connection import MessageChunk
+from asyncua.crypto.security_policies import SecurityPolicyNone
 
 EXAMPLE_BSD_PATH = Path(__file__).parent.absolute() / "example.bsd"
 
@@ -728,7 +729,7 @@ def test_text_with_locale():
 
 
 def test_message_chunk():
-    pol = ua.SecurityPolicy()
+    pol = SecurityPolicyNone()
     chunks = MessageChunk.message_to_chunks(pol, b"123", 65536)
     assert len(chunks) == 1
     seq = 0
