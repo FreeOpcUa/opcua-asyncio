@@ -1,0 +1,54 @@
+[project]
+version = "1.1.5"
+name = "asyncua"
+description = "Pure Python OPC-UA client and server library"
+requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "GNU Lesser General Public License v3 or later" }
+authors = [
+    { name = "Olivier Roulet-Dubonnet", email = "olivier.roulet@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "aiofiles",
+    "aiosqlite",
+    "cryptography>42.0.0",
+    "pyOpenSSL>23.2.0",
+    "python-dateutil",
+    "pytz",
+    "sortedcontainers",
+    "typing-extensions",
+    "wait_for2==0.3.2",
+]
+
+[project.scripts]
+uabrowse = "asyncua.tools:uals"
+uacall = "asyncua.tools:uacall"
+uaclient = "asyncua.tools:uaclient"
+uadiscover = "asyncua.tools:uadiscover"
+uageneratestructs = "asyncua.tools:uageneratestructs"
+uahistoryread = "asyncua.tools:uahistoryread"
+uals = "asyncua.tools:uals"
+uaread = "asyncua.tools:uaread"
+uaserver = "asyncua.tools:uaserver"
+uasubscribe = "asyncua.tools:uasubscribe"
+uawrite = "asyncua.tools:uawrite"
+
+[project.urls]
+Homepage = "http://freeopcua.github.io/"
+
+[tool.hatch.version]
+path = "asyncua/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = ["/asyncua"]
