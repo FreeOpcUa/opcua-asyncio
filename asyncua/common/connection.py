@@ -84,7 +84,7 @@ class MessageChunk:
     Message Chunk, as described in OPC UA specs Part 6, 6.7.2.
     """
 
-    def __init__(self, security_policy, body=b'', msg_type=ua.MessageType.SecureMessage, chunk_type=ua.ChunkType.Single):
+    def __init__(self, crypto, body=b'', msg_type=ua.MessageType.SecureMessage, chunk_type=ua.ChunkType.Single):
         self.MessageHeader = ua.Header(msg_type, chunk_type)
         if msg_type in (ua.MessageType.SecureMessage, ua.MessageType.SecureClose):
             self.SecurityHeader = ua.SymmetricAlgorithmHeader()
@@ -94,7 +94,7 @@ class MessageChunk:
             raise ua.UaError(f"Unsupported message type: {msg_type}")
         self.SequenceHeader = ua.SequenceHeader()
         self.Body = body
-        self.security_policy = security_policy
+        self.crypto = crypto
 
     @staticmethod
     def from_binary(security_policy, data):
@@ -134,20 +134,20 @@ class MessageChunk:
         return obj
 
     def encrypted_size(self, plain_size):
-        size = plain_size + self.security_policy.signature_size()
-        pbs = self.security_policy.plain_block_size()
+        size = plain_size + self.crypto.signature_size()
+        pbs = self.crypto.plain_block_size()
         if size % pbs != 0:
             raise ua.UaError("Encryption error")
-        return size // pbs * self.security_policy.encrypted_block_size()
+        return size // pbs * self.crypto.encrypted_block_size()
 
     def to_binary(self):
         security = struct_to_binary(self.SecurityHeader)
         encrypted_part = struct_to_binary(self.SequenceHeader) + self.Body
-        encrypted_part += self.security_policy.padding(len(encrypted_part))
+        encrypted_part += self.crypto.padding(len(encrypted_part))
         self.MessageHeader.body_size = len(security) + self.encrypted_size(len(encrypted_part))
         header = header_to_binary(self.MessageHeader)
-        encrypted_part += self.security_policy.signature(header + security + encrypted_part)
-        return header + security + self.security_policy.encrypt(encrypted_part)
+        encrypted_part += self.crypto.signature(header + security + encrypted_part)
+        return header + security + self.crypto.encrypt(encrypted_part)
 
     @staticmethod
     def max_body_size(crypto, max_chunk_size):
