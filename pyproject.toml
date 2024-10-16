@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 version = "1.1.5"
 name = "asyncua"
@@ -29,6 +33,20 @@ dependencies = [
     "sortedcontainers",
     "typing-extensions",
     "wait_for2==0.3.2",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "pytest-asyncio == 0.21.2",
+    "coverage",
+    "pytest-cov",
+    "pytest-mock",
+    "asynctest",
+    "types-aiofiles",
+    "types-pyOpenSSL",
+    "types-python-dateutil",
+    "types-pytz",
 ]
 
 [project.scripts]
