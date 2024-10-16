@@ -1,8 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
+dependencies = [
+    "aiofiles",
+    "aiosqlite",
+    "cryptography>42.0.0",
+    "pyOpenSSL>23.2.0",
+    "python-dateutil",
+    "pytz",
+    "sortedcontainers",
+    "typing-extensions",
+    "wait_for2==0.3.2;python_version<'3.12'",
+]
+
 version = "1.1.5"
 name = "asyncua"
 description = "Pure Python OPC-UA client and server library"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 readme = "README.md"
 license = { text = "GNU Lesser General Public License v3 or later" }
 authors = [
@@ -13,22 +29,27 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = [
-    "aiofiles",
-    "aiosqlite",
-    "cryptography>42.0.0",
-    "pyOpenSSL>23.2.0",
-    "python-dateutil",
-    "pytz",
-    "sortedcontainers",
-    "typing-extensions",
-    "wait_for2==0.3.2",
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "pytest-asyncio == 0.21.2",
+    "coverage",
+    "pytest-cov",
+    "pytest-repeat",
+    "pytest-mock",
+    "asynctest",
+    "types-aiofiles",
+    "types-pyOpenSSL",
+    "types-python-dateutil",
+    "types-pytz",
 ]
 
 [project.scripts]
@@ -46,9 +67,13 @@ uawrite = "asyncua.tools:uawrite"
 
 [project.urls]
 Homepage = "http://freeopcua.github.io/"
-
-[tool.hatch.version]
-path = "asyncua/__init__.py"
+Repository = "https://github.com/FreeOpcUa/opcua-asyncio"
 
 [tool.hatch.build.targets.sdist]
 include = ["/asyncua"]
+
+
+[tool.ruff]
+line-length = 120
+[tool.ruff.format]
+quote-style = "preserve"
