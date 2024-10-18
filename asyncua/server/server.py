@@ -5,7 +5,6 @@ High level interface to pure python OPC-UA server
 import asyncio
 import logging
 import math
-from cryptography import x509
 from datetime import timedelta, datetime
 import socket
 from urllib.parse import urlparse
@@ -113,7 +112,6 @@ class Server:
         ]
         # allow all certificates by default
         self._permission_ruleset = SimpleRoleRuleset()
-        self.certificate: Optional[x509.Certificate] = None
         # Use acceptable limits
         buffer_sz = 65535
         max_msg_sz = 100 * 1024 * 1024  # 100mb
@@ -233,7 +231,7 @@ class Server:
         """
         load server certificate from file, either pem or der
         """
-        self.certificate = await uacrypto.load_certificate(path_or_content, format)
+        self.iserver.certificate = await uacrypto.load_certificate(path_or_content, format)
 
     async def load_private_key(self, path_or_content: Union[str, Path, bytes], password=None, format=None):
         self.iserver.private_key = await uacrypto.load_private_key(path_or_content, password, format)
@@ -385,7 +383,7 @@ class Server:
         for policy_type in self._security_policy:
             policy, mode, level = security_policies.SECURITY_POLICY_TYPE_MAP[policy_type]
             if policy is not security_policies.SecurityPolicyNone and not (
-                self.certificate and self.iserver.private_key
+                self.iserver.certificate and self.iserver.private_key
             ):
                 no_cert = True
                 continue
@@ -394,7 +392,7 @@ class Server:
                 security_policies.SecurityPolicyFactory(
                     policy,
                     mode,
-                    self.certificate,
+                    self.iserver.certificate,
                     self.iserver.private_key,
                     permission_ruleset=self._permission_ruleset,
                 )
@@ -417,9 +415,21 @@ class Server:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "certificate"
             idtoken.TokenType = ua.UserTokenType.Certificate
-            idtoken.SecurityPolicyUri = policy.URI
-            # TODO request signing if mode == ua.MessageSecurityMode.None_ (also need to verify signature then)
-            idtokens.append(idtoken)
+            # always request signing
+            if mode == ua.MessageSecurityMode.None_:
+                # find first policy with signing
+                for token_policy_type in self._security_policy:
+                    token_policy, token_mode, _ = security_policies.SECURITY_POLICY_TYPE_MAP[token_policy_type]
+                    if token_mode == ua.MessageSecurityMode.None_:
+                        continue
+                    idtoken.SecurityPolicyUri = token_policy.URI
+                    idtokens.append(idtoken)
+                    break
+                else:
+                    _logger.warning("No signing policy available, user certificate cannot get verified")
+            else:
+                idtoken.SecurityPolicyUri = policy.URI
+                idtokens.append(idtoken)
 
         if ua.UserNameIdentityToken in tokens:
             idtoken = ua.UserTokenPolicy()
@@ -432,7 +442,7 @@ class Server:
                 # use same policy for encryption
                 idtoken.SecurityPolicyUri = policy.URI
             # try to avoid plaintext password, find first policy with encryption
-            elif self.certificate and self.iserver.private_key:
+            elif self.iserver.certificate and self.iserver.private_key:
                 for token_policy_type in self._security_policy:
                     token_policy, token_mode, _ = security_policies.SECURITY_POLICY_TYPE_MAP[token_policy_type]
                     if token_mode != ua.MessageSecurityMode.SignAndEncrypt:
@@ -457,8 +467,8 @@ class Server:
         edp = ua.EndpointDescription()
         edp.EndpointUrl = self.endpoint.geturl()
         edp.Server = appdesc
-        if self.certificate:
-            edp.ServerCertificate = uacrypto.der_from_x509(self.certificate)
+        if self.iserver.certificate:
+            edp.ServerCertificate = uacrypto.der_from_x509(self.iserver.certificate)
         edp.SecurityMode = mode
         edp.SecurityPolicyUri = policy.URI
         edp.UserIdentityTokens = idtokens
@@ -473,9 +483,9 @@ class Server:
         """
         Start to listen on network
         """
-        if self.certificate is not None:
+        if self.iserver.certificate is not None:
             # Log warnings about the certificate
-            uacrypto.check_certificate(self.certificate, self._application_uri, socket.gethostname())
+            uacrypto.check_certificate(self.iserver.certificate, self._application_uri, socket.gethostname())
         await self._setup_server_nodes()
         await self.iserver.start()
         try:

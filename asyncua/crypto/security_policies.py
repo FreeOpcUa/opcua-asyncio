@@ -564,6 +564,10 @@ class SecurityPolicyAes128Sha256RsaOaep(SecurityPolicy):
     def encrypt_asymmetric(pubkey, data):
         return uacrypto.encrypt_rsa_oaep(pubkey, data)
 
+    @staticmethod
+    def sign_asymmetric(privkey, data):
+        return uacrypto.sign_sha256(privkey, data)
+
     def __init__(self, peer_cert, host_cert, host_privkey, mode, permission_ruleset=None):
         if isinstance(peer_cert, bytes):
             peer_cert = uacrypto.x509_from_der(peer_cert)
@@ -637,6 +641,10 @@ class SecurityPolicyAes256Sha256RsaPss(SecurityPolicy):
     @staticmethod
     def encrypt_asymmetric(pubkey, data):
         return uacrypto.encrypt_rsa_oaep_sha256(pubkey, data)
+
+    @staticmethod
+    def sign_asymmetric(privkey, data):
+        return uacrypto.sign_pss_sha256(privkey, data)
 
     def __init__(self, peer_cert, host_cert, host_privkey, mode, permission_ruleset=None):
         if isinstance(peer_cert, bytes):
@@ -718,6 +726,10 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
     def encrypt_asymmetric(pubkey, data):
         return uacrypto.encrypt_rsa15(pubkey, data)
 
+    @staticmethod
+    def sign_asymmetric(privkey, data):
+        return uacrypto.sign_sha1(privkey, data)
+
     def __init__(self, peer_cert, host_cert, host_privkey, mode, permission_ruleset=None):
         _logger.warning("DEPRECATED! Do not use SecurityPolicyBasic128Rsa15 anymore!")
 
@@ -798,6 +810,10 @@ class SecurityPolicyBasic256(SecurityPolicy):
     def encrypt_asymmetric(pubkey, data):
         return uacrypto.encrypt_rsa_oaep(pubkey, data)
 
+    @staticmethod
+    def sign_asymmetric(privkey, data):
+        return uacrypto.sign_sha1(privkey, data)
+
     def __init__(self, peer_cert, host_cert, host_privkey, mode, permission_ruleset=None):
         _logger.warning("DEPRECATED! Do not use SecurityPolicyBasic256 anymore!")
 
@@ -877,6 +893,10 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
     @staticmethod
     def encrypt_asymmetric(pubkey, data):
         return uacrypto.encrypt_rsa_oaep(pubkey, data)
+
+    @staticmethod
+    def sign_asymmetric(privkey, data):
+        return uacrypto.sign_sha256(privkey, data)
 
     def __init__(self, peer_cert, host_cert, host_privkey, mode, permission_ruleset=None):
         if isinstance(peer_cert, bytes):
@@ -959,6 +979,26 @@ class SecurityPolicyFactory:
         return self.cls(
             peer_certificate, self.certificate, self.private_key, self.mode, permission_ruleset=self.permission_ruleset
         )
+
+
+def sign_asymmetric(privkey, data, policy_uri):
+    """
+    Sign data with privkey using an asymmetric algorithm.
+    The algorithm is selected by policy_uri.
+    Returns a tuple (signature, algorithm_uri)
+    """
+    for cls in [
+        SecurityPolicyBasic256Sha256,
+        SecurityPolicyBasic256,
+        SecurityPolicyBasic128Rsa15,
+        SecurityPolicyAes128Sha256RsaOaep,
+        SecurityPolicyAes256Sha256RsaPss,
+    ]:
+        if policy_uri == cls.URI:
+            return (cls.sign_asymmetric(privkey, data), cls.AsymmetricSignatureURI)
+    if not policy_uri or policy_uri == SecurityPolicyNone.URI:
+        return data, ""
+    raise UaError(f"Unsupported security policy `{policy_uri}`")
 
 
 # policy, mode, security_level

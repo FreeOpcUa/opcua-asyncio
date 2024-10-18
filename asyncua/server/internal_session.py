@@ -126,8 +126,7 @@ class InternalSession(AbstractSession):
                 if isinstance(id_token, ua.UserNameIdentityToken):
                     username, password = self.iserver.decrypt_user_token(self, id_token)
                 elif isinstance(id_token, ua.X509IdentityToken):
-                    # TODO implement verify_x509_token
-                    peer_certificate = id_token.CertificateData
+                    peer_certificate = self.iserver.verify_x509_token(self, id_token, params.UserTokenSignature)
                     username, password = None, None
                 else:
                     username, password = None, None
