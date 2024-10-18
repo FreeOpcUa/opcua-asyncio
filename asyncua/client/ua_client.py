@@ -13,6 +13,7 @@ from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, BadUserAccessDenied, UaStructParsingError
 from ..ua.uaprotocol_auto import OpenSecureChannelResult, SubscriptionAcknowledgement
 from ..common.connection import SecureConnection, TransportLimits
+from ..crypto import security_policies
 
 
 class UASocketProtocol(asyncio.Protocol):
@@ -24,7 +25,8 @@ class UASocketProtocol(asyncio.Protocol):
     OPEN = 'open'
     CLOSED = 'closed'
 
-    def __init__(self, timeout: float = 1, security_policy: ua.SecurityPolicy = ua.SecurityPolicy(), limits: TransportLimits = None):
+    def __init__(self, timeout: float = 1, security_policy: security_policies.SecurityPolicy = security_policies.SecurityPolicyNone(),
+                 limits: TransportLimits = None):
         """
         :param timeout: Timeout in seconds
         :param security_policy: Security policy (optional)
@@ -270,13 +272,13 @@ class UaClient(AbstractSession):
         self.logger = logging.getLogger(f'{__name__}.UaClient')
         self._subscription_callbacks = {}
         self._timeout = timeout
-        self.security_policy = ua.SecurityPolicy()
+        self.security_policy = security_policies.SecurityPolicyNone()
         self.protocol: UASocketProtocol = None
         self._publish_task = None
         self._pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
         self._closing: bool = False
 
-    def set_security(self, policy: ua.SecurityPolicy):
+    def set_security(self, policy: security_policies.SecurityPolicy):
         self.security_policy = policy
 
     def _make_protocol(self):

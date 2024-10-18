@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import socket
+import dataclasses
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast, Callable, Coroutine
@@ -68,7 +69,7 @@ class Client:
         self.description = self.name
         self.application_uri = "urn:freeopcua:client"
         self.product_uri = "urn:freeopcua.github.io:client"
-        self.security_policy = ua.SecurityPolicy()
+        self.security_policy = security_policies.SecurityPolicyNone()
         self.secure_channel_id = None
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
@@ -156,7 +157,7 @@ class Client:
     async def set_security_string(self, string: str) -> None:
         """
         Set SecureConnection mode.
-        :param string: Mode format ``Policy,Mode,certificate,private_key[,server_private_key]``
+        :param string: Mode format ``Policy,Mode,certificate,private_key[,server_certificate]``
         where:
         - ``Policy`` is ``Basic128Rsa15``, ``Basic256`` or ``Basic256Sha256``
         - ``Mode`` is ``Sign`` or ``SignAndEncrypt``
@@ -182,7 +183,7 @@ class Client:
 
     async def set_security(
         self,
-        policy: Type[ua.SecurityPolicy],
+        policy: Type[security_policies.SecurityPolicy],
         certificate: Union[str, uacrypto.CertProperties, bytes, Path],
         private_key: Union[str, uacrypto.CertProperties, bytes, Path],
         private_key_password: Optional[Union[str, bytes]] = None,
@@ -195,7 +196,7 @@ class Client:
         """
         if server_certificate is None:
             # Force unencrypted/unsigned SecureChannel to list the endpoints
-            new_policy = ua.SecurityPolicy()
+            new_policy = security_policies.SecurityPolicyNone()
             self.security_policy = new_policy
             self.uaclient.security_policy = new_policy
             # load certificate from server's list of endpoints
@@ -218,7 +219,7 @@ class Client:
 
     async def _set_security(
         self,
-        policy: Type[ua.SecurityPolicy],
+        policy: Type[security_policies.SecurityPolicy],
         certificate: uacrypto.CertProperties,
         private_key: uacrypto.CertProperties,
         server_cert: uacrypto.CertProperties,
@@ -592,29 +593,19 @@ class Client:
             _logger.exception("Error while renewing session")
             raise
 
-    def server_policy_id(self, token_type: ua.UserTokenType, default: str) -> str:
+    def server_policy(self, token_type: ua.UserTokenType) -> ua.UserTokenPolicy:
         """
-        Find PolicyId of server's UserTokenPolicy by token_type.
-        Return default if there's no matching UserTokenPolicy.
-        """
-        for policy in self._policy_ids:
-            if policy.TokenType == token_type:
-                return policy.PolicyId
-        return default
-
-    def server_policy_uri(self, token_type: ua.UserTokenType) -> str:
-        """
-        Find SecurityPolicyUri of server's UserTokenPolicy by token_type.
+        Find UserTokenPolicy by token_type.
         If SecurityPolicyUri is empty, use default SecurityPolicyUri
         of the endpoint
         """
         for policy in self._policy_ids:
             if policy.TokenType == token_type:
                 if policy.SecurityPolicyUri:
-                    return policy.SecurityPolicyUri
+                    return policy
                 # empty URI means "use this endpoint's policy URI"
-                return self.security_policy.URI
-        return self.security_policy.URI
+                return dataclasses.replace(policy, SecurityPolicyUri=self.security_policy.URI)
+        return ua.UserTokenPolicy(TokenType=token_type, SecurityPolicyUri=self.security_policy.URI)
 
     async def activate_session(self, username: Optional[str] = None, password: Optional[str] = None, certificate: Optional[x509.Certificate] = None) -> ua.ActivateSessionResult:
         """
@@ -643,31 +634,24 @@ class Client:
 
     def _add_anonymous_auth(self, params):
         params.UserIdentityToken = ua.AnonymousIdentityToken()
-        params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.Anonymous, "anonymous")
+        params.UserIdentityToken.PolicyId = self.server_policy(ua.UserTokenType.Anonymous).PolicyId
 
     def _add_certificate_auth(self, params, certificate, challenge):
         params.UserIdentityToken = ua.X509IdentityToken()
         params.UserIdentityToken.CertificateData = uacrypto.der_from_x509(certificate)
         # specs part 4, 5.6.3.1: the data to sign is created by appending
         # the last serverNonce to the serverCertificate
-        params.UserTokenSignature = ua.SignatureData()
-        # use signature algorithm that was used for certificate generation
-        if certificate.signature_hash_algorithm.name == "sha256":
-            params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.Certificate, "certificate_basic256sha256")
-            sig = uacrypto.sign_sha256(self.user_private_key, challenge)
-            params.UserTokenSignature.Algorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
-            params.UserTokenSignature.Signature = sig
-        else:
-            params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.Certificate, "certificate_basic256")
-            sig = uacrypto.sign_sha1(self.user_private_key, challenge)
-            params.UserTokenSignature.Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
-            params.UserTokenSignature.Signature = sig
+        policy = self.server_policy(ua.UserTokenType.Certificate)
+        sig, alg = security_policies.sign_asymmetric(self.user_private_key, challenge, policy.SecurityPolicyUri)
+        params.UserIdentityToken.PolicyId = policy.PolicyId
+        params.UserTokenSignature.Algorithm = alg
+        params.UserTokenSignature.Signature = sig
 
     def _add_user_auth(self, params, username: str, password: str):
         params.UserIdentityToken = ua.UserNameIdentityToken()
         params.UserIdentityToken.UserName = username
-        policy_uri = self.server_policy_uri(ua.UserTokenType.UserName)
-        if not policy_uri or policy_uri == security_policies.POLICY_NONE_URI:
+        policy = self.server_policy(ua.UserTokenType.UserName)
+        if not policy.SecurityPolicyUri or policy.SecurityPolicyUri == security_policies.SecurityPolicyNone.URI:
             # see specs part 4, 7.36.3: if the token is NOT encrypted,
             # then the password only contains UTF-8 encoded password
             # and EncryptionAlgorithm is null
@@ -676,10 +660,10 @@ class Client:
                 params.UserIdentityToken.Password = password.encode("utf8")
             params.UserIdentityToken.EncryptionAlgorithm = None
         elif self._password:
-            data, uri = self._encrypt_password(password, policy_uri)
+            data, uri = self._encrypt_password(password, policy.SecurityPolicyUri)
             params.UserIdentityToken.Password = data
             params.UserIdentityToken.EncryptionAlgorithm = uri
-        params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.UserName, "username_basic256")
+        params.UserIdentityToken.PolicyId = policy.PolicyId
 
     def _encrypt_password(self, password: str, policy_uri) -> Tuple[bytes, str]:
         pubkey = uacrypto.x509_from_der(self.security_policy.peer_certificate).public_key()

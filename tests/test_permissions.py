@@ -6,14 +6,7 @@ from asyncua import Server
 from asyncua import ua
 from asyncua.server.users import UserRole
 from asyncua.server.user_managers import CertificateUserManager
-
-try:
-    from asyncua.crypto import security_policies
-except ImportError:
-    print("WARNING: CRYPTO NOT AVAILABLE, CRYPTO TESTS DISABLED!!")
-    disable_crypto_tests = True
-else:
-    disable_crypto_tests = False
+from asyncua.crypto import security_policies
 
 pytestmark = pytest.mark.asyncio
 

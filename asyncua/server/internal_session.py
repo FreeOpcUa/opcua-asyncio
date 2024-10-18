@@ -104,8 +104,6 @@ class InternalSession(AbstractSession):
             raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
         if InternalSession._current_connections >= InternalSession.max_connections:
             raise ServiceError(ua.StatusCodes.BadMaxConnectionsReached)
-        self.nonce = create_nonce(32)
-        result.ServerNonce = self.nonce
         for _ in params.ClientSoftwareCertificates:
             result.Results.append(ua.StatusCode())
         id_token = params.UserIdentityToken
@@ -118,13 +116,18 @@ class InternalSession(AbstractSession):
             self.logger.error('Rejected active session UserIdentityToken not supported')
             raise ServiceError(ua.StatusCodes.BadIdentityTokenRejected)
         if self.iserver.user_manager is not None:
-            if isinstance(id_token, ua.UserNameIdentityToken):
-                username, password = self.iserver.check_user_token(self, id_token)
-            elif isinstance(id_token, ua.X509IdentityToken):
-                peer_certificate = id_token.CertificateData
-                username, password = None, None
-            else:
-                username, password = None, None
+            try:
+                if isinstance(id_token, ua.UserNameIdentityToken):
+                    username, password = self.iserver.decrypt_user_token(self, id_token)
+                elif isinstance(id_token, ua.X509IdentityToken):
+                    peer_certificate = self.iserver.verify_x509_token(self, id_token, params.UserTokenSignature)
+                    username, password = None, None
+                else:
+                    username, password = None, None
+            except (ServiceError, ua.uaerrors.UaStatusCodeError):
+                raise
+            except Exception:
+                raise ServiceError(ua.StatusCodes.BadIdentityTokenInvalid)
 
             user = self.iserver.user_manager.get_user(self.iserver, username=username, password=password,
                                                       certificate=peer_certificate)
@@ -132,6 +135,8 @@ class InternalSession(AbstractSession):
                 raise ServiceError(ua.StatusCodes.BadUserAccessDenied)
             else:
                 self.user = user
+        self.nonce = create_nonce(32)
+        result.ServerNonce = self.nonce
         self.state = SessionState.Activated
         InternalSession._current_connections += 1
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)

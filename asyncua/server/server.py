@@ -374,153 +374,72 @@ class Server:
 
     async def _setup_server_nodes(self):
         # to be called just before starting server since it needs all parameters to be setup
-        if ua.SecurityPolicyType.NoSecurity in self._security_policy:
-            self._set_endpoints()
-            self._policies = [ua.SecurityPolicyFactory(permission_ruleset=self._permission_ruleset)]
+        no_cert = False
+        for policy_type in self._security_policy:
+            policy, mode, level = security_policies.SECURITY_POLICY_TYPE_MAP[policy_type]
+            if policy is not security_policies.SecurityPolicyNone and not (self.certificate and self.iserver.private_key):
+                no_cert = True
+                continue
+            self._set_endpoints(policy, mode, level)
+            self._policies.append(
+                security_policies.SecurityPolicyFactory(policy, mode, self.certificate, self.iserver.private_key, permission_ruleset=self._permission_ruleset)
+            )
 
-        if self._security_policy != [ua.SecurityPolicyType.NoSecurity]:
-            if not (self.certificate and self.iserver.private_key):
-                _logger.warning("Endpoints other than open requested but private key and certificate are not set.")
-                return
+        if no_cert:
+            _logger.warning("Endpoints other than open requested but private key and certificate are not set.")
 
-            if ua.SecurityPolicyType.NoSecurity in self._security_policy:
-                _logger.warning(
-                    "Creating an open endpoint to the server, although encrypted endpoints are enabled.")
-
-            if ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256,
-                                    ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
-                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
-                                             self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
-            if ua.SecurityPolicyType.Basic256Sha256_Sign in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256, ua.MessageSecurityMode.Sign)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
-                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
-            if ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep,
-                                    ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
-                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
-                                             self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
-            if ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep, ua.MessageSecurityMode.Sign)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
-                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
-            if ua.SecurityPolicyType.Basic128Rsa15_Sign in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyBasic128Rsa15, ua.MessageSecurityMode.Sign)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15,
-                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
-            if ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyBasic128Rsa15, ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15,
-                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate, self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
-            if ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyAes256Sha256RsaPss,
-                                    ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes256Sha256RsaPss,
-                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
-                                             self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
-            if ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyAes256Sha256RsaPss, ua.MessageSecurityMode.Sign)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes256Sha256RsaPss,
-                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
-
-    @staticmethod
-    def lookup_security_level_for_policy_type(security_policy_type: ua.SecurityPolicyType) -> ua.Byte:
-        """Returns the security level for an ua.SecurityPolicyType.
-
-        This is endpoint & server implementation specific!
-
-        Returns:
-            ua.Byte: the found security level
-        """
-
-        return ua.Byte({
-            ua.SecurityPolicyType.NoSecurity: 0,
-            ua.SecurityPolicyType.Basic128Rsa15_Sign: 1,
-            ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt: 2,
-            ua.SecurityPolicyType.Basic256_Sign: 11,
-            ua.SecurityPolicyType.Basic256_SignAndEncrypt: 21,
-            ua.SecurityPolicyType.Basic256Sha256_Sign: 50,
-            ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt: 70,
-            ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign: 55,
-            ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt: 75,
-            ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign: 60,
-            ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt: 80
-        }[security_policy_type])
-
-    @staticmethod
-    def determine_security_level(security_policy_uri: str, security_mode: ua.MessageSecurityMode) -> ua.Byte:
-        """Determine the security level of an EndPoint.
-        The security level indicates how secure an EndPoint is, compared to other EndPoints of the same server.
-        Value 0 is a special value; EndPoint isn't recommended, typical for ua.MessageSecurityMode.None_.
-
-        See Part 4 7.10
-
-        To the determine the level the value of ua.SecurityPolicyType is used.
-        The enum values already correspond to and
-        The Enum ua.SecurityPolicyType already contains a value per Enum entry that already correspond to
-
-
-        Args:
-            security_policy (ua.SecurityPolicy): the used policy
-            security_mode (ua.MessageSecurityMode): the used security mode for the messages.
-
-        Returns:
-            ua.Byte: the returned security level
-        """
-        security_level: ua.Byte = ua.Byte(0)
-
-        if security_mode != ua.MessageSecurityMode.None_:
-            security_policy_name = f'{security_policy_uri.split("#")[1].replace("_","")}_{security_mode.name}'
-
-            try:
-                security_policy_type: ua.SecurityPolicyType = ua.SecurityPolicyType[security_policy_name]
-                security_level = Server.lookup_security_level_for_policy_type(security_policy_type)
-            except KeyError:
-                _logger.error('"%s" isn\'t a valid security policy', security_policy_name)
-
-        return security_level
-
-    def _set_endpoints(self, policy=ua.SecurityPolicy, mode=ua.MessageSecurityMode.None_):
+    def _set_endpoints(self, policy, mode, level):
         idtokens = []
         tokens = self.iserver.supported_tokens
         if ua.AnonymousIdentityToken in tokens:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "anonymous"
             idtoken.TokenType = ua.UserTokenType.Anonymous
-            idtoken.SecurityPolicyUri = policy.URI
+            idtoken.SecurityPolicyUri = security_policies.SecurityPolicyNone.URI
             idtokens.append(idtoken)
 
         if ua.X509IdentityToken in tokens:
             idtoken = ua.UserTokenPolicy()
-            idtoken.PolicyId = 'certificate_basic256sha256'
+            idtoken.PolicyId = 'certificate'
             idtoken.TokenType = ua.UserTokenType.Certificate
-            idtoken.SecurityPolicyUri = policy.URI
+            # always request signing
+            if mode == ua.MessageSecurityMode.None_:
+                # find first policy with signing
+                for token_policy_type in self._security_policy:
+                    token_policy, token_mode, _ = security_policies.SECURITY_POLICY_TYPE_MAP[token_policy_type]
+                    if token_mode == ua.MessageSecurityMode.None_:
+                        continue
+                    idtoken.SecurityPolicyUri = token_policy.URI
+                    break
+                else:
+                    # TODO not signing X509IdentityToken is a security issue! raise instead?
+                    idtoken.SecurityPolicyUri = security_policies.SecurityPolicyNone.URI
+            else:
+                idtoken.SecurityPolicyUri = policy.URI
             idtokens.append(idtoken)
 
         if ua.UserNameIdentityToken in tokens:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "username"
             idtoken.TokenType = ua.UserTokenType.UserName
-            idtoken.SecurityPolicyUri = policy.URI
+            if mode == ua.MessageSecurityMode.SignAndEncrypt:
+                # channel is encrypted, no need to encrypt password again
+                idtoken.SecurityPolicyUri = security_policies.SecurityPolicyNone.URI
+            elif mode == ua.MessageSecurityMode.Sign:
+                # use same policy for encryption
+                idtoken.SecurityPolicyUri = policy.URI
+            # try to avoid plaintext password, find first policy with encryption
+            elif self.certificate and self.iserver.private_key:
+                for token_policy_type in self._security_policy:
+                    token_policy, token_mode, _ = security_policies.SECURITY_POLICY_TYPE_MAP[token_policy_type]
+                    if token_mode != ua.MessageSecurityMode.SignAndEncrypt:
+                        continue
+                    idtoken.SecurityPolicyUri = token_policy.URI
+                    break
+                else:
+                    idtoken.SecurityPolicyUri = security_policies.SecurityPolicyNone.URI
+            else:
+                idtoken.SecurityPolicyUri = security_policies.SecurityPolicyNone.URI
             idtokens.append(idtoken)
 
         appdesc = ua.ApplicationDescription()
@@ -539,7 +458,7 @@ class Server:
         edp.SecurityPolicyUri = policy.URI
         edp.UserIdentityTokens = idtokens
         edp.TransportProfileUri = "http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary"
-        edp.SecurityLevel = Server.determine_security_level(policy.URI, mode)
+        edp.SecurityLevel = level
         self.iserver.add_endpoint(edp)
 
     def set_server_name(self, name):

@@ -23,12 +23,7 @@ from .users import User, UserRole
 from .internal_session import InternalSession
 from .event_generator import EventGenerator
 from ..crypto.validator import CertificateValidatorMethod
-
-try:
-    from asyncua.crypto import uacrypto
-except ImportError:
-    logging.getLogger(__name__).warning("cryptography is not installed, use of crypto disabled")
-    uacrypto = False
+from ..crypto import uacrypto
 
 _logger = logging.getLogger(__name__)
 
@@ -380,43 +375,61 @@ class InternalServer:
         """
         self.user_manager = user_manager
 
-    def check_user_token(self, isession, token):
+    def decrypt_user_token(self, isession, token):
         """
         unpack the username and password for the benefit of the user defined user manager
         """
         user_name = token.UserName
         password = token.Password
 
-        # TODO Support all Token Types
-        # AnonimousIdentityToken
-        # UserIdentityToken
-        # UserNameIdentityToken
-        # X509IdentityToken
-        # IssuedIdentityToken
+        # TODO check if algorithm is allowed, throw BadSecurityPolicyRejected if not
 
         # decrypt password if we can
-        if str(token.EncryptionAlgorithm) != "None":
-            if not uacrypto:
-                # raise  # Should I raise a significant exception?
-                return False
-            try:
-                if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
-                    raw_pw = uacrypto.decrypt_rsa15(self.private_key, password)
-                elif token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-oaep":
-                    raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, password)
-                elif token.EncryptionAlgorithm == "http://opcfoundation.org/UA/security/rsa-oaep-sha2-256":
-                    raw_pw = uacrypto.decrypt_rsa_oaep_sha256(self.private_key, password)
-                else:
-                    self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
-                    # raise  # Should I raise a significant exception?
-                    return user_name, password
-                length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
-                password = raw_pw[4:4 + length]
-                password = password.decode('utf-8')
-            except Exception:
-                self.logger.exception("Unable to decrypt password")
-                return False
-        elif isinstance(password, bytes):  # TODO check
+        if token.EncryptionAlgorithm:
+            if token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-1_5":
+                raw_pw = uacrypto.decrypt_rsa15(self.private_key, password)
+            elif token.EncryptionAlgorithm == "http://www.w3.org/2001/04/xmlenc#rsa-oaep":
+                raw_pw = uacrypto.decrypt_rsa_oaep(self.private_key, password)
+            elif token.EncryptionAlgorithm == "http://opcfoundation.org/UA/security/rsa-oaep-sha2-256":
+                raw_pw = uacrypto.decrypt_rsa_oaep_sha256(self.private_key, password)
+            else:
+                self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
+                raise ValueError("Unknown password encoding")
+            length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
+            password = raw_pw[4:4 + length]
+            password = password.decode('utf-8')
+        elif isinstance(password, bytes):
             password = password.decode('utf-8')
 
         return user_name, password
+
+    def verify_x509_token(self, isession, token, signature):
+        """
+        verify certificate signature
+        """
+        cert = token.CertificateData
+        alg = signature.Algorithm
+        sig = signature.Signature
+
+        # TODO check if algorithm is allowed, throw BadSecurityPolicyRejected if not
+
+        challenge = b''
+        if self.certificate is not None:
+            challenge += self.certificate
+        if isession.nonce is not None:
+            challenge += isession.nonce
+
+        if not (alg and sig):
+            raise ValueError("No signature")
+
+        if alg == "http://www.w3.org/2000/09/xmldsig#rsa-sha1":
+            uacrypto.verify_sha1(cert, challenge, sig)
+        elif alg == "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256":
+            uacrypto.verify_sha256(cert, challenge, sig)
+        elif alg == "http://opcfoundation.org/UA/security/rsa-pss-sha2-256":
+            uacrypto.verify_pss_sha256(cert, challenge, sig)
+        else:
+            self.logger.warning("Unknown certificate signature algorithm %s", alg)
+            raise ValueError("Unknown algorithm")
+
+        return cert
