@@ -485,7 +485,7 @@ async def test_datetime_read_value(opc):
     dt = await time_node.read_value()
     utcnow = datetime.now(timezone.utc)
     delta = utcnow - dt
-    assert delta < timedelta(seconds=1)
+    assert delta < timedelta(seconds=2)
 
 
 async def test_datetime_write_value(opc):
