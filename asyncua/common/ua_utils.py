@@ -133,7 +133,7 @@ def string_to_val(string, vtype):
     elif vtype == ua.VariantType.Guid:
         val = uuid.UUID(string)
     elif issubclass(vtype, Enum):
-        enum_int = int(string.rsplit('_', 1)[1])
+        enum_int = int(string.rsplit("_", 1)[1])
         val = vtype(enum_int)
     else:
         # FIXME: Some types are probably missing!
@@ -203,9 +203,7 @@ async def get_node_supertype(node):
     """
     return node supertype or None
     """
-    supertypes = await node.get_referenced_nodes(
-        refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse
-    )
+    supertypes = await node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
     if supertypes:
         return supertypes[0]
     return None
@@ -292,10 +290,7 @@ async def get_nodes_of_namespace(server, namespaces=None):
     namespace_indexes = [n if isinstance(n, int) else ns_available.index(n) for n in namespaces]
 
     # filter node is based on the provided namespaces and convert the nodeid to a node
-    nodes = [
-        server.get_node(nodeid) for nodeid in server.iserver.aspace.keys()
-        if nodeid.NamespaceIndex != 0 and nodeid.NamespaceIndex in namespace_indexes
-    ]
+    nodes = [server.get_node(nodeid) for nodeid in server.iserver.aspace.keys() if nodeid.NamespaceIndex != 0 and nodeid.NamespaceIndex in namespace_indexes]
     return nodes
 
 

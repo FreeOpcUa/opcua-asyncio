@@ -14,6 +14,7 @@ from asyncua import ua
 from asyncua import Node
 from asyncua.common.manage_nodes import create_encoding, create_data_type
 from asyncua.ua.uaerrors import UaInvalidParameterError
+
 if TYPE_CHECKING:
     from asyncua import Client, Server
 
@@ -54,13 +55,7 @@ def new_struct_field(
     return field
 
 
-async def new_struct(
-    server: Union["Server", "Client"],
-    idx: Union[int, ua.NodeId],
-    name: Union[int, ua.QualifiedName],
-    fields: List[ua.StructureField],
-    is_union: bool = False
-) -> Tuple[Node, List[Node]]:
+async def new_struct(server: Union["Server", "Client"], idx: Union[int, ua.NodeId], name: Union[int, ua.QualifiedName], fields: List[ua.StructureField], is_union: bool = False) -> Tuple[Node, List[Node]]:
     """
     simple way to create a new structure
     return the created data type node and the list of encoding nodes
@@ -96,13 +91,7 @@ async def new_struct(
     return dtype, [enc]
 
 
-async def new_enum(
-    server: Union["Server", "Client"],
-    idx: Union[int, ua.NodeId],
-    name: Union[int, ua.QualifiedName],
-    values: List[str],
-    option_set: bool = False
-) -> Node:
+async def new_enum(server: Union["Server", "Client"], idx: Union[int, ua.NodeId], name: Union[int, ua.QualifiedName], values: List[str], option_set: bool = False) -> Node:
     edef = ua.EnumDefinition()
     counter = 0
     for val_name in values:
@@ -129,8 +118,8 @@ def clean_name(name):
         return name + "_"
     if name.isidentifier():
         return name
-    newname = re.sub(r'\W+', '_', name)
-    newname = re.sub(r'^[0-9]+', r'_\g<0>', newname)
+    newname = re.sub(r"\W+", "_", name)
+    newname = re.sub(r"^[0-9]+", r"_\g<0>", newname)
     _logger.warning("renamed %s to %s due to Python syntax", name, newname)
     return newname
 
@@ -150,7 +139,7 @@ def get_default_value(uatype, enums=None, hack=False, optional=False):
     if uatype == "Guid":
         return "uuid.uuid4()"
     if uatype in ("ByteString", "CharArray", "Char"):
-        return b''
+        return b""
     if uatype == "Boolean":
         return "True"
     if uatype == "DateTime":
@@ -228,22 +217,22 @@ class {struct_name}{base_class}:
         else:
             # when field point to itself datatype use forward reference for typing
             uatype = f"'ua.{uatype}'"
-        if sfield.ValueRank >= 1 and uatype == 'Char':
-            uatype = 'String'
+        if sfield.ValueRank >= 1 and uatype == "Char":
+            uatype = "String"
         elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
             uatype = f"typing.List[{uatype}]"
         if sfield.IsOptional:
             uatype = f"typing.Optional[{uatype}]"
-            default_value = 'None'
+            default_value = "None"
         fields.append((fname, uatype, default_value))
     if is_union:
         # Generate getter and setter to mimic opc ua union access
         names = [f[1] for f in fields]
-        code += "    _union_types = [" + ','.join(names) + "]\n"
-        code += "    Value: typing.Union[None, " + ','.join(names) + "] = field(default=None, init=False)"
+        code += "    _union_types = [" + ",".join(names) + "]\n"
+        code += "    Value: typing.Union[None, " + ",".join(names) + "] = field(default=None, init=False)"
         for enc_idx, fd in enumerate(fields):
             name, uatype, _ = fd
-            code += f'''
+            code += f"""
 
     @property
     def {name}(self) -> typing.Optional[{uatype}]:
@@ -256,7 +245,7 @@ class {struct_name}{base_class}:
         self.Value = value
         self.Encoding = {enc_idx + 1}
 
-            '''
+            """
     else:
         for fname, uatype, default_value in fields:
             code += f"    {fname}: {uatype} = {default_value}\n"
@@ -274,21 +263,21 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False, opt
         env = {}
     #  Add the required libraries to dict
     if "ua" not in env:
-        env['ua'] = ua
+        env["ua"] = ua
     if "datetime" not in env:
-        env['datetime'] = datetime
-        env['timezone'] = timezone
+        env["datetime"] = datetime
+        env["timezone"] = timezone
     if "uuid" not in env:
-        env['uuid'] = uuid
+        env["uuid"] = uuid
     if "enum" not in env:
-        env['IntEnum'] = IntEnum
-        env['IntFlag'] = IntFlag
+        env["IntEnum"] = IntEnum
+        env["IntFlag"] = IntFlag
     if "dataclass" not in env:
-        env['dataclass'] = dataclass
+        env["dataclass"] = dataclass
     if "typing" not in env:
-        env['typing'] = typing
+        env["typing"] = typing
     if "field" not in env:
-        env['field'] = field
+        env["field"] = field
     # generate classe add it to env dict
     if enum:
         code = make_enum_code(name, sdef, option_set)
@@ -305,11 +294,10 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False, opt
 
 
 class DataTypeSorter:
-    dtype_index: Dict[ua.NodeId, 'DataTypeSorter'] = {}
+    dtype_index: Dict[ua.NodeId, "DataTypeSorter"] = {}
     referenced_dtypes: Set[ua.NodeId] = set()
 
-    def __init__(self, data_type: ua.NodeId, name: str,
-                 desc: ua.ReferenceDescription, sdef: ua.StructureDefinition):
+    def __init__(self, data_type: ua.NodeId, name: str, desc: ua.ReferenceDescription, sdef: ua.StructureDefinition):
         self.data_type = data_type
         self.name = name
         self.desc = desc
@@ -320,7 +308,7 @@ class DataTypeSorter:
         self.dtype_index[self.desc.NodeId] = self
         self.referenced_dtypes.update(self.deps)
 
-    def depends_on(self, other: 'DataTypeSorter'):
+    def depends_on(self, other: "DataTypeSorter"):
         if other.desc.NodeId in self.deps:
             return True
         for dep_nodeid in self.deps:
@@ -331,7 +319,7 @@ class DataTypeSorter:
                 return True
         return False
 
-    def __lt__(self, other: 'DataTypeSorter'):
+    def __lt__(self, other: "DataTypeSorter"):
         return other.depends_on(self)
 
     def __repr__(self):
@@ -339,6 +327,7 @@ class DataTypeSorter:
 
     def __str__(self):
         return f"<{self.__class__.__name__}: {self.name!r}>"
+
 
 async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_existing=False):
     ch = await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype)
@@ -353,11 +342,23 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_exis
                 for sfield in reversed(parent_sdef.Fields):
                     sdef.Fields.insert(0, sfield)
             dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
-            return _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef=sdef, add_existing=add_existing,)
+            return _recursive_parse(
+                server,
+                server.get_node(desc.NodeId),
+                dtypes,
+                parent_sdef=sdef,
+                add_existing=add_existing,
+            )
         else:
-            return _recursive_parse(server, server.get_node(desc.NodeId), dtypes, parent_sdef, add_existing=add_existing,)
+            return _recursive_parse(
+                server,
+                server.get_node(desc.NodeId),
+                dtypes,
+                parent_sdef,
+                add_existing=add_existing,
+            )
 
-    requests = [ __add_recursion(sdef, desc) for sdef,desc in zip(results,ch)]
+    requests = [__add_recursion(sdef, desc) for sdef, desc in zip(results, ch)]
 
     await asyncio.gather(*requests)
 
@@ -405,10 +406,9 @@ async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAt
 
 
 async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new_alias) -> Any:
-
     for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
         name = clean_name(desc.BrowseName.Name)
-        if parent_datatype not in 'Number':
+        if parent_datatype not in "Number":
             # Don't insert Number alias, they should be already insert because they have to be basetypes already
             if not hasattr(ua, name):
                 env = make_basetype_code(name, parent_datatype)
@@ -418,9 +418,9 @@ async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new
 
 
 async def load_basetype_alias_xml_import(server, name, nodeid, parent_datatype_nid):
-    '''
+    """
     Insert alias for a datatype used for xml import
-    '''
+    """
     if hasattr(ua, name):
         return getattr(ua, name)
     parent = server.get_node(parent_datatype_nid)
@@ -439,7 +439,7 @@ def make_basetype_code(name, parent_datatype):
 {name} = ua.{parent_datatype}
 """
     env = {}
-    env['ua'] = ua
+    env["ua"] = ua
     _logger.debug("Executing code: %s", code)
     try:
         exec(code, env)
@@ -454,7 +454,7 @@ async def _load_base_datatypes(server: Union["Server", "Client"]) -> Any:
     descriptions = await server.nodes.base_data_type.get_children_descriptions()
     for desc in descriptions:
         name = clean_name(desc.BrowseName.Name)
-        if name not in ['Structure', 'Enumeration']:
+        if name not in ["Structure", "Enumeration"]:
             await _recursive_parse_basedatatypes(server, server.get_node(desc.NodeId), name, new_alias)
     return new_alias
 
@@ -544,11 +544,7 @@ class {name}({enum_type}):
             # XXX: Assuming that counting starts with 1 for enumerations, which is by no means guaranteed.
             value = n + 1 if not option_set else (1 << n)
             if n == 0:
-                _logger.warning(
-                    "%s type %s: guessing field values since the server does not provide them.",
-                    "OptionSet" if option_set else "Enumeration",
-                    name
-                )
+                _logger.warning("%s type %s: guessing field values since the server does not provide them.", "OptionSet" if option_set else "Enumeration", name)
 
         code += f"    {fieldname} = {value}\n"
     return code
@@ -585,6 +581,6 @@ async def load_enum_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes,
     if hasattr(ua, name):
         return getattr(ua, name)
     # FIXME: DateTypeDefinition is not a known attribute for mypy
-    env = await _generate_object(name, attrs.DataTypeDefinition, enum=True, option_set=option_set)   # type: ignore[attr-defined]
+    env = await _generate_object(name, attrs.DataTypeDefinition, enum=True, option_set=option_set)  # type: ignore[attr-defined]
     ua.register_enum(name, node_id, env[name])
     return env[name]

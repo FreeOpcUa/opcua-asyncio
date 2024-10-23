@@ -8,9 +8,7 @@ sys.path.insert(0, "..")
 from asyncua import Server, ua
 
 
-
 async def mymain():
-
     # setup our server
     server = Server()
     await server.init()
@@ -23,7 +21,7 @@ async def mymain():
     # populating our address space
     myobj = await server.nodes.objects.add_object(idx, "MyObject")
     myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
-    await myvar.set_writable()    # Set MyVariable to be writable by clients
+    await myvar.set_writable()  # Set MyVariable to be writable by clients
 
     # starting!
     async with server:
@@ -38,7 +36,7 @@ async def mymain():
 
 
 if __name__ == "__main__":
-    #uvloop.install()
+    # uvloop.install()
     logging.basicConfig(level=logging.WARNING)
-    cProfile.run('asyncio.run(mymain(), debug=True)', filename="perf.cprof")
-    #asyncio.run(mymain())
+    cProfile.run("asyncio.run(mymain(), debug=True)", filename="perf.cprof")
+    # asyncio.run(mymain())

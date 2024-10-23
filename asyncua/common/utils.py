@@ -2,6 +2,7 @@
 Helper function and classes that do not rely on asyncua library.
 Helper function and classes depending on ua object are in ua_utils.py
 """
+
 import asyncio
 import logging
 import os
@@ -16,7 +17,7 @@ _logger = logging.getLogger(__name__)
 
 class ServiceError(UaError):
     def __init__(self, code):
-        super().__init__('UA Service Error')
+        super().__init__("UA Service Error")
         self.code = code
 
 
@@ -43,6 +44,7 @@ class Buffer:
 
     def __str__(self):
         return f"Buffer(size:{self._size}, data:{self._data[self._cur_pos:self._cur_pos + self._size]})"
+
     __repr__ = __str__
 
     def __len__(self):
@@ -53,7 +55,7 @@ class Buffer:
 
     def __bytes__(self):
         """Return remains of buffer as bytes."""
-        return bytes(self._data[self._cur_pos:])
+        return bytes(self._data[self._cur_pos :])
 
     def read(self, size):
         """
@@ -64,7 +66,7 @@ class Buffer:
         self._size -= size
         pos = self._cur_pos
         self._cur_pos += size
-        return self._data[pos:self._cur_pos]
+        return self._data[pos : self._cur_pos]
 
     def copy(self, size=-1):
         """
@@ -113,17 +115,10 @@ def fields_with_resolved_types(
 
     fields_ = fields(class_or_instance)
     if sys.version_info.major == 3 and sys.version_info.minor <= 8:
-        resolved_fieldtypes = get_type_hints(
-            class_or_instance,
-            globalns=globalns,
-            localns=localns
-        )
+        resolved_fieldtypes = get_type_hints(class_or_instance, globalns=globalns, localns=localns)
     else:
         resolved_fieldtypes = get_type_hints(  # type: ignore[call-arg]
-            class_or_instance,
-            globalns=globalns,
-            localns=localns,
-            include_extras=include_extras
+            class_or_instance, globalns=globalns, localns=localns, include_extras=include_extras
         )
     for field in fields_:
         try:
@@ -135,7 +130,7 @@ def fields_with_resolved_types(
     return fields_
 
 
-_T = TypeVar('_T')
+_T = TypeVar("_T")
 
 
 async def wait_for(aw: Awaitable[_T], timeout: Union[int, float, None]) -> _T:
@@ -151,4 +146,5 @@ async def wait_for(aw: Awaitable[_T], timeout: Union[int, float, None]) -> _T:
         return await asyncio.wait_for(aw, timeout)
 
     import wait_for2
+
     return await wait_for2.wait_for(aw, timeout)

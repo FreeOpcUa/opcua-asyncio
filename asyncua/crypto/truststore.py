@@ -1,11 +1,12 @@
-'''
+"""
 Functionality for checking a certificate based on:
 - trusted (ca) certificates
 - crl
 
 Use of cryptography module is prefered, but  doesn't provide functionality for truststores yet, so for some we rely on using pyOpenSSL.
 
-'''
+"""
+
 from typing import List
 from pathlib import Path
 import re
@@ -19,13 +20,13 @@ _logger = logging.getLogger("asyncuagds.validate")
 
 
 class TrustStore:
-    '''
+    """
     TrustStore is used to validate certificates in two ways:
     - Based on being absent in provided certificate revocation lists
     - The certificate or its issuer being  present in a list of trusted certificates
 
     It doesn't check other content of extensions of the certificate
-    '''
+    """
 
     def __init__(self, trust_locations: List[Path], crl_locations: List[Path]):
         """Constructor of the TrustStore
@@ -68,7 +69,7 @@ class TrustStore:
             await self._load_crl_location(location)
 
     def validate(self, certificate: x509.Certificate) -> bool:
-        """ Validates if a certificate is trusted, not revoked and lays in valid datarange
+        """Validates if a certificate is trusted, not revoked and lays in valid datarange
 
         Args:
             certificate (x509.Certificate): Certificate to check
@@ -80,7 +81,7 @@ class TrustStore:
         return self.is_trusted(certificate) and self.is_revoked(certificate) is False and self.check_date_range(certificate)
 
     def check_date_range(self, certificate: x509.Certificate) -> bool:
-        """ Checks if the certificate not_valid_before_utc and not_valid_after_utc are valid.
+        """Checks if the certificate not_valid_before_utc and not_valid_after_utc are valid.
 
         Args:
             certificate (x509.Certificate): Certificate to check
@@ -91,15 +92,15 @@ class TrustStore:
         valid: bool = True
         now = datetime.now(timezone.utc)
         if certificate.not_valid_after_utc < now:
-            _logger.error('certificate is no longer valid: valid until %s', certificate.not_valid_after_utc)
+            _logger.error("certificate is no longer valid: valid until %s", certificate.not_valid_after_utc)
             valid = False
         if certificate.not_valid_before_utc > now:
-            _logger.error('certificate is not yet vaild: valid after %s', certificate.not_valid_before_utc)
+            _logger.error("certificate is not yet vaild: valid after %s", certificate.not_valid_before_utc)
             valid = False
         return valid
 
     def is_revoked(self, certificate: x509.Certificate) -> bool:
-        """ Check if the provided certifcate is in the revocation lists
+        """Check if the provided certifcate is in the revocation lists
 
         when not CRLs are present it the certificate is considere not revoked.
 
@@ -119,7 +120,7 @@ class TrustStore:
         return is_revoked
 
     def is_trusted(self, certificate: x509.Certificate) -> bool:
-        """ Check if the provided certifcate is considered trusted
+        """Check if the provided certifcate is considered trusted
         For a self-signed to be trusted is must be placed in the trusted location
         Args:
             certificate (x509.Certificate): Certificate to check
@@ -132,7 +133,7 @@ class TrustStore:
         store_ctx = crypto.X509StoreContext(self._trust_store, _certificate)
         try:
             store_ctx.verify_certificate()
-            _logger.debug('Use trusted certificate : \'%s\'', _certificate.get_subject().CN)
+            _logger.debug("Use trusted certificate : '%s'", _certificate.get_subject().CN)
             return True
         except crypto.X509StoreContextError as exp:
             print(exp)
@@ -145,10 +146,10 @@ class TrustStore:
         Args:
             location (Path): location to scan for certificates
         """
-        files = Path(location).glob('*.*')
+        files = Path(location).glob("*.*")
         for file_name in files:
-            if re.match('.*(der|pem)', file_name.name.lower()):
-                _logger.debug('Add certificate to TrustStore : \'%s\'', file_name)
+            if re.match(".*(der|pem)", file_name.name.lower()):
+                _logger.debug("Add certificate to TrustStore : '%s'", file_name)
                 trusted_cert: crypto.X509 = crypto.X509.from_cryptography(await load_certificate(file_name))
                 self._trust_store.add_cert(trusted_cert)
 
@@ -158,16 +159,16 @@ class TrustStore:
         Args:
             location (Path): location to scan for crls
         """
-        files = Path(location).glob('*.*')
+        files = Path(location).glob("*.*")
         for file_name in files:
-            if re.match('.*(der|pem)', file_name.name.lower()):
-                _logger.debug('Add CRL to list : \'%s\'', file_name)
+            if re.match(".*(der|pem)", file_name.name.lower()):
+                _logger.debug("Add CRL to list : '%s'", file_name)
                 crl = await self._load_crl(file_name)
 
                 for revoked in crl:
                     self._revoked_list.append(revoked)
 
-    @ staticmethod
+    @staticmethod
     async def _load_crl(crl_file_name: Path) -> x509.CertificateRevocationList:
         """Load a single crl from file
 
@@ -178,7 +179,7 @@ class TrustStore:
             x509.CertificateRevocationList: Return loaded CRL
         """
         content = await get_content(crl_file_name)
-        if crl_file_name.suffix.lower() == '.der':
+        if crl_file_name.suffix.lower() == ".der":
             return x509.load_der_x509_crl(content)
 
         return x509.load_pem_x509_crl(content)

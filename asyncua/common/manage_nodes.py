@@ -1,6 +1,7 @@
 """
 High level functions to create nodes
 """
+
 from __future__ import annotations
 
 import logging
@@ -39,10 +40,7 @@ def _parse_nodeid_qname(*args):
     except ua.UaError:
         raise
     except Exception as ex:
-        raise TypeError(
-            f"This method takes either a namespace index and a string as argument or a nodeid and a qualifiedname."
-            f" Received arguments {args} and got exception {ex}"
-        )
+        raise TypeError(f"This method takes either a namespace index and a string as argument or a nodeid and a qualifiedname." f" Received arguments {args} and got exception {ex}")
 
 
 async def create_folder(parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str]) -> asyncua.Node:
@@ -52,10 +50,7 @@ async def create_folder(parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int]
     or namespace index, name
     """
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
-    return make_node(
-        parent.session,
-        await _create_object(parent.session, parent.nodeid, nodeid, qname, ua.ObjectIds.FolderType)
-    )
+    return make_node(parent.session, await _create_object(parent.session, parent.nodeid, nodeid, qname, ua.ObjectIds.FolderType))
 
 
 async def create_object(
@@ -78,10 +73,7 @@ async def create_object(
         nodes = await instantiate(parent, objecttype_node, nodeid, bname=qname, dname=dname, instantiate_optional=instantiate_optional)
         return nodes[0]
     else:
-        return make_node(
-            parent.session,
-            await _create_object(parent.session, parent.nodeid, nodeid, qname, ua.ObjectIds.BaseObjectType)
-        )
+        return make_node(parent.session, await _create_object(parent.session, parent.nodeid, nodeid, qname, ua.ObjectIds.BaseObjectType))
 
 
 async def create_property(
@@ -103,10 +95,7 @@ async def create_property(
         datatype = ua.NodeId(datatype, 0)
     if datatype and not isinstance(datatype, ua.NodeId):
         raise RuntimeError("datatype argument must be a nodeid or an int refering to a nodeid")
-    return make_node(
-        parent.session,
-        await _create_variable(parent.session, parent.nodeid, nodeid, qname, var, datatype=datatype, isproperty=True)
-    )
+    return make_node(parent.session, await _create_variable(parent.session, parent.nodeid, nodeid, qname, var, datatype=datatype, isproperty=True))
 
 
 async def create_variable(
@@ -129,15 +118,10 @@ async def create_variable(
     if datatype and not isinstance(datatype, ua.NodeId):
         raise RuntimeError("datatype argument must be a nodeid or an int refering to a nodeid")
 
-    return make_node(
-        parent.session,
-        await _create_variable(parent.session, parent.nodeid, nodeid, qname, var, datatype=datatype, isproperty=False)
-    )
+    return make_node(parent.session, await _create_variable(parent.session, parent.nodeid, nodeid, qname, var, datatype=datatype, isproperty=False))
 
 
-async def create_variable_type(
-    parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], datatype: Union[ua.NodeId, int]
-) -> asyncua.Node:
+async def create_variable_type(parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], datatype: Union[ua.NodeId, int]) -> asyncua.Node:
     """
     Create a new variable type
     args are nodeid, browsename and datatype
@@ -147,27 +131,18 @@ async def create_variable_type(
     if datatype and isinstance(datatype, int):
         datatype = ua.NodeId(datatype, 0)
     if datatype and not isinstance(datatype, ua.NodeId):
-        raise RuntimeError(
-            f"Data type argument must be a nodeid or an int refering to a nodeid, received: {datatype}")
-    return make_node(
-        parent.session,
-        await _create_variable_type(parent.session, parent.nodeid, nodeid, qname, datatype)
-    )
+        raise RuntimeError(f"Data type argument must be a nodeid or an int refering to a nodeid, received: {datatype}")
+    return make_node(parent.session, await _create_variable_type(parent.session, parent.nodeid, nodeid, qname, datatype))
 
 
-async def create_reference_type(
-    parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str, int], symmetric: bool = True, inversename: Optional[str] = None
-) -> asyncua.Node:
+async def create_reference_type(parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str, int], symmetric: bool = True, inversename: Optional[str] = None) -> asyncua.Node:
     """
     Create a new reference type
     args are nodeid and browsename
     or idx and name
     """
     nodeid, qname = _parse_nodeid_qname(nodeid, bname)
-    return make_node(
-        parent.session,
-        await _create_reference_type(parent.session, parent.nodeid, nodeid, qname, symmetric, inversename)
-    )
+    return make_node(parent.session, await _create_reference_type(parent.session, parent.nodeid, nodeid, qname, symmetric, inversename))
 
 
 async def create_object_type(parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str]):
@@ -190,7 +165,7 @@ async def create_method(parent: asyncua.Node, *args) -> asyncua.Node:
     a callback is a method accepting the nodeid of the parent as first argument and variants after.
     returns a list of variants
     """
-    _logger.info('create_method %r', parent)
+    _logger.info("create_method %r", parent)
     nodeid, qname = _parse_nodeid_qname(*args[:2])
     callback = args[2]
     if len(args) > 3:
@@ -337,9 +312,7 @@ async def _create_variable_type(session, parentnodeid, nodeid, qname, datatype, 
     return results[0].AddedNodeId
 
 
-async def create_data_type(
-    parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], description: Optional[str] = None
-) -> asyncua.Node:
+async def create_data_type(parent: asyncua.Node, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], description: Optional[str] = None) -> asyncua.Node:
     """
     Create a new data type to be used in new variables, etc ..
     arguments are nodeid, browsename
@@ -431,24 +404,10 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
     results[0].StatusCode.check()
     method = make_node(parent.session, results[0].AddedNodeId)
     if inputs:
-        prob = await create_property(
-            method,
-            ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex),
-            ua.QualifiedName("InputArguments", 0),
-            [_vtype_to_argument(vtype) for vtype in inputs],
-            varianttype=ua.VariantType.ExtensionObject,
-            datatype=ua.ObjectIds.Argument
-        )
+        prob = await create_property(method, ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex), ua.QualifiedName("InputArguments", 0), [_vtype_to_argument(vtype) for vtype in inputs], varianttype=ua.VariantType.ExtensionObject, datatype=ua.ObjectIds.Argument)
         await prob.set_modelling_rule(True)
     if outputs:
-        prob = await create_property(
-            method,
-            ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex),
-            ua.QualifiedName("OutputArguments", 0),
-            [_vtype_to_argument(vtype) for vtype in outputs],
-            varianttype=ua.VariantType.ExtensionObject,
-            datatype=ua.ObjectIds.Argument
-        )
+        prob = await create_property(method, ua.NodeId(NamespaceIndex=method.nodeid.NamespaceIndex), ua.QualifiedName("OutputArguments", 0), [_vtype_to_argument(vtype) for vtype in outputs], varianttype=ua.VariantType.ExtensionObject, datatype=ua.ObjectIds.Argument)
         await prob.set_modelling_rule(True)
     if hasattr(parent.session, "add_method_callback"):
         parent.session.add_method_callback(method.nodeid, callback)
@@ -498,9 +457,7 @@ def _guess_datatype(variant: ua.Variant):
         return ua.NodeId(getattr(ua.ObjectIds, variant.VariantType.name))
 
 
-async def delete_nodes(
-    session: AbstractSession, nodes: Iterable[asyncua.Node], recursive: bool = False, delete_target_references: bool = True
-) -> Tuple[List[asyncua.Node], List[ua.StatusCode]]:
+async def delete_nodes(session: AbstractSession, nodes: Iterable[asyncua.Node], recursive: bool = False, delete_target_references: bool = True) -> Tuple[List[asyncua.Node], List[ua.StatusCode]]:
     """
     Delete specified nodes. Optionally delete recursively all nodes with a
     downward hierachic references to the node

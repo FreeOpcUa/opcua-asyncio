@@ -2,6 +2,7 @@
 add nodes defined in XML to address space
 format is the one from opc-ua specification
 """
+
 from __future__ import annotations
 
 import logging
@@ -19,17 +20,16 @@ _logger = logging.getLogger(__name__)
 
 
 def _parse_version(version_string: str) -> List[int]:
-    return [int(v) for v in version_string.split('.')]
+    return [int(v) for v in version_string.split(".")]
 
 
 class XmlImporter:
-
     def __init__(self, server: Union[asyncua.Server, asyncua.Client], strict_mode: bool = True, auto_load_definitions: bool = True):
-        '''
+        """
         strict_mode: stop on an error, if False only an error message is logged,
                      but the import continues
         auto_load_definitions: auto generate code stubs on the fly for enum and structs
-        '''
+        """
         self.parser = None
         self.session = server
         self.namespaces: Dict[int, int] = {}  # Dict[IndexInXml, IndexInServer]
@@ -69,11 +69,13 @@ class XmlImporter:
         server_model_list = []
         server_namespaces_node = await self.session.nodes.namespaces.get_children()
         for model_node in server_namespaces_node:
-            server_model_list.append({
-                "ModelUri": await (await model_node.get_child("NamespaceUri")).read_value(),
-                "Version": await (await model_node.get_child("NamespaceVersion")).read_value(),
-                "PublicationDate": (await (await model_node.get_child("NamespacePublicationDate")).read_value()).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            })
+            server_model_list.append(
+                {
+                    "ModelUri": await (await model_node.get_child("NamespaceUri")).read_value(),
+                    "Version": await (await model_node.get_child("NamespaceVersion")).read_value(),
+                    "PublicationDate": (await (await model_node.get_child("NamespacePublicationDate")).read_value()).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+            )
         return server_model_list
 
     async def _check_required_models(self, xmlpath=None, xmlstring=None):
@@ -83,7 +85,7 @@ class XmlImporter:
         server_model_list = await self._get_existing_model_in_namespace()
         for model in server_model_list:
             for req_model in req_models:
-                if (model["ModelUri"] == req_model["ModelUri"] and model["PublicationDate"] >= req_model["PublicationDate"]):
+                if model["ModelUri"] == req_model["ModelUri"] and model["PublicationDate"] >= req_model["PublicationDate"]:
                     if "Version" in model and "Version" in req_model:
                         if _parse_version(model["Version"]) >= _parse_version(req_model["Version"]):
                             req_models.remove(req_model)
@@ -111,13 +113,13 @@ class XmlImporter:
             if uri not in ns_objs:
                 idx = await self.session.register_namespace(uri)
                 obj = await self.session.nodes.namespaces.add_object(idx, uri, ua.ObjectIds.NamespaceMetadataType, False)
-                ns_uri = await obj.get_child('NamespaceUri')
+                ns_uri = await obj.get_child("NamespaceUri")
                 await ns_uri.write_value(uri, ua.VariantType.String)
-                ns_ver = await obj.get_child('NamespaceVersion')
+                ns_ver = await obj.get_child("NamespaceVersion")
                 await ns_ver.write_value(version, ua.VariantType.String)
-                ns_date = await obj.get_child('NamespacePublicationDate')
+                ns_date = await obj.get_child("NamespacePublicationDate")
                 await ns_date.write_value(pub_date)
-                ns_subset = await obj.get_child('IsNamespaceSubset')
+                ns_subset = await obj.get_child("IsNamespaceSubset")
                 await ns_subset.write_value(True)
 
     async def import_xml(self, xmlpath=None, xmlstring=None):
@@ -132,7 +134,7 @@ class XmlImporter:
         await self.parser.parse(xmlpath, xmlstring)
         self.namespaces = await self._map_namespaces()
         _logger.info("namespace map: %s", self.namespaces)
-        self._unmigrated_aliases = self.parser.get_aliases()        # these nodeids are not migrated to server namespace indexes
+        self._unmigrated_aliases = self.parser.get_aliases()  # these nodeids are not migrated to server namespace indexes
         self.aliases = self._map_aliases(self._unmigrated_aliases)  # these nodeids are already migrated to server namespace indexes
         self.refs = []
         dnodes = self.parser.get_node_datas()
@@ -162,11 +164,7 @@ class XmlImporter:
         return nodes
 
     async def _add_missing_reverse_references(self, new_nodes: List[Node]) -> Set[Node]:
-        __unidirectional_types = {ua.ObjectIds.GuardVariableType, ua.ObjectIds.HasGuard,
-                                  ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType,
-                                  ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType,
-                                  ua.ObjectIds.StateType, ua.ObjectIds.TransitionType,
-                                  ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
+        __unidirectional_types = {ua.ObjectIds.GuardVariableType, ua.ObjectIds.HasGuard, ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType, ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType, ua.ObjectIds.StateType, ua.ObjectIds.TransitionType, ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
         dangling_refs_to_missing_nodes = set(new_nodes)
 
         RefSpecKey = Tuple[ua.NodeId, ua.NodeId, ua.NodeId]  # (source_node_id, target_node_id, ref_type_id)
@@ -193,15 +191,9 @@ class XmlImporter:
             source_node_id, target_node_id, ref_type = ref_spec
             reverse_ref_spec = (target_node_id, source_node_id, ref_type)
             if reverse_ref_spec not in node_reference_map:
-
                 _logger.debug("Adding missing reference: %s <-> %s (%s)", target_node_id, source_node_id, ref.ReferenceTypeId)
 
-                new_ref = ua.AddReferencesItem(
-                    SourceNodeId=target_node_id,
-                    TargetNodeId=source_node_id,
-                    ReferenceTypeId=ref_type,
-                    IsForward=(not ref.IsForward)
-                )
+                new_ref = ua.AddReferencesItem(SourceNodeId=target_node_id, TargetNodeId=source_node_id, ReferenceTypeId=ref_type, IsForward=(not ref.IsForward))
                 reference_fixes.append(new_ref)
         await self._add_references(reference_fixes)
 
@@ -215,9 +207,7 @@ class XmlImporter:
                 missing.append(nd)
             for ref in nd.refs:
                 if ref.forward:
-                    if ref.reftype in [
-                            self.session.nodes.HasComponent.nodeid,
-                            self.session.nodes.HasProperty.nodeid]:
+                    if ref.reftype in [self.session.nodes.HasComponent.nodeid, self.session.nodes.HasProperty.nodeid]:
                         # if a node has several links, the last one will win
                         if ref.target in childs:
                             _logger.warning(
@@ -322,12 +312,7 @@ class XmlImporter:
                 node.ReferenceTypeId = self._migrate_ns(obj.parentlink)
             if obj.typedef:
                 node.TypeDefinition = self._migrate_ns(obj.typedef)
-        _logger.info(
-            "Importing xml node (%s, %s) as (%s %s)",
-            obj.browsename,
-            obj.nodeid,
-            node.BrowseName,
-            node.RequestedNewNodeId)
+        _logger.info("Importing xml node (%s, %s) as (%s %s)", obj.browsename, obj.nodeid, node.BrowseName, node.RequestedNewNodeId)
         return node
 
     def _to_migrated_nodeid(self, nodeid: Union[ua.NodeId, None, str]) -> Union[ua.NodeId, ua.QualifiedName]:
@@ -358,7 +343,7 @@ class XmlImporter:
         res = await self._get_server().add_nodes([node])
         await self._add_refs(obj)
         # do not verify these nodes because some nodesets contain invalid elements
-        if obj.displayname != 'Default Binary' and obj.displayname != 'Default XML' and obj.displayname != 'Default Json':
+        if obj.displayname != "Default Binary" and obj.displayname != "Default XML" and obj.displayname != "Default Json":
             res[0].StatusCode.check()
         return res[0].AddedNodeId
 
@@ -384,7 +369,9 @@ class XmlImporter:
         if obj.datatype is not None:
             attrs.DataType = obj.datatype
         if obj.value is not None:
-            attrs.Value = await self._add_variable_value(obj, )
+            attrs.Value = await self._add_variable_value(
+                obj,
+            )
         if obj.rank:
             attrs.ValueRank = obj.rank
         if obj.accesslevel:
@@ -417,7 +404,7 @@ class XmlImporter:
             extclass = self._get_ext_class(obj.objname)
         except Exception as exp:
             if self.auto_load_definitions:
-                await self.session.load_data_type_definitions()      # load new data type definitions since a customn class should be created
+                await self.session.load_data_type_definitions()  # load new data type definitions since a customn class should be created
                 extclass = self._get_ext_class(obj.objname)
             else:
                 raise exp
@@ -431,7 +418,7 @@ class XmlImporter:
                     val,
                 )
             for attname, v in val:
-                if attname != 'EncodingMask':
+                if attname != "EncodingMask":
                     # Skip Encoding Mask used for optional types
                     atttype = self._get_val_type(extclass, attname)
                     self._set_attr(atttype, args, attname, v)
@@ -476,7 +463,7 @@ class XmlImporter:
         elif is_dataclass(atttype):
             subargs = {}
             for attname2, v2 in val:
-                if attname2 != 'EncodingMask':
+                if attname2 != "EncodingMask":
                     # Skip Encoding Mask used for optional types
                     sub_atttype = self._get_val_type(atttype, attname2)
                     self._set_attr(sub_atttype, subargs, attname2, v2)
@@ -532,7 +519,9 @@ class XmlImporter:
         if obj.datatype is not None:
             attrs.DataType = obj.datatype
         if obj.value:
-            attrs.Value = await self._add_variable_value(obj, )
+            attrs.Value = await self._add_variable_value(
+                obj,
+            )
         if obj.rank:
             attrs.ValueRank = obj.rank
         if obj.abstract:
@@ -623,8 +612,7 @@ class XmlImporter:
                     is_struct = True
                 else:
                     _logger.warning(
-                        "%s has datatypedefinition and path %s"
-                        " but we could not find out if this is a struct",
+                        "%s has datatypedefinition and path %s" " but we could not find out if this is a struct",
                         obj,
                         path,
                     )
@@ -727,6 +715,7 @@ class XmlImporter:
                         return
             sorted_ndatas.append(ndata)
             sorted_nodes[nid] = ndata
+
         last_len = 0
         while len(sorted_nodes) < len(ndatas):
             for nid, ndata in all_nodes.items():
@@ -735,7 +724,7 @@ class XmlImporter:
                 if ndata.datatype is not None and ndata.datatype in all_nodes:
                     if ndata.datatype not in sorted_nodes:
                         continue
-                if (ndata.parent is None or ndata.parent not in all_nodes):
+                if ndata.parent is None or ndata.parent not in all_nodes:
                     add_to_sorted(nid, ndata)
                 else:
                     # Check if the nodes parent is already in the list of
@@ -744,5 +733,5 @@ class XmlImporter:
                         add_to_sorted(nid, ndata)
             if last_len == len(sorted_nodes):
                 # When no change is found we are in a endlessloop
-                raise ValueError('Ordering of nodes is not possible')
+                raise ValueError("Ordering of nodes is not possible")
         return sorted_ndatas

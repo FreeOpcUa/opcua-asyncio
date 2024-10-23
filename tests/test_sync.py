@@ -38,7 +38,7 @@ def tloop():
 def server(tloop):
     s = Server(tloop=tloop)
     s.disable_clock(True)
-    s.set_endpoint('opc.tcp://0.0.0.0:8840/freeopcua/server/')
+    s.set_endpoint("opc.tcp://0.0.0.0:8840/freeopcua/server/")
     uri = "http://examples.freeopcua.github.io"
     ns_idx = s.register_namespace(uri)
     myobj = s.nodes.objects.add_object(ns_idx, "MyObject")
@@ -127,9 +127,7 @@ async def test_sync_import_xml(client):
 
 def test_sync_read_attributes(client: Client, idx):
     client.load_type_definitions()
-    myvar = client.nodes.root.get_child(
-        ["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"]
-    )
+    myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
     assert isinstance(myvar, SyncNode)
     results = client.read_attributes([myvar], attr=ua.AttributeIds.Value)
     assert len(results) == 1
@@ -138,9 +136,7 @@ def test_sync_read_attributes(client: Client, idx):
 
 def test_sync_read_values(client: Client, idx):
     client.load_type_definitions()
-    myvar = client.nodes.root.get_child(
-        ["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"]
-    )
+    myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])
     assert isinstance(myvar, SyncNode)
     results = client.read_values([myvar])
     assert len(results) == 1
@@ -194,7 +190,6 @@ async def test_sync_server_creating_shelf_files_works(tloop: ThreadLoop, tmp_pat
 
 
 class MySubHandler:
-
     def __init__(self):
         self.future = Future()
 
@@ -215,7 +210,7 @@ def test_sync_tloop_sub(client_no_tloop):
 def test_sync_sub(client):
     myhandler = MySubHandler()
     sub = client.create_subscription(1, myhandler)
-    var = client.nodes.objects.add_variable(3, 'SubVar', 0.1)
+    var = client.nodes.objects.add_variable(3, "SubVar", 0.1)
     sub.subscribe_data_change(var)
     n, v = myhandler.future.result()
     assert v == 0.1
@@ -253,11 +248,16 @@ def test_sync_xml_export(server):
 
 def test_create_enum_sync(server):
     idx = 4
-    new_enum(server, idx, "MyCustEnum", [
-        "titi",
-        "toto",
-        "tutu",
-    ])
+    new_enum(
+        server,
+        idx,
+        "MyCustEnum",
+        [
+            "titi",
+            "toto",
+            "tutu",
+        ],
+    )
 
     server.load_data_type_definitions()
 
@@ -268,11 +268,16 @@ def test_create_enum_sync(server):
 
 def test_create_enum_sync_client(client):
     idx = 4
-    new_enum(client, idx, "MyCustEnum2", [
-        "titi",
-        "toto",
-        "tutu",
-    ])
+    new_enum(
+        client,
+        idx,
+        "MyCustEnum2",
+        [
+            "titi",
+            "toto",
+            "tutu",
+        ],
+    )
 
     client.load_data_type_definitions()
 
@@ -284,10 +289,15 @@ def test_create_enum_sync_client(client):
 def test_create_struct_sync(server):
     idx = 4
 
-    new_struct(server, idx, "MyMyStruct", [
-        new_struct_field("MyBool", ua.VariantType.Boolean),
-        new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
-    ])
+    new_struct(
+        server,
+        idx,
+        "MyMyStruct",
+        [
+            new_struct_field("MyBool", ua.VariantType.Boolean),
+            new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+        ],
+    )
 
     server.load_data_type_definitions()
     mystruct = ua.MyMyStruct()
@@ -300,10 +310,15 @@ def test_create_struct_sync(server):
 def test_create_struct_sync_client(client):
     idx = 4
 
-    new_struct(client, idx, "MyMyStruct", [
-        new_struct_field("MyBool", ua.VariantType.Boolean),
-        new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
-    ])
+    new_struct(
+        client,
+        idx,
+        "MyMyStruct",
+        [
+            new_struct_field("MyBool", ua.VariantType.Boolean),
+            new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+        ],
+    )
 
     client.load_data_type_definitions()
     mystruct = ua.MyMyStruct()

@@ -8,6 +8,7 @@ class SubHandler:
     """
     Subscription Handler. To receive events from server for a subscription
     """
+
     def datachange_notification(self, node, val, data):
         print("Python: New data change event", node, val)
 

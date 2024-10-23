@@ -1,6 +1,7 @@
 """
 Test an OPC-UA server with freeopcua python client
 """
+
 import sys
 import asyncio
 import logging
@@ -15,6 +16,7 @@ class MySubHandler:
     """
     More advanced subscription client using Future, so we can wait for events in tests
     """
+
     def __init__(self):
         self.future = asyncio.Future()
 
@@ -99,8 +101,8 @@ async def test_get_namespace_array(self, client):
 def test_get_server_node(self, client):
     srv = client.nodes.server
     self.assertEqual(srv.read_browse_name(), ua.QualifiedName("Server", 0))
-    #childs = srv.get_children()
-    #assert len(childs) > 4)
+    # childs = srv.get_children()
+    # assert len(childs) > 4)
 
 
 # @connect
@@ -122,7 +124,7 @@ def test_subscribe_server_time(self, client):
     self.assertEqual(node, server_time_node)
     delta = datetime.now(timezone.utc) - val
     print("Timedelta is ", delta)
-    #assert delta < timedelta(seconds=2))
+    # assert delta < timedelta(seconds=2))
 
     sub.unsubscribe(handle)
     sub.delete()

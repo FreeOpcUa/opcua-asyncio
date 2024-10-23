@@ -13,9 +13,7 @@ from .node_factory import make_node
 _logger = logging.getLogger(__name__)
 
 
-async def copy_node(
-    parent: asyncua.Node, node: asyncua.Node, nodeid: Optional[ua.NodeId] = None, recursive: bool = True
-) -> List[asyncua.Node]:
+async def copy_node(parent: asyncua.Node, node: asyncua.Node, nodeid: Optional[ua.NodeId] = None, recursive: bool = True) -> List[asyncua.Node]:
     """
     Copy a node or node tree as child of parent node
     """
@@ -42,17 +40,20 @@ async def _copy_node(session: AbstractSession, parent_nodeid: ua.NodeId, rdesc: 
     if recursive:
         descs = await node_to_copy.get_children_descriptions()
         for desc in descs:
-            nodes = await _copy_node(session, res.AddedNodeId, desc,
-                                     nodeid=ua.NodeId(NamespaceIndex=desc.NodeId.NamespaceIndex), recursive=True)
+            nodes = await _copy_node(session, res.AddedNodeId, desc, nodeid=ua.NodeId(NamespaceIndex=desc.NodeId.NamespaceIndex), recursive=True)
             added_nodes.extend(nodes)
 
     return added_nodes
 
 
 async def _rdesc_from_node(parent: asyncua.Node, node: asyncua.Node) -> ua.ReferenceDescription:
-    results = await node.read_attributes([
-        ua.AttributeIds.NodeClass, ua.AttributeIds.BrowseName, ua.AttributeIds.DisplayName,
-    ])
+    results = await node.read_attributes(
+        [
+            ua.AttributeIds.NodeClass,
+            ua.AttributeIds.BrowseName,
+            ua.AttributeIds.DisplayName,
+        ]
+    )
     variants: List[ua.Variant] = []
     for res in results:
         res.StatusCode.check()
@@ -76,9 +77,20 @@ async def _rdesc_from_node(parent: asyncua.Node, node: asyncua.Node) -> ua.Refer
 
 
 async def _read_and_copy_attrs(node_type: asyncua.Node, struct: Any, addnode: ua.AddNodesItem) -> None:
-    names = [name for name in struct.__dict__.keys() if not name.startswith("_") and name not in (
-        "BodyLength", "TypeId", "SpecifiedAttributes", "Encoding", "IsAbstract", "EventNotifier",
-    )]
+    names = [
+        name
+        for name in struct.__dict__.keys()
+        if not name.startswith("_")
+        and name
+        not in (
+            "BodyLength",
+            "TypeId",
+            "SpecifiedAttributes",
+            "Encoding",
+            "IsAbstract",
+            "EventNotifier",
+        )
+    ]
     attrs = [getattr(ua.AttributeIds, name) for name in names]
     results = await node_type.read_attributes(attrs)
     for idx, name in enumerate(names):
@@ -91,6 +103,5 @@ async def _read_and_copy_attrs(node_type: asyncua.Node, struct: Any, addnode: ua
             else:
                 setattr(struct, name, variant.Value)
         else:
-            _logger.warning("Instantiate: while copying attributes from node type %s,"
-                            " attribute %s, statuscode is %s", str(node_type), str(name), str(results[idx].StatusCode))
+            _logger.warning("Instantiate: while copying attributes from node type %s," " attribute %s, statuscode is %s", str(node_type), str(name), str(results[idx].StatusCode))
     addnode.NodeAttributes = struct

@@ -63,18 +63,13 @@ def add_common_args(parser, default_node="i=84", require_node=False):
         default="",
         metavar="BROWSEPATH",
     )
-    parser.add_argument(
-        "-i", "--namespace", help="Default namespace", type=int, default=0, metavar="NAMESPACE"
-    )
+    parser.add_argument("-i", "--namespace", help="Default namespace", type=int, default=0, metavar="NAMESPACE")
     parser.add_argument(
         "--security",
-        help="Security settings, for example:"
-             " Basic256Sha256,SignAndEncrypt,cert.der,pk.pem[,server_cert.der]. Default: None",
+        help="Security settings, for example:" " Basic256Sha256,SignAndEncrypt,cert.der,pk.pem[,server_cert.der]. Default: None",
         default="",
     )
-    parser.add_argument(
-        "--user", help="User name for authentication. Overrides the user name given in the URL."
-    )
+    parser.add_argument("--user", help="User name for authentication. Overrides the user name given in the URL.")
     parser.add_argument(
         "--password",
         help="Password name for authentication. Overrides the password given in the URL.",
@@ -117,9 +112,7 @@ def uaread():
 
 
 async def _uaread():
-    parser = argparse.ArgumentParser(
-        description="Read attribute of a node, per default reads value of a node"
-    )
+    parser = argparse.ArgumentParser(description="Read attribute of a node, per default reads value of a node")
     add_common_args(parser)
     parser.add_argument(
         "-a",
@@ -240,15 +233,11 @@ def _val_to_variant(val, args):
     elif args.datatype == "nodeid":
         return _arg_to_variant(val, array, ua.NodeId.from_string, ua.VariantType.NodeId)
     elif args.datatype == "expandednodeid":
-        return _arg_to_variant(
-            val, array, ua.ExpandedNodeId.from_string, ua.VariantType.ExpandedNodeId
-        )
+        return _arg_to_variant(val, array, ua.ExpandedNodeId.from_string, ua.VariantType.ExpandedNodeId)
     elif args.datatype == "statuscode":
         return _arg_to_variant(val, array, int, ua.VariantType.StatusCode)
     elif args.datatype in ("qualifiedname", "browsename"):
-        return _arg_to_variant(
-            val, array, ua.QualifiedName.from_string, ua.VariantType.QualifiedName
-        )
+        return _arg_to_variant(val, array, ua.QualifiedName.from_string, ua.VariantType.QualifiedName)
     elif args.datatype == "LocalizedText":
         return _arg_to_variant(val, array, ua.LocalizedText, ua.VariantType.LocalizedText)
 
@@ -266,9 +255,7 @@ def uawrite():
 
 
 async def _uawrite():
-    parser = argparse.ArgumentParser(
-        description="Write attribute of a node, per default write value of node"
-    )
+    parser = argparse.ArgumentParser(description="Write attribute of a node, per default write value of node")
     add_common_args(parser)
     parser.add_argument(
         "-a",
@@ -344,9 +331,7 @@ def uals():
 async def _uals():
     parser = argparse.ArgumentParser(description="Browse OPC-UA node and print result")
     add_common_args(parser)
-    parser.add_argument(
-        "-l", dest="long_format", const=3, nargs="?", type=int, help="use a long listing format"
-    )
+    parser.add_argument("-l", dest="long_format", const=3, nargs="?", type=int, help="use a long listing format")
     parser.add_argument("-d", "--depth", default=1, type=int, help="Browse depth")
 
     args = parse_args(parser)
@@ -376,11 +361,7 @@ async def _lsprint_0(node, depth, indent=""):
         print("{0:30} {1:25}".format("DisplayName", "NodeId"))
         print("")
     for desc in await node.get_children_descriptions():
-        print(
-            "{0}{1:30} {2:25}".format(
-                indent, desc.DisplayName.to_string(), desc.NodeId.to_string()
-            )
-        )
+        print("{0}{1:30} {2:25}".format(indent, desc.DisplayName.to_string(), desc.NodeId.to_string()))
         if depth:
             await _lsprint_0(Node(node.session, desc.NodeId), depth - 1, indent + "  ")
 
@@ -420,11 +401,7 @@ async def _lsprint_1(node, depth, indent=""):
 
 async def _lsprint_long(pnode, depth, indent=""):
     if not indent:
-        print(
-            "{0:30} {1:25} {2:25} {3:10} {4:30} {5:25}".format(
-                "DisplayName", "NodeId", "BrowseName", "DataType", "Timestamp", "Value"
-            )
-        )
+        print("{0:30} {1:25} {2:25} {3:10} {4:30} {5:25}".format("DisplayName", "NodeId", "BrowseName", "DataType", "Timestamp", "Value"))
         print("")
     for node in await pnode.get_children():
         attrs = await node.read_attributes(
@@ -453,11 +430,7 @@ async def _lsprint_long(pnode, depth, indent=""):
                 )
             )
         else:
-            print(
-                "{0}{1:30} {2:25} {3:25}".format(
-                    indent, name.to_string(), bname.to_string(), node.nodeid.to_string()
-                )
-            )
+            print("{0}{1:30} {2:25} {3:25}".format(indent, name.to_string(), bname.to_string(), node.nodeid.to_string()))
         if depth:
             await _lsprint_long(node, depth - 1, indent + "  ")
 
@@ -521,7 +494,7 @@ def application_to_strings(app):
         ("Gateway Server URI", app.GatewayServerUri),
         ("Discovery Profile URI", app.DiscoveryProfileUri),
     ]
-    for (n, v) in optionals:
+    for n, v in optionals:
         if v:
             result.append((n, v))
     if app.DiscoveryUrls:
@@ -570,10 +543,7 @@ def uaclient():
 
 
 async def _uaclient():
-    parser = argparse.ArgumentParser(
-        description="Connect to server and start python shell. root and objects nodes are available."
-        "Node specificed in command line is available as mynode variable"
-    )
+    parser = argparse.ArgumentParser(description="Connect to server and start python shell. root and objects nodes are available." "Node specificed in command line is available as mynode variable")
     add_common_args(parser)
     parser.add_argument("-c", "--certificate", help="set client certificate")
     parser.add_argument("-k", "--private_key", help="set client private key")
@@ -597,10 +567,7 @@ async def _uaclient():
 
 
 async def _uaserver():
-    parser = argparse.ArgumentParser(
-        description="Run an example OPC-UA server. By importing xml definition and using uawrite "
-        " command line, it is even possible to expose real data using this server"
-    )
+    parser = argparse.ArgumentParser(description="Run an example OPC-UA server. By importing xml definition and using uawrite " " command line, it is even possible to expose real data using this server")
     # we set up a server, this is a bit different from other tool, so we do not reuse common arguments
     parser.add_argument(
         "-u",
@@ -617,9 +584,7 @@ async def _uaserver():
         default="WARNING",
         help="Set log level",
     )
-    parser.add_argument(
-        "-x", "--xml", metavar="XML_FILE", help="Populate address space with nodes defined in XML"
-    )
+    parser.add_argument("-x", "--xml", metavar="XML_FILE", help="Populate address space with nodes defined in XML")
     parser.add_argument(
         "-p",
         "--populate",
@@ -660,6 +625,7 @@ async def _uaserver():
         def multiply(parent, x, y):
             print("multiply method call with parameters: ", x, y)
             return x * y
+
         uri = "http://examples.freeopcua.github.io"
         idx = await server.register_namespace(uri)
         objects = server.nodes.objects
@@ -708,9 +674,7 @@ def uadiscover():
 
 
 async def _uadiscover():
-    parser = argparse.ArgumentParser(
-        description="Performs OPC UA discovery and prints information on servers and endpoints."
-    )
+    parser = argparse.ArgumentParser(description="Performs OPC UA discovery and prints information on servers and endpoints.")
     add_minimum_args(parser)
     parser.add_argument(
         "-n",
@@ -733,9 +697,7 @@ async def _uadiscover():
     try:
         if args.network:
             print(f"Performing discovery at {args.url}\n")
-            for i, server in enumerate(
-                await client.connect_and_find_servers_on_network(), start=1
-            ):
+            for i, server in enumerate(await client.connect_and_find_servers_on_network(), start=1):
                 print(f"Server {i}:")
                 # for (n, v) in application_to_strings(server):
                 # print('  {}: {}'.format(n, v))
@@ -744,13 +706,13 @@ async def _uadiscover():
         print(f"Performing discovery at {args.url}\n")
         for i, server in enumerate(await client.connect_and_find_servers(), start=1):
             print(f"Server {i}:")
-            for (n, v) in application_to_strings(server):
+            for n, v in application_to_strings(server):
                 print(f"  {n}: {v}")
             print("")
 
         for i, ep in enumerate(await client.connect_and_get_server_endpoints(), start=1):
             print(f"Endpoint {i}:")
-            for (n, v) in endpoint_to_strings(ep):
+            for n, v in endpoint_to_strings(ep):
                 print(f"  {n}: {v}")
             print("")
     except (OSError, concurrent.futures.TimeoutError) as e:
@@ -802,9 +764,7 @@ async def _uahistoryread():
         action="store_true",
         help="Read event history instead of data change history",
     )
-    parser.add_argument(
-        "-l", "--limit", type=int, default=10, help="Maximum number of notfication to return"
-    )
+    parser.add_argument("-l", "--limit", type=int, default=10, help="Maximum number of notfication to return")
 
     args = parse_args(parser, requirenodeid=True)
 
@@ -815,9 +775,7 @@ async def _uahistoryread():
         node = await get_node(client, args)
         starttime = str_to_datetime(args.starttime, datetime.now(timezone.utc) - timedelta(days=1))
         endtime = str_to_datetime(args.endtime, datetime.now(timezone.utc))
-        print(
-            f"Reading raw history of node {node} at {args.url}; start at {starttime}, end at {endtime}\n"
-        )
+        print(f"Reading raw history of node {node} at {args.url}; start at {starttime}, end at {endtime}\n")
         if args.events:
             evs = await node.read_event_history(starttime, endtime, numvalues=args.limit)
             for ev in evs:
@@ -933,10 +891,7 @@ def uageneratestructs():
 
 
 async def _uageneratestructs():
-    parser = argparse.ArgumentParser(
-        description="Generate a Python module from the xml structure definition (.bsd),"
-                    " the node argument is typically a children of i=93"
-    )
+    parser = argparse.ArgumentParser(description="Generate a Python module from the xml structure definition (.bsd)," " the node argument is typically a children of i=93")
     add_common_args(parser, require_node=True)
     parser.add_argument(
         "-o",

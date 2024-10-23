@@ -14,6 +14,7 @@ _logger = logging.getLogger(__name__)
 # Use for storing method that can validate a certificate on a create_session
 CertificateValidatorMethod = Callable[[x509.Certificate, ApplicationDescription], Awaitable[None]]
 
+
 class CertificateValidatorOptions(Flag):
     """
     Flags for which certificate validation should be performed
@@ -23,6 +24,7 @@ class CertificateValidatorOptions(Flag):
     - EXT_VALIDATION
     - TRUSTED_VALIDATION
     """
+
     TIME_RANGE = auto()
     URI = auto()
     KEY_USAGE = auto()
@@ -56,12 +58,12 @@ class CertificateValidator:
         self._trust_store: Optional[TrustStore] = trust_store
 
     def set_validate_options(self, options: CertificateValidatorOptions):
-        """ Change the use validation options at runtime"""
+        """Change the use validation options at runtime"""
 
         self._options = options
 
     async def validate(self, cert: x509.Certificate, app_description: ua.ApplicationDescription):
-        """ Validate if a certificate is valid based on the validation options.
+        """Validate if a certificate is valid based on the validation options.
         When not valid is raises a ServiceError with an UA Result Code.
 
         Args:
@@ -90,12 +92,8 @@ class CertificateValidator:
                 if app_description.ApplicationUri not in san_uri:
                     raise ServiceError(ua.StatusCodes.BadCertificateUriInvalid)
             if CertificateValidatorOptions.KEY_USAGE in self._options:
-
                 key_usage = cert.extensions.get_extension_for_class(x509.KeyUsage).value
-                if key_usage.data_encipherment is False or \
-                key_usage.digital_signature is False or \
-                key_usage.content_commitment is False or \
-                key_usage.key_encipherment is False:
+                if key_usage.data_encipherment is False or key_usage.digital_signature is False or key_usage.content_commitment is False or key_usage.key_encipherment is False:
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
             if CertificateValidatorOptions.EXT_KEY_USAGE in self._options:
                 oid = ExtendedKeyUsageOID.SERVER_AUTH if CertificateValidatorOptions.PEER_SERVER in self._options else ExtendedKeyUsageOID.CLIENT_AUTH
@@ -103,15 +101,12 @@ class CertificateValidator:
                 if oid not in cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value:
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
 
-                if CertificateValidatorOptions.PEER_SERVER in self._options and \
-                    app_description.ApplicationType not in [ua.ApplicationType.Server, ua.ApplicationType.ClientAndServer]:
-                    _logger.warning('mismatch between application type and certificate ExtendedKeyUsage')
+                if CertificateValidatorOptions.PEER_SERVER in self._options and app_description.ApplicationType not in [ua.ApplicationType.Server, ua.ApplicationType.ClientAndServer]:
+                    _logger.warning("mismatch between application type and certificate ExtendedKeyUsage")
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
-                elif CertificateValidatorOptions.PEER_CLIENT in self._options and \
-                    app_description.ApplicationType not in [ua.ApplicationType.Client, ua.ApplicationType.ClientAndServer]:
-                    _logger.warning('mismatch between application type and certificate ExtendedKeyUsage')
+                elif CertificateValidatorOptions.PEER_CLIENT in self._options and app_description.ApplicationType not in [ua.ApplicationType.Client, ua.ApplicationType.ClientAndServer]:
+                    _logger.warning("mismatch between application type and certificate ExtendedKeyUsage")
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
-
 
             # if hostname is not None:
             #     san_dns_names = san.value.get_values_for_type(x509.DNSName)
@@ -121,7 +116,6 @@ class CertificateValidator:
             raise ServiceError(ua.StatusCodes.BadCertificateInvalid) from exc
 
         if CertificateValidatorOptions.TRUSTED in self._options or CertificateValidatorOptions.REVOKED in self._options:
-
             if CertificateValidatorOptions.TRUSTED in self._options:
                 if self._trust_store and not self._trust_store.is_trusted(cert):
                     raise ServiceError(ua.StatusCodes.BadCertificateUntrusted)

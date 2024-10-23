@@ -8,6 +8,7 @@ OPC 10000-5: OPC Unified Architecture V1.04
 Part 5: Information Model - Annex C (normative) File Transfer
 https://reference.opcfoundation.org/Core/docs/Part5/C.1/
 """
+
 import logging
 from typing import Tuple
 
@@ -22,6 +23,7 @@ class UaFile:
     """
     Provides the functionality to work with "C.2 FileType".
     """
+
     def __init__(self, file_node: Node, open_mode: OpenFileMode = OpenFileMode.Read.value):
         """
         Initializes a new instance of the UaFile class.
@@ -124,9 +126,7 @@ class UaFile:
             self._set_position_node = await self._file_node.get_child("SetPosition")
         arg1_file_handle = Variant(self._file_handle, VariantType.UInt32)
         arg2_position = Variant(position, VariantType.UInt64)
-        return await self._file_node.call_method(self._set_position_node,
-                                                 arg1_file_handle,
-                                                 arg2_position)
+        return await self._file_node.call_method(self._set_position_node, arg1_file_handle, arg2_position)
 
     async def get_size(self) -> int:
         """
@@ -176,6 +176,7 @@ class UaDirectory:
     """
     Provides the functionality to work with "C.3 File System".
     """
+
     def __init__(self, directory_node):
         self._directory_node = directory_node
 
@@ -222,9 +223,7 @@ class UaDirectory:
         create_file_node = await self._directory_node.get_child("CreateFile")
         arg1_file_name = Variant(file_name, VariantType.String)
         arg2_request_file_open = Variant(request_file_open, VariantType.Boolean)
-        return await self._directory_node.call_method(create_file_node,
-                                                      arg1_file_name,
-                                                      arg2_request_file_open)
+        return await self._directory_node.call_method(create_file_node, arg1_file_name, arg2_request_file_open)
 
     async def delete(self, object_to_delete: NodeId) -> None:
         """
@@ -237,11 +236,7 @@ class UaDirectory:
         delete_node = await self._directory_node.get_child("Delete")
         await self._directory_node.call_method(delete_node, object_to_delete)
 
-    async def move_or_copy(self,
-                           object_to_move_or_copy: NodeId,
-                           target_directory: NodeId,
-                           create_copy: bool,
-                           new_name: str) -> NodeId:
+    async def move_or_copy(self, object_to_move_or_copy: NodeId, target_directory: NodeId, create_copy: bool, new_name: str) -> NodeId:
         """
         MoveOrCopy is used to move or copy a file or directory organized by this Object
         to another directory or to rename a file or directory.
@@ -256,18 +251,8 @@ class UaDirectory:
         :return: The NodeId of the moved or copied object. Even if the Object is moved,
         the Server may return a new NodeId.
         """
-        _logger.debug("Request to %s%s file system object %s from %s to %s, new name=%s",
-                      '' if create_copy else 'move',
-                      'copy' if create_copy else '',
-                      object_to_move_or_copy,
-                      self._directory_node,
-                      target_directory,
-                      new_name)
+        _logger.debug("Request to %s%s file system object %s from %s to %s, new name=%s", "" if create_copy else "move", "copy" if create_copy else "", object_to_move_or_copy, self._directory_node, target_directory, new_name)
         move_or_copy_node = await self._directory_node.get_child("MoveOrCopy")
         arg3_create_copy = Variant(create_copy, VariantType.Boolean)
         arg4_new_name = Variant(new_name, VariantType.String)
-        return await self._directory_node.call_method(move_or_copy_node,
-                                                      object_to_move_or_copy,
-                                                      target_directory,
-                                                      arg3_create_copy,
-                                                      arg4_new_name)
+        return await self._directory_node.call_method(move_or_copy_node, object_to_move_or_copy, target_directory, arg3_create_copy, arg4_new_name)

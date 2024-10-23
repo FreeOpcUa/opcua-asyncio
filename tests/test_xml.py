@@ -295,11 +295,7 @@ async def test_xml_datetime(opc, tmpdir):
 
 
 async def test_xml_datetime_array(opc, tmpdir):
-    o = await opc.opc.nodes.objects.add_variable(3, "myxmlvar-array", [
-        datetime.datetime.now(),
-        datetime.datetime.now(datetime.timezone.utc),
-        datetime.datetime.now(timezone("Asia/Tokyo"))
-    ], ua.VariantType.DateTime)
+    o = await opc.opc.nodes.objects.add_variable(3, "myxmlvar-array", [datetime.datetime.now(), datetime.datetime.now(datetime.timezone.utc), datetime.datetime.now(timezone("Asia/Tokyo"))], ua.VariantType.DateTime)
     await _test_xml_var_type(opc, tmpdir, o, "datetime_array")
     await opc.opc.delete_nodes([o])
 
@@ -359,9 +355,7 @@ async def test_xml_statuscode_array(opc, tmpdir):
 
 
 async def test_xml_bytestring_array(opc, tmpdir):
-    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array",
-                                                 [b"mytext", b"errsadf"],
-                                                 ua.VariantType.ByteString)
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array", [b"mytext", b"errsadf"], ua.VariantType.ByteString)
     await _test_xml_var_type(opc, tmpdir, o, "bytestring_array")
     await opc.opc.delete_nodes([o])
 
@@ -379,16 +373,13 @@ async def test_xml_localizedtext_with_locale(opc, tmpdir):
 
 
 async def test_xml_localizedtext_array(opc, tmpdir):
-    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array",
-                                                 [ua.LocalizedText("erert"), ua.LocalizedText("erert33")])
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array", [ua.LocalizedText("erert"), ua.LocalizedText("erert33")])
     await _test_xml_var_type(opc, tmpdir, o, "localized_text_array")
     await opc.opc.delete_nodes([o])
 
 
 async def test_xml_localizedtext_array_with_locale(opc, tmpdir):
-    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array",
-                                                 [ua.LocalizedText(Text="erert", Locale="en"),
-                                                  ua.LocalizedText(Text="erert33", Locale="de")])
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlltext_array", [ua.LocalizedText(Text="erert", Locale="en"), ua.LocalizedText(Text="erert33", Locale="de")])
     await _test_xml_var_type(opc, tmpdir, o, "localized_text_array")
     await opc.opc.delete_nodes([o])
 
@@ -439,24 +430,21 @@ async def test_xml_ext_obj_array(opc, tmpdir):
 
 
 async def test_xml_enum(opc, tmpdir):
-    o = await opc.opc.nodes.objects.add_variable(2, "xmlenum", 0, varianttype=ua.VariantType.Int32,
-                                                 datatype=ua.ObjectIds.ApplicationType)
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlenum", 0, varianttype=ua.VariantType.Int32, datatype=ua.ObjectIds.ApplicationType)
     await _test_xml_var_type(opc, tmpdir, o, "enum")
     await opc.opc.delete_nodes([o])
 
 
 async def test_xml_enumvalues(opc, tmpdir):
-    o = await opc.opc.nodes.objects.add_variable(2, "xmlenumvalues", 0, varianttype=ua.VariantType.UInt32,
-                                                 datatype=ua.ObjectIds.AttributeWriteMask)
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlenumvalues", 0, varianttype=ua.VariantType.UInt32, datatype=ua.ObjectIds.AttributeWriteMask)
     await _test_xml_var_type(opc, tmpdir, o, "enumvalues")
     await opc.opc.delete_nodes([o])
 
 
 async def test_xml_custom_uint32(opc, tmpdir):
     # t = opc.opc.nodes. create_custom_data_type(2, 'MyCustomUint32', ua.ObjectIds.UInt32)
-    t = await opc.opc.get_node(ua.ObjectIds.UInt32).add_data_type(2, 'MyCustomUint32')
-    o = await opc.opc.nodes.objects.add_variable(2, "xmlcustomunit32", 0, varianttype=ua.VariantType.UInt32,
-                                                 datatype=t.nodeid)
+    t = await opc.opc.get_node(ua.ObjectIds.UInt32).add_data_type(2, "MyCustomUint32")
+    o = await opc.opc.nodes.objects.add_variable(2, "xmlcustomunit32", 0, varianttype=ua.VariantType.UInt32, datatype=t.nodeid)
     await _test_xml_var_type(opc, tmpdir, o, "cuint32")
     await opc.opc.delete_nodes([o, t])
 
@@ -499,8 +487,8 @@ async def test_xml_var_nillable(opc):
     </UANodeSet>
     """
     _ = await opc.opc.import_xml(xmlstring=xml)
-    var_string = opc.opc.get_node(ua.NodeId('test_xml.string.nillabel', 2))
-    var_bool = opc.opc.get_node(ua.NodeId('test_xml.bool.nillabel', 2))
+    var_string = opc.opc.get_node(ua.NodeId("test_xml.string.nillabel", 2))
+    var_bool = opc.opc.get_node(ua.NodeId("test_xml.bool.nillabel", 2))
     assert await var_string.read_value() is None
     assert await var_bool.read_value() is None
     await opc.opc.delete_nodes([var_string, var_bool])
@@ -546,10 +534,16 @@ async def test_xml_byte(opc, tmpdir):
 
 async def test_xml_union(opc, tmpdir):
     idx = 4
-    o, _ = await new_struct(opc.opc, idx, "MyUnionStruct2", [
-        new_struct_field("MyString", ua.VariantType.String),
-        new_struct_field("MyInt64", ua.VariantType.Int64),
-    ], is_union=True)
+    o, _ = await new_struct(
+        opc.opc,
+        idx,
+        "MyUnionStruct2",
+        [
+            new_struct_field("MyString", ua.VariantType.String),
+            new_struct_field("MyInt64", ua.VariantType.Int64),
+        ],
+        is_union=True,
+    )
     tmp_path = tmpdir.join("export-union.xml").strpath
     await opc.opc.export_xml([o], tmp_path, export_values=True)
     await opc.opc.delete_nodes([o])
@@ -565,10 +559,15 @@ async def test_xml_union(opc, tmpdir):
 
 async def test_xml_struct_optional(opc, tmpdir):
     idx = 4
-    o, _ = await new_struct(opc.opc, idx, "MyOptionalStruct2", [
-        new_struct_field("MyString", ua.VariantType.String, optional=True),
-        new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
-    ])
+    o, _ = await new_struct(
+        opc.opc,
+        idx,
+        "MyOptionalStruct2",
+        [
+            new_struct_field("MyString", ua.VariantType.String, optional=True),
+            new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
+        ],
+    )
     tmp_path = tmpdir.join("export-optional.xml").strpath
     await opc.opc.export_xml([o], tmp_path, export_values=True)
     await opc.opc.delete_nodes([o])
@@ -584,9 +583,14 @@ async def test_xml_struct_optional(opc, tmpdir):
 
 async def test_xml_struct_with_value(opc, tmpdir):
     idx = 4
-    my_struct, _ = await new_struct(opc.opc, idx, "MyStructWithValue", [
-        new_struct_field("int_value", ua.VariantType.Int64, optional=False),
-    ])
+    my_struct, _ = await new_struct(
+        opc.opc,
+        idx,
+        "MyStructWithValue",
+        [
+            new_struct_field("int_value", ua.VariantType.Int64, optional=False),
+        ],
+    )
     await opc.opc.load_data_type_definitions()
     valnode = await opc.opc.nodes.objects.add_variable(idx, "my_struct", ua.Variant(ua.MyStructWithValue(), ua.VariantType.ExtensionObject))
 
@@ -611,12 +615,22 @@ async def test_xml_struct_with_value(opc, tmpdir):
 
 async def test_xml_struct_in_struct_with_value(opc, tmpdir):
     idx = 4
-    inner_struct, _ = await new_struct(opc.opc, idx, "MyInnerStruct", [
-        new_struct_field("int_value", ua.VariantType.Int64, optional=False),
-    ])
-    outer_struct, _ = await new_struct(opc.opc, idx, "MyOuterStruct", [
-        new_struct_field("inner_struct_value", inner_struct, optional=False),
-    ])
+    inner_struct, _ = await new_struct(
+        opc.opc,
+        idx,
+        "MyInnerStruct",
+        [
+            new_struct_field("int_value", ua.VariantType.Int64, optional=False),
+        ],
+    )
+    outer_struct, _ = await new_struct(
+        opc.opc,
+        idx,
+        "MyOuterStruct",
+        [
+            new_struct_field("inner_struct_value", inner_struct, optional=False),
+        ],
+    )
     await opc.opc.load_data_type_definitions()
     valnode = await opc.opc.nodes.objects.add_variable(idx, "my_outer_struct", ua.Variant(ua.MyOuterStruct(), ua.VariantType.ExtensionObject))
 
@@ -643,7 +657,7 @@ async def test_xml_struct_in_struct_with_value(opc, tmpdir):
 async def test_basetype_alias(opc):
     idx = 4
     # Alias double
-    _ = await opc.opc.get_node(ua.NodeId(11)).add_data_type(ua.NodeId(NamespaceIndex=idx), '4:MyDouble')
+    _ = await opc.opc.get_node(ua.NodeId(11)).add_data_type(ua.NodeId(NamespaceIndex=idx), "4:MyDouble")
     await opc.opc.load_data_type_definitions()
     assert ua.MyDouble(4.0) == ua.Double(4.0)
 

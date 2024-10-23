@@ -4,6 +4,7 @@ from asyncua import ua
 import asyncua
 from ..ua.uaerrors import UaError
 from .ua_utils import get_node_subtypes, is_subtype
+
 if TYPE_CHECKING:
     from asyncua.common.node import Node
 
@@ -38,9 +39,8 @@ class Event:
         self.internal_properties = list(self.__dict__.keys())[:] + ["internal_properties"]
 
     def __str__(self):
-        return "{0}({1})".format(
-            self.__class__.__name__,
-            [str(k) + ":" + str(v) for k, v in self.__dict__.items() if k not in self.internal_properties])
+        return "{0}({1})".format(self.__class__.__name__, [str(k) + ":" + str(v) for k, v in self.__dict__.items() if k not in self.internal_properties])
+
     __repr__ = __str__
 
     def add_property(self, name, val, datatype):
@@ -136,7 +136,7 @@ class Event:
         iter_paths = iter(browsePath)
         next(iter_paths)
         for path in iter_paths:
-            name += '/' + path.Name
+            name += "/" + path.Name
         return name
 
 
@@ -149,7 +149,7 @@ async def get_filter_from_event_type(eventtypes: List["Node"], where_clause_gene
 
 
 async def _append_new_attribute_to_select_clauses(select_clauses: List[ua.SimpleAttributeOperand], already_selected: Dict[str, str], browse_path: List[ua.QualifiedName]):
-    string_path = '/'.join(map(str, browse_path))
+    string_path = "/".join(map(str, browse_path))
     if string_path not in already_selected:
         already_selected[string_path] = string_path
         op = ua.SimpleAttributeOperand()
@@ -228,9 +228,7 @@ async def select_event_attributes_from_type_node(node: "Node", attributeSelector
         attributes.extend(await attributeSelector(curr_node))
         if curr_node.nodeid == ua.NodeId(ua.ObjectIds.BaseEventType):
             break
-        parents = await curr_node.get_referenced_nodes(
-            refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse
-        )
+        parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
         if len(parents) != 1:  # Something went wrong
             return None
         curr_node = parents[0]
@@ -260,7 +258,6 @@ async def get_event_obj_from_type_node(node):
     parent_nodeid, parent_eventtype = await _find_parent_eventtype(node)
 
     class CustomEvent(parent_eventtype):
-
         def __init__(self):
             parent_eventtype.__init__(self)
             self.EventType = node.nodeid
@@ -269,7 +266,7 @@ async def get_event_obj_from_type_node(node):
             name = (await property.read_browse_name()).Name
             if parent_variable:
                 parent_name = (await parent_variable.read_browse_name()).Name
-                name = f'{parent_name}/{name}'
+                name = f"{parent_name}/{name}"
             val = await property.read_data_value()
             self.add_property(name, val.Value.Value, val.Value.VariantType)
 
@@ -301,10 +298,9 @@ async def get_event_obj_from_type_node(node):
 
 
 async def _find_parent_eventtype(node):
-    """
-    """
+    """ """
     parents = await node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
-    if len(parents) != 1:   # Something went wrong
+    if len(parents) != 1:  # Something went wrong
         raise UaError("Parent of event type could not be found")
     if parents[0].nodeid.NamespaceIndex == 0:
         if parents[0].nodeid.Identifier in asyncua.common.event_objects.IMPLEMENTED_EVENTS.keys():

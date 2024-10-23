@@ -257,9 +257,7 @@ class _MaskEnum(IntEnum):
     def parse_bitfield(cls, the_int):
         """Take an integer and interpret it as a set of enum values."""
         if not isinstance(the_int, int):
-            raise ValueError(
-                f"Argument should be an int, we received {the_int} fo type {type(the_int)}"
-            )
+            raise ValueError(f"Argument should be an int, we received {the_int} fo type {type(the_int)}")
         return {cls(b) for b in cls._bits(the_int)}
 
     @classmethod
@@ -488,9 +486,7 @@ class NodeId:
         for identifier, valid_node_types in valid_type_combinations:
             if isinstance(self.Identifier, identifier) and self.NodeIdType in valid_node_types:
                 return
-        raise UaError(
-            f"NodeId of type {self.NodeIdType.name} has an incompatible identifier {self.Identifier} of type {type(self.Identifier)}"
-        )
+        raise UaError(f"NodeId of type {self.NodeIdType.name} has an incompatible identifier {self.Identifier} of type {type(self.Identifier)}")
 
     def __eq__(self, node):
         return isinstance(node, NodeId) and self.NamespaceIndex == node.NamespaceIndex and self.Identifier == node.Identifier
@@ -777,17 +773,11 @@ class LocalizedText:
 
         if self.Text is not None:
             if not isinstance(self.Text, str):
-                raise ValueError(
-                    f'A LocalizedText object takes a string as argument "text"'
-                    f"not a {type(self.Text)}, {self.Text}"
-                )
+                raise ValueError(f'A LocalizedText object takes a string as argument "text"' f"not a {type(self.Text)}, {self.Text}")
 
         if self.Locale is not None:
             if not isinstance(self.Locale, str):
-                raise ValueError(
-                    f'A LocalizedText object takes a string as argument "locale",'
-                    f" not a {type(self.Locale)}, {self.Locale}"
-                )
+                raise ValueError(f'A LocalizedText object takes a string as argument "locale",' f" not a {type(self.Locale)}, {self.Locale}")
 
     def to_string(self):
         return self.__str__()
@@ -893,9 +883,7 @@ class VariantTypeCustom:
         self.name = "Custom"
         self.value = val
         if self.value > 0b00111111:
-            raise UaError(
-                f"Cannot create VariantType. VariantType must be {0b111111} > x > {25}, received {val}"
-            )
+            raise UaError(f"Cannot create VariantType. VariantType must be {0b111111} > x > {25}, received {val}")
 
     def __str__(self):
         return f"VariantType.Custom:{self.value}"
@@ -965,9 +953,7 @@ class Variant:
                 VariantType.ExtensionObject,
                 VariantType.ByteString,
             ):
-                raise UaError(
-                    f"Non array Variant of type {self.VariantType} cannot have value None"
-                )
+                raise UaError(f"Non array Variant of type {self.VariantType} cannot have value None")
 
         if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
             dims = get_shape(self.Value)
@@ -975,11 +961,7 @@ class Variant:
                 object.__setattr__(self, "Dimensions", dims)
 
     def __eq__(self, other):
-        if (
-            isinstance(other, Variant)
-            and self.VariantType == other.VariantType
-            and self.Value == other.Value
-        ):
+        if isinstance(other, Variant) and self.VariantType == other.VariantType and self.Value == other.Value:
             return True
         return False
 
@@ -1022,9 +1004,7 @@ class Variant:
                 return getattr(VariantType, val.__class__.__name__)
             except AttributeError:
                 return VariantType.ExtensionObject
-        raise UaError(
-            f"Could not guess UA type of {val} with type {type(val)}, specify UA type"
-        )
+        raise UaError(f"Could not guess UA type of {val} with type {type(val)}, specify UA type")
 
 
 def flatten_and_get_shape(mylist):

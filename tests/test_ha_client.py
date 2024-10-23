@@ -102,7 +102,6 @@ class TestHaClient:
 
     @pytest.mark.asyncio
     async def test_subscription(self, ha_client, srv_variables):
-
         await ha_client.start()
         node, values = [(n, v) for n, v in srv_variables.items()][0]
 
@@ -122,9 +121,7 @@ class TestHaClient:
             await wait_for_status_change(ha_client, c, 255)
 
         primary = await ha_client.get_serving_client(ha_client.get_clients(), None)
-        await wait_mode_in_real_map(
-            ha_client, primary, sub, mode="publishing", value=True
-        )
+        await wait_mode_in_real_map(ha_client, primary, sub, mode="publishing", value=True)
 
         node_id, val, data = await myhandler.result()
         assert node_id == node
@@ -238,9 +235,7 @@ class TestHaClient:
         ha_c1.set_security(security_policy, user_cert, user_key, mode=security_mode)
         ha_clients.append(ha_c1)
 
-        ha_security = HaSecurityConfig(
-            security_policy, user_cert, user_key, mode=security_mode
-        )
+        ha_security = HaSecurityConfig(security_policy, user_cert, user_key, mode=security_mode)
         ha_clients.append(HaClient(ha_config, ha_security))
 
         for ha_client in ha_clients:
@@ -377,9 +372,7 @@ class TestReconciliator:
         for client in clients:
             url = client.server_url.geturl()
             assert sub in reconciliator.name_to_subscription[url]
-            assert isinstance(
-                reconciliator.name_to_subscription[url][sub], Subscription
-            )
+            assert isinstance(reconciliator.name_to_subscription[url][sub], Subscription)
             assert isinstance(reconciliator.node_to_handle[url][node_str], int)
 
         primary = await ha_client.get_serving_client(ha_client.get_clients(), None)
@@ -422,12 +415,8 @@ class TestReconciliator:
         url = first_client.server_url.geturl()
         real_sub = reconciliator.name_to_subscription[url][sub]
 
-        mock_subscribe_data_change = mocker.patch.object(
-            real_sub, "subscribe_data_change", wraps=real_sub.subscribe_data_change
-        )
-        mock_unsubscribe = mocker.patch.object(
-            real_sub, "unsubscribe", wraps=real_sub.unsubscribe
-        )
+        mock_subscribe_data_change = mocker.patch.object(real_sub, "subscribe_data_change", wraps=real_sub.subscribe_data_change)
+        mock_unsubscribe = mocker.patch.object(real_sub, "unsubscribe", wraps=real_sub.unsubscribe)
 
         node_list = [n.nodeid.to_string() for n in srv_variables]
 
@@ -458,9 +447,7 @@ class TestReconciliator:
         assert mock_unsubscribe.call_count == 1
 
     @pytest.mark.asyncio
-    async def test_remove_bad_nodes_from_both_maps(
-        self, ha_client, srv_variables, mocker
-    ):
+    async def test_remove_bad_nodes_from_both_maps(self, ha_client, srv_variables, mocker):
         """
         When a server respond to a MI request with BadUnknownId, make sure
         we remove the faulty node from the ideal and the real map. Otherwhise,

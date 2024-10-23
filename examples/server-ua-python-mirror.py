@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, "..")
 import time
 
@@ -39,6 +40,7 @@ class UaObject:
     Child UA variables/properties are auto subscribed to to synchronize python with UA server
     Python can write to children via write method, which will trigger an update for UA clients
     """
+
     def __init__(self, asyncua_server, ua_node):
         self.asyncua_server = asyncua_server
         self.nodes = {}
@@ -75,8 +77,8 @@ class MyObj(UaObject):
     Definition of OPC UA object which represents an object to be mirrored in python
     This class mirrors it's UA counterpart and semi-configures itself according to the UA model (generally from XML)
     """
-    def __init__(self, asyncua_server, ua_node):
 
+    def __init__(self, asyncua_server, ua_node):
         # properties and variables; must mirror UA model (based on browsename!)
         self.MyVariable = 0
         self.MyProperty = 0
@@ -86,7 +88,7 @@ class MyObj(UaObject):
         super().__init__(asyncua_server, ua_node)
 
         # local values only for use inside python
-        self.testval = 'python only'
+        self.testval = "python only"
 
         # If the object has other objects as children it is best to search by type and instantiate more
         # mirrored python classes so that your UA object tree matches your python object tree
@@ -97,7 +99,6 @@ class MyObj(UaObject):
 
 
 if __name__ == "__main__":
-
     # setup our server
     server = Server()
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
@@ -114,7 +115,7 @@ if __name__ == "__main__":
     myvar = myobj.add_variable(idx, "MyVariable", 0.0)
     myprop = myobj.add_property(idx, "MyProperty", 0)
     mywritevar = myobj.add_variable(idx, "MyClientWrite", 0)
-    mywritevar.set_writable()    # Set MyVariable to be writable by clients
+    mywritevar.set_writable()  # Set MyVariable to be writable by clients
 
     # starting!
     server.start()
@@ -125,12 +126,12 @@ if __name__ == "__main__":
     try:
         while True:
             # from an OPC UA client write a value to this node to see it show up in the python object
-            print('Python mirror of MyClientWrite is: ' + str(my_python_obj.MyClientWrite))
+            print("Python mirror of MyClientWrite is: " + str(my_python_obj.MyClientWrite))
 
             # write a single attr to OPC UA
             my_python_obj.MyVariable = 12.3
             my_python_obj.MyProperty = 55  # this value will not be visible to clients because write is not called
-            my_python_obj.write_value('MyVariable')
+            my_python_obj.write_value("MyVariable")
 
             time.sleep(3)
 
@@ -143,9 +144,9 @@ if __name__ == "__main__":
 
             # write directly to the OPC UA node of the object
             dv = ua.DataValue(ua.Variant(5.5, ua.VariantType.Double))
-            my_python_obj.nodes['MyVariable'].write_value(dv)
+            my_python_obj.nodes["MyVariable"].write_value(dv)
             dv = ua.DataValue(ua.Variant(4, ua.VariantType.UInt64))
-            my_python_obj.nodes['MyVariable'].write_value(dv)
+            my_python_obj.nodes["MyVariable"].write_value(dv)
 
             time.sleep(3)
 

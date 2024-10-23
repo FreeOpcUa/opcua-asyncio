@@ -2,6 +2,7 @@
 Run common tests on server side
 Tests that can only be run on server side must be defined here
 """
+
 import asyncio
 import shelve
 from pathlib import Path
@@ -24,7 +25,7 @@ async def test_discovery(server, discovery_server):
     client = Client(discovery_server.endpoint.geturl())
     async with client:
         servers = await client.find_servers()
-        new_app_uri = 'urn:freeopcua:python:server:test_discovery'
+        new_app_uri = "urn:freeopcua:python:server:test_discovery"
         await server.set_application_uri(new_app_uri)
         await server.register_to_discovery(discovery_server.endpoint.geturl(), 0)
         # let server register registration
@@ -38,7 +39,7 @@ async def test_discovery(server, discovery_server):
 async def test_unregister_discovery(server, discovery_server):
     client = Client(discovery_server.endpoint.geturl())
     async with client:
-        new_app_uri = 'urn:freeopcua:python:server:test_discovery2'
+        new_app_uri = "urn:freeopcua:python:server:test_discovery2"
         await server.set_application_uri(new_app_uri)
         # register without automatic renewal
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=0)
@@ -57,10 +58,10 @@ async def test_find_servers2(server, discovery_server):
     client = Client(discovery_server.endpoint.geturl())
     async with client:
         servers = await client.find_servers()
-        new_app_uri1 = 'urn:freeopcua:python:server:test_discovery1'
+        new_app_uri1 = "urn:freeopcua:python:server:test_discovery1"
         await server.set_application_uri(new_app_uri1)
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=0)
-        new_app_uri2 = 'urn:freeopcua:python:test_discovery2'
+        new_app_uri2 = "urn:freeopcua:python:test_discovery2"
         await server.set_application_uri(new_app_uri2)
         await server.register_to_discovery(discovery_server.endpoint.geturl(), period=0)
         await asyncio.sleep(0.1)  # let server register registration
@@ -71,26 +72,26 @@ async def test_find_servers2(server, discovery_server):
         assert new_app_uri1 in [s.ApplicationUri for s in new_servers]
         assert new_app_uri2 in [s.ApplicationUri for s in new_servers]
         # now do a query with filer
-        new_servers = await client.find_servers(['urn:freeopcua:python:server'])
+        new_servers = await client.find_servers(["urn:freeopcua:python:server"])
         assert len(new_servers) - len(servers) == 0
         assert new_app_uri1 in [s.ApplicationUri for s in new_servers]
         assert new_app_uri2 not in [s.ApplicationUri for s in new_servers]
         # now do a query with filer
-        new_servers = await client.find_servers(['urn:freeopcua:python'])
+        new_servers = await client.find_servers(["urn:freeopcua:python"])
         assert len(new_servers) - len(servers) == 2
         assert new_app_uri1 in [s.ApplicationUri for s in new_servers]
         assert new_app_uri2 in [s.ApplicationUri for s in new_servers]
 
 
 async def test_register_namespace(server):
-    uri = 'http://mycustom.Namespace.com'
+    uri = "http://mycustom.Namespace.com"
     idx1 = await server.register_namespace(uri)
     idx2 = await server.get_namespace_index(uri)
     assert idx1 == idx2
 
 
 async def test_register_existing_namespace(server):
-    uri = 'http://mycustom.Namespace.com'
+    uri = "http://mycustom.Namespace.com"
     idx1 = await server.register_namespace(uri)
     idx2 = await server.register_namespace(uri)
     idx3 = await server.get_namespace_index(uri)
@@ -99,10 +100,10 @@ async def test_register_existing_namespace(server):
 
 
 async def test_register_use_namespace(server):
-    uri = 'http://my_very_custom.Namespace.com'
+    uri = "http://my_very_custom.Namespace.com"
     idx = await server.register_namespace(uri)
     root = server.nodes.root
-    myvar = await root.add_variable(idx, 'var_in_custom_namespace', [5])
+    myvar = await root.add_variable(idx, "var_in_custom_namespace", [5])
     myid = myvar.nodeid
     assert idx == myid.NamespaceIndex
 
@@ -112,7 +113,7 @@ async def test_server_method(server):
         return [ua.Variant(variant.Value * 2, variant.VariantType)]
 
     o = server.nodes.objects
-    v = await o.add_method(3, 'Method1', func, [ua.VariantType.Int64], [ua.VariantType.Int64])
+    v = await o.add_method(3, "Method1", func, [ua.VariantType.Int64], [ua.VariantType.Int64])
     result = await o.call_method(v, ua.Variant(2.1))
     assert result == 4.2
 
@@ -132,9 +133,11 @@ async def test_multiple_clients_with_subscriptions(server):
     Tests that multiple clients can subscribe, and when one client disconnects, the other
     still maintains it's subscription
     """
+
     class SubscriptionHandler:
         def datachange_notification(self, node, val, data):
             pass
+
     sub_handler = SubscriptionHandler()
     client1 = Client(server.endpoint.geturl())
     client2 = Client(server.endpoint.geturl())
@@ -162,18 +165,16 @@ async def test_historize_events(server):
     srvevgen = await server.get_event_generator()
     await server.iserver.enable_history_event(srv_node, period=None)
     assert await srv_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents, ua.EventNotifier.HistoryRead}
-    await srvevgen.trigger(message='Message')
+    await srvevgen.trigger(message="Message")
     await server.iserver.disable_history_event(srv_node)
 
 
 async def test_references_for_added_nodes_method(server):
     objects = server.nodes.objects
-    o = await objects.add_object(3, 'MyObject')
-    nodes = await objects.get_referenced_nodes(refs=ua.ObjectIds.Organizes, direction=ua.BrowseDirection.Forward,
-                                               includesubtypes=False)
+    o = await objects.add_object(3, "MyObject")
+    nodes = await objects.get_referenced_nodes(refs=ua.ObjectIds.Organizes, direction=ua.BrowseDirection.Forward, includesubtypes=False)
     assert o in nodes
-    nodes = await o.get_referenced_nodes(refs=ua.ObjectIds.Organizes, direction=ua.BrowseDirection.Inverse,
-                                         includesubtypes=False)
+    nodes = await o.get_referenced_nodes(refs=ua.ObjectIds.Organizes, direction=ua.BrowseDirection.Inverse, includesubtypes=False)
     assert objects in nodes
     assert await o.get_parent() == objects
     assert (await o.read_type_definition()).Identifier == ua.ObjectIds.BaseObjectType
@@ -182,12 +183,10 @@ async def test_references_for_added_nodes_method(server):
     def callback(parent):
         return
 
-    m = await o.add_method(3, 'MyMethod', callback)
-    nodes = await o.get_referenced_nodes(refs=ua.ObjectIds.HasComponent, direction=ua.BrowseDirection.Forward,
-                                         includesubtypes=False)
+    m = await o.add_method(3, "MyMethod", callback)
+    nodes = await o.get_referenced_nodes(refs=ua.ObjectIds.HasComponent, direction=ua.BrowseDirection.Forward, includesubtypes=False)
     assert m in nodes
-    nodes = await m.get_referenced_nodes(refs=ua.ObjectIds.HasComponent, direction=ua.BrowseDirection.Inverse,
-                                         includesubtypes=False)
+    nodes = await m.get_referenced_nodes(refs=ua.ObjectIds.HasComponent, direction=ua.BrowseDirection.Inverse, includesubtypes=False)
     assert o in nodes
     assert await m.get_parent() == o
     await server.delete_nodes([o])
@@ -198,16 +197,12 @@ async def test_get_event_from_type_node_BaseEvent(server):
     This should work for following BaseEvent tests to work
     (maybe to write it a bit differentlly since they are not independent)
     """
-    ev = await asyncua.common.events.get_event_obj_from_type_node(
-        asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType))
-    )
+    ev = await asyncua.common.events.get_event_obj_from_type_node(asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)))
     check_base_event(ev)
 
 
 async def test_get_event_from_type_node_Inhereted_AuditEvent(server):
-    ev = await asyncua.common.events.get_event_obj_from_type_node(
-        asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.AuditEventType))
-    )
+    ev = await asyncua.common.events.get_event_obj_from_type_node(asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.AuditEventType)))
     # we did not receive event
     assert ev is not None
     assert isinstance(ev, BaseEvent)
@@ -222,9 +217,7 @@ async def test_get_event_from_type_node_Inhereted_AuditEvent(server):
 
 
 async def test_get_event_from_type_node_MultiInhereted_AuditOpenSecureChannelEvent(server):
-    ev = await asyncua.common.events.get_event_obj_from_type_node(
-        asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.AuditOpenSecureChannelEventType))
-    )
+    ev = await asyncua.common.events.get_event_obj_from_type_node(asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.AuditOpenSecureChannelEventType)))
     assert ev is not None
     assert isinstance(ev, BaseEvent)
     assert isinstance(ev, AuditEvent)
@@ -297,7 +290,7 @@ async def test_eventgenerator_sourceServer_ObjectIds(server):
 
 async def test_eventgenerator_sourceMyObject(server):
     objects = server.nodes.objects
-    o = await objects.add_object(3, 'MyObject')
+    o = await objects.add_object(3, "MyObject")
     evgen = await server.get_event_generator(emitting_node=o)
     await check_eventgenerator_base_event(evgen, server)
     await check_event_generator_object(evgen, o)
@@ -306,7 +299,7 @@ async def test_eventgenerator_sourceMyObject(server):
 
 async def test_eventgenerator_source_collision(server):
     objects = server.nodes.objects
-    o = await objects.add_object(3, 'MyObject')
+    o = await objects.add_object(3, "MyObject")
     event = BaseEvent(sourcenode=o.nodeid)
     evgen = await server.get_event_generator(event, ua.ObjectIds.Server)
     await check_eventgenerator_base_event(evgen, server)
@@ -355,16 +348,12 @@ async def test_create_custom_data_type_object_id(server):
     For the custom events all posibilites are tested.
     For other custom types only one test case is done since they are using the same code
     """
-    type = await server.create_custom_data_type(2, 'MyDataType', ua.ObjectIds.BaseDataType,
-                                                [('PropertyNum', ua.VariantType.Int32),
-                                                 ('PropertyString', ua.VariantType.String)])
+    type = await server.create_custom_data_type(2, "MyDataType", ua.ObjectIds.BaseDataType, [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)])
     await check_custom_type(type, ua.ObjectIds.BaseDataType, server, ua.NodeClass.DataType)
 
 
 async def test_create_custom_event_type_object_id(server):
-    type = await server.create_custom_event_type(2, 'MyEvent', ua.ObjectIds.BaseEventType,
-                                                 [('PropertyNum', ua.VariantType.Int32),
-                                                  ('PropertyString', ua.VariantType.String)])
+    type = await server.create_custom_event_type(2, "MyEvent", ua.ObjectIds.BaseEventType, [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)])
     await check_custom_type(type, ua.ObjectIds.BaseEventType, server)
     await server.delete_nodes([type])
 
@@ -373,52 +362,40 @@ async def test_create_custom_object_type_object_id(server):
     def func(parent, variant):
         return [ua.Variant(True, ua.VariantType.Boolean)]
 
-    properties = [('PropertyNum', ua.VariantType.Int32),
-                  ('PropertyString', ua.VariantType.String)]
-    variables = [('VariableString', ua.VariantType.String),
-                 ('MyEnumVar', ua.VariantType.Int32, ua.NodeId(ua.ObjectIds.ApplicationType))]
-    methods = [('MyMethod', func, [ua.VariantType.Int64], [ua.VariantType.Boolean])]
-    node_type = await server.create_custom_object_type(2, 'MyObjectType', ua.ObjectIds.BaseObjectType, properties,
-                                                       variables, methods)
+    properties = [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)]
+    variables = [("VariableString", ua.VariantType.String), ("MyEnumVar", ua.VariantType.Int32, ua.NodeId(ua.ObjectIds.ApplicationType))]
+    methods = [("MyMethod", func, [ua.VariantType.Int64], [ua.VariantType.Boolean])]
+    node_type = await server.create_custom_object_type(2, "MyObjectType", ua.ObjectIds.BaseObjectType, properties, variables, methods)
     await check_custom_type(node_type, ua.ObjectIds.BaseObjectType, server)
     variables = await node_type.get_variables()
     assert await node_type.get_child("2:VariableString") in variables
-    assert ua.VariantType.String == (
-        await(await node_type.get_child("2:VariableString")).read_data_value()).Value.VariantType
+    assert ua.VariantType.String == (await (await node_type.get_child("2:VariableString")).read_data_value()).Value.VariantType
     assert await node_type.get_child("2:MyEnumVar") in variables
-    assert ua.VariantType.Int32 == (await(await node_type.get_child("2:MyEnumVar")).read_data_value()).Value.VariantType
+    assert ua.VariantType.Int32 == (await (await node_type.get_child("2:MyEnumVar")).read_data_value()).Value.VariantType
     assert ua.NodeId(ua.ObjectIds.ApplicationType) == await (await node_type.get_child("2:MyEnumVar")).read_data_type()
     methods = await node_type.get_methods()
     assert await node_type.get_child("2:MyMethod") in methods
 
 
 async def test_create_custom_variable_type_object_id(server):
-    type = await server.create_custom_variable_type(2, 'MyVariableType', ua.ObjectIds.BaseVariableType,
-                                                    [('PropertyNum', ua.VariantType.Int32),
-                                                     ('PropertyString', ua.VariantType.String)])
+    type = await server.create_custom_variable_type(2, "MyVariableType", ua.ObjectIds.BaseVariableType, [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)])
     await check_custom_type(type, ua.ObjectIds.BaseVariableType, server)
 
 
 async def test_create_custom_event_type_node_id(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent', ua.NodeId(ua.ObjectIds.BaseEventType),
-                                                  [('PropertyNum', ua.VariantType.Int32),
-                                                   ('PropertyString', ua.VariantType.String)])
+    etype = await server.create_custom_event_type(2, "MyEvent", ua.NodeId(ua.ObjectIds.BaseEventType), [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)])
     await check_custom_type(etype, ua.ObjectIds.BaseEventType, server)
     await server.delete_nodes([etype])
 
 
 async def test_create_custom_event_type_node(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent1', asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)),
-                                                  [('PropertyNum', ua.VariantType.Int32),
-                                                   ('PropertyString', ua.VariantType.String)])
+    etype = await server.create_custom_event_type(2, "MyEvent1", asyncua.Node(server.iserver.isession, ua.NodeId(ua.ObjectIds.BaseEventType)), [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)])
     await check_custom_type(etype, ua.ObjectIds.BaseEventType, server)
     await server.delete_nodes([etype])
 
 
 async def test_get_event_from_type_node_custom_event(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent2', ua.ObjectIds.BaseEventType,
-                                                  [('PropertyNum', ua.VariantType.Int32),
-                                                   ('PropertyString', ua.VariantType.String)])
+    etype = await server.create_custom_event_type(2, "MyEvent2", ua.ObjectIds.BaseEventType, [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)])
     ev = await asyncua.common.events.get_event_obj_from_type_node(etype)
     check_custom_event(ev, etype)
     assert 0 == ev.PropertyNum
@@ -427,9 +404,7 @@ async def test_get_event_from_type_node_custom_event(server):
 
 
 async def test_eventgenerator_custom_event(server):
-    etype = await server.create_custom_event_type(2, 'MyEvent3', ua.ObjectIds.BaseEventType,
-                                                  [('PropertyNum', ua.VariantType.Int32),
-                                                   ('PropertyString', ua.VariantType.String)])
+    etype = await server.create_custom_event_type(2, "MyEvent3", ua.ObjectIds.BaseEventType, [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)])
     evgen = await server.get_event_generator(etype, ua.ObjectIds.Server)
     check_eventgenerator_custom_event(evgen, etype, server)
     await check_eventgenerator_source_server(evgen, server)
@@ -441,11 +416,9 @@ async def test_eventgenerator_custom_event(server):
 async def test_eventgenerator_custom_event_with_variables(server):
     # Here use generic create_custom_object_type
     # Variables are still missing in create_custom_event_type
-    properties = [('PropertyNum', ua.VariantType.Int32),
-                  ('PropertyString', ua.VariantType.String)]
-    variables = [('VariableString', ua.VariantType.String),
-                 ('MyEnumVar', ua.VariantType.Int32, ua.NodeId(ua.ObjectIds.ApplicationType))]
-    etype = await server.create_custom_object_type(2, 'MyEvent33', ua.ObjectIds.BaseEventType, properties, variables)
+    properties = [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)]
+    variables = [("VariableString", ua.VariantType.String), ("MyEnumVar", ua.VariantType.Int32, ua.NodeId(ua.ObjectIds.ApplicationType))]
+    etype = await server.create_custom_object_type(2, "MyEvent33", ua.ObjectIds.BaseEventType, properties, variables)
     evgen = await server.get_event_generator(etype, ua.ObjectIds.Server)
     check_eventgenerator_custom_event(evgen, etype, server)
     await check_eventgenerator_source_server(evgen, server)
@@ -455,11 +428,8 @@ async def test_eventgenerator_custom_event_with_variables(server):
 
 
 async def test_eventgenerator_double_custom_event(server):
-    event1 = await server.create_custom_event_type(3, 'MyEvent4', ua.ObjectIds.BaseEventType,
-                                                   [('PropertyNum', ua.VariantType.Int32),
-                                                    ('PropertyString', ua.VariantType.String)])
-    event2 = await server.create_custom_event_type(4, 'MyEvent5', event1, [('PropertyBool', ua.VariantType.Boolean),
-                                                                           ('PropertyInt', ua.VariantType.Int32)])
+    event1 = await server.create_custom_event_type(3, "MyEvent4", ua.ObjectIds.BaseEventType, [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)])
+    event2 = await server.create_custom_event_type(4, "MyEvent5", event1, [("PropertyBool", ua.VariantType.Boolean), ("PropertyInt", ua.VariantType.Int32)])
     evgen = await server.get_event_generator(event2, ua.ObjectIds.Server)
     check_eventgenerator_custom_event(evgen, event2, server)
     await check_eventgenerator_source_server(evgen, server)
@@ -474,10 +444,8 @@ async def test_eventgenerator_double_custom_event(server):
 
 async def test_eventgenerator_custom_event_my_object(server):
     objects = server.nodes.objects
-    o = await objects.add_object(3, 'MyObject')
-    etype = await server.create_custom_event_type(2, 'MyEvent6', ua.ObjectIds.BaseEventType,
-                                                  [('PropertyNum', ua.VariantType.Int32),
-                                                   ('PropertyString', ua.VariantType.String)])
+    o = await objects.add_object(3, "MyObject")
+    etype = await server.create_custom_event_type(2, "MyEvent6", ua.ObjectIds.BaseEventType, [("PropertyNum", ua.VariantType.Int32), ("PropertyString", ua.VariantType.String)])
 
     evgen = await server.get_event_generator(etype, o)
     check_eventgenerator_custom_event(evgen, etype, server)
@@ -514,13 +482,13 @@ async def test_get_node_by_ns(server):
         return ns_list
 
     # incase other testss created nodes in unregistered namespace
-    _idx_d = await server.register_namespace('dummy1')  # noqa: F841
-    _idx_d = await server.register_namespace('dummy2')  # noqa: F841
-    _idx_d = await server.register_namespace('dummy3')  # noqa: F841
+    _idx_d = await server.register_namespace("dummy1")  # noqa: F841
+    _idx_d = await server.register_namespace("dummy2")  # noqa: F841
+    _idx_d = await server.register_namespace("dummy3")  # noqa: F841
     # create the test namespaces and vars
-    idx_a = await server.register_namespace('a')
-    idx_b = await server.register_namespace('b')
-    idx_c = await server.register_namespace('c')
+    idx_a = await server.register_namespace("a")
+    idx_b = await server.register_namespace("b")
+    idx_c = await server.register_namespace("c")
     o = server.nodes.objects
     _myvar2 = await o.add_variable(idx_a, "MyBoolVar2", True)  # noqa: F841
     _myvar3 = await o.add_variable(idx_b, "MyBoolVar3", True)  # noqa: F841
@@ -538,15 +506,15 @@ async def test_get_node_by_ns(server):
     assert 1 == len(nodes)
     assert {idx_b} == get_ns_of_nodes(nodes)
 
-    nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=['a'])
+    nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=["a"])
     assert 1 == len(nodes)
     assert {idx_a} == get_ns_of_nodes(nodes)
 
-    nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=['a', 'c'])
+    nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=["a", "c"])
     assert 2 == len(nodes)
     assert {idx_a, idx_c} == get_ns_of_nodes(nodes)
 
-    nodes = await ua_utils.get_nodes_of_namespace(server, namespaces='b')
+    nodes = await ua_utils.get_nodes_of_namespace(server, namespaces="b")
     assert 1 == len(nodes)
     assert {idx_b} == get_ns_of_nodes(nodes)
 
@@ -554,16 +522,12 @@ async def test_get_node_by_ns(server):
     assert 1 == len(nodes)
     assert {idx_b} == get_ns_of_nodes(nodes)
     with pytest.raises(ValueError):
-        await ua_utils.get_nodes_of_namespace(server, namespaces='non_existing_ns')
+        await ua_utils.get_nodes_of_namespace(server, namespaces="non_existing_ns")
 
 
 async def test_load_enum_strings(server):
     dt = await server.nodes.enum_data_type.add_data_type(0, "MyStringEnum")
-    await dt.add_property(
-        0,
-        "EnumStrings",
-        [ua.LocalizedText("e1"), ua.LocalizedText("e2"), ua.LocalizedText("e3"), ua.LocalizedText("e 4")]
-    )
+    await dt.add_property(0, "EnumStrings", [ua.LocalizedText("e1"), ua.LocalizedText("e2"), ua.LocalizedText("e3"), ua.LocalizedText("e 4")])
     await server.load_enums()
     e = getattr(ua, "MyStringEnum")
     assert isinstance(e, EnumMeta)
@@ -576,7 +540,7 @@ async def test_load_enum_values(server):
     dt = await server.nodes.enum_data_type.add_data_type(0, "MyValuesEnum")
     v1 = ua.EnumValueType(DisplayName=ua.LocalizedText("v1"), Value=2)
     v2 = ua.EnumValueType(DisplayName=ua.LocalizedText("v2"), Value=3)
-    v3 = ua.EnumValueType(DisplayName=ua.LocalizedText("v 3 "), Value=4.)
+    v3 = ua.EnumValueType(DisplayName=ua.LocalizedText("v 3 "), Value=4.0)
     await dt.add_property(0, "EnumValues", [v1, v2, v3])
     await server.load_enums()
     e = getattr(ua, "MyValuesEnum")
@@ -591,8 +555,7 @@ async def check_eventgenerator_source_server(evgen, server: Server):
     assert evgen.event.SourceName == (await server_node.read_browse_name()).Name
     assert evgen.event.SourceNode == ua.NodeId(ua.ObjectIds.Server)
     assert await server_node.read_event_notifier() == {ua.EventNotifier.SubscribeToEvents}
-    refs = await server_node.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward,
-                                                  ua.NodeClass.ObjectType, False)
+    refs = await server_node.get_referenced_nodes(ua.ObjectIds.GeneratesEvent, ua.BrowseDirection.Forward, ua.NodeClass.ObjectType, False)
     assert len(refs) >= 1
 
 
@@ -651,9 +614,9 @@ async def check_custom_type(ntype, base_type, server: Server, node_class=None):
     assert properties is not None
     assert len(properties) == 2
     assert await ntype.get_child("2:PropertyNum") in properties
-    assert (await(await ntype.get_child("2:PropertyNum")).read_data_value()).Value.VariantType == ua.VariantType.Int32
+    assert (await (await ntype.get_child("2:PropertyNum")).read_data_value()).Value.VariantType == ua.VariantType.Int32
     assert await ntype.get_child("2:PropertyString") in properties
-    assert (await(await ntype.get_child("2:PropertyString")).read_data_value()).Value.VariantType == ua.VariantType.String
+    assert (await (await ntype.get_child("2:PropertyString")).read_data_value()).Value.VariantType == ua.VariantType.String
 
 
 async def test_server_read_write_attribute_value(server: Server):
@@ -733,7 +696,7 @@ async def test_message_limits_fail_write(restore_transport_limits_server: Server
     server.bserver.limits.max_recv_buffer = 1024
     server.bserver.limits.max_send_buffer = 10240000
     server.bserver.limits.max_chunk_count = 10
-    test_string = b'a' * 100 * 1024
+    test_string = b"a" * 100 * 1024
     n = await server.nodes.objects.add_variable(1, "MyLimitVariable", test_string)
     await n.set_writable(True)
     client = Client(server.endpoint.geturl())
@@ -751,7 +714,7 @@ async def test_message_limits_fail_read(restore_transport_limits_server: Server)
     server.bserver.limits.max_recv_buffer = 10240000
     server.bserver.limits.max_send_buffer = 1024
     server.bserver.limits.max_chunk_count = 10
-    test_string = b'a' * 100 * 1024
+    test_string = b"a" * 100 * 1024
     n = await server.nodes.objects.add_variable(1, "MyLimitVariable", test_string)
     await n.set_writable(True)
     client = Client(server.endpoint.geturl())
@@ -775,7 +738,7 @@ async def test_message_limits_works(restore_transport_limits_server: Server):
     # Test that chunks are working correct
     async with client:
         n = client.get_node(n.nodeid)
-        test_string = 'a' * (1024 * 5)
+        test_string = "a" * (1024 * 5)
         await n.write_value(test_string, ua.VariantType.String)
         await n.read_value()
 
@@ -811,6 +774,7 @@ async def test_null_auth(server):
     # Modify the authentication creation in the client request
     def _add_null_auth(self, params):
         params.UserIdentityToken = ua.ExtensionObject(ua.NodeId(ua.ObjectIds.Null))
+
     client._add_anonymous_auth = _add_null_auth.__get__(client, Client)
     # Attempt to connect, this should be accepted without error
     async with client:

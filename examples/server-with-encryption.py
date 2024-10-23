@@ -4,6 +4,7 @@ from pathlib import Path
 import socket
 
 import logging
+
 sys.path.insert(0, "..")
 from asyncua import Server
 from asyncua import ua
@@ -19,17 +20,17 @@ logging.basicConfig(level=logging.INFO)
 
 USE_TRUST_STORE = False
 
+
 async def main():
     cert_base = Path(__file__).parent
     server_cert = Path(cert_base / "certificates/server-certificate-example.der")
     server_private_key = Path(cert_base / "certificates/server-private-key-example.pem")
 
     host_name = socket.gethostname()
-    server_app_uri =   f"myselfsignedserver@{host_name}"
-
+    server_app_uri = f"myselfsignedserver@{host_name}"
 
     cert_user_manager = CertificateUserManager()
-    await cert_user_manager.add_user("certificates/peer-certificate-example-1.der", name='test_user')
+    await cert_user_manager.add_user("certificates/peer-certificate-example-1.der", name="test_user")
 
     server = Server(user_manager=cert_user_manager)
 
@@ -41,17 +42,19 @@ async def main():
 
     # Below is only required if the server should generate its own certificate,
     # It will renew also when the valid datetime range is out of range (on startup, no on runtime)
-    await setup_self_signed_certificate(server_private_key,
-                                        server_cert,
-                                        server_app_uri,
-                                        host_name,
-                                        [ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH],
-                                        {
-                                            'countryName': 'CN',
-                                            'stateOrProvinceName': 'AState',
-                                            'localityName': 'Foo',
-                                            'organizationName': "Bar Ltd",
-                                        })
+    await setup_self_signed_certificate(
+        server_private_key,
+        server_cert,
+        server_app_uri,
+        host_name,
+        [ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH],
+        {
+            "countryName": "CN",
+            "stateOrProvinceName": "AState",
+            "localityName": "Foo",
+            "organizationName": "Bar Ltd",
+        },
+    )
 
     # load server certificate and private key. This enables endpoints
     # with signing and encryption.
@@ -59,10 +62,9 @@ async def main():
     await server.load_private_key(str(server_private_key))
 
     if USE_TRUST_STORE:
-        trust_store = TrustStore([Path('examples') / 'certificates' / 'trusted' / 'certs'], [])
+        trust_store = TrustStore([Path("examples") / "certificates" / "trusted" / "certs"], [])
         await trust_store.load()
-        validator = CertificateValidator(options=CertificateValidatorOptions.TRUSTED_VALIDATION | CertificateValidatorOptions.PEER_CLIENT,
-                                         trust_store = trust_store)
+        validator = CertificateValidator(options=CertificateValidatorOptions.TRUSTED_VALIDATION | CertificateValidatorOptions.PEER_CLIENT, trust_store=trust_store)
     else:
         validator = CertificateValidator(options=CertificateValidatorOptions.EXT_VALIDATION | CertificateValidatorOptions.PEER_CLIENT)
     server.set_certificate_validator(validator)

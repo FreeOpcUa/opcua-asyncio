@@ -6,7 +6,7 @@ from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
 from asyncua.common import utils
 
-OPC_TCP_SCHEME = 'opc.tcp'
+OPC_TCP_SCHEME = "opc.tcp"
 
 
 @dataclass
@@ -25,21 +25,21 @@ class Hello:
 
 @dataclass
 class MessageType:
-    Invalid: bytes = b'INV'  # FIXME: check value
-    Hello: bytes = b'HEL'
-    Acknowledge: bytes = b'ACK'
-    Error: bytes = b'ERR'
-    SecureOpen: bytes = b'OPN'
-    SecureClose: bytes = b'CLO'
-    SecureMessage: bytes = b'MSG'
+    Invalid: bytes = b"INV"  # FIXME: check value
+    Hello: bytes = b"HEL"
+    Acknowledge: bytes = b"ACK"
+    Error: bytes = b"ERR"
+    SecureOpen: bytes = b"OPN"
+    SecureClose: bytes = b"CLO"
+    SecureMessage: bytes = b"MSG"
 
 
 @dataclass
 class ChunkType:
-    Invalid: bytes = b'0'  # FIXME check
-    Single: bytes = b'F'
-    Intermediate: bytes = b'C'
-    Abort: bytes = b'A'  # when an error occurred and the Message is aborted (body is ErrorMessage)
+    Invalid: bytes = b"0"  # FIXME check
+    Single: bytes = b"F"
+    Intermediate: bytes = b"C"
+    Abort: bytes = b"A"  # when an error occurred and the Message is aborted (body is ErrorMessage)
 
 
 @dataclass
@@ -76,15 +76,14 @@ class Acknowledge:
 
 @dataclass
 class AsymmetricAlgorithmHeader:
-    SecurityPolicyURI: uatypes.String = 'http://opcfoundation.org/UA/SecurityPolicy#None'
+    SecurityPolicyURI: uatypes.String = "http://opcfoundation.org/UA/SecurityPolicy#None"
     SenderCertificate: uatypes.ByteString = None
     ReceiverCertificateThumbPrint: uatypes.ByteString = None
 
     def __str__(self):
         len(self.SenderCertificate) if self.SenderCertificate is not None else None
         size2 = len(self.ReceiverCertificateThumbPrint) if self.ReceiverCertificateThumbPrint is not None else None
-        return f'{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI},' \
-               f' certificatesize:{size2}, receiverCertificatesize:{size2} )'
+        return f"{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI}," f" certificatesize:{size2}, receiverCertificatesize:{size2} )"
 
     __repr__ = __str__
 
@@ -95,7 +94,7 @@ class SymmetricAlgorithmHeader:
 
     @staticmethod
     def max_size():
-        return struct.calcsize('<I')
+        return struct.calcsize("<I")
 
 
 @dataclass
@@ -105,13 +104,14 @@ class SequenceHeader:
 
     @staticmethod
     def max_size():
-        return struct.calcsize('<II')
+        return struct.calcsize("<II")
 
 
 class CryptographyNone:
     """
     Base class for symmetric/asymmetric cryptography
     """
+
     def __init__(self):
         pass
 
@@ -133,7 +133,7 @@ class CryptographyNone:
         plain_size = size + len(padding) + signature_size()
         plain_size = N * plain_block_size()
         """
-        return b''
+        return b""
 
     def min_padding_size(self):
         return 0
@@ -142,7 +142,7 @@ class CryptographyNone:
         return 0
 
     def signature(self, data):
-        return b''
+        return b""
 
     def encrypt(self, data):
         return data
@@ -167,8 +167,9 @@ class SecurityPolicy:
     """
     Base class for security policy
     """
-    URI = 'http://opcfoundation.org/UA/SecurityPolicy#None'
-    AsymmetricSignatureURI: str = ''
+
+    URI = "http://opcfoundation.org/UA/SecurityPolicy#None"
+    AsymmetricSignatureURI: str = ""
     signature_key_size: int = 0
     symmetric_key_size: int = 0
     secure_channel_nonce_length: int = 0
@@ -195,6 +196,7 @@ class SecurityPolicyFactory:
     Server has one certificate and private key, but needs a separate
     SecurityPolicy for every client and client's certificate
     """
+
     def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None, permission_ruleset=None):
         self.cls = cls
         self.mode = mode
@@ -287,7 +289,7 @@ class DataTypeAttributes(auto.DataTypeAttributes):
 # we now need to register DataTypeAttributes since we added a new attribute
 nid = uatypes.FourByteNodeId(auto.ObjectIds.DataTypeAttributes_Encoding_DefaultBinary)
 uatypes.extension_objects_by_typeid[nid] = DataTypeAttributes
-uatypes.extension_object_typeids['DataTypeAttributes'] = nid
+uatypes.extension_object_typeids["DataTypeAttributes"] = nid
 
 
 @dataclass

@@ -42,7 +42,7 @@ class EventGenerator:
             self.event = await events.get_event_obj_from_type_node(node)
             if isinstance(self.event, event_objects.Condition):
                 # Add ConditionId, which is not modelled as a component of the ConditionType
-                self.event.add_property('NodeId', None, ua.VariantType.NodeId)
+                self.event.add_property("NodeId", None, ua.VariantType.NodeId)
 
         if isinstance(emitting_node, Node):
             pass
@@ -73,8 +73,7 @@ class EventGenerator:
                 result.check()
 
     def __str__(self):
-        return f"EventGenerator(Type:{self.event.EventType}, Emitting Node:{self.event.emitting_node.to_string()}, " \
-               f"Time:{self.event.Time}, Message: {self.event.Message})"
+        return f"EventGenerator(Type:{self.event.EventType}, Emitting Node:{self.event.emitting_node.to_string()}, " f"Time:{self.event.Time}, Message: {self.event.Message})"
 
     __repr__ = __str__
 
@@ -82,7 +81,7 @@ class EventGenerator:
         """
         Trigger the event. This will send a notification to all subscribed clients
         """
-        self.event.EventId = ua.Variant(uuid.uuid4().hex.encode('utf-8'), ua.VariantType.ByteString)
+        self.event.EventId = ua.Variant(uuid.uuid4().hex.encode("utf-8"), ua.VariantType.ByteString)
         if time_attr:
             self.event.Time = time_attr
         else:

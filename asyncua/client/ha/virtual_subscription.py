@@ -24,9 +24,7 @@ class VirtualSubscription:
     # see: https://github.com/grantjenks/python-sortedcontainers/pull/107
     nodes: SortedDict = field(default_factory=SortedDict)
 
-    def subscribe_data_change(
-        self, nodes: Iterable[str], attr: ua.AttributeIds, queuesize: int
-    ) -> None:
+    def subscribe_data_change(self, nodes: Iterable[str], attr: ua.AttributeIds, queuesize: int) -> None:
         for node in nodes:
             self.nodes[node] = NodeAttr(attr, queuesize)
 

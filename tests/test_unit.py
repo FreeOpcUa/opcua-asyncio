@@ -223,7 +223,7 @@ def test_string_to_variant_float():
 
 def test_string_to_variant_datetime_string():
     s_arr_datetime = "[2014-05-6, 2016-10-3]"
-    arr_string = ['2014-05-6', '2016-10-3']
+    arr_string = ["2014-05-6", "2016-10-3"]
     arr_datetime = [datetime(2014, 5, 6), datetime(2016, 10, 3)]
     assert s_arr_datetime == val_to_string(arr_string)
     assert arr_string == string_to_val(s_arr_datetime, ua.VariantType.String)
@@ -394,14 +394,14 @@ def test_nodeid_bytestring():
     s2 = n2.to_string()
     assert n == n2
     assert s == s2
-    n = ua.ByteStringNodeId(Identifier=b'\x01\x00\x05\x55')
+    n = ua.ByteStringNodeId(Identifier=b"\x01\x00\x05\x55")
     s = n.to_string()
     n2 = ua.NodeId.from_string(s)
     s2 = n2.to_string()
     assert n == n2
     assert s == s2
-    n = ua.NodeId.from_string('b=0xaabbccdd')
-    assert n.Identifier == b'\xaa\xbb\xcc\xdd'
+    n = ua.NodeId.from_string("b=0xaabbccdd")
+    assert n.Identifier == b"\xaa\xbb\xcc\xdd"
 
 
 def test__nodeid():
@@ -488,18 +488,18 @@ def test_expandednodeid():
 
 def test_null_guid():
     with pytest.raises(ua.UaError):
-        n = ua.NodeId(b'000000', 0, NodeIdType=ua.NodeIdType.Guid)
-    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 0, NodeIdType=ua.NodeIdType.Guid)
+        n = ua.NodeId(b"000000", 0, NodeIdType=ua.NodeIdType.Guid)
+    n = ua.NodeId(uuid.UUID("00000000-0000-0000-0000-000000000000"), 0, NodeIdType=ua.NodeIdType.Guid)
     assert n.is_null()
     assert n.has_null_identifier()
 
     with pytest.raises(ua.UaError):
-        n = ua.NodeId(b'000000', 1, NodeIdType=ua.NodeIdType.Guid)
-    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000000000000'), 1, NodeIdType=ua.NodeIdType.Guid)
+        n = ua.NodeId(b"000000", 1, NodeIdType=ua.NodeIdType.Guid)
+    n = ua.NodeId(uuid.UUID("00000000-0000-0000-0000-000000000000"), 1, NodeIdType=ua.NodeIdType.Guid)
     assert not n.is_null()
     assert n.has_null_identifier()
 
-    n = ua.NodeId(uuid.UUID('00000000-0000-0000-0000-000001000000'), 1, NodeIdType=ua.NodeIdType.Guid)
+    n = ua.NodeId(uuid.UUID("00000000-0000-0000-0000-000001000000"), 1, NodeIdType=ua.NodeIdType.Guid)
     assert not n.is_null()
     assert not n.has_null_identifier()
 
@@ -538,15 +538,15 @@ def test_extension_object():
 
 def test_unknown_extension_object():
     obj = ua.ExtensionObject(
-        Body=b'example of data in custom format',
-        TypeId=ua.NodeId.from_string('ns=3;i=42'),
+        Body=b"example of data in custom format",
+        TypeId=ua.NodeId.from_string("ns=3;i=42"),
     )
 
     data = ua.utils.Buffer(extensionobject_to_binary(obj))
     obj2 = extensionobject_from_binary(data)
     assert type(obj2) is ua.ExtensionObject
     assert obj2.TypeId == obj.TypeId
-    assert obj2.Body == b'example of data in custom format'
+    assert obj2.Body == b"example of data in custom format"
 
 
 def test_datetime():
@@ -581,25 +581,25 @@ def test_equal_nodeid():
 
 def test_zero_nodeid():
     assert ua.NodeId() == ua.NodeId(0, 0)
-    assert ua.NodeId() == ua.NodeId.from_string('ns=0;i=0;')
+    assert ua.NodeId() == ua.NodeId.from_string("ns=0;i=0;")
 
 
 def test_string_nodeid():
-    nid = ua.NodeId('titi', 1)
+    nid = ua.NodeId("titi", 1)
     assert nid.NamespaceIndex == 1
-    assert nid.Identifier == 'titi'
+    assert nid.Identifier == "titi"
     assert nid.NodeIdType == ua.NodeIdType.String
 
 
 def test_unicode_string_nodeid():
-    nid = ua.NodeId('hëllò', 1)
+    nid = ua.NodeId("hëllò", 1)
     assert nid.NamespaceIndex == 1
-    assert nid.Identifier == 'hëllò'
+    assert nid.Identifier == "hëllò"
     assert nid.NodeIdType == ua.NodeIdType.String
     d = nodeid_to_binary(nid)
     new_nid = nodeid_from_binary(io.BytesIO(d))
     assert new_nid == nid
-    assert new_nid.Identifier == 'hëllò'
+    assert new_nid.Identifier == "hëllò"
     assert new_nid.NodeIdType == ua.NodeIdType.String
 
 
@@ -611,30 +611,30 @@ def test_numeric_nodeid():
 
 
 def test_qualifiedstring_nodeid():
-    nid = ua.NodeId.from_string('ns=2;s=PLC1.Manufacturer')
+    nid = ua.NodeId.from_string("ns=2;s=PLC1.Manufacturer")
     assert nid.NamespaceIndex == 2
-    assert nid.Identifier == 'PLC1.Manufacturer'
+    assert nid.Identifier == "PLC1.Manufacturer"
 
 
 def test_strrepr_nodeid():
-    nid = ua.NodeId.from_string('ns=2;s=PLC1.Manufacturer')
-    assert nid.to_string() == 'ns=2;s=PLC1.Manufacturer'
+    nid = ua.NodeId.from_string("ns=2;s=PLC1.Manufacturer")
+    assert nid.to_string() == "ns=2;s=PLC1.Manufacturer"
     # assert repr(nid) == 'ns=2;s=PLC1.Manufacturer;'
 
 
 def test_qualified_name():
-    qn = ua.QualifiedName('qname', 2)
+    qn = ua.QualifiedName("qname", 2)
     assert qn.NamespaceIndex == 2
-    assert qn.Name == 'qname'
-    assert qn.to_string() == '2:qname'
+    assert qn.Name == "qname"
+    assert qn.to_string() == "2:qname"
 
 
 def test_datavalue():
     dv = ua.DataValue(123, SourceTimestamp=datetime.now(timezone.utc))
     assert dv.Value == ua.Variant(123)
     assert type(dv.Value) is ua.Variant
-    dv = ua.DataValue('abc', SourceTimestamp=datetime.now(timezone.utc))
-    assert dv.Value == ua.Variant('abc')
+    dv = ua.DataValue("abc", SourceTimestamp=datetime.now(timezone.utc))
+    assert dv.Value == ua.Variant("abc")
     assert isinstance(dv.SourceTimestamp, datetime)
 
 
@@ -686,9 +686,9 @@ def test_variant_array_dim():
 
 
 def test_text():
-    t1 = ua.LocalizedText('Root')
-    t2 = ua.LocalizedText('Root')
-    t3 = ua.LocalizedText('root')
+    t1 = ua.LocalizedText("Root")
+    t2 = ua.LocalizedText("Root")
+    t3 = ua.LocalizedText("root")
     assert t1 == t2
     assert t1 != t3
     t4 = struct_from_binary(ua.LocalizedText, ua.utils.Buffer(struct_to_binary(t1)))
@@ -696,7 +696,7 @@ def test_text():
 
 
 def test_text_simple():
-    t = ua.LocalizedText('Root')
+    t = ua.LocalizedText("Root")
     b = struct_to_binary(t)
     buf = ua.utils.Buffer(b)
     t2 = struct_from_binary(ua.LocalizedText, buf)
@@ -704,12 +704,12 @@ def test_text_simple():
 
 
 def test_text_with_locale():
-    t0 = ua.LocalizedText('Root')
-    t1 = ua.LocalizedText('Root', 'de-AT')
-    t2 = ua.LocalizedText('Root', 'de-AT')
-    t3 = ua.LocalizedText('Root', 'de-DE')
-    t4 = ua.LocalizedText(Locale='de-DE')
-    t5 = ua.LocalizedText(Locale='de-DE')
+    t0 = ua.LocalizedText("Root")
+    t1 = ua.LocalizedText("Root", "de-AT")
+    t2 = ua.LocalizedText("Root", "de-AT")
+    t3 = ua.LocalizedText("Root", "de-DE")
+    t4 = ua.LocalizedText(Locale="de-DE")
+    t5 = ua.LocalizedText(Locale="de-DE")
     assert t0 != t1
     assert t1 == t2
     assert t1 != t3
@@ -721,7 +721,7 @@ def test_text_with_locale():
 
 def test_message_chunk():
     pol = ua.SecurityPolicy()
-    chunks = MessageChunk.message_to_chunks(pol, b'123', 65536)
+    chunks = MessageChunk.message_to_chunks(pol, b"123", 65536)
     assert len(chunks) == 1
     seq = 0
     for chunk in chunks:
@@ -732,11 +732,11 @@ def test_message_chunk():
 
     # for policy None, MessageChunk overhead is 12+4+8 = 24 bytes
     # Let's pack 11 bytes into 28-byte chunks. The message must be split as 4+4+3
-    chunks = MessageChunk.message_to_chunks(pol, b'12345678901', 28)
+    chunks = MessageChunk.message_to_chunks(pol, b"12345678901", 28)
     assert len(chunks) == 3
-    assert chunks[0].Body == b'1234'
-    assert chunks[1].Body == b'5678'
-    assert chunks[2].Body == b'901'
+    assert chunks[0].Body == b"1234"
+    assert chunks[1].Body == b"5678"
+    assert chunks[2].Body == b"901"
     for chunk in chunks:
         seq += 1
         chunk.SequenceHeader.SequenceNumber = seq
@@ -838,7 +838,7 @@ def test_bin_datattributes():
 
 
 def test_browse():
-    data = b'\x01\x00\x12\x02\xe0S2\xb3\x8f\n\xd7\x01\x04\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x03\x00\x00\x00\x00#\x01@U\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00Objects\x02\x07\x00\x00\x00Objects\x01\x00\x00\x00@=\x00\x00\x00\x00\x00#\x01@V\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00Types\x02\x05\x00\x00\x00Types\x01\x00\x00\x00@=\x00\x00\x00\x00\x00#\x01@W\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00Views\x02\x05\x00\x00\x00Views\x01\x00\x00\x00@=\x00\x00\x00\x00\xff\xff\xff\xff'
+    data = b"\x01\x00\x12\x02\xe0S2\xb3\x8f\n\xd7\x01\x04\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\x03\x00\x00\x00\x00#\x01@U\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00Objects\x02\x07\x00\x00\x00Objects\x01\x00\x00\x00@=\x00\x00\x00\x00\x00#\x01@V\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00Types\x02\x05\x00\x00\x00Types\x01\x00\x00\x00@=\x00\x00\x00\x00\x00#\x01@W\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00Views\x02\x05\x00\x00\x00Views\x01\x00\x00\x00@=\x00\x00\x00\x00\xff\xff\xff\xff"
     _ = struct_from_binary(ua.BrowseResponse, ua.utils.Buffer(data))
 
 

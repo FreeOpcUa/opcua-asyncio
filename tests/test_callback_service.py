@@ -13,33 +13,34 @@ async def create_monitored_items(event, dispatcher):
     print("Monitored Item")
 
     for idx in range(len(event.response_params)):
-        if (event.response_params[idx].StatusCode.is_good()):
+        if event.response_params[idx].StatusCode.is_good():
             nodeId = event.request_params.ItemsToCreate[idx].ItemToMonitor.NodeId
             print(f"Node {nodeId} was created")
 
 
 async def modify_monitored_items(event, dispatcher):
-    print('modify_monitored_items')
+    print("modify_monitored_items")
 
 
 async def delete_monitored_items(event, dispatcher):
-    print('delete_monitored_items')
+    print("delete_monitored_items")
 
 
 async def write_items(event, dispatcher):
-    print('write', event.response_params)
+    print("write", event.response_params)
 
 
 class SubscriptionHandler:
     """
     The SubscriptionHandler is used to handle the data that is received for the subscription.
     """
+
     def datachange_notification(self, node, val, data):
         """
         Callback for asyncua Subscription.
         This method will be called when the Client received a data change message from the Server.
         """
-        _logger.info('datachange_notification %r %s', node, val)
+        _logger.info("datachange_notification %r %s", node, val)
 
 
 async def test_write_callback(mocker):
@@ -59,8 +60,8 @@ async def test_write_callback(mocker):
     # starting!
     await server.start()
 
-    mocked_create_monitored_items = mocker.patch('tests.test_callback_service.create_monitored_items')
-    mocked_write_items = mocker.patch('tests.test_callback_service.write_items')
+    mocked_create_monitored_items = mocker.patch("tests.test_callback_service.create_monitored_items")
+    mocked_write_items = mocker.patch("tests.test_callback_service.write_items")
     # Create Callback for item event
     server.subscribe_server_callback(CallbackType.ItemSubscriptionCreated, mocked_create_monitored_items)
     server.subscribe_server_callback(CallbackType.PostWrite, mocked_write_items)
@@ -74,9 +75,7 @@ async def test_write_callback(mocker):
         handler = SubscriptionHandler()
         # We create a Client Subscription.
         subscription = await client.create_subscription(500, handler)
-        nodes = [
-            var
-        ]
+        nodes = [var]
         await subscription.subscribe_data_change(nodes)
         assert mocked_create_monitored_items.called
         await subscription.delete()

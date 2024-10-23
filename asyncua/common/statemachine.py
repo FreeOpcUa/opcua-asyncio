@@ -1,4 +1,4 @@
-'''
+"""
 https://reference.opcfoundation.org/v104/Core/docs/Part10/
 https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.1/
 Basic statemachines described in OPC UA Spec.:
@@ -13,7 +13,8 @@ Overview - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5.2.
 States - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5.2.3.2
 Transitions - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5.2.3.3
 Events - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.5/
-'''
+"""
+
 import logging
 import datetime
 
@@ -28,14 +29,15 @@ _logger = logging.getLogger(__name__)
 
 
 class State:
-    '''
+    """
     Helperclass for States (StateVariableType)
     https://reference.opcfoundation.org/v104/Core/docs/Part5/B.4.3/
     name: type string will be converted automatically to qualifiedname
         -> Name is a QualifiedName which uniquely identifies the current state within the StateMachineType.
     id: "BaseVariableType" Id is a name which uniquely identifies the current state within the StateMachineType. A subtype may restrict the DataType.
     number: Number is an integer which uniquely identifies the current state within the StateMachineType.
-    '''
+    """
+
     def __init__(self, id, name: str = None, number: int = None, node: Optional[Node] = None):
         if id is not None:
             self.id = ua.Variant(id)
@@ -48,7 +50,7 @@ class State:
 
 
 class Transition:
-    '''
+    """
     Helper class for Transitions (TransitionVariableType)
     https://reference.opcfoundation.org/v104/Core/docs/Part5/B.4.4/
     name: type string will be converted automatically to qualifiedname
@@ -60,7 +62,8 @@ class Transition:
     If, for example, a StateA is active and – while active – switches several times between its substates SubA and SubB,
     then the TransitionTime stays at the point in time when StateA became active whereas the EffectiveTransitionTime changes
     with each change of a substate.
-    '''
+    """
+
     def __init__(self, id, name: str = None, number: int = None, node: Node = None):
         if id is not None:
             self.id = ua.Variant(id)
@@ -73,12 +76,13 @@ class Transition:
 
 
 class StateMachine:
-    '''
+    """
     Implementation of an StateMachineType (most basic type)
     CurrentState: Mandatory "StateVariableType"
     LastTransition: Optional "TransitionVariableType"
     Generates TransitionEvent's
-    '''
+    """
+
     def __init__(self, server: Server = None, parent: Node = None, idx: int = None, name: str = None):
         if not isinstance(server, Server):
             raise ValueError(f"server: {type(server)} is not a instance of Server class")
@@ -111,16 +115,11 @@ class StateMachine:
         self._current_state = State(None)
 
     async def install(self, optionals: bool = False):
-        '''
+        """
         setup adressspace
-        '''
+        """
         self._optionals = optionals
-        self._state_machine_node = await self._parent.add_object(
-            self._idx,
-            self._name,
-            objecttype=self._state_machine_type,
-            instantiate_optional=optionals
-        )
+        self._state_machine_node = await self._parent.add_object(self._idx, self._name, objecttype=self._state_machine_type, instantiate_optional=optionals)
         if self._optionals:
             self._last_transition_node = await self._state_machine_node.get_child(["LastTransition"])
             children = await self._last_transition_node.get_children()
@@ -128,19 +127,15 @@ class StateMachine:
             for each in children:
                 childnames.append(await each.read_browse_name())
             if "TransitionTime" not in childnames:
-                self._last_transition_transitiontime_node = await self._last_transition_node.add_property(
-                    0,
-                    "TransitionTime",
-                    ua.Variant(datetime.datetime.now(datetime.timezone.utc), VariantType=ua.VariantType.DateTime)
-                )
+                self._last_transition_transitiontime_node = await self._last_transition_node.add_property(0, "TransitionTime", ua.Variant(datetime.datetime.now(datetime.timezone.utc), VariantType=ua.VariantType.DateTime))
             else:
                 self._last_transition_transitiontime_node = await self._last_transition_node.get_child("TransitionTime")
         await self.init(self._state_machine_node)
 
     async def init(self, statemachine: Node):
-        '''
+        """
         initialize and get subnodes
-        '''
+        """
         self._current_state_node = await statemachine.get_child(["CurrentState"])
         current_state_props = await self._current_state_node.get_properties()
         for prop in current_state_props:
@@ -173,13 +168,13 @@ class StateMachine:
         self._evgen = await self._server.get_event_generator(self.evtype, self._state_machine_node)
 
     async def change_state(self, state: State, transition: Transition = None, event_msg: Union[str, ua.LocalizedText] = None, severity: int = 500):
-        '''
+        """
         method to change the state of the statemachine
         state: "State" mandatory
         transition: "Transition" optional
         event_msg: "LocalizedText" optional
         severity: "Int" optional
-        '''
+        """
         await self._write_state(state)
         if transition:
             await self._write_transition(transition)
@@ -212,10 +207,10 @@ class StateMachine:
                 await self._current_state_effective_display_name_node.write_value(state.effectivedisplayname, ua.VariantType.LocalizedText)
 
     async def _write_transition(self, transition: Transition):
-        '''
+        """
         transition: Transition
         issub: boolean (true if it is a transition between substates)
-        '''
+        """
         if not isinstance(transition, Transition):
             raise ValueError(f"Statemachine: {self._name} -> state: {transition} is not a instance of StateMachine.Transition class")
         transition._transitiontime = datetime.datetime.now(datetime.timezone.utc)
@@ -231,13 +226,13 @@ class StateMachine:
                 await self._last_transition_transitiontime_node.write_value(transition._transitiontime, ua.VariantType.DateTime)
 
     async def add_state(self, state: State, state_type: ua.NodeId = ua.NodeId(2307, 0), optionals: bool = False):
-        '''
+        """
         this method adds a state object to the statemachines address space
         state: State,
         InitialStateType: ua.NodeId(2309, 0),
         StateType: ua.NodeId(2307, 0),
         ChoiceStateType: ua.NodeId(15109,0),
-        '''
+        """
         if not isinstance(state, State):
             raise ValueError(f"Statemachine: {self._name} -> state: {state} is not a instance of StateMachine.State class")
         if state_type not in [ua.NodeId(2309, 0), ua.NodeId(2307, 0), ua.NodeId(15109, 0)]:
@@ -247,12 +242,7 @@ class StateMachine:
             raise ValueError(f"Statemachine: {self._name} -> State.name is None")
         if not state.number:
             raise ValueError(f"Statemachine: {self._name} -> State.number is None")
-        state.node = await self._state_machine_node.add_object(
-            self._idx,
-            state.name,
-            objecttype=state_type,
-            instantiate_optional=optionals
-        )
+        state.node = await self._state_machine_node.add_object(self._idx, state.name, objecttype=state_type, instantiate_optional=optionals)
         state_number = await state.node.get_child(["StateNumber"])
         await state_number.write_value(state.number, ua.VariantType.UInt32)
         if not state.id:
@@ -260,19 +250,14 @@ class StateMachine:
         return state.node
 
     async def add_transition(self, transition: Transition, transition_type: ua.NodeId = ua.NodeId(2310, 0), optionals: bool = False):
-        '''
+        """
         this method adds a transition object to the statemachines address space
         transition: Transition,
         transition_type: ua.NodeId(2310, 0),
-        '''
+        """
         if not isinstance(transition, Transition):
             raise ValueError(f"Statemachine: {self._name} -> state: {transition} is not a instance of StateMachine.Transition class")
-        transition.node = await self._state_machine_node.add_object(
-            self._idx,
-            transition.name,
-            objecttype=transition_type,
-            instantiate_optional=optionals
-        )
+        transition.node = await self._state_machine_node.add_object(self._idx, transition.name, objecttype=transition_type, instantiate_optional=optionals)
         transition_number = await transition.node.get_child(["TransitionNumber"])
         await transition_number.write_value(transition.number, ua.VariantType.UInt32)
         if not transition.id:
@@ -281,10 +266,11 @@ class StateMachine:
 
 
 class FiniteStateMachine(StateMachine):
-    '''
+    """
     Implementation of an FiniteStateMachineType a little more advanced than the basic one
     if you need to know the available states and transition from clientside
-    '''
+    """
+
     def __init__(self, server: Server = None, parent: Node = None, idx: int = None, name: str = None):
         super().__init__(server, parent, idx, name)
         if name is None:
@@ -310,9 +296,10 @@ class FiniteStateMachine(StateMachine):
 
 
 class ExclusiveLimitStateMachine(FiniteStateMachine):
-    '''
+    """
     NOT IMPLEMENTED "ExclusiveLimitStateMachineType"
-    '''
+    """
+
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
         if name is None:
@@ -322,11 +309,12 @@ class ExclusiveLimitStateMachine(FiniteStateMachine):
 
 
 class FileTransferStateMachine(FiniteStateMachine):
-    '''
+    """
     NOT IMPLEMENTED "FileTransferStateMachineType"
     https://reference.opcfoundation.org/v104/Core/ObjectTypes/FileTransferStateMachineType/
     https://reference.opcfoundation.org/v104/Core/docs/Part5/C.4.6/
-    '''
+    """
+
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
         if name is None:
@@ -336,11 +324,12 @@ class FileTransferStateMachine(FiniteStateMachine):
 
 
 class ProgramStateMachine(FiniteStateMachine):
-    '''
+    """
     https://reference.opcfoundation.org/v104/Core/docs/Part10/4.2.3/
     Implementation of an ProgramStateMachine its quite a complex statemachine with the
     optional possibility to make the statchange from clientside via opcua-methods
-    '''
+    """
+
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
         if name is None:
@@ -351,9 +340,10 @@ class ProgramStateMachine(FiniteStateMachine):
 
 
 class ShelvedStateMachine(FiniteStateMachine):
-    '''
+    """
     NOT IMPLEMENTED "ShelvedStateMachineType"
-    '''
+    """
+
     def __init__(self, server=None, parent=None, idx=None, name=None):
         super().__init__(server, parent, idx, name)
         if name is None:

@@ -35,7 +35,7 @@ class HistorySQLite(HistoryStorageInterface):
 
     async def stop(self):
         await self._db.close()
-        self.logger.info('Historizing SQL connection closed')
+        self.logger.info("Historizing SQL connection closed")
 
     async def new_historized_node(self, node_id, period, count=0):
         table = self._get_table_name(node_id)
@@ -45,13 +45,7 @@ class HistorySQLite(HistoryStorageInterface):
         try:
             validate_table_name(table)
             await self._db.execute(
-                f'CREATE TABLE "{table}" (_Id INTEGER PRIMARY KEY NOT NULL,'
-                ' ServerTimestamp TIMESTAMP,'
-                ' SourceTimestamp TIMESTAMP,'
-                ' StatusCode INTEGER,'
-                ' Value TEXT,'
-                ' VariantType TEXT,'
-                ' VariantBinary BLOB)',
+                f'CREATE TABLE "{table}" (_Id INTEGER PRIMARY KEY NOT NULL,' " ServerTimestamp TIMESTAMP," " SourceTimestamp TIMESTAMP," " StatusCode INTEGER," " Value TEXT," " VariantType TEXT," " VariantBinary BLOB)",
                 None,
             )
             await self._db.commit()
@@ -96,8 +90,7 @@ class HistorySQLite(HistoryStorageInterface):
             # ensure that no more than count records are stored for the specified node
             validate_table_name(table)
             await self.execute_sql_delete(
-                'SourceTimestamp = (SELECT CASE WHEN COUNT(*) > ? '
-                f'THEN MIN(SourceTimestamp) ELSE NULL END FROM "{table}")',
+                "SourceTimestamp = (SELECT CASE WHEN COUNT(*) > ? " f'THEN MIN(SourceTimestamp) ELSE NULL END FROM "{table}")',
                 (count,),
                 table,
                 node_id,
@@ -132,7 +125,7 @@ class HistorySQLite(HistoryStorageInterface):
             self.logger.error("Historizing SQL Read Error for %s: %s", node_id, e)
         if len(results) > self.max_history_data_response_size:
             cont = results[self.max_history_data_response_size].SourceTimestamp
-        results = results[:self.max_history_data_response_size]
+        results = results[: self.max_history_data_response_size]
         return results, cont
 
     async def new_historized_event(self, source_id, evtypes, period, count=0):
@@ -148,8 +141,7 @@ class HistorySQLite(HistoryStorageInterface):
         try:
             validate_table_name(table)
             await self._db.execute(
-                f'CREATE TABLE "{table}" '
-                f'(_Id INTEGER PRIMARY KEY NOT NULL, _Timestamp TIMESTAMP, _EventTypeName TEXT, {columns})',
+                f'CREATE TABLE "{table}" ' f"(_Id INTEGER PRIMARY KEY NOT NULL, _Timestamp TIMESTAMP, _EventTypeName TEXT, {columns})",
                 None,
             )
             await self._db.commit()
@@ -164,8 +156,7 @@ class HistorySQLite(HistoryStorageInterface):
         try:
             validate_table_name(table)
             await self._db.execute(
-                f'INSERT INTO "{table}" ("_Id", "_Timestamp", "_EventTypeName", {columns}) '
-                f'VALUES (NULL, "{event.Time}", "{event_type}", {placeholders})',
+                f'INSERT INTO "{table}" ("_Id", "_Timestamp", "_EventTypeName", {columns}) ' f'VALUES (NULL, "{event.Time}", "{event_type}", {placeholders})',
                 evtup,
             )
             await self._db.commit()
@@ -178,7 +169,7 @@ class HistorySQLite(HistoryStorageInterface):
             date_limit = datetime.now(timezone.utc) - period
             try:
                 validate_table_name(table)
-                await self._db.execute(f'DELETE FROM "{table}" WHERE Time < ?', (date_limit.isoformat(' '),))
+                await self._db.execute(f'DELETE FROM "{table}" WHERE Time < ?', (date_limit.isoformat(" "),))
                 await self._db.commit()
             except aiosqlite.Error as e:
                 self.logger.error("Historizing SQL Delete Old Data Error for events from %s: %s", event.SourceNode, e)
@@ -194,8 +185,7 @@ class HistorySQLite(HistoryStorageInterface):
         try:
             validate_table_name(table)
             async with self._db.execute(
-                f'SELECT "_Timestamp", {clauses_str} FROM "{table}" '
-                f'WHERE "_Timestamp" BETWEEN ? AND ? ORDER BY "_Id" {order} LIMIT ?',
+                f'SELECT "_Timestamp", {clauses_str} FROM "{table}" ' f'WHERE "_Timestamp" BETWEEN ? AND ? ORDER BY "_Id" {order} LIMIT ?',
                 (start_time, end_time, limit),
             ) as cursor:
                 async for row in cursor:
@@ -211,7 +201,7 @@ class HistorySQLite(HistoryStorageInterface):
             self.logger.error("Historizing SQL Read Error events for node %s: %s", source_id, e)
         if len(results) > self.max_history_data_response_size:  # start > ua.get_win_epoch() and
             cont = cont_timestamps[self.max_history_data_response_size]
-        results = results[:self.max_history_data_response_size]
+        results = results[: self.max_history_data_response_size]
         return results, cont
 
     def _get_table_name(self, node_id):
@@ -293,9 +283,7 @@ class HistorySQLite(HistoryStorageInterface):
                     name = select_clause.BrowsePath[0].Name
                     s_clauses.append(name)
             except AttributeError:
-                self.logger.warning(
-                    "Historizing SQL OPC UA Select Clause Warning for node %s," " Clause: %s:", source_id, select_clause
-                )
+                self.logger.warning("Historizing SQL OPC UA Select Clause Warning for node %s," " Clause: %s:", source_id, select_clause)
         # remove select clauses that the event type doesn't have; SQL will error because the column doesn't exist
         clauses = [x for x in s_clauses if x in self._event_fields[source_id]]
         return clauses, self._list_to_sql_str(clauses)

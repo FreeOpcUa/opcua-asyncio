@@ -42,7 +42,7 @@ async def call_method_full(parent: asyncua.Node, methodid: Union[ua.NodeId, ua.Q
     """
     if isinstance(methodid, (str, ua.uatypes.QualifiedName)):
         methodid = (await parent.get_child(methodid)).nodeid
-    elif hasattr(methodid, 'nodeid'):
+    elif hasattr(methodid, "nodeid"):
         methodid = methodid.nodeid
 
     result = await _call_method(parent.session, parent.nodeid, methodid, to_variant(*args))
@@ -78,6 +78,7 @@ def uamethod(func):
     """
 
     if iscoroutinefunction(func):
+
         @wraps(func)
         async def wrapper(parent, *args):
             func_args = _format_call_inputs(parent, *args)
@@ -85,11 +86,13 @@ def uamethod(func):
             return _format_call_outputs(result)
 
     else:
+
         @wraps(func)
         def wrapper(parent, *args):
             func_args = _format_call_inputs(parent, *args)
             result = func(*func_args)
             return _format_call_outputs(result)
+
     return wrapper
 
 
