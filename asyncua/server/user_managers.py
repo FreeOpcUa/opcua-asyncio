@@ -26,6 +26,7 @@ class CertificateUserManager:
     """
     Certificate user manager, takes a certificate handler with its associated users and provides those users.
     """
+
     def __init__(self):
         self._trusted_certificates = {}
 
@@ -37,15 +38,13 @@ class CertificateUserManager:
         user = User(role=user_role, name=name)
 
         if name in self._trusted_certificates:
-            logging.warning("certificate with name %s "
-                            "attempted to be added multiple times, only the last version will be kept.", name)
-        self._trusted_certificates[name] = {'certificate': uacrypto.der_from_x509(certificate), 'user': user}
+            logging.warning("certificate with name %s " "attempted to be added multiple times, only the last version will be kept.", name)
+        self._trusted_certificates[name] = {"certificate": uacrypto.der_from_x509(certificate), "user": user}
 
     def get_user(self, iserver, username=None, password=None, certificate=None):
         if certificate is None:
             return None
-        correct_users = [prospective_certificate['user'] for prospective_certificate in self._trusted_certificates.values()
-                         if certificate == prospective_certificate['certificate']]
+        correct_users = [prospective_certificate["user"] for prospective_certificate in self._trusted_certificates.values() if certificate == prospective_certificate["certificate"]]
         if len(correct_users) == 0:
             return None
         else:

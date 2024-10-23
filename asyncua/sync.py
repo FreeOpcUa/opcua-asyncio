@@ -1,6 +1,7 @@
 """
 sync API of asyncua
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -104,6 +105,7 @@ def syncmethod(func):
     """
     decorator for sync methods
     """
+
     def wrapper(self, *args, **kwargs):
         args, kwargs = _to_async(args, kwargs)
         aio_func = getattr(self.aio_obj, func.__name__)
@@ -135,6 +137,7 @@ def syncfunc(aio_func):
     """
     decorator for sync function
     """
+
     def decorator(func, *args, **kwargs):
         return sync_wrapper(aio_func)
 
@@ -155,6 +158,7 @@ def sync_uaclient_method(aio_func):
         ...
     ```
     """
+
     def sync_method(client: Client):
         uaclient = client.aio_obj.uaclient
         return functools.partial(sync_wrapper(aio_func), client.tloop, uaclient)
@@ -176,6 +180,7 @@ def sync_async_client_method(aio_func):
         ...
     ```
     """
+
     def sync_method(client: Client):
         return functools.partial(sync_wrapper(aio_func), client.tloop, client)
 
@@ -475,9 +480,7 @@ class Client:
 
     @syncmethod
     def translate_browsepaths(  # type: ignore[empty-body]
-        self,
-        starting_node: ua.NodeId,
-        relative_paths: Iterable[Union[ua.RelativePath, str]]
+        self, starting_node: ua.NodeId, relative_paths: Iterable[Union[ua.RelativePath, str]]
     ) -> List[ua.BrowsePathResult]:
         pass
 
@@ -537,7 +540,12 @@ class Server:
     waits for an async call to return. defualt is 120s and hopefully should fit most applications
     """
 
-    def __init__(self, shelf_file: Optional[Path] = None, tloop=None, sync_wrapper_timeout: Optional[float] = 120,):
+    def __init__(
+        self,
+        shelf_file: Optional[Path] = None,
+        tloop=None,
+        sync_wrapper_timeout: Optional[float] = 120,
+    ):
         self.tloop = tloop
         self.close_tloop = False
         if not self.tloop:
@@ -637,12 +645,7 @@ class Server:
     def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         pass
 
-    def set_attribute_value_callback(
-        self,
-        nodeid: ua.NodeId,
-        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
-        attr=ua.AttributeIds.Value
-    ) -> None:
+    def set_attribute_value_callback(self, nodeid: ua.NodeId, callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue], attr=ua.AttributeIds.Value) -> None:
         self.aio_obj.set_attribute_value_callback(nodeid, callback, attr)
 
     def create_subscription(self, period, handler):
@@ -784,16 +787,14 @@ class SyncNode:
         self,
         path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]],
         return_all: Literal[False] = False,
-    ) -> SyncNode:
-        ...
+    ) -> SyncNode: ...
 
     @overload
     def get_child(
         self,
         path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]],
         return_all: Literal[True] = True,
-    ) -> List[SyncNode]:
-        ...
+    ) -> List[SyncNode]: ...
 
     @syncmethod
     def get_child(  # type: ignore[empty-body]
@@ -805,9 +806,7 @@ class SyncNode:
 
     @syncmethod
     def get_children_by_path(  # type: ignore[empty-body]
-        self,
-        paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]],
-        raise_on_partial_error: bool = True
+        self, paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]], raise_on_partial_error: bool = True
     ) -> List[List[Optional[SyncNode]]]:
         pass
 
@@ -871,7 +870,8 @@ class SyncNode:
 
     @syncmethod
     def add_object(  # type: ignore[empty-body]
-        self, nodeid: Union[ua.NodeId, str],
+        self,
+        nodeid: Union[ua.NodeId, str],
         bname: Union[ua.QualifiedName, str],
         objecttype: Optional[int] = None,
         instantiate_optional: bool = True,
@@ -954,9 +954,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def add_reference(
-        self, target: Union[SyncNode, ua.NodeId, str, int], reftype: int, forward: bool = True, bidirectional: bool = True
-    ) -> None:
+    def add_reference(self, target: Union[SyncNode, ua.NodeId, str, int], reftype: int, forward: bool = True, bidirectional: bool = True) -> None:
         pass
 
     @syncmethod
@@ -968,12 +966,10 @@ class SyncNode:
         pass
 
     @overload
-    def get_path(self, max_length: int = 20, as_string: Literal[False] = False) -> List[SyncNode]:
-        ...
+    def get_path(self, max_length: int = 20, as_string: Literal[False] = False) -> List[SyncNode]: ...
 
     @overload
-    def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> List[str]:
-        ...
+    def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> List[str]: ...
 
     @syncmethod
     def get_path(self, max_length: int = 20, as_string: bool = False) -> Union[List[SyncNode], List[str]]:  # type: ignore[empty-body]
@@ -1076,11 +1072,7 @@ class Subscription:
         self.aio_obj = sub
 
     @syncmethod
-    def subscribe_data_change(self, nodes,
-                              attr=ua.AttributeIds.Value,
-                              queuesize=0,
-                              monitoring=ua.MonitoringMode.Reporting,
-                              sampling_interval=0.0):
+    def subscribe_data_change(self, nodes, attr=ua.AttributeIds.Value, queuesize=0, monitoring=ua.MonitoringMode.Reporting, sampling_interval=0.0):
         pass
 
     @syncmethod
@@ -1093,7 +1085,14 @@ class Subscription:
     ):
         pass
 
-    def _make_monitored_item_request(self, node: SyncNode, attr, mfilter, queuesize, monitoring=ua.MonitoringMode.Reporting,) -> ua.MonitoredItemCreateRequest:
+    def _make_monitored_item_request(
+        self,
+        node: SyncNode,
+        attr,
+        mfilter,
+        queuesize,
+        monitoring=ua.MonitoringMode.Reporting,
+    ) -> ua.MonitoredItemCreateRequest:
         return self.aio_obj._make_monitored_item_request(node, attr, mfilter, queuesize, monitoring)
 
     @syncmethod
@@ -1160,11 +1159,7 @@ def new_struct_field(
 
 @syncfunc(aio_func=common.structures104.new_enum)
 def new_enum(  # type: ignore[empty-body]
-    server: Union[Server, Client],
-    idx: Union[int, ua.NodeId],
-    name: Union[int, ua.QualifiedName],
-    values: List[str],
-    optional: bool = False
+    server: Union[Server, Client], idx: Union[int, ua.NodeId], name: Union[int, ua.QualifiedName], values: List[str], optional: bool = False
 ) -> SyncNode:
     pass
 

@@ -26,9 +26,7 @@ class SubscriptionService:
         self.standard_events = {}
         self._conditions = {}
 
-    async def create_subscription(
-        self, params, callback, session_id, request_callback=None
-    ):
+    async def create_subscription(self, params, callback, session_id, request_callback=None):
         self.logger.info("create subscription")
         result = ua.CreateSubscriptionResult()
         result.RevisedPublishingInterval = params.RequestedPublishingInterval
@@ -73,9 +71,7 @@ class SubscriptionService:
             else:
                 existing_subs.append(sub)
                 res.append(ua.StatusCode())
-        stop_results = await asyncio.gather(
-            *[sub.stop() for sub in existing_subs], return_exceptions=True
-        )
+        stop_results = await asyncio.gather(*[sub.stop() for sub in existing_subs], return_exceptions=True)
         for stop_result in stop_results:
             if isinstance(res, Exception):
                 self.logger.warning("Exception while stopping subscription", exc_info=stop_result)
@@ -115,8 +111,7 @@ class SubscriptionService:
             for _ in params.MonitoredItemIds:
                 res.append(ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid))
             return res
-        return self.subscriptions[params.SubscriptionId].monitored_item_srv.delete_monitored_items(
-            params.MonitoredItemIds)
+        return self.subscriptions[params.SubscriptionId].monitored_item_srv.delete_monitored_items(params.MonitoredItemIds)
 
     def republish(self, params):
         if params.SubscriptionId not in self.subscriptions:
@@ -125,7 +120,7 @@ class SubscriptionService:
         return self.subscriptions[params.SubscriptionId].republish(params.RetransmitSequenceNumber)
 
     async def trigger_event(self, event, subscription_id=None):
-        if hasattr(event, 'Retain') and hasattr(event, 'NodeId'):
+        if hasattr(event, "Retain") and hasattr(event, "NodeId"):
             if event.Retain:
                 self._conditions[event.NodeId] = event
             elif event.NodeId in self._conditions:

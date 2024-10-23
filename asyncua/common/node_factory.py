@@ -11,4 +11,5 @@ def make_node(session: AbstractSession, nodeid: ua.NodeId) -> asyncua.Node:
     Needed no break cyclical import of `Node`
     """
     from .node import Node
+
     return Node(session, nodeid)

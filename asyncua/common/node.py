@@ -20,8 +20,7 @@ from .ua_utils import value_to_datavalue
 
 from .events import Event, get_filter_from_event_type
 from .ua_utils import data_type_to_variant_type
-from .manage_nodes import create_folder, create_object, create_object_type, create_variable, create_variable_type, \
-    create_data_type, create_property, delete_nodes, create_method, create_reference_type
+from .manage_nodes import create_folder, create_object, create_object_type, create_variable, create_variable_type, create_data_type, create_property, delete_nodes, create_method, create_reference_type
 from .methods import call_method
 
 _logger = logging.getLogger(__name__)
@@ -54,6 +53,7 @@ class Node:
     OPC-UA protocol. Feel free to look at the code of this class and call
     directly UA services methods to optimize your code
     """
+
     def __init__(self, session: AbstractSession, nodeid: Union["Node", ua.NodeId, str, int]):
         self.session = session
         self.nodeid: ua.NodeId
@@ -364,7 +364,9 @@ class Node:
         return result
 
     async def get_children(
-        self, refs: int = ua.ObjectIds.HierarchicalReferences, nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
+        self,
+        refs: int = ua.ObjectIds.HierarchicalReferences,
+        nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
     ) -> List["Node"]:
         """
         Get all children of a node. By default hierarchical references and all node classes are returned.
@@ -411,13 +413,7 @@ class Node:
         """
         return await self.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Method)
 
-    async def get_children_descriptions(
-        self,
-        refs: int = ua.ObjectIds.HierarchicalReferences,
-        nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
-        includesubtypes: bool = True,
-        result_mask: ua.BrowseResultMask = ua.BrowseResultMask.All
-    ) -> List[ua.ReferenceDescription]:
+    async def get_children_descriptions(self, refs: int = ua.ObjectIds.HierarchicalReferences, nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified, includesubtypes: bool = True, result_mask: ua.BrowseResultMask = ua.BrowseResultMask.All) -> List[ua.ReferenceDescription]:
         return await self.get_references(refs, ua.BrowseDirection.Forward, nodeclassmask, includesubtypes, result_mask)
 
     async def get_encoding_refs(self) -> List["Node"]:
@@ -426,14 +422,7 @@ class Node:
     async def get_description_refs(self) -> List["Node"]:
         return await self.get_referenced_nodes(ua.ObjectIds.HasDescription, ua.BrowseDirection.Forward)
 
-    async def get_references(
-        self,
-        refs: int = ua.ObjectIds.References,
-        direction: ua.BrowseDirection = ua.BrowseDirection.Both,
-        nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
-        includesubtypes: bool = True,
-        result_mask: ua.BrowseResultMask = ua.BrowseResultMask.All
-    ) -> List[ua.ReferenceDescription]:
+    async def get_references(self, refs: int = ua.ObjectIds.References, direction: ua.BrowseDirection = ua.BrowseDirection.Both, nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified, includesubtypes: bool = True, result_mask: ua.BrowseResultMask = ua.BrowseResultMask.All) -> List[ua.ReferenceDescription]:
         """
         returns references of the node based on specific filter defined with:
 
@@ -501,12 +490,10 @@ class Node:
         return references[0].NodeId
 
     @overload
-    async def get_path(self, max_length: int = 20, as_string: Literal[False] = False) -> List["Node"]:
-        ...
+    async def get_path(self, max_length: int = 20, as_string: Literal[False] = False) -> List["Node"]: ...
 
     @overload
-    async def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> List["str"]:
-        ...
+    async def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> List["str"]: ...
 
     async def get_path(self, max_length: int = 20, as_string: bool = False) -> Union[List["Node"], List[str]]:
         """
@@ -557,20 +544,12 @@ class Node:
         return None
 
     @overload
-    async def get_child(
-        self, path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]], return_all: Literal[False] = False
-    ) -> "Node":
-        ...
+    async def get_child(self, path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]], return_all: Literal[False] = False) -> "Node": ...
 
     @overload
-    async def get_child(
-        self, path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]], return_all: Literal[True] = True
-    ) -> List["Node"]:
-        ...
+    async def get_child(self, path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]], return_all: Literal[True] = True) -> List["Node"]: ...
 
-    async def get_child(
-        self, path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]], return_all: bool = False
-    ) -> Union["Node", List["Node"]]:
+    async def get_child(self, path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]], return_all: bool = False) -> Union["Node", List["Node"]]:
         """
         get a child specified by its path from this node.
         A path might be:
@@ -595,11 +574,7 @@ class Node:
             return [Node(self.session, target.TargetId) for target in result.Targets]
         return Node(self.session, result.Targets[0].TargetId)
 
-    async def get_children_by_path(
-        self,
-        paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]],
-        raise_on_partial_error: bool = True
-    ) -> List[List[Optional["Node"]]]:
+    async def get_children_by_path(self, paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]], raise_on_partial_error: bool = True) -> List[List[Optional["Node"]]]:
         """
         get children specified by their paths from this node.
         A path might be:
@@ -629,11 +604,7 @@ class Node:
         except ua.UaStatusCodeError:
             codes = [result.StatusCode.value for result in results]
             raise ua.UaStatusCodeErrors(codes)
-        return [
-            [Node(self.session, target.TargetId) for target in result.Targets]
-            if result.StatusCode.is_good() else None
-            for result in results
-        ]
+        return [[Node(self.session, target.TargetId) for target in result.Targets] if result.StatusCode.is_good() else None for result in results]
 
     def _make_relative_path(self, path: Iterable[Union[ua.QualifiedName, str]]) -> ua.RelativePath:
         rpath = ua.RelativePath()
@@ -649,13 +620,7 @@ class Node:
             rpath.Elements.append(el)
         return rpath
 
-    async def read_raw_history(
-        self,
-        starttime: Optional[datetime] = None,
-        endtime: Optional[datetime] = None,
-        numvalues: int = 0,
-        return_bounds: bool = True
-    ) -> List[ua.DataValue]:
+    async def read_raw_history(self, starttime: Optional[datetime] = None, endtime: Optional[datetime] = None, numvalues: int = 0, return_bounds: bool = True) -> List[ua.DataValue]:
         """
         Read raw history of a node
         result code from server is checked and an exception is raised in case of error
@@ -696,7 +661,7 @@ class Node:
         """
         valueid = ua.HistoryReadValueId()
         valueid.NodeId = self.nodeid
-        valueid.IndexRange = ''
+        valueid.IndexRange = ""
         valueid.ContinuationPoint = continuation_point
         params = ua.HistoryReadParameters()
         params.HistoryReadDetails = details
@@ -705,13 +670,7 @@ class Node:
         params.NodesToRead.append(valueid)
         return (await self.session.history_read(params))[0]
 
-    async def read_event_history(
-        self,
-        starttime: datetime = None,
-        endtime: datetime = None,
-        numvalues: int = 0,
-        evtypes: Union["Node", ua.NodeId, str, int, Iterable[Union["Node", ua.NodeId, str, int]]] = ua.ObjectIds.BaseEventType
-    ) -> List[Event]:
+    async def read_event_history(self, starttime: datetime = None, endtime: datetime = None, numvalues: int = 0, evtypes: Union["Node", ua.NodeId, str, int, Iterable[Union["Node", ua.NodeId, str, int]]] = ua.ObjectIds.BaseEventType) -> List[Event]:
         """
         Read event history of a source node
         result code from server is checked and an exception is raised in case of error
@@ -747,7 +706,7 @@ class Node:
         """
         valueid = ua.HistoryReadValueId()
         valueid.NodeId = self.nodeid
-        valueid.IndexRange = ''
+        valueid.IndexRange = ""
         params = ua.HistoryReadParameters()
         params.HistoryReadDetails = details
         params.TimestampsToReturn = ua.TimestampsToReturn.Both
@@ -773,9 +732,7 @@ class Node:
         ditem.DeleteBidirectional = bidirectional
         return ditem
 
-    async def delete_reference(
-        self, target: Union["Node", ua.NodeId, str, int], reftype: int, forward: bool = True, bidirectional: bool = True
-    ) -> None:
+    async def delete_reference(self, target: Union["Node", ua.NodeId, str, int], reftype: int, forward: bool = True, bidirectional: bool = True) -> None:
         """
         Delete given node's references from address space
         """
@@ -791,7 +748,11 @@ class Node:
         (await self.session.delete_references([ditem]))[0].check()
 
     async def add_reference(
-        self, target: Union["Node", ua.NodeId, str, int], reftype: int, forward: bool = True, bidirectional: bool = True,
+        self,
+        target: Union["Node", ua.NodeId, str, int],
+        reftype: int,
+        forward: bool = True,
+        bidirectional: bool = True,
     ) -> None:
         """
         Add reference to node
@@ -871,9 +832,7 @@ class Node:
     async def add_method(self, *args) -> "Node":
         return await create_method(self, *args)
 
-    async def add_reference_type(
-        self, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], symmetric: bool = True, inversename: Optional[str] = None
-    ) -> "Node":
+    async def add_reference_type(self, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], symmetric: bool = True, inversename: Optional[str] = None) -> "Node":
         return await create_reference_type(self, nodeid, bname, symmetric, inversename)
 
     async def call_method(self, methodid: Union[ua.NodeId, ua.QualifiedName, str], *args) -> Any:

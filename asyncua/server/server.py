@@ -102,12 +102,7 @@ class Server:
         self._policies = []
         self.nodes: Shortcuts = Shortcuts(self.iserver.isession)
         # enable all endpoints by default
-        self._security_policy = [
-            ua.SecurityPolicyType.NoSecurity, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
-            ua.SecurityPolicyType.Basic256Sha256_Sign, ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt,
-            ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign, ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign,
-            ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt
-        ]
+        self._security_policy = [ua.SecurityPolicyType.NoSecurity, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt, ua.SecurityPolicyType.Basic256Sha256_Sign, ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt, ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign, ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign, ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt]
         # allow all certificates by default
         self._permission_ruleset = SimpleRoleRuleset()
         self.certificate: Optional[x509.Certificate] = None
@@ -118,7 +113,7 @@ class Server:
             max_recv_buffer=buffer_sz,
             max_send_buffer=buffer_sz,
             max_chunk_count=math.ceil(max_msg_sz / buffer_sz),  # Round up to allow max msg size
-            max_message_size=max_msg_sz
+            max_message_size=max_msg_sz,
         )
 
     async def init(self, shelf_file: Optional[Path] = None):
@@ -159,16 +154,8 @@ class Server:
         """
         self.iserver.aspace.force_server_timestamp = force_server_timestamp
 
-    async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version,
-                             build_number, build_date):
-
-        if not all(isinstance(arg, str) for arg in [
-            product_uri,
-            manufacturer_name,
-            product_name,
-            software_version,
-            build_number
-        ]):
+    async def set_build_info(self, product_uri, manufacturer_name, product_name, software_version, build_number, build_date):
+        if not all(isinstance(arg, str) for arg in [product_uri, manufacturer_name, product_name, software_version, build_number]):
             raise TypeError(f"""Expected all str got
                 product_uri: {type(product_uri)},
                 manufacturer_name: {type(manufacturer_name)},
@@ -202,10 +189,8 @@ class Server:
         # we also need to update all individual nodes :/
         product_uri_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ProductUri))
         product_name_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ProductName))
-        product_manufacturer_name_node = self.get_node(
-            ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ManufacturerName))
-        product_software_version_node = self.get_node(
-            ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_SoftwareVersion))
+        product_manufacturer_name_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_ManufacturerName))
+        product_software_version_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_SoftwareVersion))
         product_build_number_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_BuildNumber))
         product_build_date_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_BuildInfo_BuildDate))
 
@@ -224,6 +209,7 @@ class Server:
 
     def __str__(self):
         return f"OPC UA Server({self.endpoint.geturl()})"
+
     __repr__ = __str__
 
     async def load_certificate(self, path_or_content: Union[str, bytes, Path], format: str = None):
@@ -348,9 +334,9 @@ class Server:
 
     def set_security_IDs(self, policy_ids):
         """
-            DEPRECATED!
-            Only available for backwards compatibility.
-            Use set_identity_tokens instead.
+        DEPRECATED!
+        Only available for backwards compatibility.
+        Use set_identity_tokens instead.
         """
         _logger.warning("set_security_IDs is deprecated, use set_identity_tokens instead!")
         tokens = []
@@ -384,63 +370,32 @@ class Server:
                 return
 
             if ua.SecurityPolicyType.NoSecurity in self._security_policy:
-                _logger.warning(
-                    "Creating an open endpoint to the server, although encrypted endpoints are enabled.")
+                _logger.warning("Creating an open endpoint to the server, although encrypted endpoints are enabled.")
 
             if ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256,
-                                    ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
-                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
-                                             self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
+                self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256, ua.MessageSecurityMode.SignAndEncrypt)
+                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256, ua.MessageSecurityMode.SignAndEncrypt, self.certificate, self.iserver.private_key, permission_ruleset=self._permission_ruleset))
             if ua.SecurityPolicyType.Basic256Sha256_Sign in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyBasic256Sha256, ua.MessageSecurityMode.Sign)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256,
-                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
+                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic256Sha256, ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key, permission_ruleset=self._permission_ruleset))
             if ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep,
-                                    ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
-                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
-                                             self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
+                self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep, ua.MessageSecurityMode.SignAndEncrypt)
+                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep, ua.MessageSecurityMode.SignAndEncrypt, self.certificate, self.iserver.private_key, permission_ruleset=self._permission_ruleset))
             if ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyAes128Sha256RsaOaep, ua.MessageSecurityMode.Sign)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep,
-                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
+                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes128Sha256RsaOaep, ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key, permission_ruleset=self._permission_ruleset))
             if ua.SecurityPolicyType.Basic128Rsa15_Sign in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyBasic128Rsa15, ua.MessageSecurityMode.Sign)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15,
-                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
+                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15, ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key, permission_ruleset=self._permission_ruleset))
             if ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyBasic128Rsa15, ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15,
-                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate, self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
+                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyBasic128Rsa15, ua.MessageSecurityMode.SignAndEncrypt, self.certificate, self.iserver.private_key, permission_ruleset=self._permission_ruleset))
             if ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt in self._security_policy:
-                self._set_endpoints(security_policies.SecurityPolicyAes256Sha256RsaPss,
-                                    ua.MessageSecurityMode.SignAndEncrypt)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes256Sha256RsaPss,
-                                             ua.MessageSecurityMode.SignAndEncrypt, self.certificate,
-                                             self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
+                self._set_endpoints(security_policies.SecurityPolicyAes256Sha256RsaPss, ua.MessageSecurityMode.SignAndEncrypt)
+                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes256Sha256RsaPss, ua.MessageSecurityMode.SignAndEncrypt, self.certificate, self.iserver.private_key, permission_ruleset=self._permission_ruleset))
             if ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign in self._security_policy:
                 self._set_endpoints(security_policies.SecurityPolicyAes256Sha256RsaPss, ua.MessageSecurityMode.Sign)
-                self._policies.append(
-                    ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes256Sha256RsaPss,
-                                             ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key,
-                                             permission_ruleset=self._permission_ruleset))
+                self._policies.append(ua.SecurityPolicyFactory(security_policies.SecurityPolicyAes256Sha256RsaPss, ua.MessageSecurityMode.Sign, self.certificate, self.iserver.private_key, permission_ruleset=self._permission_ruleset))
 
     @staticmethod
     def lookup_security_level_for_policy_type(security_policy_type: ua.SecurityPolicyType) -> ua.Byte:
@@ -452,19 +407,7 @@ class Server:
             ua.Byte: the found security level
         """
 
-        return ua.Byte({
-            ua.SecurityPolicyType.NoSecurity: 0,
-            ua.SecurityPolicyType.Basic128Rsa15_Sign: 1,
-            ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt: 2,
-            ua.SecurityPolicyType.Basic256_Sign: 11,
-            ua.SecurityPolicyType.Basic256_SignAndEncrypt: 21,
-            ua.SecurityPolicyType.Basic256Sha256_Sign: 50,
-            ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt: 70,
-            ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign: 55,
-            ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt: 75,
-            ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign: 60,
-            ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt: 80
-        }[security_policy_type])
+        return ua.Byte({ua.SecurityPolicyType.NoSecurity: 0, ua.SecurityPolicyType.Basic128Rsa15_Sign: 1, ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt: 2, ua.SecurityPolicyType.Basic256_Sign: 11, ua.SecurityPolicyType.Basic256_SignAndEncrypt: 21, ua.SecurityPolicyType.Basic256Sha256_Sign: 50, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt: 70, ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign: 55, ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt: 75, ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign: 60, ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt: 80}[security_policy_type])
 
     @staticmethod
     def determine_security_level(security_policy_uri: str, security_mode: ua.MessageSecurityMode) -> ua.Byte:
@@ -511,7 +454,7 @@ class Server:
 
         if ua.X509IdentityToken in tokens:
             idtoken = ua.UserTokenPolicy()
-            idtoken.PolicyId = 'certificate_basic256sha256'
+            idtoken.PolicyId = "certificate_basic256sha256"
             idtoken.TokenType = ua.UserTokenType.Certificate
             idtoken.SecurityPolicyUri = policy.URI
             idtokens.append(idtoken)
@@ -655,8 +598,7 @@ class Server:
         await ev_gen.init(etype, emitting_node=emitting_node)
         return ev_gen
 
-    async def create_custom_data_type(self, idx, name, basetype=ua.ObjectIds.BaseDataType,
-                                      properties=None, description=None):
+    async def create_custom_data_type(self, idx, name, basetype=ua.ObjectIds.BaseDataType, properties=None, description=None):
         if properties is None:
             properties = []
         base_t = _get_node(self.iserver.isession, basetype)
@@ -666,23 +608,15 @@ class Server:
             datatype = None
             if len(prop) > 2:
                 datatype = prop[2]
-            await custom_t.add_property(idx, prop[0], ua.get_default_value(prop[1]),
-                                        varianttype=prop[1], datatype=datatype)
+            await custom_t.add_property(idx, prop[0], ua.get_default_value(prop[1]), varianttype=prop[1], datatype=datatype)
         return custom_t
 
-    async def create_custom_event_type(self, idx, name,
-                                       basetype=ua.ObjectIds.BaseEventType, properties=None):
+    async def create_custom_event_type(self, idx, name, basetype=ua.ObjectIds.BaseEventType, properties=None):
         if properties is None:
             properties = []
         return await self._create_custom_type(idx, name, basetype, properties, [], [])
 
-    async def create_custom_object_type(self,
-                                        idx,
-                                        name,
-                                        basetype=ua.ObjectIds.BaseObjectType,
-                                        properties=None,
-                                        variables=None,
-                                        methods=None):
+    async def create_custom_object_type(self, idx, name, basetype=ua.ObjectIds.BaseObjectType, properties=None, variables=None, methods=None):
         if properties is None:
             properties = []
         if variables is None:
@@ -694,13 +628,7 @@ class Server:
     # def create_custom_reference_type(self, idx, name, basetype=ua.ObjectIds.BaseReferenceType, properties=[]):
     # return self._create_custom_type(idx, name, basetype, properties)
 
-    async def create_custom_variable_type(self,
-                                          idx,
-                                          name,
-                                          basetype=ua.ObjectIds.BaseVariableType,
-                                          properties=None,
-                                          variables=None,
-                                          methods=None):
+    async def create_custom_variable_type(self, idx, name, basetype=ua.ObjectIds.BaseVariableType, properties=None, variables=None, methods=None):
         if properties is None:
             properties = []
         if variables is None:
@@ -716,14 +644,12 @@ class Server:
             datatype = None
             if len(prop) > 2:
                 datatype = prop[2]
-            await custom_t.add_property(
-                idx, prop[0], ua.get_default_value(prop[1]), varianttype=prop[1], datatype=datatype)
+            await custom_t.add_property(idx, prop[0], ua.get_default_value(prop[1]), varianttype=prop[1], datatype=datatype)
         for variable in variables:
             datatype = None
             if len(variable) > 2:
                 datatype = variable[2]
-            await custom_t.add_variable(
-                idx, variable[0], ua.get_default_value(variable[1]), varianttype=variable[1], datatype=datatype)
+            await custom_t.add_variable(idx, variable[0], ua.get_default_value(variable[1]), varianttype=variable[1], datatype=datatype)
         for method in methods:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
@@ -847,24 +773,14 @@ class Server:
         """
         return await self.iserver.write_attribute_value(nodeid, datavalue, attr)
 
-    def set_attribute_value_callback(
-        self,
-        nodeid: ua.NodeId,
-        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
-        attr=ua.AttributeIds.Value
-    ) -> None:
+    def set_attribute_value_callback(self, nodeid: ua.NodeId, callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue], attr=ua.AttributeIds.Value) -> None:
         """
         Set a callback function to the Attribute that returns a value for read_attribute_value() instead of the
         written value. Note that it does not trigger the datachange_callbacks unlike write_attribute_value().
         """
         self.iserver.set_attribute_value_callback(nodeid, callback, attr)
 
-    def set_attribute_value_setter(
-        self,
-        nodeid: ua.NodeId,
-        setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None],
-        attr=ua.AttributeIds.Value
-    ) -> None:
+    def set_attribute_value_setter(self, nodeid: ua.NodeId, setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None], attr=ua.AttributeIds.Value) -> None:
         """
         Set a setter function for the Attribute. This setter will be called when a new value is set using
         write_attribute_value() instead of directly writing the value. This is useful, for example, if you want to

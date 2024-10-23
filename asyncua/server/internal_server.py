@@ -2,6 +2,7 @@
 Internal server implementing opcu-ua interface.
 Can be used on server side or to implement binary/https opc-ua servers
 """
+
 from typing import Callable, Optional
 import asyncio
 from datetime import datetime, timedelta, timezone
@@ -70,9 +71,7 @@ class InternalServer:
         self.certificate_validator: Optional[CertificateValidatorMethod] = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
         # create a session to use on server side
-        self.isession = InternalSession(
-            self, self.aspace, self.subscription_service, "Internal", user=User(role=UserRole.Admin)
-        )
+        self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal", user=User(role=UserRole.Admin))
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         self.time_task = None
         self._time_task_stop = False
@@ -104,7 +103,7 @@ class InternalServer:
         """
         Set up some nodes as defined by spec
         """
-        uries = ['http://opcfoundation.org/UA/']
+        uries = ["http://opcfoundation.org/UA/"]
         ns_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
         await ns_node.write_value(uries)
 
@@ -137,9 +136,7 @@ class InternalServer:
 
     async def load_standard_address_space(self, shelf_file: Optional[Path] = None):
         if shelf_file:
-            is_file = await asyncio.get_running_loop().run_in_executor(
-                None, Path.is_file, shelf_file
-            ) or await asyncio.get_running_loop().run_in_executor(None, Path.is_file, shelf_file / '.db')
+            is_file = await asyncio.get_running_loop().run_in_executor(None, Path.is_file, shelf_file) or await asyncio.get_running_loop().run_in_executor(None, Path.is_file, shelf_file / ".db")
             if is_file:
                 # import address space from shelf
                 await asyncio.get_running_loop().run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
@@ -188,18 +185,16 @@ class InternalServer:
         self.aspace.dump(path)
 
     async def start(self):
-        self.logger.info('starting internal server')
+        self.logger.info("starting internal server")
         for edp in self.endpoints:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(
-            ua.ServerState.Running, ua.VariantType.Int32
-        )
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(ua.ServerState.Running, ua.VariantType.Int32)
         await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.now(timezone.utc))
         if not self.disabled_clock:
             self.time_task = asyncio.create_task(self._set_current_time_loop())
 
     async def stop(self):
-        self.logger.info('stopping internal server')
+        self.logger.info("stopping internal server")
         if self.time_task:
             self._time_task_stop = True
             await self.time_task
@@ -225,43 +220,37 @@ class InternalServer:
             try:
                 netloc = urlparse(params_ep_url).netloc
             except ValueError:
-                netloc = ''
+                netloc = ""
             if netloc:
                 return url._replace(netloc=netloc).geturl()
         if self.match_discovery_source_ip and sockname:
-            return url._replace(netloc=sockname[0] + ':' + str(sockname[1])).geturl()
+            return url._replace(netloc=sockname[0] + ":" + str(sockname[1])).geturl()
         return url.geturl()
 
     async def get_endpoints(self, params=None, sockname=None):
-        self.logger.info('get endpoint')
+        self.logger.info("get endpoint")
         edps = []
         params_ep_url = params.EndpointUrl if params else None
         for edp in self.endpoints:
             edp = copy(edp)
             edp.EndpointUrl = self._mangle_endpoint_url(edp.EndpointUrl, params_ep_url=params_ep_url, sockname=sockname)
             edp.Server = copy(edp.Server)
-            edp.Server.DiscoveryUrls = [
-                self._mangle_endpoint_url(url, params_ep_url=params_ep_url, sockname=sockname)
-                for url in edp.Server.DiscoveryUrls
-            ]
+            edp.Server.DiscoveryUrls = [self._mangle_endpoint_url(url, params_ep_url=params_ep_url, sockname=sockname) for url in edp.Server.DiscoveryUrls]
             edps.append(edp)
         return edps
 
     def find_servers(self, params, sockname=None):
         servers = []
-        params_server_uris = [uri.split(':') for uri in params.ServerUris] if params.ServerUris else []
+        params_server_uris = [uri.split(":") for uri in params.ServerUris] if params.ServerUris else []
         our_application_uris = [edp.Server.ApplicationUri for edp in self.endpoints]
         for desc in self._known_servers.values():
             if params_server_uris:
-                serv_uri = desc.Server.ApplicationUri.split(':')
+                serv_uri = desc.Server.ApplicationUri.split(":")
                 if not any(serv_uri[: len(uri)] == uri for uri in params_server_uris):
                     continue
             if desc.Server.ApplicationUri in our_application_uris:
                 serv = copy(desc.Server)
-                serv.DiscoveryUrls = [
-                    self._mangle_endpoint_url(url, params_ep_url=params.EndpointUrl, sockname=sockname)
-                    for url in serv.DiscoveryUrls
-                ]
+                serv.DiscoveryUrls = [self._mangle_endpoint_url(url, params_ep_url=params.EndpointUrl, sockname=sockname) for url in serv.DiscoveryUrls]
             else:
                 serv = desc.Server
             servers.append(serv)
@@ -309,7 +298,7 @@ class InternalServer:
         """
         event_notifier = await source.read_event_notifier()
         if ua.EventNotifier.SubscribeToEvents not in event_notifier:
-            raise ua.UaError('Node does not generate events', event_notifier)
+            raise ua.UaError("Node does not generate events", event_notifier)
         if ua.EventNotifier.HistoryRead not in event_notifier:
             event_notifier.add(ua.EventNotifier.HistoryRead)
             await source.set_event_notifier(event_notifier)
@@ -341,24 +330,14 @@ class InternalServer:
         """
         await self.aspace.write_attribute_value(nodeid, attr, datavalue)
 
-    def set_attribute_value_callback(
-        self,
-        nodeid: ua.NodeId,
-        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
-        attr=ua.AttributeIds.Value
-    ) -> None:
+    def set_attribute_value_callback(self, nodeid: ua.NodeId, callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue], attr=ua.AttributeIds.Value) -> None:
         """
         Set a callback function to the Attribute that returns a value for read_attribute_value() instead of the
         written value. Note that it does not trigger the datachange_callbacks unlike write_attribute_value().
         """
         self.aspace.set_attribute_value_callback(nodeid, attr, callback)
 
-    def set_attribute_value_setter(
-        self,
-        nodeid: ua.NodeId,
-        setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None],
-        attr=ua.AttributeIds.Value
-    ) -> None:
+    def set_attribute_value_setter(self, nodeid: ua.NodeId, setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None], attr=ua.AttributeIds.Value) -> None:
         """
         Set a setter function for the Attribute. This setter will be called when a new value is set using
         write_attribute_value() instead of directly writing the value. This is useful, for example, if you want to
@@ -410,13 +389,13 @@ class InternalServer:
                     self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
                     # raise  # Should I raise a significant exception?
                     return user_name, password
-                length = unpack_from('<I', raw_pw)[0] - len(isession.nonce)
-                password = raw_pw[4:4 + length]
-                password = password.decode('utf-8')
+                length = unpack_from("<I", raw_pw)[0] - len(isession.nonce)
+                password = raw_pw[4 : 4 + length]
+                password = password.decode("utf-8")
             except Exception:
                 self.logger.exception("Unable to decrypt password")
                 return False
         elif isinstance(password, bytes):  # TODO check
-            password = password.decode('utf-8')
+            password = password.decode("utf-8")
 
         return user_name, password

@@ -1,11 +1,11 @@
 from asyncua import Server, ua, uamethod
 import asyncio
 
-async def main():
 
+async def main():
     @uamethod
     async def callback(parent, in_extobj):
-        out_extobj = ua.uaprotocol_auto.AxisInformation() # get new instanace of AxisInformation
+        out_extobj = ua.uaprotocol_auto.AxisInformation()  # get new instanace of AxisInformation
         out_extobj.EngineeringUnits = in_extobj.EngineeringUnits
         out_extobj.EURange.Low = in_extobj.EURange.Low
         out_extobj.EURange.High = in_extobj.EURange.High
@@ -13,12 +13,9 @@ async def main():
         out_extobj.AxisScaleType = in_extobj.AxisScaleType
         out_extobj.AxisSteps = in_extobj.AxisSteps
 
-        await axis_info.set_value(out_extobj) #write values to variable
+        await axis_info.set_value(out_extobj)  # write values to variable
 
-        ret = (
-            ua.Variant(out_extobj, ua.VariantType.ExtensionObject),
-            ua.Variant("test", ua.VariantType.String)
-        )
+        ret = (ua.Variant(out_extobj, ua.VariantType.ExtensionObject), ua.Variant("test", ua.VariantType.String))
 
         return ret
 
@@ -54,25 +51,15 @@ async def main():
     status.Description = ua.LocalizedText("MSG")
 
     method_parent = await obj.add_object(idx, "Methods")
-    method_node = await method_parent.add_method(
-        idx,
-        "SetAxisInformation",
-        callback,
-        [
-            inarg_extobj
-        ],
-        [
-            outarg_extobj,
-            status
-        ]
-    )
+    method_node = await method_parent.add_method(idx, "SetAxisInformation", callback, [inarg_extobj], [outarg_extobj, status])
 
-    #add a variable of type AxisInformation
+    # add a variable of type AxisInformation
     axis_info = await obj.add_variable(idx, "AxisInformation", ua.uaprotocol_auto.AxisInformation(), varianttype=ua.VariantType.ExtensionObject)
 
     async with server:
         while 1:
             await asyncio.sleep(1)
 
-if  __name__ == "__main__":
+
+if __name__ == "__main__":
     asyncio.run(main())

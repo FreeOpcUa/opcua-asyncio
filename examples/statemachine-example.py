@@ -4,9 +4,10 @@ from asyncua import Server, ua
 from asyncua.common.statemachine import StateMachine, State, Transition
 
 logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger('asyncua')
+_logger = logging.getLogger("asyncua")
 
 if __name__ == "__main__":
+
     async def main():
         server = Server()
         await server.init()
@@ -22,7 +23,7 @@ if __name__ == "__main__":
         # if the state node already exist for example from xml model you can assign it here: node=<StateNode>
         state1 = State("State-Id-1", "Idle", 1)
         # adds the state (StateType) to the statemachine childs - this is optional!
-        await mystatemachine.add_state(state1, state_type=ua.NodeId(2309, 0)) #this is an init state -> InitialStateType: ua.NodeId(2309, 0)
+        await mystatemachine.add_state(state1, state_type=ua.NodeId(2309, 0))  # this is an init state -> InitialStateType: ua.NodeId(2309, 0)
         state2 = State("State-Id-2", "Loading", 2)
         await mystatemachine.add_state(state2)
         state3 = State("State-Id-3", "Initializing", 3)

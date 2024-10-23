@@ -5,12 +5,11 @@ from asyncua import Client, ua
 from asyncua.common.structures104 import load_custom_struct
 
 
-
 async def main():
-    url = 'opc.tcp://localhost:4840/freeopcua/server/'
+    url = "opc.tcp://localhost:4840/freeopcua/server/"
     # url = 'opc.tcp://commsvr.com:51234/UA/CAS_UA_Server'
     async with Client(url=url) as client:
-        uri = 'http://examples.freeopcua.github.io'
+        uri = "http://examples.freeopcua.github.io"
         idx = await client.register_namespace(uri)
         await client.load_data_type_definitions()
         my_enum = await client.nodes.objects.get_child(f"{idx}:my_enum")
@@ -25,7 +24,8 @@ async def main():
         mystructnode = await client.nodes.base_structure_type.get_child(f"{idx}:MyStruct")
         my_type = await load_custom_struct(mystructnode)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     logging.basicConfig(level=logging.WARNING)
-    _logger = logging.getLogger('asyncua')
+    _logger = logging.getLogger("asyncua")
     asyncio.run(main())

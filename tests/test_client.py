@@ -1,4 +1,3 @@
-
 import logging
 import pytest
 
@@ -22,22 +21,22 @@ async def test_objects_anonymous(server, client):
     with pytest.raises(ua.UaStatusCodeError):
         await objects.write_attribute(ua.AttributeIds.WriteMask, ua.DataValue(999))
     with pytest.raises(ua.UaStatusCodeError):
-        await objects.add_folder(3, 'MyFolder')
+        await objects.add_folder(3, "MyFolder")
 
 
 async def test_folder_anonymous(server, admin_client, client):
     objects = admin_client.nodes.objects
-    f = await objects.add_folder(3, 'MyFolderRO')
+    f = await objects.add_folder(3, "MyFolderRO")
     f_ro = client.get_node(f.nodeid)
     assert f == f_ro
     with pytest.raises(ua.UaStatusCodeError):
-        await f_ro.add_folder(3, 'MyFolder2')
+        await f_ro.add_folder(3, "MyFolder2")
     await server.delete_nodes([f, f_ro])
 
 
 async def test_variable_anonymous(server, admin_client, client):
     objects = admin_client.nodes.objects
-    v = await objects.add_variable(3, 'MyROVariable', 6)
+    v = await objects.add_variable(3, "MyROVariable", 6)
     await v.write_value(4)  # this should work
     v_ro = client.get_node(v.nodeid)
     with pytest.raises(ua.UaStatusCodeError):
@@ -60,7 +59,7 @@ async def test_context_manager(server):
         state[0] += 1
 
     # create client and replace instance methods with dummy methods
-    client = Client('opc.tcp://dummy_address:10000')
+    client = Client("opc.tcp://dummy_address:10000")
     client.connect = increment_state.__get__(client)
     client.disconnect = increment_state.__get__(client)
 
@@ -84,7 +83,7 @@ async def test_enumstrings_getvalue(server, client):
 
 async def test_custom_enum_struct(server, client):
     await client.load_type_definitions()
-    ns = await client.get_namespace_index('http://yourorganisation.org/struct_enum_example/')
+    ns = await client.get_namespace_index("http://yourorganisation.org/struct_enum_example/")
     myvar = client.get_node(ua.NodeId(6009, ns))
     val = await myvar.read_value()
     assert 242 == val.IntVal1
@@ -92,7 +91,7 @@ async def test_custom_enum_struct(server, client):
 
 
 async def test_multiple_read_and_write_value(server, client):
-    f = await server.nodes.objects.add_folder(3, 'Multiple_read_write_test')
+    f = await server.nodes.objects.add_folder(3, "Multiple_read_write_test")
     v1 = await f.add_variable(3, "a", 1)
     await v1.set_writable()
     v2 = await f.add_variable(3, "b", 2)
@@ -114,7 +113,7 @@ async def test_multiple_read_and_write_value(server, client):
 
 
 async def test_read_and_write_status_check(server, client):
-    f = await server.nodes.objects.add_folder(3, 'read_and_write_status_check')
+    f = await server.nodes.objects.add_folder(3, "read_and_write_status_check")
     v1 = await f.add_variable(3, "a", 1)
     await v1.set_writable()
 
@@ -135,8 +134,7 @@ async def test_read_and_write_status_check(server, client):
     # with raise_on_bad_status set to False
     val = await v1.read_data_value(False)
     assert val.Value.Value is None, "Value should be Null if StatusCode is Bad"
-    assert val.StatusCode_ == testStatusCode, "StatusCode expected " \
-        + str(val.StatusCode_) + ", but instead got " + str(testStatusCode)
+    assert val.StatusCode_ == testStatusCode, "StatusCode expected " + str(val.StatusCode_) + ", but instead got " + str(testStatusCode)
 
     # check that reading the value generates an error
     # with raise_on_bad_status set to True
@@ -187,9 +185,9 @@ async def test_translate_browsepaths(server, client: Client):
 async def test_strip_credentials_in_url():
     """Check that the credentials are correctly stripped in the server url"""
 
-    client = Client('opc.tcp://user:password@dummy_address:10000')
-    assert client.server_url.netloc == 'dummy_address:10000'
+    client = Client("opc.tcp://user:password@dummy_address:10000")
+    assert client.server_url.netloc == "dummy_address:10000"
 
-    client = Client('opc.tcp://user:password@dummy_address:10000')
+    client = Client("opc.tcp://user:password@dummy_address:10000")
     client.strip_url_credentials = False
-    assert client.server_url.netloc == 'user:password@dummy_address:10000'
+    assert client.server_url.netloc == "user:password@dummy_address:10000"

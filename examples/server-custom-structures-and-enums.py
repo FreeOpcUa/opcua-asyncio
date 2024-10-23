@@ -5,36 +5,56 @@ from asyncua import ua, Server
 from asyncua.common.structures104 import new_struct, new_enum, new_struct_field
 
 logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger('asyncua')
+_logger = logging.getLogger("asyncua")
 
 
 async def main():
     # setup our server
     server = Server()
     await server.init()
-    server.set_endpoint('opc.tcp://0.0.0.0:4840/freeopcua/server/')
+    server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
 
     # setup our own namespace, not really necessary but should as spec
-    uri = 'http://examples.freeopcua.github.io'
+    uri = "http://examples.freeopcua.github.io"
     idx = await server.register_namespace(uri)
 
-    snode1, _ = await new_struct(server, idx, "MyStruct", [
-        new_struct_field("MyBool", ua.VariantType.Boolean),
-        new_struct_field("MyUInt32List", ua.VariantType.UInt32, array=True),
-    ])
-    snode2, _ = await new_struct(server, idx, "MyOptionalStruct", [
-        new_struct_field("MyBool", ua.VariantType.Boolean),
-        new_struct_field("MyUInt32List", ua.VariantType.UInt32, array=True),
-        new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
-    ])
-    snode3, _ = await new_struct(server, idx, "MyNestedStruct", [
-        new_struct_field("MyStructArray", snode1, array=True),
-    ])
-    enode = await new_enum(server, idx, "MyEnum", [
-        "titi",
-        "toto",
-        "tutu",
-    ])
+    snode1, _ = await new_struct(
+        server,
+        idx,
+        "MyStruct",
+        [
+            new_struct_field("MyBool", ua.VariantType.Boolean),
+            new_struct_field("MyUInt32List", ua.VariantType.UInt32, array=True),
+        ],
+    )
+    snode2, _ = await new_struct(
+        server,
+        idx,
+        "MyOptionalStruct",
+        [
+            new_struct_field("MyBool", ua.VariantType.Boolean),
+            new_struct_field("MyUInt32List", ua.VariantType.UInt32, array=True),
+            new_struct_field("MyInt64", ua.VariantType.Int64, optional=True),
+        ],
+    )
+    snode3, _ = await new_struct(
+        server,
+        idx,
+        "MyNestedStruct",
+        [
+            new_struct_field("MyStructArray", snode1, array=True),
+        ],
+    )
+    enode = await new_enum(
+        server,
+        idx,
+        "MyEnum",
+        [
+            "titi",
+            "toto",
+            "tutu",
+        ],
+    )
 
     custom_objs = await server.load_data_type_definitions()
     print("Custom objects on server")
@@ -52,5 +72,5 @@ async def main():
             await asyncio.sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

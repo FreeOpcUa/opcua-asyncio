@@ -15,6 +15,7 @@ class CallbackType(Enum):
     :ivar MonitoredItem:
 
     """
+
     Null = 0
     ItemSubscriptionCreated = 1
     ItemSubscriptionModified = 2
@@ -57,7 +58,7 @@ class CallbackService:
         if event is None:
             event = Callback()
         elif not isinstance(event, Callback):
-            raise ValueError('Unexpected event type given')
+            raise ValueError("Unexpected event type given")
         event.setName(eventName)
         if eventName not in self._listeners:
             return event
@@ -91,7 +92,7 @@ class CallbackService:
 
     def addSubscriber(self, subscriber):
         if not isinstance(subscriber, CallbackSubscriberInterface):
-            raise ValueError('Unexpected subscriber type given')
+            raise ValueError("Unexpected subscriber type given")
         for eventName, params in subscriber.getSubscribedEvents().items():
             if isinstance(params, str):
                 self.addListener(eventName, getattr(subscriber, params))

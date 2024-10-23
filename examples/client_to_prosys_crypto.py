@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, "..")
 import logging
 import asyncio
@@ -16,7 +17,6 @@ async def main():
         while True:
             print("childs og objects are: ", await objects.get_children())
             await asyncio.sleep(1)
-
 
 
 if __name__ == "__main__":

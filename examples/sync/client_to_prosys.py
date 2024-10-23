@@ -4,7 +4,6 @@ from asyncua.sync import Client
 
 
 class SubHandler:
-
     """
     Client to subscription. It will receive events from server
     """
@@ -18,9 +17,10 @@ class SubHandler:
 
 if __name__ == "__main__":
     from IPython import embed
+
     logging.basicConfig(level=logging.DEBUG)
-    #client = Client("opc.tcp://olivier:olivierpass@localhost:53530/OPCUA/SimulationServer/")
-    #client.set_security_string("Basic256Sha256,SignAndEncrypt,certificate-example.der,private-key-example.pem")
+    # client = Client("opc.tcp://olivier:olivierpass@localhost:53530/OPCUA/SimulationServer/")
+    # client.set_security_string("Basic256Sha256,SignAndEncrypt,certificate-example.der,private-key-example.pem")
     with Client("opc.tcp://localhost:53530/OPCUA/SimulationServer/") as client:
         root = client.nodes.root
         print("Root is", root)

@@ -57,9 +57,9 @@ class Client:
         """
         self._server_url = urlparse(url)
         # take initial username and password from the url
-        userinfo, have_info, _ = self._server_url.netloc.rpartition('@')
+        userinfo, have_info, _ = self._server_url.netloc.rpartition("@")
         if have_info:
-            username, have_password, password = userinfo.partition(':')
+            username, have_password, password = userinfo.partition(":")
             self._username = unquote(username)
             if have_password:
                 self._password = unquote(password)
@@ -111,7 +111,7 @@ class Client:
         is not recommended for security reasons.
         """
         url = self._server_url
-        userinfo, have_info, hostinfo = url.netloc.rpartition('@')
+        userinfo, have_info, hostinfo = url.netloc.rpartition("@")
         if have_info:
             # remove credentials from url, preventing them to be sent unencrypted in e.g. send_hello
             if self.strip_url_credentials:
@@ -125,7 +125,7 @@ class Client:
         """
         _logger.info("find_endpoint %r %r %r", endpoints, security_mode, policy_uri)
         for ep in endpoints:
-            if (ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and ep.SecurityPolicyUri == policy_uri):
+            if ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and ep.SecurityPolicyUri == policy_uri:
                 return ep
         raise ua.UaError(f"No matching endpoints: {security_mode}, {policy_uri}")
 
@@ -171,8 +171,8 @@ class Client:
         if len(parts) < 4:
             raise ua.UaError(f"Wrong format: `{string}`, expected at least 4 comma-separated values")
 
-        if '::' in parts[3]:  # if the filename contains a colon, assume it's a conjunction and parse it
-            parts[3], client_key_password = parts[3].split('::')
+        if "::" in parts[3]:  # if the filename contains a colon, assume it's a conjunction and parse it
+            parts[3], client_key_password = parts[3].split("::")
         else:
             client_key_password = None
 
@@ -205,7 +205,7 @@ class Client:
             # this generates a error in our crypto part, so we strip everything after
             # the server cert. To do this we read byte 2:4 and get the length - 4
             cert_len_idx = 2
-            len_bytestr = endpoint.ServerCertificate[cert_len_idx:cert_len_idx + 2]
+            len_bytestr = endpoint.ServerCertificate[cert_len_idx : cert_len_idx + 2]
             cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
             server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate[:cert_len])
         elif not isinstance(server_certificate, uacrypto.CertProperties):
@@ -224,7 +224,6 @@ class Client:
         server_cert: uacrypto.CertProperties,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
     ) -> None:
-
         if isinstance(server_cert, uacrypto.CertProperties):
             server_cert = await uacrypto.load_certificate(server_cert.path_or_content, server_cert.extension)
         cert = await uacrypto.load_certificate(certificate.path_or_content, certificate.extension)
@@ -500,7 +499,7 @@ class Client:
             # this generates a error in our crypto part, so we strip everything after
             # the server cert. To do this we read byte 2:4 and get the length - 4
             cert_len_idx = 2
-            len_bytestr = response.ServerCertificate[cert_len_idx:cert_len_idx + 2]
+            len_bytestr = response.ServerCertificate[cert_len_idx : cert_len_idx + 2]
             cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
             server_certificate = response.ServerCertificate[:cert_len]
         if not self.security_policy.peer_certificate:
@@ -630,7 +629,7 @@ class Client:
         if self.security_policy.AsymmetricSignatureURI:
             params.ClientSignature.Algorithm = self.security_policy.AsymmetricSignatureURI
         else:
-            params.ClientSignature.Algorithm = (security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI)
+            params.ClientSignature.Algorithm = security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
         params.LocaleIds = self._locale
         if not username and not user_certificate:
@@ -729,9 +728,7 @@ class Client:
         """
         return Node(self.uaclient, nodeid)
 
-    async def create_subscription(
-        self, period: Union[ua.CreateSubscriptionParameters, float], handler: SubscriptionHandler, publishing: bool = True
-    ) -> Subscription:
+    async def create_subscription(self, period: Union[ua.CreateSubscriptionParameters, float], handler: SubscriptionHandler, publishing: bool = True) -> Subscription:
         """
         Create a subscription.
         Returns a Subscription object which allows to subscribe to events or data changes on server.
@@ -763,35 +760,21 @@ class Client:
         params: ua.CreateSubscriptionParameters,
         results: ua.CreateSubscriptionResult,
     ) -> Optional[ua.ModifySubscriptionParameters]:
-        if (
-            results.RevisedPublishingInterval == params.RequestedPublishingInterval
-            and results.RevisedLifetimeCount == params.RequestedLifetimeCount
-            and results.RevisedMaxKeepAliveCount == params.RequestedMaxKeepAliveCount
-        ):
+        if results.RevisedPublishingInterval == params.RequestedPublishingInterval and results.RevisedLifetimeCount == params.RequestedLifetimeCount and results.RevisedMaxKeepAliveCount == params.RequestedMaxKeepAliveCount:
             return None
-        _logger.warning(
-            "Revised values returned differ from subscription values: %s", results
-        )
+        _logger.warning("Revised values returned differ from subscription values: %s", results)
         revised_interval = results.RevisedPublishingInterval
         # Adjust the MaxKeepAliveCount based on the RevisedPublishInterval when necessary
         new_keepalive_count = self.get_keepalive_count(revised_interval)
-        if (
-            revised_interval != params.RequestedPublishingInterval
-            and new_keepalive_count != params.RequestedMaxKeepAliveCount
-        ):
-            _logger.info(
-                "KeepAliveCount will be updated to %s "
-                "for consistency with RevisedPublishInterval", new_keepalive_count
-            )
+        if revised_interval != params.RequestedPublishingInterval and new_keepalive_count != params.RequestedMaxKeepAliveCount:
+            _logger.info("KeepAliveCount will be updated to %s " "for consistency with RevisedPublishInterval", new_keepalive_count)
             modified_params = ua.ModifySubscriptionParameters()
             # copy the existing subscription parameters
             copy_dataclass_attr(params, modified_params)
             # then override with the revised values
             modified_params.RequestedMaxKeepAliveCount = new_keepalive_count
             modified_params.SubscriptionId = results.SubscriptionId
-            modified_params.RequestedPublishingInterval = (
-                results.RevisedPublishingInterval
-            )
+            modified_params.RequestedPublishingInterval = results.RevisedPublishingInterval
             # update LifetimeCount but chances are it will be re-revised again
             modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
             return modified_params

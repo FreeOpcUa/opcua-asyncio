@@ -15,6 +15,7 @@ you need an OPC UA server that offers the required File Transfer functionality.
 However, in this project there is currently no demo server containing
 file transfer capabilities.
 """
+
 import asyncio
 import logging
 
@@ -56,20 +57,18 @@ async def task():
             _logger.warning("=> File '%s' already exists on server.", new_file_name)
 
         # Write to file on server
-        file_content = ("I am a random file\n" * 3).encode('utf-8')
+        file_content = ("I am a random file\n" * 3).encode("utf-8")
         # In order to write to a file, it must already exist on the target system. (OPC UA typical)
         remote_file_node = await remote_file_system.get_child(f"{uri}:{new_file_name}")
         # In order to write to a file, you need the OpenFileModes "Write"
         # and one of the following "Append" or "EraseExisting". (OPC UA typical too)
-        async with UaFile(remote_file_node,
-                          OpenFileMode.Write + OpenFileMode.EraseExisting) as remote_file:
+        async with UaFile(remote_file_node, OpenFileMode.Write + OpenFileMode.EraseExisting) as remote_file:
             await remote_file.write(file_content)
 
         # Append to file on server
-        file_content = ("I am appended text\n" * 3).encode('utf-8')
+        file_content = ("I am appended text\n" * 3).encode("utf-8")
         remote_file_node = await remote_file_system.get_child(f"{uri}:{new_file_name}")
-        async with UaFile(remote_file_node,
-                          OpenFileMode.Write + OpenFileMode.Append) as remote_file:
+        async with UaFile(remote_file_node, OpenFileMode.Write + OpenFileMode.Append) as remote_file:
             await remote_file.write(file_content)
 
         # Get size of remote file

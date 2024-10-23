@@ -50,7 +50,7 @@ class RelativePathElementFormatter:
                 raise UaInvalidParameterError("RelativePathElementType is not specified.")
 
     @staticmethod
-    def parse(string: str) -> Tuple['RelativePathElementFormatter', str]:
+    def parse(string: str) -> Tuple["RelativePathElementFormatter", str]:
         el = RelativePathElementFormatter()
 
         rest = string
@@ -89,7 +89,7 @@ class RelativePathElementFormatter:
             idx_str = m.group(1)
             if idx_str:
                 idx = int(idx_str)
-            rest = rest[m.end():]
+            rest = rest[m.end() :]
 
         # Extract rest of name.
         name = []
@@ -159,9 +159,7 @@ class RelativePathElementFormatter:
             path.append("/")
         elif self._element_type == RelativePathElementType.AnyComponent:
             path.append(".")
-        elif (
-            self._element_type == RelativePathElementType.ForwardReference or self._element_type == RelativePathElementType.InverseReference
-        ):
+        elif self._element_type == RelativePathElementType.ForwardReference or self._element_type == RelativePathElementType.InverseReference:
             if self._reference_type_name and self._reference_type_name.Name:
                 path.append("<")
                 if not self._include_subtypes:
@@ -231,7 +229,7 @@ def _find_reference_type(reference_type_name: QualifiedName) -> NodeId:
     if type_id is not None:
         return NodeId(Identifier=type_id, NamespaceIndex=0)
     else:
-        raise ValueError('Non-standard ReferenceTypes are not supported.')
+        raise ValueError("Non-standard ReferenceTypes are not supported.")
 
 
 def _find_reference_type_name(reference_type_id: NodeId) -> QualifiedName:
@@ -240,6 +238,6 @@ def _find_reference_type_name(reference_type_id: NodeId) -> QualifiedName:
         if id_type == NodeIdType.TwoByte or id_type == NodeIdType.FourByte or id_type == NodeIdType.Numeric:
             type_id: int = reference_type_id.Identifier
             return QualifiedName.from_string(ObjectIdNames[type_id])
-        raise ValueError('Non-integer NodeIds are not supported.')
+        raise ValueError("Non-integer NodeIds are not supported.")
     else:
-        raise ValueError('Non-standard ReferenceTypes are not supported.')
+        raise ValueError("Non-standard ReferenceTypes are not supported.")

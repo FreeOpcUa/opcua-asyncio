@@ -15,7 +15,7 @@ root = logging.getLogger()
 root.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 root.addHandler(handler)
 # diable logging for the servers
@@ -37,7 +37,7 @@ class SubHandler:
 
 
 async def start_servers():
-    """ Spin up two servers with identical configurations """
+    """Spin up two servers with identical configurations"""
     ports = [4840, 4841]
     urls = []
     loop = asyncio.get_event_loop()
@@ -74,14 +74,7 @@ async def main():
     urls, node = await start_servers()
 
     # set up ha_client with the serveur urls
-    ha_config = HaConfig(
-        HaMode.WARM,
-        keepalive_timer=15,
-        manager_timer=15,
-        reconciliator_timer=15,
-        urls=urls,
-        session_timeout=30
-    )
+    ha_config = HaConfig(HaMode.WARM, keepalive_timer=15, manager_timer=15, reconciliator_timer=15, urls=urls, session_timeout=30)
     ha = HaClient(ha_config)
     await ha.start()
 

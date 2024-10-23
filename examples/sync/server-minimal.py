@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, "../..")
 import time
 
@@ -18,7 +19,7 @@ if __name__ == "__main__":
     # populating our address space
     myobj = server.nodes.objects.add_object(idx, "MyObject")
     myvar = myobj.add_variable(idx, "MyVariable", 6.7)
-    myvar.set_writable()    # Set MyVariable to be writable by clients
+    myvar.set_writable()  # Set MyVariable to be writable by clients
 
     # starting!
     server.start()
@@ -30,5 +31,5 @@ if __name__ == "__main__":
             count += 0.1
             myvar.write_value(count)
     finally:
-        #close connection, remove subscriptions, etc
+        # close connection, remove subscriptions, etc
         server.stop()

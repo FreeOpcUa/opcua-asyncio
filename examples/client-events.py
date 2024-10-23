@@ -13,6 +13,7 @@ class SubHandler:
     Do not do expensive, slow or network operation there. Create another
     thread if you need to do such a thing
     """
+
     def event_notification(self, event):
         _logger.info("New event received: %r", event)
 

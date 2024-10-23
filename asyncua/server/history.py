@@ -23,6 +23,7 @@ class HistoryStorageInterface:
     Interface of a history backend.
     Must be implemented by backends
     """
+
     def __init__(self, max_history_data_response_size=10000):
         self.max_history_data_response_size = max_history_data_response_size
 
@@ -132,31 +133,21 @@ class HistoryDict(HistoryStorageInterface):
             if end is None:
                 end = ua.get_win_epoch()
             if start == ua.get_win_epoch():
-                results = [
-                    dv
-                    for dv in reversed(self._datachanges[node_id])
-                    if start <= dv.SourceTimestamp
-                ]
+                results = [dv for dv in reversed(self._datachanges[node_id]) if start <= dv.SourceTimestamp]
             elif end == ua.get_win_epoch():
                 results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp]
             elif start > end:
-                results = [
-                    dv
-                    for dv in reversed(self._datachanges[node_id])
-                    if end <= dv.SourceTimestamp <= start
-                ]
+                results = [dv for dv in reversed(self._datachanges[node_id]) if end <= dv.SourceTimestamp <= start]
 
             else:
-                results = [
-                    dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp <= end
-                ]
+                results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp <= end]
 
             if nb_values and len(results) > nb_values:
                 results = results[:nb_values]
 
             if len(results) > self.max_history_data_response_size:
                 cont = results[self.max_history_data_response_size].SourceTimestamp
-                results = results[:self.max_history_data_response_size]
+                results = results[: self.max_history_data_response_size]
             return results, cont
 
     async def new_historized_event(self, source_id, evtypes, period, count=0):
@@ -197,9 +188,7 @@ class HistoryDict(HistoryStorageInterface):
             elif end == ua.get_win_epoch():
                 results = [ev for ev in self._events[source_id] if start <= ev.Time]
             elif start > end:
-                results = [
-                    ev for ev in reversed(self._events[source_id]) if end <= ev.Time <= start
-                ]
+                results = [ev for ev in reversed(self._events[source_id]) if end <= ev.Time <= start]
 
             else:
                 results = [ev for ev in self._events[source_id] if start <= ev.Time <= end]
@@ -209,7 +198,7 @@ class HistoryDict(HistoryStorageInterface):
 
             if len(results) > self.max_history_data_response_size:
                 cont = results[self.max_history_data_response_size].Time
-                results = results[:self.max_history_data_response_size]
+                results = results[: self.max_history_data_response_size]
             return results, cont
 
     async def stop(self):
@@ -260,9 +249,7 @@ class HistoryManager:
         Subscribe to the nodes' data changes and store the data in the active storage.
         """
         if not self._sub:
-            self._sub = await self._create_subscription(
-                SubHandler(self.storage)
-            )
+            self._sub = await self._create_subscription(SubHandler(self.storage))
         if node in self._handlers:
             raise ua.UaError(f"Node {node} is already historized")
         await self.storage.new_historized_node(node.nodeid, period, count)
@@ -285,9 +272,7 @@ class HistoryManager:
         must be deleted manually so that a new table with the custom event fields can be created.
         """
         if not self._sub:
-            self._sub = await self._create_subscription(
-                SubHandler(self.storage)
-            )
+            self._sub = await self._create_subscription(SubHandler(self.storage))
         if source in self._handlers:
             raise ua.UaError(f"Events from {source} are already historized")
 
@@ -364,9 +349,7 @@ class HistoryManager:
             # send correctly with continuation point
             starttime = ua.ua_binary.Primitives.DateTime.unpack(Buffer(rv.ContinuationPoint))
 
-        dv, cont = await self.storage.read_node_history(
-            rv.NodeId, starttime, details.EndTime, details.NumValuesPerNode
-        )
+        dv, cont = await self.storage.read_node_history(rv.NodeId, starttime, details.EndTime, details.NumValuesPerNode)
         if cont:
             cont = ua.ua_binary.Primitives.DateTime.pack(cont)
         # rv.IndexRange
@@ -382,9 +365,7 @@ class HistoryManager:
             # send correctly with continuation point
             starttime = ua.ua_binary.Primitives.DateTime.unpack(Buffer(rv.ContinuationPoint))
 
-        evts, cont = await self.storage.read_event_history(
-            rv.NodeId, starttime, details.EndTime, details.NumValuesPerNode, details.Filter
-        )
+        evts, cont = await self.storage.read_event_history(rv.NodeId, starttime, details.EndTime, details.NumValuesPerNode, details.Filter)
         results = []
         for ev in evts:
             field_list = ua.HistoryEventFieldList()

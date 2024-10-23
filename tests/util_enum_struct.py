@@ -15,7 +15,7 @@ class ExampleEnum(IntEnum):
     EnumVal3 = 2
 
 
-setattr(asyncua.ua, 'ExampleEnum', ExampleEnum)
+setattr(asyncua.ua, "ExampleEnum", ExampleEnum)
 
 
 @dataclass
@@ -26,10 +26,10 @@ class ExampleStruct:
 
 async def add_server_custom_enum_struct(server: Server):
     # import some nodes from xml
-    ns = await server.register_namespace('http://yourorganisation.org/struct_enum_example/')
-    uatypes.register_enum('ExampleEnum', ua.NodeId(3002, ns), ExampleEnum)
-    uatypes.register_extension_object('ExampleStruct', ua.NodeId(5001, ns), ExampleStruct)
-    await server.import_xml(TEST_DIR / "enum_struct_test_nodes.xml"),
+    ns = await server.register_namespace("http://yourorganisation.org/struct_enum_example/")
+    uatypes.register_enum("ExampleEnum", ua.NodeId(3002, ns), ExampleEnum)
+    uatypes.register_extension_object("ExampleStruct", ua.NodeId(5001, ns), ExampleStruct)
+    (await server.import_xml(TEST_DIR / "enum_struct_test_nodes.xml"),)
     val = ExampleStruct()
     val.IntVal1 = 242
     val.EnumVal = ExampleEnum.EnumVal2

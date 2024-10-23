@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+
 sys.path.insert(0, "..")
 
 from asyncua import Server

@@ -1,5 +1,6 @@
 import asyncio
 import sys
+
 sys.path.insert(0, "..")
 import math
 
@@ -8,7 +9,6 @@ from asyncua.server.history_sql import HistorySQLite
 
 
 async def main():
-
     # setup our server
     server = Server()
 
@@ -49,6 +49,7 @@ async def main():
     finally:
         # close connection, remove subscriptions, etc
         await server.stop()
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

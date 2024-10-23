@@ -1,4 +1,5 @@
-""" Several tests for certificate /signing request generation"""
+"""Several tests for certificate /signing request generation"""
+
 from typing import List
 from datetime import datetime, timedelta, timezone
 import socket
@@ -12,33 +13,26 @@ from asyncua.crypto.cert_gen import generate_private_key, generate_app_certifica
 
 
 async def test_create_self_signed_app_certificate() -> None:
-    """ Checks if the self signed certificate complies to OPC 10000-6 6.2.2"""
+    """Checks if the self signed certificate complies to OPC 10000-6 6.2.2"""
 
     hostname = socket.gethostname()
 
     names = {
-        'countryName': 'NL',
-        'stateOrProvinceName': 'ZH',
-        'localityName': 'Foo',
-        'organizationName': "Bar Ltd",
+        "countryName": "NL",
+        "stateOrProvinceName": "ZH",
+        "localityName": "Foo",
+        "organizationName": "Bar Ltd",
     }
-    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
-                                                 x509.DNSName(f"{hostname}")]
+    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"), x509.DNSName(f"{hostname}")]
 
-    extended = [ExtendedKeyUsageOID.CLIENT_AUTH,
-                ExtendedKeyUsageOID.SERVER_AUTH]
+    extended = [ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH]
 
     days_valid = 100
 
     key: RSAPrivateKey = generate_private_key()
     dt_before_generation = datetime.now(timezone.utc)
     dt_before_generation -= timedelta(microseconds=dt_before_generation.microsecond)
-    cert: x509.Certificate = generate_self_signed_app_certificate(key,
-                                                                  f"myserver@{hostname}",
-                                                                  names,
-                                                                  subject_alt_names,
-                                                                  extended=extended,
-                                                                  days=days_valid)
+    cert: x509.Certificate = generate_self_signed_app_certificate(key, f"myserver@{hostname}", names, subject_alt_names, extended=extended, days=days_valid)
     dt_after_generation = datetime.now(timezone.utc)
     dt_after_generation -= timedelta(microseconds=dt_after_generation.microsecond)
 
@@ -74,48 +68,32 @@ async def test_create_self_signed_app_certificate() -> None:
 
     # check subject alternative name
     assert cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(x509.DNSName)[0] == hostname
-    assert cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(
-        x509.UniformResourceIdentifier)[0] == f"urn:{hostname}:foobar:myserver"
+    assert cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(x509.UniformResourceIdentifier)[0] == f"urn:{hostname}:foobar:myserver"
 
     assert cert.extensions.get_extension_for_class(x509.BasicConstraints).value.ca is True
 
-    assert cert.extensions.get_extension_for_class(x509.KeyUsage).value == x509.KeyUsage(
-        digital_signature=True,
-        content_commitment=True,
-        key_encipherment=True,
-        data_encipherment=True,
-        key_agreement=False,
-        key_cert_sign=True,
-        crl_sign=False,
-        encipher_only=False,
-        decipher_only=False)
+    assert cert.extensions.get_extension_for_class(x509.KeyUsage).value == x509.KeyUsage(digital_signature=True, content_commitment=True, key_encipherment=True, data_encipherment=True, key_agreement=False, key_cert_sign=True, crl_sign=False, encipher_only=False, decipher_only=False)
 
     assert cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value == x509.ExtendedKeyUsage(extended)
 
 
 async def test_app_create_certificate_signing_request() -> None:
-    """ Checks if the self signed certificate complies to OPC 10000-6 6.2.2"""
+    """Checks if the self signed certificate complies to OPC 10000-6 6.2.2"""
 
     hostname = socket.gethostname()
 
     names = {
-        'countryName': 'NL',
-        'stateOrProvinceName': 'ZH',
-        'localityName': 'Foo',
-        'organizationName': "Bar Ltd",
+        "countryName": "NL",
+        "stateOrProvinceName": "ZH",
+        "localityName": "Foo",
+        "organizationName": "Bar Ltd",
     }
-    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
-                                                 x509.DNSName(f"{hostname}")]
+    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"), x509.DNSName(f"{hostname}")]
 
-    extended = [ExtendedKeyUsageOID.CLIENT_AUTH,
-                ExtendedKeyUsageOID.SERVER_AUTH]
+    extended = [ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH]
 
     key: RSAPrivateKey = generate_private_key()
-    csr: x509.CertificateSigningRequest = generate_app_certificate_signing_request(key,
-                                                                                   f"myserver@{hostname}",
-                                                                                   names,
-                                                                                   subject_alt_names,
-                                                                                   extended=extended)
+    csr: x509.CertificateSigningRequest = generate_app_certificate_signing_request(key, f"myserver@{hostname}", names, subject_alt_names, extended=extended)
 
     # check subject
     assert csr.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value == f"myserver@{hostname}"
@@ -126,19 +104,9 @@ async def test_app_create_certificate_signing_request() -> None:
 
     # check subject alternative name
     assert csr.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(x509.DNSName)[0] == hostname
-    assert csr.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(
-        x509.UniformResourceIdentifier)[0] == f"urn:{hostname}:foobar:myserver"
+    assert csr.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(x509.UniformResourceIdentifier)[0] == f"urn:{hostname}:foobar:myserver"
 
-    assert csr.extensions.get_extension_for_class(x509.KeyUsage).value == x509.KeyUsage(
-        digital_signature=True,
-        content_commitment=True,
-        key_encipherment=True,
-        data_encipherment=True,
-        key_agreement=False,
-        key_cert_sign=False,
-        crl_sign=False,
-        encipher_only=False,
-        decipher_only=False)
+    assert csr.extensions.get_extension_for_class(x509.KeyUsage).value == x509.KeyUsage(digital_signature=True, content_commitment=True, key_encipherment=True, data_encipherment=True, key_agreement=False, key_cert_sign=False, crl_sign=False, encipher_only=False, decipher_only=False)
 
     assert csr.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value == x509.ExtendedKeyUsage(extended)
 
@@ -148,31 +116,27 @@ async def test_app_sign_certificate_request() -> None:
     hostname = socket.gethostname()
 
     names = {
-        'countryName': 'NL',
-        'stateOrProvinceName': 'ZH',
-        'localityName': 'Foo',
-        'organizationName': "Bar Ltd",
+        "countryName": "NL",
+        "stateOrProvinceName": "ZH",
+        "localityName": "Foo",
+        "organizationName": "Bar Ltd",
     }
-    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
-                                                 x509.DNSName(f"{hostname}")]
+    subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"), x509.DNSName(f"{hostname}")]
 
-    extended = [ExtendedKeyUsageOID.CLIENT_AUTH,
-                ExtendedKeyUsageOID.SERVER_AUTH]
+    extended = [ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH]
 
     key_ca: RSAPrivateKey = generate_private_key()
-    issuer: x509.Certificate = generate_self_signed_app_certificate(key_ca,
-                                                                    "Application CA",
-                                                                    names,
-                                                                    subject_alt_names,
-                                                                    extended=[],  # keep this one empty when generating an application CA
-                                                                    days=365)
+    issuer: x509.Certificate = generate_self_signed_app_certificate(
+        key_ca,
+        "Application CA",
+        names,
+        subject_alt_names,
+        extended=[],  # keep this one empty when generating an application CA
+        days=365,
+    )
 
     key_server: RSAPrivateKey = generate_private_key()
-    csr: x509.CertificateSigningRequest = generate_app_certificate_signing_request(key_server,
-                                                                                   f"myserver@{hostname}",
-                                                                                   names,
-                                                                                   subject_alt_names,
-                                                                                   extended=extended)
+    csr: x509.CertificateSigningRequest = generate_app_certificate_signing_request(key_server, f"myserver@{hostname}", names, subject_alt_names, extended=extended)
 
     cert: x509.Certificate = sign_certificate_request(csr, issuer, key_ca, days=30)
 
@@ -192,14 +156,12 @@ async def test_app_sign_certificate_request() -> None:
 
     assert cert.extensions.get_extension_for_class(x509.BasicConstraints).value.ca is False
 
-    assert cert.extensions.get_extension_for_class(
-        x509.SubjectAlternativeName).value == csr.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
+    assert cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value == csr.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
 
-    assert cert.extensions.get_extension_for_class(
-        x509.KeyUsage).value == csr.extensions.get_extension_for_class(x509.KeyUsage).value
+    assert cert.extensions.get_extension_for_class(x509.KeyUsage).value == csr.extensions.get_extension_for_class(x509.KeyUsage).value
 
-    assert cert.extensions.get_extension_for_class(
-        x509.ExtendedKeyUsage).value == csr.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value
+    assert cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value == csr.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value
+
 
 async def test_generate_load_private_key_pem(tmp_path):
     key_path = tmp_path / "cert.pem"
@@ -207,4 +169,4 @@ async def test_generate_load_private_key_pem(tmp_path):
     key_path.write_bytes(dump_private_key_as_pem(key))
 
     key2 = await load_private_key(key_path)
-    assert dump_private_key_as_pem(key) ==  dump_private_key_as_pem(key2)
+    assert dump_private_key_as_pem(key) == dump_private_key_as_pem(key2)

@@ -1,6 +1,7 @@
 """
 Low level binary client
 """
+
 import asyncio
 import copy
 import logging
@@ -20,9 +21,10 @@ class UASocketProtocol(asyncio.Protocol):
     Handle socket connection and send ua messages.
     Timeout is the timeout used while waiting for an ua answer from server.
     """
-    INITIALIZED = 'initialized'
-    OPEN = 'open'
-    CLOSED = 'closed'
+
+    INITIALIZED = "initialized"
+    OPEN = "open"
+    CLOSED = "closed"
 
     def __init__(self, timeout: float = 1, security_policy: ua.SecurityPolicy = ua.SecurityPolicy(), limits: TransportLimits = None):
         """
@@ -52,7 +54,7 @@ class UASocketProtocol(asyncio.Protocol):
         # Hook for upper layer tasks before a request is sent (optional)
         self.pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
 
-    def connection_made(self, transport: asyncio.Transport):   # type: ignore[override]
+    def connection_made(self, transport: asyncio.Transport):  # type: ignore[override]
         self.state = self.OPEN
         self.transport = transport
 
@@ -79,11 +81,11 @@ class UASocketProtocol(asyncio.Protocol):
                 try:
                     header = header_from_binary(buf)
                 except ua.utils.NotEnoughData:
-                    self.logger.debug('Not enough data while parsing header from server, waiting for more')
+                    self.logger.debug("Not enough data while parsing header from server, waiting for more")
                     self.receive_buffer = data
                     return
                 if len(buf) < header.body_size:
-                    self.logger.debug('We did not receive enough data from server. Need %s got %s', header.body_size, len(buf))
+                    self.logger.debug("We did not receive enough data from server. Need %s got %s", header.body_size, len(buf))
                     self.receive_buffer = data
                     return
                 msg = self._connection.receive_from_header_and_body(header, buf)
@@ -99,11 +101,11 @@ class UASocketProtocol(asyncio.Protocol):
                 # Buffer still has bytes left, try to process again
                 data = bytes(buf)
             except ua.UaStatusCodeError as e:
-                self.logger.error('Got error status from server: {}'.format(e))
+                self.logger.error("Got error status from server: {}".format(e))
                 self.disconnect_socket()
                 return
             except Exception:
-                self.logger.exception('Exception raised while parsing message from server')
+                self.logger.exception("Exception raised while parsing message from server")
                 self.disconnect_socket()
                 return
 
@@ -133,7 +135,7 @@ class UASocketProtocol(asyncio.Protocol):
         :return: Future that resolves with the Response
         """
         self._setup_request_header(request.RequestHeader, timeout)
-        self.logger.debug('Sending: %s', request)
+        self.logger.debug("Sending: %s", request)
         try:
             binreq = struct_to_binary(request)
         except Exception:
@@ -229,10 +231,10 @@ class UASocketProtocol(asyncio.Protocol):
         request = ua.OpenSecureChannelRequest()
         request.Parameters = params
         if self._open_secure_channel_exchange is not None:
-            raise RuntimeError('Two Open Secure Channel requests can not happen too close to each other. ' 'The response must be processed and returned before the next request can be sent.')
+            raise RuntimeError("Two Open Secure Channel requests can not happen too close to each other. " "The response must be processed and returned before the next request can be sent.")
         self._open_secure_channel_exchange = params
         await wait_for(self._send_request(request, message_type=ua.MessageType.SecureOpen), self.timeout)
-        _return = self._open_secure_channel_exchange.Parameters # type: ignore[union-attr]
+        _return = self._open_secure_channel_exchange.Parameters  # type: ignore[union-attr]
         self._open_secure_channel_exchange = None
         return _return
 
@@ -267,7 +269,7 @@ class UaClient(AbstractSession):
         """
         :param timeout: Timout in seconds
         """
-        self.logger = logging.getLogger(f'{__name__}.UaClient')
+        self.logger = logging.getLogger(f"{__name__}.UaClient")
         self._subscription_callbacks = {}
         self._timeout = timeout
         self.security_policy = ua.SecurityPolicy()
@@ -499,7 +501,7 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def create_subscription(   # type: ignore[override]
+    async def create_subscription(  # type: ignore[override]
         self, params: ua.CreateSubscriptionParameters, callback
     ) -> ua.CreateSubscriptionResult:
         self.logger.debug("create_subscription")
@@ -509,10 +511,7 @@ class UaClient(AbstractSession):
         response = struct_from_binary(ua.CreateSubscriptionResponse, data)
         response.ResponseHeader.ServiceResult.check()
         self._subscription_callbacks[response.Parameters.SubscriptionId] = callback
-        self.logger.info(
-            "create_subscription success SubscriptionId %s",
-            response.Parameters.SubscriptionId
-        )
+        self.logger.info("create_subscription success SubscriptionId %s", response.Parameters.SubscriptionId)
         if not self._publish_task or self._publish_task.done():
             # Start the publishing loop if it is not yet running
             # The current strategy is to have only one open publish request per UaClient. This might not be enough
@@ -523,16 +522,13 @@ class UaClient(AbstractSession):
 
     async def inform_subscriptions(self, status: ua.StatusCode):
         """
-            Inform all current subscriptions with a status code. This calls the handler's status_change_notification
+        Inform all current subscriptions with a status code. This calls the handler's status_change_notification
         """
         status_message = ua.StatusChangeNotification(Status=status)
         notification_message = ua.NotificationMessage(NotificationData=[status_message])  # type: ignore[list-item]
         for subid, callback in self._subscription_callbacks.items():
             try:
-                parameters = ua.PublishResult(
-                    subid,
-                    NotificationMessage_=notification_message
-                )
+                parameters = ua.PublishResult(subid, NotificationMessage_=notification_message)
                 if asyncio.iscoroutinefunction(callback):
                     await callback(parameters)
                 else:
@@ -540,18 +536,13 @@ class UaClient(AbstractSession):
             except Exception:  # we call user code, catch everything!
                 self.logger.exception("Exception while calling user callback: %s")
 
-    async def update_subscription(
-        self, params: ua.ModifySubscriptionParameters
-    ) -> ua.ModifySubscriptionResult:
+    async def update_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
         request = ua.ModifySubscriptionRequest()
         request.Parameters = params
         data = await self.protocol.send_request(request)
         response = struct_from_binary(ua.ModifySubscriptionResponse, data)
         response.ResponseHeader.ServiceResult.check()
-        self.logger.info(
-            "update_subscription success SubscriptionId %s",
-            params.SubscriptionId
-        )
+        self.logger.info("update_subscription success SubscriptionId %s", params.SubscriptionId)
         return response.Parameters
 
     modify_subscription = update_subscription  # legacy support
@@ -572,7 +563,7 @@ class UaClient(AbstractSession):
         """
         Send a PublishRequest to the server.
         """
-        self.logger.debug('publish %r', acks)
+        self.logger.debug("publish %r", acks)
         request = ua.PublishRequest()
         request.Parameters.SubscriptionAcknowledgements = acks if acks else []
         data = await self.protocol.send_request(request, timeout=0)

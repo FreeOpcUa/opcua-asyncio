@@ -7,7 +7,6 @@ namespace = "http://examples.freeopcua.github.io"
 
 
 async def main():
-
     print(f"Connecting to {url} ...")
     async with Client(url=url) as client:
         # Find the namespace index
@@ -15,9 +14,7 @@ async def main():
         print(f"Namespace Index for '{namespace}': {nsidx}")
 
         # Get the variable node for read / write
-        var = await client.nodes.root.get_child(
-            f"0:Objects/{nsidx}:MyObject/{nsidx}:MyVariable"
-        )
+        var = await client.nodes.root.get_child(f"0:Objects/{nsidx}:MyObject/{nsidx}:MyVariable")
         value = await var.read_value()
         print(f"Value of MyVariable ({var}): {value}")
 

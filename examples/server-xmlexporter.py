@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, "..")
 import asyncio
 
@@ -20,7 +21,7 @@ async def main():
 
     myobj = await server.nodes.objects.add_object(idx, "MyObject")
     myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
-    await myvar.set_writable()    # Set MyVariable to be writable by clients
+    await myvar.set_writable()  # Set MyVariable to be writable by clients
 
     dev = await server.nodes.base_object_type.add_object_type(0, "MyDevice")
     await dev.add_variable(0, "sensor1", 1.0)
@@ -30,8 +31,9 @@ async def main():
     node_list = [dev, mydevice[0], myobj, myvar]
 
     exporter = XmlExporter(server)
-    await exporter.build_etree(node_list, ['http://myua.org/test/'])
-    await exporter.write_xml('ua-export.xml')
+    await exporter.build_etree(node_list, ["http://myua.org/test/"])
+    await exporter.write_xml("ua-export.xml")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -5,6 +5,7 @@ from datetime import datetime
 import time
 from math import sin
 import sys
+
 sys.path.insert(0, "../..")
 
 try:
@@ -24,7 +25,6 @@ from asyncua.sync import Server, ThreadLoop
 
 
 class SubHandler:
-
     """
     Subscription Handler. To receive events from server for a subscription
     """
@@ -38,6 +38,7 @@ class SubHandler:
 
 # method to be exposed through server
 
+
 def func(parent, variant):
     ret = False
     if variant.Value % 2 == 0:
@@ -47,6 +48,7 @@ def func(parent, variant):
 
 # method to be exposed through server
 # uses a decorator to automatically convert to and from variants
+
 
 @uamethod
 def multiply(parent, x, y):
@@ -70,30 +72,26 @@ class VarUpdater(Thread):
             time.sleep(0.1)
 
 
-
 if __name__ == "__main__":
     # optional: setup logging
     logging.basicConfig(level=logging.WARN)
-    #logger = logging.getLogger("opcua.address_space")
+    # logger = logging.getLogger("opcua.address_space")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("opcua.internal_server")
+    # logger = logging.getLogger("opcua.internal_server")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("opcua.binary_server_asyncio")
+    # logger = logging.getLogger("opcua.binary_server_asyncio")
     # logger.setLevel(logging.DEBUG)
-    #logger = logging.getLogger("opcua.uaprocessor")
+    # logger = logging.getLogger("opcua.uaprocessor")
     # logger.setLevel(logging.DEBUG)
     with ThreadLoop() as tloop:
         # now set up our server
         server = Server(tloop=tloop)
-        #server.disable_clock()
-        #server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
+        # server.disable_clock()
+        # server.set_endpoint("opc.tcp://localhost:4840/freeopcua/server/")
         server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         server.set_server_name("FreeOpcUa Example Server")
         # set all possible endpoint policies for clients to connect through
-        server.set_security_policy([
-                    ua.SecurityPolicyType.NoSecurity,
-                    ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
-                    ua.SecurityPolicyType.Basic256Sha256_Sign])
+        server.set_security_policy([ua.SecurityPolicyType.NoSecurity, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt, ua.SecurityPolicyType.Basic256Sha256_Sign])
 
         # set up our own namespace
         uri = "http://examples.freeopcua.github.io"
@@ -119,11 +117,11 @@ if __name__ == "__main__":
         myobj = server.nodes.objects.add_object(idx, "MyObject")
         myvar = myobj.add_variable(idx, "MyVariable", 6.7)
         mysin = myobj.add_variable(idx, "MySin", 0, ua.VariantType.Float)
-        myvar.set_writable()    # Set MyVariable to be writable by clients
+        myvar.set_writable()  # Set MyVariable to be writable by clients
         mystringvar = myobj.add_variable(idx, "MyStringVariable", "Really nice string")
-        mystringvar.set_writable()    # Set MyVariable to be writable by clients
+        mystringvar.set_writable()  # Set MyVariable to be writable by clients
         mydtvar = myobj.add_variable(idx, "MyDateTimeVar", datetime.utcnow())
-        mydtvar.set_writable()    # Set MyVariable to be writable by clients
+        mydtvar.set_writable()  # Set MyVariable to be writable by clients
         myarrayvar = myobj.add_variable(idx, "myarrayvar", [6.7, 7.9])
         myarrayvar = myobj.add_variable(idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32))
         myprop = myobj.add_property(idx, "myproperty", "I am a property")
@@ -146,9 +144,9 @@ if __name__ == "__main__":
             vup.start()
 
             # enable following if you want to subscribe to nodes on server side
-            #handler = SubHandler()
-            #sub = server.create_subscription(500, handler)
-            #handle = sub.subscribe_data_change(myvar)
+            # handler = SubHandler()
+            # sub = server.create_subscription(500, handler)
+            # handle = sub.subscribe_data_change(myvar)
             # trigger event, all subscribed clients wil receive it
             var = myarrayvar.read_value()  # return a ref to value in db server side! not a copy!
             var = copy.copy(var)  # WARNING: we need to copy before writing again, otherwise no data change event will be generated

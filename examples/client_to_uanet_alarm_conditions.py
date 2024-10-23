@@ -7,7 +7,6 @@ _logger = logging.getLogger(__name__)
 
 
 class SubHandler:
-
     def __init__(self):
         self.currentConditions = {}
 
@@ -17,10 +16,11 @@ class SubHandler:
     Do not do expensive, slow or network operatsion there. Create another
     thread if you need to do such a thing
     """
+
     def event_notification(self, event):
         _logger.info("New event received: %r", event)
         # To avoid special event for ConditionRefresh 'Condition refresh started for subscription X.'
-        if (event.NodeId):
+        if event.NodeId:
             conditionId = event.NodeId.to_string()
             conditionKeys = self.currentConditions.keys()
             # A alarm/condition appears with Retain=True and disappears with Retain=False

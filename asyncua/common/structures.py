@@ -6,6 +6,7 @@ for custom structures
 
 import uuid
 import logging
+
 # The next two imports are for generated code
 from datetime import datetime, timezone
 from enum import IntEnum, EnumMeta
@@ -88,17 +89,17 @@ class {self.name}:
             field.uatype = "UInt32"
             self.fields = [field] + self.fields
         for sfield in self.fields:
-            if sfield.name != 'SwitchField':
-                '''
+            if sfield.name != "SwitchField":
+                """
                 SwitchFields is the 'Encoding' Field in OptionSets to be
                 compatible with 1.04 structs we added
                 the 'Encoding' Field before and skip the SwitchField Field
-                '''
+                """
                 uatype = f"'ua.{sfield.uatype}'"
                 if sfield.array:
                     uatype = f"List[{uatype}]"
-                if uatype == 'List[ua.Char]':
-                    uatype = 'String'
+                if uatype == "List[ua.Char]":
+                    uatype = "String"
                 if sfield.is_optional:
                     code += f"    {sfield.name}: Optional[{uatype}] = None\n"
                 else:
@@ -173,12 +174,12 @@ class StructGenerator:
                         _type = xmlfield.get("TypeName")
                         if ":" in _type:
                             _type = _type.split(":")[1]
-                        if _type == 'Bit':
+                        if _type == "Bit":
                             # Bits are used for bit fields and filler ignore
                             continue
                         field = Field(_clean_name)
                         field.uatype = clean_name(_type)
-                        if xmlfield.get("SwitchField", '') != '':
+                        if xmlfield.get("SwitchField", "") != "":
                             # Optional Field
                             field.is_optional = True
                             struct.option_counter += 1
@@ -204,8 +205,7 @@ class StructGenerator:
         for struct in self.model:
             if isinstance(struct, EnumType):
                 continue  # No registration required for enums
-            code += f"ua.register_extension_object('{struct.name}'," \
-                    f" ua.NodeId.from_string('{struct.typeid}'), {struct.name})\n"
+            code += f"ua.register_extension_object('{struct.name}'," f" ua.NodeId.from_string('{struct.typeid}'), {struct.name})\n"
         return code
 
     def get_python_classes(self, env=None):
@@ -297,22 +297,22 @@ def _generate_python_class(model, env=None):
         env = ua.__dict__
     #  Add the required libraries to dict
     if "ua" not in env:
-        env['ua'] = ua
+        env["ua"] = ua
     if "datetime" not in env:
-        env['datetime'] = datetime
-        env['timezone'] = timezone
+        env["datetime"] = datetime
+        env["timezone"] = timezone
     if "uuid" not in env:
-        env['uuid'] = uuid
+        env["uuid"] = uuid
     if "enum" not in env:
-        env['IntEnum'] = IntEnum
+        env["IntEnum"] = IntEnum
     if "dataclass" not in env:
-        env['dataclass'] = dataclass
+        env["dataclass"] = dataclass
     if "field" not in env:
-        env['field'] = field
+        env["field"] = field
     if "List" not in env:
-        env['List'] = List
-    if 'Optional' not in env:
-        env['Optional'] = Optional
+        env["List"] = List
+    if "Optional" not in env:
+        env["Optional"] = Optional
     # generate classes one by one and add them to dict
     for element in model:
         code = element.get_code()

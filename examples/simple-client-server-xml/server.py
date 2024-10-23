@@ -51,9 +51,7 @@ class HelloServer:
 
         objects = self.server.nodes.objects
 
-        freeopcua_namespace = await self.server.get_namespace_index(
-            "urn:freeopcua:python:server"
-        )
+        freeopcua_namespace = await self.server.get_namespace_index("urn:freeopcua:python:server")
         hellower = await objects.get_child("0:Hellower")
         hellower_say_hello = await hellower.get_child("0:SayHello")
 

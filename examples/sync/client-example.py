@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, "..")
 import logging
 import time
@@ -19,7 +20,6 @@ from asyncua.sync import Client, ThreadLoop
 
 
 class SubHandler:
-
     """
     Subscription Handler. To receive events from server for a subscription
     data_change and event methods are called directly from receiving thread.
@@ -36,8 +36,8 @@ class SubHandler:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.WARN)
-    #logger = logging.getLogger("KeepAlive")
-    #logger.setLevel(logging.DEBUG)
+    # logger = logging.getLogger("KeepAlive")
+    # logger.setLevel(logging.DEBUG)
 
     with ThreadLoop() as tloop:
         with Client("opc.tcp://localhost:4840/freeopcua/server/", tloop=tloop) as client:
@@ -51,13 +51,13 @@ if __name__ == "__main__":
             print("Children of root are: ", client.nodes.root.get_children())
 
             # get a specific node knowing its node id
-            #var = client.get_node(ua.NodeId(1002, 2))
-            #var = client.get_node("ns=3;i=2002")
-            #print(var)
-            #var.read_data_value() # get value of node as a DataValue object
-            #var.read_value() # get value of node as a python builtin
-            #var.write_value(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
-            #var.write_value(3.9) # set node value using implicit data type
+            # var = client.get_node(ua.NodeId(1002, 2))
+            # var = client.get_node("ns=3;i=2002")
+            # print(var)
+            # var.read_data_value() # get value of node as a DataValue object
+            # var.read_value() # get value of node as a python builtin
+            # var.write_value(ua.Variant([23], ua.VariantType.Int64)) #set node value using explicit data type
+            # var.write_value(3.9) # set node value using implicit data type
 
             # getting our namespace idx
             uri = "http://examples.freeopcua.github.io"

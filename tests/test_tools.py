@@ -36,7 +36,7 @@ async def test_cli_tools(running_server):
 
     for tool in (uaread, uals, uawrite, uahistoryread, uaclient, uadiscover, uacall):
         # It's necessary to mock argv, else the tool is invoked with *pytest's* argv
-        with patch.object(sys, 'argv', tool_opts[tool]):
+        with patch.object(sys, "argv", tool_opts[tool]):
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 result = executor.submit(tool)
                 for future in concurrent.futures.as_completed([result]):
@@ -49,10 +49,7 @@ async def test_cli_tools(running_server):
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 async def test_cli_tools_which_require_sigint(running_server):
     url = running_server
-    tools = (
-        ["tools/uaserver"],
-        ["tools/uasubscribe", "-u", url, "-n", RW_NODE]
-    )
+    tools = (["tools/uaserver"], ["tools/uasubscribe", "-u", url, "-n", RW_NODE])
     for tool in tools:
         proc = subprocess.Popen(tool, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         with pytest.raises(subprocess.TimeoutExpired):

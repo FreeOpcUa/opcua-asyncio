@@ -55,11 +55,7 @@ class SimpleRoleRuleset(PermissionRuleset):
     def __init__(self):
         admin_ids = list(map(ua.NodeId, ADMIN_TYPES))
         user_ids = list(map(ua.NodeId, USER_TYPES))
-        self._permission_dict = {
-            UserRole.Admin: set().union(admin_ids, user_ids),
-            UserRole.User: set().union(user_ids),
-            UserRole.Anonymous: set()
-        }
+        self._permission_dict = {UserRole.Admin: set().union(admin_ids, user_ids), UserRole.User: set().union(user_ids), UserRole.Anonymous: set()}
 
     def check_validity(self, user, action_type_id, body):
         if action_type_id in self._permission_dict[user.role]:
