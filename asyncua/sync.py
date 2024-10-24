@@ -677,6 +677,8 @@ class SyncNode:
         self.tloop = tloop
 
     def __eq__(self, other):
+        if not isinstance(other, SyncNode):
+            return False
         return other is not None and self.aio_obj == other.aio_obj
 
     def __ne__(self, other):

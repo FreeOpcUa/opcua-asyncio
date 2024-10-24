@@ -196,7 +196,7 @@ class CodeGenerator:
         self.writecode()
         self.writecode(indent, 'attrs = ua.ObjectAttributes(')
         if obj.desc:
-            self.writecode(indent, '    Description=LocalizedText("{0}"),'.format(obj.desc))
+            self.writecode(indent, '    Description=LocalizedText("""{0}"""),'.format(obj.desc))
         self.writecode(
             f'''        DisplayName=LocalizedText("{obj.displayname}"),\n'''
             f'''        EventNotifier={obj.eventnotifier},\n'''
