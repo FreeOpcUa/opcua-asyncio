@@ -3,9 +3,9 @@ import os
 
 
 def bump_version():
-    with open("setup.py") as f:
+    with open("pyproject.toml") as f:
         s = f.read()
-    m = re.search(r'version="(.*)\.(.*)\.(.*)",', s)
+    m = re.search(r'version = "(.*)\.(.*)\.(.*)",', s)
     v1, v2, v3 = m.groups()
     oldv = "{0}.{1}.{2}".format(v1, v2, v3)
     newv = "{0}.{1}.{2}".format(v1, v2, str(int(v3) + 1))
@@ -14,7 +14,7 @@ def bump_version():
     if ans:
         newv = ans
     s = s.replace(oldv, newv)
-    with open("setup.py", "w") as f:
+    with open("pyproject.toml", "w") as f:
         f.write(s)
     return newv
 
@@ -33,8 +33,8 @@ def release():
         ans = input("upload to pip?(Y/n)")
         if ans in ("", "y", "yes"):
             os.system("rm -rf dist/*")
-            os.system("python3 setup.py sdist bdist_wheel")
-            os.system("twine upload dist/*")
+            os.system("uv build")
+            os.system("uv publish")
             os.system("git log -s --format=oneline")
 
 
