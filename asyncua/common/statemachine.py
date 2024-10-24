@@ -198,7 +198,8 @@ class StateMachine:
         await self._current_state_node.write_value(ua.LocalizedText(state.name, self.locale), ua.VariantType.LocalizedText)
         if state.node:
             if self._current_state_id_node:
-                await self._current_state_id_node.write_value(state.node.nodeid, varianttype=ua.VariantType.NodeId)
+                await self._current_state_id_node.write_value(state.name,ua.VariantType.String)
+                #await self._current_state_id_node.write_value(state.node.nodeid, varianttype=ua.VariantType.NodeId)
             if self._current_state_name_node and state.name:
                 await self._current_state_name_node.write_value(state.name, ua.VariantType.QualifiedName)
             if self._current_state_number_node and state.number:
@@ -217,7 +218,8 @@ class StateMachine:
         await self._last_transition_node.write_value(ua.LocalizedText(transition.name, self.locale), ua.VariantType.LocalizedText)
         if self._optionals:
             if self._last_transition_id_node:
-                await self._last_transition_id_node.write_value(transition.node.nodeid, varianttype=ua.VariantType.NodeId)
+                await self._last_transition_id_node.write_value(transition.name, ua.VariantType.String)
+                #await self._last_transition_id_node.write_value(transition.node.nodeid, varianttype=ua.VariantType.NodeId)
             if self._last_transition_name_node and transition.name:
                 await self._last_transition_name_node.write_value(ua.QualifiedName(transition.name, self._idx), ua.VariantType.QualifiedName)
             if self._last_transition_number_node and transition.number:
