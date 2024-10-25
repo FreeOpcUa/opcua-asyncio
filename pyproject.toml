@@ -72,6 +72,11 @@ Repository = "https://github.com/FreeOpcUa/opcua-asyncio"
 [tool.hatch.build.targets.sdist]
 include = ["/asyncua"]
 
+[tool.pytest.ini_options]
+log_cli = false
+log_level = "INFO"
+testpaths  = ["tests"]
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 999
