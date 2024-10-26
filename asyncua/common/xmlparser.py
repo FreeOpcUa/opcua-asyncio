@@ -118,7 +118,12 @@ class XMLParser:
         self.logger = logging.getLogger(__name__)
         self._retag = re.compile(r"(\{.*\})(.*)")
         self.root = None
-        self.ns = {"base": "http://opcfoundation.org/UA/2011/03/UANodeSet.xsd", "uax": "http://opcfoundation.org/UA/2008/02/Types.xsd", "xsd": "http://www.w3.org/2001/XMLSchema", "xsi": "http://www.w3.org/2001/XMLSchema-instance"}
+        self.ns = {
+            "base": "http://opcfoundation.org/UA/2011/03/UANodeSet.xsd",
+            "uax": "http://opcfoundation.org/UA/2008/02/Types.xsd",
+            "xsd": "http://www.w3.org/2001/XMLSchema",
+            "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        }
 
     async def parse(self, xmlpath=None, xmlstring=None):
         if xmlstring:

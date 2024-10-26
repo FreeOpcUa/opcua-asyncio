@@ -205,7 +205,10 @@ class StructGenerator:
         for struct in self.model:
             if isinstance(struct, EnumType):
                 continue  # No registration required for enums
-            code += f"ua.register_extension_object('{struct.name}'," f" ua.NodeId.from_string('{struct.typeid}'), {struct.name})\n"
+            code += (
+                f"ua.register_extension_object('{struct.name}',"
+                f" ua.NodeId.from_string('{struct.typeid}'), {struct.name})\n"
+            )
         return code
 
     def get_python_classes(self, env=None):
@@ -268,7 +271,9 @@ async def load_type_definitions(server, nodes=None):
         # every children of our node should represent a class
         for ndesc in await node.get_children_descriptions():
             ndesc_node = server.get_node(ndesc.NodeId)
-            ref_desc_list = await ndesc_node.get_references(refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse)
+            ref_desc_list = await ndesc_node.get_references(
+                refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse
+            )
             if ref_desc_list:  # some server put extra things here
                 name = clean_name(ndesc.BrowseName.Name)
                 if name not in structs_dict:

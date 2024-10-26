@@ -91,7 +91,13 @@ if __name__ == "__main__":
         server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         server.set_server_name("FreeOpcUa Example Server")
         # set all possible endpoint policies for clients to connect through
-        server.set_security_policy([ua.SecurityPolicyType.NoSecurity, ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt, ua.SecurityPolicyType.Basic256Sha256_Sign])
+        server.set_security_policy(
+            [
+                ua.SecurityPolicyType.NoSecurity,
+                ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
+                ua.SecurityPolicyType.Basic256Sha256_Sign,
+            ]
+        )
 
         # set up our own namespace
         uri = "http://examples.freeopcua.github.io"
@@ -112,7 +118,9 @@ if __name__ == "__main__":
         myfolder = server.nodes.objects.add_folder(idx, "myEmptyFolder")
         # instanciate one instance of our device
         mydevice = server.nodes.objects.add_object(idx, "Device0001", dev)
-        mydevice_var = mydevice.get_child([f"{idx}:controller", f"{idx}:state"])  # get proxy to our device state variable
+        mydevice_var = mydevice.get_child(
+            [f"{idx}:controller", f"{idx}:state"]
+        )  # get proxy to our device state variable
         # create directly some objects and variables
         myobj = server.nodes.objects.add_object(idx, "MyObject")
         myvar = myobj.add_variable(idx, "MyVariable", 6.7)
@@ -126,7 +134,9 @@ if __name__ == "__main__":
         myarrayvar = myobj.add_variable(idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32))
         myprop = myobj.add_property(idx, "myproperty", "I am a property")
         mymethod = myobj.add_method(idx, "mymethod", func, [ua.VariantType.Int64], [ua.VariantType.Boolean])
-        multiply_node = myobj.add_method(idx, "multiply", multiply, [ua.VariantType.Int64, ua.VariantType.Int64], [ua.VariantType.Int64])
+        multiply_node = myobj.add_method(
+            idx, "multiply", multiply, [ua.VariantType.Int64, ua.VariantType.Int64], [ua.VariantType.Int64]
+        )
 
         # import some nodes from xml
         server.import_xml("custom_nodes.xml")
@@ -149,12 +159,16 @@ if __name__ == "__main__":
             # handle = sub.subscribe_data_change(myvar)
             # trigger event, all subscribed clients wil receive it
             var = myarrayvar.read_value()  # return a ref to value in db server side! not a copy!
-            var = copy.copy(var)  # WARNING: we need to copy before writing again, otherwise no data change event will be generated
+            var = copy.copy(
+                var
+            )  # WARNING: we need to copy before writing again, otherwise no data change event will be generated
             var.append(9.3)
             myarrayvar.write_value(var)
             mydevice_var.write_value("Running")
             myevgen.trigger(message="This is BaseEvent")
-            server.write_attribute_value(myvar.nodeid, ua.DataValue(9.9))  # Server side write method which is a bit faster than using write
+            server.write_attribute_value(
+                myvar.nodeid, ua.DataValue(9.9)
+            )  # Server side write method which is a bit faster than using write
 
             embed()
             vup.stop()

@@ -19,7 +19,12 @@ async def main():
 
     # Creating a custom event: Approach 1
     # The custom event object automatically will have members from its parent (BaseEventType)
-    etype = await server.create_custom_event_type(idx, "MyFirstEvent", ua.ObjectIds.BaseEventType, [("MyNumericProperty", ua.VariantType.Float), ("MyStringProperty", ua.VariantType.String)])
+    etype = await server.create_custom_event_type(
+        idx,
+        "MyFirstEvent",
+        ua.ObjectIds.BaseEventType,
+        [("MyNumericProperty", ua.VariantType.Float), ("MyStringProperty", ua.VariantType.String)],
+    )
     myevgen = await server.get_event_generator(etype, myobj)
 
     # Creating a custom event: Approach 2

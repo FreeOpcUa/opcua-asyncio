@@ -111,7 +111,9 @@ class SubscriptionService:
             for _ in params.MonitoredItemIds:
                 res.append(ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid))
             return res
-        return self.subscriptions[params.SubscriptionId].monitored_item_srv.delete_monitored_items(params.MonitoredItemIds)
+        return self.subscriptions[params.SubscriptionId].monitored_item_srv.delete_monitored_items(
+            params.MonitoredItemIds
+        )
 
     def republish(self, params):
         if params.SubscriptionId not in self.subscriptions:

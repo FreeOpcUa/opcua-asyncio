@@ -44,7 +44,9 @@ def server(tloop):
     myobj = s.nodes.objects.add_object(ns_idx, "MyObject")
     myobj.add_variable(ns_idx, "MyVariable", 6.7)
     myobj.add_variable(ns_idx, "MySin", 0, ua.VariantType.Float)
-    s.nodes.objects.add_method(ns_idx, "Divide", divide, [ua.VariantType.Float, ua.VariantType.Float], [ua.VariantType.Float])
+    s.nodes.objects.add_method(
+        ns_idx, "Divide", divide, [ua.VariantType.Float, ua.VariantType.Float], [ua.VariantType.Float]
+    )
     with s:
         yield s
 

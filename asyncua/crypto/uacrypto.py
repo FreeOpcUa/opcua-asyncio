@@ -62,7 +62,11 @@ def x509_from_der(data):
     return x509.load_der_x509_certificate(data, default_backend())
 
 
-async def load_private_key(path_or_content: Union[str, Path, bytes], password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None):
+async def load_private_key(
+    path_or_content: Union[str, Path, bytes],
+    password: Optional[Union[str, bytes]] = None,
+    extension: Optional[str] = None,
+):
     if isinstance(path_or_content, str):
         ext = Path(path_or_content).suffix
     elif isinstance(path_or_content, Path):
@@ -94,7 +98,11 @@ def pem_from_key(private_key: rsa.RSAPrivateKey) -> bytes:
     Returns:
         bytes: The private as PEM/PKCS8 format
     """
-    return private_key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption())
+    return private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
 
 
 def sign_sha1(private_key, data):
@@ -131,12 +139,16 @@ def verify_pss_sha256(certificate, data, signature):
 
 
 def encrypt_basic256(public_key, data):
-    ciphertext = public_key.encrypt(data, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+    ciphertext = public_key.encrypt(
+        data, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None)
+    )
     return ciphertext
 
 
 def encrypt_rsa_oaep(public_key, data):
-    ciphertext = public_key.encrypt(data, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA1()), algorithm=hashes.SHA1(), label=None))
+    ciphertext = public_key.encrypt(
+        data, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA1()), algorithm=hashes.SHA1(), label=None)
+    )
     return ciphertext
 
 
@@ -154,7 +166,9 @@ def encrypt_rsa15(public_key, data):
 
 
 def decrypt_rsa_oaep(private_key, data):
-    text = private_key.decrypt(bytes(data), padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA1()), algorithm=hashes.SHA1(), label=None))
+    text = private_key.decrypt(
+        bytes(data), padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA1()), algorithm=hashes.SHA1(), label=None)
+    )
     return text
 
 
@@ -285,12 +299,18 @@ def check_certificate(cert: x509.Certificate, application_uri: str, hostname: Op
         san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
         san_uri = san.value.get_values_for_type(x509.UniformResourceIdentifier)
         if application_uri not in san_uri:
-            _logger.warning("certificate does not contain the application uri (%s). Most applications will reject a connection without it.", application_uri)
+            _logger.warning(
+                "certificate does not contain the application uri (%s). Most applications will reject a connection without it.",
+                application_uri,
+            )
             err = True
         if hostname is not None:
             san_dns_names = san.value.get_values_for_type(x509.DNSName)
             if hostname not in san_dns_names:
-                _logger.warning("certificate does not contain the hostname in DNSNames %s. Some applications will check this.", hostname)
+                _logger.warning(
+                    "certificate does not contain the hostname in DNSNames %s. Some applications will check this.",
+                    hostname,
+                )
                 err = True
     except x509.ExtensionNotFound:
         _logger.warning("certificate has no SubjectAlternativeName this is need for application verification!")

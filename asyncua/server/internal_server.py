@@ -71,7 +71,9 @@ class InternalServer:
         self.certificate_validator: Optional[CertificateValidatorMethod] = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
         # create a session to use on server side
-        self.isession = InternalSession(self, self.aspace, self.subscription_service, "Internal", user=User(role=UserRole.Admin))
+        self.isession = InternalSession(
+            self, self.aspace, self.subscription_service, "Internal", user=User(role=UserRole.Admin)
+        )
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         self.time_task = None
         self._time_task_stop = False
@@ -96,8 +98,12 @@ class InternalServer:
                 evgen.event.Severity = self.bind_condition_methods
             self.subscription_service.standard_events[etype] = evgen
 
-        self.isession.add_method_callback(ua.NodeId(ua.ObjectIds.ConditionType_ConditionRefresh), self.subscription_service.condition_refresh)
-        self.isession.add_method_callback(ua.NodeId(ua.ObjectIds.ConditionType_ConditionRefresh2), self.subscription_service.condition_refresh)
+        self.isession.add_method_callback(
+            ua.NodeId(ua.ObjectIds.ConditionType_ConditionRefresh), self.subscription_service.condition_refresh
+        )
+        self.isession.add_method_callback(
+            ua.NodeId(ua.ObjectIds.ConditionType_ConditionRefresh2), self.subscription_service.condition_refresh
+        )
 
     async def setup_nodes(self):
         """
@@ -136,7 +142,9 @@ class InternalServer:
 
     async def load_standard_address_space(self, shelf_file: Optional[Path] = None):
         if shelf_file:
-            is_file = await asyncio.get_running_loop().run_in_executor(None, Path.is_file, shelf_file) or await asyncio.get_running_loop().run_in_executor(None, Path.is_file, shelf_file / ".db")
+            is_file = await asyncio.get_running_loop().run_in_executor(
+                None, Path.is_file, shelf_file
+            ) or await asyncio.get_running_loop().run_in_executor(None, Path.is_file, shelf_file / ".db")
             if is_file:
                 # import address space from shelf
                 await asyncio.get_running_loop().run_in_executor(None, self.aspace.load_aspace_shelf, shelf_file)
@@ -188,8 +196,12 @@ class InternalServer:
         self.logger.info("starting internal server")
         for edp in self.endpoints:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(ua.ServerState.Running, ua.VariantType.Int32)
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(datetime.now(timezone.utc))
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(
+            ua.ServerState.Running, ua.VariantType.Int32
+        )
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(
+            datetime.now(timezone.utc)
+        )
         if not self.disabled_clock:
             self.time_task = asyncio.create_task(self._set_current_time_loop())
 
@@ -235,7 +247,10 @@ class InternalServer:
             edp = copy(edp)
             edp.EndpointUrl = self._mangle_endpoint_url(edp.EndpointUrl, params_ep_url=params_ep_url, sockname=sockname)
             edp.Server = copy(edp.Server)
-            edp.Server.DiscoveryUrls = [self._mangle_endpoint_url(url, params_ep_url=params_ep_url, sockname=sockname) for url in edp.Server.DiscoveryUrls]
+            edp.Server.DiscoveryUrls = [
+                self._mangle_endpoint_url(url, params_ep_url=params_ep_url, sockname=sockname)
+                for url in edp.Server.DiscoveryUrls
+            ]
             edps.append(edp)
         return edps
 
@@ -250,7 +265,10 @@ class InternalServer:
                     continue
             if desc.Server.ApplicationUri in our_application_uris:
                 serv = copy(desc.Server)
-                serv.DiscoveryUrls = [self._mangle_endpoint_url(url, params_ep_url=params.EndpointUrl, sockname=sockname) for url in serv.DiscoveryUrls]
+                serv.DiscoveryUrls = [
+                    self._mangle_endpoint_url(url, params_ep_url=params.EndpointUrl, sockname=sockname)
+                    for url in serv.DiscoveryUrls
+                ]
             else:
                 serv = desc.Server
             servers.append(serv)
@@ -330,14 +348,24 @@ class InternalServer:
         """
         await self.aspace.write_attribute_value(nodeid, attr, datavalue)
 
-    def set_attribute_value_callback(self, nodeid: ua.NodeId, callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue], attr=ua.AttributeIds.Value) -> None:
+    def set_attribute_value_callback(
+        self,
+        nodeid: ua.NodeId,
+        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
+        attr=ua.AttributeIds.Value,
+    ) -> None:
         """
         Set a callback function to the Attribute that returns a value for read_attribute_value() instead of the
         written value. Note that it does not trigger the datachange_callbacks unlike write_attribute_value().
         """
         self.aspace.set_attribute_value_callback(nodeid, attr, callback)
 
-    def set_attribute_value_setter(self, nodeid: ua.NodeId, setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None], attr=ua.AttributeIds.Value) -> None:
+    def set_attribute_value_setter(
+        self,
+        nodeid: ua.NodeId,
+        setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None],
+        attr=ua.AttributeIds.Value,
+    ) -> None:
         """
         Set a setter function for the Attribute. This setter will be called when a new value is set using
         write_attribute_value() instead of directly writing the value. This is useful, for example, if you want to

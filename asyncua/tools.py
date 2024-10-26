@@ -66,7 +66,8 @@ def add_common_args(parser, default_node="i=84", require_node=False):
     parser.add_argument("-i", "--namespace", help="Default namespace", type=int, default=0, metavar="NAMESPACE")
     parser.add_argument(
         "--security",
-        help="Security settings, for example:" " Basic256Sha256,SignAndEncrypt,cert.der,pk.pem[,server_cert.der]. Default: None",
+        help="Security settings, for example:"
+        " Basic256Sha256,SignAndEncrypt,cert.der,pk.pem[,server_cert.der]. Default: None",
         default="",
     )
     parser.add_argument("--user", help="User name for authentication. Overrides the user name given in the URL.")
@@ -401,7 +402,11 @@ async def _lsprint_1(node, depth, indent=""):
 
 async def _lsprint_long(pnode, depth, indent=""):
     if not indent:
-        print("{0:30} {1:25} {2:25} {3:10} {4:30} {5:25}".format("DisplayName", "NodeId", "BrowseName", "DataType", "Timestamp", "Value"))
+        print(
+            "{0:30} {1:25} {2:25} {3:10} {4:30} {5:25}".format(
+                "DisplayName", "NodeId", "BrowseName", "DataType", "Timestamp", "Value"
+            )
+        )
         print("")
     for node in await pnode.get_children():
         attrs = await node.read_attributes(
@@ -430,7 +435,9 @@ async def _lsprint_long(pnode, depth, indent=""):
                 )
             )
         else:
-            print("{0}{1:30} {2:25} {3:25}".format(indent, name.to_string(), bname.to_string(), node.nodeid.to_string()))
+            print(
+                "{0}{1:30} {2:25} {3:25}".format(indent, name.to_string(), bname.to_string(), node.nodeid.to_string())
+            )
         if depth:
             await _lsprint_long(node, depth - 1, indent + "  ")
 
@@ -543,7 +550,10 @@ def uaclient():
 
 
 async def _uaclient():
-    parser = argparse.ArgumentParser(description="Connect to server and start python shell. root and objects nodes are available." "Node specificed in command line is available as mynode variable")
+    parser = argparse.ArgumentParser(
+        description="Connect to server and start python shell. root and objects nodes are available."
+        "Node specificed in command line is available as mynode variable"
+    )
     add_common_args(parser)
     parser.add_argument("-c", "--certificate", help="set client certificate")
     parser.add_argument("-k", "--private_key", help="set client private key")
@@ -567,7 +577,10 @@ async def _uaclient():
 
 
 async def _uaserver():
-    parser = argparse.ArgumentParser(description="Run an example OPC-UA server. By importing xml definition and using uawrite " " command line, it is even possible to expose real data using this server")
+    parser = argparse.ArgumentParser(
+        description="Run an example OPC-UA server. By importing xml definition and using uawrite "
+        " command line, it is even possible to expose real data using this server"
+    )
     # we set up a server, this is a bit different from other tool, so we do not reuse common arguments
     parser.add_argument(
         "-u",
@@ -674,7 +687,9 @@ def uadiscover():
 
 
 async def _uadiscover():
-    parser = argparse.ArgumentParser(description="Performs OPC UA discovery and prints information on servers and endpoints.")
+    parser = argparse.ArgumentParser(
+        description="Performs OPC UA discovery and prints information on servers and endpoints."
+    )
     add_minimum_args(parser)
     parser.add_argument(
         "-n",
@@ -891,7 +906,10 @@ def uageneratestructs():
 
 
 async def _uageneratestructs():
-    parser = argparse.ArgumentParser(description="Generate a Python module from the xml structure definition (.bsd)," " the node argument is typically a children of i=93")
+    parser = argparse.ArgumentParser(
+        description="Generate a Python module from the xml structure definition (.bsd),"
+        " the node argument is typically a children of i=93"
+    )
     add_common_args(parser, require_node=True)
     parser.add_argument(
         "-o",

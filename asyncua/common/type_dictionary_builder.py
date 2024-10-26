@@ -37,7 +37,14 @@ class OPCTypeDictionaryBuilder:
         :param ns_urn: name of the name space
         types in dict is created as opc:xxx, otherwise as tns:xxx
         """
-        head_attributes = {"xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance", "xmlns:tns": ns_urn, "DefaultByteOrder": "LittleEndian", "xmlns:opc": "http://opcfoundation.org/BinarySchema/", "xmlns:ua": "http://opcfoundation.org/UA/", "TargetNamespace": ns_urn}
+        head_attributes = {
+            "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+            "xmlns:tns": ns_urn,
+            "DefaultByteOrder": "LittleEndian",
+            "xmlns:opc": "http://opcfoundation.org/BinarySchema/",
+            "xmlns:ua": "http://opcfoundation.org/UA/",
+            "TargetNamespace": ns_urn,
+        }
 
         self.etree = Et.ElementTree(Et.Element("opc:TypeDictionary", head_attributes))
 
@@ -163,17 +170,29 @@ class DataTypeDictionaryBuilder:
         """link the three node by their node ids according to UA standard"""
         refs = [
             # add reverse reference to BaseDataType -> Structure
-            _reference_generator(data_type_node_id, ua.NodeId(ua.ObjectIds.Structure, 0), ua.NodeId(ua.ObjectIds.HasSubtype, 0), False),
+            _reference_generator(
+                data_type_node_id, ua.NodeId(ua.ObjectIds.Structure, 0), ua.NodeId(ua.ObjectIds.HasSubtype, 0), False
+            ),
             # add reverse reference to created data type
             _reference_generator(linked_obj_node_id, data_type_node_id, ua.NodeId(ua.ObjectIds.HasEncoding, 0), False),
             # add HasDescription link to dictionary description
             _reference_generator(linked_obj_node_id, description_node_id, ua.NodeId(ua.ObjectIds.HasDescription, 0)),
             # add reverse HasDescription link
-            _reference_generator(description_node_id, linked_obj_node_id, ua.NodeId(ua.ObjectIds.HasDescription, 0), False),
+            _reference_generator(
+                description_node_id, linked_obj_node_id, ua.NodeId(ua.ObjectIds.HasDescription, 0), False
+            ),
             # add link to the type definition node
-            _reference_generator(linked_obj_node_id, ua.NodeId(ua.ObjectIds.DataTypeEncodingType, 0), ua.NodeId(ua.ObjectIds.HasTypeDefinition, 0)),
+            _reference_generator(
+                linked_obj_node_id,
+                ua.NodeId(ua.ObjectIds.DataTypeEncodingType, 0),
+                ua.NodeId(ua.ObjectIds.HasTypeDefinition, 0),
+            ),
             # add has type definition link
-            _reference_generator(description_node_id, ua.NodeId(ua.ObjectIds.DataTypeDescriptionType, 0), ua.NodeId(ua.ObjectIds.HasTypeDefinition, 0)),
+            _reference_generator(
+                description_node_id,
+                ua.NodeId(ua.ObjectIds.DataTypeDescriptionType, 0),
+                ua.NodeId(ua.ObjectIds.HasTypeDefinition, 0),
+            ),
             # add forward link of dict to description item
             _reference_generator(self.dict_id, description_node_id, ua.NodeId(ua.ObjectIds.HasComponent, 0)),
             # add reverse link to dictionary

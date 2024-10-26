@@ -9,7 +9,11 @@ import logging
 import uuid
 from typing import Set, Union, Dict, List, Tuple
 from dataclasses import fields, is_dataclass
-from asyncua.common.structures104 import load_custom_struct_xml_import, load_enum_xml_import, load_basetype_alias_xml_import
+from asyncua.common.structures104 import (
+    load_custom_struct_xml_import,
+    load_enum_xml_import,
+    load_basetype_alias_xml_import,
+)
 import asyncua
 from asyncua import ua, Node
 from asyncua.ua.uatypes import type_is_union, types_from_union, type_is_list, type_from_list
@@ -24,7 +28,12 @@ def _parse_version(version_string: str) -> List[int]:
 
 
 class XmlImporter:
-    def __init__(self, server: Union[asyncua.Server, asyncua.Client], strict_mode: bool = True, auto_load_definitions: bool = True):
+    def __init__(
+        self,
+        server: Union[asyncua.Server, asyncua.Client],
+        strict_mode: bool = True,
+        auto_load_definitions: bool = True,
+    ):
         """
         strict_mode: stop on an error, if False only an error message is logged,
                      but the import continues
@@ -73,7 +82,9 @@ class XmlImporter:
                 {
                     "ModelUri": await (await model_node.get_child("NamespaceUri")).read_value(),
                     "Version": await (await model_node.get_child("NamespaceVersion")).read_value(),
-                    "PublicationDate": (await (await model_node.get_child("NamespacePublicationDate")).read_value()).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "PublicationDate": (
+                        await (await model_node.get_child("NamespacePublicationDate")).read_value()
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 }
             )
         return server_model_list
@@ -85,7 +96,10 @@ class XmlImporter:
         server_model_list = await self._get_existing_model_in_namespace()
         for model in server_model_list:
             for req_model in req_models:
-                if model["ModelUri"] == req_model["ModelUri"] and model["PublicationDate"] >= req_model["PublicationDate"]:
+                if (
+                    model["ModelUri"] == req_model["ModelUri"]
+                    and model["PublicationDate"] >= req_model["PublicationDate"]
+                ):
                     if "Version" in model and "Version" in req_model:
                         if _parse_version(model["Version"]) >= _parse_version(req_model["Version"]):
                             req_models.remove(req_model)
@@ -112,7 +126,9 @@ class XmlImporter:
         for uri, version, pub_date in self.parser.get_nodeset_namespaces():
             if uri not in ns_objs:
                 idx = await self.session.register_namespace(uri)
-                obj = await self.session.nodes.namespaces.add_object(idx, uri, ua.ObjectIds.NamespaceMetadataType, False)
+                obj = await self.session.nodes.namespaces.add_object(
+                    idx, uri, ua.ObjectIds.NamespaceMetadataType, False
+                )
                 ns_uri = await obj.get_child("NamespaceUri")
                 await ns_uri.write_value(uri, ua.VariantType.String)
                 ns_ver = await obj.get_child("NamespaceVersion")
@@ -134,8 +150,12 @@ class XmlImporter:
         await self.parser.parse(xmlpath, xmlstring)
         self.namespaces = await self._map_namespaces()
         _logger.info("namespace map: %s", self.namespaces)
-        self._unmigrated_aliases = self.parser.get_aliases()  # these nodeids are not migrated to server namespace indexes
-        self.aliases = self._map_aliases(self._unmigrated_aliases)  # these nodeids are already migrated to server namespace indexes
+        self._unmigrated_aliases = (
+            self.parser.get_aliases()
+        )  # these nodeids are not migrated to server namespace indexes
+        self.aliases = self._map_aliases(
+            self._unmigrated_aliases
+        )  # these nodeids are already migrated to server namespace indexes
         self.refs = []
         dnodes = self.parser.get_node_datas()
         dnodes = self.make_objects(dnodes)
@@ -164,7 +184,18 @@ class XmlImporter:
         return nodes
 
     async def _add_missing_reverse_references(self, new_nodes: List[Node]) -> Set[Node]:
-        __unidirectional_types = {ua.ObjectIds.GuardVariableType, ua.ObjectIds.HasGuard, ua.ObjectIds.TransitionVariableType, ua.ObjectIds.StateMachineType, ua.ObjectIds.StateVariableType, ua.ObjectIds.TwoStateVariableType, ua.ObjectIds.StateType, ua.ObjectIds.TransitionType, ua.ObjectIds.FiniteTransitionVariableType, ua.ObjectIds.HasInterface}
+        __unidirectional_types = {
+            ua.ObjectIds.GuardVariableType,
+            ua.ObjectIds.HasGuard,
+            ua.ObjectIds.TransitionVariableType,
+            ua.ObjectIds.StateMachineType,
+            ua.ObjectIds.StateVariableType,
+            ua.ObjectIds.TwoStateVariableType,
+            ua.ObjectIds.StateType,
+            ua.ObjectIds.TransitionType,
+            ua.ObjectIds.FiniteTransitionVariableType,
+            ua.ObjectIds.HasInterface,
+        }
         dangling_refs_to_missing_nodes = set(new_nodes)
 
         RefSpecKey = Tuple[ua.NodeId, ua.NodeId, ua.NodeId]  # (source_node_id, target_node_id, ref_type_id)
@@ -178,7 +209,10 @@ class XmlImporter:
                 dangling_refs_to_missing_nodes.discard(new_node_id)
                 dangling_refs_to_missing_nodes.discard(ref.NodeId)
 
-                if ref.ReferenceTypeId.NamespaceIndex != 0 or ref.ReferenceTypeId.Identifier not in __unidirectional_types:
+                if (
+                    ref.ReferenceTypeId.NamespaceIndex != 0
+                    or ref.ReferenceTypeId.Identifier not in __unidirectional_types
+                ):
                     ref_key: RefSpecKey = (new_node_id, ref.NodeId, ref.ReferenceTypeId)
                     node_reference_map[ref_key] = ref
 
@@ -191,9 +225,16 @@ class XmlImporter:
             source_node_id, target_node_id, ref_type = ref_spec
             reverse_ref_spec = (target_node_id, source_node_id, ref_type)
             if reverse_ref_spec not in node_reference_map:
-                _logger.debug("Adding missing reference: %s <-> %s (%s)", target_node_id, source_node_id, ref.ReferenceTypeId)
+                _logger.debug(
+                    "Adding missing reference: %s <-> %s (%s)", target_node_id, source_node_id, ref.ReferenceTypeId
+                )
 
-                new_ref = ua.AddReferencesItem(SourceNodeId=target_node_id, TargetNodeId=source_node_id, ReferenceTypeId=ref_type, IsForward=(not ref.IsForward))
+                new_ref = ua.AddReferencesItem(
+                    SourceNodeId=target_node_id,
+                    TargetNodeId=source_node_id,
+                    ReferenceTypeId=ref_type,
+                    IsForward=(not ref.IsForward),
+                )
                 reference_fixes.append(new_ref)
         await self._add_references(reference_fixes)
 
@@ -287,7 +328,11 @@ class XmlImporter:
         """
         if isinstance(obj, ua.NodeId):
             if obj.NamespaceIndex in self.namespaces:
-                obj = ua.NodeId(Identifier=obj.Identifier, NamespaceIndex=self.namespaces[obj.NamespaceIndex], NodeIdType=obj.NodeIdType)
+                obj = ua.NodeId(
+                    Identifier=obj.Identifier,
+                    NamespaceIndex=self.namespaces[obj.NamespaceIndex],
+                    NodeIdType=obj.NodeIdType,
+                )
         if isinstance(obj, ua.QualifiedName):
             if obj.NamespaceIndex in self.namespaces:
                 obj = ua.QualifiedName(Name=obj.Name, NamespaceIndex=self.namespaces[obj.NamespaceIndex])
@@ -312,7 +357,13 @@ class XmlImporter:
                 node.ReferenceTypeId = self._migrate_ns(obj.parentlink)
             if obj.typedef:
                 node.TypeDefinition = self._migrate_ns(obj.typedef)
-        _logger.info("Importing xml node (%s, %s) as (%s %s)", obj.browsename, obj.nodeid, node.BrowseName, node.RequestedNewNodeId)
+        _logger.info(
+            "Importing xml node (%s, %s) as (%s %s)",
+            obj.browsename,
+            obj.nodeid,
+            node.BrowseName,
+            node.RequestedNewNodeId,
+        )
         return node
 
     def _to_migrated_nodeid(self, nodeid: Union[ua.NodeId, None, str]) -> Union[ua.NodeId, ua.QualifiedName]:
@@ -343,7 +394,11 @@ class XmlImporter:
         res = await self._get_server().add_nodes([node])
         await self._add_refs(obj)
         # do not verify these nodes because some nodesets contain invalid elements
-        if obj.displayname != "Default Binary" and obj.displayname != "Default XML" and obj.displayname != "Default Json":
+        if (
+            obj.displayname != "Default Binary"
+            and obj.displayname != "Default XML"
+            and obj.displayname != "Default Json"
+        ):
             res[0].StatusCode.check()
         return res[0].AddedNodeId
 
@@ -404,7 +459,9 @@ class XmlImporter:
             extclass = self._get_ext_class(obj.objname)
         except Exception as exp:
             if self.auto_load_definitions:
-                await self.session.load_data_type_definitions()  # load new data type definitions since a customn class should be created
+                await (
+                    self.session.load_data_type_definitions()
+                )  # load new data type definitions since a customn class should be created
                 extclass = self._get_ext_class(obj.objname)
             else:
                 raise exp
@@ -627,7 +684,9 @@ class XmlImporter:
                 await load_enum_xml_import(node.RequestedNewNodeId, attrs, is_option_set)
             if is_alias:
                 if node.ParentNodeId != ua.NodeId(ua.ObjectIds.Structure):
-                    await load_basetype_alias_xml_import(self.session, node.BrowseName.Name, node.RequestedNewNodeId, node.ParentNodeId)
+                    await load_basetype_alias_xml_import(
+                        self.session, node.BrowseName.Name, node.RequestedNewNodeId, node.ParentNodeId
+                    )
         return res[0].AddedNodeId
 
     async def _add_refs(self, obj):

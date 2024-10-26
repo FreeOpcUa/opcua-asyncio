@@ -162,7 +162,9 @@ class HaClient:
         self.is_running = True
 
     async def stop(self):
-        to_stop: Sequence[Union[KeepAlive, HaManager, Reconciliator]] = chain(self._keepalive_task, self._manager_task, self._reconciliator_task)
+        to_stop: Sequence[Union[KeepAlive, HaManager, Reconciliator]] = chain(
+            self._keepalive_task, self._manager_task, self._reconciliator_task
+        )
         stop = [p.stop() for p in to_stop]
 
         await asyncio.gather(*stop)
@@ -231,7 +233,9 @@ class HaClient:
             for url in self.urls:
                 vs = self.ideal_map[url].get(sub_name)
                 if not vs:
-                    _logger.warning("The subscription specified for the data_change: %s doesn't exist in ideal_map", sub_name)
+                    _logger.warning(
+                        "The subscription specified for the data_change: %s doesn't exist in ideal_map", sub_name
+                    )
                     return
                 vs.subscribe_data_change(nodes, attr, queuesize)
                 await self.hook_on_subscribe(nodes=nodes, attr=attr, queuesize=queuesize, url=url)
@@ -513,7 +517,12 @@ class HaManager:
         healthy, unhealthy = await self.ha_client.group_clients_by_health()
 
         async def reco_resub(client: Client, force: bool):
-            if force or not client.uaclient.protocol or client.uaclient.protocol and client.uaclient.protocol.state == UASocketProtocol.CLOSED:
+            if (
+                force
+                or not client.uaclient.protocol
+                or client.uaclient.protocol
+                and client.uaclient.protocol.state == UASocketProtocol.CLOSED
+            ):
                 _logger.info("Virtually reconnecting and resubscribing %s", client)
                 await self.ha_client.reconnect(client=client)
 

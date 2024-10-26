@@ -48,7 +48,9 @@ FILETIME_EPOCH_AS_DATETIME = datetime(1601, 1, 1)
 FILETIME_EPOCH_AS_UTC_DATETIME = FILETIME_EPOCH_AS_DATETIME.replace(tzinfo=timezone.utc)
 MAX_FILETIME_EPOCH_DATETIME = datetime(9999, 12, 31, 23, 59, 59)
 MAX_FILETIME_EPOCH_AS_UTC_DATETIME = MAX_FILETIME_EPOCH_DATETIME.replace(tzinfo=timezone.utc)
-MAX_OPC_FILETIME = int((MAX_FILETIME_EPOCH_DATETIME - FILETIME_EPOCH_AS_DATETIME).total_seconds()) * HUNDREDS_OF_NANOSECONDS
+MAX_OPC_FILETIME = (
+    int((MAX_FILETIME_EPOCH_DATETIME - FILETIME_EPOCH_AS_DATETIME).total_seconds()) * HUNDREDS_OF_NANOSECONDS
+)
 MAX_INT64 = 2**63 - 1
 
 
@@ -486,10 +488,16 @@ class NodeId:
         for identifier, valid_node_types in valid_type_combinations:
             if isinstance(self.Identifier, identifier) and self.NodeIdType in valid_node_types:
                 return
-        raise UaError(f"NodeId of type {self.NodeIdType.name} has an incompatible identifier {self.Identifier} of type {type(self.Identifier)}")
+        raise UaError(
+            f"NodeId of type {self.NodeIdType.name} has an incompatible identifier {self.Identifier} of type {type(self.Identifier)}"
+        )
 
     def __eq__(self, node):
-        return isinstance(node, NodeId) and self.NamespaceIndex == node.NamespaceIndex and self.Identifier == node.Identifier
+        return (
+            isinstance(node, NodeId)
+            and self.NamespaceIndex == node.NamespaceIndex
+            and self.Identifier == node.Identifier
+        )
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -500,7 +508,11 @@ class NodeId:
     def __lt__(self, other):
         if not isinstance(other, NodeId):
             raise AttributeError("Can only compare to NodeId")
-        return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (other.NodeIdType, other.NamespaceIndex, other.Identifier)
+        return (self.NodeIdType, self.NamespaceIndex, self.Identifier) < (
+            other.NodeIdType,
+            other.NamespaceIndex,
+            other.Identifier,
+        )
 
     def is_null(self):
         if self.NamespaceIndex != 0:
@@ -773,11 +785,16 @@ class LocalizedText:
 
         if self.Text is not None:
             if not isinstance(self.Text, str):
-                raise ValueError(f'A LocalizedText object takes a string as argument "text"' f"not a {type(self.Text)}, {self.Text}")
+                raise ValueError(
+                    f'A LocalizedText object takes a string as argument "text"' f"not a {type(self.Text)}, {self.Text}"
+                )
 
         if self.Locale is not None:
             if not isinstance(self.Locale, str):
-                raise ValueError(f'A LocalizedText object takes a string as argument "locale",' f" not a {type(self.Locale)}, {self.Locale}")
+                raise ValueError(
+                    f'A LocalizedText object takes a string as argument "locale",'
+                    f" not a {type(self.Locale)}, {self.Locale}"
+                )
 
     def to_string(self):
         return self.__str__()
@@ -1071,7 +1088,9 @@ class DataValue:
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     Value: Optional[Variant] = None
     StatusCode_: Optional[StatusCode] = field(default_factory=StatusCode)
-    SourceTimestamp: Optional[DateTime] = None  # FIXME type DateType raises type hinting errors because datetime is assigned
+    SourceTimestamp: Optional[DateTime] = (
+        None  # FIXME type DateType raises type hinting errors because datetime is assigned
+    )
     ServerTimestamp: Optional[DateTime] = None
     SourcePicoseconds: Optional[UInt16] = None
     ServerPicoseconds: Optional[UInt16] = None

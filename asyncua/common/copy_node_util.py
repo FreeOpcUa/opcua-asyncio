@@ -13,7 +13,9 @@ from .node_factory import make_node
 _logger = logging.getLogger(__name__)
 
 
-async def copy_node(parent: asyncua.Node, node: asyncua.Node, nodeid: Optional[ua.NodeId] = None, recursive: bool = True) -> List[asyncua.Node]:
+async def copy_node(
+    parent: asyncua.Node, node: asyncua.Node, nodeid: Optional[ua.NodeId] = None, recursive: bool = True
+) -> List[asyncua.Node]:
     """
     Copy a node or node tree as child of parent node
     """
@@ -24,7 +26,13 @@ async def copy_node(parent: asyncua.Node, node: asyncua.Node, nodeid: Optional[u
     return [make_node(parent.session, nid) for nid in added_nodeids]
 
 
-async def _copy_node(session: AbstractSession, parent_nodeid: ua.NodeId, rdesc: ua.ReferenceDescription, nodeid: ua.NodeId, recursive: bool):
+async def _copy_node(
+    session: AbstractSession,
+    parent_nodeid: ua.NodeId,
+    rdesc: ua.ReferenceDescription,
+    nodeid: ua.NodeId,
+    recursive: bool,
+):
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = rdesc.BrowseName
@@ -40,7 +48,13 @@ async def _copy_node(session: AbstractSession, parent_nodeid: ua.NodeId, rdesc: 
     if recursive:
         descs = await node_to_copy.get_children_descriptions()
         for desc in descs:
-            nodes = await _copy_node(session, res.AddedNodeId, desc, nodeid=ua.NodeId(NamespaceIndex=desc.NodeId.NamespaceIndex), recursive=True)
+            nodes = await _copy_node(
+                session,
+                res.AddedNodeId,
+                desc,
+                nodeid=ua.NodeId(NamespaceIndex=desc.NodeId.NamespaceIndex),
+                recursive=True,
+            )
             added_nodes.extend(nodes)
 
     return added_nodes
@@ -103,5 +117,10 @@ async def _read_and_copy_attrs(node_type: asyncua.Node, struct: Any, addnode: ua
             else:
                 setattr(struct, name, variant.Value)
         else:
-            _logger.warning("Instantiate: while copying attributes from node type %s," " attribute %s, statuscode is %s", str(node_type), str(name), str(results[idx].StatusCode))
+            _logger.warning(
+                "Instantiate: while copying attributes from node type %s," " attribute %s, statuscode is %s",
+                str(node_type),
+                str(name),
+                str(results[idx].StatusCode),
+            )
     addnode.NodeAttributes = struct

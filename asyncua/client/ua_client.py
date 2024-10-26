@@ -26,7 +26,12 @@ class UASocketProtocol(asyncio.Protocol):
     OPEN = "open"
     CLOSED = "closed"
 
-    def __init__(self, timeout: float = 1, security_policy: ua.SecurityPolicy = ua.SecurityPolicy(), limits: TransportLimits = None):
+    def __init__(
+        self,
+        timeout: float = 1,
+        security_policy: ua.SecurityPolicy = ua.SecurityPolicy(),
+        limits: TransportLimits = None,
+    ):
         """
         :param timeout: Timeout in seconds
         :param security_policy: Security policy (optional)
@@ -50,7 +55,9 @@ class UASocketProtocol(asyncio.Protocol):
         self.closed: bool = False
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
         # passing back the processed response to the request so that it can return it.
-        self._open_secure_channel_exchange: Union[ua.OpenSecureChannelResponse, ua.OpenSecureChannelParameters, None] = None
+        self._open_secure_channel_exchange: Union[
+            ua.OpenSecureChannelResponse, ua.OpenSecureChannelParameters, None
+        ] = None
         # Hook for upper layer tasks before a request is sent (optional)
         self.pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
 
@@ -85,14 +92,18 @@ class UASocketProtocol(asyncio.Protocol):
                     self.receive_buffer = data
                     return
                 if len(buf) < header.body_size:
-                    self.logger.debug("We did not receive enough data from server. Need %s got %s", header.body_size, len(buf))
+                    self.logger.debug(
+                        "We did not receive enough data from server. Need %s got %s", header.body_size, len(buf)
+                    )
                     self.receive_buffer = data
                     return
                 msg = self._connection.receive_from_header_and_body(header, buf)
                 self._process_received_message(msg)
                 if header.MessageType == ua.MessageType.SecureOpen:
                     params: ua.OpenSecureChannelParameters = self._open_secure_channel_exchange
-                    response: ua.OpenSecureChannelResponse = struct_from_binary(ua.OpenSecureChannelResponse, msg.body())
+                    response: ua.OpenSecureChannelResponse = struct_from_binary(
+                        ua.OpenSecureChannelResponse, msg.body()
+                    )
                     response.ResponseHeader.ServiceResult.check()
                     self._open_secure_channel_exchange = response
                     self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
@@ -181,7 +192,12 @@ class UASocketProtocol(asyncio.Protocol):
         typeid = nodeid_from_binary(data)
         if typeid == ua.FourByteNodeId(ua.ObjectIds.ServiceFault_Encoding_DefaultBinary):
             hdr = struct_from_binary(ua.ResponseHeader, data)
-            self.logger.warning("ServiceFault (%s, diagnostics: %s) from server received %s", hdr.ServiceResult.name, hdr.ServiceDiagnostics, context)
+            self.logger.warning(
+                "ServiceFault (%s, diagnostics: %s) from server received %s",
+                hdr.ServiceResult.name,
+                hdr.ServiceDiagnostics,
+                context,
+            )
             hdr.ServiceResult.check()
             return False
         return True
@@ -190,7 +206,9 @@ class UASocketProtocol(asyncio.Protocol):
         try:
             self._callbackmap[request_id].set_result(body)
         except KeyError as ex:
-            raise ua.UaError(f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}, body was {body}") from ex
+            raise ua.UaError(
+                f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}, body was {body}"
+            ) from ex
         except asyncio.InvalidStateError:
             if not self.closed:
                 self.logger.warning("Future for request id %s is already done", request_id)
@@ -231,7 +249,10 @@ class UASocketProtocol(asyncio.Protocol):
         request = ua.OpenSecureChannelRequest()
         request.Parameters = params
         if self._open_secure_channel_exchange is not None:
-            raise RuntimeError("Two Open Secure Channel requests can not happen too close to each other. " "The response must be processed and returned before the next request can be sent.")
+            raise RuntimeError(
+                "Two Open Secure Channel requests can not happen too close to each other. "
+                "The response must be processed and returned before the next request can be sent."
+            )
         self._open_secure_channel_exchange = params
         await wait_for(self._send_request(request, message_type=ua.MessageType.SecureOpen), self.timeout)
         _return = self._open_secure_channel_exchange.Parameters  # type: ignore[union-attr]
@@ -301,7 +322,9 @@ class UaClient(AbstractSession):
         self.logger.info("opening connection")
         self._closing = False
         # Timeout the connection when the server isn't available
-        await asyncio.wait_for(asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout)
+        await asyncio.wait_for(
+            asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout
+        )
 
     def disconnect_socket(self):
         if not self.protocol:
@@ -616,7 +639,11 @@ class UaClient(AbstractSession):
             try:
                 callback = self._subscription_callbacks[subscription_id]
             except KeyError:
-                self.logger.warning("Received data for unknown subscription %s active are %s", subscription_id, self._subscription_callbacks.keys())
+                self.logger.warning(
+                    "Received data for unknown subscription %s active are %s",
+                    subscription_id,
+                    self._subscription_callbacks.keys(),
+                )
             else:
                 try:
                     if asyncio.iscoroutinefunction(callback):

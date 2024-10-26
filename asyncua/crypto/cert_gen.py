@@ -56,10 +56,19 @@ def dump_private_key_as_pem(private_key: rsa.RSAPrivateKey) -> bytes:
     Returns:
         bytes: The private as PEM/PKCS8 format
     """
-    return private_key.private_bytes(encoding=Encoding.PEM, format=PrivateFormat.PKCS8, encryption_algorithm=NoEncryption())
+    return private_key.private_bytes(
+        encoding=Encoding.PEM, format=PrivateFormat.PKCS8, encryption_algorithm=NoEncryption()
+    )
 
 
-def generate_self_signed_app_certificate(private_key: rsa.RSAPrivateKey, common_name: str, names: Dict[str, str], subject_alt_names: List[x509.GeneralName], extended: List[x509.ObjectIdentifier], days: int = 365) -> x509.Certificate:
+def generate_self_signed_app_certificate(
+    private_key: rsa.RSAPrivateKey,
+    common_name: str,
+    names: Dict[str, str],
+    subject_alt_names: List[x509.GeneralName],
+    extended: List[x509.ObjectIdentifier],
+    days: int = 365,
+) -> x509.Certificate:
     """Generate a self signed certificate for OPC UA client/server application that is according to OPC 10000-4 6.1 / OPC 10000-6 6.2.2
 
     Args:
@@ -89,10 +98,30 @@ def generate_self_signed_app_certificate(private_key: rsa.RSAPrivateKey, common_
     builder = builder.serial_number(serial_number)
     builder = builder.public_key(public_key)
     builder = builder.add_extension(x509.SubjectKeyIdentifier.from_public_key(private_key.public_key()), critical=False)
-    builder = builder.add_extension(x509.AuthorityKeyIdentifier(key_identifier_from_public_key(private_key.public_key()), [x509.DirectoryName(x509.Name(name_attributes))], serial_number), critical=False)
+    builder = builder.add_extension(
+        x509.AuthorityKeyIdentifier(
+            key_identifier_from_public_key(private_key.public_key()),
+            [x509.DirectoryName(x509.Name(name_attributes))],
+            serial_number,
+        ),
+        critical=False,
+    )
     builder = builder.add_extension(x509.SubjectAlternativeName(subject_alt_names), critical=False)
     builder = builder.add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=False)
-    builder = builder.add_extension(x509.KeyUsage(digital_signature=True, content_commitment=True, key_encipherment=True, data_encipherment=not (generate_ca), key_agreement=False, key_cert_sign=True, crl_sign=generate_ca, encipher_only=False, decipher_only=False), critical=False)
+    builder = builder.add_extension(
+        x509.KeyUsage(
+            digital_signature=True,
+            content_commitment=True,
+            key_encipherment=True,
+            data_encipherment=not (generate_ca),
+            key_agreement=False,
+            key_cert_sign=True,
+            crl_sign=generate_ca,
+            encipher_only=False,
+            decipher_only=False,
+        ),
+        critical=False,
+    )
     if not generate_ca:
         builder = builder.add_extension(x509.ExtendedKeyUsage(extended), critical=False)
 
@@ -104,7 +133,13 @@ def generate_self_signed_app_certificate(private_key: rsa.RSAPrivateKey, common_
     return certificate
 
 
-def generate_app_certificate_signing_request(private_key: rsa.RSAPrivateKey, common_name: str, names: Dict[str, str], subject_alt_names: List[x509.GeneralName], extended: List[x509.ObjectIdentifier]) -> x509.CertificateSigningRequest:
+def generate_app_certificate_signing_request(
+    private_key: rsa.RSAPrivateKey,
+    common_name: str,
+    names: Dict[str, str],
+    subject_alt_names: List[x509.GeneralName],
+    extended: List[x509.ObjectIdentifier],
+) -> x509.CertificateSigningRequest:
     """Generate a certificate signing request for a OPC UA client/server application that is according to OPC 10000-4 6.1 / OPC 10000-6 6.2.2
 
     Args:
@@ -124,7 +159,20 @@ def generate_app_certificate_signing_request(private_key: rsa.RSAPrivateKey, com
     builder = x509.CertificateSigningRequestBuilder()
     builder = builder.subject_name(x509.Name(name_attributes))
     builder = builder.add_extension(x509.SubjectAlternativeName(subject_alt_names), critical=False)
-    builder = builder.add_extension(x509.KeyUsage(digital_signature=True, content_commitment=True, key_encipherment=True, data_encipherment=True, key_agreement=False, key_cert_sign=False, crl_sign=False, encipher_only=False, decipher_only=False), critical=False)
+    builder = builder.add_extension(
+        x509.KeyUsage(
+            digital_signature=True,
+            content_commitment=True,
+            key_encipherment=True,
+            data_encipherment=True,
+            key_agreement=False,
+            key_cert_sign=False,
+            crl_sign=False,
+            encipher_only=False,
+            decipher_only=False,
+        ),
+        critical=False,
+    )
 
     builder = builder.add_extension(x509.ExtendedKeyUsage(extended), critical=False)
     csr = builder.sign(
@@ -135,7 +183,9 @@ def generate_app_certificate_signing_request(private_key: rsa.RSAPrivateKey, com
     return csr
 
 
-def sign_certificate_request(csr: x509.CertificateSigningRequest, issuer: x509.Certificate, private_key: rsa.RSAPrivateKey, days=365) -> x509.Certificate:
+def sign_certificate_request(
+    csr: x509.CertificateSigningRequest, issuer: x509.Certificate, private_key: rsa.RSAPrivateKey, days=365
+) -> x509.Certificate:
     """Create certficate based on certificate signing request and ca
 
     Args:
@@ -158,8 +208,17 @@ def sign_certificate_request(csr: x509.CertificateSigningRequest, issuer: x509.C
     builder = builder.serial_number(serial_number)
     builder = builder.public_key(public_key)
     builder = builder.add_extension(x509.SubjectKeyIdentifier.from_public_key(csr.public_key()), critical=False)
-    builder = builder.add_extension(x509.AuthorityKeyIdentifier(key_identifier_from_public_key(issuer.public_key()), [x509.DirectoryName(issuer.subject)], issuer.serial_number), critical=False)
-    builder = builder.add_extension(csr.extensions.get_extension_for_class(x509.SubjectAlternativeName).value, critical=False)
+    builder = builder.add_extension(
+        x509.AuthorityKeyIdentifier(
+            key_identifier_from_public_key(issuer.public_key()),
+            [x509.DirectoryName(issuer.subject)],
+            issuer.serial_number,
+        ),
+        critical=False,
+    )
+    builder = builder.add_extension(
+        csr.extensions.get_extension_for_class(x509.SubjectAlternativeName).value, critical=False
+    )
     builder = builder.add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=False)
     builder = builder.add_extension(csr.extensions.get_extension_for_class(x509.KeyUsage).value, critical=False)
     builder = builder.add_extension(csr.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value, critical=False)
@@ -172,7 +231,14 @@ def sign_certificate_request(csr: x509.CertificateSigningRequest, issuer: x509.C
     return certificate
 
 
-async def setup_self_signed_certificate(key_file: Path, cert_file: Path, app_uri: str, host_name: str, cert_use: List[x509.ObjectIdentifier], subject_attrs: Dict[str, str]):
+async def setup_self_signed_certificate(
+    key_file: Path,
+    cert_file: Path,
+    app_uri: str,
+    host_name: str,
+    cert_use: List[x509.ObjectIdentifier],
+    subject_attrs: Dict[str, str],
+):
     """Convenient helper for generating  a key and or basic certificate if needed:
     - The key/certificate doesn't exists (when key is missing, always regenerate the certificate)
     - If the certficate is invalid
@@ -204,8 +270,13 @@ async def setup_self_signed_certificate(key_file: Path, cert_file: Path, app_uri
         generate_cert = check_certificate(cert, app_uri, host_name)
 
     if generate_cert:
-        subject_alt_names: List[x509.GeneralName] = [x509.UniformResourceIdentifier(app_uri), x509.DNSName(f"{host_name}")]
+        subject_alt_names: List[x509.GeneralName] = [
+            x509.UniformResourceIdentifier(app_uri),
+            x509.DNSName(f"{host_name}"),
+        ]
 
-        cert = generate_self_signed_app_certificate(key, app_uri, subject_attrs, subject_alt_names, extended=cert_use, days=365)
+        cert = generate_self_signed_app_certificate(
+            key, app_uri, subject_attrs, subject_alt_names, extended=cert_use, days=365
+        )
 
         cert_file.write_bytes(cert.public_bytes(encoding=Encoding.DER))

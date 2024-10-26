@@ -23,7 +23,9 @@ if __name__ == "__main__":
         # if the state node already exist for example from xml model you can assign it here: node=<StateNode>
         state1 = State("State-Id-1", "Idle", 1, node=None)
         # adds the state (StateType) to the statemachine childs - this is mandatory for the FiniteStateMachine!
-        await mystatemachine.add_state(state1, state_type=ua.NodeId(2309, 0))  # this is a init state -> InitialStateType: ua.NodeId(2309, 0)
+        await mystatemachine.add_state(
+            state1, state_type=ua.NodeId(2309, 0)
+        )  # this is a init state -> InitialStateType: ua.NodeId(2309, 0)
         state2 = State("State-Id-2", "Loading", 2)
         await mystatemachine.add_state(state2)
         state3 = State("State-Id-3", "Initializing", 3)
@@ -35,7 +37,9 @@ if __name__ == "__main__":
 
         # sets the avalible states of the FiniteStateMachine
         # this is mandatory!
-        await mystatemachine.set_available_states([state1.node.nodeid, state2.node.nodeid, state3.node.nodeid, state4.node.nodeid, state5.node.nodeid])
+        await mystatemachine.set_available_states(
+            [state1.node.nodeid, state2.node.nodeid, state3.node.nodeid, state4.node.nodeid, state5.node.nodeid]
+        )
 
         # setup your transition helperclass
         # if the transition node already exist for example from xml model you can assign it here: node=<TransitionNode>
@@ -52,7 +56,9 @@ if __name__ == "__main__":
         await mystatemachine.add_transition(trans5)
 
         # this is optional for the FiniteStateMachine
-        await mystatemachine.set_available_transitions([trans1.node.nodeid, trans2.node.nodeid, trans3.node.nodeid, trans4.node.nodeid, trans5.node.nodeid])
+        await mystatemachine.set_available_transitions(
+            [trans1.node.nodeid, trans2.node.nodeid, trans3.node.nodeid, trans4.node.nodeid, trans5.node.nodeid]
+        )
 
         # initialise the FiniteStateMachine by call change_state() with the InitialState
         # if the statechange should trigger an TransitionEvent the Message can be assigned here

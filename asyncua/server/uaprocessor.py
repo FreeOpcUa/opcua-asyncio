@@ -50,7 +50,9 @@ class UaProcessor:
 
     def send_response(self, requesthandle, seqhdr, response, msgtype=ua.MessageType.SecureMessage):
         response.ResponseHeader.RequestHandle = requesthandle
-        data = self._connection.message_to_binary(struct_to_binary(response), message_type=msgtype, request_id=seqhdr.RequestId)
+        data = self._connection.message_to_binary(
+            struct_to_binary(response), message_type=msgtype, request_id=seqhdr.RequestId
+        )
         self._transport.write(data)
 
     def open_secure_channel(self, algohdr, seqhdr, body):
@@ -59,7 +61,9 @@ class UaProcessor:
         if not self._connection.is_open():
             # Only call select_policy if the channel isn't open. Otherwise
             # it will break the Secure channel renewal.
-            self._connection.select_policy(algohdr.SecurityPolicyURI, algohdr.SenderCertificate, request.Parameters.SecurityMode)
+            self._connection.select_policy(
+                algohdr.SecurityPolicyURI, algohdr.SenderCertificate, request.Parameters.SecurityMode
+            )
 
         channel = self._connection.open(request.Parameters, self.iserver)
         # send response
@@ -72,11 +76,19 @@ class UaProcessor:
             if not self._publish_requests:
                 # only store one callback per subscription
                 self._publish_results_subs[subscription_id] = True
-                _logger.info("Server wants to send publish answer but no publish request is available," "enqueuing publish results callback, length of queue is %s", len(self._publish_results_subs))
+                _logger.info(
+                    "Server wants to send publish answer but no publish request is available,"
+                    "enqueuing publish results callback, length of queue is %s",
+                    len(self._publish_results_subs),
+                )
                 return None
             # We pop left from the Publish Request deque (FIFO)
             requestdata = self._publish_requests.popleft()
-            if requestdata.requesthdr.TimeoutHint == 0 or requestdata.requesthdr.TimeoutHint != 0 and time.time() - requestdata.timestamp < requestdata.requesthdr.TimeoutHint / 1000:
+            if (
+                requestdata.requesthdr.TimeoutHint == 0
+                or requestdata.requesthdr.TimeoutHint != 0
+                and time.time() - requestdata.timestamp < requestdata.requesthdr.TimeoutHint / 1000
+            ):
                 # Continue and use `requestdata` only if there was no timeout
                 break
         return requestdata
@@ -194,7 +206,9 @@ class UaProcessor:
                 data = params.ClientNonce
             else:
                 data = self._connection.security_policy.peer_certificate + params.ClientNonce
-            response.Parameters.ServerSignature.Signature = self._connection.security_policy.asymmetric_cryptography.signature(data)
+            response.Parameters.ServerSignature.Signature = (
+                self._connection.security_policy.asymmetric_cryptography.signature(data)
+            )
             response.Parameters.ServerSignature.Algorithm = self._connection.security_policy.AsymmetricSignatureURI
             # _logger.info("sending create session response")
             self.send_response(requesthdr.RequestHandle, seqhdr, response)
@@ -352,7 +366,9 @@ class UaProcessor:
             elif typeid == ua.NodeId(ua.ObjectIds.CreateSubscriptionRequest_Encoding_DefaultBinary):
                 _logger.info("create subscription request (%s)", user)
                 params = struct_from_binary(ua.CreateSubscriptionParameters, body)
-                result = await self.session.create_subscription(params, self.forward_publish_response, request_callback=self.get_publish_request)
+                result = await self.session.create_subscription(
+                    params, self.forward_publish_response, request_callback=self.get_publish_request
+                )
                 response = ua.CreateSubscriptionResponse()
                 response.Parameters = result
                 # _logger.info("sending create subscription response")

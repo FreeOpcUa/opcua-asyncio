@@ -39,7 +39,10 @@ class Event:
         self.internal_properties = list(self.__dict__.keys())[:] + ["internal_properties"]
 
     def __str__(self):
-        return "{0}({1})".format(self.__class__.__name__, [str(k) + ":" + str(v) for k, v in self.__dict__.items() if k not in self.internal_properties])
+        return "{0}({1})".format(
+            self.__class__.__name__,
+            [str(k) + ":" + str(v) for k, v in self.__dict__.items() if k not in self.internal_properties],
+        )
 
     __repr__ = __str__
 
@@ -148,7 +151,11 @@ async def get_filter_from_event_type(eventtypes: List["Node"], where_clause_gene
     return evfilter
 
 
-async def _append_new_attribute_to_select_clauses(select_clauses: List[ua.SimpleAttributeOperand], already_selected: Dict[str, str], browse_path: List[ua.QualifiedName]):
+async def _append_new_attribute_to_select_clauses(
+    select_clauses: List[ua.SimpleAttributeOperand],
+    already_selected: Dict[str, str],
+    browse_path: List[ua.QualifiedName],
+):
     string_path = "/".join(map(str, browse_path))
     if string_path not in already_selected:
         already_selected[string_path] = string_path
@@ -159,20 +166,46 @@ async def _append_new_attribute_to_select_clauses(select_clauses: List[ua.Simple
         select_clauses.append(op)
 
 
-async def _select_clause_from_childs(child: "Node", refs: List[ua.ReferenceDescription], select_clauses: List[ua.SimpleAttributeOperand], already_selected: Dict[str, str], browse_path: List[ua.QualifiedName]):
+async def _select_clause_from_childs(
+    child: "Node",
+    refs: List[ua.ReferenceDescription],
+    select_clauses: List[ua.SimpleAttributeOperand],
+    already_selected: Dict[str, str],
+    browse_path: List[ua.QualifiedName],
+):
     for ref in refs:
         if ref.NodeClass == ua.NodeClass.Variable:
             if ref.ReferenceTypeId == ua.ObjectIds.HasProperty:
-                await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [*browse_path] + [ref.BrowseName])
+                await _append_new_attribute_to_select_clauses(
+                    select_clauses, already_selected, [*browse_path] + [ref.BrowseName]
+                )
             else:
-                await _append_new_attribute_to_select_clauses(select_clauses, already_selected, [*browse_path] + [ref.BrowseName])
+                await _append_new_attribute_to_select_clauses(
+                    select_clauses, already_selected, [*browse_path] + [ref.BrowseName]
+                )
                 var = child.new_node(child.session, ref.NodeId)
-                refs = await var.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK)
-                await _select_clause_from_childs(var, refs, select_clauses, already_selected, browse_path + [ref.BrowseName])
+                refs = await var.get_references(
+                    ua.ObjectIds.Aggregates,
+                    ua.BrowseDirection.Forward,
+                    ua.NodeClass.Object | ua.NodeClass.Variable,
+                    True,
+                    _BROWSE_MASK,
+                )
+                await _select_clause_from_childs(
+                    var, refs, select_clauses, already_selected, browse_path + [ref.BrowseName]
+                )
         elif ref.NodeClass == ua.NodeClass.Object:
             obj = child.new_node(child.session, ref.NodeId)
-            refs = await obj.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK)
-            await _select_clause_from_childs(obj, refs, select_clauses, already_selected, browse_path + [ref.BrowseName])
+            refs = await obj.get_references(
+                ua.ObjectIds.Aggregates,
+                ua.BrowseDirection.Forward,
+                ua.NodeClass.Object | ua.NodeClass.Variable,
+                True,
+                _BROWSE_MASK,
+            )
+            await _select_clause_from_childs(
+                obj, refs, select_clauses, already_selected, browse_path + [ref.BrowseName]
+            )
 
 
 async def select_clauses_from_evtype(evtypes: List["Node"]):
@@ -182,7 +215,16 @@ async def select_clauses_from_evtype(evtypes: List["Node"]):
     for evtype in evtypes:
         if not add_condition_id and await is_subtype(evtype, ua.NodeId(ua.ObjectIds.ConditionType)):
             add_condition_id = True
-        refs = await select_event_attributes_from_type_node(evtype, lambda n: n.get_references(ua.ObjectIds.Aggregates, ua.BrowseDirection.Forward, ua.NodeClass.Object | ua.NodeClass.Variable, True, _BROWSE_MASK))
+        refs = await select_event_attributes_from_type_node(
+            evtype,
+            lambda n: n.get_references(
+                ua.ObjectIds.Aggregates,
+                ua.BrowseDirection.Forward,
+                ua.NodeClass.Object | ua.NodeClass.Variable,
+                True,
+                _BROWSE_MASK,
+            ),
+        )
         if refs:
             await _select_clause_from_childs(evtype, refs, select_clauses, already_selected, [])
     if add_condition_id:
@@ -228,7 +270,9 @@ async def select_event_attributes_from_type_node(node: "Node", attributeSelector
         attributes.extend(await attributeSelector(curr_node))
         if curr_node.nodeid == ua.NodeId(ua.ObjectIds.BaseEventType):
             break
-        parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
+        parents = await curr_node.get_referenced_nodes(
+            refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse
+        )
         if len(parents) != 1:  # Something went wrong
             return None
         curr_node = parents[0]
@@ -244,7 +288,9 @@ async def get_event_variables_from_type_node(node: "Node") -> List["Node"]:
 
 
 async def get_event_objects_from_type_node(node: "Node") -> List["Node"]:
-    return await select_event_attributes_from_type_node(node, lambda n: n.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Object))
+    return await select_event_attributes_from_type_node(
+        node, lambda n: n.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Object)
+    )
 
 
 async def get_event_obj_from_type_node(node):
@@ -285,7 +331,9 @@ async def get_event_obj_from_type_node(node):
                     # Add the sub-properties of the VariableType
                     for prop in await var.get_properties():
                         await self._add_new_property(prop, var)
-                parents = await curr_node.get_referenced_nodes(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
+                parents = await curr_node.get_referenced_nodes(
+                    refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse
+                )
                 if len(parents) != 1:  # Something went wrong
                     raise UaError("Parent of event type could not be found")
                 curr_node = parents[0]

@@ -365,7 +365,9 @@ class HistoryManager:
             # send correctly with continuation point
             starttime = ua.ua_binary.Primitives.DateTime.unpack(Buffer(rv.ContinuationPoint))
 
-        evts, cont = await self.storage.read_event_history(rv.NodeId, starttime, details.EndTime, details.NumValuesPerNode, details.Filter)
+        evts, cont = await self.storage.read_event_history(
+            rv.NodeId, starttime, details.EndTime, details.NumValuesPerNode, details.Filter
+        )
         results = []
         for ev in evts:
             field_list = ua.HistoryEventFieldList()

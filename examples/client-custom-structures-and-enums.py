@@ -14,7 +14,9 @@ async def main():
         await client.load_data_type_definitions()
         my_enum = await client.nodes.objects.get_child(f"{idx}:my_enum")
         val = await my_enum.get_value()
-        print("ENUM", val, type(val), val == ua.MyEnum.toto)  # enums are int32 in UA, we do not convert them back to IntEnum yet
+        print(
+            "ENUM", val, type(val), val == ua.MyEnum.toto
+        )  # enums are int32 in UA, we do not convert them back to IntEnum yet
         my_struct = await client.nodes.objects.get_child(f"{idx}:my_struct")
         print("STRUCT", await my_struct.read_value())
         my_struct_opt = await client.nodes.objects.get_child(f"{idx}:my_struct_optional")

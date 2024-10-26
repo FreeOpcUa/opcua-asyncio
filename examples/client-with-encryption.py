@@ -45,14 +45,23 @@ async def task(loop):
     )
     client = Client(url=url)
     client.application_uri = client_app_uri
-    await client.set_security(SecurityPolicyBasic256Sha256, certificate=str(cert), private_key=str(private_key), server_certificate="certificate-example.der")
+    await client.set_security(
+        SecurityPolicyBasic256Sha256,
+        certificate=str(cert),
+        private_key=str(private_key),
+        server_certificate="certificate-example.der",
+    )
 
     if USE_TRUST_STORE:
         trust_store = TrustStore([Path("examples") / "certificates" / "trusted" / "certs"], [])
         await trust_store.load()
-        validator = CertificateValidator(CertificateValidatorOptions.TRUSTED_VALIDATION | CertificateValidatorOptions.PEER_SERVER, trust_store)
+        validator = CertificateValidator(
+            CertificateValidatorOptions.TRUSTED_VALIDATION | CertificateValidatorOptions.PEER_SERVER, trust_store
+        )
     else:
-        validator = CertificateValidator(CertificateValidatorOptions.EXT_VALIDATION | CertificateValidatorOptions.PEER_SERVER)
+        validator = CertificateValidator(
+            CertificateValidatorOptions.EXT_VALIDATION | CertificateValidatorOptions.PEER_SERVER
+        )
     client.certificate_validator = validator
     try:
         async with client:

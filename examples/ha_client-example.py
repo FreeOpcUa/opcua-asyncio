@@ -74,7 +74,9 @@ async def main():
     urls, node = await start_servers()
 
     # set up ha_client with the serveur urls
-    ha_config = HaConfig(HaMode.WARM, keepalive_timer=15, manager_timer=15, reconciliator_timer=15, urls=urls, session_timeout=30)
+    ha_config = HaConfig(
+        HaMode.WARM, keepalive_timer=15, manager_timer=15, reconciliator_timer=15, urls=urls, session_timeout=30
+    )
     ha = HaClient(ha_config)
     await ha.start()
 

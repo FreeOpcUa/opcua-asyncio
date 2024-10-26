@@ -55,7 +55,13 @@ def new_struct_field(
     return field
 
 
-async def new_struct(server: Union["Server", "Client"], idx: Union[int, ua.NodeId], name: Union[int, ua.QualifiedName], fields: List[ua.StructureField], is_union: bool = False) -> Tuple[Node, List[Node]]:
+async def new_struct(
+    server: Union["Server", "Client"],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    fields: List[ua.StructureField],
+    is_union: bool = False,
+) -> Tuple[Node, List[Node]]:
     """
     simple way to create a new structure
     return the created data type node and the list of encoding nodes
@@ -91,7 +97,13 @@ async def new_struct(server: Union["Server", "Client"], idx: Union[int, ua.NodeI
     return dtype, [enc]
 
 
-async def new_enum(server: Union["Server", "Client"], idx: Union[int, ua.NodeId], name: Union[int, ua.QualifiedName], values: List[str], option_set: bool = False) -> Node:
+async def new_enum(
+    server: Union["Server", "Client"],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    values: List[str],
+    option_set: bool = False,
+) -> Node:
     edef = ua.EnumDefinition()
     counter = 0
     for val_name in values:
@@ -163,8 +175,14 @@ def make_structure_code(data_type, struct_name, sdef, log_error=True):
     """
     given a StructureDefinition object, generate Python code
     """
-    if sdef.StructureType not in (ua.StructureType.Structure, ua.StructureType.StructureWithOptionalFields, ua.StructureType.Union):
-        raise NotImplementedError(f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {struct_name} with DataTypdeDefinition {sdef}")
+    if sdef.StructureType not in (
+        ua.StructureType.Structure,
+        ua.StructureType.StructureWithOptionalFields,
+        ua.StructureType.Union,
+    ):
+        raise NotImplementedError(
+            f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {struct_name} with DataTypdeDefinition {sdef}"
+        )
     is_union = sdef.StructureType == ua.StructureType.Union
     base_class = "" if not is_union else "(ua.UaUnion)"
     code = f"""
@@ -459,7 +477,9 @@ async def _load_base_datatypes(server: Union["Server", "Client"]) -> Any:
     return new_alias
 
 
-async def load_data_type_definitions(server: Union["Server", "Client"], base_node: Node = None, overwrite_existing=False) -> Dict:
+async def load_data_type_definitions(
+    server: Union["Server", "Client"], base_node: Node = None, overwrite_existing=False
+) -> Dict:
     """
     Read DataTypeDefinition attribute on all Structure and Enumeration defined
     on server and generate Python objects in ua namespace to be used to talk with server
@@ -544,7 +564,11 @@ class {name}({enum_type}):
             # XXX: Assuming that counting starts with 1 for enumerations, which is by no means guaranteed.
             value = n + 1 if not option_set else (1 << n)
             if n == 0:
-                _logger.warning("%s type %s: guessing field values since the server does not provide them.", "OptionSet" if option_set else "Enumeration", name)
+                _logger.warning(
+                    "%s type %s: guessing field values since the server does not provide them.",
+                    "OptionSet" if option_set else "Enumeration",
+                    name,
+                )
 
         code += f"    {fieldname} = {value}\n"
     return code
@@ -566,7 +590,9 @@ async def load_enums(server: Union["Server", "Client"], base_node: Node = None, 
                 continue
             env = await _generate_object(name, edef, enum=True, option_set=option_set, log_fail=False)
         except Exception:
-            _logger.exception("%s %s (NodeId: %s): Failed to generate class from UA datatype", typename, name, desc.NodeId)
+            _logger.exception(
+                "%s %s (NodeId: %s): Failed to generate class from UA datatype", typename, name, desc.NodeId
+            )
             continue
         ua.register_enum(name, desc.NodeId, env[name])
         new_enums[name] = env[name]

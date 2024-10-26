@@ -12,7 +12,13 @@ from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from asyncua.crypto.uacrypto import load_certificate
 from asyncua.crypto.truststore import TrustStore
-from asyncua.crypto.cert_gen import generate_private_key, generate_self_signed_app_certificate, dump_private_key_as_pem, generate_app_certificate_signing_request, sign_certificate_request
+from asyncua.crypto.cert_gen import (
+    generate_private_key,
+    generate_self_signed_app_certificate,
+    dump_private_key_as_pem,
+    generate_app_certificate_signing_request,
+    sign_certificate_request,
+)
 
 # pylint: disable=redefined-outer-name,missing-function-docstring, missing-module-docstring, missing-class-docstring
 
@@ -46,7 +52,10 @@ def cert_files(tmp_path_factory) -> Path:
         "localityName": "Foo",
         "organizationName": "Bar Ltd",
     }
-    subject_alt_names: list[x509.GeneralName] = [x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"), x509.DNSName(f"{hostname}")]
+    subject_alt_names: list[x509.GeneralName] = [
+        x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
+        x509.DNSName(f"{hostname}"),
+    ]
 
     extended = [ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH]
 
@@ -75,7 +84,9 @@ def cert_files(tmp_path_factory) -> Path:
     )
 
     # gen server CSR
-    csr: x509.CertificateSigningRequest = generate_app_certificate_signing_request(server_key, f"myserver@{hostname}", names, subject_alt_names, extended=extended)
+    csr: x509.CertificateSigningRequest = generate_app_certificate_signing_request(
+        server_key, f"myserver@{hostname}", names, subject_alt_names, extended=extended
+    )
 
     # sign CSR
     cert: x509.Certificate = sign_certificate_request(csr, issuer, key_ca, days=30)
@@ -107,7 +118,12 @@ def cert_files(tmp_path_factory) -> Path:
 
     (own_certs / "ca_empty_crl.der").write_bytes(crl_empty.public_bytes(encoding=Encoding.DER))
 
-    revoked_cert = x509.RevokedCertificateBuilder().serial_number(cert.serial_number).revocation_date(datetime.datetime.today()).build()
+    revoked_cert = (
+        x509.RevokedCertificateBuilder()
+        .serial_number(cert.serial_number)
+        .revocation_date(datetime.datetime.today())
+        .build()
+    )
     builder = builder.add_revoked_certificate(revoked_cert)
     crl = builder.sign(
         private_key=key_ca,
@@ -138,7 +154,9 @@ async def test_selfsigned_not_in_trust_store(cert_files, trust_store) -> None:
 
 
 async def test_selfsigned_in_trust_store(cert_files, trust_store) -> None:
-    shutil.copyfile(cert_files / SERVER_CERT_SELF_SIGNED_FILE, trust_store.trust_locations[0] / SERVER_CERT_SELF_SIGNED_FILE)
+    shutil.copyfile(
+        cert_files / SERVER_CERT_SELF_SIGNED_FILE, trust_store.trust_locations[0] / SERVER_CERT_SELF_SIGNED_FILE
+    )
     await trust_store.load()
 
     cert_self_signed: x509.Certificate = await load_certificate(cert_files / SERVER_CERT_SELF_SIGNED_FILE)

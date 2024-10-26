@@ -75,18 +75,18 @@ include = ["/asyncua"]
 [tool.pytest.ini_options]
 log_cli = false
 log_level = "INFO"
-testpaths  = ["tests"]
+testpaths = ["tests"]
 asyncio_mode = "auto"
 
 [tool.ruff]
-line-length = 999
+line-length = 120
 extend-exclude = [
     "docs",
     "nodeset",
     "schemas",
     "*_auto.py",
     "event_objects.py",
-    "standard_address_space_services.py"
+    "standard_address_space_services.py",
 ]
 target-version = "py37"
 [tool.ruff.lint]

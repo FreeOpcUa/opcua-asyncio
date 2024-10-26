@@ -31,7 +31,9 @@ async def call_method(parent: asyncua.Node, methodid: Union[ua.NodeId, ua.Qualif
         return result.OutputArguments
 
 
-async def call_method_full(parent: asyncua.Node, methodid: Union[ua.NodeId, ua.QualifiedName, str], *args) -> ua.CallMethodResult:
+async def call_method_full(
+    parent: asyncua.Node, methodid: Union[ua.NodeId, ua.QualifiedName, str], *args
+) -> ua.CallMethodResult:
     """
     Call an OPC-UA method. methodid is browse name of child method or the
     nodeid of method as a NodeId object

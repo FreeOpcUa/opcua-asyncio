@@ -113,7 +113,11 @@ class MonitoredItemService:
         return result, mdata
 
     def _create_events_monitored_item(self, params: ua.MonitoredItemCreateRequest):
-        self.logger.info("request to subscribe to events for node %s and attribute %s", params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId)
+        self.logger.info(
+            "request to subscribe to events for node %s and attribute %s",
+            params.ItemToMonitor.NodeId,
+            params.ItemToMonitor.AttributeId,
+        )
 
         result, mdata = self._make_monitored_item_common(params)
         ev_notify_byte = self.aspace.read_attribute_value(
@@ -133,11 +137,17 @@ class MonitoredItemService:
         return result
 
     async def _create_data_change_monitored_item(self, params: ua.MonitoredItemCreateRequest):
-        self.logger.info("request to subscribe to datachange for node %s and attribute %s", params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId)
+        self.logger.info(
+            "request to subscribe to datachange for node %s and attribute %s",
+            params.ItemToMonitor.NodeId,
+            params.ItemToMonitor.AttributeId,
+        )
 
         result, mdata = self._make_monitored_item_common(params)
         result.FilterResult = params.RequestedParameters.Filter
-        result.StatusCode, handle = self.aspace.add_datachange_callback(params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId, self.datachange_callback)
+        result.StatusCode, handle = self.aspace.add_datachange_callback(
+            params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId, self.datachange_callback
+        )
 
         self.logger.debug("adding callback return status %s and handle %s", result.StatusCode, handle)
         mdata.callback_handle = handle
@@ -188,17 +198,24 @@ class MonitoredItemService:
         if old.StatusCode != current.StatusCode:
             return True
 
-        if trg in [ua.DataChangeTrigger.StatusValue, ua.DataChangeTrigger.StatusValueTimestamp] and old.Value != current.Value:
+        if (
+            trg in [ua.DataChangeTrigger.StatusValue, ua.DataChangeTrigger.StatusValueTimestamp]
+            and old.Value != current.Value
+        ):
             return True
 
-        if trg == ua.DataChangeTrigger.StatusValueTimestamp and (old.SourceTimestamp != current.SourceTimestamp or old.SourcePicoseconds != current.SourcePicoseconds):
+        if trg == ua.DataChangeTrigger.StatusValueTimestamp and (
+            old.SourceTimestamp != current.SourceTimestamp or old.SourcePicoseconds != current.SourcePicoseconds
+        ):
             return True
 
         return False
 
     async def datachange_callback(self, handle: int, value: ua.DataValue, error=None):
         if error:
-            self.logger.info("subscription %s: datachange callback called with handle '%s' and error '%s'", self, handle, error)
+            self.logger.info(
+                "subscription %s: datachange callback called with handle '%s' and error '%s'", self, handle, error
+            )
             await self.trigger_statuschange(error)
         else:
             # self.logger.info(f"subscription {self}: datachange callback called "
@@ -208,7 +225,9 @@ class MonitoredItemService:
             mdata = self._monitored_items[mid]
             mdata.mvalue.set_current_datavalue(value)
             if mdata.filter:
-                deadband_flag_pass = self._is_data_changed(mdata.mvalue, mdata.filter.Trigger) and self._is_deadband_exceeded(mdata.mvalue, mdata.filter)
+                deadband_flag_pass = self._is_data_changed(
+                    mdata.mvalue, mdata.filter.Trigger
+                ) and self._is_deadband_exceeded(mdata.mvalue, mdata.filter)
             else:
                 # Trigger defaults to StatusValue
                 deadband_flag_pass = self._is_data_changed(mdata.mvalue, ua.DataChangeTrigger.StatusValue)
@@ -245,7 +264,9 @@ class MonitoredItemService:
 
     async def _trigger_event(self, event, mid: int):
         if mid not in self._monitored_items:
-            self.logger.debug("Could not find monitored items for id %s for event %s in subscription %s", mid, event, self)
+            self.logger.debug(
+                "Could not find monitored items for id %s for event %s in subscription %s", mid, event, self
+            )
             return
         mdata = self._monitored_items[mid]
         if not mdata.where_clause_evaluator.eval(event):
@@ -273,7 +294,9 @@ class WhereClauseEvaluator:
         try:
             res = self._eval_el(0, event)
         except Exception as ex:
-            self.logger.exception("Exception while evaluating WhereClause %s for event %s: %s", self.elements, event, ex)
+            self.logger.exception(
+                "Exception while evaluating WhereClause %s for event %s: %s", self.elements, event, ex
+            )
             return False
         return res
 

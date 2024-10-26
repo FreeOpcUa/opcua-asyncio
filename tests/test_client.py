@@ -103,13 +103,21 @@ async def test_multiple_read_and_write_value(server, client):
     vals = await client.read_values([v1, v2, v3])
     assert vals == [1, 2, 3]
     rets = await client.write_values([v1, v2, v3], [4, 5, 6])
-    assert rets == [ua.StatusCode(value=ua.StatusCodes.Good), ua.StatusCode(value=ua.StatusCodes.Good), ua.StatusCode(value=ua.StatusCodes.Good)]
+    assert rets == [
+        ua.StatusCode(value=ua.StatusCodes.Good),
+        ua.StatusCode(value=ua.StatusCodes.Good),
+        ua.StatusCode(value=ua.StatusCodes.Good),
+    ]
     vals = await client.read_values([v1, v2, v3])
     assert vals == [4, 5, 6]
     with pytest.raises(ua.uaerrors.BadUserAccessDenied):
         await client.write_values([v1, v2, v_ro], [4, 5, 6])
     rets = await client.write_values([v1, v2, v_ro], [4, 5, 6], raise_on_partial_error=False)
-    assert rets == [ua.StatusCode(value=ua.StatusCodes.Good), ua.StatusCode(ua.StatusCodes.Good), ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)]
+    assert rets == [
+        ua.StatusCode(value=ua.StatusCodes.Good),
+        ua.StatusCode(ua.StatusCodes.Good),
+        ua.StatusCode(ua.StatusCodes.BadUserAccessDenied),
+    ]
 
 
 async def test_read_and_write_status_check(server, client):
@@ -134,7 +142,9 @@ async def test_read_and_write_status_check(server, client):
     # with raise_on_bad_status set to False
     val = await v1.read_data_value(False)
     assert val.Value.Value is None, "Value should be Null if StatusCode is Bad"
-    assert val.StatusCode_ == testStatusCode, "StatusCode expected " + str(val.StatusCode_) + ", but instead got " + str(testStatusCode)
+    assert val.StatusCode_ == testStatusCode, (
+        "StatusCode expected " + str(val.StatusCode_) + ", but instead got " + str(testStatusCode)
+    )
 
     # check that reading the value generates an error
     # with raise_on_bad_status set to True

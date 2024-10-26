@@ -180,7 +180,9 @@ class AbstractSession(ABC):
     # MonitoredItem Service Set: https://reference.opcfoundation.org/Core/Part4/v104/5.12.1/
 
     @abstractmethod
-    async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters) -> List[ua.MonitoredItemCreateResult]:
+    async def create_monitored_items(
+        self, params: ua.CreateMonitoredItemsParameters
+    ) -> List[ua.MonitoredItemCreateResult]:
         """
         https://reference.opcfoundation.org/Core/Part4/v104/5.12.2/
 
@@ -193,7 +195,9 @@ class AbstractSession(ABC):
         """
 
     @abstractmethod
-    async def modify_monitored_items(self, params: ua.ModifyMonitoredItemsParameters) -> List[ua.MonitoredItemModifyResult]:
+    async def modify_monitored_items(
+        self, params: ua.ModifyMonitoredItemsParameters
+    ) -> List[ua.MonitoredItemModifyResult]:
         """
         https://reference.opcfoundation.org/Core/Part4/v104/5.12.3/
 

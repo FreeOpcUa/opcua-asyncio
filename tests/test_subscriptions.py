@@ -654,7 +654,12 @@ async def test_get_event_contains_object(opc):
 
 
 async def test_get_event_from_type_node_CustomEvent(opc):
-    etype = await opc.server.create_custom_event_type(2, "MyEvent", ua.ObjectIds.AuditEventType, [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)])
+    etype = await opc.server.create_custom_event_type(
+        2,
+        "MyEvent",
+        ua.ObjectIds.AuditEventType,
+        [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)],
+    )
     properties = await asyncua.common.events.get_event_properties_from_type_node(etype)
     for child in await opc.opc.get_node(ua.ObjectIds.BaseEventType).get_properties():
         assert child in properties
@@ -728,7 +733,12 @@ async def test_events_wrong_source(opc):
 
 
 async def test_events_CustomEvent(opc):
-    etype = await opc.server.create_custom_event_type(2, "MyEvent", ua.ObjectIds.BaseEventType, [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)])
+    etype = await opc.server.create_custom_event_type(
+        2,
+        "MyEvent",
+        ua.ObjectIds.BaseEventType,
+        [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)],
+    )
     evgen = await opc.server.get_event_generator(etype)
     myhandler = MySubHandler()
     sub = await opc.opc.create_subscription(100, myhandler)
@@ -758,10 +768,20 @@ async def test_events_CustomEvent(opc):
 
 
 async def test_events_CustomEvent_CustomFilter(opc):
-    etype = await opc.server.create_custom_event_type(2, "MyEventCustom", ua.ObjectIds.ProgramTransitionAuditEventType, [("NodeId", ua.VariantType.NodeId), ("PropertyString", ua.VariantType.String)])
+    etype = await opc.server.create_custom_event_type(
+        2,
+        "MyEventCustom",
+        ua.ObjectIds.ProgramTransitionAuditEventType,
+        [("NodeId", ua.VariantType.NodeId), ("PropertyString", ua.VariantType.String)],
+    )
     # Create Custom Event filter including AttributeId.NodeId
     efilter = ua.EventFilter()
-    browsePathes = [[ua.uatypes.QualifiedName("PropertyString", 2)], [ua.uatypes.QualifiedName("Transition"), ua.uatypes.QualifiedName("Id")], [ua.uatypes.QualifiedName("Message")], [ua.uatypes.QualifiedName("EventType")]]
+    browsePathes = [
+        [ua.uatypes.QualifiedName("PropertyString", 2)],
+        [ua.uatypes.QualifiedName("Transition"), ua.uatypes.QualifiedName("Id")],
+        [ua.uatypes.QualifiedName("Message")],
+        [ua.uatypes.QualifiedName("EventType")],
+    ]
     # SelectClause
     for bp in browsePathes:
         op = ua.SimpleAttributeOperand()
@@ -811,7 +831,12 @@ async def test_events_CustomEvent_CustomFilter(opc):
 async def test_events_CustomEvent_MyObject(opc):
     objects = opc.server.nodes.objects
     o = await objects.add_object(3, "MyObject")
-    etype = await opc.server.create_custom_event_type(2, "MyEvent", ua.ObjectIds.BaseEventType, [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)])
+    etype = await opc.server.create_custom_event_type(
+        2,
+        "MyEvent",
+        ua.ObjectIds.BaseEventType,
+        [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)],
+    )
     evgen = await opc.server.get_event_generator(etype, emitting_node=o)
     myhandler = MySubHandler()
     sub = await opc.opc.create_subscription(100, myhandler)
@@ -841,9 +866,19 @@ async def test_events_CustomEvent_MyObject(opc):
 async def test_several_different_events(opc):
     objects = opc.server.nodes.objects
     o = await objects.add_object(3, "MyObject")
-    etype1 = await opc.server.create_custom_event_type(2, "MyEvent1", ua.ObjectIds.BaseEventType, [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)])
+    etype1 = await opc.server.create_custom_event_type(
+        2,
+        "MyEvent1",
+        ua.ObjectIds.BaseEventType,
+        [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)],
+    )
     evgen1 = await opc.server.get_event_generator(etype1, o)
-    etype2 = await opc.server.create_custom_event_type(2, "MyEvent2", ua.ObjectIds.BaseEventType, [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)])
+    etype2 = await opc.server.create_custom_event_type(
+        2,
+        "MyEvent2",
+        ua.ObjectIds.BaseEventType,
+        [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)],
+    )
     evgen2 = await opc.server.get_event_generator(etype2, o)
     myhandler = MySubHandler2()
     sub = await opc.opc.create_subscription(100, myhandler)
@@ -882,11 +917,26 @@ async def test_several_different_events(opc):
 async def test_several_different_events_2(opc):
     objects = opc.server.nodes.objects
     o = await objects.add_object(3, "MyObject")
-    etype1 = await opc.server.create_custom_event_type(2, "MyEvent1", ua.ObjectIds.BaseEventType, [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)])
+    etype1 = await opc.server.create_custom_event_type(
+        2,
+        "MyEvent1",
+        ua.ObjectIds.BaseEventType,
+        [("PropertyNum", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)],
+    )
     evgen1 = await opc.server.get_event_generator(etype1, o)
-    etype2 = await opc.server.create_custom_event_type(2, "MyEvent2", ua.ObjectIds.BaseEventType, [("PropertyNum2", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)])
+    etype2 = await opc.server.create_custom_event_type(
+        2,
+        "MyEvent2",
+        ua.ObjectIds.BaseEventType,
+        [("PropertyNum2", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)],
+    )
     evgen2 = await opc.server.get_event_generator(etype2, o)
-    etype3 = await opc.server.create_custom_event_type(2, "MyEvent3", ua.ObjectIds.BaseEventType, [("PropertyNum3", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)])
+    etype3 = await opc.server.create_custom_event_type(
+        2,
+        "MyEvent3",
+        ua.ObjectIds.BaseEventType,
+        [("PropertyNum3", ua.VariantType.Float), ("PropertyString", ua.VariantType.String)],
+    )
     evgen3 = await opc.server.get_event_generator(etype3, o)
     myhandler = MySubHandler2()
     sub = await opc.opc.create_subscription(100, myhandler)
@@ -962,8 +1012,15 @@ async def test_maxkeepalive_count(opc, mocker):
     mock_period = 500
     mock_max_keepalive_count = client.get_keepalive_count(mock_period)
 
-    mock_response = ua.CreateSubscriptionResult(SubscriptionId=78, RevisedPublishingInterval=mock_period, RevisedLifetimeCount=10000, RevisedMaxKeepAliveCount=2700)
-    mock_create_subscription = mocker.patch.object(client.uaclient, "create_subscription", new=AsyncMock(return_value=mock_response))
+    mock_response = ua.CreateSubscriptionResult(
+        SubscriptionId=78,
+        RevisedPublishingInterval=mock_period,
+        RevisedLifetimeCount=10000,
+        RevisedMaxKeepAliveCount=2700,
+    )
+    mock_create_subscription = mocker.patch.object(
+        client.uaclient, "create_subscription", new=AsyncMock(return_value=mock_response)
+    )
     mock_update_subscription = mocker.patch.object(client.uaclient, "update_subscription", new=AsyncMock())
 
     sub = await client.create_subscription(period, sub_handler)
@@ -971,8 +1028,26 @@ async def test_maxkeepalive_count(opc, mocker):
     assert mock_max_keepalive_count != max_keepalive_count
     # mock point to the object at its finale state,
     # here the subscription params have already been updated
-    mock_create_subscription.assert_awaited_with(ua.CreateSubscriptionParameters(RequestedPublishingInterval=mock_period, RequestedLifetimeCount=10000, RequestedMaxKeepAliveCount=mock_max_keepalive_count, MaxNotificationsPerPublish=10000, PublishingEnabled=True, Priority=0), callback=mocker.ANY)
-    mock_update_subscription.assert_awaited_with(ua.ModifySubscriptionParameters(SubscriptionId=78, RequestedPublishingInterval=mock_period, RequestedLifetimeCount=10000, RequestedMaxKeepAliveCount=mock_max_keepalive_count, MaxNotificationsPerPublish=10000))
+    mock_create_subscription.assert_awaited_with(
+        ua.CreateSubscriptionParameters(
+            RequestedPublishingInterval=mock_period,
+            RequestedLifetimeCount=10000,
+            RequestedMaxKeepAliveCount=mock_max_keepalive_count,
+            MaxNotificationsPerPublish=10000,
+            PublishingEnabled=True,
+            Priority=0,
+        ),
+        callback=mocker.ANY,
+    )
+    mock_update_subscription.assert_awaited_with(
+        ua.ModifySubscriptionParameters(
+            SubscriptionId=78,
+            RequestedPublishingInterval=mock_period,
+            RequestedLifetimeCount=10000,
+            RequestedMaxKeepAliveCount=mock_max_keepalive_count,
+            MaxNotificationsPerPublish=10000,
+        )
+    )
 
     # we don't update when sub params == revised params
     mock_update_subscription.reset_mock()

@@ -62,7 +62,9 @@ class ThreadLoop(Thread):
 
     def post(self, coro):
         if not self.loop or not self.loop.is_running() or not self.is_alive():
-            raise ThreadLoopNotRunning(f"could not post {coro} since asyncio loop in thread has not been started or has been stopped")
+            raise ThreadLoopNotRunning(
+                f"could not post {coro} since asyncio loop in thread has not been started or has been stopped"
+            )
         futur = asyncio.run_coroutine_threadsafe(coro, loop=self.loop)
         return futur.result(self.timeout)
 
@@ -230,7 +232,14 @@ class Client:
     waits for an async call to return. defualt is 120s and hopefully should fit most applications
     """
 
-    def __init__(self, url: str, timeout: float = 4, tloop=None, sync_wrapper_timeout: Optional[float] = 120, watchdog_intervall: float = 1.0) -> None:
+    def __init__(
+        self,
+        url: str,
+        timeout: float = 4,
+        tloop=None,
+        sync_wrapper_timeout: Optional[float] = 120,
+        watchdog_intervall: float = 1.0,
+    ) -> None:
         self.tloop = tloop
         self.close_tloop = False
         if not self.tloop:
@@ -296,7 +305,9 @@ class Client:
         self.aio_obj.set_locale(locale)
 
     @syncmethod
-    def load_private_key(self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None) -> None:
+    def load_private_key(
+        self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None
+    ) -> None:
         pass
 
     @syncmethod
@@ -308,7 +319,9 @@ class Client:
         pass
 
     @syncmethod
-    def load_data_type_definitions(self, node: Optional[SyncNode] = None, overwrite_existing: bool = False) -> Dict[str, Type]:  # type: ignore[empty-body]
+    def load_data_type_definitions(  # type: ignore[empty-body]
+        self, node: Optional[SyncNode] = None, overwrite_existing: bool = False
+    ) -> Dict[str, Type]:
         pass
 
     @syncmethod
@@ -327,12 +340,19 @@ class Client:
     def load_enums(self) -> Dict[str, Type]:  # type: ignore[empty-body]
         pass
 
-    def create_subscription(self, period: Union[ua.CreateSubscriptionParameters, float], handler: subscription.SubscriptionHandler, publishing: bool = True) -> Subscription:
+    def create_subscription(
+        self,
+        period: Union[ua.CreateSubscriptionParameters, float],
+        handler: subscription.SubscriptionHandler,
+        publishing: bool = True,
+    ) -> Subscription:
         coro = self.aio_obj.create_subscription(period, _SubHandler(self.tloop, handler), publishing)
         aio_sub = self.tloop.post(coro)
         return Subscription(self.tloop, aio_sub)
 
-    def get_subscription_revised_params(self, params: ua.CreateSubscriptionParameters, results: ua.CreateSubscriptionResult) -> Optional[ua.ModifySubscriptionParameters]:  # type: ignore
+    def get_subscription_revised_params(
+        self, params: ua.CreateSubscriptionParameters, results: ua.CreateSubscriptionResult
+    ) -> Optional[ua.ModifySubscriptionParameters]:  # type: ignore
         return self.aio_obj.get_subscription_revised_params(params, results)
 
     @syncmethod
@@ -463,7 +483,9 @@ class Client:
         pass
 
     @syncmethod
-    def read_attributes(self, nodes: Iterable[SyncNode], attr: ua.AttributeIds = ua.AttributeIds.Value) -> List[ua.DataValue]:  # type: ignore[empty-body]
+    def read_attributes(  # type: ignore[empty-body]
+        self, nodes: Iterable[SyncNode], attr: ua.AttributeIds = ua.AttributeIds.Value
+    ) -> List[ua.DataValue]:
         pass
 
     @syncmethod
@@ -471,7 +493,9 @@ class Client:
         pass
 
     @syncmethod
-    def write_values(self, nodes: Iterable[SyncNode], values: Iterable[Any], raise_on_partial_error: bool = True) -> List[ua.StatusCode]:  # type: ignore[empty-body]
+    def write_values(  # type: ignore[empty-body]
+        self, nodes: Iterable[SyncNode], values: Iterable[Any], raise_on_partial_error: bool = True
+    ) -> List[ua.StatusCode]:
         pass
 
     @syncmethod
@@ -645,7 +669,12 @@ class Server:
     def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
         pass
 
-    def set_attribute_value_callback(self, nodeid: ua.NodeId, callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue], attr=ua.AttributeIds.Value) -> None:
+    def set_attribute_value_callback(
+        self,
+        nodeid: ua.NodeId,
+        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
+        attr=ua.AttributeIds.Value,
+    ) -> None:
         self.aio_obj.set_attribute_value_callback(nodeid, callback, attr)
 
     def create_subscription(self, period, handler):
@@ -806,7 +835,9 @@ class SyncNode:
 
     @syncmethod
     def get_children_by_path(  # type: ignore[empty-body]
-        self, paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]], raise_on_partial_error: bool = True
+        self,
+        paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]],
+        raise_on_partial_error: bool = True,
     ) -> List[List[Optional[SyncNode]]]:
         pass
 
@@ -834,7 +865,9 @@ class SyncNode:
         starttime: datetime = None,
         endtime: datetime = None,
         numvalues: int = 0,
-        evtypes: Union[SyncNode, ua.NodeId, str, int, Iterable[Union[SyncNode, ua.NodeId, str, int]]] = ua.ObjectIds.BaseEventType,
+        evtypes: Union[
+            SyncNode, ua.NodeId, str, int, Iterable[Union[SyncNode, ua.NodeId, str, int]]
+        ] = ua.ObjectIds.BaseEventType,
     ) -> List[Event]:
         pass
 
@@ -954,7 +987,13 @@ class SyncNode:
         pass
 
     @syncmethod
-    def add_reference(self, target: Union[SyncNode, ua.NodeId, str, int], reftype: int, forward: bool = True, bidirectional: bool = True) -> None:
+    def add_reference(
+        self,
+        target: Union[SyncNode, ua.NodeId, str, int],
+        reftype: int,
+        forward: bool = True,
+        bidirectional: bool = True,
+    ) -> None:
         pass
 
     @syncmethod
@@ -1072,7 +1111,14 @@ class Subscription:
         self.aio_obj = sub
 
     @syncmethod
-    def subscribe_data_change(self, nodes, attr=ua.AttributeIds.Value, queuesize=0, monitoring=ua.MonitoringMode.Reporting, sampling_interval=0.0):
+    def subscribe_data_change(
+        self,
+        nodes,
+        attr=ua.AttributeIds.Value,
+        queuesize=0,
+        monitoring=ua.MonitoringMode.Reporting,
+        sampling_interval=0.0,
+    ):
         pass
 
     @syncmethod
@@ -1125,7 +1171,9 @@ class XmlExporter:
 class DataTypeDictionaryBuilder:
     def __init__(self, server, idx, ns_urn, dict_name, dict_node_id=None):
         self.tloop = server.tloop
-        self.aio_obj = type_dictionary_builder.DataTypeDictionaryBuilder(server.aio_obj, idx, ns_urn, dict_name, dict_node_id)
+        self.aio_obj = type_dictionary_builder.DataTypeDictionaryBuilder(
+            server.aio_obj, idx, ns_urn, dict_name, dict_node_id
+        )
         self.init()
 
     @property
@@ -1159,7 +1207,11 @@ def new_struct_field(
 
 @syncfunc(aio_func=common.structures104.new_enum)
 def new_enum(  # type: ignore[empty-body]
-    server: Union[Server, Client], idx: Union[int, ua.NodeId], name: Union[int, ua.QualifiedName], values: List[str], optional: bool = False
+    server: Union[Server, Client],
+    idx: Union[int, ua.NodeId],
+    name: Union[int, ua.QualifiedName],
+    values: List[str],
+    optional: bool = False,
 ) -> SyncNode:
     pass
 

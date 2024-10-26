@@ -83,7 +83,9 @@ class UaStatusCodeErrors(UaStatusCodeError):
         # import here to avoid circular import problems
         import asyncua.ua.status_codes as status_codes
 
-        return "[{0}]".format(", ".join(["{1}({0})".format(*status_codes.get_name_and_doc(code)) for code in self.codes]))
+        return "[{0}]".format(
+            ", ".join(["{1}({0})".format(*status_codes.get_name_and_doc(code)) for code in self.codes])
+        )
 
     @property
     def code(self):

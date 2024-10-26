@@ -119,13 +119,19 @@ class Client:
         return url
 
     @staticmethod
-    def find_endpoint(endpoints: Iterable[ua.EndpointDescription], security_mode: ua.MessageSecurityMode, policy_uri: str) -> ua.EndpointDescription:
+    def find_endpoint(
+        endpoints: Iterable[ua.EndpointDescription], security_mode: ua.MessageSecurityMode, policy_uri: str
+    ) -> ua.EndpointDescription:
         """
         Find endpoint with required security mode and policy URI
         """
         _logger.info("find_endpoint %r %r %r", endpoints, security_mode, policy_uri)
         for ep in endpoints:
-            if ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME) and ep.SecurityMode == security_mode and ep.SecurityPolicyUri == policy_uri:
+            if (
+                ep.EndpointUrl.startswith(ua.OPC_TCP_SCHEME)
+                and ep.SecurityMode == security_mode
+                and ep.SecurityPolicyUri == policy_uri
+            ):
                 return ep
         raise ua.UaError(f"No matching endpoints: {security_mode}, {policy_uri}")
 
@@ -178,7 +184,9 @@ class Client:
 
         policy_class = getattr(security_policies, f"SecurityPolicy{parts[0]}")
         mode = getattr(ua.MessageSecurityMode, parts[1])
-        return await self.set_security(policy_class, parts[2], parts[3], client_key_password, parts[4] if len(parts) >= 5 else None, mode)
+        return await self.set_security(
+            policy_class, parts[2], parts[3], client_key_password, parts[4] if len(parts) >= 5 else None, mode
+        )
 
     async def set_security(
         self,
@@ -242,7 +250,9 @@ class Client:
         """
         self.user_certificate = await uacrypto.load_certificate(path, extension)
 
-    async def load_private_key(self, path: Path, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None) -> None:
+    async def load_private_key(
+        self, path: Path, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None
+    ) -> None:
         """
         Load user private key. This is used for authenticating using certificate
         """
@@ -309,7 +319,9 @@ class Client:
             try:
                 await self.create_session()
                 try:
-                    await self.activate_session(username=self._username, password=self._password, certificate=self.user_certificate)
+                    await self.activate_session(
+                        username=self._username, password=self._password, certificate=self.user_certificate
+                    )
                 except Exception:
                     # clean up session
                     await self.close_session()
@@ -395,7 +407,11 @@ class Client:
         params.ClientNonce = create_nonce(self.security_policy.secure_channel_nonce_length)
         result = await self.uaclient.open_secure_channel(params)
         if self.secure_channel_timeout != result.SecurityToken.RevisedLifetime:
-            _logger.info("Requested secure channel timeout to be %dms, got %dms instead", self.secure_channel_timeout, result.SecurityToken.RevisedLifetime)
+            _logger.info(
+                "Requested secure channel timeout to be %dms, got %dms instead",
+                self.secure_channel_timeout,
+                result.SecurityToken.RevisedLifetime,
+            )
             self.secure_channel_timeout = result.SecurityToken.RevisedLifetime
 
     async def close_secure_channel(self):
@@ -408,7 +424,9 @@ class Client:
         params.EndpointUrl = self.server_url.geturl()
         return await self.uaclient.get_endpoints(params)
 
-    async def register_server(self, server: "asyncua.server.Server", discovery_configuration: Optional[ua.DiscoveryConfiguration] = None) -> None:
+    async def register_server(
+        self, server: "asyncua.server.Server", discovery_configuration: Optional[ua.DiscoveryConfiguration] = None
+    ) -> None:
         """
         register a server to discovery server
         if discovery_configuration is provided, the newer register_server2 service call is used
@@ -427,7 +445,9 @@ class Client:
             return await self.uaclient.register_server2(params)
         return await self.uaclient.register_server(serv)
 
-    async def unregister_server(self, server: "asyncua.server.Server", discovery_configuration: Optional[ua.DiscoveryConfiguration] = None) -> None:
+    async def unregister_server(
+        self, server: "asyncua.server.Server", discovery_configuration: Optional[ua.DiscoveryConfiguration] = None
+    ) -> None:
         """
         register a server to discovery server
         if discovery_configuration is provided, the newer register_server2 service call is used
@@ -520,7 +540,11 @@ class Client:
         self._policy_ids = ep.UserIdentityTokens
         #  Actual maximum number of milliseconds that a Session shall remain open without activity
         if self.session_timeout != response.RevisedSessionTimeout:
-            _logger.warning("Requested session timeout to be %dms, got %dms instead", self.secure_channel_timeout, response.RevisedSessionTimeout)
+            _logger.warning(
+                "Requested session timeout to be %dms, got %dms instead",
+                self.secure_channel_timeout,
+                response.RevisedSessionTimeout,
+            )
             self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
         self._monitor_server_task = asyncio.create_task(self._monitor_server_loop())
@@ -615,7 +639,12 @@ class Client:
                 return self.security_policy.URI
         return self.security_policy.URI
 
-    async def activate_session(self, username: Optional[str] = None, password: Optional[str] = None, certificate: Optional[x509.Certificate] = None) -> ua.ActivateSessionResult:
+    async def activate_session(
+        self,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        certificate: Optional[x509.Certificate] = None,
+    ) -> ua.ActivateSessionResult:
         """
         Activate session using either username and password or private_key
         """
@@ -652,12 +681,16 @@ class Client:
         params.UserTokenSignature = ua.SignatureData()
         # use signature algorithm that was used for certificate generation
         if certificate.signature_hash_algorithm.name == "sha256":
-            params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.Certificate, "certificate_basic256sha256")
+            params.UserIdentityToken.PolicyId = self.server_policy_id(
+                ua.UserTokenType.Certificate, "certificate_basic256sha256"
+            )
             sig = uacrypto.sign_sha256(self.user_private_key, challenge)
             params.UserTokenSignature.Algorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
             params.UserTokenSignature.Signature = sig
         else:
-            params.UserIdentityToken.PolicyId = self.server_policy_id(ua.UserTokenType.Certificate, "certificate_basic256")
+            params.UserIdentityToken.PolicyId = self.server_policy_id(
+                ua.UserTokenType.Certificate, "certificate_basic256"
+            )
             sig = uacrypto.sign_sha1(self.user_private_key, challenge)
             params.UserTokenSignature.Algorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
             params.UserTokenSignature.Signature = sig
@@ -728,7 +761,12 @@ class Client:
         """
         return Node(self.uaclient, nodeid)
 
-    async def create_subscription(self, period: Union[ua.CreateSubscriptionParameters, float], handler: SubscriptionHandler, publishing: bool = True) -> Subscription:
+    async def create_subscription(
+        self,
+        period: Union[ua.CreateSubscriptionParameters, float],
+        handler: SubscriptionHandler,
+        publishing: bool = True,
+    ) -> Subscription:
         """
         Create a subscription.
         Returns a Subscription object which allows to subscribe to events or data changes on server.
@@ -760,14 +798,24 @@ class Client:
         params: ua.CreateSubscriptionParameters,
         results: ua.CreateSubscriptionResult,
     ) -> Optional[ua.ModifySubscriptionParameters]:
-        if results.RevisedPublishingInterval == params.RequestedPublishingInterval and results.RevisedLifetimeCount == params.RequestedLifetimeCount and results.RevisedMaxKeepAliveCount == params.RequestedMaxKeepAliveCount:
+        if (
+            results.RevisedPublishingInterval == params.RequestedPublishingInterval
+            and results.RevisedLifetimeCount == params.RequestedLifetimeCount
+            and results.RevisedMaxKeepAliveCount == params.RequestedMaxKeepAliveCount
+        ):
             return None
         _logger.warning("Revised values returned differ from subscription values: %s", results)
         revised_interval = results.RevisedPublishingInterval
         # Adjust the MaxKeepAliveCount based on the RevisedPublishInterval when necessary
         new_keepalive_count = self.get_keepalive_count(revised_interval)
-        if revised_interval != params.RequestedPublishingInterval and new_keepalive_count != params.RequestedMaxKeepAliveCount:
-            _logger.info("KeepAliveCount will be updated to %s " "for consistency with RevisedPublishInterval", new_keepalive_count)
+        if (
+            revised_interval != params.RequestedPublishingInterval
+            and new_keepalive_count != params.RequestedMaxKeepAliveCount
+        ):
+            _logger.info(
+                "KeepAliveCount will be updated to %s " "for consistency with RevisedPublishInterval",
+                new_keepalive_count,
+            )
             modified_params = ua.ModifySubscriptionParameters()
             # copy the existing subscription parameters
             copy_dataclass_attr(params, modified_params)
@@ -811,7 +859,9 @@ class Client:
     async def delete_nodes(self, nodes: Iterable[Node], recursive=False) -> Tuple[List[Node], List[ua.StatusCode]]:
         return await delete_nodes(self.uaclient, nodes, recursive)
 
-    async def import_xml(self, path=None, xmlstring=None, strict_mode=True, auto_load_definitions: bool = True) -> List[ua.NodeId]:
+    async def import_xml(
+        self, path=None, xmlstring=None, strict_mode=True, auto_load_definitions: bool = True
+    ) -> List[ua.NodeId]:
         """
         Import nodes defined in xml
         """
@@ -850,7 +900,9 @@ class Client:
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_type_definitions(self, nodes)
 
-    async def load_data_type_definitions(self, node: Optional[Node] = None, overwrite_existing: bool = False) -> Dict[str, Type]:
+    async def load_data_type_definitions(
+        self, node: Optional[Node] = None, overwrite_existing: bool = False
+    ) -> Dict[str, Type]:
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
@@ -891,7 +943,9 @@ class Client:
             node.nodeid = node.basenodeid
             node.basenodeid = None
 
-    async def read_attributes(self, nodes: Iterable[Node], attr: ua.AttributeIds = ua.AttributeIds.Value) -> List[ua.DataValue]:
+    async def read_attributes(
+        self, nodes: Iterable[Node], attr: ua.AttributeIds = ua.AttributeIds.Value
+    ) -> List[ua.DataValue]:
         """
         Read the attributes of multiple nodes.
         """
@@ -905,7 +959,9 @@ class Client:
         res = await self.read_attributes(nodes, attr=ua.AttributeIds.Value)
         return [r.Value.Value if r.Value else None for r in res]
 
-    async def write_values(self, nodes: Iterable[Node], values: Iterable[Any], raise_on_partial_error: bool = True) -> List[ua.StatusCode]:
+    async def write_values(
+        self, nodes: Iterable[Node], values: Iterable[Any], raise_on_partial_error: bool = True
+    ) -> List[ua.StatusCode]:
         """
         Write values to multiple nodes in one ua call
         """
@@ -938,7 +994,9 @@ class Client:
         results = await self.uaclient.browse(parameters)
         return list(zip(nodes, results))
 
-    async def translate_browsepaths(self, starting_node: ua.NodeId, relative_paths: Iterable[Union[ua.RelativePath, str]]) -> List[ua.BrowsePathResult]:
+    async def translate_browsepaths(
+        self, starting_node: ua.NodeId, relative_paths: Iterable[Union[ua.RelativePath, str]]
+    ) -> List[ua.BrowsePathResult]:
         bpaths = []
         for p in relative_paths:
             try:

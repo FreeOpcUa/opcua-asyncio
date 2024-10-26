@@ -149,7 +149,12 @@ class RelativePathElementFormatter:
         if reference_type_id is None:
             raise ValueError(f"Could not convert BrowseName to a ReferenceTypeId: {self._reference_type_name}")
 
-        return RelativePathElement(ReferenceTypeId=reference_type_id, IsInverse=is_inverse, IncludeSubtypes=include_subtypes, TargetName=target_name)
+        return RelativePathElement(
+            ReferenceTypeId=reference_type_id,
+            IsInverse=is_inverse,
+            IncludeSubtypes=include_subtypes,
+            TargetName=target_name,
+        )
 
     def to_string(self) -> str:
         path = []
@@ -159,7 +164,10 @@ class RelativePathElementFormatter:
             path.append("/")
         elif self._element_type == RelativePathElementType.AnyComponent:
             path.append(".")
-        elif self._element_type == RelativePathElementType.ForwardReference or self._element_type == RelativePathElementType.InverseReference:
+        elif (
+            self._element_type == RelativePathElementType.ForwardReference
+            or self._element_type == RelativePathElementType.InverseReference
+        ):
             if self._reference_type_name and self._reference_type_name.Name:
                 path.append("<")
                 if not self._include_subtypes:
