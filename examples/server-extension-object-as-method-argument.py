@@ -51,10 +51,14 @@ async def main():
     status.Description = ua.LocalizedText("MSG")
 
     method_parent = await obj.add_object(idx, "Methods")
-    method_node = await method_parent.add_method(idx, "SetAxisInformation", callback, [inarg_extobj], [outarg_extobj, status])
+    method_node = await method_parent.add_method(
+        idx, "SetAxisInformation", callback, [inarg_extobj], [outarg_extobj, status]
+    )
 
     # add a variable of type AxisInformation
-    axis_info = await obj.add_variable(idx, "AxisInformation", ua.uaprotocol_auto.AxisInformation(), varianttype=ua.VariantType.ExtensionObject)
+    axis_info = await obj.add_variable(
+        idx, "AxisInformation", ua.uaprotocol_auto.AxisInformation(), varianttype=ua.VariantType.ExtensionObject
+    )
 
     async with server:
         while 1:

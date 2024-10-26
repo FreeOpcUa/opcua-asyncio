@@ -45,7 +45,10 @@ def read_nodes(path):
 
 
 def get_refs(e):
-    return set((r.attrib["ReferenceType"], r.text, r.attrib.get("IsForward", "true") == "true") for r in find_elem(e, "References"))
+    return set(
+        (r.attrib["ReferenceType"], r.text, r.attrib.get("IsForward", "true") == "true")
+        for r in find_elem(e, "References")
+    )
 
 
 @pytest.mark.skip("Donot understand that code and I am not sure we should test the xml file. it is not ours")
@@ -56,5 +59,8 @@ def test_std_address_space_references():
     std_nodes = read_nodes(Path(__file__).parent.parent.absolute() / "schemas" / "Opc.Ua.NodeSet2.xml")
     for k in aspace.keys():
         refs = set((r.ReferenceTypeId.to_string(), r.NodeId.to_string(), r.IsForward) for r in aspace[k].references)
-        xml_refs = set((r.attrib["ReferenceType"], r.text, r.attrib.get("IsForward", "true") == "true") for r in find_elem(std_nodes[k.to_string()], "References"))
+        xml_refs = set(
+            (r.attrib["ReferenceType"], r.text, r.attrib.get("IsForward", "true") == "true")
+            for r in find_elem(std_nodes[k.to_string()], "References")
+        )
         assert 0 == len(xml_refs - refs)

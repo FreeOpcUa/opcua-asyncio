@@ -29,11 +29,20 @@ srv_crypto_params = [
     (EXAMPLE_PATH / "private-key-example.pem", EXAMPLE_PATH / "certificate-example.der"),
 ]
 
-admin_peer_creds = {"certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-1.der", "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-1.pem"}
+admin_peer_creds = {
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-1.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-1.pem",
+}
 
-user_peer_creds = {"certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-2.der", "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-2.pem"}
+user_peer_creds = {
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-2.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-2.pem",
+}
 
-anonymous_peer_creds = {"certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-3.der", "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-3.pem"}
+anonymous_peer_creds = {
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-3.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-3.pem",
+}
 
 
 @pytest.fixture(params=srv_crypto_params)
@@ -67,7 +76,14 @@ async def srv_crypto_one_cert(request):
 
 async def test_permissions_admin(srv_crypto_one_cert):
     clt = Client(uri_crypto_cert)
-    await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, admin_peer_creds["certificate"], admin_peer_creds["private_key"], None, server_certificate=srv_crypto_params[0][1], mode=ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        admin_peer_creds["certificate"],
+        admin_peer_creds["private_key"],
+        None,
+        server_certificate=srv_crypto_params[0][1],
+        mode=ua.MessageSecurityMode.SignAndEncrypt,
+    )
 
     async with clt:
         assert await clt.get_objects_node().get_children()
@@ -80,7 +96,14 @@ async def test_permissions_admin(srv_crypto_one_cert):
 
 async def test_permissions_user(srv_crypto_one_cert):
     clt = Client(uri_crypto_cert)
-    await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, user_peer_creds["certificate"], user_peer_creds["private_key"], None, server_certificate=srv_crypto_params[0][1], mode=ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        user_peer_creds["certificate"],
+        user_peer_creds["private_key"],
+        None,
+        server_certificate=srv_crypto_params[0][1],
+        mode=ua.MessageSecurityMode.SignAndEncrypt,
+    )
     async with clt:
         assert await clt.get_objects_node().get_children()
         objects = clt.nodes.objects
@@ -93,7 +116,14 @@ async def test_permissions_user(srv_crypto_one_cert):
 
 async def test_permissions_anonymous(srv_crypto_one_cert):
     clt = Client(uri_crypto_cert)
-    await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, anonymous_peer_creds["certificate"], anonymous_peer_creds["private_key"], None, server_certificate=srv_crypto_params[0][1], mode=ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        anonymous_peer_creds["certificate"],
+        anonymous_peer_creds["private_key"],
+        None,
+        server_certificate=srv_crypto_params[0][1],
+        mode=ua.MessageSecurityMode.SignAndEncrypt,
+    )
     async with clt:
         await clt.get_endpoints()
         with pytest.raises(ua.uaerrors.BadUserAccessDenied):

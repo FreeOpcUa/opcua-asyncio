@@ -400,7 +400,9 @@ async def wait_clients_socket(ha_client, state):
                 else:
                     break
             await sleep(SLEEP)
-        assert (not client.uaclient.protocol and state == UASocketProtocol.CLOSED) or client.uaclient.protocol.state == state
+        assert (
+            not client.uaclient.protocol and state == UASocketProtocol.CLOSED
+        ) or client.uaclient.protocol.state == state
 
 
 async def wait_sub_in_real_map(ha_client, sub, negation=False):

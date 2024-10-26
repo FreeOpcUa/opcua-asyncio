@@ -253,7 +253,9 @@ def test_string_to_variant_status_code():
 def test_status_code_to_string():
     # serialize a status code and deserialize it, name and doc resolution should work just fine
     statuscode = ua.StatusCode(ua.StatusCodes.BadNotConnected)
-    statuscode2 = struct_from_binary(ua.StatusCode, io.BytesIO(struct_to_binary(ua.StatusCode(ua.StatusCodes.BadNotConnected))))
+    statuscode2 = struct_from_binary(
+        ua.StatusCode, io.BytesIO(struct_to_binary(ua.StatusCode(ua.StatusCodes.BadNotConnected)))
+    )
 
     assert statuscode == statuscode2
     assert statuscode.value == statuscode2.value
@@ -317,7 +319,10 @@ def test_string_to_val_xml_element():
 
 
 def test_variant_dimensions():
-    arry = [[[1.0, 1.0, 1.0, 1.0], [2.0, 2.0, 2.0, 2.0], [3.0, 3.0, 3.0, 3.0]], [[5.0, 5.0, 5.0, 5.0], [7.0, 8.0, 9.0, 01.0], [1.0, 1.0, 1.0, 1.0]]]
+    arry = [
+        [[1.0, 1.0, 1.0, 1.0], [2.0, 2.0, 2.0, 2.0], [3.0, 3.0, 3.0, 3.0]],
+        [[5.0, 5.0, 5.0, 5.0], [7.0, 8.0, 9.0, 01.0], [1.0, 1.0, 1.0, 1.0]],
+    ]
     v = ua.Variant(arry)
     assert [2, 3, 4] == v.Dimensions
     v2 = variant_from_binary(ua.utils.Buffer(variant_to_binary(v)))
@@ -334,7 +339,10 @@ def test_variant_dimensions():
 
 
 def test_flatten():
-    arry = [[[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]], [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]]
+    arry = [
+        [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
+        [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
+    ]
     l2 = flatten(arry)
     dims = get_shape(arry)
     assert [2, 3, 4] == dims

@@ -73,7 +73,10 @@ class EventGenerator:
                 result.check()
 
     def __str__(self):
-        return f"EventGenerator(Type:{self.event.EventType}, Emitting Node:{self.event.emitting_node.to_string()}, " f"Time:{self.event.Time}, Message: {self.event.Message})"
+        return (
+            f"EventGenerator(Type:{self.event.EventType}, Emitting Node:{self.event.emitting_node.to_string()}, "
+            f"Time:{self.event.Time}, Message: {self.event.Message})"
+        )
 
     __repr__ = __str__
 
@@ -100,6 +103,8 @@ class EventGenerator:
         if message:
             self.event.Message = ua.LocalizedText(message)
         elif not self.event.Message:
-            self.event.Message = ua.LocalizedText((await Node(self.isession, self.event.SourceNode).read_browse_name()).Name).Text
+            self.event.Message = ua.LocalizedText(
+                (await Node(self.isession, self.event.SourceNode).read_browse_name()).Name
+            ).Text
 
         await self.isession.subscription_service.trigger_event(self.event, subscription_id=subscription_id)

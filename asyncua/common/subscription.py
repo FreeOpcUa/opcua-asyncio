@@ -230,12 +230,33 @@ class Subscription:
             self.logger.exception("Exception calling status change handler")
 
     @overload
-    async def subscribe_data_change(self, nodes: Node, attr: ua.AttributeIds = ua.AttributeIds.Value, queuesize: int = 0, monitoring=ua.MonitoringMode.Reporting, sampling_interval: ua.Duration = 0.0) -> int: ...
+    async def subscribe_data_change(
+        self,
+        nodes: Node,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
+        queuesize: int = 0,
+        monitoring=ua.MonitoringMode.Reporting,
+        sampling_interval: ua.Duration = 0.0,
+    ) -> int: ...
 
     @overload
-    async def subscribe_data_change(self, nodes: Union[Node, Iterable[Node]], attr: ua.AttributeIds = ua.AttributeIds.Value, queuesize: int = 0, monitoring=ua.MonitoringMode.Reporting, sampling_interval: ua.Duration = 0.0) -> List[Union[int, ua.StatusCode]]: ...
+    async def subscribe_data_change(
+        self,
+        nodes: Union[Node, Iterable[Node]],
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
+        queuesize: int = 0,
+        monitoring=ua.MonitoringMode.Reporting,
+        sampling_interval: ua.Duration = 0.0,
+    ) -> List[Union[int, ua.StatusCode]]: ...
 
-    async def subscribe_data_change(self, nodes: Union[Node, Iterable[Node]], attr: ua.AttributeIds = ua.AttributeIds.Value, queuesize: int = 0, monitoring=ua.MonitoringMode.Reporting, sampling_interval: ua.Duration = 50.0) -> Union[int, List[Union[int, ua.StatusCode]]]:
+    async def subscribe_data_change(
+        self,
+        nodes: Union[Node, Iterable[Node]],
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
+        queuesize: int = 0,
+        monitoring=ua.MonitoringMode.Reporting,
+        sampling_interval: ua.Duration = 50.0,
+    ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Subscribe to data change events of one or multiple nodes.
         The default attribute used for the subscription is `Value`.
@@ -253,7 +274,9 @@ class Subscription:
         :param sampling_interval: ua.Duration
         :return: Handle for changing/cancelling of the subscription
         """
-        return await self._subscribe(nodes, attr, queuesize=queuesize, monitoring=monitoring, sampling_interval=sampling_interval)
+        return await self._subscribe(
+            nodes, attr, queuesize=queuesize, monitoring=monitoring, sampling_interval=sampling_interval
+        )
 
     async def _create_eventfilter(
         self,
@@ -266,7 +289,16 @@ class Subscription:
         evfilter = await get_filter_from_event_type(evtypes, where_clause_generation)  # type: ignore[union-attr]
         return evfilter
 
-    async def subscribe_events(self, sourcenode: Union[Node, ua.NodeId, str, int] = ua.ObjectIds.Server, evtypes: Union[Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]] = ua.ObjectIds.BaseEventType, evfilter: Optional[ua.EventFilter] = None, queuesize: int = 0, where_clause_generation: bool = True) -> int:
+    async def subscribe_events(
+        self,
+        sourcenode: Union[Node, ua.NodeId, str, int] = ua.ObjectIds.Server,
+        evtypes: Union[
+            Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]
+        ] = ua.ObjectIds.BaseEventType,
+        evfilter: Optional[ua.EventFilter] = None,
+        queuesize: int = 0,
+        where_clause_generation: bool = True,
+    ) -> int:
         """
         Subscribe to events from a node. Default node is Server node.
         In most servers the server node is the only one you can subscribe to.
@@ -284,14 +316,24 @@ class Subscription:
         """
         sourcenode = Node(self.server, sourcenode)
         if evfilter is None:
-            if isinstance(evtypes, (int, str, ua.NodeId, Node)) and Node(self.server, evtypes).nodeid == ua.NodeId(ua.ObjectIds.BaseEventType):
+            if isinstance(evtypes, (int, str, ua.NodeId, Node)) and Node(self.server, evtypes).nodeid == ua.NodeId(
+                ua.ObjectIds.BaseEventType
+            ):
                 # Remove where clause for base event type, for servers that have problems with long WhereClauses.
                 # Also because BaseEventType wants every event we can ommit it. Issue: #1205
                 where_clause_generation = False
             evfilter = await self._create_eventfilter(evtypes, where_clause_generation)
         return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)  # type: ignore
 
-    async def subscribe_alarms_and_conditions(self, sourcenode: Union[Node, ua.NodeId, str, int] = ua.ObjectIds.Server, evtypes: Union[Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]] = ua.ObjectIds.ConditionType, evfilter: Optional[ua.EventFilter] = None, queuesize: int = 0) -> int:
+    async def subscribe_alarms_and_conditions(
+        self,
+        sourcenode: Union[Node, ua.NodeId, str, int] = ua.ObjectIds.Server,
+        evtypes: Union[
+            Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]
+        ] = ua.ObjectIds.ConditionType,
+        evfilter: Optional[ua.EventFilter] = None,
+        queuesize: int = 0,
+    ) -> int:
         """
         Subscribe to alarm and condition events from a node. Default node is Server node.
         In many servers the server node is the only one you can subscribe to.
@@ -309,12 +351,36 @@ class Subscription:
         return await self.subscribe_events(sourcenode, evtypes, evfilter, queuesize)
 
     @overload
-    async def _subscribe(self, nodes: Node, attr=ua.AttributeIds.Value, mfilter: Optional[ua.MonitoringFilter] = None, queuesize: int = 0, monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting, sampling_interval: ua.Duration = 0.0) -> int: ...
+    async def _subscribe(
+        self,
+        nodes: Node,
+        attr=ua.AttributeIds.Value,
+        mfilter: Optional[ua.MonitoringFilter] = None,
+        queuesize: int = 0,
+        monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
+        sampling_interval: ua.Duration = 0.0,
+    ) -> int: ...
 
     @overload
-    async def _subscribe(self, nodes: Iterable[Node], attr=ua.AttributeIds.Value, mfilter: Optional[ua.MonitoringFilter] = None, queuesize: int = 0, monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting, sampling_interval: ua.Duration = 0.0) -> List[Union[int, ua.StatusCode]]: ...
+    async def _subscribe(
+        self,
+        nodes: Iterable[Node],
+        attr=ua.AttributeIds.Value,
+        mfilter: Optional[ua.MonitoringFilter] = None,
+        queuesize: int = 0,
+        monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
+        sampling_interval: ua.Duration = 0.0,
+    ) -> List[Union[int, ua.StatusCode]]: ...
 
-    async def _subscribe(self, nodes: Union[Node, Iterable[Node]], attr=ua.AttributeIds.Value, mfilter: Optional[ua.MonitoringFilter] = None, queuesize: int = 0, monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting, sampling_interval: ua.Duration = 0.0) -> Union[int, List[Union[int, ua.StatusCode]]]:
+    async def _subscribe(
+        self,
+        nodes: Union[Node, Iterable[Node]],
+        attr=ua.AttributeIds.Value,
+        mfilter: Optional[ua.MonitoringFilter] = None,
+        queuesize: int = 0,
+        monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
+        sampling_interval: ua.Duration = 0.0,
+    ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Private low level method for subscribing.
         :param nodes: One Node or an Iterable of Nodes.
@@ -346,7 +412,9 @@ class Subscription:
             mids[0].check()
         return mids[0]  # type: ignore
 
-    def _make_monitored_item_request(self, node: Node, attr, mfilter, queuesize, monitoring, sampling_interval) -> ua.MonitoredItemCreateRequest:
+    def _make_monitored_item_request(
+        self, node: Node, attr, mfilter, queuesize, monitoring, sampling_interval
+    ) -> ua.MonitoredItemCreateRequest:
         rv = ua.ReadValueId()
         rv.NodeId = node.nodeid
         rv.AttributeId = attr
@@ -365,7 +433,9 @@ class Subscription:
         mir.RequestedParameters = mparams
         return mir
 
-    async def create_monitored_items(self, monitored_items: Iterable[ua.MonitoredItemCreateRequest]) -> List[Union[int, ua.StatusCode]]:
+    async def create_monitored_items(
+        self, monitored_items: Iterable[ua.MonitoredItemCreateRequest]
+    ) -> List[Union[int, ua.StatusCode]]:
         """
         low level method to have full control over subscription parameters.
         Client handle must be unique since it will be used as key for internal registration of data.
@@ -418,7 +488,9 @@ class Subscription:
             if handle in handle_map:
                 del self._monitored_items[handle_map[handle]]
 
-    async def modify_monitored_item(self, handle: int, new_samp_time: ua.Duration, new_queuesize: int = 0, mod_filter_val: int = -1) -> List[ua.MonitoredItemModifyResult]:
+    async def modify_monitored_item(
+        self, handle: int, new_samp_time: ua.Duration, new_queuesize: int = 0, mod_filter_val: int = -1
+    ) -> List[ua.MonitoredItemModifyResult]:
         """
         Modify a monitored item.
         :param handle: Handle returned when originally subscribing
@@ -444,7 +516,9 @@ class Subscription:
             mod_filter.DeadbandValue = mod_filter_val
         modif_item = ua.MonitoredItemModifyRequest()
         modif_item.MonitoredItemId = handle
-        modif_item.RequestedParameters = self._modify_monitored_item_request(new_queuesize, new_samp_time, mod_filter, item_to_change.client_handle)
+        modif_item.RequestedParameters = self._modify_monitored_item_request(
+            new_queuesize, new_samp_time, mod_filter, item_to_change.client_handle
+        )
         params = ua.ModifyMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
         params.ItemsToModify.append(modif_item)
@@ -452,7 +526,13 @@ class Subscription:
         item_to_change.mfilter = results[0].FilterResult
         return results
 
-    def _modify_monitored_item_request(self, new_queuesize: int, new_samp_time: ua.Duration, mod_filter: ua.DataChangeFilter, client_handle: ua.IntegerId) -> ua.MonitoringParameters:
+    def _modify_monitored_item_request(
+        self,
+        new_queuesize: int,
+        new_samp_time: ua.Duration,
+        mod_filter: ua.DataChangeFilter,
+        client_handle: ua.IntegerId,
+    ) -> ua.MonitoringParameters:
         req_params = ua.MonitoringParameters()
         req_params.ClientHandle = client_handle
         req_params.QueueSize = new_queuesize
@@ -461,12 +541,33 @@ class Subscription:
         return req_params
 
     @overload
-    async def deadband_monitor(self, var: Node, deadband_val: ua.Double, deadbandtype: ua.UInt32 = 1, queuesize: int = 0, attr: ua.AttributeIds = ua.AttributeIds.Value) -> int: ...
+    async def deadband_monitor(
+        self,
+        var: Node,
+        deadband_val: ua.Double,
+        deadbandtype: ua.UInt32 = 1,
+        queuesize: int = 0,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
+    ) -> int: ...
 
     @overload
-    async def deadband_monitor(self, var: Iterable[Node], deadband_val: ua.Double, deadbandtype: ua.UInt32 = 1, queuesize: int = 0, attr: ua.AttributeIds = ua.AttributeIds.Value) -> List[Union[int, ua.StatusCode]]: ...
+    async def deadband_monitor(
+        self,
+        var: Iterable[Node],
+        deadband_val: ua.Double,
+        deadbandtype: ua.UInt32 = 1,
+        queuesize: int = 0,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
+    ) -> List[Union[int, ua.StatusCode]]: ...
 
-    async def deadband_monitor(self, var: Union[Node, Iterable[Node]], deadband_val: ua.Double, deadbandtype: ua.UInt32 = 1, queuesize: int = 0, attr: ua.AttributeIds = ua.AttributeIds.Value) -> Union[int, List[Union[int, ua.StatusCode]]]:
+    async def deadband_monitor(
+        self,
+        var: Union[Node, Iterable[Node]],
+        deadband_val: ua.Double,
+        deadbandtype: ua.UInt32 = 1,
+        queuesize: int = 0,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
+    ) -> Union[int, List[Union[int, ua.StatusCode]]]:
         """
         Method to create a subscription with a Deadband Value.
         Default deadband value type is absolute.

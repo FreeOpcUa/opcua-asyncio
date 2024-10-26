@@ -78,7 +78,9 @@ class OPCUAProtocol(asyncio.Protocol):
                     return
                 else:
                     if len(buf) < header.body_size:
-                        _logger.debug("We did not receive enough data from client. Need %s got %s", header.body_size, len(buf))
+                        _logger.debug(
+                            "We did not receive enough data from client. Need %s got %s", header.body_size, len(buf)
+                        )
                         return
                     # we have a complete message
                     self.messages.put_nowait((header, buf))
@@ -128,7 +130,13 @@ class BinaryServer:
 
     def _make_protocol(self):
         """Protocol Factory"""
-        return OPCUAProtocol(iserver=self.iserver, policies=self._policies, clients=self.clients, closing_tasks=self.closing_tasks, limits=self.limits)
+        return OPCUAProtocol(
+            iserver=self.iserver,
+            policies=self._policies,
+            clients=self.clients,
+            closing_tasks=self.closing_tasks,
+            limits=self.limits,
+        )
 
     async def start(self):
         self._server = await asyncio.get_running_loop().create_server(self._make_protocol, self.hostname, self.port)

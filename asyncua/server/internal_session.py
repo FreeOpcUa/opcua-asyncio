@@ -31,7 +31,15 @@ class InternalSession(AbstractSession):
     _counter = 10
     _auth_counter = 1000
 
-    def __init__(self, internal_server: InternalServer, aspace: AddressSpace, submgr: SubscriptionService, name, user=User(role=UserRole.Anonymous), external=False):
+    def __init__(
+        self,
+        internal_server: InternalServer,
+        aspace: AddressSpace,
+        submgr: SubscriptionService,
+        name,
+        user=User(role=UserRole.Anonymous),
+        external=False,
+    ):
         self.logger = logging.getLogger(__name__)
         self.iserver: InternalServer = internal_server
         # define if session is external, we need to copy some objects if it is internal
@@ -50,7 +58,10 @@ class InternalSession(AbstractSession):
         self.session_timeout = None
 
     def __str__(self):
-        return f"InternalSession(name:{self.name}," f" user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})"
+        return (
+            f"InternalSession(name:{self.name},"
+            f" user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})"
+        )
 
     async def get_endpoints(self, params=None, sockname=None):
         return await self.iserver.get_endpoints(params, sockname)
@@ -68,7 +79,9 @@ class InternalSession(AbstractSession):
         self.session_timeout = result.RevisedSessionTimeout / 1000
 
         if self.iserver.certificate_validator and params.ClientCertificate:
-            await self.iserver.certificate_validator(x509.load_der_x509_certificate(params.ClientCertificate), params.ClientDescription)
+            await self.iserver.certificate_validator(
+                x509.load_der_x509_certificate(params.ClientCertificate), params.ClientDescription
+            )
 
         self.nonce = create_nonce(32)
         result.ServerNonce = self.nonce
@@ -86,7 +99,9 @@ class InternalSession(AbstractSession):
             InternalSession._current_connections = 0
         self.state = SessionState.Closed
         if delete_subs:
-            await self.delete_subscriptions([id for id, sub in self.subscription_service.subscriptions.items() if sub.session_id == self.session_id])
+            await self.delete_subscriptions(
+                [id for id, sub in self.subscription_service.subscriptions.items() if sub.session_id == self.session_id]
+            )
 
     def activate_session(self, params, peer_certificate):
         self.logger.info("activate session")
@@ -117,7 +132,9 @@ class InternalSession(AbstractSession):
             else:
                 username, password = None, None
 
-            user = self.iserver.user_manager.get_user(self.iserver, username=username, password=password, certificate=peer_certificate)
+            user = self.iserver.user_manager.get_user(
+                self.iserver, username=username, password=password, certificate=peer_certificate
+            )
             if user is None:
                 raise ServiceError(ua.StatusCodes.BadUserAccessDenied)
             else:
@@ -132,9 +149,13 @@ class InternalSession(AbstractSession):
             user = User()
         else:
             user = self.user
-        await self.iserver.callback_service.dispatch(CallbackType.PreRead, ServerItemCallback(params, None, user, self.external))
+        await self.iserver.callback_service.dispatch(
+            CallbackType.PreRead, ServerItemCallback(params, None, user, self.external)
+        )
         results = self.iserver.attribute_service.read(params)
-        await self.iserver.callback_service.dispatch(CallbackType.PostRead, ServerItemCallback(params, results, user, self.external))
+        await self.iserver.callback_service.dispatch(
+            CallbackType.PostRead, ServerItemCallback(params, results, user, self.external)
+        )
         return results
 
     async def history_read(self, params) -> List[ua.HistoryReadResult]:
@@ -145,9 +166,13 @@ class InternalSession(AbstractSession):
             user = User()
         else:
             user = self.user
-        await self.iserver.callback_service.dispatch(CallbackType.PreWrite, ServerItemCallback(params, None, user, self.external))
+        await self.iserver.callback_service.dispatch(
+            CallbackType.PreWrite, ServerItemCallback(params, None, user, self.external)
+        )
         write_result = await self.iserver.attribute_service.write(params, user=user)
-        await self.iserver.callback_service.dispatch(CallbackType.PostWrite, ServerItemCallback(params, write_result, user, self.external))
+        await self.iserver.callback_service.dispatch(
+            CallbackType.PostWrite, ServerItemCallback(params, write_result, user, self.external)
+        )
         return write_result
 
     async def browse(self, params):
@@ -191,18 +216,24 @@ class InternalSession(AbstractSession):
         return await self.iserver.method_service.call(params)
 
     async def create_subscription(self, params, callback, request_callback=None):
-        result = await self.subscription_service.create_subscription(params, callback, self.session_id, request_callback=request_callback)
+        result = await self.subscription_service.create_subscription(
+            params, callback, self.session_id, request_callback=request_callback
+        )
         return result
 
     async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
         """Returns Future"""
         subscription_result = await self.subscription_service.create_monitored_items(params)
-        await self.iserver.callback_service.dispatch(CallbackType.ItemSubscriptionCreated, ServerItemCallback(params, subscription_result, None, self.external))
+        await self.iserver.callback_service.dispatch(
+            CallbackType.ItemSubscriptionCreated, ServerItemCallback(params, subscription_result, None, self.external)
+        )
         return subscription_result
 
     async def modify_monitored_items(self, params):
         subscription_result = self.subscription_service.modify_monitored_items(params)
-        await self.iserver.callback_service.dispatch(CallbackType.ItemSubscriptionModified, ServerItemCallback(params, subscription_result, None, self.external))
+        await self.iserver.callback_service.dispatch(
+            CallbackType.ItemSubscriptionModified, ServerItemCallback(params, subscription_result, None, self.external)
+        )
         return subscription_result
 
     def republish(self, params):
@@ -215,7 +246,9 @@ class InternalSession(AbstractSession):
     async def delete_monitored_items(self, params):
         # This is an async method, dues to symmetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
-        await self.iserver.callback_service.dispatch(CallbackType.ItemSubscriptionDeleted, ServerItemCallback(params, subscription_result, None, self.external))
+        await self.iserver.callback_service.dispatch(
+            CallbackType.ItemSubscriptionDeleted, ServerItemCallback(params, subscription_result, None, self.external)
+        )
 
         return subscription_result
 

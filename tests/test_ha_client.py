@@ -415,7 +415,9 @@ class TestReconciliator:
         url = first_client.server_url.geturl()
         real_sub = reconciliator.name_to_subscription[url][sub]
 
-        mock_subscribe_data_change = mocker.patch.object(real_sub, "subscribe_data_change", wraps=real_sub.subscribe_data_change)
+        mock_subscribe_data_change = mocker.patch.object(
+            real_sub, "subscribe_data_change", wraps=real_sub.subscribe_data_change
+        )
         mock_unsubscribe = mocker.patch.object(real_sub, "unsubscribe", wraps=real_sub.unsubscribe)
 
         node_list = [n.nodeid.to_string() for n in srv_variables]

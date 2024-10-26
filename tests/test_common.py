@@ -229,7 +229,9 @@ async def test_delete_nodes_with_inverse_references(opc):
     await opc.opc.delete_nodes([var])
     childs = await fold.get_children()
     assert var not in childs
-    has_desc_refs = await var2.get_referenced_nodes(refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse)
+    has_desc_refs = await var2.get_referenced_nodes(
+        refs=ua.ObjectIds.HasDescription, direction=ua.BrowseDirection.Inverse
+    )
     assert len(has_desc_refs) == 0
     has_effect_refs = await var2.get_referenced_nodes(refs=ua.ObjectIds.HasEffect, direction=ua.BrowseDirection.Inverse)
     assert len(has_effect_refs) == 0
@@ -269,7 +271,9 @@ async def test_delete_nodes_recursive2(opc):
 
 
 async def test_delete_references(opc):
-    newtype = await opc.opc.get_node(ua.ObjectIds.HierarchicalReferences).add_reference_type(0, "HasSuperSecretVariable")
+    newtype = await opc.opc.get_node(ua.ObjectIds.HierarchicalReferences).add_reference_type(
+        0, "HasSuperSecretVariable"
+    )
 
     obj = opc.opc.nodes.objects
     fold = await obj.add_folder(2, "FolderToRef")
@@ -454,7 +458,9 @@ async def test_get_node_by_nodeid(opc):
 
 async def test_get_children_by_path(opc):
     root = opc.opc.nodes.root
-    [server_time_nodes] = await root.get_children_by_path([["0:Objects", "0:Server", "0:ServerStatus", "0:CurrentTime"]])
+    [server_time_nodes] = await root.get_children_by_path(
+        [["0:Objects", "0:Server", "0:ServerStatus", "0:CurrentTime"]]
+    )
     correct = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
     assert len(server_time_nodes) == 1
     assert server_time_nodes[0] == correct
@@ -1461,7 +1467,9 @@ async def test_custom_struct_(opc):
     await opc.opc.load_data_type_definitions()
     mystruct = ua.MyMyStruct()
     mystruct.MyUInt32 = [78, 79]
-    var = await opc.opc.nodes.objects.add_variable(idx, "my_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    var = await opc.opc.nodes.objects.add_variable(
+        idx, "my_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject)
+    )
     val = await var.read_value()
     assert val.MyUInt32 == [78, 79]
 
@@ -1528,7 +1536,9 @@ async def test_custom_struct_union(opc):
     await opc.opc.load_data_type_definitions()
     my_union = ua.MyUnionStruct()
     my_union.MyInt64 = 555
-    var = await opc.opc.nodes.objects.add_variable(idx, "my_union_struct", ua.Variant(my_union, ua.VariantType.ExtensionObject))
+    var = await opc.opc.nodes.objects.add_variable(
+        idx, "my_union_struct", ua.Variant(my_union, ua.VariantType.ExtensionObject)
+    )
     val = await var.read_value()
     assert val.MyInt64 == 555
     assert val.MyString is None
@@ -1637,7 +1647,9 @@ async def test_custom_list_of_struct(opc):
     mystruct = ua.MyMotherStruct3()
     mystruct.MySubStruct = [ua.MySubStruct3()]
     mystruct.MySubStruct[0].MyUInt32 = 78
-    var = await opc.opc.nodes.objects.add_variable(idx, "my_mother_struct3", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    var = await opc.opc.nodes.objects.add_variable(
+        idx, "my_mother_struct3", ua.Variant(mystruct, ua.VariantType.ExtensionObject)
+    )
     val = await var.read_value()
     assert val.MySubStruct[0].MyUInt32 == 78
 
@@ -1670,7 +1682,9 @@ async def test_custom_struct_with_enum(opc):
 
     mystruct = ua.MyStructEnum()
     mystruct.MyEnum = ua.MyCustEnum2.tutu
-    var = await opc.opc.nodes.objects.add_variable(idx, "my_struct2", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    var = await opc.opc.nodes.objects.add_variable(
+        idx, "my_struct2", ua.Variant(mystruct, ua.VariantType.ExtensionObject)
+    )
     val = await var.read_value()
     assert val.MyEnum == ua.MyCustEnum2.tutu
     assert isinstance(val.MyEnum, ua.MyCustEnum2)
@@ -1932,7 +1946,9 @@ async def test_sub_class(opc):
         [],
         ua.PublishedEventsDataType(ua.NodeId(NamespaceIndex=1), [], ua.ContentFilter([])),
     )
-    var = await opc.opc.nodes.objects.add_variable(idx, "struct with sub", struct_with_sub, datatype=struct_with_sub.data_type)
+    var = await opc.opc.nodes.objects.add_variable(
+        idx, "struct with sub", struct_with_sub, datatype=struct_with_sub.data_type
+    )
     await var.write_value(struct_with_sub)
     val = await var.read_value()
     assert val == struct_with_sub
@@ -2010,7 +2026,9 @@ async def test_custom_struct_with_strange_chars(opc):
     mystruct = ua.Siemens()
     mystruct.My_UInt32 = [78, 79]
     mystruct.My_Bool = False
-    var = await opc.opc.nodes.objects.add_variable(idx, "my_siemens_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
+    var = await opc.opc.nodes.objects.add_variable(
+        idx, "my_siemens_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject)
+    )
     val = await var.read_value()
     assert val.My_UInt32 == [78, 79]
 
@@ -2034,6 +2052,10 @@ async def test_sql_injection():
 
 async def test_parse_nodeid_name_contains_multiple_dividers():
     raw_node_name = "ns=9;s=Line1.nsuri=MACHINE.NS;s=MACHINE.NS.State.Running"
-    expected_node_id = NodeId(Identifier=String("Line1.nsuri=MACHINE.NS;s=MACHINE.NS.State.Running"), NamespaceIndex=Int16(9), NodeIdType=NodeIdType.String)
+    expected_node_id = NodeId(
+        Identifier=String("Line1.nsuri=MACHINE.NS;s=MACHINE.NS.State.Running"),
+        NamespaceIndex=Int16(9),
+        NodeIdType=NodeIdType.String,
+    )
     got_node_id = NodeId.from_string(string=raw_node_name)
     assert got_node_id == expected_node_id

@@ -53,7 +53,12 @@ class CertificateValidator:
     Default CertificateValidatorOptions.BASIC_VALIDATION is used.
     """
 
-    def __init__(self, options: CertificateValidatorOptions = CertificateValidatorOptions.BASIC_VALIDATION | CertificateValidatorOptions.PEER_CLIENT, trust_store: Optional[TrustStore] = None):
+    def __init__(
+        self,
+        options: CertificateValidatorOptions = CertificateValidatorOptions.BASIC_VALIDATION
+        | CertificateValidatorOptions.PEER_CLIENT,
+        trust_store: Optional[TrustStore] = None,
+    ):
         self._options = options
         self._trust_store: Optional[TrustStore] = trust_store
 
@@ -93,18 +98,34 @@ class CertificateValidator:
                     raise ServiceError(ua.StatusCodes.BadCertificateUriInvalid)
             if CertificateValidatorOptions.KEY_USAGE in self._options:
                 key_usage = cert.extensions.get_extension_for_class(x509.KeyUsage).value
-                if key_usage.data_encipherment is False or key_usage.digital_signature is False or key_usage.content_commitment is False or key_usage.key_encipherment is False:
+                if (
+                    key_usage.data_encipherment is False
+                    or key_usage.digital_signature is False
+                    or key_usage.content_commitment is False
+                    or key_usage.key_encipherment is False
+                ):
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
             if CertificateValidatorOptions.EXT_KEY_USAGE in self._options:
-                oid = ExtendedKeyUsageOID.SERVER_AUTH if CertificateValidatorOptions.PEER_SERVER in self._options else ExtendedKeyUsageOID.CLIENT_AUTH
+                oid = (
+                    ExtendedKeyUsageOID.SERVER_AUTH
+                    if CertificateValidatorOptions.PEER_SERVER in self._options
+                    else ExtendedKeyUsageOID.CLIENT_AUTH
+                )
 
                 if oid not in cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value:
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
 
-                if CertificateValidatorOptions.PEER_SERVER in self._options and app_description.ApplicationType not in [ua.ApplicationType.Server, ua.ApplicationType.ClientAndServer]:
+                if CertificateValidatorOptions.PEER_SERVER in self._options and app_description.ApplicationType not in [
+                    ua.ApplicationType.Server,
+                    ua.ApplicationType.ClientAndServer,
+                ]:
                     _logger.warning("mismatch between application type and certificate ExtendedKeyUsage")
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
-                elif CertificateValidatorOptions.PEER_CLIENT in self._options and app_description.ApplicationType not in [ua.ApplicationType.Client, ua.ApplicationType.ClientAndServer]:
+                elif (
+                    CertificateValidatorOptions.PEER_CLIENT in self._options
+                    and app_description.ApplicationType
+                    not in [ua.ApplicationType.Client, ua.ApplicationType.ClientAndServer]
+                ):
                     _logger.warning("mismatch between application type and certificate ExtendedKeyUsage")
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
 

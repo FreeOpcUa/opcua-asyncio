@@ -31,7 +31,9 @@ class XmlExporter:
     order it can be added to the dictionary below.
     """
 
-    extobj_ordered_elements = {ua.NodeId(ua.ObjectIds.Argument): ["Name", "DataType", "ValueRank", "ArrayDimensions", "Description"]}
+    extobj_ordered_elements = {
+        ua.NodeId(ua.ObjectIds.Argument): ["Name", "DataType", "ValueRank", "ArrayDimensions", "Description"]
+    }
 
     def __init__(self, server: Union[asyncua.Server, asyncua.Client], export_values: bool = False):
         """
@@ -381,7 +383,9 @@ class XmlExporter:
                     type_name = ua.ObjectIdNames[dtype.Identifier]
                 except KeyError:
                     dtype_node = self.server.get_node(dtype)
-                    enc_node = (await dtype_node.get_referenced_nodes(ua.ObjectIds.HasEncoding, ua.BrowseDirection.Forward))[0]
+                    enc_node = (
+                        await dtype_node.get_referenced_nodes(ua.ObjectIds.HasEncoding, ua.BrowseDirection.Forward)
+                    )[0]
                     type_name = ua.extension_objects_by_typeid[enc_node.nodeid].__name__
 
                 await self._value_to_etree(member_el, type_name, dtype, v)
@@ -498,7 +502,9 @@ class XmlExporter:
             except AttributeError:
                 try:
                     enc_node: Node = self.server.get_node(ua.extension_object_typeids[type_name])
-                    dtype_node = (await enc_node.get_referenced_nodes(ua.ObjectIds.HasEncoding, ua.BrowseDirection.Inverse))[0]
+                    dtype_node = (
+                        await enc_node.get_referenced_nodes(ua.ObjectIds.HasEncoding, ua.BrowseDirection.Inverse)
+                    )[0]
                     dtype = dtype_node.nodeid
                 except KeyError:
                     for cls in ua.enums_datatypes:

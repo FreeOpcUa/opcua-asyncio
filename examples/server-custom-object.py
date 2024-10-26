@@ -33,7 +33,9 @@ async def main():
     # Example 2 - create a new object type and a instance of the new object type
     # -------------------------------------------------------------------------------
     mycustomobj_type = await server.nodes.base_object_type.add_object_type(idx, "MyCustomObjectType")
-    var = await mycustomobj_type.add_variable(0, "var_should_be_there_after_instantiate", 1.0)  # demonstrates instantiate
+    var = await mycustomobj_type.add_variable(
+        0, "var_should_be_there_after_instantiate", 1.0
+    )  # demonstrates instantiate
     await var.set_modelling_rule(True)  # make sure the variable is instansiated
 
     myobj = await server.nodes.objects.add_object(idx, "MyCustomObjectA", mycustomobj_type.nodeid)

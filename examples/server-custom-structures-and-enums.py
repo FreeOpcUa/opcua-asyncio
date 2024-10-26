@@ -63,9 +63,13 @@ async def main():
 
     valnode = await server.nodes.objects.add_variable(idx, "my_enum", ua.MyEnum.toto, datatype=enode.nodeid)
     await server.nodes.objects.add_variable(idx, "my_struct", ua.Variant(ua.MyStruct(), ua.VariantType.ExtensionObject))
-    await server.nodes.objects.add_variable(idx, "my_struct_optional", ua.Variant(ua.MyOptionalStruct(), ua.VariantType.ExtensionObject))
+    await server.nodes.objects.add_variable(
+        idx, "my_struct_optional", ua.Variant(ua.MyOptionalStruct(), ua.VariantType.ExtensionObject)
+    )
     await server.nodes.objects.add_variable(idx, "t1", ua.Variant(ua.MyNestedStruct(), ua.VariantType.ExtensionObject))
-    await server.export_xml([server.nodes.objects, server.nodes.root, snode1, snode2, snode3, enode, valnode], "structs_and_enum.xml")
+    await server.export_xml(
+        [server.nodes.objects, server.nodes.root, snode1, snode2, snode3, enode, valnode], "structs_and_enum.xml"
+    )
 
     async with server:
         while True:

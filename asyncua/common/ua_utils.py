@@ -290,7 +290,11 @@ async def get_nodes_of_namespace(server, namespaces=None):
     namespace_indexes = [n if isinstance(n, int) else ns_available.index(n) for n in namespaces]
 
     # filter node is based on the provided namespaces and convert the nodeid to a node
-    nodes = [server.get_node(nodeid) for nodeid in server.iserver.aspace.keys() if nodeid.NamespaceIndex != 0 and nodeid.NamespaceIndex in namespace_indexes]
+    nodes = [
+        server.get_node(nodeid)
+        for nodeid in server.iserver.aspace.keys()
+        if nodeid.NamespaceIndex != 0 and nodeid.NamespaceIndex in namespace_indexes
+    ]
     return nodes
 
 

@@ -78,7 +78,11 @@ class TrustStore:
             bool: Returns True when the certificate is valid
         """
 
-        return self.is_trusted(certificate) and self.is_revoked(certificate) is False and self.check_date_range(certificate)
+        return (
+            self.is_trusted(certificate)
+            and self.is_revoked(certificate) is False
+            and self.check_date_range(certificate)
+        )
 
     def check_date_range(self, certificate: x509.Certificate) -> bool:
         """Checks if the certificate not_valid_before_utc and not_valid_after_utc are valid.

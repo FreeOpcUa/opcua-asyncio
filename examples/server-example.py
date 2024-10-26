@@ -74,7 +74,9 @@ async def main():
     myfolder = await server.nodes.objects.add_folder(idx, "myEmptyFolder")
     # instanciate one instance of our device
     mydevice = await server.nodes.objects.add_object(idx, "Device0001", dev)
-    mydevice_var = await mydevice.get_child([f"{idx}:controller", f"{idx}:state"])  # get proxy to our device state variable
+    mydevice_var = await mydevice.get_child(
+        [f"{idx}:controller", f"{idx}:state"]
+    )  # get proxy to our device state variable
     # create directly some objects and variables
     myobj = await server.nodes.objects.add_object(idx, "MyObject")
     myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
@@ -115,7 +117,9 @@ async def main():
         # handle = await sub.subscribe_data_change(myvar)
         # trigger event, all subscribed clients wil receive it
         var = await myarrayvar.read_value()  # return a ref to value in db server side! not a copy!
-        var = copy.copy(var)  # WARNING: we need to copy before writting again otherwise no data change event will be generated
+        var = copy.copy(
+            var
+        )  # WARNING: we need to copy before writting again otherwise no data change event will be generated
         var.append(9.3)
         await myarrayvar.write_value(var)
         await mydevice_var.write_value("Running")

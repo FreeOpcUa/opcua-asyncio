@@ -25,9 +25,16 @@ if __name__ == "__main__":
 
     # Creating a custom event: Approach 1
     # The custom event object automatically will have members from its parent (BaseEventType)
-    etype = server.create_custom_event_type(2, "MyFirstEvent", ua.ObjectIds.BaseEventType, [("MyNumericProperty", ua.VariantType.Float), ("MyStringProperty", ua.VariantType.String)])
+    etype = server.create_custom_event_type(
+        2,
+        "MyFirstEvent",
+        ua.ObjectIds.BaseEventType,
+        [("MyNumericProperty", ua.VariantType.Float), ("MyStringProperty", ua.VariantType.String)],
+    )
     # create second event
-    etype2 = server.create_custom_event_type(2, "MySecondEvent", ua.ObjectIds.BaseEventType, [("MyOtherProperty", ua.VariantType.Float)])
+    etype2 = server.create_custom_event_type(
+        2, "MySecondEvent", ua.ObjectIds.BaseEventType, [("MyOtherProperty", ua.VariantType.Float)]
+    )
 
     # get an event generator for the myobj node which generates custom events
     myevgen = server.get_event_generator(etype, myobj)

@@ -83,7 +83,10 @@ class AsymmetricAlgorithmHeader:
     def __str__(self):
         len(self.SenderCertificate) if self.SenderCertificate is not None else None
         size2 = len(self.ReceiverCertificateThumbPrint) if self.ReceiverCertificateThumbPrint is not None else None
-        return f"{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI}," f" certificatesize:{size2}, receiverCertificatesize:{size2} )"
+        return (
+            f"{self.__class__.__name__}(SecurityPolicy:{self.SecurityPolicyURI},"
+            f" certificatesize:{size2}, receiverCertificatesize:{size2} )"
+        )
 
     __repr__ = __str__
 
@@ -197,7 +200,14 @@ class SecurityPolicyFactory:
     SecurityPolicy for every client and client's certificate
     """
 
-    def __init__(self, cls=SecurityPolicy, mode=auto.MessageSecurityMode.None_, certificate=None, private_key=None, permission_ruleset=None):
+    def __init__(
+        self,
+        cls=SecurityPolicy,
+        mode=auto.MessageSecurityMode.None_,
+        certificate=None,
+        private_key=None,
+        permission_ruleset=None,
+    ):
         self.cls = cls
         self.mode = mode
         self.certificate = certificate
@@ -211,7 +221,13 @@ class SecurityPolicyFactory:
         if self.cls is SecurityPolicy:
             return self.cls(permissions=self.permission_ruleset)
         else:
-            return self.cls(peer_certificate, self.certificate, self.private_key, self.mode, permission_ruleset=self.permission_ruleset)
+            return self.cls(
+                peer_certificate,
+                self.certificate,
+                self.private_key,
+                self.mode,
+                permission_ruleset=self.permission_ruleset,
+            )
 
 
 class Message:
@@ -239,13 +255,17 @@ ana = auto.NodeAttributesMask
 @dataclass
 class ObjectAttributes(auto.ObjectAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.EventNotifier
+        self.SpecifiedAttributes = (
+            ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.EventNotifier
+        )
 
 
 @dataclass
 class ObjectTypeAttributes(auto.ObjectTypeAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract
+        self.SpecifiedAttributes = (
+            ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract
+        )
 
 
 @dataclass
@@ -254,25 +274,58 @@ class VariableAttributes(auto.VariableAttributes):
     Historizing: uatypes.Boolean = True
     AccessLevel: uatypes.Byte = auto.AccessLevel.CurrentRead.mask
     UserAccessLevel: uatypes.Byte = auto.AccessLevel.CurrentRead.mask
-    SpecifiedAttributes: uatypes.UInt32 = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Value | ana.DataType | ana.ValueRank | ana.ArrayDimensions | ana.AccessLevel | ana.UserAccessLevel | ana.MinimumSamplingInterval | ana.Historizing
+    SpecifiedAttributes: uatypes.UInt32 = (
+        ana.DisplayName
+        | ana.Description
+        | ana.WriteMask
+        | ana.UserWriteMask
+        | ana.Value
+        | ana.DataType
+        | ana.ValueRank
+        | ana.ArrayDimensions
+        | ana.AccessLevel
+        | ana.UserAccessLevel
+        | ana.MinimumSamplingInterval
+        | ana.Historizing
+    )
 
 
 @dataclass
 class VariableTypeAttributes(auto.VariableTypeAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Value | ana.DataType | ana.ValueRank | ana.ArrayDimensions | ana.IsAbstract
+        self.SpecifiedAttributes = (
+            ana.DisplayName
+            | ana.Description
+            | ana.WriteMask
+            | ana.UserWriteMask
+            | ana.Value
+            | ana.DataType
+            | ana.ValueRank
+            | ana.ArrayDimensions
+            | ana.IsAbstract
+        )
 
 
 @dataclass
 class MethodAttributes(auto.MethodAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Executable | ana.UserExecutable
+        self.SpecifiedAttributes = (
+            ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Executable | ana.UserExecutable
+        )
 
 
 @dataclass
 class ReferenceTypeAttributes(auto.ReferenceTypeAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract | ana.Symmetric | ana.InverseName
+        self.SpecifiedAttributes = (
+            ana.DisplayName
+            | ana.Description
+            | ana.WriteMask
+            | ana.UserWriteMask
+            | ana.IsAbstract
+            | ana.Symmetric
+            | ana.InverseName
+        )
 
 
 # FIXME: changes in that class donnot seem to be part of spec as of 1.04
@@ -283,7 +336,14 @@ class DataTypeAttributes(auto.DataTypeAttributes):
     DataTypeDefinition: uatypes.ExtensionObject = field(default_factory=auto.ExtensionObject)
 
     def __post_init__(self):
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract | ana.DataTypeDefinition
+        self.SpecifiedAttributes = (
+            ana.DisplayName
+            | ana.Description
+            | ana.WriteMask
+            | ana.UserWriteMask
+            | ana.IsAbstract
+            | ana.DataTypeDefinition
+        )
 
 
 # we now need to register DataTypeAttributes since we added a new attribute
@@ -295,7 +355,14 @@ uatypes.extension_object_typeids["DataTypeAttributes"] = nid
 @dataclass
 class ViewAttributes(auto.ViewAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.ContainsNoLoops | ana.EventNotifier
+        self.SpecifiedAttributes = (
+            ana.DisplayName
+            | ana.Description
+            | ana.WriteMask
+            | ana.UserWriteMask
+            | ana.ContainsNoLoops
+            | ana.EventNotifier
+        )
 
 
 @dataclass

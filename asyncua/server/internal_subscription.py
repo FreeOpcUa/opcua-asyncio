@@ -114,7 +114,11 @@ class InternalSubscription:
         if self._startup or self._triggered_datachanges or self._triggered_events:
             return True
         if self._keep_alive_count > self.data.RevisedMaxKeepAliveCount:
-            self.logger.debug("keep alive count %s is > than max keep alive count %s, sending publish event", self._keep_alive_count, self.data.RevisedMaxKeepAliveCount)
+            self.logger.debug(
+                "keep alive count %s is > than max keep alive count %s, sending publish event",
+                self._keep_alive_count,
+                self.data.RevisedMaxKeepAliveCount,
+            )
             return True
         self._keep_alive_count += 1
         return False
@@ -127,7 +131,12 @@ class InternalSubscription:
         queued to be called back with publish request when one is available.
         """
         if self._publish_cycles_count > self.data.RevisedLifetimeCount:
-            self.logger.warning("Subscription %s has expired, publish cycle count(%s) > lifetime count (%s)", self, self._publish_cycles_count, self.data.RevisedLifetimeCount)
+            self.logger.warning(
+                "Subscription %s has expired, publish cycle count(%s) > lifetime count (%s)",
+                self,
+                self._publish_cycles_count,
+                self.data.RevisedLifetimeCount,
+            )
             # FIXME this will never be send since we do not have publish request anyway
             await self.monitored_item_srv.trigger_statuschange(ua.StatusCode(ua.StatusCodes.BadTimeout))
             # Stop the subscription
@@ -251,7 +260,9 @@ class InternalSubscription:
         self._triggered_statuschanges.append(code)
         await self._trigger_publish()
 
-    async def _enqueue_event(self, mid: int, eventdata: Union[ua.MonitoredItemNotification, ua.EventFieldList], size: int, queue: dict):
+    async def _enqueue_event(
+        self, mid: int, eventdata: Union[ua.MonitoredItemNotification, ua.EventFieldList], size: int, queue: dict
+    ):
         if mid not in queue:
             # New Monitored Item Id
             queue[mid] = [eventdata]

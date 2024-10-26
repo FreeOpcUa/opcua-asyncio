@@ -218,7 +218,9 @@ class Reconciliator:
                 real_sub = self.name_to_subscription[url].get(sub_name)
                 # in case the previous create_subscription request failed
                 if not real_sub:
-                    _logger.warning("Can't create nodes for %s since underlying " "subscription for %s doesn't exist", url, sub_name)
+                    _logger.warning(
+                        "Can't create nodes for %s since underlying " "subscription for %s doesn't exist", url, sub_name
+                    )
                     continue
                 vs_real = real_map[url][sub_name]
                 vs_ideal = ideal_map[url][sub_name]
@@ -310,7 +312,9 @@ class Reconciliator:
                 real_sub = self.name_to_subscription[url].get(sub_name)
                 # in case the previous create_subscription request failed
                 if not real_sub:
-                    _logger.warning("Can't change modes for %s since underlying subscription for %s doesn't exist", url, sub_name)
+                    _logger.warning(
+                        "Can't change modes for %s since underlying subscription for %s doesn't exist", url, sub_name
+                    )
                     continue
                 vs_real = real_map[url][sub_name]
                 vs_ideal = ideal_map[url][sub_name]

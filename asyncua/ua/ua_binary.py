@@ -14,7 +14,14 @@ from dataclasses import is_dataclass, fields
 from asyncua import ua
 from .uaerrors import UaError
 from ..common.utils import Buffer
-from .uatypes import type_from_optional, type_is_list, type_is_union, type_from_list, types_or_list_from_union, type_allow_subclass
+from .uatypes import (
+    type_from_optional,
+    type_is_list,
+    type_is_union,
+    type_from_list,
+    types_or_list_from_union,
+    type_allow_subclass,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -311,7 +318,8 @@ def create_dataclass_serializer(dataclazz):
 
         return union_serialize
     option_fields_encodings = [  # Name and binary encoding of optional fields
-        (field.name, 1 << enc_count) for enc_count, field in enumerate(filter(lambda f: type_is_union(f.type), data_fields))
+        (field.name, 1 << enc_count)
+        for enc_count, field in enumerate(filter(lambda f: type_is_union(f.type), data_fields))
     ]
 
     def enc_value(obj):
@@ -324,7 +332,10 @@ def create_dataclass_serializer(dataclazz):
     encoding_functions = [(f.name, field_serializer(f.type, dataclazz)) for f in data_fields]
 
     def serialize(obj):
-        return b"".join(serializer(enc_value(obj)) if name == "Encoding" else serializer(obj.__dict__[name]) for name, serializer in encoding_functions)
+        return b"".join(
+            serializer(enc_value(obj)) if name == "Encoding" else serializer(obj.__dict__[name])
+            for name, serializer in encoding_functions
+        )
 
     return serialize
 
@@ -415,11 +426,17 @@ def nodeid_to_binary(nodeid):
     elif nodeid.NodeIdType == ua.NodeIdType.Numeric:
         data = struct.pack("<BHI", nodeid.NodeIdType.value, nodeid.NamespaceIndex, nodeid.Identifier)
     elif nodeid.NodeIdType == ua.NodeIdType.String:
-        data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.String.pack(nodeid.Identifier)
+        data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.String.pack(
+            nodeid.Identifier
+        )
     elif nodeid.NodeIdType == ua.NodeIdType.ByteString:
-        data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.Bytes.pack(nodeid.Identifier)
+        data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.Bytes.pack(
+            nodeid.Identifier
+        )
     elif nodeid.NodeIdType == ua.NodeIdType.Guid:
-        data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.Guid.pack(nodeid.Identifier)
+        data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.Guid.pack(
+            nodeid.Identifier
+        )
     else:
         raise UaError(f"Unknown NodeIdType: {nodeid.NodeIdType} for NodeId: {nodeid}")
     # Add NamespaceUri and ServerIndex in case we have an ExpandedNodeId

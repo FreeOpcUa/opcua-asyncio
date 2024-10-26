@@ -33,13 +33,26 @@ uri_no_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num2)
 uri_crypto_cert = "opc.tcp://127.0.0.1:{0:d}".format(port_num3)
 BASE_DIR = Path(__file__).parent.parent
 EXAMPLE_PATH = BASE_DIR / "examples"
-srv_crypto_params = [(EXAMPLE_PATH / "private-key-example.pem", EXAMPLE_PATH / "certificate-example.der"), (EXAMPLE_PATH / "private-key-3072-example.pem", EXAMPLE_PATH / "certificate-3072-example.der")]
+srv_crypto_params = [
+    (EXAMPLE_PATH / "private-key-example.pem", EXAMPLE_PATH / "certificate-example.der"),
+    (EXAMPLE_PATH / "private-key-3072-example.pem", EXAMPLE_PATH / "certificate-3072-example.der"),
+]
 
-peer_creds = {"certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-1.der", "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-1.pem"}
+peer_creds = {
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-1.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-1.pem",
+}
 
-unauthorized_peer_creds = {"certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-2.der", "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-2.pem"}
+unauthorized_peer_creds = {
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-2.der",
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-2.pem",
+}
 
-encrypted_private_key_peer_creds = {"private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-encrypted-private-key.pem", "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-encrypted-private-key.der", "password": b"password"}
+encrypted_private_key_peer_creds = {
+    "private_key": EXAMPLE_PATH / "certificates/peer-private-key-example-encrypted-private-key.pem",
+    "certificate": EXAMPLE_PATH / "certificates/peer-certificate-example-encrypted-private-key.der",
+    "password": b"password",
+}
 
 
 @pytest.fixture(params=srv_crypto_params)
@@ -140,13 +153,17 @@ async def test_nocrypto(srv_no_crypto):
 async def test_nocrypto_fail(srv_no_crypto):
     clt = Client(uri_no_crypto)
     with pytest.raises(ua.UaError):
-        await clt.set_security_string(f"Basic256Sha256,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'}")
+        await clt.set_security_string(
+            f"Basic256Sha256,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'}"
+        )
 
 
 async def test_basic256(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
-    await clt.set_security_string(f"Basic256Sha256,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}")
+    await clt.set_security_string(
+        f"Basic256Sha256,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}"
+    )
     async with clt:
         assert await clt.nodes.objects.get_children()
 
@@ -155,7 +172,9 @@ async def test_basic128rsa15(srv_crypto_all_cert_basic128rsa15):
     _, cert = srv_crypto_all_cert_basic128rsa15
     clt = Client(uri_crypto)
     print(await clt.connect_and_get_server_endpoints())
-    await clt.set_security_string(f"Basic128Rsa15,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}")
+    await clt.set_security_string(
+        f"Basic128Rsa15,Sign,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}"
+    )
     async with clt:
         assert await clt.nodes.objects.get_children()
 
@@ -163,7 +182,9 @@ async def test_basic128rsa15(srv_crypto_all_cert_basic128rsa15):
 async def test_basic256_encrypt(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
-    await clt.set_security_string(f"Basic256Sha256,SignAndEncrypt,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}")
+    await clt.set_security_string(
+        f"Basic256Sha256,SignAndEncrypt,{EXAMPLE_PATH / 'certificate-example.der'},{EXAMPLE_PATH / 'private-key-example.pem'},{cert}"
+    )
     async with clt:
         assert await clt.nodes.objects.get_children()
 
@@ -171,7 +192,14 @@ async def test_basic256_encrypt(srv_crypto_all_certs):
 async def test_basic256_encrypt_success(srv_crypto_all_certs):
     clt = Client(uri_crypto)
     _, cert = srv_crypto_all_certs
-    await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, f"{EXAMPLE_PATH / 'certificate-example.der'}", f"{EXAMPLE_PATH / 'private-key-example.pem'}", None, cert, ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        f"{EXAMPLE_PATH / 'certificate-example.der'}",
+        f"{EXAMPLE_PATH / 'private-key-example.pem'}",
+        None,
+        cert,
+        ua.MessageSecurityMode.SignAndEncrypt,
+    )
 
     async with clt:
         assert await clt.nodes.objects.get_children()
@@ -180,8 +208,17 @@ async def test_basic256_encrypt_success(srv_crypto_all_certs):
 async def test_basic256_encrypt_use_certificate_bytes(srv_crypto_all_certs):
     clt = Client(uri_crypto)
     _, cert = srv_crypto_all_certs
-    with open(cert, "rb") as server_cert, open(f"{EXAMPLE_PATH / 'certificate-example.der'}", "rb") as user_cert, open(f"{EXAMPLE_PATH / 'private-key-example.pem'}", "rb") as user_key:
-        await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, user_cert.read(), CertProperties(user_key.read(), extension="pem"), None, server_cert.read(), ua.MessageSecurityMode.SignAndEncrypt)
+    with open(cert, "rb") as server_cert, open(f"{EXAMPLE_PATH / 'certificate-example.der'}", "rb") as user_cert, open(
+        f"{EXAMPLE_PATH / 'private-key-example.pem'}", "rb"
+    ) as user_key:
+        await clt.set_security(
+            security_policies.SecurityPolicyBasic256Sha256,
+            user_cert.read(),
+            CertProperties(user_key.read(), extension="pem"),
+            None,
+            server_cert.read(),
+            ua.MessageSecurityMode.SignAndEncrypt,
+        )
 
     async with clt:
         assert await clt.nodes.objects.get_children()
@@ -193,13 +230,27 @@ async def test_basic256_encrypt_fail(srv_crypto_all_certs):
     _, cert = srv_crypto_all_certs
     clt = Client(uri_crypto)
     with pytest.raises(ua.UaError):
-        await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, f"{EXAMPLE_PATH / 'certificate-example.der'}", f"{EXAMPLE_PATH / 'private-key-example.pem'}", None, None, mode=ua.MessageSecurityMode.None_)
+        await clt.set_security(
+            security_policies.SecurityPolicyBasic256Sha256,
+            f"{EXAMPLE_PATH / 'certificate-example.der'}",
+            f"{EXAMPLE_PATH / 'private-key-example.pem'}",
+            None,
+            None,
+            mode=ua.MessageSecurityMode.None_,
+        )
 
 
 async def test_Aes128Sha256RsaOaep_encrypt_success(srv_crypto_all_certs):
     clt = Client(uri_crypto)
     _, cert = srv_crypto_all_certs
-    await clt.set_security(security_policies.SecurityPolicyAes128Sha256RsaOaep, f"{EXAMPLE_PATH / 'certificate-example.der'}", f"{EXAMPLE_PATH / 'private-key-example.pem'}", None, cert, ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyAes128Sha256RsaOaep,
+        f"{EXAMPLE_PATH / 'certificate-example.der'}",
+        f"{EXAMPLE_PATH / 'private-key-example.pem'}",
+        None,
+        cert,
+        ua.MessageSecurityMode.SignAndEncrypt,
+    )
 
     async with clt:
         assert await clt.nodes.objects.get_children()
@@ -208,7 +259,14 @@ async def test_Aes128Sha256RsaOaep_encrypt_success(srv_crypto_all_certs):
 async def test_Aes256Sha256RsaPss_encrypt_success(srv_crypto_all_certs):
     clt = Client(uri_crypto)
     _, cert = srv_crypto_all_certs
-    await clt.set_security(security_policies.SecurityPolicyAes256Sha256RsaPss, f"{EXAMPLE_PATH / 'certificate-example.der'}", f"{EXAMPLE_PATH / 'private-key-example.pem'}", None, cert, ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyAes256Sha256RsaPss,
+        f"{EXAMPLE_PATH / 'certificate-example.der'}",
+        f"{EXAMPLE_PATH / 'private-key-example.pem'}",
+        None,
+        cert,
+        ua.MessageSecurityMode.SignAndEncrypt,
+    )
 
     async with clt:
         assert await clt.nodes.objects.get_children()
@@ -217,7 +275,14 @@ async def test_Aes256Sha256RsaPss_encrypt_success(srv_crypto_all_certs):
 async def test_certificate_handling_success(srv_crypto_one_cert):
     _, cert = srv_crypto_one_cert
     clt = Client(uri_crypto_cert)
-    await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, peer_creds["certificate"], peer_creds["private_key"], None, cert, mode=ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        peer_creds["certificate"],
+        peer_creds["private_key"],
+        None,
+        cert,
+        mode=ua.MessageSecurityMode.SignAndEncrypt,
+    )
     async with clt:
         assert await clt.get_objects_node().get_children()
 
@@ -225,7 +290,14 @@ async def test_certificate_handling_success(srv_crypto_one_cert):
 async def test_encrypted_private_key_handling_success(srv_crypto_encrypted_key_one_cert):
     _, cert = srv_crypto_encrypted_key_one_cert
     clt = Client(uri_crypto_cert)
-    await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, encrypted_private_key_peer_creds["certificate"], encrypted_private_key_peer_creds["private_key"], encrypted_private_key_peer_creds["password"], cert, mode=ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        encrypted_private_key_peer_creds["certificate"],
+        encrypted_private_key_peer_creds["private_key"],
+        encrypted_private_key_peer_creds["password"],
+        cert,
+        mode=ua.MessageSecurityMode.SignAndEncrypt,
+    )
     async with clt:
         assert await clt.get_objects_node().get_children()
 
@@ -240,7 +312,13 @@ async def test_encrypted_private_key_handling_success_with_cert_props(srv_crypto
         extension="PEM",
     )
     server_cert = uacrypto.CertProperties(cert)
-    await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, user_cert, user_key, server_certificate=server_cert, mode=ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        user_cert,
+        user_key,
+        server_certificate=server_cert,
+        mode=ua.MessageSecurityMode.SignAndEncrypt,
+    )
     async with clt:
         assert await clt.get_objects_node().get_children()
 
@@ -250,7 +328,13 @@ async def test_certificate_handling_failure(srv_crypto_one_cert):
     clt = Client(uri_crypto_cert)
 
     with pytest.raises(ua.uaerrors.BadUserAccessDenied):
-        await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, unauthorized_peer_creds["certificate"], unauthorized_peer_creds["private_key"], None, mode=ua.MessageSecurityMode.SignAndEncrypt)
+        await clt.set_security(
+            security_policies.SecurityPolicyBasic256Sha256,
+            unauthorized_peer_creds["certificate"],
+            unauthorized_peer_creds["private_key"],
+            None,
+            mode=ua.MessageSecurityMode.SignAndEncrypt,
+        )
 
         async with clt:
             assert await clt.get_objects_node().get_children()
@@ -279,7 +363,14 @@ async def test_certificate_handling_mismatched_creds(srv_crypto_one_cert):
     with pytest.raises((AttributeError, TimeoutError)):
         # either exception can be raise, depending on used python version
         # and crypto library version
-        await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, peer_creds["certificate"], unauthorized_peer_creds["private_key"], None, cert, mode=ua.MessageSecurityMode.SignAndEncrypt)
+        await clt.set_security(
+            security_policies.SecurityPolicyBasic256Sha256,
+            peer_creds["certificate"],
+            unauthorized_peer_creds["private_key"],
+            None,
+            cert,
+            mode=ua.MessageSecurityMode.SignAndEncrypt,
+        )
         async with clt:
             assert await clt.get_objects_node().get_children()
 
@@ -295,7 +386,13 @@ async def test_secure_channel_key_expiration(srv_crypto_one_cert, mocker):
         extension="PEM",
     )
     server_cert = uacrypto.CertProperties(cert)
-    await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, user_cert, user_key, server_certificate=server_cert, mode=ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        user_cert,
+        user_key,
+        server_certificate=server_cert,
+        mode=ua.MessageSecurityMode.SignAndEncrypt,
+    )
     async with clt:
         assert clt.uaclient.security_policy.symmetric_cryptography.Prev_Verifier is None
         assert clt.uaclient.security_policy.symmetric_cryptography.Prev_Decryptor is None
@@ -391,30 +488,59 @@ async def test_anonymous_rejection():
     await srv.load_private_key(key)
     await srv.start()
     clt = Client(uri_crypto_cert)
-    await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, peer_creds["certificate"], peer_creds["private_key"], None, cert, mode=ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        peer_creds["certificate"],
+        peer_creds["private_key"],
+        None,
+        cert,
+        mode=ua.MessageSecurityMode.SignAndEncrypt,
+    )
     with pytest.raises(ua.uaerrors.BadIdentityTokenRejected):
         await clt.connect()
     await srv.stop()
 
 
 async def test_security_level_all():
-    assert Server.determine_security_level(ua.SecurityPolicy.URI, ua.MessageSecurityMode.None_) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.NoSecurity)
+    assert Server.determine_security_level(
+        ua.SecurityPolicy.URI, ua.MessageSecurityMode.None_
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.NoSecurity)
 
-    assert Server.determine_security_level(security_policies.SecurityPolicyBasic256Sha256.URI, ua.MessageSecurityMode.Sign) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256Sha256_Sign)
-    assert Server.determine_security_level(security_policies.SecurityPolicyBasic256Sha256.URI, ua.MessageSecurityMode.SignAndEncrypt) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt)
+    assert Server.determine_security_level(
+        security_policies.SecurityPolicyBasic256Sha256.URI, ua.MessageSecurityMode.Sign
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256Sha256_Sign)
+    assert Server.determine_security_level(
+        security_policies.SecurityPolicyBasic256Sha256.URI, ua.MessageSecurityMode.SignAndEncrypt
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt)
 
-    assert Server.determine_security_level(security_policies.SecurityPolicyAes128Sha256RsaOaep.URI, ua.MessageSecurityMode.Sign) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign)
-    assert Server.determine_security_level(security_policies.SecurityPolicyAes128Sha256RsaOaep.URI, ua.MessageSecurityMode.SignAndEncrypt) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt)
+    assert Server.determine_security_level(
+        security_policies.SecurityPolicyAes128Sha256RsaOaep.URI, ua.MessageSecurityMode.Sign
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes128Sha256RsaOaep_Sign)
+    assert Server.determine_security_level(
+        security_policies.SecurityPolicyAes128Sha256RsaOaep.URI, ua.MessageSecurityMode.SignAndEncrypt
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes128Sha256RsaOaep_SignAndEncrypt)
 
-    assert Server.determine_security_level(security_policies.SecurityPolicyAes256Sha256RsaPss.URI, ua.MessageSecurityMode.Sign) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign)
-    assert Server.determine_security_level(security_policies.SecurityPolicyAes256Sha256RsaPss.URI, ua.MessageSecurityMode.SignAndEncrypt) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt)
+    assert Server.determine_security_level(
+        security_policies.SecurityPolicyAes256Sha256RsaPss.URI, ua.MessageSecurityMode.Sign
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes256Sha256RsaPss_Sign)
+    assert Server.determine_security_level(
+        security_policies.SecurityPolicyAes256Sha256RsaPss.URI, ua.MessageSecurityMode.SignAndEncrypt
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt)
 
     # For the sake of completeness also the old, not recommended, protocols Basic128Rsa15 and Basic256
-    assert Server.determine_security_level(security_policies.SecurityPolicyBasic128Rsa15.URI, ua.MessageSecurityMode.Sign) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic128Rsa15_Sign)
-    assert Server.determine_security_level(security_policies.SecurityPolicyBasic128Rsa15.URI, ua.MessageSecurityMode.SignAndEncrypt) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt)
+    assert Server.determine_security_level(
+        security_policies.SecurityPolicyBasic128Rsa15.URI, ua.MessageSecurityMode.Sign
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic128Rsa15_Sign)
+    assert Server.determine_security_level(
+        security_policies.SecurityPolicyBasic128Rsa15.URI, ua.MessageSecurityMode.SignAndEncrypt
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic128Rsa15_SignAndEncrypt)
 
-    assert Server.determine_security_level(security_policies.SecurityPolicyBasic256.URI, ua.MessageSecurityMode.Sign) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256_Sign)
-    assert Server.determine_security_level(security_policies.SecurityPolicyBasic256.URI, ua.MessageSecurityMode.SignAndEncrypt) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256_SignAndEncrypt)
+    assert Server.determine_security_level(
+        security_policies.SecurityPolicyBasic256.URI, ua.MessageSecurityMode.Sign
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256_Sign)
+    assert Server.determine_security_level(
+        security_policies.SecurityPolicyBasic256.URI, ua.MessageSecurityMode.SignAndEncrypt
+    ) == Server.lookup_security_level_for_policy_type(ua.SecurityPolicyType.Basic256_SignAndEncrypt)
 
 
 async def test_security_level_endpoints(srv_crypto_all_certs: Tuple[Server, str]):
@@ -423,7 +549,9 @@ async def test_security_level_endpoints(srv_crypto_all_certs: Tuple[Server, str]
     end_points: list[ua.EndpointDescription] = await srv.get_endpoints()
 
     for end_point in end_points:
-        assert end_point.SecurityLevel == Server.determine_security_level(end_point.SecurityPolicyUri, end_point.SecurityMode)
+        assert end_point.SecurityLevel == Server.determine_security_level(
+            end_point.SecurityPolicyUri, end_point.SecurityMode
+        )
 
 
 async def test_certificate_validator(srv_crypto_one_cert):
@@ -431,23 +559,38 @@ async def test_certificate_validator(srv_crypto_one_cert):
 
     srv, cert = srv_crypto_one_cert
 
-    validator = CertificateValidator(options=CertificateValidatorOptions.BASIC_VALIDATION | CertificateValidatorOptions.PEER_CLIENT)
+    validator = CertificateValidator(
+        options=CertificateValidatorOptions.BASIC_VALIDATION | CertificateValidatorOptions.PEER_CLIENT
+    )
     srv.set_certificate_validator(validator)
 
     clt = Client(uri_crypto_cert)
-    await clt.set_security(security_policies.SecurityPolicyBasic256Sha256, peer_creds["certificate"], peer_creds["private_key"], None, cert, mode=ua.MessageSecurityMode.SignAndEncrypt)
+    await clt.set_security(
+        security_policies.SecurityPolicyBasic256Sha256,
+        peer_creds["certificate"],
+        peer_creds["private_key"],
+        None,
+        cert,
+        mode=ua.MessageSecurityMode.SignAndEncrypt,
+    )
 
     validator.set_validate_options(options=CertificateValidatorOptions.URI | CertificateValidatorOptions.PEER_CLIENT)
     with pytest.raises(ua.uaerrors.BadCertificateInvalid):
         async with clt:
             assert await clt.get_objects_node().get_children()
 
-    validator.set_validate_options(options=CertificateValidatorOptions.TIME_RANGE | CertificateValidatorOptions.PEER_CLIENT)
+    validator.set_validate_options(
+        options=CertificateValidatorOptions.TIME_RANGE | CertificateValidatorOptions.PEER_CLIENT
+    )
     with pytest.raises(ua.uaerrors.BadCertificateTimeInvalid):
         async with clt:
             assert await clt.get_objects_node().get_children()
 
-    validator.set_validate_options(options=CertificateValidatorOptions.KEY_USAGE | CertificateValidatorOptions.EXT_KEY_USAGE | CertificateValidatorOptions.PEER_CLIENT)
+    validator.set_validate_options(
+        options=CertificateValidatorOptions.KEY_USAGE
+        | CertificateValidatorOptions.EXT_KEY_USAGE
+        | CertificateValidatorOptions.PEER_CLIENT
+    )
     with pytest.raises(ua.uaerrors.BadCertificateInvalid):
         async with clt:
             assert await clt.get_objects_node().get_children()
