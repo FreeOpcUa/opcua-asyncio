@@ -92,6 +92,10 @@ target-version = "py37"
 [tool.ruff.lint]
 select = ["E", "F", "G004", "W", "UP"]
 ignore = [
+    "E111",  # conflicts with ruff format, cf doc
+    "E114",  # conflicts with ruff format, cf doc
+    "E117",  # conflicts with ruff format, cf doc
+    "E501",  # conflicts with ruff format, cf doc
     "UP032", # Use f-string instead of `format` call
     "UP030", # Use implicit references for positional format fields
     "UP027", # Replace unpacked list comprehension with a generator expression
