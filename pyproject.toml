@@ -36,9 +36,8 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest",
     "pytest-asyncio == 0.21.2",
     "coverage",
@@ -50,7 +49,10 @@ dev-dependencies = [
     "types-pyOpenSSL",
     "types-python-dateutil",
     "types-pytz",
+    "ruff",
+
 ]
+lint = ["ruff", "mypy", "pre-commit"]
 
 [project.scripts]
 uabrowse = "asyncua.tools:uals"
