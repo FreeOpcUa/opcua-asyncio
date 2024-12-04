@@ -271,7 +271,7 @@ class ObjectTypeAttributes(auto.ObjectTypeAttributes):
 @dataclass
 class VariableAttributes(auto.VariableAttributes):
     ArrayDimensions: List[uatypes.UInt32] = None
-    Historizing: uatypes.Boolean = True
+    Historizing: uatypes.Boolean = False
     AccessLevel: uatypes.Byte = auto.AccessLevel.CurrentRead.mask
     UserAccessLevel: uatypes.Byte = auto.AccessLevel.CurrentRead.mask
     SpecifiedAttributes: uatypes.UInt32 = (
