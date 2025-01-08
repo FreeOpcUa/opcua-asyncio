@@ -143,12 +143,12 @@ class Client:
         """
         self._username = username
 
-    def set_password(self, pwd: str) -> None:
+    def set_password(self, pwd: str | None) -> None:
         """
         Set user password for the connection.
         initial password from the URL will be overwritten
         """
-        if not isinstance(pwd, str):
+        if pwd is not None and not isinstance(pwd, str):
             raise TypeError(f"Password must be a string, got {pwd} of type {type(pwd)}")
         self._password = pwd
 
