@@ -658,7 +658,9 @@ class Client:
             self._add_certificate_auth(params, user_certificate, challenge)
         else:
             self._add_user_auth(params, username, password)
-        return await self.uaclient.activate_session(params)
+        res = await self.uaclient.activate_session(params)
+        self._server_nonce = res.ServerNonce
+        return res
 
     def _add_anonymous_auth(self, params):
         params.UserIdentityToken = ua.AnonymousIdentityToken()
@@ -676,8 +678,11 @@ class Client:
         params.UserTokenSignature.Signature = sig
 
     def _add_user_auth(self, params, username: str, password: str):
+        self.set_user(username)
+        self.set_password(password)
+
         params.UserIdentityToken = ua.UserNameIdentityToken()
-        params.UserIdentityToken.UserName = username
+        params.UserIdentityToken.UserName = self._username
         policy = self.server_policy(ua.UserTokenType.UserName)
         if not policy.SecurityPolicyUri or policy.SecurityPolicyUri == security_policies.SecurityPolicyNone.URI:
             # see specs part 4, 7.36.3: if the token is NOT encrypted,
@@ -686,10 +691,10 @@ class Client:
             if self._password:
                 if self.security_policy.Mode != ua.MessageSecurityMode.SignAndEncrypt:
                     _logger.warning("Sending plain-text password")
-                params.UserIdentityToken.Password = password.encode("utf8")
+                params.UserIdentityToken.Password = self._password.encode("utf8")
             params.UserIdentityToken.EncryptionAlgorithm = None
         elif self._password:
-            data, uri = self._encrypt_password(password, policy.SecurityPolicyUri)
+            data, uri = self._encrypt_password(self._password, policy.SecurityPolicyUri)
             params.UserIdentityToken.Password = data
             params.UserIdentityToken.EncryptionAlgorithm = uri
         params.UserIdentityToken.PolicyId = policy.PolicyId
