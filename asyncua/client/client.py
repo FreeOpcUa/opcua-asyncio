@@ -143,12 +143,12 @@ class Client:
         """
         self._username = username
 
-    def set_password(self, pwd: str | None) -> None:
+    def set_password(self, pwd: str) -> None:
         """
         Set user password for the connection.
         initial password from the URL will be overwritten
         """
-        if pwd is not None and not isinstance(pwd, str):
+        if not isinstance(pwd, str):
             raise TypeError(f"Password must be a string, got {pwd} of type {type(pwd)}")
         self._password = pwd
 
@@ -678,23 +678,20 @@ class Client:
         params.UserTokenSignature.Signature = sig
 
     def _add_user_auth(self, params, username: str, password: str):
-        self.set_user(username)
-        self.set_password(password)
-
         params.UserIdentityToken = ua.UserNameIdentityToken()
-        params.UserIdentityToken.UserName = self._username
+        params.UserIdentityToken.UserName = username
         policy = self.server_policy(ua.UserTokenType.UserName)
         if not policy.SecurityPolicyUri or policy.SecurityPolicyUri == security_policies.SecurityPolicyNone.URI:
             # see specs part 4, 7.36.3: if the token is NOT encrypted,
             # then the password only contains UTF-8 encoded password
             # and EncryptionAlgorithm is null
-            if self._password:
+            if password:
                 if self.security_policy.Mode != ua.MessageSecurityMode.SignAndEncrypt:
                     _logger.warning("Sending plain-text password")
-                params.UserIdentityToken.Password = self._password.encode("utf8")
+                params.UserIdentityToken.Password = password.encode("utf8")
             params.UserIdentityToken.EncryptionAlgorithm = None
-        elif self._password:
-            data, uri = self._encrypt_password(self._password, policy.SecurityPolicyUri)
+        elif password:
+            data, uri = self._encrypt_password(password, policy.SecurityPolicyUri)
             params.UserIdentityToken.Password = data
             params.UserIdentityToken.EncryptionAlgorithm = uri
         params.UserIdentityToken.PolicyId = policy.PolicyId
