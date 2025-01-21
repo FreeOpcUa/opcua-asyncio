@@ -54,11 +54,18 @@ class TransportLimits:
         ack.SendBufferSize = min(msg.SendBufferSize, self.max_recv_buffer)
         ack.MaxChunkCount = self._select_limit(msg.MaxChunkCount, self.max_chunk_count)
         ack.MaxMessageSize = self._select_limit(msg.MaxMessageSize, self.max_message_size)
+        have_changes = (
+                self.max_chunk_count != ack.MaxChunkCount or
+                self.max_recv_buffer != ack.ReceiveBufferSize or
+                self.max_send_buffer != ack.SendBufferSize or
+                self.max_message_size != ack.MaxMessageSize
+        )
+        if have_changes:
+            _logger.info("updating server limits to: %s", self)
         self.max_chunk_count = ack.MaxChunkCount
         self.max_recv_buffer = ack.SendBufferSize
         self.max_send_buffer = ack.ReceiveBufferSize
         self.max_message_size = ack.MaxMessageSize
-        _logger.info("updating server limits to: %s", self)
         return ack
 
     def create_hello_limits(self, msg: ua.Hello) -> ua.Hello:
@@ -69,6 +76,14 @@ class TransportLimits:
         return msg
 
     def update_client_limits(self, msg: ua.Acknowledge) -> None:
+        have_changes = (
+                self.max_chunk_count != msg.MaxChunkCount or
+                self.max_recv_buffer != msg.ReceiveBufferSize or
+                self.max_send_buffer != msg.SendBufferSize or
+                self.max_message_size != msg.MaxMessageSize
+        )
+        if have_changes:
+            _logger.info("updating client limits to: %s", self)
         self.max_chunk_count = msg.MaxChunkCount
         self.max_recv_buffer = msg.ReceiveBufferSize
         self.max_send_buffer = msg.SendBufferSize
