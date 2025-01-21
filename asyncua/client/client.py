@@ -796,7 +796,7 @@ class Client:
             and new_keepalive_count != params.RequestedMaxKeepAliveCount
         ):
             _logger.info(
-                "KeepAliveCount will be updated to %s " "for consistency with RevisedPublishInterval",
+                "KeepAliveCount will be updated to %s for consistency with RevisedPublishInterval",
                 new_keepalive_count,
             )
             modified_params = ua.ModifySubscriptionParameters()

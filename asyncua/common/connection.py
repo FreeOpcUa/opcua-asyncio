@@ -55,10 +55,10 @@ class TransportLimits:
         ack.MaxChunkCount = self._select_limit(msg.MaxChunkCount, self.max_chunk_count)
         ack.MaxMessageSize = self._select_limit(msg.MaxMessageSize, self.max_message_size)
         have_changes = (
-                self.max_chunk_count != ack.MaxChunkCount or
-                self.max_recv_buffer != ack.ReceiveBufferSize or
-                self.max_send_buffer != ack.SendBufferSize or
-                self.max_message_size != ack.MaxMessageSize
+            self.max_chunk_count != ack.MaxChunkCount
+            or self.max_recv_buffer != ack.ReceiveBufferSize
+            or self.max_send_buffer != ack.SendBufferSize
+            or self.max_message_size != ack.MaxMessageSize
         )
         if have_changes:
             _logger.info("updating server limits to: %s", self)
@@ -77,10 +77,10 @@ class TransportLimits:
 
     def update_client_limits(self, msg: ua.Acknowledge) -> None:
         have_changes = (
-                self.max_chunk_count != msg.MaxChunkCount or
-                self.max_recv_buffer != msg.ReceiveBufferSize or
-                self.max_send_buffer != msg.SendBufferSize or
-                self.max_message_size != msg.MaxMessageSize
+            self.max_chunk_count != msg.MaxChunkCount
+            or self.max_recv_buffer != msg.ReceiveBufferSize
+            or self.max_send_buffer != msg.SendBufferSize
+            or self.max_message_size != msg.MaxMessageSize
         )
         if have_changes:
             _logger.info("updating client limits to: %s", self)
@@ -384,8 +384,7 @@ class SecureConnection:
             )
             if timeout < datetime.now(timezone.utc):
                 raise ua.UaError(
-                    f"Security token id {security_hdr.TokenId} has timed out "
-                    f"({timeout} < {datetime.now(timezone.utc)})"
+                    f"Security token id {security_hdr.TokenId} has timed out ({timeout} < {datetime.now(timezone.utc)})"
                 )
             return
 
@@ -400,7 +399,7 @@ class SecureConnection:
         if chunk.MessageHeader.MessageType != ua.MessageType.SecureOpen:
             if chunk.MessageHeader.ChannelId != self.security_token.ChannelId:
                 raise ua.UaError(
-                    f"Wrong channel id {chunk.MessageHeader.ChannelId}," f" expected {self.security_token.ChannelId}"
+                    f"Wrong channel id {chunk.MessageHeader.ChannelId}, expected {self.security_token.ChannelId}"
                 )
         if self._incoming_parts:
             if self._incoming_parts[0].SequenceHeader.RequestId != chunk.SequenceHeader.RequestId:

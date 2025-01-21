@@ -503,7 +503,7 @@ async def test_security_level_endpoints(srv_crypto_all_certs: Tuple[Server, str]
             policy_type = ua.SecurityPolicyType.NoSecurity
         else:
             policy_type = ua.SecurityPolicyType[
-                f'{end_point.SecurityPolicyUri.split("#")[1].replace("_", "")}_{end_point.SecurityMode.name}'
+                f"{end_point.SecurityPolicyUri.split('#')[1].replace('_', '')}_{end_point.SecurityMode.name}"
             ]
         assert end_point.SecurityLevel == SECURITY_POLICY_TYPE_MAP[policy_type][2]
 
