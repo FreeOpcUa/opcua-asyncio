@@ -1,4 +1,4 @@
-OPC UA / IEC 62541 Client and Server for Python >= 3.7 and pypy3 .
+OPC UA / IEC 62541 Client and Server for Python >= 3.8 and pypy3 .
 http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
 [![Python package](https://github.com/FreeOpcUa/opcua-asyncio/workflows/Python%20package/badge.svg)](https://github.com/FreeOpcUa/opcua-asyncio/actions)
