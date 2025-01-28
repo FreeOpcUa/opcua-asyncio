@@ -3,6 +3,7 @@ import hashlib
 from datetime import datetime, timedelta, timezone
 import logging
 import copy
+from typing_extensions import Literal
 
 from asyncua import ua
 from asyncua.ua.uaerrors import UaInvalidParameterError
@@ -48,17 +49,30 @@ class TransportLimits:
             _logger.error("Number of message chunks: %s is > configured max chunk count: %s", sz, self.max_chunk_count)
         return within_limit
 
+    def _set_new_limits_from_ack(self, ack: ua.Acknowledge, role: Literal["client", "server"]) -> None:
+        max_recv_buffer = ack.ReceiveBufferSize if role == "client" else ack.SendBufferSize
+        max_send_buffer = ack.SendBufferSize if role == "client" else ack.ReceiveBufferSize
+
+        new_limits = TransportLimits(
+            max_chunk_count=ack.MaxChunkCount,
+            max_recv_buffer=max_recv_buffer,
+            max_send_buffer=max_send_buffer,
+            max_message_size=ack.MaxMessageSize,
+        )
+        if new_limits != self:
+            self.max_chunk_count = new_limits.max_chunk_count
+            self.max_recv_buffer = new_limits.max_recv_buffer
+            self.max_send_buffer = new_limits.max_send_buffer
+            self.max_message_size = new_limits.max_message_size
+            _logger.info("updating %s limits to: %s", role, self)
+
     def create_acknowledge_and_set_limits(self, msg: ua.Hello) -> ua.Acknowledge:
         ack = ua.Acknowledge()
         ack.ReceiveBufferSize = min(msg.ReceiveBufferSize, self.max_send_buffer)
         ack.SendBufferSize = min(msg.SendBufferSize, self.max_recv_buffer)
         ack.MaxChunkCount = self._select_limit(msg.MaxChunkCount, self.max_chunk_count)
         ack.MaxMessageSize = self._select_limit(msg.MaxMessageSize, self.max_message_size)
-        self.max_chunk_count = ack.MaxChunkCount
-        self.max_recv_buffer = ack.SendBufferSize
-        self.max_send_buffer = ack.ReceiveBufferSize
-        self.max_message_size = ack.MaxMessageSize
-        _logger.info("updating server limits to: %s", self)
+        self._set_new_limits_from_ack(ack, "server")
         return ack
 
     def create_hello_limits(self, msg: ua.Hello) -> ua.Hello:
@@ -69,11 +83,7 @@ class TransportLimits:
         return msg
 
     def update_client_limits(self, msg: ua.Acknowledge) -> None:
-        self.max_chunk_count = msg.MaxChunkCount
-        self.max_recv_buffer = msg.ReceiveBufferSize
-        self.max_send_buffer = msg.SendBufferSize
-        self.max_message_size = msg.MaxMessageSize
-        _logger.info("updating client limits to: %s", self)
+        self._set_new_limits_from_ack(msg, "client")
 
 
 class MessageChunk:
