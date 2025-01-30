@@ -39,7 +39,7 @@ class CertificateUserManager:
 
         if name in self._trusted_certificates:
             logging.warning(
-                "certificate with name %s " "attempted to be added multiple times, only the last version will be kept.",
+                "certificate with name %s attempted to be added multiple times, only the last version will be kept.",
                 name,
             )
         self._trusted_certificates[name] = {"certificate": uacrypto.der_from_x509(certificate), "user": user}

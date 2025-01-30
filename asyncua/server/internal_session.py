@@ -59,8 +59,7 @@ class InternalSession(AbstractSession):
 
     def __str__(self):
         return (
-            f"InternalSession(name:{self.name},"
-            f" user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})"
+            f"InternalSession(name:{self.name}, user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})"
         )
 
     async def get_endpoints(self, params=None, sockname=None):

@@ -669,7 +669,7 @@ class XmlImporter:
                     is_struct = True
                 else:
                     _logger.warning(
-                        "%s has datatypedefinition and path %s" " but we could not find out if this is a struct",
+                        "%s has datatypedefinition and path %s but we could not find out if this is a struct",
                         obj,
                         path,
                     )

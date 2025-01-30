@@ -786,7 +786,7 @@ class LocalizedText:
         if self.Text is not None:
             if not isinstance(self.Text, str):
                 raise ValueError(
-                    f'A LocalizedText object takes a string as argument "text"' f"not a {type(self.Text)}, {self.Text}"
+                    f'A LocalizedText object takes a string as argument "text"not a {type(self.Text)}, {self.Text}'
                 )
 
         if self.Locale is not None:
