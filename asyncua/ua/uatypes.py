@@ -93,6 +93,10 @@ class UaUnion:
     pass
 
 
+class Number(float):
+    pass
+
+
 class SByte(int):
     pass
 
