@@ -1087,7 +1087,7 @@ class DataValue:
     :vartype ServerPicoseconds: int
     """
 
-    data_type = NodeId(25)
+    data_type = NodeId(23)
 
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     Value: Optional[Variant] = None
