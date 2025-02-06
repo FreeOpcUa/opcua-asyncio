@@ -15,6 +15,8 @@ from datetime import datetime, timedelta, timezone
 from enum import IntEnum
 from typing import Any, Generic, List, Optional, Union
 
+from asyncua.ua.object_ids import ObjectIds
+
 # hack to support python < 3.8
 if sys.version_info.minor < 10:
 
@@ -1087,7 +1089,7 @@ class DataValue:
     :vartype ServerPicoseconds: int
     """
 
-    data_type = NodeId(23)
+    data_type = NodeId(Int32(ObjectIds.DataValue))
 
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
     Value: Optional[Variant] = None
