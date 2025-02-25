@@ -179,6 +179,7 @@ def make_structure_code(data_type, struct_name, sdef, log_error=True):
         ua.StructureType.Structure,
         ua.StructureType.StructureWithOptionalFields,
         ua.StructureType.Union,
+        ua.StructureType.StructureWithSubtypedValues,
     ):
         raise NotImplementedError(
             f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {struct_name} with DataTypdeDefinition {sdef}"
@@ -240,8 +241,11 @@ class {struct_name}{base_class}:
         elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
             uatype = f"typing.List[{uatype}]"
         if sfield.IsOptional:
-            uatype = f"typing.Optional[{uatype}]"
-            default_value = "None"
+            if sdef.StructureType is ua.StructureType.StructureWithSubtypedValues:
+                uatype = f"typing.Annotated[{uatype}, 'AllowSubtypes']"
+            else:
+                uatype = f"typing.Optional[{uatype}]"
+                default_value = "None"
         fields.append((fname, uatype, default_value))
     if is_union:
         # Generate getter and setter to mimic opc ua union access
