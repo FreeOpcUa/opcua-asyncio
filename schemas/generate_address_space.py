@@ -8,7 +8,6 @@ import sys
 import datetime
 import logging
 from dataclasses import fields
-# sys.path.insert(0, "..")  # load local freeopcua implementation
 from pathlib import Path
 
 from asyncua.common import xmlparser
@@ -362,7 +361,14 @@ class CodeGenerator:
 def save_aspace_to_disk():
     path = BASE_DIR / 'asyncua' / 'binary_address_space.pickle'
     print('Saving standard address space to:', path)
-    sys.path.append('..')
+
+    # standard_address_space_services is already loaded by asyncua/__init__.py
+    # reload and attach it to get the new version
+    import asyncua.server.standard_address_space.standard_address_space_services
+    import importlib
+    importlib.reload(asyncua.server.standard_address_space.standard_address_space_services)
+    asyncua.server.standard_address_space.standard_address_space.create_standard_address_space_Services = asyncua.server.standard_address_space.standard_address_space_services.create_standard_address_space_Services
+
     from asyncua.server.standard_address_space import standard_address_space
     from asyncua.server.address_space import NodeManagementService, AddressSpace
     a_space = AddressSpace()
