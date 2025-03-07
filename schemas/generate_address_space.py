@@ -98,6 +98,7 @@ class CodeGenerator:
         self.output_file = None
         self.part = self.input_path.parts[-1].split(".")[-2]
         self.parser = None
+        self.nodes = {}
 
     async def run(self):
         sys.stderr.write(f"Generating Python code {self.output_path} for XML file {self.input_path}\n")
@@ -122,6 +123,8 @@ class CodeGenerator:
                 self.make_method_code(node)
             else:
                 sys.stderr.write(f"Not implemented node type: {node.nodetype}\n")
+        for obj in self.nodes.values():
+            self.make_refs_code(obj, "   ")
         self.output_file.close()
 
     def writecode(self, *args):
@@ -159,6 +162,7 @@ class CodeGenerator:
             f'''def create_standard_address_space_{self.part!s}(server):''')
 
     def make_node_code(self, obj, indent):
+        self.nodes[obj.nodeid] = obj
         self.writecode(
             f'''    node = ua.AddNodesItem(\n'''
             f'''        RequestedNewNodeId={nodeid_code(obj.nodeid)},\n'''
@@ -202,7 +206,6 @@ class CodeGenerator:
             f'''        )'''
             )
         self.make_node_code(obj, indent)
-        self.make_refs_code(obj, indent)
 
     def make_object_type_code(self, obj):
         indent = "   "
@@ -216,7 +219,6 @@ class CodeGenerator:
             '''        )'''
             )
         self.make_node_code(obj, indent)
-        self.make_refs_code(obj, indent)
 
     def make_common_variable_code(self, indent, obj):
         if obj.desc:
@@ -286,7 +288,6 @@ class CodeGenerator:
             self.writecode(indent, f'    MinimumSamplingInterval={obj.minsample},')
         self.make_common_variable_code(indent, obj)
         self.make_node_code(obj, indent)
-        self.make_refs_code(obj, indent)
 
     def make_variable_type_code(self, obj):
         indent = "   "
@@ -298,7 +299,6 @@ class CodeGenerator:
             self.writecode(indent, f'    IsAbstract={obj.abstract},')
         self.make_common_variable_code(indent, obj)
         self.make_node_code(obj, indent)
-        self.make_refs_code(obj, indent)
 
     def make_method_code(self, obj):
         indent = "   "
@@ -310,7 +310,6 @@ class CodeGenerator:
             f'        DisplayName=LocalizedText("{obj.displayname}"),\n'
             '    )')
         self.make_node_code(obj, indent)
-        self.make_refs_code(obj, indent)
 
     def make_reference_code(self, obj):
         indent = "   "
@@ -327,7 +326,6 @@ class CodeGenerator:
             self.writecode(indent, f'    Symmetric={obj.symmetric},')
         self.writecode(indent, '    )')
         self.make_node_code(obj, indent)
-        self.make_refs_code(obj, indent)
 
     def make_datatype_code(self, obj):
         indent = "   "
@@ -339,19 +337,20 @@ class CodeGenerator:
         self.writecode(indent, f'    IsAbstract={obj.abstract},')
         self.writecode(indent, '    )')
         self.make_node_code(obj, indent)
-        self.make_refs_code(obj, indent)
 
     def make_refs_code(self, obj, indent):
         if not obj.refs:
             return
+        self.writecode()
         self.writecode(indent, "refs = []")
         for ref in obj.refs:
+            target_obj = self.nodes[ref.target]
             self.writecode(
                 f'''    ref = ua.AddReferencesItem(\n'''
                 f'''        IsForward={ref.forward},\n'''
                 f'''        ReferenceTypeId={self.to_ref_type(ref.reftype)},\n'''
                 f'''        SourceNodeId={nodeid_code(obj.nodeid)},\n'''
-                f'''        TargetNodeClass=NodeClass.DataType,\n'''
+                f'''        TargetNodeClass=NodeClass.{target_obj.nodetype[2:]},\n'''
                 f'''        TargetNodeId={nodeid_code(ref.target)},\n'''
                 f'''        )\n'''
                 f'''    refs.append(ref)''')
