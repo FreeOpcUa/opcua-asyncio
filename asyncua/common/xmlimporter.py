@@ -783,6 +783,9 @@ class XmlImporter:
                 if ndata.datatype is not None and ndata.datatype in all_nodes:
                     if ndata.datatype not in sorted_nodes:
                         continue
+                if ndata.typedef is not None and ndata.typedef in all_nodes:
+                    if ndata.typedef not in sorted_nodes:
+                        continue
                 if ndata.parent is None or ndata.parent not in all_nodes:
                     add_to_sorted(nid, ndata)
                 else:
