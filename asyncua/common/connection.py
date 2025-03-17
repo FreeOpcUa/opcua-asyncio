@@ -188,7 +188,7 @@ class MessageChunk:
             # SecureOpen message must be in a single chunk (specs, Part 6, 6.7.2)
             chunk = MessageChunk(security_policy.asymmetric_cryptography, body, message_type, ua.ChunkType.Single)
             chunk.SecurityHeader.SecurityPolicyURI = security_policy.URI
-            if security_policy.host_certificate:
+            if security_policy.host_certificate and security_policy.Mode != ua.MessageSecurityMode.None_:
                 chunk.SecurityHeader.SenderCertificate = security_policy.host_certificate
             if security_policy.peer_certificate:
                 chunk.SecurityHeader.ReceiverCertificateThumbPrint = hashlib.sha1(
