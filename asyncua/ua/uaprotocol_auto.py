@@ -8,7 +8,7 @@ from enum import IntEnum, IntFlag
 from typing import List, Optional, Type
 from dataclasses import dataclass, field
 
-from asyncua.ua.uatypes import FROZEN
+from asyncua.ua.uatypes import FROZEN, FILETIME_EPOCH_AS_UTC_DATETIME
 from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32
 from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid
 from asyncua.ua.uatypes import AccessLevel, EventNotifier
@@ -5820,7 +5820,11 @@ class ViewDescription:
     data_type = NodeId(ObjectIds.ViewDescription)
 
     ViewId: NodeId = field(default_factory=NodeId)
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    # Set the default timestamp to 1601-01-01, which is the OPC UA TimeBase.
+    # This prevents the "BadViewTimestampInvalid" error in Browse Request Service results, 
+    # indicating that the view timestamp is either unavailable or unsupported.
+    # https://github.com/FreeOpcUa/opcua-asyncio/issues/654
+    Timestamp: UtcTime = field(default_factory=lambda: FILETIME_EPOCH_AS_UTC_DATETIME)
     ViewVersion: UInt32 = 0
 
 
