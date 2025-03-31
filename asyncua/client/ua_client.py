@@ -10,6 +10,7 @@ from typing import Awaitable, Callable, Dict, List, Optional, Union
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
 from ..common.utils import wait_for
+from asyncua.ua.uaerrors._base import UaError
 from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, BadUserAccessDenied, UaStructParsingError
 from ..ua.uaprotocol_auto import OpenSecureChannelResult, SubscriptionAcknowledgement
@@ -181,10 +182,10 @@ class UASocketProtocol(asyncio.Protocol):
             await self.pre_request_hook()
         try:
             data = await wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
-        except Exception:
+        except Exception as ex:
             if self.state != self.OPEN:
                 raise ConnectionError("Connection is closed") from None
-            raise
+            raise UaError("Failed to send request to OPC UA server") from ex
         self.check_answer(data, f" in response to {request.__class__.__name__}")
         return data
 
@@ -250,7 +251,7 @@ class UASocketProtocol(asyncio.Protocol):
         request = ua.OpenSecureChannelRequest()
         request.Parameters = params
         if self._open_secure_channel_exchange is not None:
-            raise RuntimeError(
+            raise UaError(
                 "Two Open Secure Channel requests can not happen too close to each other. "
                 "The response must be processed and returned before the next request can be sent."
             )
