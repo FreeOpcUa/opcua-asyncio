@@ -558,6 +558,22 @@ def test_unknown_extension_object():
     assert obj2.Body == b"example of data in custom format"
 
 
+def test_extension_object_missing_length():
+    obj = ua.DataChangeNotification()
+    binary = bytearray(extensionobject_to_binary(obj))
+
+    # Patch the binary to replace the correct length with -1 (i.e. missing),
+    # which some old OPC/UA implementations mistakenly do.
+    # Bytes 0-4 are the node ID, byte 4 is the encoding mask, so the length
+    # is bytes 5-8.
+    binary[5:9] = b"\xff\xff\xff\xff"
+
+    obj2 = extensionobject_from_binary(ua.utils.Buffer(bytes(binary)))
+    assert type(obj) is type(obj2)
+    assert obj.MonitoredItems == obj2.MonitoredItems
+    assert obj.DiagnosticInfos == obj2.DiagnosticInfos
+
+
 def test_datetime():
     now = datetime.now(timezone.utc)
     epch = ua.datetime_to_win_epoch(now)
