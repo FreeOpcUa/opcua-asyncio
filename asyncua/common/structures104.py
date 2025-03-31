@@ -508,16 +508,9 @@ async def load_data_type_definitions(
                 new_objects[dts.name] = env[dts.name]  # type: ignore
             except NotImplementedError:
                 _logger.exception("Structure type %s not implemented", dts.sdef)
-            except AttributeError:
-                # Failed to resolve datatypes
+            except (AttributeError, RuntimeError):
+                _logger.exception("Failed to resolve datatypes", dts.sdef)
                 failed_types.append(dts)
-                if log_ex:
-                    raise
-            except RuntimeError:
-                # Failed to resolve datatypes
-                failed_types.append(dts)
-                if log_ex:
-                    raise
         if not failed_types:
             break
         dtypes = failed_types
@@ -573,7 +566,6 @@ class {name}({enum_type}):
                     "OptionSet" if option_set else "Enumeration",
                     name,
                 )
-
         code += f"    {fieldname} = {value}\n"
     return code
 
