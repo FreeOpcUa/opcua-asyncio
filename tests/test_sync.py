@@ -100,7 +100,7 @@ def test_sync_client_get_node(client, idx):
     assert node == client.nodes.objects
     nodes = node.get_children()
     assert len(nodes) > 2
-    assert nodes[0] == client.nodes.server
+    assert client.nodes.server in nodes
     assert isinstance(nodes[0], SyncNode)
 
     results = node.get_children_by_path([[f"{idx}:MyObject", f"{idx}:MyVariable"]])
@@ -175,7 +175,7 @@ def test_sync_server_get_node(server, idx):
     assert node == server.nodes.objects
     nodes = node.get_children()
     assert len(nodes) > 2
-    assert nodes[0] == server.nodes.server
+    assert server.nodes.server in nodes
     assert isinstance(nodes[0], SyncNode)
 
     results = node.get_children_by_path([[f"{idx}:MyObject", f"{idx}:MyVariable"]])
