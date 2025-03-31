@@ -543,7 +543,10 @@ def extensionobject_from_binary(data: Buffer) -> ua.ExtensionObject:
     body = None
     if encoding & (1 << 0):
         length = Primitives.Int32.unpack(data)
-        if length < 1:
+        if length == -1:
+            # Interop fix for old OPC/UA implementations that fail to fill in the length
+            body = data
+        elif length < 1:
             body = Buffer(b"")
         else:
             body = data.copy(length)
