@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from asyncua.ua.uatypes import FROZEN
 from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32
 from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid
-from asyncua.ua.uatypes import AccessLevel, EventNotifier  
+from asyncua.ua.uatypes import AccessLevel, EventNotifier
 from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue
 from asyncua.ua.uatypes import RelativePath, RelativePathElement
 from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo

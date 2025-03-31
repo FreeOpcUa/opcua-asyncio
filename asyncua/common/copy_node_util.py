@@ -74,7 +74,7 @@ async def _rdesc_from_node(parent: asyncua.Node, node: asyncua.Node) -> ua.Refer
         if res.Value is None:
             raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         variants.append(res.Value)
-    nclass, qname, dname = [v.Value for v in variants]
+    nclass, qname, dname = (v.Value for v in variants)
     rdesc = ua.ReferenceDescription()
     rdesc.NodeId = node.nodeid
     rdesc.BrowseName = qname
