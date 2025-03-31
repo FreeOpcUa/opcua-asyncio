@@ -49,7 +49,7 @@ async def main():
     # get nodeid of custom object type by one of the following 2 ways:
     # 1) Use node ID
     # 3) Or As child from BaseObjectType
-    myobject1_type_nodeid = ua.NodeId.from_string("ns=%d;i=2" % idx)
+    myobject1_type_nodeid = ua.NodeId.from_string(f"ns={idx};i=2")
     myobject2_type_nodeid = (await server.nodes.base_object_type.get_child([f"{idx}:MyCustomObjectType"])).nodeid
 
     # populating our address space
