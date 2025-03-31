@@ -566,7 +566,7 @@ def test_extension_object_missing_length():
     # which some old OPC/UA implementations mistakenly do.
     # Bytes 0-4 are the node ID, byte 4 is the encoding mask, so the length
     # is bytes 5-8.
-    binary[5:9] = b'\xff\xff\xff\xff'
+    binary[5:9] = b"\xff\xff\xff\xff"
 
     obj2 = extensionobject_from_binary(ua.utils.Buffer(bytes(binary)))
     assert type(obj) is type(obj2)
