@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 import argparse
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,13 +32,7 @@ def get_new_nodeset(timeout: float = 120, tag: Optional[str] = None, branch: Opt
     elif target_v2.is_dir():
         target_v2.rename(str(backup_v2))
     try:
-        args = [
-            "git",
-            "clone",
-            "--depth=1",
-            "https://github.com/OPCFoundation/UA-Nodeset.git",
-            "UA-Nodeset-master"
-        ]
+        args = ["git", "clone", "--depth=1", "https://github.com/OPCFoundation/UA-Nodeset.git", "UA-Nodeset-master"]
         if tag is not None:
             args.append(f"tags/{tag}")
         if branch is not None:
@@ -53,15 +48,17 @@ def get_new_nodeset(timeout: float = 120, tag: Optional[str] = None, branch: Opt
         else:
             raise UpdateError("Nodeset neither existed nor was downloaded. Abort update.")
     except TimeoutExpired:
-        raise UpdateError(f"Timeout expired - Waited {timeout} seconds to clone from repo."
-                          f" Either change value or check network connection. Abort update.")
+        raise UpdateError(
+            f"Timeout expired - Waited {timeout} seconds to clone from repo."
+            f" Either change value or check network connection. Abort update."
+        )
     if backup_v1.is_dir():
         rm_tree(backup_v1)
     elif backup_v2.is_dir():
         rm_tree(backup_v2)
     rm_tree(target_v2 / ".git")
     rm_tree(target_v2 / ".github")
-    (target_v2 / "PublishNodeSets.bat").unlink()
+    # (target_v2 / "PublishNodeSets.bat").unlink()
 
 
 def generate_standard_nodesets():
