@@ -1,17 +1,17 @@
 """
 Autogenerate code from xml spec
-Date:2022-09-22 18:18:39.272455
+Date:2025-03-31 12:18:27.134351+00:00
 """
 
 from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
-from typing import List, Optional, Type
+from typing import Union, List, Optional, Type
 from dataclasses import dataclass, field
 
 from asyncua.ua.uatypes import FROZEN
 from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32
 from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid
-from asyncua.ua.uatypes import AccessLevel, EventNotifier
+from asyncua.ua.uatypes import AccessLevel, EventNotifier  
 from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue
 from asyncua.ua.uatypes import RelativePath, RelativePathElement
 from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo
@@ -44,6 +44,15 @@ BitFieldMaskDataType = UInt64
 
 
 SemanticVersionString = String
+
+
+Handle = UInt32
+
+
+TrimmedString = String
+
+
+EncodedTicket = String
 
 
 NormalizedString = String
@@ -96,8 +105,6 @@ NumericRange = String
 
 class NamingRuleType(IntEnum):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part3/8.29
-
     :ivar Mandatory:
     :vartype Mandatory: 1
     :ivar Optional:
@@ -108,6 +115,25 @@ class NamingRuleType(IntEnum):
     Mandatory = 1
     Optional = 2
     Constraint = 3
+
+
+class RedundantServerMode(IntEnum):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.44
+
+    :ivar PrimaryWithBackup:
+    :vartype PrimaryWithBackup: 0
+    :ivar PrimaryOnly:
+    :vartype PrimaryOnly: 1
+    :ivar BackupReady:
+    :vartype BackupReady: 2
+    :ivar BackupNotReady:
+    :vartype BackupNotReady: 3
+    """
+    PrimaryWithBackup = 0
+    PrimaryOnly = 1
+    BackupReady = 2
+    BackupNotReady = 3
 
 
 class OpenFileMode(IntEnum):
@@ -147,6 +173,8 @@ class IdentityCriteriaType(IntEnum):
     :vartype Application: 7
     :ivar X509Subject:
     :vartype X509Subject: 8
+    :ivar TrustedApplication:
+    :vartype TrustedApplication: 9
     """
     UserName = 1
     Thumbprint = 2
@@ -156,10 +184,81 @@ class IdentityCriteriaType(IntEnum):
     AuthenticatedUser = 6
     Application = 7
     X509Subject = 8
+    TrustedApplication = 9
+
+
+class ConversionLimitEnum(IntEnum):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/6.6.3
+
+    :ivar NoConversion:
+    :vartype NoConversion: 0
+    :ivar Limited:
+    :vartype Limited: 1
+    :ivar Unlimited:
+    :vartype Unlimited: 2
+    """
+    NoConversion = 0
+    Limited = 1
+    Unlimited = 2
+
+
+class AlarmMask(IntFlag):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part9/8.3
+
+    :ivar Active:
+    :vartype Active: Bit: 0
+    :ivar Unacknowledged:
+    :vartype Unacknowledged: Bit: 1
+    :ivar Unconfirmed:
+    :vartype Unconfirmed: Bit: 2
+    """
+    Active = 1<<0
+    Unacknowledged = 1<<1
+    Unconfirmed = 1<<2
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt16"
+
+
+class TrustListValidationOptions(IntFlag):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.8
+
+    :ivar SuppressCertificateExpired:
+    :vartype SuppressCertificateExpired: Bit: 0
+    :ivar SuppressHostNameInvalid:
+    :vartype SuppressHostNameInvalid: Bit: 1
+    :ivar SuppressRevocationStatusUnknown:
+    :vartype SuppressRevocationStatusUnknown: Bit: 2
+    :ivar SuppressIssuerCertificateExpired:
+    :vartype SuppressIssuerCertificateExpired: Bit: 3
+    :ivar SuppressIssuerRevocationStatusUnknown:
+    :vartype SuppressIssuerRevocationStatusUnknown: Bit: 4
+    :ivar CheckRevocationStatusOnline:
+    :vartype CheckRevocationStatusOnline: Bit: 5
+    :ivar CheckRevocationStatusOffline:
+    :vartype CheckRevocationStatusOffline: Bit: 6
+    """
+    SuppressCertificateExpired = 1<<0
+    SuppressHostNameInvalid = 1<<1
+    SuppressRevocationStatusUnknown = 1<<2
+    SuppressIssuerCertificateExpired = 1<<3
+    SuppressIssuerRevocationStatusUnknown = 1<<4
+    CheckRevocationStatusOnline = 1<<5
+    CheckRevocationStatusOffline = 1<<6
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
 
 
 class TrustListMasks(IntEnum):
     """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.7
+
     :ivar None_:
     :vartype None_: 0
     :ivar TrustedCertificates:
@@ -205,7 +304,7 @@ class PubSubState(IntEnum):
 
 class DataSetFieldFlags(IntFlag):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.4
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.5
 
     :ivar PromotedField:
     :vartype PromotedField: Bit: 0
@@ -215,6 +314,22 @@ class DataSetFieldFlags(IntFlag):
     @staticmethod
     def datatype() -> str:
         return "UInt16"
+
+
+class ActionState(IntEnum):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.11/#6.2.11.2.1
+
+    :ivar Idle:
+    :vartype Idle: 0
+    :ivar Executing:
+    :vartype Executing: 1
+    :ivar Done:
+    :vartype Done: 2
+    """
+    Idle = 0
+    Executing = 1
+    Done = 2
 
 
 class DataSetFieldContentMask(IntFlag):
@@ -367,6 +482,8 @@ class JsonNetworkMessageContentMask(IntFlag):
     :vartype DataSetClassId: Bit: 4
     :ivar ReplyTo:
     :vartype ReplyTo: Bit: 5
+    :ivar WriterGroupName:
+    :vartype WriterGroupName: Bit: 6
     """
     NetworkMessageHeader = 1<<0
     DataSetMessageHeader = 1<<1
@@ -374,6 +491,7 @@ class JsonNetworkMessageContentMask(IntFlag):
     PublisherId = 1<<3
     DataSetClassId = 1<<4
     ReplyTo = 1<<5
+    WriterGroupName = 1<<6
 
     @staticmethod
     def datatype() -> str:
@@ -398,8 +516,16 @@ class JsonDataSetMessageContentMask(IntFlag):
     :vartype MessageType: Bit: 5
     :ivar DataSetWriterName:
     :vartype DataSetWriterName: Bit: 6
-    :ivar ReversibleFieldEncoding:
-    :vartype ReversibleFieldEncoding: Bit: 7
+    :ivar FieldEncoding1:
+    :vartype FieldEncoding1: Bit: 7
+    :ivar PublisherId:
+    :vartype PublisherId: Bit: 8
+    :ivar WriterGroupName:
+    :vartype WriterGroupName: Bit: 9
+    :ivar MinorVersion:
+    :vartype MinorVersion: Bit: 10
+    :ivar FieldEncoding2:
+    :vartype FieldEncoding2: Bit: 11
     """
     DataSetWriterId = 1<<0
     MetaDataVersion = 1<<1
@@ -408,7 +534,11 @@ class JsonDataSetMessageContentMask(IntFlag):
     Status = 1<<4
     MessageType = 1<<5
     DataSetWriterName = 1<<6
-    ReversibleFieldEncoding = 1<<7
+    FieldEncoding1 = 1<<7
+    PublisherId = 1<<8
+    WriterGroupName = 1<<9
+    MinorVersion = 1<<10
+    FieldEncoding2 = 1<<11
 
     @staticmethod
     def datatype() -> str:
@@ -805,6 +935,125 @@ class TsnListenerStatus(IntEnum):
     Ready = 1
     PartialFailed = 2
     Failed = 3
+
+
+class ChassisIdSubtype(IntEnum):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.1/#5.3.1.9
+
+    :ivar ChassisComponent:
+    :vartype ChassisComponent: 1
+    :ivar InterfaceAlias:
+    :vartype InterfaceAlias: 2
+    :ivar PortComponent:
+    :vartype PortComponent: 3
+    :ivar MacAddress:
+    :vartype MacAddress: 4
+    :ivar NetworkAddress:
+    :vartype NetworkAddress: 5
+    :ivar InterfaceName:
+    :vartype InterfaceName: 6
+    :ivar Local:
+    :vartype Local: 7
+    """
+    ChassisComponent = 1
+    InterfaceAlias = 2
+    PortComponent = 3
+    MacAddress = 4
+    NetworkAddress = 5
+    InterfaceName = 6
+    Local = 7
+
+
+class PortIdSubtype(IntEnum):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.1/#5.3.1.10
+
+    :ivar InterfaceAlias:
+    :vartype InterfaceAlias: 1
+    :ivar PortComponent:
+    :vartype PortComponent: 2
+    :ivar MacAddress:
+    :vartype MacAddress: 3
+    :ivar NetworkAddress:
+    :vartype NetworkAddress: 4
+    :ivar InterfaceName:
+    :vartype InterfaceName: 5
+    :ivar AgentCircuitId:
+    :vartype AgentCircuitId: 6
+    :ivar Local:
+    :vartype Local: 7
+    """
+    InterfaceAlias = 1
+    PortComponent = 2
+    MacAddress = 3
+    NetworkAddress = 4
+    InterfaceName = 5
+    AgentCircuitId = 6
+    Local = 7
+
+
+class ManAddrIfSubtype(IntEnum):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.1/#5.3.1.11
+
+    :ivar None_:
+    :vartype None_: 0
+    :ivar Unknown:
+    :vartype Unknown: 1
+    :ivar PortRef:
+    :vartype PortRef: 2
+    :ivar SystemPortNumber:
+    :vartype SystemPortNumber: 3
+    """
+    None_ = 0
+    Unknown = 1
+    PortRef = 2
+    SystemPortNumber = 3
+
+
+class LldpSystemCapabilitiesMap(IntFlag):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.3/#5.3.3.1
+
+    :ivar Other:
+    :vartype Other: Bit: 0
+    :ivar Repeater:
+    :vartype Repeater: Bit: 1
+    :ivar Bridge:
+    :vartype Bridge: Bit: 2
+    :ivar WlanAccessPoint:
+    :vartype WlanAccessPoint: Bit: 3
+    :ivar Router:
+    :vartype Router: Bit: 4
+    :ivar Telephone:
+    :vartype Telephone: Bit: 5
+    :ivar DocsisCableDevice:
+    :vartype DocsisCableDevice: Bit: 6
+    :ivar StationOnly:
+    :vartype StationOnly: Bit: 7
+    :ivar CvlanComponent:
+    :vartype CvlanComponent: Bit: 8
+    :ivar SvlanComponent:
+    :vartype SvlanComponent: Bit: 9
+    :ivar TwoPortMacRelay:
+    :vartype TwoPortMacRelay: Bit: 10
+    """
+    Other = 1<<0
+    Repeater = 1<<1
+    Bridge = 1<<2
+    WlanAccessPoint = 1<<3
+    Router = 1<<4
+    Telephone = 1<<5
+    DocsisCableDevice = 1<<6
+    StationOnly = 1<<7
+    CvlanComponent = 1<<8
+    SvlanComponent = 1<<9
+    TwoPortMacRelay = 1<<10
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
 
 
 class IdType(IntEnum):
@@ -1475,9 +1724,22 @@ class TimestampsToReturn(IntEnum):
     Invalid = 4
 
 
+class SortOrderType(IntEnum):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.8
+
+    :ivar Ascending:
+    :vartype Ascending: 0
+    :ivar Descending:
+    :vartype Descending: 1
+    """
+    Ascending = 0
+    Descending = 1
+
+
 class HistoryUpdateType(IntEnum):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.6
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.7
 
     :ivar Insert:
     :vartype Insert: 1
@@ -1496,7 +1758,7 @@ class HistoryUpdateType(IntEnum):
 
 class PerformUpdateType(IntEnum):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.7
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.8
 
     :ivar Insert:
     :vartype Insert: 1
@@ -1653,7 +1915,7 @@ class AxisScaleEnumeration(IntEnum):
 
 class ExceptionDeviationFormat(IntEnum):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/5.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/5.2.2
 
     :ivar AbsoluteValue:
     :vartype AbsoluteValue: 0
@@ -1673,8 +1935,8 @@ class ExceptionDeviationFormat(IntEnum):
     Unknown = 4
 
 
-@dataclass(frozen=FROZEN)
-class Union:
+@dataclass(frozen=FROZEN) # type: ignore
+class Union: # type: ignore
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.12
 
@@ -1752,6 +2014,32 @@ class EndpointType:
     SecurityMode: MessageSecurityMode = MessageSecurityMode.Invalid
     SecurityPolicyUri: String = None
     TransportProfileUri: String = None
+
+
+@dataclass(frozen=FROZEN)
+class BitFieldDefinition:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.45
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar Description:
+    :vartype Description: LocalizedText
+    :ivar Reserved:
+    :vartype Reserved: Boolean
+    :ivar StartingBitPosition:
+    :vartype StartingBitPosition: UInt32
+    :ivar EndingBitPosition:
+    :vartype EndingBitPosition: UInt32
+    """
+
+    data_type = NodeId(ObjectIds.BitFieldDefinition)
+
+    Name: String = None
+    Description: LocalizedText = field(default_factory=LocalizedText)
+    Reserved: Boolean = True
+    StartingBitPosition: UInt32 = 0
+    EndingBitPosition: UInt32 = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -1929,8 +2217,88 @@ class CurrencyUnitType:
 
 
 @dataclass(frozen=FROZEN)
+class AnnotationDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/6.6.1
+
+    :ivar Annotation:
+    :vartype Annotation: String
+    :ivar Discipline:
+    :vartype Discipline: String
+    :ivar Uri:
+    :vartype Uri: String
+    """
+
+    data_type = NodeId(ObjectIds.AnnotationDataType)
+
+    Annotation: String = None
+    Discipline: String = None
+    Uri: String = None
+
+
+@dataclass(frozen=FROZEN)
+class LinearConversionDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/6.6.2
+
+    :ivar InitialAddend:
+    :vartype InitialAddend: Float
+    :ivar Multiplicand:
+    :vartype Multiplicand: Float
+    :ivar Divisor:
+    :vartype Divisor: Float
+    :ivar FinalAddend:
+    :vartype FinalAddend: Float
+    """
+
+    data_type = NodeId(ObjectIds.LinearConversionDataType)
+
+    InitialAddend: Float = 0
+    Multiplicand: Float = 0
+    Divisor: Float = 0
+    FinalAddend: Float = 0
+
+
+@dataclass(frozen=FROZEN)
+class QuantityDimension:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/6.6.4
+
+    :ivar MassExponent:
+    :vartype MassExponent: SByte
+    :ivar LengthExponent:
+    :vartype LengthExponent: SByte
+    :ivar TimeExponent:
+    :vartype TimeExponent: SByte
+    :ivar ElectricCurrentExponent:
+    :vartype ElectricCurrentExponent: SByte
+    :ivar AmountOfSubstanceExponent:
+    :vartype AmountOfSubstanceExponent: SByte
+    :ivar LuminousIntensityExponent:
+    :vartype LuminousIntensityExponent: SByte
+    :ivar AbsoluteTemperatureExponent:
+    :vartype AbsoluteTemperatureExponent: SByte
+    :ivar DimensionlessExponent:
+    :vartype DimensionlessExponent: SByte
+    """
+
+    data_type = NodeId(ObjectIds.QuantityDimension)
+
+    MassExponent: SByte = field(default_factory=SByte)
+    LengthExponent: SByte = field(default_factory=SByte)
+    TimeExponent: SByte = field(default_factory=SByte)
+    ElectricCurrentExponent: SByte = field(default_factory=SByte)
+    AmountOfSubstanceExponent: SByte = field(default_factory=SByte)
+    LuminousIntensityExponent: SByte = field(default_factory=SByte)
+    AbsoluteTemperatureExponent: SByte = field(default_factory=SByte)
+    DimensionlessExponent: SByte = field(default_factory=SByte)
+
+
+@dataclass(frozen=FROZEN)
 class TrustListDataType:
     """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.6
+
     :ivar SpecifiedLists:
     :vartype SpecifiedLists: UInt32
     :ivar TrustedCertificates:
@@ -1950,6 +2318,26 @@ class TrustListDataType:
     TrustedCrls: List[ByteString] = field(default_factory=list)
     IssuerCertificates: List[ByteString] = field(default_factory=list)
     IssuerCrls: List[ByteString] = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class TransactionErrorType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.16
+
+    :ivar TargetId:
+    :vartype TargetId: NodeId
+    :ivar Error:
+    :vartype Error: StatusCode
+    :ivar Message:
+    :vartype Message: LocalizedText
+    """
+
+    data_type = NodeId(ObjectIds.TransactionErrorType)
+
+    TargetId: NodeId = field(default_factory=NodeId)
+    Error: StatusCode = field(default_factory=StatusCode)
+    Message: LocalizedText = field(default_factory=LocalizedText)
 
 
 @dataclass(frozen=FROZEN)
@@ -2044,7 +2432,7 @@ class UnsignedRationalNumber:
 @dataclass(frozen=FROZEN)
 class FieldMetaData:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.4
 
     :ivar Name:
     :vartype Name: String
@@ -2085,7 +2473,7 @@ class FieldMetaData:
 @dataclass(frozen=FROZEN)
 class ConfigurationVersionDataType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.5
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.6
 
     :ivar MajorVersion:
     :vartype MajorVersion: VersionTime
@@ -2170,6 +2558,43 @@ class PublishedDataSetCustomSourceDataType(PublishedDataSetSourceDataType):
     data_type = NodeId(ObjectIds.PublishedDataSetCustomSourceDataType)
 
     CyclicDataSet: Boolean = True
+
+
+@dataclass(frozen=FROZEN)
+class ActionTargetDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.10.3
+
+    :ivar ActionTargetId:
+    :vartype ActionTargetId: UInt16
+    :ivar Name:
+    :vartype Name: String
+    :ivar Description:
+    :vartype Description: LocalizedText
+    """
+
+    data_type = NodeId(ObjectIds.ActionTargetDataType)
+
+    ActionTargetId: UInt16 = 0
+    Name: String = None
+    Description: LocalizedText = field(default_factory=LocalizedText)
+
+
+@dataclass(frozen=FROZEN)
+class ActionMethodDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.10.5
+
+    :ivar ObjectId:
+    :vartype ObjectId: NodeId
+    :ivar MethodId:
+    :vartype MethodId: NodeId
+    """
+
+    data_type = NodeId(ObjectIds.ActionMethodDataType)
+
+    ObjectId: NodeId = field(default_factory=NodeId)
+    MethodId: NodeId = field(default_factory=NodeId)
 
 
 @dataclass(frozen=FROZEN)
@@ -2720,6 +3145,32 @@ class DatagramDataSetReaderTransportDataType(DataSetReaderTransportDataType):
 
 
 @dataclass(frozen=FROZEN)
+class DtlsPubSubConnectionDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.7.6
+
+    :ivar ClientCipherSuite:
+    :vartype ClientCipherSuite: String
+    :ivar ServerCipherSuites:
+    :vartype ServerCipherSuites: String
+    :ivar ZeroRTT:
+    :vartype ZeroRTT: Boolean
+    :ivar CertificateGroupId:
+    :vartype CertificateGroupId: NodeId
+    :ivar VerifyClientCertificate:
+    :vartype VerifyClientCertificate: Boolean
+    """
+
+    data_type = NodeId(ObjectIds.DtlsPubSubConnectionDataType)
+
+    ClientCipherSuite: String = None
+    ServerCipherSuites: List[String] = field(default_factory=list)
+    ZeroRTT: Boolean = True
+    CertificateGroupId: NodeId = field(default_factory=NodeId)
+    VerifyClientCertificate: Boolean = True
+
+
+@dataclass(frozen=FROZEN)
 class BrokerConnectionTransportDataType(ConnectionTransportDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.2/#6.4.2.2.3
@@ -2858,6 +3309,244 @@ class PubSubConfigurationValueDataType:
 
 
 @dataclass(frozen=FROZEN)
+class JsonNetworkMessage:
+    """
+    :ivar MessageId:
+    :vartype MessageId: String
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar PublisherId:
+    :vartype PublisherId: String
+    :ivar WriterGroupName:
+    :vartype WriterGroupName: String
+    :ivar DataSetClassId:
+    :vartype DataSetClassId: String
+    :ivar Messages:
+    :vartype Messages: ExtensionObject
+    """
+
+    data_type = NodeId(ObjectIds.JsonNetworkMessage)
+
+    MessageId: String = None
+    MessageType: String = None
+    PublisherId: String = None
+    WriterGroupName: String = None
+    DataSetClassId: String = None
+    Messages: List[ExtensionObject] = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class JsonDataSetMessage:
+    """
+    :ivar DataSetWriterId:
+    :vartype DataSetWriterId: UInt16
+    :ivar DataSetWriterName:
+    :vartype DataSetWriterName: String
+    :ivar PublisherId:
+    :vartype PublisherId: String
+    :ivar WriterGroupName:
+    :vartype WriterGroupName: String
+    :ivar SequenceNumber:
+    :vartype SequenceNumber: UInt32
+    :ivar MetaDataVersion:
+    :vartype MetaDataVersion: ConfigurationVersionDataType
+    :ivar MinorVersion:
+    :vartype MinorVersion: VersionTime
+    :ivar Timestamp:
+    :vartype Timestamp: DateTime
+    :ivar Status:
+    :vartype Status: StatusCode
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar Payload:
+    :vartype Payload: ExtensionObject
+    """
+
+    data_type = NodeId(ObjectIds.JsonDataSetMessage)
+
+    DataSetWriterId: UInt16 = 0
+    DataSetWriterName: String = None
+    PublisherId: String = None
+    WriterGroupName: String = None
+    SequenceNumber: UInt32 = 0
+    MetaDataVersion: ConfigurationVersionDataType = field(default_factory=ConfigurationVersionDataType)
+    MinorVersion: VersionTime = 0
+    Timestamp: DateTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    Status: StatusCode = field(default_factory=StatusCode)
+    MessageType: String = None
+    Payload: ExtensionObject = ExtensionObject()
+
+
+@dataclass(frozen=FROZEN)
+class JsonStatusMessage:
+    """
+    :ivar MessageId:
+    :vartype MessageId: String
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar PublisherId:
+    :vartype PublisherId: String
+    :ivar Timestamp:
+    :vartype Timestamp: UtcTime
+    :ivar IsCyclic:
+    :vartype IsCyclic: Boolean
+    :ivar Status:
+    :vartype Status: PubSubState
+    :ivar NextReportTime:
+    :vartype NextReportTime: UtcTime
+    """
+
+    data_type = NodeId(ObjectIds.JsonStatusMessage)
+
+    MessageId: String = None
+    MessageType: String = None
+    PublisherId: String = None
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    IsCyclic: Boolean = True
+    Status: PubSubState = PubSubState.Disabled
+    NextReportTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(frozen=FROZEN)
+class JsonActionNetworkMessage:
+    """
+    :ivar MessageId:
+    :vartype MessageId: String
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar PublisherId:
+    :vartype PublisherId: String
+    :ivar Timestamp:
+    :vartype Timestamp: UtcTime
+    :ivar ResponseAddress:
+    :vartype ResponseAddress: String
+    :ivar CorrelationData:
+    :vartype CorrelationData: ByteString
+    :ivar RequestorId:
+    :vartype RequestorId: String
+    :ivar TimeoutHint:
+    :vartype TimeoutHint: Duration
+    :ivar Messages:
+    :vartype Messages: ExtensionObject
+    """
+
+    data_type = NodeId(ObjectIds.JsonActionNetworkMessage)
+
+    MessageId: String = None
+    MessageType: String = None
+    PublisherId: String = None
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    ResponseAddress: String = None
+    CorrelationData: ByteString = None
+    RequestorId: String = None
+    TimeoutHint: Duration = 0
+    Messages: List[ExtensionObject] = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class JsonActionRequestMessage:
+    """
+    :ivar DataSetWriterId:
+    :vartype DataSetWriterId: UInt16
+    :ivar ActionTargetId:
+    :vartype ActionTargetId: UInt16
+    :ivar DataSetWriterName:
+    :vartype DataSetWriterName: String
+    :ivar WriterGroupName:
+    :vartype WriterGroupName: String
+    :ivar MetaDataVersion:
+    :vartype MetaDataVersion: ConfigurationVersionDataType
+    :ivar MinorVersion:
+    :vartype MinorVersion: VersionTime
+    :ivar Timestamp:
+    :vartype Timestamp: DateTime
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar RequestId:
+    :vartype RequestId: UInt16
+    :ivar ActionState:
+    :vartype ActionState: ActionState
+    :ivar Payload:
+    :vartype Payload: ExtensionObject
+    """
+
+    data_type = NodeId(ObjectIds.JsonActionRequestMessage)
+
+    DataSetWriterId: UInt16 = 0
+    ActionTargetId: UInt16 = 0
+    DataSetWriterName: String = None
+    WriterGroupName: String = None
+    MetaDataVersion: ConfigurationVersionDataType = field(default_factory=ConfigurationVersionDataType)
+    MinorVersion: VersionTime = 0
+    Timestamp: DateTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    MessageType: String = None
+    RequestId: UInt16 = 0
+    ActionState_: ActionState = ActionState.Idle
+    Payload: ExtensionObject = ExtensionObject()
+
+    @property
+    def ActionState(self):
+        return self.ActionState_
+
+    @ActionState.setter
+    def ActionState(self, val):
+        self.ActionState_ = val
+
+
+@dataclass(frozen=FROZEN)
+class JsonActionResponseMessage:
+    """
+    :ivar DataSetWriterId:
+    :vartype DataSetWriterId: UInt16
+    :ivar ActionTargetId:
+    :vartype ActionTargetId: UInt16
+    :ivar DataSetWriterName:
+    :vartype DataSetWriterName: String
+    :ivar WriterGroupName:
+    :vartype WriterGroupName: String
+    :ivar MetaDataVersion:
+    :vartype MetaDataVersion: ConfigurationVersionDataType
+    :ivar MinorVersion:
+    :vartype MinorVersion: VersionTime
+    :ivar Timestamp:
+    :vartype Timestamp: DateTime
+    :ivar Status:
+    :vartype Status: StatusCode
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar RequestId:
+    :vartype RequestId: UInt16
+    :ivar ActionState:
+    :vartype ActionState: ActionState
+    :ivar Payload:
+    :vartype Payload: ExtensionObject
+    """
+
+    data_type = NodeId(ObjectIds.JsonActionResponseMessage)
+
+    DataSetWriterId: UInt16 = 0
+    ActionTargetId: UInt16 = 0
+    DataSetWriterName: String = None
+    WriterGroupName: String = None
+    MetaDataVersion: ConfigurationVersionDataType = field(default_factory=ConfigurationVersionDataType)
+    MinorVersion: VersionTime = 0
+    Timestamp: DateTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    Status: StatusCode = field(default_factory=StatusCode)
+    MessageType: String = None
+    RequestId: UInt16 = 0
+    ActionState_: ActionState = ActionState.Idle
+    Payload: ExtensionObject = ExtensionObject()
+
+    @property
+    def ActionState(self):
+        return self.ActionState_
+
+    @ActionState.setter
+    def ActionState(self, val):
+        self.ActionState_ = val
+
+
+@dataclass(frozen=FROZEN)
 class AliasNameDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part17/7.2
@@ -2915,6 +3604,114 @@ class PriorityMappingEntryType:
     PriorityLabel: String = None
     PriorityValue_PCP: Byte = 0
     PriorityValue_DSCP: UInt32 = 0
+
+
+@dataclass(frozen=FROZEN)
+class LldpManagementAddressTxPortType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.2/#5.3.2.2
+
+    :ivar AddressSubtype:
+    :vartype AddressSubtype: UInt32
+    :ivar ManAddress:
+    :vartype ManAddress: String
+    :ivar TxEnable:
+    :vartype TxEnable: Boolean
+    :ivar AddrLen:
+    :vartype AddrLen: UInt32
+    :ivar IfSubtype:
+    :vartype IfSubtype: ManAddrIfSubtype
+    :ivar IfId:
+    :vartype IfId: UInt32
+    """
+
+    data_type = NodeId(ObjectIds.LldpManagementAddressTxPortType)
+
+    AddressSubtype: UInt32 = 0
+    ManAddress: String = None
+    TxEnable: Boolean = True
+    AddrLen: UInt32 = 0
+    IfSubtype: ManAddrIfSubtype = ManAddrIfSubtype.None_
+    IfId: UInt32 = 0
+
+
+@dataclass(frozen=FROZEN)
+class LldpManagementAddressType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.2/#5.3.2.3
+
+    :ivar AddressSubtype:
+    :vartype AddressSubtype: UInt32
+    :ivar Address:
+    :vartype Address: String
+    :ivar IfSubtype:
+    :vartype IfSubtype: ManAddrIfSubtype
+    :ivar IfId:
+    :vartype IfId: UInt32
+    """
+
+    data_type = NodeId(ObjectIds.LldpManagementAddressType)
+
+    AddressSubtype: UInt32 = 0
+    Address: String = None
+    IfSubtype: ManAddrIfSubtype = ManAddrIfSubtype.None_
+    IfId: UInt32 = 0
+
+
+@dataclass(frozen=FROZEN)
+class LldpTlvType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.2/#5.3.2.4
+
+    :ivar TlvType:
+    :vartype TlvType: UInt32
+    :ivar TlvInfo:
+    :vartype TlvInfo: ByteString
+    """
+
+    data_type = NodeId(ObjectIds.LldpTlvType)
+
+    TlvType: UInt32 = 0
+    TlvInfo: ByteString = None
+
+
+@dataclass(frozen=FROZEN)
+class ReferenceDescriptionDataType:
+    """
+    :ivar SourceNode:
+    :vartype SourceNode: NodeId
+    :ivar ReferenceType:
+    :vartype ReferenceType: NodeId
+    :ivar IsForward:
+    :vartype IsForward: Boolean
+    :ivar TargetNode:
+    :vartype TargetNode: ExpandedNodeId
+    """
+
+    data_type = NodeId(ObjectIds.ReferenceDescriptionDataType)
+
+    SourceNode: NodeId = field(default_factory=NodeId)
+    ReferenceType: NodeId = field(default_factory=NodeId)
+    IsForward: Boolean = True
+    TargetNode: ExpandedNodeId = field(default_factory=ExpandedNodeId)
+
+
+@dataclass(frozen=FROZEN)
+class ReferenceListEntryDataType:
+    """
+    :ivar ReferenceType:
+    :vartype ReferenceType: NodeId
+    :ivar IsForward:
+    :vartype IsForward: Boolean
+    :ivar TargetNode:
+    :vartype TargetNode: ExpandedNodeId
+    """
+
+    data_type = NodeId(ObjectIds.ReferenceListEntryDataType)
+
+    ReferenceType: NodeId = field(default_factory=NodeId)
+    IsForward: Boolean = True
+    TargetNode: ExpandedNodeId = field(default_factory=ExpandedNodeId)
 
 
 @dataclass(frozen=FROZEN)
@@ -3207,7 +4004,7 @@ class EnumDescription(DataTypeDescription):
 @dataclass(frozen=FROZEN)
 class DataTypeSchemaHeader:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.31
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.2
 
     :ivar Namespaces:
     :vartype Namespaces: String
@@ -3262,7 +4059,7 @@ class UABinaryFileDataType(DataTypeSchemaHeader):
 @dataclass(frozen=FROZEN)
 class DataSetMetaDataType(DataTypeSchemaHeader):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.3
 
     :ivar Namespaces:
     :vartype Namespaces: String
@@ -3324,6 +4121,43 @@ class PublishedDataSetDataType:
 
 
 @dataclass(frozen=FROZEN)
+class PublishedActionDataType(PublishedDataSetSourceDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.10.4
+
+    :ivar RequestDataSetMetaData:
+    :vartype RequestDataSetMetaData: DataSetMetaDataType
+    :ivar ActionTargets:
+    :vartype ActionTargets: ActionTargetDataType
+    """
+
+    data_type = NodeId(ObjectIds.PublishedActionDataType)
+
+    RequestDataSetMetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
+    ActionTargets: List[ActionTargetDataType] = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class PublishedActionMethodDataType(PublishedActionDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.10.6
+
+    :ivar RequestDataSetMetaData:
+    :vartype RequestDataSetMetaData: DataSetMetaDataType
+    :ivar ActionTargets:
+    :vartype ActionTargets: ActionTargetDataType
+    :ivar ActionMethods:
+    :vartype ActionMethods: ActionMethodDataType
+    """
+
+    data_type = NodeId(ObjectIds.PublishedActionMethodDataType)
+
+    RequestDataSetMetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
+    ActionTargets: List[ActionTargetDataType] = field(default_factory=list)
+    ActionMethods: List[ActionMethodDataType] = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
 class StandaloneSubscribedDataSetDataType(SubscribedDataSetDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.10/#6.2.10.5
@@ -3344,6 +4178,78 @@ class StandaloneSubscribedDataSetDataType(SubscribedDataSetDataType):
     DataSetFolder: List[String] = field(default_factory=list)
     DataSetMetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
     SubscribedDataSet: Type[SubscribedDataSetDataType] = field(default_factory=SubscribedDataSetDataType)
+
+
+@dataclass(frozen=FROZEN)
+class JsonDataSetMetaDataMessage:
+    """
+    :ivar MessageId:
+    :vartype MessageId: String
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar PublisherId:
+    :vartype PublisherId: String
+    :ivar DataSetWriterId:
+    :vartype DataSetWriterId: UInt16
+    :ivar WriterGroupName:
+    :vartype WriterGroupName: String
+    :ivar DataSetWriterName:
+    :vartype DataSetWriterName: String
+    :ivar Timestamp:
+    :vartype Timestamp: UtcTime
+    :ivar MetaData:
+    :vartype MetaData: DataSetMetaDataType
+    """
+
+    data_type = NodeId(ObjectIds.JsonDataSetMetaDataMessage)
+
+    MessageId: String = None
+    MessageType: String = None
+    PublisherId: String = None
+    DataSetWriterId: UInt16 = 0
+    WriterGroupName: String = None
+    DataSetWriterName: String = None
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    MetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
+
+
+@dataclass(frozen=FROZEN)
+class JsonActionMetaDataMessage:
+    """
+    :ivar MessageId:
+    :vartype MessageId: String
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar PublisherId:
+    :vartype PublisherId: String
+    :ivar DataSetWriterId:
+    :vartype DataSetWriterId: UInt16
+    :ivar DataSetWriterName:
+    :vartype DataSetWriterName: String
+    :ivar Timestamp:
+    :vartype Timestamp: UtcTime
+    :ivar ActionTargets:
+    :vartype ActionTargets: ActionTargetDataType
+    :ivar Request:
+    :vartype Request: DataSetMetaDataType
+    :ivar Response:
+    :vartype Response: DataSetMetaDataType
+    :ivar ActionMethods:
+    :vartype ActionMethods: ActionMethodDataType
+    """
+
+    data_type = NodeId(ObjectIds.JsonActionMetaDataMessage)
+
+    MessageId: String = None
+    MessageType: String = None
+    PublisherId: String = None
+    DataSetWriterId: UInt16 = 0
+    DataSetWriterName: String = None
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    ActionTargets: List[ActionTargetDataType] = field(default_factory=list)
+    Request: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
+    Response: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
+    ActionMethods: List[ActionMethodDataType] = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -3383,7 +4289,7 @@ class TimeZoneDataType:
 @dataclass(frozen=FROZEN)
 class ApplicationDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/7.2.4/#7.2.4.6.5
 
     :ivar ApplicationUri:
     :vartype ApplicationUri: String
@@ -3418,6 +4324,33 @@ class ApplicationDescription:
     @ApplicationType.setter
     def ApplicationType(self, val):
         self.ApplicationType_ = val
+
+
+@dataclass(frozen=FROZEN)
+class JsonApplicationDescriptionMessage:
+    """
+    :ivar MessageId:
+    :vartype MessageId: String
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar PublisherId:
+    :vartype PublisherId: String
+    :ivar Timestamp:
+    :vartype Timestamp: UtcTime
+    :ivar Description:
+    :vartype Description: ApplicationDescription
+    :ivar ServerCapabilities:
+    :vartype ServerCapabilities: String
+    """
+
+    data_type = NodeId(ObjectIds.JsonApplicationDescriptionMessage)
+
+    MessageId: String = None
+    MessageType: String = None
+    PublisherId: String = None
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    Description: ApplicationDescription = field(default_factory=ApplicationDescription)
+    ServerCapabilities: List[String] = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -3509,8 +4442,6 @@ class ServiceFault:
 @dataclass(frozen=FROZEN)
 class SessionlessInvokeRequestType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/6.3.2
-
     :ivar UrisVersion:
     :vartype UrisVersion: VersionTime
     :ivar NamespaceUris:
@@ -3535,8 +4466,6 @@ class SessionlessInvokeRequestType:
 @dataclass(frozen=FROZEN)
 class SessionlessInvokeResponseType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/6.3.2
-
     :ivar NamespaceUris:
     :vartype NamespaceUris: String
     :ivar ServerUris:
@@ -3571,7 +4500,7 @@ class FindServersParameters:
 @dataclass(frozen=FROZEN)
 class FindServersRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.2/#5.4.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.2/#5.5.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -3599,7 +4528,7 @@ class FindServersRequest:
 @dataclass(frozen=FROZEN)
 class FindServersResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.2/#5.4.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.2/#5.5.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -3627,7 +4556,7 @@ class FindServersResponse:
 @dataclass(frozen=FROZEN)
 class ServerOnNetwork:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.3/#5.4.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.3/#5.5.3.2
 
     :ivar RecordId:
     :vartype RecordId: UInt32
@@ -3666,7 +4595,7 @@ class FindServersOnNetworkParameters:
 @dataclass(frozen=FROZEN)
 class FindServersOnNetworkRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.3/#5.4.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.3/#5.5.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -3707,7 +4636,7 @@ class FindServersOnNetworkResult:
 @dataclass(frozen=FROZEN)
 class FindServersOnNetworkResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.3/#5.4.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.3/#5.5.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4092,6 +5021,54 @@ class PubSubConfigurationDataType:
 
 
 @dataclass(frozen=FROZEN)
+class JsonPubSubConnectionMessage:
+    """
+    :ivar MessageId:
+    :vartype MessageId: String
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar PublisherId:
+    :vartype PublisherId: String
+    :ivar Timestamp:
+    :vartype Timestamp: UtcTime
+    :ivar Connection:
+    :vartype Connection: PubSubConnectionDataType
+    """
+
+    data_type = NodeId(ObjectIds.JsonPubSubConnectionMessage)
+
+    MessageId: String = None
+    MessageType: String = None
+    PublisherId: String = None
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    Connection: PubSubConnectionDataType = field(default_factory=PubSubConnectionDataType)
+
+
+@dataclass(frozen=FROZEN)
+class JsonActionResponderMessage:
+    """
+    :ivar MessageId:
+    :vartype MessageId: String
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar PublisherId:
+    :vartype PublisherId: String
+    :ivar Timestamp:
+    :vartype Timestamp: UtcTime
+    :ivar Connection:
+    :vartype Connection: PubSubConnectionDataType
+    """
+
+    data_type = NodeId(ObjectIds.JsonActionResponderMessage)
+
+    MessageId: String = None
+    MessageType: String = None
+    PublisherId: String = None
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    Connection: PubSubConnectionDataType = field(default_factory=PubSubConnectionDataType)
+
+
+@dataclass(frozen=FROZEN)
 class PubSubConfiguration2DataType(PubSubConfigurationDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.12/#6.2.12.4
@@ -4133,6 +5110,33 @@ class PubSubConfiguration2DataType(PubSubConfigurationDataType):
 
 
 @dataclass(frozen=FROZEN)
+class JsonServerEndpointsMessage:
+    """
+    :ivar MessageId:
+    :vartype MessageId: String
+    :ivar MessageType:
+    :vartype MessageType: String
+    :ivar PublisherId:
+    :vartype PublisherId: String
+    :ivar Timestamp:
+    :vartype Timestamp: UtcTime
+    :ivar Description:
+    :vartype Description: ApplicationDescription
+    :ivar Endpoints:
+    :vartype Endpoints: EndpointDescription
+    """
+
+    data_type = NodeId(ObjectIds.JsonServerEndpointsMessage)
+
+    MessageId: String = None
+    MessageType: String = None
+    PublisherId: String = None
+    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    Description: ApplicationDescription = field(default_factory=ApplicationDescription)
+    Endpoints: List[EndpointDescription] = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
 class GetEndpointsParameters:
     """
     :ivar EndpointUrl:
@@ -4151,7 +5155,7 @@ class GetEndpointsParameters:
 @dataclass(frozen=FROZEN)
 class GetEndpointsRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.4/#5.4.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.4/#5.5.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4179,7 +5183,7 @@ class GetEndpointsRequest:
 @dataclass(frozen=FROZEN)
 class GetEndpointsResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.4/#5.4.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.4/#5.5.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4242,7 +5246,7 @@ class RegisteredServer:
 @dataclass(frozen=FROZEN)
 class RegisterServerRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.5/#5.4.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.5/#5.5.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4270,7 +5274,7 @@ class RegisterServerRequest:
 @dataclass(frozen=FROZEN)
 class RegisterServerResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.5/#5.4.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.5/#5.5.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4335,7 +5339,7 @@ class RegisterServer2Parameters:
 @dataclass(frozen=FROZEN)
 class RegisterServer2Request:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.6/#5.4.6.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.6/#5.5.6.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4363,7 +5367,7 @@ class RegisterServer2Request:
 @dataclass(frozen=FROZEN)
 class RegisterServer2Response:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.4.6/#5.4.6.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.6/#5.5.6.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4394,8 +5398,6 @@ class RegisterServer2Response:
 @dataclass(frozen=FROZEN)
 class ChannelSecurityToken:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.2/#5.5.2.2
-
     :ivar ChannelId:
     :vartype ChannelId: UInt32
     :ivar TokenId:
@@ -4439,8 +5441,6 @@ class OpenSecureChannelParameters:
 @dataclass(frozen=FROZEN)
 class OpenSecureChannelRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.2/#5.5.2.2
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4483,8 +5483,6 @@ class OpenSecureChannelResult:
 @dataclass(frozen=FROZEN)
 class OpenSecureChannelResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.2/#5.5.2.2
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4511,8 +5509,6 @@ class OpenSecureChannelResponse:
 @dataclass(frozen=FROZEN)
 class CloseSecureChannelRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.3/#5.5.3.2
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar RequestHeader:
@@ -4536,8 +5532,6 @@ class CloseSecureChannelRequest:
 @dataclass(frozen=FROZEN)
 class CloseSecureChannelResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.3/#5.5.3.2
-
     :ivar TypeId:
     :vartype TypeId: NodeId
     :ivar ResponseHeader:
@@ -4626,7 +5620,7 @@ class CreateSessionParameters:
 @dataclass(frozen=FROZEN)
 class CreateSessionRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.6.2/#5.6.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.2/#5.7.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4688,7 +5682,7 @@ class CreateSessionResult:
 @dataclass(frozen=FROZEN)
 class CreateSessionResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.6.2/#5.6.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.2/#5.7.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4826,7 +5820,7 @@ class ActivateSessionParameters:
 @dataclass(frozen=FROZEN)
 class ActivateSessionRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.6.3/#5.6.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.3/#5.7.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4870,7 +5864,7 @@ class ActivateSessionResult:
 @dataclass(frozen=FROZEN)
 class ActivateSessionResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.6.3/#5.6.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.3/#5.7.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4898,7 +5892,7 @@ class ActivateSessionResponse:
 @dataclass(frozen=FROZEN)
 class CloseSessionRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.6.4/#5.6.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.4/#5.7.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4926,7 +5920,7 @@ class CloseSessionRequest:
 @dataclass(frozen=FROZEN)
 class CloseSessionResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.6.4/#5.6.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.4/#5.7.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4961,7 +5955,7 @@ class CancelParameters:
 @dataclass(frozen=FROZEN)
 class CancelRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.6.5/#5.6.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.5/#5.7.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4999,7 +5993,7 @@ class CancelResult:
 @dataclass(frozen=FROZEN)
 class CancelResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.6.5/#5.6.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.5/#5.7.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -5416,7 +6410,7 @@ class AddNodesItem:
 @dataclass(frozen=FROZEN)
 class AddNodesResult:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.2/#5.7.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.2/#5.8.2.2
 
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
@@ -5451,7 +6445,7 @@ class AddNodesParameters:
 @dataclass(frozen=FROZEN)
 class AddNodesRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.2/#5.7.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.2/#5.8.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -5479,7 +6473,7 @@ class AddNodesRequest:
 @dataclass(frozen=FROZEN)
 class AddNodesResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.2/#5.7.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.2/#5.8.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -5549,7 +6543,7 @@ class AddReferencesParameters:
 @dataclass(frozen=FROZEN)
 class AddReferencesRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.3/#5.7.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.3/#5.8.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -5577,7 +6571,7 @@ class AddReferencesRequest:
 @dataclass(frozen=FROZEN)
 class AddReferencesResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.3/#5.7.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.3/#5.8.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -5643,7 +6637,7 @@ class DeleteNodesParameters:
 @dataclass(frozen=FROZEN)
 class DeleteNodesRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.4/#5.7.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.4/#5.8.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -5671,7 +6665,7 @@ class DeleteNodesRequest:
 @dataclass(frozen=FROZEN)
 class DeleteNodesResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.4/#5.7.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.4/#5.8.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -5738,7 +6732,7 @@ class DeleteReferencesParameters:
 @dataclass(frozen=FROZEN)
 class DeleteReferencesRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.5/#5.7.5.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.5/#5.8.5.1
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -5779,7 +6773,7 @@ class DeleteReferencesResult:
 @dataclass(frozen=FROZEN)
 class DeleteReferencesResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.5/#5.7.5.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.5/#5.8.5.1
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -5827,7 +6821,7 @@ class ViewDescription:
 @dataclass(frozen=FROZEN)
 class BrowseDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.2/#5.8.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.2/#5.9.2.2
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -5962,7 +6956,7 @@ class BrowseParameters:
 @dataclass(frozen=FROZEN)
 class BrowseRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.2/#5.8.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.2/#5.9.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -5990,7 +6984,7 @@ class BrowseRequest:
 @dataclass(frozen=FROZEN)
 class BrowseResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.2/#5.8.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.2/#5.9.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6034,7 +7028,7 @@ class BrowseNextParameters:
 @dataclass(frozen=FROZEN)
 class BrowseNextRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.3/#5.8.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.3/#5.9.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6075,7 +7069,7 @@ class BrowseNextResult:
 @dataclass(frozen=FROZEN)
 class BrowseNextResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.3/#5.8.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.3/#5.9.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6103,7 +7097,7 @@ class BrowseNextResponse:
 @dataclass(frozen=FROZEN)
 class BrowsePath:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part3/6.2.5
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
 
     :ivar StartingNode:
     :vartype StartingNode: NodeId
@@ -6128,7 +7122,7 @@ class BrowsePath:
 @dataclass(frozen=FROZEN)
 class BrowsePathTarget:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.4/#5.8.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
 
     :ivar TargetId:
     :vartype TargetId: ExpandedNodeId
@@ -6145,7 +7139,7 @@ class BrowsePathTarget:
 @dataclass(frozen=FROZEN)
 class BrowsePathResult:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.4/#5.8.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
 
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
@@ -6180,7 +7174,7 @@ class TranslateBrowsePathsToNodeIdsParameters:
 @dataclass(frozen=FROZEN)
 class TranslateBrowsePathsToNodeIdsRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.4/#5.8.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6208,7 +7202,7 @@ class TranslateBrowsePathsToNodeIdsRequest:
 @dataclass(frozen=FROZEN)
 class TranslateBrowsePathsToNodeIdsResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.4/#5.8.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6249,7 +7243,7 @@ class RegisterNodesParameters:
 @dataclass(frozen=FROZEN)
 class RegisterNodesRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.5/#5.8.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.5/#5.9.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6287,7 +7281,7 @@ class RegisterNodesResult:
 @dataclass(frozen=FROZEN)
 class RegisterNodesResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.5/#5.8.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.5/#5.9.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6325,7 +7319,7 @@ class UnregisterNodesParameters:
 @dataclass(frozen=FROZEN)
 class UnregisterNodesRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.6/#5.8.6.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.6/#5.9.6.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6353,7 +7347,7 @@ class UnregisterNodesRequest:
 @dataclass(frozen=FROZEN)
 class UnregisterNodesResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.6/#5.8.6.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.6/#5.9.6.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6414,7 +7408,7 @@ class EndpointConfiguration:
 @dataclass(frozen=FROZEN)
 class QueryDataDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.3/#5.9.3.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.1
 
     :ivar RelativePath:
     :vartype RelativePath: RelativePath
@@ -6442,7 +7436,7 @@ class QueryDataDescription:
 @dataclass(frozen=FROZEN)
 class NodeTypeDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.3/#5.9.3.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.1
 
     :ivar TypeDefinitionNode:
     :vartype TypeDefinitionNode: ExpandedNodeId
@@ -6710,7 +7704,7 @@ class ContentFilterResult:
 @dataclass(frozen=FROZEN)
 class ParsingResult:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.3/#5.9.3.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.1
 
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
@@ -6760,7 +7754,7 @@ class QueryFirstParameters:
 @dataclass(frozen=FROZEN)
 class QueryFirstRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.3/#5.9.3.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.1
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6818,7 +7812,7 @@ class QueryFirstResult:
 @dataclass(frozen=FROZEN)
 class QueryFirstResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.3/#5.9.3.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.1
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6867,7 +7861,7 @@ class QueryNextParameters:
 @dataclass(frozen=FROZEN)
 class QueryNextRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.4/#5.10.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6908,7 +7902,7 @@ class QueryNextResult:
 @dataclass(frozen=FROZEN)
 class QueryNextResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.4/#5.10.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -6991,7 +7985,7 @@ class ReadParameters:
 @dataclass(frozen=FROZEN)
 class ReadRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.2/#5.10.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.2/#5.11.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -7019,7 +8013,7 @@ class ReadRequest:
 @dataclass(frozen=FROZEN)
 class ReadResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.2/#5.10.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.2/#5.11.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -7050,7 +8044,7 @@ class ReadResponse:
 @dataclass(frozen=FROZEN)
 class HistoryReadValueId:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.3/#5.11.3.2
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7088,7 +8082,7 @@ class HistoryReadValueId:
 @dataclass(frozen=FROZEN)
 class HistoryReadResult:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.3/#5.11.3.2
 
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
@@ -7123,7 +8117,7 @@ class HistoryReadResult:
 @dataclass(frozen=FROZEN)
 class HistoryReadDetails:
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.1
 
     """
 
@@ -7131,9 +8125,26 @@ class HistoryReadDetails:
 
 
 @dataclass(frozen=FROZEN)
+class SortRuleElement:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.7
+
+    :ivar SortOrder:
+    :vartype SortOrder: SortOrderType
+    :ivar EventField:
+    :vartype EventField: SimpleAttributeOperand
+    """
+
+    data_type = NodeId(ObjectIds.SortRuleElement)
+
+    SortOrder: SortOrderType = SortOrderType.Ascending
+    EventField: SimpleAttributeOperand = field(default_factory=SimpleAttributeOperand)
+
+
+@dataclass(frozen=FROZEN)
 class ReadRawModifiedDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.3/#6.4.3.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.3/#6.5.3.1
 
     :ivar IsReadModified:
     :vartype IsReadModified: Boolean
@@ -7159,7 +8170,7 @@ class ReadRawModifiedDetails(HistoryReadDetails):
 @dataclass(frozen=FROZEN)
 class ReadAtTimeDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.5/#6.4.5.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.5/#6.5.5.1
 
     :ivar ReqTimes:
     :vartype ReqTimes: UtcTime
@@ -7176,7 +8187,7 @@ class ReadAtTimeDetails(HistoryReadDetails):
 @dataclass(frozen=FROZEN)
 class ReadAnnotationDataDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.6/#6.4.6.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.6/#6.5.6.1
 
     :ivar ReqTimes:
     :vartype ReqTimes: UtcTime
@@ -7190,7 +8201,7 @@ class ReadAnnotationDataDetails(HistoryReadDetails):
 @dataclass(frozen=FROZEN)
 class HistoryData:
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.2
 
     :ivar DataValues:
     :vartype DataValues: DataValue
@@ -7204,7 +8215,7 @@ class HistoryData:
 @dataclass(frozen=FROZEN)
 class ModificationInfo:
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.5.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.5
 
     :ivar ModificationTime:
     :vartype ModificationTime: UtcTime
@@ -7224,7 +8235,7 @@ class ModificationInfo:
 @dataclass(frozen=FROZEN)
 class HistoryModifiedData(HistoryData):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.5.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.3
 
     :ivar DataValues:
     :vartype DataValues: DataValue
@@ -7268,7 +8279,7 @@ class HistoryReadParameters:
 @dataclass(frozen=FROZEN)
 class HistoryReadRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.3/#5.11.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -7296,7 +8307,7 @@ class HistoryReadRequest:
 @dataclass(frozen=FROZEN)
 class HistoryReadResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.3/#5.11.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -7327,7 +8338,7 @@ class HistoryReadResponse:
 @dataclass(frozen=FROZEN)
 class WriteValue:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.4/#5.10.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.4/#5.11.4.2
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7368,7 +8379,7 @@ class WriteParameters:
 @dataclass(frozen=FROZEN)
 class WriteRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.4/#5.10.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.4/#5.11.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -7396,7 +8407,7 @@ class WriteRequest:
 @dataclass(frozen=FROZEN)
 class WriteResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.4/#5.10.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.4/#5.11.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -7427,29 +8438,17 @@ class WriteResponse:
 @dataclass(frozen=FROZEN)
 class HistoryUpdateDetails:
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.1
 
-    :ivar NodeId:
-    :vartype NodeId: NodeId
     """
 
     data_type = NodeId(ObjectIds.HistoryUpdateDetails)
-
-    NodeId_: NodeId = field(default_factory=NodeId)
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
 
 
 @dataclass(frozen=FROZEN)
 class UpdateDataDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.2/#6.8.2.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.2/#6.9.2.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7477,7 +8476,7 @@ class UpdateDataDetails(HistoryUpdateDetails):
 @dataclass(frozen=FROZEN)
 class UpdateStructureDataDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.3/#6.8.3.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.3/#6.9.3.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7505,7 +8504,7 @@ class UpdateStructureDataDetails(HistoryUpdateDetails):
 @dataclass(frozen=FROZEN)
 class DeleteRawModifiedDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.5/#6.8.5.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.5/#6.9.5.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7536,7 +8535,7 @@ class DeleteRawModifiedDetails(HistoryUpdateDetails):
 @dataclass(frozen=FROZEN)
 class DeleteAtTimeDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.6/#6.8.6.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.6/#6.9.6.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7561,7 +8560,7 @@ class DeleteAtTimeDetails(HistoryUpdateDetails):
 @dataclass(frozen=FROZEN)
 class DeleteEventDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.7/#6.8.7.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.7/#6.9.7.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7586,7 +8585,7 @@ class DeleteEventDetails(HistoryUpdateDetails):
 @dataclass(frozen=FROZEN)
 class HistoryUpdateResult:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.5/#5.10.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.5/#5.11.5.2
 
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
@@ -7624,7 +8623,7 @@ class HistoryUpdateParameters:
 @dataclass(frozen=FROZEN)
 class HistoryUpdateRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.5/#5.10.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.5/#5.11.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -7652,7 +8651,7 @@ class HistoryUpdateRequest:
 @dataclass(frozen=FROZEN)
 class HistoryUpdateResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.5/#5.10.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.5/#5.11.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -7683,7 +8682,7 @@ class HistoryUpdateResponse:
 @dataclass(frozen=FROZEN)
 class CallMethodRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.2/#5.11.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
 
     :ivar ObjectId:
     :vartype ObjectId: NodeId
@@ -7703,7 +8702,7 @@ class CallMethodRequest:
 @dataclass(frozen=FROZEN)
 class CallMethodResult:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.2/#5.11.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
 
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
@@ -7744,7 +8743,7 @@ class CallParameters:
 @dataclass(frozen=FROZEN)
 class CallRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.2/#5.11.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -7772,7 +8771,7 @@ class CallRequest:
 @dataclass(frozen=FROZEN)
 class CallResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.2/#5.11.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -7850,7 +8849,7 @@ class EventFilter(MonitoringFilter):
 @dataclass(frozen=FROZEN)
 class ReadEventDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.2/#6.4.2.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.2/#6.5.2.1
 
     :ivar NumValuesPerNode:
     :vartype NumValuesPerNode: Counter
@@ -7871,9 +8870,61 @@ class ReadEventDetails(HistoryReadDetails):
 
 
 @dataclass(frozen=FROZEN)
+class ReadEventDetails2(ReadEventDetails):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.2/#6.5.2.3
+
+    :ivar NumValuesPerNode:
+    :vartype NumValuesPerNode: Counter
+    :ivar StartTime:
+    :vartype StartTime: UtcTime
+    :ivar EndTime:
+    :vartype EndTime: UtcTime
+    :ivar Filter:
+    :vartype Filter: EventFilter
+    :ivar ReadModified:
+    :vartype ReadModified: Boolean
+    """
+
+    data_type = NodeId(ObjectIds.ReadEventDetails2)
+
+    NumValuesPerNode: Counter = 0
+    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    Filter: EventFilter = field(default_factory=EventFilter)
+    ReadModified: Boolean = True
+
+
+@dataclass(frozen=FROZEN)
+class ReadEventDetailsSorted(ReadEventDetails):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.2/#6.5.2.5
+
+    :ivar NumValuesPerNode:
+    :vartype NumValuesPerNode: Counter
+    :ivar StartTime:
+    :vartype StartTime: UtcTime
+    :ivar EndTime:
+    :vartype EndTime: UtcTime
+    :ivar Filter:
+    :vartype Filter: EventFilter
+    :ivar SortClause:
+    :vartype SortClause: SortRuleElement
+    """
+
+    data_type = NodeId(ObjectIds.ReadEventDetailsSorted)
+
+    NumValuesPerNode: Counter = 0
+    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    Filter: EventFilter = field(default_factory=EventFilter)
+    SortClause: List[SortRuleElement] = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
 class AggregateConfiguration:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.4
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.4/#6.5.4.1
 
     :ivar UseServerCapabilitiesDefaults:
     :vartype UseServerCapabilitiesDefaults: Boolean
@@ -7899,7 +8950,7 @@ class AggregateConfiguration:
 @dataclass(frozen=FROZEN)
 class ReadProcessedDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.4.4/#6.4.4.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.4/#6.5.4.1
 
     :ivar StartTime:
     :vartype StartTime: UtcTime
@@ -8038,7 +9089,7 @@ class MonitoringParameters:
 @dataclass(frozen=FROZEN)
 class MonitoredItemCreateRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.2/#5.13.2.2
 
     :ivar ItemToMonitor:
     :vartype ItemToMonitor: ReadValueId
@@ -8066,7 +9117,7 @@ class MonitoredItemCreateRequest:
 @dataclass(frozen=FROZEN)
 class MonitoredItemCreateResult:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.2/#5.13.2.2
 
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
@@ -8124,7 +9175,7 @@ class CreateMonitoredItemsParameters:
 @dataclass(frozen=FROZEN)
 class CreateMonitoredItemsRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.2/#5.13.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8152,7 +9203,7 @@ class CreateMonitoredItemsRequest:
 @dataclass(frozen=FROZEN)
 class CreateMonitoredItemsResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.2/#5.13.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8183,7 +9234,7 @@ class CreateMonitoredItemsResponse:
 @dataclass(frozen=FROZEN)
 class MonitoredItemModifyRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.3/#5.12.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.3/#5.13.3.2
 
     :ivar MonitoredItemId:
     :vartype MonitoredItemId: IntegerId
@@ -8200,7 +9251,7 @@ class MonitoredItemModifyRequest:
 @dataclass(frozen=FROZEN)
 class MonitoredItemModifyResult:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.3/#5.12.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.3/#5.13.3.2
 
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
@@ -8255,7 +9306,7 @@ class ModifyMonitoredItemsParameters:
 @dataclass(frozen=FROZEN)
 class ModifyMonitoredItemsRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.3/#5.12.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.3/#5.13.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8283,7 +9334,7 @@ class ModifyMonitoredItemsRequest:
 @dataclass(frozen=FROZEN)
 class ModifyMonitoredItemsResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.3/#5.12.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.3/#5.13.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8338,7 +9389,7 @@ class SetMonitoringModeParameters:
 @dataclass(frozen=FROZEN)
 class SetMonitoringModeRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.4/#5.12.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.4/#5.13.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8379,7 +9430,7 @@ class SetMonitoringModeResult:
 @dataclass(frozen=FROZEN)
 class SetMonitoringModeResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.4/#5.12.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.4/#5.13.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8426,7 +9477,7 @@ class SetTriggeringParameters:
 @dataclass(frozen=FROZEN)
 class SetTriggeringRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.5/#5.12.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.5/#5.13.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8473,7 +9524,7 @@ class SetTriggeringResult:
 @dataclass(frozen=FROZEN)
 class SetTriggeringResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.5/#5.12.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.5/#5.13.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8514,7 +9565,7 @@ class DeleteMonitoredItemsParameters:
 @dataclass(frozen=FROZEN)
 class DeleteMonitoredItemsRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.6/#5.12.6.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.6/#5.13.6.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8542,7 +9593,7 @@ class DeleteMonitoredItemsRequest:
 @dataclass(frozen=FROZEN)
 class DeleteMonitoredItemsResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.6/#5.12.6.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.6/#5.13.6.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8598,7 +9649,7 @@ class CreateSubscriptionParameters:
 @dataclass(frozen=FROZEN)
 class CreateSubscriptionRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.2/#5.13.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.2/#5.14.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8645,7 +9696,7 @@ class CreateSubscriptionResult:
 @dataclass(frozen=FROZEN)
 class CreateSubscriptionResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.2/#5.13.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.2/#5.14.2.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8698,7 +9749,7 @@ class ModifySubscriptionParameters:
 @dataclass(frozen=FROZEN)
 class ModifySubscriptionRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.3/#5.13.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.3/#5.14.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8742,7 +9793,7 @@ class ModifySubscriptionResult:
 @dataclass(frozen=FROZEN)
 class ModifySubscriptionResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.3/#5.13.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.3/#5.14.3.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8783,7 +9834,7 @@ class SetPublishingModeParameters:
 @dataclass(frozen=FROZEN)
 class SetPublishingModeRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.4/#5.13.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.4/#5.14.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8824,7 +9875,7 @@ class SetPublishingModeResult:
 @dataclass(frozen=FROZEN)
 class SetPublishingModeResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.4/#5.13.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.4/#5.14.4.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -8947,6 +9998,8 @@ class EventNotificationList(NotificationData):
 @dataclass(frozen=FROZEN)
 class HistoryEventFieldList:
     """
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.4
+
     :ivar EventFields:
     :vartype EventFields: Variant
     """
@@ -8959,7 +10012,7 @@ class HistoryEventFieldList:
 @dataclass(frozen=FROZEN)
 class HistoryEvent:
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.5.4
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.4
 
     :ivar Events:
     :vartype Events: HistoryEventFieldList
@@ -8971,9 +10024,26 @@ class HistoryEvent:
 
 
 @dataclass(frozen=FROZEN)
+class HistoryModifiedEvent(HistoryEvent):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.5
+
+    :ivar Events:
+    :vartype Events: HistoryEventFieldList
+    :ivar ModificationInfos:
+    :vartype ModificationInfos: ModificationInfo
+    """
+
+    data_type = NodeId(ObjectIds.HistoryModifiedEvent)
+
+    Events: List[HistoryEventFieldList] = field(default_factory=list)
+    ModificationInfos: List[ModificationInfo] = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
 class UpdateEventDetails(HistoryUpdateDetails):
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/6.8.4/#6.8.4.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.4/#6.9.4.1
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -9029,7 +10099,7 @@ class StatusChangeNotification(NotificationData):
 @dataclass(frozen=FROZEN)
 class SubscriptionAcknowledgement:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.5/#5.13.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.5/#5.14.5.2
 
     :ivar SubscriptionId:
     :vartype SubscriptionId: IntegerId
@@ -9056,7 +10126,7 @@ class PublishParameters:
 @dataclass(frozen=FROZEN)
 class PublishRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.5/#5.13.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.5/#5.14.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -9117,7 +10187,7 @@ class PublishResult:
 @dataclass(frozen=FROZEN)
 class PublishResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.5/#5.13.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.5/#5.14.5.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -9158,7 +10228,7 @@ class RepublishParameters:
 @dataclass(frozen=FROZEN)
 class RepublishRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.6/#5.13.6.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.6/#5.14.6.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -9186,7 +10256,7 @@ class RepublishRequest:
 @dataclass(frozen=FROZEN)
 class RepublishResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.6/#5.13.6.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.6/#5.14.6.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -9221,7 +10291,7 @@ class RepublishResponse:
 @dataclass(frozen=FROZEN)
 class TransferResult:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.7/#5.13.7.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.7/#5.14.7.2
 
     :ivar StatusCode:
     :vartype StatusCode: StatusCode
@@ -9259,7 +10329,7 @@ class TransferSubscriptionsParameters:
 @dataclass(frozen=FROZEN)
 class TransferSubscriptionsRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.7/#5.13.7.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.7/#5.14.7.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -9300,7 +10370,7 @@ class TransferSubscriptionsResult:
 @dataclass(frozen=FROZEN)
 class TransferSubscriptionsResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.7/#5.13.7.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.7/#5.14.7.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -9338,7 +10408,7 @@ class DeleteSubscriptionsParameters:
 @dataclass(frozen=FROZEN)
 class DeleteSubscriptionsRequest:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.8/#5.13.8.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.8/#5.14.8.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -9366,7 +10436,7 @@ class DeleteSubscriptionsRequest:
 @dataclass(frozen=FROZEN)
 class DeleteSubscriptionsResponse:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.8/#5.13.8.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.8/#5.14.8.2
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -9881,8 +10951,8 @@ class SubscriptionDiagnosticsDataType:
     :vartype MonitoringQueueOverflowCount: UInt32
     :ivar NextSequenceNumber:
     :vartype NextSequenceNumber: UInt32
-    :ivar EventQueueOverFlowCount:
-    :vartype EventQueueOverFlowCount: UInt32
+    :ivar EventQueueOverflowCount:
+    :vartype EventQueueOverflowCount: UInt32
     """
 
     data_type = NodeId(ObjectIds.SubscriptionDiagnosticsDataType)
@@ -9917,7 +10987,7 @@ class SubscriptionDiagnosticsDataType:
     DisabledMonitoredItemCount: UInt32 = 0
     MonitoringQueueOverflowCount: UInt32 = 0
     NextSequenceNumber: UInt32 = 0
-    EventQueueOverFlowCount: UInt32 = 0
+    EventQueueOverflowCount: UInt32 = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -9977,7 +11047,7 @@ class Range:
 @dataclass(frozen=FROZEN)
 class EUInformation:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.3/#5.6.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.3/#5.6.3.3
 
     :ivar NamespaceUri:
     :vartype NamespaceUri: String
@@ -10163,7 +11233,7 @@ class ProgramDiagnostic2DataType:
 @dataclass(frozen=FROZEN)
 class Annotation:
     """
-    https://reference.opcfoundation.org/v104/Core/docs/Part11/5.5
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.6
 
     :ivar Message:
     :vartype Message: String
@@ -10195,6 +11265,9 @@ extension_object_typeids['EphemeralKeyType'] = nid
 nid = FourByteNodeId(ObjectIds.EndpointType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = EndpointType
 extension_object_typeids['EndpointType'] = nid
+nid = FourByteNodeId(ObjectIds.BitFieldDefinition_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = BitFieldDefinition
+extension_object_typeids['BitFieldDefinition'] = nid
 nid = FourByteNodeId(ObjectIds.RationalNumber_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RationalNumber
 extension_object_typeids['RationalNumber'] = nid
@@ -10228,9 +11301,21 @@ extension_object_typeids['IdentityMappingRuleType'] = nid
 nid = FourByteNodeId(ObjectIds.CurrencyUnitType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = CurrencyUnitType
 extension_object_typeids['CurrencyUnitType'] = nid
+nid = FourByteNodeId(ObjectIds.AnnotationDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = AnnotationDataType
+extension_object_typeids['AnnotationDataType'] = nid
+nid = FourByteNodeId(ObjectIds.LinearConversionDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = LinearConversionDataType
+extension_object_typeids['LinearConversionDataType'] = nid
+nid = FourByteNodeId(ObjectIds.QuantityDimension_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = QuantityDimension
+extension_object_typeids['QuantityDimension'] = nid
 nid = FourByteNodeId(ObjectIds.TrustListDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = TrustListDataType
 extension_object_typeids['TrustListDataType'] = nid
+nid = FourByteNodeId(ObjectIds.TransactionErrorType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = TransactionErrorType
+extension_object_typeids['TransactionErrorType'] = nid
 nid = FourByteNodeId(ObjectIds.DecimalDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = DecimalDataType
 extension_object_typeids['DecimalDataType'] = nid
@@ -10264,6 +11349,12 @@ extension_object_typeids['PublishedDataItemsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PublishedDataSetCustomSourceDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PublishedDataSetCustomSourceDataType
 extension_object_typeids['PublishedDataSetCustomSourceDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ActionTargetDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ActionTargetDataType
+extension_object_typeids['ActionTargetDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ActionMethodDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ActionMethodDataType
+extension_object_typeids['ActionMethodDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DataSetWriterTransportDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = DataSetWriterTransportDataType
 extension_object_typeids['DataSetWriterTransportDataType'] = nid
@@ -10321,13 +11412,10 @@ extension_object_typeids['UadpDataSetWriterMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.UadpDataSetReaderMessageDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = UadpDataSetReaderMessageDataType
 extension_object_typeids['UadpDataSetReaderMessageDataType'] = nid
-nid = FourByteNodeId(ObjectIds.JsonWriterGroupMessageDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = JsonWriterGroupMessageDataType
 extension_object_typeids['JsonWriterGroupMessageDataType'] = nid
-nid = FourByteNodeId(ObjectIds.JsonDataSetWriterMessageDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = JsonDataSetWriterMessageDataType
 extension_object_typeids['JsonDataSetWriterMessageDataType'] = nid
-nid = FourByteNodeId(ObjectIds.JsonDataSetReaderMessageDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = JsonDataSetReaderMessageDataType
 extension_object_typeids['JsonDataSetReaderMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.QosDataType_Encoding_DefaultBinary)
@@ -10360,6 +11448,9 @@ extension_object_typeids['DatagramWriterGroupTransport2DataType'] = nid
 nid = FourByteNodeId(ObjectIds.DatagramDataSetReaderTransportDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = DatagramDataSetReaderTransportDataType
 extension_object_typeids['DatagramDataSetReaderTransportDataType'] = nid
+nid = FourByteNodeId(ObjectIds.DtlsPubSubConnectionDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = DtlsPubSubConnectionDataType
+extension_object_typeids['DtlsPubSubConnectionDataType'] = nid
 nid = FourByteNodeId(ObjectIds.BrokerConnectionTransportDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = BrokerConnectionTransportDataType
 extension_object_typeids['BrokerConnectionTransportDataType'] = nid
@@ -10378,6 +11469,18 @@ extension_object_typeids['PubSubConfigurationRefDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PubSubConfigurationValueDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PubSubConfigurationValueDataType
 extension_object_typeids['PubSubConfigurationValueDataType'] = nid
+extension_objects_by_typeid[nid] = JsonNetworkMessage
+extension_object_typeids['JsonNetworkMessage'] = nid
+extension_objects_by_typeid[nid] = JsonDataSetMessage
+extension_object_typeids['JsonDataSetMessage'] = nid
+extension_objects_by_typeid[nid] = JsonStatusMessage
+extension_object_typeids['JsonStatusMessage'] = nid
+extension_objects_by_typeid[nid] = JsonActionNetworkMessage
+extension_object_typeids['JsonActionNetworkMessage'] = nid
+extension_objects_by_typeid[nid] = JsonActionRequestMessage
+extension_object_typeids['JsonActionRequestMessage'] = nid
+extension_objects_by_typeid[nid] = JsonActionResponseMessage
+extension_object_typeids['JsonActionResponseMessage'] = nid
 nid = FourByteNodeId(ObjectIds.AliasNameDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = AliasNameDataType
 extension_object_typeids['AliasNameDataType'] = nid
@@ -10387,6 +11490,21 @@ extension_object_typeids['UserManagementDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PriorityMappingEntryType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PriorityMappingEntryType
 extension_object_typeids['PriorityMappingEntryType'] = nid
+nid = FourByteNodeId(ObjectIds.LldpManagementAddressTxPortType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = LldpManagementAddressTxPortType
+extension_object_typeids['LldpManagementAddressTxPortType'] = nid
+nid = FourByteNodeId(ObjectIds.LldpManagementAddressType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = LldpManagementAddressType
+extension_object_typeids['LldpManagementAddressType'] = nid
+nid = FourByteNodeId(ObjectIds.LldpTlvType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = LldpTlvType
+extension_object_typeids['LldpTlvType'] = nid
+nid = FourByteNodeId(ObjectIds.ReferenceDescriptionDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ReferenceDescriptionDataType
+extension_object_typeids['ReferenceDescriptionDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ReferenceListEntryDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ReferenceListEntryDataType
+extension_object_typeids['ReferenceListEntryDataType'] = nid
 nid = FourByteNodeId(ObjectIds.RolePermissionType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RolePermissionType
 extension_object_typeids['RolePermissionType'] = nid
@@ -10435,9 +11553,19 @@ extension_object_typeids['DataSetMetaDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PublishedDataSetDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PublishedDataSetDataType
 extension_object_typeids['PublishedDataSetDataType'] = nid
+nid = FourByteNodeId(ObjectIds.PublishedActionDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = PublishedActionDataType
+extension_object_typeids['PublishedActionDataType'] = nid
+nid = FourByteNodeId(ObjectIds.PublishedActionMethodDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = PublishedActionMethodDataType
+extension_object_typeids['PublishedActionMethodDataType'] = nid
 nid = FourByteNodeId(ObjectIds.StandaloneSubscribedDataSetDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = StandaloneSubscribedDataSetDataType
 extension_object_typeids['StandaloneSubscribedDataSetDataType'] = nid
+extension_objects_by_typeid[nid] = JsonDataSetMetaDataMessage
+extension_object_typeids['JsonDataSetMetaDataMessage'] = nid
+extension_objects_by_typeid[nid] = JsonActionMetaDataMessage
+extension_object_typeids['JsonActionMetaDataMessage'] = nid
 nid = FourByteNodeId(ObjectIds.OptionSet_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = OptionSet
 extension_object_typeids['OptionSet'] = nid
@@ -10447,6 +11575,8 @@ extension_object_typeids['TimeZoneDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ApplicationDescription_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = ApplicationDescription
 extension_object_typeids['ApplicationDescription'] = nid
+extension_objects_by_typeid[nid] = JsonApplicationDescriptionMessage
+extension_object_typeids['JsonApplicationDescriptionMessage'] = nid
 nid = FourByteNodeId(ObjectIds.RequestHeader_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RequestHeader
 extension_object_typeids['RequestHeader'] = nid
@@ -10504,9 +11634,15 @@ extension_object_typeids['PubSubConnectionDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PubSubConfigurationDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PubSubConfigurationDataType
 extension_object_typeids['PubSubConfigurationDataType'] = nid
+extension_objects_by_typeid[nid] = JsonPubSubConnectionMessage
+extension_object_typeids['JsonPubSubConnectionMessage'] = nid
+extension_objects_by_typeid[nid] = JsonActionResponderMessage
+extension_object_typeids['JsonActionResponderMessage'] = nid
 nid = FourByteNodeId(ObjectIds.PubSubConfiguration2DataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PubSubConfiguration2DataType
 extension_object_typeids['PubSubConfiguration2DataType'] = nid
+extension_objects_by_typeid[nid] = JsonServerEndpointsMessage
+extension_object_typeids['JsonServerEndpointsMessage'] = nid
 nid = FourByteNodeId(ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = GetEndpointsRequest
 extension_object_typeids['GetEndpointsRequest'] = nid
@@ -10690,12 +11826,6 @@ extension_object_typeids['BrowseNextRequest'] = nid
 nid = FourByteNodeId(ObjectIds.BrowseNextResponse_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = BrowseNextResponse
 extension_object_typeids['BrowseNextResponse'] = nid
-nid = FourByteNodeId(ObjectIds.RelativePathElement_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = RelativePathElement
-extension_object_typeids['RelativePathElement'] = nid
-nid = FourByteNodeId(ObjectIds.RelativePath_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = RelativePath
-extension_object_typeids['RelativePath'] = nid
 nid = FourByteNodeId(ObjectIds.BrowsePath_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = BrowsePath
 extension_object_typeids['BrowsePath'] = nid
@@ -10801,6 +11931,9 @@ extension_object_typeids['HistoryReadResult'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryReadDetails_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = HistoryReadDetails
 extension_object_typeids['HistoryReadDetails'] = nid
+nid = FourByteNodeId(ObjectIds.SortRuleElement_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = SortRuleElement
+extension_object_typeids['SortRuleElement'] = nid
 nid = FourByteNodeId(ObjectIds.ReadRawModifiedDetails_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = ReadRawModifiedDetails
 extension_object_typeids['ReadRawModifiedDetails'] = nid
@@ -10885,6 +12018,12 @@ extension_object_typeids['EventFilter'] = nid
 nid = FourByteNodeId(ObjectIds.ReadEventDetails_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = ReadEventDetails
 extension_object_typeids['ReadEventDetails'] = nid
+nid = FourByteNodeId(ObjectIds.ReadEventDetails2_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ReadEventDetails2
+extension_object_typeids['ReadEventDetails2'] = nid
+nid = FourByteNodeId(ObjectIds.ReadEventDetailsSorted_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ReadEventDetailsSorted
+extension_object_typeids['ReadEventDetailsSorted'] = nid
 nid = FourByteNodeId(ObjectIds.AggregateConfiguration_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = AggregateConfiguration
 extension_object_typeids['AggregateConfiguration'] = nid
@@ -10990,6 +12129,9 @@ extension_object_typeids['HistoryEventFieldList'] = nid
 nid = FourByteNodeId(ObjectIds.HistoryEvent_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = HistoryEvent
 extension_object_typeids['HistoryEvent'] = nid
+nid = FourByteNodeId(ObjectIds.HistoryModifiedEvent_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = HistoryModifiedEvent
+extension_object_typeids['HistoryModifiedEvent'] = nid
 nid = FourByteNodeId(ObjectIds.UpdateEventDetails_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = UpdateEventDetails
 extension_object_typeids['UpdateEventDetails'] = nid

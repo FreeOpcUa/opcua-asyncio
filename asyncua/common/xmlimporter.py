@@ -634,10 +634,10 @@ class XmlImporter:
         return res[0].AddedNodeId
 
     async def add_datatype(self, obj, no_namespace_migration=False):
-        is_enum = False
-        is_struct = False
-        is_option_set = False
-        is_alias = False
+        is_enum: bool = False
+        is_struct: bool = False
+        is_option_set: bool = False
+        is_alias: bool = False
         node = self._get_add_node_item(obj, no_namespace_migration)
         attrs = ua.DataTypeAttributes()
         if obj.desc:
