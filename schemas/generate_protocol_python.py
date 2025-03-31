@@ -42,11 +42,13 @@ class CodeGenerator:
         for struct in self.model.structs:
             if struct.name in IgnoredStructs:
                 continue
+                continue
             if struct.name.endswith('Node') or struct.name.endswith('NodeId'):
                 continue
             if struct.do_not_register:
                 continue
-            self.write(f"nid = FourByteNodeId(ObjectIds.{struct.name}_Encoding_DefaultBinary)")
+            if not struct.name.startswith("Json"):  #FIXME: might filter out too many things but these do not have
+                self.write(f"nid = FourByteNodeId(ObjectIds.{struct.name}_Encoding_DefaultBinary)")
             self.write(f"extension_objects_by_typeid[nid] = {struct.name}")
             self.write(f"extension_object_typeids['{struct.name}'] = nid")
 
@@ -143,7 +145,6 @@ class CodeGenerator:
             extobj_hack = True
 
         hack_names = []
-
         for field in obj.fields:
             typestring = field.data_type
             if field.allow_subtypes and typestring != 'ExtensionObject':
@@ -165,9 +166,12 @@ class CodeGenerator:
             elif field.data_type == obj.name:  # help!!! selv referencing class
                 # FIXME: Might not be good enough
                 self.write(f"{fieldname}: Optional[ExtensionObject] = None")
-            elif obj.name not in ("ExtensionObject",) and \
+            elif obj.name not in ("ExtensionObject") and \
                     field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
-                self.write(f"TypeId: NodeId = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultBinary)")
+                if obj.name.startswith("Json"):
+                    self.write(f"TypeId: NodeId = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultJson)")
+                else:
+                    self.write(f"TypeId: NodeId = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultBinary)")
             else:
                 self.write(f"{fieldname}: {typestring} = {'field(default_factory=list)' if field.is_array() else self.get_default_value(field)}")
 
