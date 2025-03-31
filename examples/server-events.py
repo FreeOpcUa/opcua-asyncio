@@ -37,12 +37,12 @@ async def main():
         count = 0
         while True:
             await asyncio.sleep(1)
-            myevgen.event.Message = ua.LocalizedText("MyFirstEvent %d" % count)
+            myevgen.event.Message = ua.LocalizedText(f"MyFirstEvent {count}")
             myevgen.event.Severity = count
             myevgen.event.MyNumericProperty = count
-            myevgen.event.MyStringProperty = "Property %d" % count
+            myevgen.event.MyStringProperty = f"Property {count}"
             await myevgen.trigger()
-            await mysecondevgen.trigger(message="MySecondEvent %d" % count)
+            await mysecondevgen.trigger(message=f"MySecondEvent {count}")
 
             count += 1
 
