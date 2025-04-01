@@ -39,7 +39,7 @@ classifiers = [
 [dependency-groups]
 dev = [
     "pytest",
-    "pytest-asyncio == 0.21.2",
+    "pytest-asyncio",
     "coverage",
     "pytest-cov",
     "pytest-repeat",
