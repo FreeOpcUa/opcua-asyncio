@@ -2,18 +2,17 @@ import sys
 
 sys.path.insert(0, "..")
 import time
-from datetime import datetime
+from datetime import datetime, UTC
 
 from asyncua import ua, Server
 from asyncua.server.history_sql import HistorySQLite
-
 
 if __name__ == "__main__":
     # setup our server
     server = Server()
     server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
 
-    # setup our own namespace, not really necessary but should as spec
+    # set up our own namespace, not really necessary but should as spec
     uri = "http://examples.freeopcua.github.io"
     idx = server.register_namespace(uri)
 
@@ -76,7 +75,7 @@ if __name__ == "__main__":
             serverevgen.trigger(message="Server Event Message")
 
             # read event history from sql
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             server_event_history = server_node.read_event_history(None, end_time, 0)
 
     finally:
