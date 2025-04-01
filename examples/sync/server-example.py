@@ -19,6 +19,7 @@ except ImportError:
         shell = code.InteractiveConsole(myvars)
         shell.interact()
 
+
 from asyncua import ua, uamethod
 from asyncua.sync import Server, ThreadLoop
 
