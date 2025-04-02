@@ -363,9 +363,9 @@ class StatusCode:
     """
     :ivar value:
     :vartype value: int
-    :ivar name:
+    :ivar name():
     :vartype name: string
-    :ivar doc:
+    :ivar doc():
     :vartype doc: string
     """
 
@@ -792,13 +792,13 @@ class LocalizedText:
         if self.Text is not None:
             if not isinstance(self.Text, str):
                 raise ValueError(
-                    f'A LocalizedText object takes a string as argument "text"not a {type(self.Text)}, {self.Text}'
+                    f'A LocalizedText object takes a string as argument "Text" not a {type(self.Text)}, {self.Text}'
                 )
 
         if self.Locale is not None:
             if not isinstance(self.Locale, str):
                 raise ValueError(
-                    f'A LocalizedText object takes a string as argument "locale",'
+                    f'A LocalizedText object takes a string as argument "Locale",'
                     f" not a {type(self.Locale)}, {self.Locale}"
                 )
 
@@ -932,7 +932,7 @@ class Variant:
     :vartype Value: Any supported type
     :ivar VariantType:
     :vartype VariantType: VariantType
-    :ivar Dimension:
+    :ivar Dimensions:
     :vartype Dimensions: The length of each dimension. Make the variant a Matrix
     :ivar is_array:
     :vartype is_array: If the variant is an array. Always True if Dimension is specified
@@ -1077,12 +1077,12 @@ class DataValue:
 
     :ivar Value:
     :vartype Value: Variant
-    :ivar StatusCode:
+    :ivar StatusCode_:
     :vartype StatusCode: StatusCode
     :ivar SourceTimestamp:
     :vartype SourceTimestamp: datetime
     :ivar SourcePicoSeconds:
-    :vartype SourcePicoSeconds: int
+    :vartype SourcePicoseconds: int
     :ivar ServerTimestamp:
     :vartype ServerTimestamp: datetime
     :ivar ServerPicoseconds:
