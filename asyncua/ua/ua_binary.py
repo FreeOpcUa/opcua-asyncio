@@ -75,7 +75,7 @@ class _String:
     @staticmethod
     def pack(string):
         if string is not None:
-            string = string.encode("utf-8")
+            string = string.encode("utf-8", errors='surrogateescape') # String encoding ÄÜÖöäüß without surrogates leads to unusable nodeids
         return _Bytes.pack(string)
 
     @staticmethod
@@ -83,7 +83,7 @@ class _String:
         b = _Bytes.unpack(data)
         if b is None:
             return b
-        return b.decode("utf-8", errors="replace")  # not need to be strict here, this is user data
+        return b.decode("utf-8", errors="surrogateescape")  # String encoding ÄÜÖöäüß without surrogates leads to unusable nodeids
 
 
 class _Null:
