@@ -509,7 +509,8 @@ async def load_data_type_definitions(
             except NotImplementedError:
                 _logger.exception("Structure type %s not implemented", dts.sdef)
             except (AttributeError, RuntimeError):
-                _logger.exception("Failed to resolve datatypes", dts.sdef)
+                if log_ex:
+                    _logger.exception("Failed to resolve datatype %s", dts.sdef)
                 failed_types.append(dts)
         if not failed_types:
             break
