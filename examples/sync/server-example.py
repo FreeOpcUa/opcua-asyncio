@@ -1,10 +1,10 @@
-from threading import Thread
 import copy
 import logging
-from datetime import datetime
-import time
-from math import sin
 import sys
+import time
+from datetime import datetime, UTC
+from math import sin
+from threading import Thread
 
 sys.path.insert(0, "../..")
 
@@ -128,10 +128,10 @@ if __name__ == "__main__":
         myvar.set_writable()  # Set MyVariable to be writable by clients
         mystringvar = myobj.add_variable(idx, "MyStringVariable", "Really nice string")
         mystringvar.set_writable()  # Set MyVariable to be writable by clients
-        mydtvar = myobj.add_variable(idx, "MyDateTimeVar", datetime.utcnow())
+        mydtvar = myobj.add_variable(idx, "MyDateTimeVar", datetime.now(UTC))
         mydtvar.set_writable()  # Set MyVariable to be writable by clients
         myarrayvar = myobj.add_variable(idx, "myarrayvar", [6.7, 7.9])
-        myarrayvar = myobj.add_variable(idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32))
+        myarrayvar = myobj.add_variable(idx, "myStronglyTypedVariable", ua.Variant([], ua.VariantType.UInt32))
         myprop = myobj.add_property(idx, "myproperty", "I am a property")
         mymethod = myobj.add_method(idx, "mymethod", func, [ua.VariantType.Int64], [ua.VariantType.Boolean])
         multiply_node = myobj.add_method(

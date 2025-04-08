@@ -1,13 +1,11 @@
 import asyncio
 import copy
 import logging
-from datetime import datetime
 import time
+from datetime import datetime, UTC
 from math import sin
 
-
 from asyncua import ua, uamethod, Server
-
 
 _logger = logging.getLogger(__name__)
 
@@ -56,7 +54,7 @@ async def main():
         ]
     )
 
-    # setup our own namespace
+    # set up our own namespace
     uri = "http://examples.freeopcua.github.io"
     idx = await server.register_namespace(uri)
 
@@ -83,11 +81,11 @@ async def main():
     await myvar.set_writable()  # Set MyVariable to be writable by clients
     mystringvar = await myobj.add_variable(idx, "MyStringVariable", "Really nice string")
     await mystringvar.set_writable()  # Set MyVariable to be writable by clients
-    mydtvar = await myobj.add_variable(idx, "MyDateTimeVar", datetime.utcnow())
+    mydtvar = await myobj.add_variable(idx, "MyDateTimeVar", datetime.now(UTC))
     await mydtvar.set_writable()  # Set MyVariable to be writable by clients
     myarrayvar = await myobj.add_variable(idx, "myarrayvar", [6.7, 7.9])
     myuintvar = await myobj.add_variable(idx, "myuintvar", ua.UInt16(4))
-    await myobj.add_variable(idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32))
+    await myobj.add_variable(idx, "myStronglyTypedVariable", ua.Variant([], ua.VariantType.UInt32))
     await myarrayvar.set_writable(True)
     myprop = await myobj.add_property(idx, "myproperty", "I am a property")
     mymethod = await myobj.add_method(idx, "mymethod", func, [ua.VariantType.Int64], [ua.VariantType.Boolean])
