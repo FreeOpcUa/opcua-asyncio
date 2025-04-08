@@ -5,7 +5,7 @@ import os
 def bump_version():
     with open("pyproject.toml") as f:
         s = f.read()
-    m = re.search(r'version = "(.*)\.(.*)\.(.*)",', s)
+    m = re.search(r'version = "(.*)\.(.*)\.(.*)"', s)
     v1, v2, v3 = m.groups()
     oldv = "{0}.{1}.{2}".format(v1, v2, v3)
     newv = "{0}.{1}.{2}".format(v1, v2, str(int(v3) + 1))
