@@ -10,10 +10,10 @@ from asyncua.server.users import User, UserRole
 class AbstractUserManager(ABC):
     @abstractmethod
     def get_user(
-        self, 
-        iserver,   # TODO: iserver should be abstract, maybe a base class or interface
-        username: Optional[str] = None, 
-        password: Optional[str] = None, 
+        self,
+        iserver,  # TODO: iserver should be abstract, maybe a base class or interface
+        username: Optional[str] = None,
+        password: Optional[str] = None,
         certificate: Optional[Any] = None,  # FIXME: fix type hinting for certificate
     ) -> Optional[User]:
         pass
@@ -21,10 +21,10 @@ class AbstractUserManager(ABC):
 
 class PermissiveUserManager(AbstractUserManager):
     def get_user(
-        self, 
-        iserver, 
-        username: Optional[str] = None, 
-        password: Optional[str] = None, 
+        self,
+        iserver,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
         certificate: Optional[Any] = None,
     ) -> User:
         """
@@ -45,10 +45,10 @@ class CertificateUserManager(AbstractUserManager):
         self._trusted_certificates: dict[str, dict] = {}
 
     async def add_role(
-        self, 
-        certificate_path: Path, 
-        user_role: UserRole, 
-        name: str, 
+        self,
+        certificate_path: Path,
+        user_role: UserRole,
+        name: str,
         format: Union[str, None] = None
     ):
         certificate = await uacrypto.load_certificate(certificate_path, format)
@@ -65,9 +65,9 @@ class CertificateUserManager(AbstractUserManager):
         self._trusted_certificates[name] = {"certificate": uacrypto.der_from_x509(certificate), "user": user}
 
     def get_user(
-        self, 
-        iserver, 
-        username: Optional[str] = None, 
+        self,
+        iserver,
+        username: Optional[str] = None,
         password: Optional[str] = None,
         certificate: Optional[Any] = None
     ) -> Optional[User]:
