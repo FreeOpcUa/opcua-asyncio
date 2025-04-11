@@ -15,7 +15,7 @@ class AbstractUserManager(ABC):
         username: Optional[str] = None, 
         password: Optional[str] = None, 
         certificate: Optional[Any] = None,  # FIXME: fix type hinting for certificate
-    ) -> User:
+    ) -> Optional[User]:
         pass
 
 
@@ -42,7 +42,7 @@ class CertificateUserManager(AbstractUserManager):
     """
 
     def __init__(self):
-        self._trusted_certificates = {}
+        self._trusted_certificates: dict[str, dict] = {}
 
     async def add_role(
         self, 
@@ -70,10 +70,10 @@ class CertificateUserManager(AbstractUserManager):
         username: Optional[str] = None, 
         password: Optional[str] = None,
         certificate: Optional[Any] = None
-    ):
+    ) -> Optional[User]:
         if certificate is None:
             return None
-        correct_users = [
+        correct_users: list[User] = [
             prospective_certificate["user"]
             for prospective_certificate in self._trusted_certificates.values()
             if certificate == prospective_certificate["certificate"]
