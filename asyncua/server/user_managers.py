@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional, Any
 from abc import ABC, abstractmethod
 
 from asyncua.crypto import uacrypto
@@ -9,12 +9,24 @@ from asyncua.server.users import User, UserRole
 
 class AbstractUserManager(ABC):
     @abstractmethod
-    def get_user(self, iserver, username=None, password=None, certificate=None):
+    def get_user(
+        self, 
+        iserver,   # TODO: iserver should be abstract, maybe a base class or interface
+        username: Optional[str] = None, 
+        password: Optional[str] = None, 
+        certificate: Optional[Any] = None,  # FIXME: fix type hinting for certificate
+    ) -> User:
         pass
 
 
 class PermissiveUserManager(AbstractUserManager):
-    def get_user(self, iserver, username=None, password=None, certificate=None):
+    def get_user(
+        self, 
+        iserver, 
+        username: Optional[str] = None, 
+        password: Optional[str] = None, 
+        certificate: Optional[Any] = None,
+    ) -> User:
         """
         Default user_manager, does nothing much but check for admin
         """
@@ -23,7 +35,7 @@ class PermissiveUserManager(AbstractUserManager):
         else:
             return User(role=UserRole.User)
 
-AbstractUserManager
+
 class CertificateUserManager(AbstractUserManager):
     """
     Certificate user manager, takes a certificate handler with its associated users and provides those users.
@@ -32,7 +44,13 @@ class CertificateUserManager(AbstractUserManager):
     def __init__(self):
         self._trusted_certificates = {}
 
-    async def add_role(self, certificate_path: Path, user_role: UserRole, name: str, format: Union[str, None] = None):
+    async def add_role(
+        self, 
+        certificate_path: Path, 
+        user_role: UserRole, 
+        name: str, 
+        format: Union[str, None] = None
+    ):
         certificate = await uacrypto.load_certificate(certificate_path, format)
         if name is None:
             raise KeyError
@@ -46,7 +64,13 @@ class CertificateUserManager(AbstractUserManager):
             )
         self._trusted_certificates[name] = {"certificate": uacrypto.der_from_x509(certificate), "user": user}
 
-    def get_user(self, iserver, username=None, password=None, certificate=None):
+    def get_user(
+        self, 
+        iserver, 
+        username: Optional[str] = None, 
+        password: Optional[str] = None,
+        certificate: Optional[Any] = None
+    ):
         if certificate is None:
             return None
         correct_users = [
