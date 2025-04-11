@@ -13,7 +13,7 @@ import logging
 from urllib.parse import urlparse
 
 from asyncua import ua
-from .user_managers import PermissiveUserManager, UserManager
+from .user_managers import PermissiveUserManager, AbstractUserManager
 from ..common.callback import CallbackService
 from ..common.node import Node
 from .history import HistoryManager
@@ -40,7 +40,7 @@ class InternalServer:
     There is one `InternalServer` for every `Server`.
     """
 
-    def __init__(self, user_manager: UserManager = None):
+    def __init__(self, user_manager: AbstractUserManager = None):
         self.logger = logging.getLogger(__name__)
         self.callback_service = CallbackService()
         self.endpoints = []

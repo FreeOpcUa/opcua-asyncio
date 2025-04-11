@@ -1,17 +1,19 @@
 import logging
 from pathlib import Path
 from typing import Union
+from abc import ABC, abstractmethod
 
 from asyncua.crypto import uacrypto
 from asyncua.server.users import User, UserRole
 
 
-class UserManager:
+class AbstractUserManager(ABC):
+    @abstractmethod
     def get_user(self, iserver, username=None, password=None, certificate=None):
-        raise NotImplementedError
+        pass
 
-
-class PermissiveUserManager:
+AbstractUserManager
+class PermissiveUserManager(AbstractUserManager):
     def get_user(self, iserver, username=None, password=None, certificate=None):
         """
         Default user_manager, does nothing much but check for admin
@@ -21,8 +23,8 @@ class PermissiveUserManager:
         else:
             return User(role=UserRole.User)
 
-
-class CertificateUserManager:
+AbstractUserManager
+class CertificateUserManager(AbstractUserManager):
     """
     Certificate user manager, takes a certificate handler with its associated users and provides those users.
     """
