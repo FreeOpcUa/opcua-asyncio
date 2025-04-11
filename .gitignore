@@ -25,3 +25,7 @@ examples/history.db
 .vscode
 .coverage
 schemas/UA-Nodese*
+.python-version  # pyenv
+# virtual environments
+.venv*
+venv*
