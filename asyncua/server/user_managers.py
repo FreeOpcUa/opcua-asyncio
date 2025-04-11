@@ -12,7 +12,7 @@ class AbstractUserManager(ABC):
     def get_user(self, iserver, username=None, password=None, certificate=None):
         pass
 
-AbstractUserManager
+
 class PermissiveUserManager(AbstractUserManager):
     def get_user(self, iserver, username=None, password=None, certificate=None):
         """
