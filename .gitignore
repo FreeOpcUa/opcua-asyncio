@@ -29,3 +29,6 @@ schemas/UA-Nodese*
 # virtual environments
 .venv*
 venv*
+
+# lock files
+uv.lock
