@@ -141,7 +141,7 @@ class InternalServer:
                 self.aspace.load_aspace_shelf(path=shelf_file)
                 return
             except Exception as e:
-                self.logger.info('could not load shelf file: %s, error: %s', shelf_file, e)
+                self.logger.info("could not load shelf file: %s, error: %s", shelf_file, e)
         # import address space from code generated from xml
         standard_address_space.fill_address_space(self.node_mgt_service)
         # import address space directly from xml, this has performance impact so disabled
