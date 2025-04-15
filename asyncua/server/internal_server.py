@@ -137,10 +137,11 @@ class InternalServer:
 
     async def load_standard_address_space(self, shelf_file: Optional[Path] = None):
         if shelf_file:
-            if shelf_file.is_file() or (shelf_file / ".db").is_file():
-                # import address space from shelf
-                self.aspace.load_aspace_shelf(shelf_file)
+            try:  # just try to load, see what happens... expecting shelf file base path to provide ".bak", ".dat" and ".dir" files
+                self.aspace.load_aspace_shelf(path=shelf_file)
                 return
+            except Exception as e:
+                self.logger.info(f'could not load shelf file: {shelf_file}, error: {e}')
         # import address space from code generated from xml
         standard_address_space.fill_address_space(self.node_mgt_service)
         # import address space directly from xml, this has performance impact so disabled
