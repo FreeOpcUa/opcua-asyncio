@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Union, Optional, Any
+from typing import Optional, Any
 from abc import ABC, abstractmethod
 
 from asyncua.crypto import uacrypto
@@ -49,7 +49,7 @@ class CertificateUserManager(AbstractUserManager):
         certificate_path: Path,
         user_role: UserRole,
         name: str,
-        format: Union[str, None] = None
+        format: Optional[str] = None,
     ):
         certificate = await uacrypto.load_certificate(certificate_path, format)
         if name is None:
@@ -69,7 +69,7 @@ class CertificateUserManager(AbstractUserManager):
         iserver,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        certificate: Optional[Any] = None
+        certificate: Optional[Any] = None,
     ) -> Optional[User]:
         if certificate is None:
             return None
@@ -83,8 +83,8 @@ class CertificateUserManager(AbstractUserManager):
         else:
             return correct_users[0]
 
-    async def add_user(self, certificate_path: Path, name: str, format: Union[str, None] = None):
+    async def add_user(self, certificate_path: Path, name: str, format: Optional[str] = None):
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.User, name=name, format=format)
 
-    async def add_admin(self, certificate_path: Path, name: str, format: Union[str, None] = None):
+    async def add_admin(self, certificate_path: Path, name: str, format: Optional[str] = None):
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.Admin, name=name, format=format)
