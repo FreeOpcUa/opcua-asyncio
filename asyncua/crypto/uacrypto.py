@@ -59,7 +59,31 @@ async def load_certificate(path_or_content: Union[bytes, str, Path], extension: 
 def x509_from_der(data):
     if not data:
         return None
-    return x509.load_der_x509_certificate(data, default_backend())
+    try:
+        return x509.load_der_x509_certificate(data, default_backend())
+    except ValueError as e:
+        if "extradata" not in str(e).lower():
+            raise
+            
+        # Try parsing as certificate chain
+        offset = 0
+        while offset < len(data):
+            if data[offset] != 0x30:  # SEQUENCE tag
+                break
+                
+            length_byte = data[offset + 1]
+            if length_byte < 128:
+                cert_len = length_byte
+                header_len = 2
+            else:
+                num_len_bytes = length_byte & 0x7F
+                cert_len = int.from_bytes(data[offset + 2:offset + 2 + num_len_bytes], 'big')
+                header_len = 2 + num_len_bytes
+                
+            total_len = header_len + cert_len
+            cert_data = data[offset:offset + total_len]
+            # Return first certificate in chain
+            return x509.load_der_x509_certificate(cert_data, default_backend())
 
 
 async def load_private_key(
