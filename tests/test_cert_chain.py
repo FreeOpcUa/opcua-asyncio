@@ -10,7 +10,6 @@ that some OPC UA servers might provide, improving compatibility.
 """
 
 import pytest
-import os
 from pathlib import Path
 
 from asyncua.crypto import uacrypto
