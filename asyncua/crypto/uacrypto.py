@@ -96,12 +96,12 @@ def x509_from_der(data):
                 # First byte indicates how many bytes are used to represent the length
                 num_len_bytes = length_byte & 0x7F
                 # Read the actual length from the following bytes
-                cert_len = int.from_bytes(data[offset + 2:offset + 2 + num_len_bytes], "big")
+                cert_len = int.from_bytes(data[offset + 2 : offset + 2 + num_len_bytes], "big")
                 header_len = 2 + num_len_bytes  # Tag (1) + length indicator (1) + length bytes
 
             # Extract just the first certificate from the chain
             total_len = header_len + cert_len
-            cert_data = data[offset:offset + total_len]
+            cert_data = data[offset : offset + total_len]
             # Return only the first certificate in the chain
             return x509.load_der_x509_certificate(cert_data, default_backend())
 

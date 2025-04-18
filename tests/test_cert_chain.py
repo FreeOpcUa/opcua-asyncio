@@ -23,9 +23,7 @@ pytestmark = pytest.mark.asyncio
 BASE_DIR = Path(__file__).parent.parent
 EXAMPLE_CERT_PATH = BASE_DIR / "examples" / "certificate-example.der"
 EXAMPLE_CERT_3072_PATH = BASE_DIR / "examples" / "certificate-3072-example.der"
-PEER_CERT_PATH = (
-    BASE_DIR / "examples" / "certificates" / "peer-certificate-example-1.der"
-)
+PEER_CERT_PATH = BASE_DIR / "examples" / "certificates" / "peer-certificate-example-1.der"
 
 
 def create_cert_chain():
@@ -94,9 +92,7 @@ def test_x509_from_der_cert_chain():
     # Verify that the loaded certificate is the first one in the chain
     # by comparing it with the original certificate
     original_cert = x509.load_der_x509_certificate(first_cert_data, default_backend())
-    assert cert.public_bytes(serialization.Encoding.DER) == original_cert.public_bytes(
-        serialization.Encoding.DER
-    )
+    assert cert.public_bytes(serialization.Encoding.DER) == original_cert.public_bytes(serialization.Encoding.DER)
 
 
 def test_x509_from_der_invalid_data():
