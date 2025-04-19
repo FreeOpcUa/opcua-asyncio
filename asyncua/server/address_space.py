@@ -12,10 +12,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, KeysView
+from typing import TYPE_CHECKING, Optional, KeysView, Union
 
 if TYPE_CHECKING:
-    from typing import Callable, Dict, List, Union, Tuple, Generator, TypeAlias
+    from typing import Callable, Dict, List, Tuple, Generator, TypeAlias
     from asyncua.ua.uaprotocol_auto import (
         ObjectAttributes,
         DataTypeAttributes,
@@ -33,17 +33,14 @@ if TYPE_CHECKING:
         ObjectTypeAttributes,
         ObjectAttributes,
     ]  # FIXME Check, if there are missing attribute types.
-else:
-    TypeAlias = object
+    StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
+    FileDescriptorOrPath: TypeAlias = int | StrOrBytesPath
 
 from asyncua import ua
 
 from .users import User, UserRole
 
 _logger = logging.getLogger(__name__)
-
-StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
-FileDescriptorOrPath: TypeAlias = int | StrOrBytesPath
 
 
 class AttributeValue:
