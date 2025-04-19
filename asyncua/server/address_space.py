@@ -12,10 +12,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, KeysView, TypeAlias
+from typing import TYPE_CHECKING, Optional, KeysView
 
 if TYPE_CHECKING:
-    from typing import Callable, Dict, List, Union, Tuple, Generator
+    from typing import Callable, Dict, List, Union, Tuple, Generator, TypeAlias
     from asyncua.ua.uaprotocol_auto import (
         ObjectAttributes,
         DataTypeAttributes,
@@ -33,6 +33,8 @@ if TYPE_CHECKING:
         ObjectTypeAttributes,
         ObjectAttributes,
     ]  # FIXME Check, if there are missing attribute types.
+else:
+    TypeAlias = object
 
 from asyncua import ua
 
