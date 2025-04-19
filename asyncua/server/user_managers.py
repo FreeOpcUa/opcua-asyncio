@@ -1,18 +1,32 @@
 import logging
 from pathlib import Path
-from typing import Union
+from typing import Optional, Any
+from abc import ABC, abstractmethod
 
 from asyncua.crypto import uacrypto
 from asyncua.server.users import User, UserRole
 
 
-class UserManager:
-    def get_user(self, iserver, username=None, password=None, certificate=None):
-        raise NotImplementedError
+class AbstractUserManager(ABC):
+    @abstractmethod
+    def get_user(
+        self,
+        iserver,  # TODO: iserver should be abstract, maybe a base class or interface
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        certificate: Optional[Any] = None,  # FIXME: fix type hinting for certificate
+    ) -> Optional[User]:
+        pass
 
 
-class PermissiveUserManager:
-    def get_user(self, iserver, username=None, password=None, certificate=None):
+class PermissiveUserManager(AbstractUserManager):
+    def get_user(
+        self,
+        iserver,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        certificate: Optional[Any] = None,
+    ) -> User:
         """
         Default user_manager, does nothing much but check for admin
         """
@@ -22,15 +36,21 @@ class PermissiveUserManager:
             return User(role=UserRole.User)
 
 
-class CertificateUserManager:
+class CertificateUserManager(AbstractUserManager):
     """
     Certificate user manager, takes a certificate handler with its associated users and provides those users.
     """
 
     def __init__(self):
-        self._trusted_certificates = {}
+        self._trusted_certificates: dict[str, dict] = {}
 
-    async def add_role(self, certificate_path: Path, user_role: UserRole, name: str, format: Union[str, None] = None):
+    async def add_role(
+        self,
+        certificate_path: Path,
+        user_role: UserRole,
+        name: str,
+        format: Optional[str] = None,
+    ):
         certificate = await uacrypto.load_certificate(certificate_path, format)
         if name is None:
             raise KeyError
@@ -44,10 +64,16 @@ class CertificateUserManager:
             )
         self._trusted_certificates[name] = {"certificate": uacrypto.der_from_x509(certificate), "user": user}
 
-    def get_user(self, iserver, username=None, password=None, certificate=None):
+    def get_user(
+        self,
+        iserver,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        certificate: Optional[Any] = None,
+    ) -> Optional[User]:
         if certificate is None:
             return None
-        correct_users = [
+        correct_users: list[User] = [
             prospective_certificate["user"]
             for prospective_certificate in self._trusted_certificates.values()
             if certificate == prospective_certificate["certificate"]
@@ -57,8 +83,8 @@ class CertificateUserManager:
         else:
             return correct_users[0]
 
-    async def add_user(self, certificate_path: Path, name: str, format: Union[str, None] = None):
+    async def add_user(self, certificate_path: Path, name: str, format: Optional[str] = None):
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.User, name=name, format=format)
 
-    async def add_admin(self, certificate_path: Path, name: str, format: Union[str, None] = None):
+    async def add_admin(self, certificate_path: Path, name: str, format: Optional[str] = None):
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.Admin, name=name, format=format)

@@ -13,7 +13,7 @@ import logging
 from urllib.parse import urlparse
 
 from asyncua import ua
-from .user_managers import PermissiveUserManager, UserManager
+from .user_managers import PermissiveUserManager, AbstractUserManager
 from ..common.callback import CallbackService
 from ..common.node import Node
 from .history import HistoryManager
@@ -40,7 +40,7 @@ class InternalServer:
     There is one `InternalServer` for every `Server`.
     """
 
-    def __init__(self, user_manager: UserManager = None):
+    def __init__(self, user_manager: AbstractUserManager = None):
         self.logger = logging.getLogger(__name__)
         self.callback_service = CallbackService()
         self.endpoints = []
@@ -137,10 +137,11 @@ class InternalServer:
 
     async def load_standard_address_space(self, shelf_file: Optional[Path] = None):
         if shelf_file:
-            if shelf_file.is_file() or (shelf_file / ".db").is_file():
-                # import address space from shelf
-                self.aspace.load_aspace_shelf(shelf_file)
+            try:  # just try to load, see what happens... expecting shelf file base path to provide ".bak", ".dat" and ".dir" files
+                self.aspace.load_aspace_shelf(path=shelf_file)
                 return
+            except Exception as e:
+                self.logger.info("could not load shelf file: %s, error: %s", shelf_file, e)
         # import address space from code generated from xml
         standard_address_space.fill_address_space(self.node_mgt_service)
         # import address space directly from xml, this has performance impact so disabled
