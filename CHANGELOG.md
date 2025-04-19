@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [#1277](https://github.com/FreeOpcUa/opcua-asyncio/pull/1277)
 - Fixed incorrect function signature in Node and it's Sync wrapper
   [#1690](https://github.com/FreeOpcUa/opcua-asyncio/pull/1690)
+- Fix certificate chain handling in x509_from_der function
+  Fixes [#1148](https://github.com/FreeOpcUa/opcua-asyncio/issues/1148) and [#1245](https://github.com/FreeOpcUa/opcua-asyncio/issues/1245)
 
 ## [1.0.2] - 2022-04-05
 

@@ -57,9 +57,56 @@ async def load_certificate(path_or_content: Union[bytes, str, Path], extension: 
 
 
 def x509_from_der(data):
+    """Load X.509 certificate from DER data.
+
+    This function handles both single certificates and certificate chains.
+    When a certificate chain is detected, it extracts and returns the first
+    certificate in the chain.
+
+    Args:
+        data (bytes): DER-encoded certificate data
+
+    Returns:
+        x509.Certificate or None: Loaded certificate object or None if data is empty
+    """
     if not data:
         return None
-    return x509.load_der_x509_certificate(data, default_backend())
+    try:
+        # First try to load as a single certificate
+        return x509.load_der_x509_certificate(data, default_backend())
+    except ValueError as e:
+        # The specific error 'ParseError { kind: ExtraData }' indicates we might have a certificate chain
+        # This happens when the cryptography library encounters additional data after a valid certificate
+        if "extradata" not in str(e).lower():
+            raise
+
+        # Try parsing as certificate chain by manually extracting the first certificate
+        # using DER encoding rules: https://en.wikipedia.org/wiki/X.690#DER_encoding
+        offset = 0
+        while offset < len(data):
+            if data[offset] != 0x30:  # 0x30 is the ASN.1 SEQUENCE tag that starts a certificate
+                break
+
+            # Parse the length field according to DER rules
+            length_byte = data[offset + 1]
+            if length_byte < 128:  # Short form length
+                cert_len = length_byte
+                header_len = 2  # Tag (1 byte) + length (1 byte)
+            else:  # Long form length
+                # First byte indicates how many bytes are used to represent the length
+                num_len_bytes = length_byte & 0x7F
+                # Read the actual length from the following bytes
+                cert_len = int.from_bytes(data[offset + 2 : offset + 2 + num_len_bytes], "big")
+                header_len = 2 + num_len_bytes  # Tag (1) + length indicator (1) + length bytes
+
+            # Extract just the first certificate from the chain
+            total_len = header_len + cert_len
+            cert_data = data[offset : offset + total_len]
+            # Return only the first certificate in the chain
+            return x509.load_der_x509_certificate(cert_data, default_backend())
+
+        # If we get here, we have a certificate chain but no valid certificates
+        raise ValueError("No valid certificates found in the certificate chain")
 
 
 async def load_private_key(
