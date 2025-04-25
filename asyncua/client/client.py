@@ -65,9 +65,9 @@ class Client:
             if have_password:
                 self._password = unquote(password)
 
-        self.name = "Pure Python Async. Client"
+        self.name = "Pure Python Async Client"
         self.description = self.name
-        self.application_uri = "urn:freeopcua:client"
+        self.application_uri = "urn:example.org:FreeOpcUa:opcua-asyncio"
         self.product_uri = "urn:freeopcua.github.io:client"
         self.security_policy = security_policies.SecurityPolicyNone()
         self.secure_channel_id = None
@@ -497,6 +497,7 @@ class Client:
         desc.ApplicationName = ua.LocalizedText(self.name)
         desc.ApplicationType = ua.ApplicationType.Client
         params = ua.CreateSessionParameters()
+        params.ServerUri = f"urn:{self.server_url.hostname}{self.server_url.path.replace('/', ':')}"
         # at least 32 random bytes for server to prove possession of private key (specs part 4, 5.6.2.2)
         nonce = create_nonce(32)
         params.ClientNonce = nonce
