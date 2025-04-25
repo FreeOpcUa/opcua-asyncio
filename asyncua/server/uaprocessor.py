@@ -203,10 +203,11 @@ class UaProcessor:
             response = ua.CreateSessionResponse()
             response.Parameters = sessiondata
             response.Parameters.ServerCertificate = self._connection.security_policy.host_certificate
-            if self._connection.security_policy.peer_certificate is None:
-                data = params.ClientNonce
-            else:
-                data = self._connection.security_policy.peer_certificate + params.ClientNonce
+            data = b""
+            if self._connection.security_policy.peer_certificate is not None:
+                data += self._connection.security_policy.peer_certificate
+            if params.ClientNonce is not None:
+                data += params.ClientNonce
             response.Parameters.ServerSignature.Signature = (
                 self._connection.security_policy.asymmetric_cryptography.signature(data)
             )
