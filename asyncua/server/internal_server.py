@@ -20,7 +20,7 @@ from .history import HistoryManager
 from .address_space import NodeData, AddressSpace, AttributeService, ViewService, NodeManagementService, MethodService
 from .subscription_service import SubscriptionService
 from .standard_address_space import standard_address_space
-from .users import User, UserRole
+from asyncua.crypto.permission_rules import User, UserRole
 from .internal_session import InternalSession
 from .event_generator import EventGenerator
 from ..crypto.validator import CertificateValidatorMethod

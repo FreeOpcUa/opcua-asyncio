@@ -1,7 +1,7 @@
 import pytest
 
 from asyncua import Client, Server, ua
-from asyncua.server.users import UserRole, User
+from asyncua.crypto.permission_rules import UserRole, User
 
 uri = "opc.tcp://127.0.0.1:48517/baz/server"
 uri_creds = "opc.tcp://foobar:hR%26yjjGhP%246%40nQ4e@127.0.0.1:48517/baz/server"

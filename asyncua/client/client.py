@@ -2,11 +2,13 @@ import asyncio
 import logging
 import socket
 import dataclasses
-from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast, Callable, Coroutine
 from urllib.parse import urlparse, unquote, ParseResult
 from pathlib import Path
+
+from asyncua.crypto.permission_rules import USER_TYPES, User
+from cryptography import x509
+from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 
 import asyncua
 from asyncua import ua
@@ -501,7 +503,12 @@ class Client:
         # at least 32 random bytes for server to prove possession of private key (specs part 4, 5.6.2.2)
         nonce = create_nonce(32)
         params.ClientNonce = nonce
-        params.ClientCertificate = self.security_policy.host_certificate
+        if self.security_policy.host_certificate:
+            params.ClientCertificate = self.security_policy.host_certificate
+        elif self.user_certificate:
+            params.ClientCertificate = uacrypto.der_from_x509(self.user_certificate)
+        else:
+            params.ClientCertificate = None
         params.ClientDescription = desc
         params.EndpointUrl = self.server_url.geturl()
         params.SessionName = f"{self.description} Session{self._session_counter}"
@@ -640,7 +647,7 @@ class Client:
         """
         Activate session using either username and password or private_key
         """
-        user_certificate = certificate or self.user_certificate
+        user_certificate = certificate
         params = ua.ActivateSessionParameters()
         challenge = b""
         if self.security_policy.peer_certificate is not None:
@@ -653,7 +660,7 @@ class Client:
             params.ClientSignature.Algorithm = security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
         params.LocaleIds = self._locale
-        if not username and not user_certificate:
+        if not username and not (user_certificate and self.user_private_key):
             self._add_anonymous_auth(params)
         elif user_certificate:
             self._add_certificate_auth(params, user_certificate, challenge)

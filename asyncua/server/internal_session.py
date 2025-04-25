@@ -10,7 +10,7 @@ from ..common.callback import CallbackType, ServerItemCallback
 from ..common.utils import create_nonce, ServiceError
 from ..crypto.uacrypto import x509
 from .address_space import AddressSpace
-from .users import User, UserRole
+from asyncua.crypto.permission_rules import User, UserRole
 from .subscription_service import SubscriptionService
 
 if TYPE_CHECKING:
