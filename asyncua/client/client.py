@@ -6,7 +6,6 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, U
 from urllib.parse import urlparse, unquote, ParseResult
 from pathlib import Path
 
-from asyncua.crypto.permission_rules import USER_TYPES, User
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 
