@@ -132,7 +132,7 @@ def clean_name(name):
         return name
     newname = re.sub(r"\W+", "_", name)
     newname = re.sub(r"^[0-9]+", r"_\g<0>", newname)
-    _logger.warning("renamed %s to %s due to Python syntax", name, newname)
+    _logger.info("renamed %s to %s due to Python syntax", name, newname)
     return newname
 
 
