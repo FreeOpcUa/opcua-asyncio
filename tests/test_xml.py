@@ -133,6 +133,16 @@ async def test_xml_import_ns_dependencies(opc):
             await opc.opc.delete_nodes([opc.opc.get_node(nodeid)])
 
 
+async def test_xml_export_ns_dependencies(opc, tmpdir):
+    first_ns = await opc.opc.register_namespace("first_ns")
+    data_type_node = await opc.opc.get_node(ua.ObjectIds.UInt32).add_data_type(first_ns, "MyCustomUint32")
+    second_ns = await opc.opc.register_namespace("seconds_ns")
+    node = await opc.opc.nodes.objects.add_variable(
+        second_ns, "xmlcustomunit32", 0, varianttype=ua.VariantType.UInt32, datatype=data_type_node.nodeid
+    )
+    await _test_xml_var_type(opc, tmpdir, node, "cuint32")
+
+
 async def test_xml_method(opc, tmpdir):
     await opc.opc.register_namespace("foo")
     await opc.opc.register_namespace("bar")
@@ -198,14 +208,12 @@ async def test_xml_ns(opc, tmpdir):
     new_ns = await opc.opc.register_namespace("my_new_namespace")
     bname_ns = await opc.opc.register_namespace("bname_namespace")
     o = await opc.opc.nodes.objects.add_object(0, "xmlns0")
-    o50 = await opc.opc.nodes.objects.add_object(50, "xmlns20")
-    o200 = await opc.opc.nodes.objects.add_object(200, "xmlns200")
     onew = await opc.opc.nodes.objects.add_object(new_ns, "xmlns_new")
     vnew = await onew.add_variable(new_ns, "xmlns_new_var", 9.99)
     o_no_export = await opc.opc.nodes.objects.add_object(ref_ns, "xmlns_parent")
     v_no_parent = await o_no_export.add_variable(new_ns, "xmlns_new_var_no_parent", 9.99)
     o_bname = await onew.add_object(f"ns={new_ns};i=4000", f"{bname_ns}:BNAME")
-    nodes = [o, o50, o200, onew, vnew, v_no_parent, o_bname]
+    nodes = [o, onew, vnew, v_no_parent, o_bname]
     tmp_path = tmpdir.join("tmp_test_export-ns.xml").strpath
     await opc.opc.export_xml(nodes, tmp_path, export_values=True)
     # delete node and change index og new_ns before re-importing
@@ -219,8 +227,6 @@ async def test_xml_ns(opc, tmpdir):
     new_ns = await opc.opc.register_namespace("my_new_namespace_offsett")
     new_ns = await opc.opc.register_namespace("my_new_namespace")
     _ = await opc.opc.import_xml(tmp_path)
-    for i in [o, o50, o200]:
-        await i.read_browse_name()
     with pytest.raises(uaerrors.BadNodeIdUnknown):
         await onew.read_browse_name()
     # since my_new_namesspace2 is referenced byt a node it should have been reimported
@@ -234,6 +240,40 @@ async def test_xml_ns(opc, tmpdir):
     await nnode.read_browse_name()
     vnew2 = (await nnode.get_children())[0]
     assert vnew2.nodeid.NamespaceIndex == new_ns
+
+
+async def test_xml_invalid_ns(opc, tmpdir):
+    # Import a XML where a namespace index does not relate to a namespace URI
+    xml = """
+    <UANodeSet xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd" xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <NamespaceUris>
+      </NamespaceUris>
+      <Aliases>
+        <Alias Alias="Boolean">i=1</Alias>
+        <Alias Alias="String">i=12</Alias>
+        <Alias Alias="HasTypeDefinition">i=40</Alias>
+        <Alias Alias="HasComponent">i=47</Alias>
+      </Aliases>
+      <UAVariable BrowseName="50:xmlstring" DataType="String" NodeId="ns=50;s=test_xml.string.nillable" ParentNodeId="i=85">
+        <DisplayName>xmlstring</DisplayName>
+        <Description>xmlstring</Description>
+        <References>
+          <Reference IsForward="false" ReferenceType="HasComponent">i=85</Reference>
+          <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+        </References>
+        <Value>
+            <uax:String></uax:String>
+        </Value>
+      </UAVariable>
+    </UANodeSet>
+    """
+    with pytest.raises(ua.UaError):
+        _ = await opc.opc.import_xml(xmlstring=xml)
+    # Export a XML where a namespace index does not relate to a registered namespace
+    o50 = await opc.opc.nodes.objects.add_object(50, "xmlns50")
+    tmp_path = tmpdir.join("tmp_test_export-ns.xml").strpath
+    with pytest.raises(ua.UaError):
+        await opc.opc.export_xml([o50], tmp_path, export_values=True)
 
 
 async def test_xml_float(opc, tmpdir):
@@ -503,7 +543,7 @@ async def test_xml_var_nillable(opc):
         <Alias Alias="HasTypeDefinition">i=40</Alias>
         <Alias Alias="HasComponent">i=47</Alias>
       </Aliases>
-      <UAVariable BrowseName="2:xmlstring" DataType="String" NodeId="ns=2;s=test_xml.string.nillabel" ParentNodeId="i=85">
+      <UAVariable BrowseName="1:xmlstring" DataType="String" NodeId="ns=1;s=test_xml.string.nillable" ParentNodeId="i=85">
         <DisplayName>xmlstring</DisplayName>
         <Description>xmlstring</Description>
         <References>
@@ -515,7 +555,7 @@ async def test_xml_var_nillable(opc):
         </Value>
       </UAVariable>
 
-     <UAVariable BrowseName="2:xmlbool" DataType="Boolean" NodeId="ns=2;s=test_xml.bool.nillabel" ParentNodeId="i=85">
+     <UAVariable BrowseName="1:xmlbool" DataType="Boolean" NodeId="ns=1;s=test_xml.bool.nillable" ParentNodeId="i=85">
         <DisplayName>xmlbool</DisplayName>
         <Description>xmlbool</Description>
         <References>
@@ -530,8 +570,8 @@ async def test_xml_var_nillable(opc):
     </UANodeSet>
     """
     _ = await opc.opc.import_xml(xmlstring=xml)
-    var_string = opc.opc.get_node(ua.NodeId("test_xml.string.nillabel", 2))
-    var_bool = opc.opc.get_node(ua.NodeId("test_xml.bool.nillabel", 2))
+    var_string = opc.opc.get_node(ua.NodeId("test_xml.string.nillable", 1))
+    var_bool = opc.opc.get_node(ua.NodeId("test_xml.bool.nillable", 1))
     assert await var_string.read_value() is None
     assert await var_bool.read_value() is None
     await opc.opc.delete_nodes([var_string, var_bool])
