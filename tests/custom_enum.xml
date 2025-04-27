@@ -6,7 +6,7 @@
   <Aliases>
     <Alias Alias="HasSubtype">i=45</Alias>
   </Aliases>
-  <UADataType NodeId="ns=1;i=5101" BrowseName="4:MyCrazyEnum">
+  <UADataType NodeId="ns=1;i=5101" BrowseName="1:MyCrazyEnum">
     <DisplayName>MyCrazyEnum</DisplayName>
     <Description>MyCrazyEnum</Description>
     <Definition Name="MyCrazyEnum">

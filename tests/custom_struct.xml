@@ -7,7 +7,7 @@
     <Alias Alias="HasEncoding">i=38</Alias>
     <Alias Alias="HasSubtype">i=45</Alias>
   </Aliases>
-  <UADataType NodeId="ns=1;i=6101" BrowseName="4:MyCrazyStruct">
+  <UADataType NodeId="ns=1;i=6101" BrowseName="1:MyCrazyStruct">
     <DisplayName>MyCrazyStruct</DisplayName>
     <Description>My Description</Description>
     <Definition Name="MyCrazyStruct">
