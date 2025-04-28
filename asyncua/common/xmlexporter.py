@@ -61,7 +61,7 @@ class XmlExporter:
         Namespaces used by nodes are always exported for consistency.
         Args:
             node_list: list of Node objects for export
-
+            add_all_namespaces: if true export all server namespaces no matter which are used.
         Returns:
         """
         self.logger.info("Building XML etree")
@@ -85,7 +85,7 @@ class XmlExporter:
         Namespaces used by nodes are always exported for consistency.
         Args:
             node_list: list of Node objects for export
-
+            add_all_namespaces: if true export all server namespaces no matter which are used.
         Returns:
         """
         self.logger.info("Building XML etree chunked")
