@@ -59,8 +59,9 @@ class XmlImporter:
         # drop it, to prevent the following code from failing and
         # misplacing namespace index 1 (user namespace)
         # to namespace index 0 (server namespace)
-        if xml_uris[0] == "http://opcfoundation.org/UA/":
-            xml_uris.pop(0)
+        if xml_uris:
+            if xml_uris[0] == "http://opcfoundation.org/UA/":
+                xml_uris.pop(0)
 
         server_uris = await self.session.get_namespace_array()
         namespaces_map = {}
