@@ -55,7 +55,7 @@ class XmlExporter:
         if self._export_values:
             self.logger.warning("Exporting values of variables is limited and can result in invalid xmls.")
 
-    async def build_etree(self, node_list, add_all_namespaces = False):
+    async def build_etree(self, node_list, add_all_namespaces=False):
         """
         Create an XML etree object from a list of nodes;
         Namespaces used by nodes are always exported for consistency.
@@ -76,10 +76,9 @@ class XmlExporter:
     def _chunked_iterable(self, iterable, chunk_size):
         """Yield successive chunk_size chunks from iterable."""
         for i in range(0, len(iterable), chunk_size):
-            yield iterable[i:i + chunk_size]
+            yield iterable[i : i + chunk_size]
 
-    async def build_etree_chunked(self, node_list, add_all_namespaces = False, chunk_size=500):
-
+    async def build_etree_chunked(self, node_list, add_all_namespaces=False, chunk_size=500):
         """
         Create an XML etree object from a list of nodes in chunks to prevent a server-overload because of the mass requests;
         Namespaces used by nodes are always exported for consistency.
@@ -102,8 +101,7 @@ class XmlExporter:
         # add aliases to the XML etree
         self._add_alias_els()
 
-    async def _add_namespaces(self, nodes, add_all_namespaces = False):
-
+    async def _add_namespaces(self, nodes, add_all_namespaces=False):
         if add_all_namespaces:
             # add all namespaces
             ns_array = await self.server.get_namespace_array()
