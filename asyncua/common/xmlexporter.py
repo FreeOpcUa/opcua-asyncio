@@ -88,7 +88,7 @@ class XmlExporter:
         addr_idx_to_xml_idx = {0: 0}
         for xml_idx, addr_idx in enumerate(idxs):
             if addr_idx >= len(ns_array):
-                break
+                raise UaError(f"Namespace index '{addr_idx}' is not present in the namespace array")
             addr_idx_to_xml_idx[addr_idx] = xml_idx + 1
         return addr_idx_to_xml_idx
 
@@ -106,6 +106,11 @@ class XmlExporter:
                 raise
 
             node_idxs.extend(ref.NodeId.NamespaceIndex for ref in await node.get_references())
+            if node.nodeid.NamespaceIndex != 0:
+                try:
+                    node_idxs.append((await node.read_data_type()).NamespaceIndex)
+                except ua.UaStatusCodeError:
+                    pass
             node_idxs = list(set(node_idxs))  # remove duplicates
             for i in node_idxs:
                 if i != 0 and i not in idxs:

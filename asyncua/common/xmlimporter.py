@@ -326,6 +326,10 @@ class XmlImporter:
 
         :returns: NodeId (str)
         """
+        # Handle ns=1 without a namespace URI gracefully to not break previous behavior.
+        # These nodes will be added to the local server namespace.
+        if obj.NamespaceIndex > 1 and obj.NamespaceIndex not in self.namespaces:
+            raise UaError(f"Namespace index '{obj.NamespaceIndex}' referenced by '{obj}' is not defined in xml")
         if isinstance(obj, ua.NodeId):
             if obj.NamespaceIndex in self.namespaces:
                 obj = ua.NodeId(
