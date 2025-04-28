@@ -55,33 +55,68 @@ class XmlExporter:
         if self._export_values:
             self.logger.warning("Exporting values of variables is limited and can result in invalid xmls.")
 
-    async def build_etree(self, node_list):
+    async def build_etree(self, node_list, add_all_namespaces=False):
         """
         Create an XML etree object from a list of nodes;
         Namespaces used by nodes are always exported for consistency.
         Args:
             node_list: list of Node objects for export
-
+            add_all_namespaces: if true export all server namespaces no matter which are used.
         Returns:
         """
         self.logger.info("Building XML etree")
 
-        await self._add_namespaces(node_list)
+        await self._add_namespaces(node_list, add_all_namespaces)
         # add all nodes in the list to the XML etree
         for node in node_list:
             await self.node_to_etree(node)
         # add aliases to the XML etree
         self._add_alias_els()
 
-    async def _add_namespaces(self, nodes):
-        ns_array = await self.server.get_namespace_array()
-        idxs = await self._get_ns_idxs_of_nodes(nodes)
+    def _chunked_iterable(self, iterable, chunk_size):
+        """Yield successive chunk_size chunks from iterable."""
+        for i in range(0, len(iterable), chunk_size):
+            yield iterable[i : i + chunk_size]
 
-        # now create a dict of idx_in_address_space to idx_in_exported_file
-        self._addr_idx_to_xml_idx = self._make_idx_dict(idxs, ns_array)
-        ns_to_export = [ns_array[i] for i in sorted(list(self._addr_idx_to_xml_idx.keys())) if i != 0]
-        # write namespaces to xml
-        self._add_namespace_uri_els(ns_to_export)
+    async def build_etree_chunked(self, node_list, add_all_namespaces=False, chunk_size=500):
+        """
+        Create an XML etree object from a list of nodes in chunks to prevent a server-overload because of the mass requests;
+        Namespaces used by nodes are always exported for consistency.
+        Args:
+            node_list: list of Node objects for export
+            add_all_namespaces: if true export all server namespaces no matter which are used.
+        Returns:
+        """
+        self.logger.info("Building XML etree chunked")
+
+        await self._add_namespaces(node_list, add_all_namespaces)
+        # add all nodes in the list to the XML etree
+        for i, chunk in enumerate(self._chunked_iterable(list, chunk_size)):
+            await self.server.disconnect()
+            await self.server.connect()
+            # add all nodes in the list to the XML etree
+            for node in chunk:
+                await self.node_to_etree(node)
+
+        # add aliases to the XML etree
+        self._add_alias_els()
+
+    async def _add_namespaces(self, nodes, add_all_namespaces=False):
+        if add_all_namespaces:
+            # add all namespaces
+            ns_array = await self.server.get_namespace_array()
+            self._addr_idx_to_xml_idx = {count: count for count in range(len(ns_array))}
+            # write namespaces to xml
+            self._add_namespace_uri_els(ns_array)
+        else:
+            ns_array = await self.server.get_namespace_array()
+            idxs = await self._get_ns_idxs_of_nodes(nodes)
+
+            # now create a dict of idx_in_address_space to idx_in_exported_file
+            self._addr_idx_to_xml_idx = self._make_idx_dict(idxs, ns_array)
+            ns_to_export = [ns_array[i] for i in sorted(list(self._addr_idx_to_xml_idx.keys())) if i != 0]
+            # write namespaces to xml
+            self._add_namespace_uri_els(ns_to_export)
 
     def _make_idx_dict(self, idxs, ns_array):
         idxs.sort()
