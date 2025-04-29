@@ -17,13 +17,15 @@ class SubHandler:
 
 
 async def main():
-    url = "opc.tcp://localhost:53530/OPCUA/SimulationServer/"
+    url = "opc.tcp://localhost:53530/OPCUA/SimulationServer"
     # url = "opc.tcp://olivier:olivierpass@localhost:53530/OPCUA/SimulationServer/"
-    async with Client(url=url) as client:
+    client = Client(url=url)
+    await client.load_client_certificate("my_cert.der")
+    async with client:
         await client.load_data_type_definitions(overwrite_existing=True)
         print("Root children are", await client.nodes.root.get_children())
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.WARN)
+    logging.basicConfig(level=logging.DEBUG)
     asyncio.run(main())

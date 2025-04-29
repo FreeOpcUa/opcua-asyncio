@@ -139,9 +139,8 @@ class TrustStore:
             store_ctx.verify_certificate()
             _logger.debug("Use trusted certificate : '%s'", _certificate.get_subject().CN)
             return True
-        except crypto.X509StoreContextError as exp:
-            print(exp)
-            _logger.warning('Not trusted certificate used: "%s"', _certificate.get_subject().CN)
+        except crypto.X509StoreContextError:
+            _logger.exception('Not trusted certificate used: "%s"', _certificate.get_subject().CN)
         return False
 
     async def _load_trust_location(self, location: Path):

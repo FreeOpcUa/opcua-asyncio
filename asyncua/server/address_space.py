@@ -33,8 +33,8 @@ if TYPE_CHECKING:
     ]  # FIXME Check, if there are missing attribute types.
 
 from asyncua import ua
+from asyncua.crypto.permission_rules import User, UserRole
 
-from .users import User, UserRole
 
 _logger = logging.getLogger(__name__)
 

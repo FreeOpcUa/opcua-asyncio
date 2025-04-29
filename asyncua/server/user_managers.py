@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Union
 
 from asyncua.crypto import uacrypto
-from asyncua.server.users import User, UserRole
+from asyncua.crypto.permission_rules import User, UserRole
 
 
 class UserManager:

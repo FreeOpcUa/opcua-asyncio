@@ -219,7 +219,6 @@ class UaDirectory:
         and shall be ignored by the caller.
         """
         _logger.debug("Request to create file %s in %s", file_name, self._directory_node)
-        print(f"Request to create file {file_name} in {self._directory_node}")
         create_file_node = await self._directory_node.get_child("CreateFile")
         arg1_file_name = Variant(file_name, VariantType.String)
         arg2_request_file_open = Variant(request_file_open, VariantType.Boolean)

@@ -132,7 +132,7 @@ def clean_name(name):
         return name
     newname = re.sub(r"\W+", "_", name)
     newname = re.sub(r"^[0-9]+", r"_\g<0>", newname)
-    _logger.warning("renamed %s to %s due to Python syntax", name, newname)
+    _logger.info("renamed %s to %s due to Python syntax", name, newname)
     return newname
 
 
@@ -363,7 +363,8 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_exis
             if parent_sdef:
                 for sfield in reversed(parent_sdef.Fields):
                     sdef.Fields.insert(0, sfield)
-            dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
+            if isinstance(sdef, ua.StructureDefinition):
+                dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
             return _recursive_parse(
                 server,
                 server.get_node(desc.NodeId),

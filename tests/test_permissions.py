@@ -4,7 +4,7 @@ import pytest
 from asyncua import Client
 from asyncua import Server
 from asyncua import ua
-from asyncua.server.users import UserRole
+from asyncua.crypto.permission_rules import UserRole
 from asyncua.server.user_managers import CertificateUserManager
 from asyncua.crypto import security_policies
 

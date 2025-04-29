@@ -38,5 +38,13 @@ Step 3: openssl req -x509 -days 365 -new -out certificate.pem -key key.pem -conf
 this way is proved with Siemens OPC UA Client/Server!
 '
 
-openssl req -x509 -newkey rsa:4096 -sha256 -keyout my_private_key.pem -out my_cert.pem -days 3650 -nodes -addext "subjectAltName = URI:urn:example.org:FreeOpcUa:python-opcua"
+
+
+
+# Step 1: Generate PEM certificate and private key with correct extensions
+openssl req -x509 -newkey rsa:4096 -sha512 \
+  -keyout my_private_key.pem -out my_cert.pem \
+  -days 3650 -nodes -config cert-config.cnf
+
+# Step 2: Convert certificate to DER format for OPC UA
 openssl x509 -outform der -in my_cert.pem -out my_cert.der

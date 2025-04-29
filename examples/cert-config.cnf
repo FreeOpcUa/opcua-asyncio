@@ -1,0 +1,18 @@
+
+[ req ]
+default_bits        = 2048
+default_md          = sha512
+distinguished_name = req_distinguished_name
+x509_extensions = v3_ext
+prompt = no
+
+[req_distinguished_name]
+CN= freeopcua@somewhere
+O= My Organization
+DC= helitack
+
+[ v3_ext ]
+subjectAltName = URI:urn:example.org:FreeOpcUa:opcua-asyncio
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = clientAuth, serverAuth
+basicConstraints = critical, CA:false
