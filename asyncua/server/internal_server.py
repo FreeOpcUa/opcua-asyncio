@@ -13,18 +13,29 @@ import logging
 from urllib.parse import urlparse
 
 from asyncua import ua
-from .user_managers import PermissiveUserManager, UserManager
+from asyncua.common.session_interface import AbstractSession
+from asyncua.ua.uaprotocol_auto import UserNameIdentityToken
 from ..common.callback import CallbackService
 from ..common.node import Node
+from ..crypto.validator import CertificateValidatorMethod
+from ..crypto import uacrypto
+from .base import AbstractUserManager, AbstractInternalServer
+from .user_managers import PermissiveUserManager
 from .history import HistoryManager
-from .address_space import NodeData, AddressSpace, AttributeService, ViewService, NodeManagementService, MethodService
+from .address_space import (
+    NodeData,
+    AbstractAddressSpace,
+    AddressSpace,
+    AttributeService,
+    ViewService,
+    NodeManagementService,
+    MethodService,
+)
 from .subscription_service import SubscriptionService
 from .standard_address_space import standard_address_space
 from asyncua.crypto.permission_rules import User, UserRole
 from .internal_session import InternalSession
 from .event_generator import EventGenerator
-from ..crypto.validator import CertificateValidatorMethod
-from ..crypto import uacrypto
 
 _logger = logging.getLogger(__name__)
 
@@ -35,14 +46,19 @@ class ServerDesc:
         self.Capabilities = cap
 
 
-class InternalServer:
+class InternalServer(AbstractInternalServer):
     """
     There is one `InternalServer` for every `Server`.
     """
 
-    def __init__(self, user_manager: UserManager = None):
+    def __init__(
+        self,
+        user_manager: Optional[AbstractUserManager] = None,
+        aspace: Optional[AbstractAddressSpace] = None,
+        certificate_validator: Optional[CertificateValidatorMethod] = None,
+    ):
         self.logger = logging.getLogger(__name__)
-        self.callback_service = CallbackService()
+
         self.endpoints = []
         self._channel_id_counter = 5
         self.allow_remote_admin = True
@@ -51,30 +67,84 @@ class InternalServer:
         self._known_servers = {}  # used if we are a discovery server
         self.certificate = None
         self.private_key = None
-        self.aspace = AddressSpace()
-        self.attribute_service = AttributeService(self.aspace)
-        self.view_service = ViewService(self.aspace)
-        self.method_service = MethodService(self.aspace)
-        self.node_mgt_service = NodeManagementService(self.aspace)
+
+        self._user_manager: AbstractUserManager = user_manager or PermissiveUserManager()
+        self._aspace: AbstractAddressSpace = aspace or AddressSpace()
+        self._certificate_validator: Optional[CertificateValidatorMethod] = certificate_validator
+
+        self._callback_service = CallbackService()
+        self._attribute_service = AttributeService(aspace=self.aspace)
+        self._view_service = ViewService(aspace=self.aspace)
+        self._method_service = MethodService(aspace=self.aspace)
+        self._node_mgt_service = NodeManagementService(aspace=self.aspace)
         self.asyncio_transports = []
-        self.subscription_service: SubscriptionService = SubscriptionService(self.aspace)
-        self.history_manager = HistoryManager(self)
-        if user_manager is None:
-            _logger.info("No user manager specified. Using default permissive manager instead.")
-            user_manager = PermissiveUserManager()
-        self.user_manager = user_manager
-        self.certificate_validator: Optional[CertificateValidatorMethod] = None
+        self._subscription_service: SubscriptionService = SubscriptionService(aspace=self.aspace)
+        self._history_manager = HistoryManager(iserver=self)
+        # if user_manager is None:
+        #     _logger.info("No user manager specified. Using default permissive manager instead.")
+        #     user_manager = PermissiveUserManager()
+        # self.user_manager = user_manager
+
         """hook to validate a certificate, raises a ServiceError when not valid"""
         # create a session to use on server side
-        self.isession = InternalSession(
-            self, self.aspace, self.subscription_service, "Internal", user=User(role=UserRole.Admin)
-        )
+        self._isession = InternalSession(internal_server=self, name="Internal", user=User(role=UserRole.Admin))
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         self.time_task = None
         self._time_task_stop = False
         self.match_discovery_endpoint_url: bool = True
         self.match_discovery_source_ip: bool = True
         self.supported_tokens = (ua.AnonymousIdentityToken, ua.X509IdentityToken, ua.UserNameIdentityToken)
+
+    @property
+    def aspace(self) -> AbstractAddressSpace:
+        return self._aspace
+
+    @property
+    def user_manager(self) -> AbstractUserManager:
+        return self._user_manager
+
+    @property
+    def isession(self) -> InternalSession:
+        return self._isession
+
+    @property
+    def callback_service(self) -> CallbackService:
+        return self._callback_service
+
+    @property
+    def attribute_service(self) -> AttributeService:
+        return self._attribute_service
+
+    @property
+    def view_service(self) -> ViewService:
+        return self._view_service
+
+    @property
+    def method_service(self) -> MethodService:
+        return self._method_service
+
+    @property
+    def node_mgt_service(self) -> NodeManagementService:
+        return self._node_mgt_service
+
+    @property
+    def subscription_service(self) -> SubscriptionService:
+        return self._subscription_service
+
+    @property
+    def history_manager(self) -> HistoryManager:
+        return self._history_manager
+
+    @property
+    def certificate_validator(self) -> Optional[CertificateValidatorMethod]:
+        return self._certificate_validator
+
+    @certificate_validator.setter
+    def certificate_validator(self, validator: CertificateValidatorMethod):
+        """
+        Set the certificate validator method.
+        """
+        self._certificate_validator = validator
 
     async def init(self, shelffile: Optional[Path] = None):
         await self.load_standard_address_space(shelffile)
@@ -137,10 +207,11 @@ class InternalServer:
 
     async def load_standard_address_space(self, shelf_file: Optional[Path] = None):
         if shelf_file:
-            if shelf_file.is_file() or (shelf_file / ".db").is_file():
-                # import address space from shelf
-                self.aspace.load_aspace_shelf(shelf_file)
+            try:  # just try to load, see what happens... expecting shelf file base path to provide ".bak", ".dat" and ".dir" files
+                self.aspace.load_aspace_shelf(path=shelf_file)
                 return
+            except Exception as e:
+                self.logger.info("could not load shelf file: %s, error: %s", shelf_file, e)
         # import address space from code generated from xml
         standard_address_space.fill_address_space(self.node_mgt_service)
         # import address space directly from xml, this has performance impact so disabled
@@ -282,7 +353,7 @@ class InternalServer:
         return self.register_server(params.Server, params.DiscoveryConfiguration)
 
     def create_session(self, name, user=User(role=UserRole.Anonymous), external=False):
-        return InternalSession(self, self.aspace, self.subscription_service, name, user=user, external=external)
+        return InternalSession(internal_server=self, name=name, user=user, external=external)
 
     async def enable_history_data_change(self, node, period=timedelta(days=7), count=0):
         """
@@ -379,7 +450,7 @@ class InternalServer:
         """
         self.user_manager = user_manager
 
-    def decrypt_user_token(self, isession, token):
+    def decrypt_user_token(self, token: UserNameIdentityToken):
         """
         unpack the username and password for the benefit of the user defined user manager
         """
@@ -399,7 +470,7 @@ class InternalServer:
             else:
                 self.logger.warning("Unknown password encoding %s", token.EncryptionAlgorithm)
                 raise ValueError("Unknown password encoding")
-            length = unpack_from("<I", raw_pw)[0] - len(isession.nonce)
+            length = unpack_from("<I", raw_pw)[0] - len(self.isession.nonce)
             password = raw_pw[4 : 4 + length]
             password = password.decode("utf-8")
         elif isinstance(password, bytes):
