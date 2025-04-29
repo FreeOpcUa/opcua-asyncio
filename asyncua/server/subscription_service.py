@@ -8,7 +8,7 @@ from typing import Dict, Iterable
 
 from asyncua import ua
 from asyncua.common import utils, uamethod
-from .address_space import AddressSpace
+from .address_space import AbstractAddressSpace
 from .internal_subscription import InternalSubscription
 
 
@@ -18,9 +18,9 @@ class SubscriptionService:
     There is one `SubscriptionService` instance for every `Server`/`InternalServer`.
     """
 
-    def __init__(self, aspace: AddressSpace):
+    def __init__(self, aspace: AbstractAddressSpace):
         self.logger = logging.getLogger(__name__)
-        self.aspace: AddressSpace = aspace
+        self.aspace: AbstractAddressSpace = aspace
         self.subscriptions: Dict[int, InternalSubscription] = {}
         self._sub_id_counter = 77
         self.standard_events = {}

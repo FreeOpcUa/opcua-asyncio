@@ -152,7 +152,9 @@ class AbstractSession(ABC):
     # Subscription Service Set: https://reference.opcfoundation.org/Core/Part4/v104/5.13.1/
 
     @abstractmethod
-    async def create_subscription(self, params: ua.CreateSubscriptionParameters) -> ua.CreateSubscriptionResult:
+    async def create_subscription(
+        self, params: ua.CreateSubscriptionParameters, *args, **kwargs
+    ) -> ua.CreateSubscriptionResult:
         """
         https://reference.opcfoundation.org/Core/Part4/v104/5.13.2/
 
