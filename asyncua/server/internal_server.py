@@ -13,7 +13,6 @@ import logging
 from urllib.parse import urlparse
 
 from asyncua import ua
-from asyncua.common.session_interface import AbstractSession
 from asyncua.ua.uaprotocol_auto import UserNameIdentityToken
 from ..common.callback import CallbackService
 from ..common.node import Node
@@ -70,7 +69,9 @@ class InternalServer(AbstractInternalServer):
 
         self._user_manager: AbstractUserManager = user_manager or PermissiveUserManager()
         self._aspace: AbstractAddressSpace = aspace or AddressSpace()
-        self._certificate_validator: Optional[CertificateValidatorMethod] = certificate_validator
+        self._certificate_validator: Optional[CertificateValidatorMethod] = (
+            certificate_validator  # hook to validate a certificate, rasies a ServiceError when not valid
+        )
 
         self._callback_service = CallbackService()
         self._attribute_service = AttributeService(aspace=self.aspace)
@@ -80,12 +81,7 @@ class InternalServer(AbstractInternalServer):
         self.asyncio_transports = []
         self._subscription_service: SubscriptionService = SubscriptionService(aspace=self.aspace)
         self._history_manager = HistoryManager(iserver=self)
-        # if user_manager is None:
-        #     _logger.info("No user manager specified. Using default permissive manager instead.")
-        #     user_manager = PermissiveUserManager()
-        # self.user_manager = user_manager
 
-        """hook to validate a certificate, raises a ServiceError when not valid"""
         # create a session to use on server side
         self._isession = InternalSession(internal_server=self, name="Internal", user=User(role=UserRole.Admin))
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))

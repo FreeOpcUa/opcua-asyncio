@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, KeysView, Union
 
 if TYPE_CHECKING:
-    from typing import Callable, Dict, List, Tuple, Generator, TypeAlias
+    from typing import Callable, Dict, List, Tuple, Generator
     from asyncua.ua.uaprotocol_auto import (
         ObjectAttributes,
         DataTypeAttributes,
@@ -33,8 +33,8 @@ if TYPE_CHECKING:
         ObjectTypeAttributes,
         ObjectAttributes,
     ]  # FIXME Check, if there are missing attribute types.
-    StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
-    FileDescriptorOrPath: TypeAlias = int | StrOrBytesPath
+    StrOrBytesPath = Union[str, bytes, PathLike[str], PathLike[bytes]]
+    FileDescriptorOrPath = Union[int, StrOrBytesPath]
 
 from asyncua import ua
 from asyncua.crypto.permission_rules import User, UserRole
