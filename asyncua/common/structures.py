@@ -143,6 +143,9 @@ class StructGenerator:
         if name.startswith("__") and name.endswith("Length"):
             # Codesys syntax
             return True
+        if name.startswith("#"):
+            # BR syntax
+            return True
         return False
 
     def _make_model(self, root):
