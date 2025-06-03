@@ -1,5 +1,8 @@
+from enum import Enum
+from dataclasses import dataclass
+from typing import Optional
+
 from asyncua import ua
-from asyncua.server.users import UserRole
 
 ADMIN_TYPES = [
     ua.ObjectIds.RegisterServerRequest_Encoding_DefaultBinary,
@@ -35,6 +38,22 @@ USER_TYPES = [
     ua.ObjectIds.RegisterNodesRequest_Encoding_DefaultBinary,
     ua.ObjectIds.UnregisterNodesRequest_Encoding_DefaultBinary,
 ]
+
+
+class UserRole(Enum):
+    """
+    User Roles
+    """
+
+    Admin = 0
+    Anonymous = 1
+    User = 3
+
+
+@dataclass
+class User:
+    role: UserRole = UserRole.Anonymous
+    name: Optional[str] = None
 
 
 class PermissionRuleset:

@@ -112,7 +112,7 @@ class HistorySQLite(HistoryStorageInterface):
         try:
             validate_table_name(table)
             async with self._db.execute(
-                f'SELECT * FROM "{table}" WHERE "SourceTimestamp" BETWEEN ? AND ? ' f'ORDER BY "_Id" {order} LIMIT ?',
+                f'SELECT * FROM "{table}" WHERE "SourceTimestamp" BETWEEN ? AND ? ORDER BY "_Id" {order} LIMIT ?',
                 (
                     start_time,
                     end_time,
@@ -294,7 +294,7 @@ class HistorySQLite(HistoryStorageInterface):
                     s_clauses.append(name)
             except AttributeError:
                 self.logger.warning(
-                    "Historizing SQL OPC UA Select Clause Warning for node %s," " Clause: %s:", source_id, select_clause
+                    "Historizing SQL OPC UA Select Clause Warning for node %s, Clause: %s:", source_id, select_clause
                 )
         # remove select clauses that the event type doesn't have; SQL will error because the column doesn't exist
         clauses = [x for x in s_clauses if x in self._event_fields[source_id]]

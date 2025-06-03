@@ -74,7 +74,7 @@ async def _rdesc_from_node(parent: asyncua.Node, node: asyncua.Node) -> ua.Refer
         if res.Value is None:
             raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         variants.append(res.Value)
-    nclass, qname, dname = [v.Value for v in variants]
+    nclass, qname, dname = (v.Value for v in variants)
     rdesc = ua.ReferenceDescription()
     rdesc.NodeId = node.nodeid
     rdesc.BrowseName = qname
@@ -118,7 +118,7 @@ async def _read_and_copy_attrs(node_type: asyncua.Node, struct: Any, addnode: ua
                 setattr(struct, name, variant.Value)
         else:
             _logger.warning(
-                "Instantiate: while copying attributes from node type %s," " attribute %s, statuscode is %s",
+                "Instantiate: while copying attributes from node type %s, attribute %s, statuscode is %s",
                 str(node_type),
                 str(name),
                 str(results[idx].StatusCode),

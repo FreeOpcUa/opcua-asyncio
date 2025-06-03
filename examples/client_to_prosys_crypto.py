@@ -9,7 +9,7 @@ from asyncua import Client
 
 async def main():
     client = Client("opc.tcp://localhost:53530/OPCUA/SimulationServer/")
-    await client.set_security_string("Basic256Sha256,Sign,certificate-example.der,private-key-example.pem")
+    await client.set_security_string("Basic256Sha256,Sign,my_cert.der,my_private_key.pem")
     client.session_timeout = 2000
     async with client:
         root = client.nodes.root

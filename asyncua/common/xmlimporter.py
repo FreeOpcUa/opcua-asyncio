@@ -54,6 +54,15 @@ class XmlImporter:
         if not present the namespace is registered.
         """
         xml_uris = self.parser.get_used_namespaces()
+
+        # Check if first namespace is the standard namespace and
+        # drop it, to prevent the following code from failing and
+        # misplacing namespace index 1 (user namespace)
+        # to namespace index 0 (server namespace)
+        if xml_uris:
+            if xml_uris[0] == "http://opcfoundation.org/UA/":
+                xml_uris.pop(0)
+
         server_uris = await self.session.get_namespace_array()
         namespaces_map = {}
         for ns_index, ns_uri in enumerate(xml_uris):
@@ -326,6 +335,10 @@ class XmlImporter:
 
         :returns: NodeId (str)
         """
+        # Handle ns=1 without a namespace URI gracefully to not break previous behavior.
+        # These nodes will be added to the local server namespace.
+        if obj.NamespaceIndex > 1 and obj.NamespaceIndex not in self.namespaces:
+            raise UaError(f"Namespace index '{obj.NamespaceIndex}' referenced by '{obj}' is not defined in xml")
         if isinstance(obj, ua.NodeId):
             if obj.NamespaceIndex in self.namespaces:
                 obj = ua.NodeId(
@@ -634,10 +647,10 @@ class XmlImporter:
         return res[0].AddedNodeId
 
     async def add_datatype(self, obj, no_namespace_migration=False):
-        is_enum = False
-        is_struct = False
-        is_option_set = False
-        is_alias = False
+        is_enum: bool = False
+        is_struct: bool = False
+        is_option_set: bool = False
+        is_alias: bool = False
         node = self._get_add_node_item(obj, no_namespace_migration)
         attrs = ua.DataTypeAttributes()
         if obj.desc:
@@ -669,7 +682,7 @@ class XmlImporter:
                     is_struct = True
                 else:
                     _logger.warning(
-                        "%s has datatypedefinition and path %s" " but we could not find out if this is a struct",
+                        "%s has datatypedefinition and path %s but we could not find out if this is a struct",
                         obj,
                         path,
                     )
@@ -782,6 +795,9 @@ class XmlImporter:
                     continue
                 if ndata.datatype is not None and ndata.datatype in all_nodes:
                     if ndata.datatype not in sorted_nodes:
+                        continue
+                if ndata.typedef is not None and ndata.typedef in all_nodes:
+                    if ndata.typedef not in sorted_nodes:
                         continue
                 if ndata.parent is None or ndata.parent not in all_nodes:
                     add_to_sorted(nid, ndata)

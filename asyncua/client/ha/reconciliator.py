@@ -219,7 +219,7 @@ class Reconciliator:
                 # in case the previous create_subscription request failed
                 if not real_sub:
                     _logger.warning(
-                        "Can't create nodes for %s since underlying " "subscription for %s doesn't exist", url, sub_name
+                        "Can't create nodes for %s since underlying subscription for %s doesn't exist", url, sub_name
                     )
                     continue
                 vs_real = real_map[url][sub_name]

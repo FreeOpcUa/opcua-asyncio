@@ -132,7 +132,7 @@ def clean_name(name):
         return name
     newname = re.sub(r"\W+", "_", name)
     newname = re.sub(r"^[0-9]+", r"_\g<0>", newname)
-    _logger.warning("renamed %s to %s due to Python syntax", name, newname)
+    _logger.info("renamed %s to %s due to Python syntax", name, newname)
     return newname
 
 
@@ -179,6 +179,7 @@ def make_structure_code(data_type, struct_name, sdef, log_error=True):
         ua.StructureType.Structure,
         ua.StructureType.StructureWithOptionalFields,
         ua.StructureType.Union,
+        ua.StructureType.StructureWithSubtypedValues,
     ):
         raise NotImplementedError(
             f"Only StructureType implemented, not {ua.StructureType(sdef.StructureType).name} for node {struct_name} with DataTypdeDefinition {sdef}"
@@ -240,8 +241,11 @@ class {struct_name}{base_class}:
         elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
             uatype = f"typing.List[{uatype}]"
         if sfield.IsOptional:
-            uatype = f"typing.Optional[{uatype}]"
-            default_value = "None"
+            if sdef.StructureType is ua.StructureType.StructureWithSubtypedValues:
+                uatype = f"typing.Annotated[{uatype}, 'AllowSubtypes']"
+            else:
+                uatype = f"typing.Optional[{uatype}]"
+                default_value = "None"
         fields.append((fname, uatype, default_value))
     if is_union:
         # Generate getter and setter to mimic opc ua union access
@@ -359,7 +363,8 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_exis
             if parent_sdef:
                 for sfield in reversed(parent_sdef.Fields):
                     sdef.Fields.insert(0, sfield)
-            dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
+            if isinstance(sdef, ua.StructureDefinition):
+                dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
             return _recursive_parse(
                 server,
                 server.get_node(desc.NodeId),
@@ -504,16 +509,10 @@ async def load_data_type_definitions(
                 new_objects[dts.name] = env[dts.name]  # type: ignore
             except NotImplementedError:
                 _logger.exception("Structure type %s not implemented", dts.sdef)
-            except AttributeError:
-                # Failed to resolve datatypes
-                failed_types.append(dts)
+            except (AttributeError, RuntimeError):
                 if log_ex:
-                    raise
-            except RuntimeError:
-                # Failed to resolve datatypes
+                    _logger.exception("Failed to resolve datatype %s", dts.sdef)
                 failed_types.append(dts)
-                if log_ex:
-                    raise
         if not failed_types:
             break
         dtypes = failed_types
@@ -569,7 +568,6 @@ class {name}({enum_type}):
                     "OptionSet" if option_set else "Enumeration",
                     name,
                 )
-
         code += f"    {fieldname} = {value}\n"
     return code
 

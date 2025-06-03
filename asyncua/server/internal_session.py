@@ -10,7 +10,7 @@ from ..common.callback import CallbackType, ServerItemCallback
 from ..common.utils import create_nonce, ServiceError
 from ..crypto.uacrypto import x509
 from .address_space import AddressSpace
-from .users import User, UserRole
+from asyncua.crypto.permission_rules import User, UserRole
 from .subscription_service import SubscriptionService
 
 if TYPE_CHECKING:
@@ -59,8 +59,7 @@ class InternalSession(AbstractSession):
 
     def __str__(self):
         return (
-            f"InternalSession(name:{self.name},"
-            f" user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})"
+            f"InternalSession(name:{self.name}, user:{self.user}, id:{self.session_id}, auth_token:{self.auth_token})"
         )
 
     async def get_endpoints(self, params=None, sockname=None):

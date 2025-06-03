@@ -1731,7 +1731,7 @@ def expect_file_creation(filename: str):
 
 
 async def test_custom_struct_export(opc):
-    idx = 4
+    idx = 1
 
     dtype, encs = await new_struct(
         opc.opc,
@@ -1747,7 +1747,7 @@ async def test_custom_struct_export(opc):
 
 
 async def test_custom_enum_export(opc):
-    idx = 4
+    idx = 1
 
     dtype = await new_enum(
         opc.opc,

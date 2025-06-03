@@ -1,4 +1,4 @@
-OPC UA / IEC 62541 Client and Server for Python >= 3.7 and pypy3 .
+OPC UA / IEC 62541 Client and Server for Python >= 3.8 and pypy3 .
 http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
 [![Python package](https://github.com/FreeOpcUa/opcua-asyncio/workflows/Python%20package/badge.svg)](https://github.com/FreeOpcUa/opcua-asyncio/actions)
@@ -7,7 +7,7 @@ http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
 # opcua-asyncio
 
-opcua-asyncio is an asyncio-based asynchronous OPC UA client and server based on python-opcua, removing support of python < 3.7.
+opcua-asyncio is an asyncio-based asynchronous OPC UA client and server based on python-opcua, removing support of python < 3.8.
 Asynchronous programming allows for simpler code (e.g. less need for locks) and can potentially provide performance improvements.
 This library also provides a [synchronous wrapper](https://github.com/FreeOpcUa/opcua-asyncio/blob/master/asyncua/sync.py) over the async API, which can be used in synchronous code instead of python-opcua.
 

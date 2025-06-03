@@ -33,8 +33,8 @@ if TYPE_CHECKING:
     ]  # FIXME Check, if there are missing attribute types.
 
 from asyncua import ua
+from asyncua.crypto.permission_rules import User, UserRole
 
-from .users import User, UserRole
 
 _logger = logging.getLogger(__name__)
 
@@ -328,6 +328,10 @@ class NodeManagementService:
                         result.StatusCode = ua.StatusCode(ua.StatusCodes.BadBrowseNameDuplicated)
                         return result
 
+        if not item.TypeDefinition.is_null() and item.TypeDefinition not in self._aspace:
+            result.StatusCode = ua.StatusCode(ua.StatusCodes.BadTypeDefinitionInvalid)
+            return result
+
         nodedata = NodeData(item.RequestedNewNodeId)
 
         self._add_node_attributes(nodedata, item, add_timestamps=check)
@@ -340,7 +344,7 @@ class NodeManagementService:
             self._add_ref_to_parent(nodedata, item, parentdata)
 
         # add type definition
-        if item.TypeDefinition != ua.NodeId():
+        if not item.TypeDefinition.is_null():
             self._add_type_definition(nodedata, item)
 
         result.StatusCode = ua.StatusCode()
@@ -399,7 +403,7 @@ class NodeManagementService:
         addref.IsForward = True  # FIXME in uaprotocol_auto.py
         addref.ReferenceTypeId = ua.NodeId(ua.ObjectIds.HasTypeDefinition)
         addref.TargetNodeId = item.TypeDefinition
-        addref.TargetNodeClass = ua.NodeClass.DataType
+        addref.TargetNodeClass = ua.NodeClass.Unspecified
         self._add_reference_no_check(nodedata, addref)  # FIXME return StatusCode is not evaluated
 
     def delete_nodes(

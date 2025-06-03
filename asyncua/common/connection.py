@@ -54,11 +54,18 @@ class TransportLimits:
         ack.SendBufferSize = min(msg.SendBufferSize, self.max_recv_buffer)
         ack.MaxChunkCount = self._select_limit(msg.MaxChunkCount, self.max_chunk_count)
         ack.MaxMessageSize = self._select_limit(msg.MaxMessageSize, self.max_message_size)
-        self.max_chunk_count = ack.MaxChunkCount
-        self.max_recv_buffer = ack.SendBufferSize
-        self.max_send_buffer = ack.ReceiveBufferSize
-        self.max_message_size = ack.MaxMessageSize
-        _logger.info("updating server limits to: %s", self)
+        have_changes = (
+            self.max_chunk_count != ack.MaxChunkCount
+            or self.max_recv_buffer != ack.ReceiveBufferSize
+            or self.max_send_buffer != ack.SendBufferSize
+            or self.max_message_size != ack.MaxMessageSize
+        )
+        if have_changes:
+            _logger.info("updating server limits to: %s", self)
+            self.max_chunk_count = ack.MaxChunkCount
+            self.max_recv_buffer = ack.SendBufferSize
+            self.max_send_buffer = ack.ReceiveBufferSize
+            self.max_message_size = ack.MaxMessageSize
         return ack
 
     def create_hello_limits(self, msg: ua.Hello) -> ua.Hello:
@@ -69,11 +76,18 @@ class TransportLimits:
         return msg
 
     def update_client_limits(self, msg: ua.Acknowledge) -> None:
-        self.max_chunk_count = msg.MaxChunkCount
-        self.max_recv_buffer = msg.ReceiveBufferSize
-        self.max_send_buffer = msg.SendBufferSize
-        self.max_message_size = msg.MaxMessageSize
-        _logger.info("updating client limits to: %s", self)
+        have_changes = (
+            self.max_chunk_count != msg.MaxChunkCount
+            or self.max_recv_buffer != msg.ReceiveBufferSize
+            or self.max_send_buffer != msg.SendBufferSize
+            or self.max_message_size != msg.MaxMessageSize
+        )
+        if have_changes:
+            _logger.info("updating client limits to: %s", self)
+            self.max_chunk_count = msg.MaxChunkCount
+            self.max_recv_buffer = msg.ReceiveBufferSize
+            self.max_send_buffer = msg.SendBufferSize
+            self.max_message_size = msg.MaxMessageSize
 
 
 class MessageChunk:
@@ -174,7 +188,7 @@ class MessageChunk:
             # SecureOpen message must be in a single chunk (specs, Part 6, 6.7.2)
             chunk = MessageChunk(security_policy.asymmetric_cryptography, body, message_type, ua.ChunkType.Single)
             chunk.SecurityHeader.SecurityPolicyURI = security_policy.URI
-            if security_policy.host_certificate:
+            if security_policy.host_certificate and security_policy.Mode != ua.MessageSecurityMode.None_:
                 chunk.SecurityHeader.SenderCertificate = security_policy.host_certificate
             if security_policy.peer_certificate:
                 chunk.SecurityHeader.ReceiverCertificateThumbPrint = hashlib.sha1(
@@ -370,8 +384,7 @@ class SecureConnection:
             )
             if timeout < datetime.now(timezone.utc):
                 raise ua.UaError(
-                    f"Security token id {security_hdr.TokenId} has timed out "
-                    f"({timeout} < {datetime.now(timezone.utc)})"
+                    f"Security token id {security_hdr.TokenId} has timed out ({timeout} < {datetime.now(timezone.utc)})"
                 )
             return
 
@@ -386,7 +399,7 @@ class SecureConnection:
         if chunk.MessageHeader.MessageType != ua.MessageType.SecureOpen:
             if chunk.MessageHeader.ChannelId != self.security_token.ChannelId:
                 raise ua.UaError(
-                    f"Wrong channel id {chunk.MessageHeader.ChannelId}," f" expected {self.security_token.ChannelId}"
+                    f"Wrong channel id {chunk.MessageHeader.ChannelId}, expected {self.security_token.ChannelId}"
                 )
         if self._incoming_parts:
             if self._incoming_parts[0].SequenceHeader.RequestId != chunk.SequenceHeader.RequestId:

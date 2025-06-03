@@ -73,7 +73,7 @@ async def main():
     myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
     await myvar.set_writable()  # Set MyVariable to be writable by clients
     myarrayvar = await myobj.add_variable(idx, "myarrayvar", [6.7, 7.9])
-    await myobj.add_variable(idx, "myStronglytTypedVariable", ua.Variant([], ua.VariantType.UInt32))
+    await myobj.add_variable(idx, "myStronglyTypedVariable", ua.Variant([], ua.VariantType.UInt32))
     await myobj.add_property(idx, "myproperty", "I am a property")
     await myobj.add_method(idx, "mymethod", func, [ua.VariantType.Int64], [ua.VariantType.Boolean])
 

@@ -43,7 +43,7 @@ class Buffer:
         self._size = size
 
     def __str__(self):
-        return f"Buffer(size:{self._size}, data:{self._data[self._cur_pos:self._cur_pos + self._size]})"
+        return f"Buffer(size:{self._size}, data:{self._data[self._cur_pos : self._cur_pos + self._size]})"
 
     __repr__ = __str__
 
