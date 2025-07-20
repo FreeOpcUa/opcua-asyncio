@@ -97,19 +97,34 @@ async def new_struct(
     return dtype, [enc]
 
 
+def new_enum_field(
+    name: str,
+    description: str = "",
+) -> ua.EnumField:
+    """
+    simple way to create an EnumField
+    """
+    field = ua.EnumField()
+    field.DisplayName = ua.LocalizedText(Text=name)
+    field.Name = name
+    if description:
+        field.Description = ua.LocalizedText(Text=description)
+    else:
+        field.Description = ua.LocalizedText(Text=name)
+    return field
+
+
 async def new_enum(
     server: Union["Server", "Client"],
     idx: Union[int, ua.NodeId],
     name: Union[int, ua.QualifiedName],
-    values: List[str],
+    fields: List[Union[str, ua.EnumField]],
     option_set: bool = False,
 ) -> Node:
     edef = ua.EnumDefinition()
     counter = 0
-    for val_name in values:
-        field = ua.EnumField()
-        field.DisplayName = ua.LocalizedText(Text=val_name)
-        field.Name = val_name
+    for item in fields:
+        field = item if isinstance(item, ua.EnumField) else new_enum_field(item)
         field.Value = counter
         counter += 1
         edef.Fields.append(field)

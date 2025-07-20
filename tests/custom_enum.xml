@@ -10,7 +10,9 @@
     <DisplayName>MyCrazyEnum</DisplayName>
     <Description>MyCrazyEnum</Description>
     <Definition Name="MyCrazyEnum">
-      <Field Name="titi" Value="0" />
+      <Field Name="titi" Value="0">
+        <Description>Description for titi.</Description>
+      </Field>
       <Field Name="toto" Value="1" />
       <Field Name="tutu" Value="2" />
     </Definition>

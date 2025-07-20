@@ -11,7 +11,9 @@
     <DisplayName>MyCrazyStruct</DisplayName>
     <Description>My Description</Description>
     <Definition Name="MyCrazyStruct">
-      <Field Name="MyBool" DataType="i=1" />
+      <Field Name="MyBool" DataType="i=1">
+        <Description>Description for MyBool.</Description>
+      </Field>
       <Field Name="MyUInt32" DataType="i=7" ValueRank="0" ArrayDimensions="1" />
     </Definition>
     <References>
