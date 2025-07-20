@@ -375,12 +375,16 @@ class XmlExporter:
                 field_el.attrib["ArrayDimensions"] = ", ".join([str(i) for i in field.ArrayDimensions])
             if field.IsOptional:
                 field_el.attrib["IsOptional"] = "true"
+            if field.Description and field.Description.Text not in (None, ""):
+                self._add_sub_el(field_el, "Description", field.Description.Text)
 
     def _enum_fields_to_etree(self, sdef_el, sdef):
         for field in sdef.Fields:
             field_el = Et.SubElement(sdef_el, "Field")
             field_el.attrib["Name"] = field.Name
             field_el.attrib["Value"] = str(field.Value)
+            if field.Description and field.Description.Text not in (None, ""):
+                self._add_sub_el(field_el, "Description", field.Description.Text)
 
     def _add_namespace_uri_els(self, uris):
         nuris_el = Et.Element("NamespaceUris")

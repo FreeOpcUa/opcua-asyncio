@@ -7,7 +7,7 @@ import pytest
 from pytz import timezone
 
 from asyncua import ua, Node, uamethod
-from asyncua.common.structures104 import new_struct, new_struct_field
+from asyncua.common.structures104 import new_enum, new_enum_field, new_struct, new_struct_field
 from asyncua.ua import uaerrors
 
 _logger = logging.getLogger("asyncua.common.xmlimporter")
@@ -522,6 +522,31 @@ async def test_xml_enumvalues(opc, tmpdir):
     await opc.opc.delete_nodes([o])
 
 
+async def test_xml_enum_fields(opc, tmpdir):
+    idx = 1
+    field_0 = new_enum_field("tata", "My nice description.")
+    field_1 = new_enum_field("titi")
+    my_enum = await new_enum(
+        opc.opc,
+        idx,
+        "MyEnum",
+        [
+            field_0,
+            "titi",
+        ],
+    )
+    tmp_path = tmpdir.join("export-enum-fields.xml").strpath
+    await opc.opc.export_xml([my_enum], tmp_path, export_values=True)
+    await opc.opc.delete_nodes([my_enum])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    imported_my_enum = opc.opc.get_node(new_nodes[0])
+    assert my_enum == imported_my_enum
+    imported_edef = await imported_my_enum.read_data_type_definition()
+    for i, field in enumerate([field_0, field_1]):
+        assert imported_edef.Fields[i].Name == field.Name
+        assert imported_edef.Fields[i].Description.Text == field.Description.Text
+
+
 async def test_xml_custom_uint32(opc, tmpdir):
     # t = opc.opc.nodes. create_custom_data_type(2, 'MyCustomUint32', ua.ObjectIds.UInt32)
     t = await opc.opc.get_node(ua.ObjectIds.UInt32).add_data_type(2, "MyCustomUint32")
@@ -616,7 +641,7 @@ async def test_xml_byte(opc, tmpdir):
 
 
 async def test_xml_union(opc, tmpdir):
-    idx = 4
+    idx = 1
     o, _ = await new_struct(
         opc.opc,
         idx,
@@ -640,8 +665,31 @@ async def test_xml_union(opc, tmpdir):
     assert t.MyInt64 is None
 
 
+async def test_xml_struct_fields(opc, tmpdir):
+    idx = 1
+    field = new_struct_field("int_value", ua.VariantType.Int64, description="My nice description.")
+    my_struct, _ = await new_struct(
+        opc.opc,
+        idx,
+        "MyStruct",
+        [
+            field,
+        ],
+    )
+    tmp_path = tmpdir.join("export-struct-fields.xml").strpath
+    await opc.opc.export_xml([my_struct], tmp_path, export_values=True)
+    await opc.opc.delete_nodes([my_struct])
+    new_nodes = await opc.opc.import_xml(tmp_path)
+    imported_my_struct = opc.opc.get_node(new_nodes[0])
+    assert my_struct == imported_my_struct
+    imported_sdef = await imported_my_struct.read_data_type_definition()
+    assert imported_sdef.Fields[0].Name == field.Name
+    assert imported_sdef.Fields[0].DataType == field.DataType
+    assert imported_sdef.Fields[0].Description.Text == field.Description.Text
+
+
 async def test_xml_struct_optional(opc, tmpdir):
-    idx = 4
+    idx = 1
     o, _ = await new_struct(
         opc.opc,
         idx,
@@ -665,7 +713,7 @@ async def test_xml_struct_optional(opc, tmpdir):
 
 
 async def test_xml_struct_with_value(opc, tmpdir):
-    idx = 4
+    idx = 1
     my_struct, _ = await new_struct(
         opc.opc,
         idx,
@@ -699,7 +747,7 @@ async def test_xml_struct_with_value(opc, tmpdir):
 
 
 async def test_xml_struct_in_struct_with_value(opc, tmpdir):
-    idx = 4
+    idx = 1
     inner_struct, _ = await new_struct(
         opc.opc,
         idx,
@@ -742,7 +790,7 @@ async def test_xml_struct_in_struct_with_value(opc, tmpdir):
 
 
 async def test_basetype_alias(opc):
-    idx = 4
+    idx = 1
     # Alias double
     _ = await opc.opc.get_node(ua.NodeId(11)).add_data_type(ua.NodeId(NamespaceIndex=idx), "4:MyDouble")
     await opc.opc.load_data_type_definitions()
