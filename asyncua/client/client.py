@@ -24,6 +24,7 @@ from ..common.utils import create_nonce, ServiceError
 from ..common.ua_utils import value_to_datavalue, copy_dataclass_attr
 from ..crypto import uacrypto, security_policies
 from ..crypto.validator import CertificateValidatorMethod
+from ..ua.ua_binary import LowApiConfig
 
 _logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class Client:
     _password: Optional[str] = None
     strip_url_credentials: bool = True
 
-    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
+    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0, encoding="utf-8"):
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -92,6 +93,7 @@ class Client:
         self._closing: bool = False
         self.certificate_validator: Optional[CertificateValidatorMethod] = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
+        LowApiConfig.String_Encoding = encoding
 
     async def __aenter__(self):
         await self.connect()

@@ -31,6 +31,7 @@ from ..common.connection import TransportLimits
 
 from ..crypto import security_policies, uacrypto, validator
 from ..crypto.permission_rules import SimpleRoleRuleset
+from ..ua.ua_binary import LowApiConfig
 
 _logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class Server:
         server listens on some internal IP.
     """
 
-    def __init__(self, iserver: InternalServer = None, user_manager=None):
+    def __init__(self, iserver: InternalServer = None, user_manager=None, encoding="utf-8"):
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
         self.product_uri = "urn:freeopcua.github.io:python:server"
@@ -121,6 +122,7 @@ class Server:
             max_chunk_count=math.ceil(max_msg_sz / buffer_sz),  # Round up to allow max msg size
             max_message_size=max_msg_sz,
         )
+        LowApiConfig.String_Encoding = encoding
 
     async def init(self, shelf_file: Optional[Path] = None):
         await self.iserver.init(shelf_file)
