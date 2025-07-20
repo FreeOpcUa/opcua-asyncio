@@ -1769,6 +1769,7 @@ async def test_custom_enum_import(opc):
     node = nodes[0]
     sdef = await node.read_data_type_definition()
     assert sdef.Fields[0].Name == "titi"
+    assert sdef.Fields[0].Description.Text == "Description for titi."
     with expect_file_creation("custom_enum_v2.xml") as path:
         await opc.opc.export_xml(nodes, path)
 
@@ -1780,6 +1781,8 @@ async def test_custom_struct_import(opc):
     sdef = await node.read_data_type_definition()
     assert sdef.StructureType == ua.StructureType.Structure
     assert sdef.Fields[0].Name == "MyBool"
+    assert sdef.Fields[0].DataType == ua.NodeId(ua.ObjectIds.Boolean)
+    assert sdef.Fields[0].Description.Text == "Description for MyBool."
     with expect_file_creation("custom_enum_v2.xml") as path:
         await opc.opc.export_xml(nodes, path)
 

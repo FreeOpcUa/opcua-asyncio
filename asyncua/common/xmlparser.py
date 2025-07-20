@@ -248,8 +248,11 @@ class XMLParser:
         else:
             self.logger.info("Not implemented tag: %s", el)
 
-    def _parse_field(self, field):
-        return Field(field)
+    def _parse_field(self, el):
+        field = Field(el)
+        for attribute in el:
+            self._parse_attr(attribute, field)
+        return field
 
     def _parse_contained_value(self, el, obj):
         """
