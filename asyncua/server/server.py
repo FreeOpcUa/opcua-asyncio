@@ -7,12 +7,14 @@ import logging
 import math
 from datetime import timedelta, datetime
 import socket
-from urllib.parse import urlparse
+from urllib.parse import ParseResult, urlparse
 from typing import Callable, Optional, Tuple, Union
 from pathlib import Path
 
 from asyncua import ua
-from .address_space import NodeData
+from .base import AbstractInternalServer
+from .address_space import NodeData, AbstractAddressSpace
+from .user_managers import AbstractUserManager
 from .binary_server_asyncio import BinaryServer
 from .internal_server import InternalServer
 from .event_generator import EventGenerator
@@ -31,6 +33,7 @@ from ..common.connection import TransportLimits
 
 from ..crypto import security_policies, uacrypto, validator
 from ..crypto.permission_rules import SimpleRoleRuleset
+
 
 _logger = logging.getLogger(__name__)
 
@@ -84,22 +87,52 @@ class Server:
         server listens on some internal IP.
     """
 
-    def __init__(self, iserver: InternalServer = None, user_manager=None):
-        self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
-        self._application_uri = "urn:freeopcua:python:server"
-        self.product_uri = "urn:freeopcua.github.io:python:server"
-        self.name: str = "FreeOpcUa Python Server"
-        self.manufacturer_name = "FreeOpcUa"
-        self.application_type = ua.ApplicationType.ClientAndServer
-        self.default_timeout: int = 60 * 60 * 1000
-        self.iserver: InternalServer = iserver if iserver else InternalServer(user_manager=user_manager)
+    def __init__(
+        self,
+        iserver: Optional[AbstractInternalServer] = None,
+        aspace: Optional[AbstractAddressSpace] = None,
+        user_manager: Optional[AbstractUserManager] = None,
+        url: str = "opc.tcp://localhost:4840/freeopcua/server/",
+        uri: str = "urn:freeopcua:python:server",
+        product_uri: str = "urn:freeopcua.github.io:python:server",
+        name: str = "FreeOpcUa Python Server",
+        manufacturer_name: str = "FreeOpcUa",
+        socket_address: Optional[Tuple[str, int]] = None,
+        discovery_period: int = 60,
+        # default_timeout: int = 60*60*1000,
+    ) -> None:
+        """
+        :param iserver: Internal server instance
+        :param aspace: Address space instance (only used if no iserver instance was passed)
+        :param user_manager: User manager instance (only used if no iserver instance was passed)
+        :param endpoint: Endpoint URL
+        :param uri: Application URI
+        :param product_uri: Product URI
+        :param name: Server name
+        :param manufacturer_name: Manufacturer name
+        :param socket_address: A tuple of IP address and port describing the server socket address. Used when the IP
+            address of the network interface is different from the endpoint IP offered to the client during discovery.
+            Helpful when the server is running behind NAT or inside a Docker container, where the client connects to an
+            external IP, while the server listens on some internal IP.
+        :param discovery_period: Period in seconds for renewing the registration to a discovery server. If set to 0,
+        """
+        self.iserver: AbstractInternalServer = iserver or InternalServer(user_manager=user_manager, aspace=aspace)
         self.bserver: Optional[BinaryServer] = None
-        self.socket_address: Optional[Tuple[str, int]] = None
+
+        self.endpoint: ParseResult = urlparse(url=url)
+        self._application_uri: str = uri
+        self.product_uri: str = product_uri
+        self.name: str = name
+        self.manufacturer_name = manufacturer_name
+        self.application_type = ua.ApplicationType.ClientAndServer
+        # self.default_timeout: int = 60 * 60 * 1000  # Don't think this is used anywhere?
+
+        self.socket_address: Optional[Tuple[str, int]] = socket_address
         self._discovery_clients = {}
-        self._discovery_period = 60
+        self._discovery_period = discovery_period
         self._discovery_handle = None
         self._policies = []
-        self.nodes: Shortcuts = Shortcuts(self.iserver.isession)
+        self.nodes: Shortcuts = Shortcuts(server=self.iserver.isession)
         # enable all endpoints by default
         self._security_policy = [
             ua.SecurityPolicyType.NoSecurity,

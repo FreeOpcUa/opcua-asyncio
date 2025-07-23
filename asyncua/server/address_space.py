@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+from os import PathLike
 import asyncio
 import collections.abc
 import dataclasses
@@ -10,10 +12,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, KeysView, Union
 
 if TYPE_CHECKING:
-    from typing import Callable, Dict, List, Union, Tuple, Generator
+    from typing import Callable, Dict, List, Tuple, Generator
     from asyncua.ua.uaprotocol_auto import (
         ObjectAttributes,
         DataTypeAttributes,
@@ -31,6 +33,8 @@ if TYPE_CHECKING:
         ObjectTypeAttributes,
         ObjectAttributes,
     ]  # FIXME Check, if there are missing attribute types.
+    StrOrBytesPath = Union[str, bytes, PathLike[str], PathLike[bytes]]
+    FileDescriptorOrPath = Union[int, StrOrBytesPath]
 
 from asyncua import ua
 from asyncua.crypto.permission_rules import User, UserRole
@@ -624,7 +628,180 @@ class MethodService:
         return res
 
 
-class AddressSpace:
+class AbstractAddressSpace(ABC):
+    """
+    Abstract class for address space.
+    https://reference.opcfoundation.org/Core/docs/Part3/
+    """
+
+    @property
+    def force_server_timestamp(self) -> bool:
+        """If True, the server timestamp is always set to the current time when writing a value"""
+        return self._force_server_timestamp
+
+    @force_server_timestamp.setter
+    def force_server_timestamp(self, value: bool) -> None:
+        """Set the force_server_timestamp property"""
+        self._force_server_timestamp = value
+
+    @abstractmethod
+    def __getitem__(self, nodeid: ua.NodeId) -> NodeData:
+        pass
+
+    @abstractmethod
+    def get(self, nodeid: ua.NodeId) -> Optional[NodeData]:
+        pass
+
+    @abstractmethod
+    def __setitem__(self, nodeid: ua.NodeId, value: NodeData):
+        pass
+
+    @abstractmethod
+    def __contains__(self, nodeid: ua.NodeId) -> bool:
+        pass
+
+    @abstractmethod
+    def __delitem__(self, nodeid: ua.NodeId) -> None:
+        pass
+
+    @abstractmethod
+    def generate_nodeid(self, idx: Optional[int]) -> ua.NodeId:
+        pass
+
+    @abstractmethod
+    def keys(self) -> KeysView[ua.NodeId]:
+        pass
+
+    @abstractmethod
+    def clear(self) -> None:
+        """Delete all nodes in address space"""
+        pass
+
+    @abstractmethod
+    def dump(self, path: FileDescriptorOrPath) -> None:
+        """
+        Dump address space as binary to file; note that server must be stopped for this method to work
+        DO NOT DUMP AN ADDRESS SPACE WHICH IS USING A SHELF (load_aspace_shelf), ONLY CACHED NODES WILL GET DUMPED!
+        """
+        pass
+
+    @abstractmethod
+    def load(self, path: FileDescriptorOrPath) -> None:
+        """
+        Load address space from a binary file, overwriting everything in the current address space
+        """
+        pass
+
+    @abstractmethod
+    def make_aspace_shelf(self, path: Path) -> None:
+        """
+        Make a shelf for containing the nodes from the standard address space; this is typically only done on first
+        start of the server. Subsequent server starts will load the shelf, nodes are then moved to a cache
+        by the LazyLoadingDict class when they are accessed. Saving data back to the shelf
+        is currently NOT supported, it is only used for the default OPC UA standard address space
+
+        Note: Intended for slow devices, such as Raspberry Pi, to greatly improve start up time
+        """
+        pass
+
+    @abstractmethod
+    def load_aspace_shelf(self, path: Path) -> None:
+        """
+        Load the standard address space nodes from a python shelve via LazyLoadingDict as needed.
+        The dump() method can no longer be used if the address space is being loaded from a shelf
+
+        Note: Intended for slow devices, such as Raspberry Pi, to greatly improve start up time
+        """
+        pass
+
+    @abstractmethod
+    def read_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds) -> ua.DataValue:
+        pass
+
+    @abstractmethod
+    async def write_attribute_value(
+        self, nodeid: ua.NodeId, attr: ua.AttributeIds, value: ua.DataValue
+    ) -> ua.StatusCode:
+        pass
+
+    @abstractmethod
+    def set_attribute_value_callback(
+        self,
+        nodeid: ua.NodeId,
+        attr: ua.AttributeIds,
+        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
+    ) -> ua.StatusCode:
+        pass
+
+    @abstractmethod
+    def set_attribute_value_setter(
+        self,
+        nodeid: ua.NodeId,
+        attr: ua.AttributeIds,
+        setter: Callable[[NodeData, ua.AttributeIds], ua.DataValue],
+    ) -> ua.StatusCode:
+        pass
+
+    @abstractmethod
+    def add_datachange_callback(
+        self,
+        nodeid: ua.NodeId,
+        attr: ua.AttributeIds,
+        callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
+    ) -> tuple[ua.StatusCode, int]:
+        pass
+
+    @abstractmethod
+    def delete_datachange_callback(self, handle: int) -> None:
+        pass
+
+    @abstractmethod
+    def add_method_callback(self, methodid: ua.NodeId, callback: Callable) -> None:
+        pass
+
+    @staticmethod
+    def _variant_type_match(value: ua.DataValue, attval: AttributeValue, node: NodeData) -> bool:  # type: ignore[override]
+        if attval.value is None:
+            return True  # None data value can be overwritten anytime.
+        if isinstance(v := attval.value.Value, ua.Variant):
+            if (attr_vtype := v.VariantType) == ua.VariantType.Null:
+                # Node had a null value, many nodes are initialized with that value
+                # we should check what the real type is
+                if isinstance(dtv := node.attributes[ua.AttributeIds.DataType].value, ua.DataValue):
+                    if isinstance(dtvv := dtv.Value, ua.Variant):
+                        if isinstance(dtype := dtvv.Value, ua.NodeId):
+                            if isinstance(dtype.Identifier, int):
+                                if dtype.NamespaceIndex == 0 and dtype.Identifier <= 25:
+                                    attr_vtype = ua.VariantType(dtype.Identifier)
+                                else:
+                                    # FIXME: should find the correct variant type given data type but
+                                    # this is a bit complicaed so trusting the first write
+                                    return True
+            if value.Value.VariantType == attr_vtype:  # type: ignore[union-attr]
+                return True
+            _logger.warning(
+                "Write refused: Variant: %s with type %s does not have expected type: %s",
+                value.Value,
+                value.Value.VariantType if value.Value else None,
+                attval.value.Value.VariantType if attval.value.Value else None,
+            )
+        return False
+
+    def _is_expected_variant_type(
+        self,
+        value: ua.DataValue,
+        attval: AttributeValue,
+        node: NodeData,
+    ) -> bool:
+        """
+        Check if the value is of the expected variant type.
+        This method is used to check if the value is of the expected variant type
+        before writing it to the node.
+        """
+        return self._variant_type_match(value=value, attval=attval, node=node)
+
+
+class AddressSpace(AbstractAddressSpace):
     """
     The address space object stores all the nodes of the OPC-UA server and helper methods.
     The methods are thread safe
@@ -825,32 +1002,6 @@ class AddressSpace:
                 self.logger.exception("Error calling datachange callback %s, %s, %s", k, v, ex)
 
         return ua.StatusCode()
-
-    def _is_expected_variant_type(self, value: ua.DataValue, attval: AttributeValue, node: NodeData) -> bool:
-        if attval.value is None:
-            return True  # None data value can be overwritten anytime.
-
-        # FIXME Type hinting reveals that it is possible that Value (Optional) is None which would raise an exception
-        vtype = attval.value.Value.VariantType  # type: ignore[union-attr]
-        if vtype == ua.VariantType.Null:
-            # Node had a null value, many nodes are initialized with that value
-            # we should check what the real type is
-            dtype = node.attributes[ua.AttributeIds.DataType].value.Value.Value  # type: ignore[union-attr]
-            if dtype.NamespaceIndex == 0 and dtype.Identifier <= 25:
-                vtype = ua.VariantType(dtype.Identifier)
-            else:
-                # FIXME: should find the correct variant type given data type but
-                # this is a bit complicaed so trusting the first write
-                return True
-        if value.Value.VariantType == vtype:  # type: ignore[union-attr]
-            return True
-        _logger.warning(
-            "Write refused: Variant: %s with type %s does not have expected type: %s",
-            value.Value,
-            value.Value.VariantType if value.Value else None,
-            attval.value.Value.VariantType if attval.value.Value else None,
-        )
-        return False
 
     def set_attribute_value_callback(
         self,

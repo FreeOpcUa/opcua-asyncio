@@ -25,3 +25,13 @@ examples/history.db
 .vscode
 .coverage
 schemas/UA-Nodese*
+
+# pyenv
+.python-version
+
+# virtual environments
+.venv*
+venv*
+
+# lock files
+uv.lock
