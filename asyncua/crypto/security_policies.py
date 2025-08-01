@@ -248,7 +248,7 @@ class Cryptography(CryptographyNone):
         """
         Remove expired keys as soon as possible
         """
-        now = time.time()
+        now = time.monotonic()
         if now > self.prev_key_expiration:
             if self.Prev_Decryptor and self.Prev_Verifier:
                 self.Prev_Decryptor.reset()
@@ -603,7 +603,7 @@ class SecurityPolicyAes128Sha256RsaOaep(SecurityPolicy):
             self.symmetric_cryptography.prev_key_expiration = self.symmetric_cryptography.key_expiration
 
         # lifetime is in ms
-        self.symmetric_cryptography.key_expiration = time.time() + (lifetime * 0.001)
+        self.symmetric_cryptography.key_expiration = time.monotonic() + (lifetime * 0.001)
         self.symmetric_cryptography.Verifier = VerifierHMac256(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
@@ -681,7 +681,7 @@ class SecurityPolicyAes256Sha256RsaPss(SecurityPolicy):
             self.symmetric_cryptography.prev_key_expiration = self.symmetric_cryptography.key_expiration
 
         # lifetime is in ms
-        self.symmetric_cryptography.key_expiration = time.time() + (lifetime * 0.001)
+        self.symmetric_cryptography.key_expiration = time.monotonic() + (lifetime * 0.001)
         self.symmetric_cryptography.Verifier = VerifierHMac256(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
@@ -765,7 +765,7 @@ class SecurityPolicyBasic128Rsa15(SecurityPolicy):
             self.symmetric_cryptography.prev_key_expiration = self.symmetric_cryptography.key_expiration
 
         # lifetime is in ms
-        self.symmetric_cryptography.key_expiration = time.time() + (lifetime * 0.001)
+        self.symmetric_cryptography.key_expiration = time.monotonic() + (lifetime * 0.001)
         self.symmetric_cryptography.Verifier = VerifierAesCbc(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
@@ -852,7 +852,7 @@ class SecurityPolicyBasic256(SecurityPolicy):
 
         # convert lifetime to seconds and add the 25% extra-margin (Part4/5.5.2)
         lifetime *= 1.25 * 0.001
-        self.symmetric_cryptography.key_expiration = time.time() + lifetime
+        self.symmetric_cryptography.key_expiration = time.monotonic() + lifetime
         self.symmetric_cryptography.Verifier = VerifierAesCbc(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 
@@ -933,7 +933,7 @@ class SecurityPolicyBasic256Sha256(SecurityPolicy):
             self.symmetric_cryptography.prev_key_expiration = self.symmetric_cryptography.key_expiration
 
         # lifetime is in ms
-        self.symmetric_cryptography.key_expiration = time.time() + (lifetime * 0.001)
+        self.symmetric_cryptography.key_expiration = time.monotonic() + (lifetime * 0.001)
         self.symmetric_cryptography.Verifier = VerifierHMac256(sigkey)
         self.symmetric_cryptography.Decryptor = DecryptorAesCbc(key, init_vec)
 

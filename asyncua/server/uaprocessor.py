@@ -20,7 +20,7 @@ class PublishRequestData:
     def __init__(self, requesthdr=None, seqhdr=None):
         self.requesthdr = requesthdr
         self.seqhdr = seqhdr
-        self.timestamp = time.time()
+        self.timestamp = time.monotonic()
 
 
 class UaProcessor:
@@ -88,7 +88,7 @@ class UaProcessor:
             if (
                 requestdata.requesthdr.TimeoutHint == 0
                 or requestdata.requesthdr.TimeoutHint != 0
-                and time.time() - requestdata.timestamp < requestdata.requesthdr.TimeoutHint / 1000
+                and time.monotonic() - requestdata.timestamp < requestdata.requesthdr.TimeoutHint / 1000
             ):
                 # Continue and use `requestdata` only if there was no timeout
                 break

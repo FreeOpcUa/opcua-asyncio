@@ -92,13 +92,13 @@ class InternalSubscription:
         """
         Start the publication loop running at the RevisedPublishingInterval.
         """
-        ts = time.time()
+        ts = time.monotonic()
         period = self.data.RevisedPublishingInterval / 1000.0
         try:
             await self.publish_results()
             while not self._closing:
                 next_ts = ts + period
-                sleep_time = next_ts - time.time()
+                sleep_time = next_ts - time.monotonic()
                 ts = next_ts
                 await asyncio.sleep(max(sleep_time, 0))
                 await self.publish_results()
