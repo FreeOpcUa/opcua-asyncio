@@ -87,13 +87,13 @@ class Reconciliator:
         _logger.info("Starting Reconciliator loop, checking every %dsec", self.timer)
         self.is_running = True
         while self.is_running:
-            start = time.time()
+            start = time.monotonic()
             async with self.ha_client._url_to_reset_lock:
                 await self.resubscribe()
             async with self.ha_client._ideal_map_lock:
                 await self.reconciliate()
             await self.debug_status()
-            stop = time.time() - start
+            stop = time.monotonic() - start
             _logger.info("[TIME] Reconciliation: %.2fsec", stop)
 
             if await event_wait(self.stop_event, self.timer):
