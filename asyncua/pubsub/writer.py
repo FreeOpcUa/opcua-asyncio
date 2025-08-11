@@ -1,13 +1,14 @@
 """
-    missing features:
-        Uadp: - implement a lot of specs correct  (timing, publishing)
-              - DeltaFrames
-              - Promotedfields
-        JsonEncoding: all
-        DataSetWriter: implement state
+missing features:
+    Uadp: - implement a lot of specs correct  (timing, publishing)
+          - DeltaFrames
+          - Promotedfields
+    JsonEncoding: all
+    DataSetWriter: implement state
 """
+
 from __future__ import annotations
-from typing import Optional, Tuple, List, TYPE_CHECKING, Type, Union
+from typing import Optional, Tuple, List, TYPE_CHECKING, Union
 import asyncio
 from asyncua.common.node import Node
 from asyncua.common import instantiate_util
@@ -64,6 +65,8 @@ class DataSetWriter(PubSubInformationModel):
     Write of an Dataset
     """
 
+    _node: Optional[Node] = None
+
     def __init__(self, cfg: Optional[DataSetWriterDataType]):
         if cfg is None:
             self._cfg = DataSetWriterDataType()
@@ -105,16 +108,10 @@ class DataSetWriter(PubSubInformationModel):
                 | DataSetFieldContentMask.SourceTimestamp
             )
         elif raw:
-            msg_mask |= (
-                UadpDataSetMessageContentMask.Status
-                | UadpDataSetMessageContentMask.Timestamp
-            )
+            msg_mask |= UadpDataSetMessageContentMask.Status | UadpDataSetMessageContentMask.Timestamp
             mask = DataSetFieldContentMask.RawData
         else:
-            msg_mask |= (
-                UadpDataSetMessageContentMask.Status
-                | UadpDataSetMessageContentMask.Timestamp
-            )
+            msg_mask |= UadpDataSetMessageContentMask.Status | UadpDataSetMessageContentMask.Timestamp
             mask = DataSetFieldContentMask(0)
         message_settings = UadpDataSetWriterMessageDataType(DataSetMessageContentMask=msg_mask)
         dsw_cfg = DataSetWriterDataType(
@@ -128,7 +125,7 @@ class DataSetWriter(PubSubInformationModel):
         )
         return cls(dsw_cfg)
 
-    def generate_promoted_fields(self) -> List[Variant]:
+    def generate_promoted_fields(self) -> List[Variant]:  # type: ignore[empty-body]
         # @TODO
         pass
 
@@ -136,25 +133,13 @@ class DataSetWriter(PubSubInformationModel):
         msg_cfg: UadpDataSetWriterMessageDataType = self._cfg.MessageSettings
         header = UadpDataSetMessageHeader(Valid=True)
         self._seq_no += 1
-        if (
-            UadpDataSetMessageContentMask.MajorVersion
-            in msg_cfg.DataSetMessageContentMask
-        ):
+        if UadpDataSetMessageContentMask.MajorVersion in msg_cfg.DataSetMessageContentMask:
             header.CfgMajorVersion = pds.dataset._meta.ConfigurationVersion.MajorVersion
-        if (
-            UadpDataSetMessageContentMask.MinorVersion
-            in msg_cfg.DataSetMessageContentMask
-        ):
+        if UadpDataSetMessageContentMask.MinorVersion in msg_cfg.DataSetMessageContentMask:
             header.CfgMinorVersion = pds.dataset._meta.ConfigurationVersion.MinorVersion
-        if (
-            UadpDataSetMessageContentMask.PicoSeconds
-            in msg_cfg.DataSetMessageContentMask
-        ):
+        if UadpDataSetMessageContentMask.PicoSeconds in msg_cfg.DataSetMessageContentMask:
             header.PicoSeconds = 0  # Not supported
-        if (
-            UadpDataSetMessageContentMask.SequenceNumber
-            in msg_cfg.DataSetMessageContentMask
-        ):
+        if UadpDataSetMessageContentMask.SequenceNumber in msg_cfg.DataSetMessageContentMask:
             header.SequenceNo = self._seq_no
         if DataSetFieldContentMask.RawData in self._cfg.DataSetFieldContentMask:
             data, status, dt = await pds.get_source().get_raw()
@@ -176,9 +161,7 @@ class DataSetWriter(PubSubInformationModel):
             ds.Header.Timestamp = dt
         return ds
 
-    async def _init_information_model(
-        self, parent: Node, server: Server, pubsub: Optional[IPubSub]
-    ) -> None:
+    async def _init_information_model(self, parent: Node, server: Server, pubsub: Optional[IPubSub]) -> None:
         dsw_type = server.get_node(NodeId(ObjectIds.DataSetWriterType, 0))
         objs = await instantiate_util.instantiate(
             parent,
@@ -189,6 +172,7 @@ class DataSetWriter(PubSubInformationModel):
             dname=LocalizedText(self._cfg.Name, ""),
         )
         dsw_obj = objs[0]
+        self._node = dsw_obj
         await self._init_node(dsw_obj, server)
         await parent.add_reference(dsw_obj, NodeId(ObjectIds.HasDataSetWriter))
         await parent.delete_reference(dsw_obj, ObjectIds.HasComponent)
@@ -196,14 +180,12 @@ class DataSetWriter(PubSubInformationModel):
         if pubsub:
             ds = pubsub.get_published_dataset(self._cfg.DataSetName)
             if ds is not None:
+                if ds._node is None:
+                    raise RuntimeError(f"DataSet node for '{self._cfg.DataSetName}' is not initialized")
                 await ds._node.add_reference(dsw_obj, NodeId(ObjectIds.DataSetToWriter))
-        await self.set_node_value(
-            "0:DataSetFieldContentMask", self._cfg.DataSetFieldContentMask_
-        )
+        await self.set_node_value("0:DataSetFieldContentMask", self._cfg.DataSetFieldContentMask_)
 
-        await self._node.add_variable(
-            NodeId(NamespaceIndex=1), "0:KeyFrameCount", self._cfg.KeyFrameCount
-        )
+        await self._node.add_variable(NodeId(NamespaceIndex=1), "0:KeyFrameCount", self._cfg.KeyFrameCount)
 
         await self.set_node_value(
             "0:DataSetWriterProperties",
@@ -229,19 +211,13 @@ class DataSetWriter(PubSubInformationModel):
             )
             msg_settings = nodes[0]
             n = await msg_settings.get_child("0:ConfiguredSize")
-            await n.set_data_value(
-                DataValue(Variant(msg_cfg.ConfiguredSize, VariantType.UInt16))
-            )
+            await n.set_data_value(DataValue(Variant(msg_cfg.ConfiguredSize, VariantType.UInt16)))
             n = await msg_settings.get_child("0:DataSetMessageContentMask")
             await n.set_data_value(DataValue(msg_cfg.DataSetMessageContentMask))
             n = await msg_settings.get_child("0:DataSetOffset")
-            await n.set_data_value(
-                DataValue(Variant(msg_cfg.DataSetOffset, VariantType.UInt16))
-            )
+            await n.set_data_value(DataValue(Variant(msg_cfg.DataSetOffset, VariantType.UInt16)))
             n = await msg_settings.get_child("0:NetworkMessageNumber")
-            await n.set_data_value(
-                DataValue(Variant(msg_cfg.NetworkMessageNumber, VariantType.UInt16))
-            )
+            await n.set_data_value(DataValue(Variant(msg_cfg.NetworkMessageNumber, VariantType.UInt16)))
 
 
 class WriterGroup(PubSubInformationModel):
@@ -249,15 +225,15 @@ class WriterGroup(PubSubInformationModel):
     Configures a group of datasets writer
     """
 
+    _app: Optional[Server] = None
+
     uadp = True  # Currently only uadp is supported
 
     def __init__(self, cfg: Optional[WriterGroupDataType]) -> None:
         super().__init__()
         if cfg is not None:
             self._cfg = cfg
-            self._writer = [
-                DataSetWriter(writer) for writer in self._cfg.DataSetWriters
-            ]
+            self._writer = [DataSetWriter(writer) for writer in self._cfg.DataSetWriters]
         else:
             self._cfg = WriterGroupDataType()
             self._writer = []
@@ -307,9 +283,10 @@ class WriterGroup(PubSubInformationModel):
             MessageSettings=message_settings,
         )
         o = cls(cfg)
-        for wr in writer:
-            o._writer.append(wr)
-            o._cfg.DataSetWriters.append(wr._cfg)
+        if writer:
+            for wr in writer:
+                o._writer.append(wr)
+                o._cfg.DataSetWriters.append(wr._cfg)
         return o
 
     async def add_writer(self, writer: DataSetWriter) -> None:
@@ -327,66 +304,40 @@ class WriterGroup(PubSubInformationModel):
         msg = UadpNetworkMessage()
         payload_header = False
         promoted_fields = False
-        if (
-            UadpNetworkMessageContentMask.PublisherId
-            in msg_cfg.NetworkMessageContentMask
-        ):
+        if UadpNetworkMessageContentMask.PublisherId in msg_cfg.NetworkMessageContentMask:
             msg.Header.PublisherId = sender.get_publisher_id()
-        if (
-            UadpNetworkMessageContentMask.GroupHeader
-            in msg_cfg.NetworkMessageContentMask
-        ):
+        if UadpNetworkMessageContentMask.GroupHeader in msg_cfg.NetworkMessageContentMask:
             msg.GroupHeader = UadpGroupHeader()
-            if (
-                UadpNetworkMessageContentMask.GroupVersion
-                in msg_cfg.NetworkMessageContentMask
-            ):
+            if UadpNetworkMessageContentMask.GroupVersion in msg_cfg.NetworkMessageContentMask:
                 msg.GroupHeader.GroupVersion = msg_cfg.GroupVersion
-            if (
-                UadpNetworkMessageContentMask.WriterGroupId
-                in msg_cfg.NetworkMessageContentMask
-            ):
+            if UadpNetworkMessageContentMask.WriterGroupId in msg_cfg.NetworkMessageContentMask:
                 msg.GroupHeader.WriterGroupId = self._cfg.WriterGroupId
-            if (
-                UadpNetworkMessageContentMask.NetworkMessageNumber
-                in msg_cfg.NetworkMessageContentMask
-            ):
+            if UadpNetworkMessageContentMask.NetworkMessageNumber in msg_cfg.NetworkMessageContentMask:
                 msg.GroupHeader.NetworkMessageNo = msg_no
-            if (
-                UadpNetworkMessageContentMask.SequenceNumber
-                in msg_cfg.NetworkMessageContentMask
-            ):
+            if UadpNetworkMessageContentMask.SequenceNumber in msg_cfg.NetworkMessageContentMask:
                 msg.GroupHeader.SequenceNo = 0
-        if (
-            UadpNetworkMessageContentMask.PayloadHeader
-            in msg_cfg.NetworkMessageContentMask
-        ):
+        if UadpNetworkMessageContentMask.PayloadHeader in msg_cfg.NetworkMessageContentMask:
             payload_header = True
         if UadpNetworkMessageContentMask.Timestamp in msg_cfg.NetworkMessageContentMask:
             msg.TimeStamp = DateTime.utcnow()
-        if (
-            UadpNetworkMessageContentMask.PicoSeconds
-            in msg_cfg.NetworkMessageContentMask
-        ):
+        if UadpNetworkMessageContentMask.PicoSeconds in msg_cfg.NetworkMessageContentMask:
             msg.PicoSeconds = 0  # Not supported
-        if (
-            UadpNetworkMessageContentMask.DataSetClassId
-            in msg_cfg.NetworkMessageContentMask
-        ):
+        if UadpNetworkMessageContentMask.DataSetClassId in msg_cfg.NetworkMessageContentMask:
             # @TODO where to get the DataSetClassId?
             logger.warn("Uadp DataSetClassId is not supported.")
             pass
             # msg.Header.DataSetClassId = Guid()
-        if (
-            UadpNetworkMessageContentMask.PromotedFields
-            in msg_cfg.NetworkMessageContentMask
-        ):
+        if UadpNetworkMessageContentMask.PromotedFields in msg_cfg.NetworkMessageContentMask:
             promoted_fields = True
         msg.Payload = []
         return msg, promoted_fields, payload_header
 
     async def _generate_uadp(self, sender: PubSubSender, ps: IPubSub):
         msg_cfg = self.get_msg_cfg()
+        # Narrow type to UadpWriterGroupMessageDataType to safely access DataSetOrdering
+        if not isinstance(msg_cfg, UadpWriterGroupMessageDataType):
+            raise UaError("Invalid message configuration type for UADP generation")
+        # Determine writer grouping based on DataSetOrdering
         if msg_cfg.DataSetOrdering == DataSetOrderingType.AscendingWriterId:
             writer = [sorted(self._writer, key=lambda w: w.get_id())]
         elif msg_cfg.DataSetOrdering == DataSetOrderingType.AscendingWriterIdSingle:
@@ -394,37 +345,32 @@ class WriterGroup(PubSubInformationModel):
         elif msg_cfg.DataSetOrdering == DataSetOrderingType.Undefined:
             writer = [self._writer]
         msg_no = 0
-        msgs = []
+        msgs: list[UadpDataSetMessage] = []
         for msg_writers in writer:
-            msg, promoted_fields, payload_header = self._init_msg(
-                sender, msg_cfg, msg_no
-            )
+            msg, promoted_fields, payload_header = self._init_msg(sender, msg_cfg, msg_no)
             if promoted_fields and len(msg_writers) > 1:
-                logger.error(
-                    "Promoted Fields only work if number Datasets in a message is 1"
-                )
-                raise UaError(
-                    "Promoted Fields only work if number Datasets in a message is 1"
-                )
+                logger.error("Promoted Fields only work if number Datasets in a message is 1")
+                raise UaError("Promoted Fields only work if number Datasets in a message is 1")
             for w in msg_writers:
                 if payload_header:
                     msg.DataSetPayloadHeader.append(w.get_id())
                 pds = ps.get_published_dataset(w._cfg.DataSetName)
                 if pds is None:
-                    logger.error(f"Pds with name {w._cfg.DataSetName} not found!")
+                    logger.error("Pds with name %s not found!", w._cfg.DataSetName)
                     raise UaError("Error in Connection!")
-                msg.Payload.append(await w.generate_uadp_dataset(pds))
+                if isinstance(msg.Payload, list):
+                    msg.Payload.append(await w.generate_uadp_dataset(pds))
+                else:
+                    raise UaError(f"Unexpected Payload type: {type(msg.Payload)}")
                 if promoted_fields:
-                    msg.promoted_fields = w.generate_promoted_fields()
+                    msg.PromotedFields = w.generate_promoted_fields()
             msg_no += 1
             msgs.append(msg)
         sender.send_uadp(msgs)
 
     async def run(self, sender: PubSubSender, ps: IPubSub):
         try:
-            logging.info(
-                f"WriterGroupe {self._cfg.Name} running with {self._cfg.PublishingInterval} ms"
-            )
+            logging.info("WriterGroup %s running with %s ms", self._cfg.Name, self._cfg.PublishingInterval)
             await self._set_state(PubSubState.Operational)
             while 1:
                 await self._generate_uadp(sender, ps)
@@ -439,11 +385,9 @@ class WriterGroup(PubSubInformationModel):
             return self._cfg.MessageSettings
         if isinstance(self._cfg.MessageSettings, JsonWriterGroupMessageDataType):
             return self._cfg.MessageSettings
-        raise Exception('Configuration error')
+        raise Exception("Configuration error")
 
-    async def _init_information_model(
-        self, parent: Node, server: Server, pubsub: IPubSub
-    ) -> None:
+    async def _init_information_model(self, parent: Node, server: Server, pubsub: IPubSub) -> None:
         writer_grp_type = server.get_node(NodeId(ObjectIds.WriterGroupType, 0))
         self._ps = pubsub
         nodes = await instantiate_util.instantiate(
@@ -455,6 +399,7 @@ class WriterGroup(PubSubInformationModel):
             dname=LocalizedText(self._cfg.Name, ""),
         )
         writer_gp_obj = nodes[0]
+        self._node = writer_gp_obj
         await parent.add_reference(writer_gp_obj, NodeId(ObjectIds.HasWriterGroup))
         await parent.delete_reference(writer_gp_obj, ObjectIds.HasComponent)
         await self._init_node(writer_gp_obj, server)
@@ -471,9 +416,9 @@ class WriterGroup(PubSubInformationModel):
                 is_array=True,
             ),
         )
-        await self._node.add_variable(
-            NodeId(NamespaceIndex=1), "0:SecurityGroupId", self._cfg.SecurityGroupId
-        )
+        if self._node is None:
+            raise UaError("Writer node is not initialized")
+        await self._node.add_variable(NodeId(NamespaceIndex=1), "0:SecurityGroupId", self._cfg.SecurityGroupId)
         await self._node.add_variable(
             NodeId(NamespaceIndex=1),
             "0:SecurityKeyServices",
@@ -484,14 +429,10 @@ class WriterGroup(PubSubInformationModel):
             ),
             datatype=ObjectIds.EndpointDescription,
         )
-        await self.set_node_value(
-            "0:WriterGroupId", Variant(self._cfg.WriterGroupId, VariantType.UInt16)
-        )
+        await self.set_node_value("0:WriterGroupId", Variant(self._cfg.WriterGroupId, VariantType.UInt16))
         await self.set_node_value("0:PublishingInterval", self._cfg.PublishingInterval)
         await self.set_node_value("0:KeepAliveTime", self._cfg.KeepAliveTime)
-        await self.set_node_value(
-            "0:Priority", Variant(self._cfg.WriterGroupId, VariantType.Byte)
-        )
+        await self.set_node_value("0:Priority", Variant(self._cfg.WriterGroupId, VariantType.Byte))
         await self.set_node_value(
             "0:LocaleIds",
             Variant(self._cfg.LocaleIds, VariantType.String, is_array=True),
@@ -520,9 +461,7 @@ class WriterGroup(PubSubInformationModel):
         await sampling_offset.set_data_value(DataValue(msg_cfg.SamplingOffset))
         publishing_offset = await msg_settings.get_child("0:PublishingOffset")
         await publishing_offset.set_data_value(
-            DataValue(
-                Variant(msg_cfg.PublishingOffset, VariantType.Double, is_array=True)
-            )
+            DataValue(Variant(msg_cfg.PublishingOffset, VariantType.Double, is_array=True))
         )
 
         for writer in self._writer:

@@ -1,6 +1,7 @@
 """
-    Links PubSub recived DataSets to the addresspace
+Links PubSub recived DataSets to the addresspace
 """
+
 from __future__ import annotations
 import logging
 from typing import List, Union, TYPE_CHECKING
@@ -15,7 +16,6 @@ from asyncua.ua.uaprotocol_auto import (
     PubSubState,
 )
 from asyncua.ua.uatypes import (
-    LocalizedText,
     NodeId,
     Variant,
 )
@@ -36,9 +36,11 @@ class SubscribedDataSetMirror:
         self._nodes = {}
 
     async def _create_and_set_node(self, f: FieldMetaData):
-        n = await self._node.add_variable(
-            NodeId(NamespaceIndex=1), "1:" + str(f.Name), Variant(), datatype=f.DataType
-        )
+        if self._node is None:
+            raise RuntimeError(
+                "SubscribedDataSetMirror._node is not initialized. Did you forget to call on_state_change?"
+            )
+        n = await self._node.add_variable(NodeId(NamespaceIndex=1), "1:" + str(f.Name), Variant(), datatype=f.DataType)
         await n.write_attribute(AttributeIds.Description, f.Description)
         await n.write_attribute(AttributeIds.ValueRank, f.ValueRank)
         await n.write_attribute(AttributeIds.ArrayDimensions, f.ArrayDimensions)
@@ -52,10 +54,7 @@ class SubscribedDataSetMirror:
                     NodeId(NamespaceIndex=1),
                     bname="1:" + str(self._cfg.ParentNodeName),
                 )
-            self.nodes = {
-                f.DataSetFieldId: await self._create_and_set_node(f)
-                for f in meta.get_config().Fields
-            }
+            self.nodes = {f.DataSetFieldId: await self._create_and_set_node(f) for f in meta.get_config().Fields}
 
     def get_subscribed_dataset(self) -> SubscribedDataSetMirrorDataType:
         return self._cfg
@@ -81,9 +80,7 @@ class FieldTargets:
 class SubScripedTargetVariables:
     """Maps the values to targeted variables in the addresspace"""
 
-    def __init__(
-        self, server: Server, cfg: Union[TargetVariablesDataType, List[FieldTargets]]
-    ):
+    def __init__(self, server: Server, cfg: Union[TargetVariablesDataType, List[FieldTargets]]):
         if isinstance(cfg, TargetVariablesDataType):
             self._cfg = cfg
             self._fields = [FieldTargets(f) for f in cfg.TargetVariables]
@@ -93,27 +90,17 @@ class SubScripedTargetVariables:
         self.server = server
         self.nodes = {}
 
-    async def on_dataset_recived(
-        self, meta: DataSetMeta, fields: List[DataSetValue]
-    ) -> None:
+    async def on_dataset_recived(self, meta: DataSetMeta, fields: List[DataSetValue]) -> None:
         """Called when a published dataset recived an update"""
         for field in fields:
             try:
                 node, cfg = self.nodes[field.Meta.DataSetFieldId]
-                if (
-                    field.Value.StatusCode is not None
-                    and not field.Value.StatusCode.is_good()
-                ):
-                    logger.info(f"Error field {field.Name} value with {field.Value}")
+                if field.Value.StatusCode is not None and not field.Value.StatusCode.is_good():
+                    logger.info("Error field %s value with %s", field.Name, field.Value)
                     # if status code is bad, check overridevalue handling to handle the cases
-                    if (
-                        cfg._cfg.OverrideValueHandling
-                        == OverrideValueHandling.OverrideValue
-                    ):
+                    if cfg._cfg.OverrideValueHandling == OverrideValueHandling.OverrideValue:
                         await node.set_value(cfg.OverrideValue)
-                    elif (
-                        cfg._cfg.OverrideValueHandling == OverrideValueHandling.Disabled
-                    ):
+                    elif cfg._cfg.OverrideValueHandling == OverrideValueHandling.Disabled:
                         # Set errorcode
                         await node.write_attribute(AttributeIds.Value, field.Value)
                 else:
@@ -124,10 +111,7 @@ class SubScripedTargetVariables:
     async def on_state_change(self, meta: DataSetMeta, state: PubSubState) -> None:
         """Called when a DataSet state changes"""
         if state == PubSubState.Operational:
-            self.nodes = {
-                f._cfg.DataSetFieldId: (self.server.get_node(f._cfg.TargetNodeId), f)
-                for f in self._fields
-            }
+            self.nodes = {f._cfg.DataSetFieldId: (self.server.get_node(f._cfg.TargetNodeId), f) for f in self._fields}
 
     def get_subscribed_dataset(self) -> TargetVariablesDataType:
         return self._cfg

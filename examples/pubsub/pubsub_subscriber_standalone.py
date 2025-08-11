@@ -1,6 +1,7 @@
-'''
+"""
 Example creating a standalone publisher that recives an Int32, String, Bool and ArrayInt16 matching the pubsubpublisher standalone example
-'''
+"""
+
 import asyncio
 import logging
 from typing import List
@@ -9,10 +10,10 @@ from asyncua.pubsub.udp import UdpSettings
 
 # This Parameter must match the Publisher Settings!
 CFG = {
-    'PublisherID': ua.Variant(ua.UInt16(1)),
-    'WriterId': ua.UInt16(1),
-    'DataSetWriterId': ua.UInt16(32),
-    'url': "opc.udp://239.0.0.1:4840"
+    "PublisherID": ua.Variant(ua.UInt16(1)),
+    "WriterId": ua.UInt16(1),
+    "DataSetWriterId": ua.UInt16(32),
+    "url": "opc.udp://239.0.0.1:4840",
 }
 
 
@@ -30,7 +31,9 @@ def create_reader(handler: pubsub.SubscripedDataSet):
     # Register Handler to get the DataSetResults
     cfg = pubsub.ReaderGroupDataType("ReaderGroup1", True)
     reader = pubsub.ReaderGroup(cfg)
-    cfg = pubsub.DataSetReaderDataType("SimpleDataSetReader", True, CFG['PublisherID'], CFG['WriterId'], CFG['DataSetWriterId'])
+    cfg = pubsub.DataSetReaderDataType(
+        "SimpleDataSetReader", True, CFG["PublisherID"], CFG["WriterId"], CFG["DataSetWriterId"]
+    )
     dsr = pubsub.DataSetReader(cfg)
     dsr.set_subscriped(handler)
     meatadata = create_meta_data()
@@ -41,20 +44,23 @@ def create_reader(handler: pubsub.SubscripedDataSet):
 
 def create_connection() -> pubsub.PubSubConnection:
     # The PublisherId here is 2 but could be any number because we are just subscribing
-    return pubsub.PubSubConnection.udp_udadp("Subscriber Connection1 UDP UADP", ua.UInt16(2), UdpSettings(Url=CFG['url']))
+    return pubsub.PubSubConnection.udp_udadp(
+        "Subscriber Connection1 UDP UADP", ua.UInt16(2), UdpSettings(Url=CFG["url"])
+    )
 
 
 class OnDataRecived:
-    '''
+    """
     This is called when a dataset is recived
-    '''
+    """
+
     def on_dataset_recived(self, meta: pubsub.DataSetMeta, fields: List[pubsub.DataSetValue]):
         print("Got Msg:")
         for f in fields:
             print(f"{f.Name} -> {f.Value}")
 
     def on_state_change(self, meta: pubsub.DataSetMeta, state: ua.PubSubState):
-        ''' Called when a DataSet state changes '''
+        """Called when a DataSet state changes"""
         print(f"State changed {meta.Name} - {state.name}")
 
 
@@ -69,6 +75,7 @@ async def main():
     async with app:
         while 1:
             await asyncio.sleep(5)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -1,6 +1,7 @@
 """
-    Protocols which are used to decople components from pubsub
+Protocols which are used to decople components from pubsub
 """
+
 from asyncua.ua.uatypes import Byte, ExtensionObject, String, UInt16, UInt32, UInt64
 from asyncua import ua
 from .uadp import UadpNetworkMessage

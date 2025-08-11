@@ -1,6 +1,7 @@
 """
 Example creating a publisher standalone that sends an Int32, String, Bool and ArrayInt16
 """
+
 import asyncio
 from datetime import datetime
 import logging

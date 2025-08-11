@@ -96,5 +96,7 @@ class PubSubInformationModel:
             return self.__state_fallback
 
     async def _get_node_name(self) -> String:
+        if self._node is None:
+            raise ValueError("Information model is not initialized")
         name = await self._node.read_browse_name()
         return name.Name

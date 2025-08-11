@@ -13,6 +13,7 @@ unimplemented:
     SubScripedDataSet:
         - all @TODO
 """
+
 from __future__ import annotations
 from typing import Iterable, List, Optional, TYPE_CHECKING
 import asyncio
@@ -85,13 +86,11 @@ class DataSetReader(PubSubInformationModel):
             self._cfg = DataSetReaderDataType()
         else:
             self._cfg = cfg
-        self._meta = DataSetMeta(cfg.DataSetMetaData)
+        self._meta = DataSetMeta(self._cfg.DataSetMetaData)
         self._subscriped = None
         if subscriped is not None:
             self._subscriped = subscriped
-            get_subscribed_dataset = getattr(
-                self._subscriped, "get_subscribed_dataset", None
-            )
+            get_subscribed_dataset = getattr(self._subscriped, "get_subscribed_dataset", None)
             if callable(get_subscribed_dataset):
                 self._cfg.SubscribedDataSet = self._subscriped.get_subscribed_dataset()
         self._task = None
@@ -132,16 +131,9 @@ class DataSetReader(PubSubInformationModel):
 
     async def handle_dataset(self, ds: UadpDataSetMessage) -> None:
         if isinstance(ds, UadpDataSetDataValue):
-            fields = [
-                DataSetValue(m.Name, d, m) for d, m in zip(ds.Data, self._meta._fields)
-            ]
+            fields = [DataSetValue(m.Name, d, m) for d, m in zip(ds.Data, self._meta._fields)]
         elif isinstance(ds, UadpDataSetDeltaDataValue):
-            fields = [
-                DataSetValue(
-                    self._meta._fields[d.No].Name, d.Value, self._meta._fields[d.No]
-                )
-                for d in ds.Data
-            ]
+            fields = [DataSetValue(self._meta._fields[d.No].Name, d.Value, self._meta._fields[d.No]) for d in ds.Data]
         elif isinstance(ds, UadpDataSetVariant):
             fields = [
                 DataSetValue(m.Name, datavalue_from_variant(d, ds.Header), m)
@@ -158,21 +150,15 @@ class DataSetReader(PubSubInformationModel):
             ]
         elif isinstance(ds, UadpDataSetRaw):
             values = self._datavalues_from_raw(ds.Data, ds.Header)
-            fields = [
-                DataSetValue(m.Name, d, m) for d, m in zip(values, self._meta._fields)
-            ]
+            fields = [DataSetValue(m.Name, d, m) for d, m in zip(values, self._meta._fields)]
         else:
             raise NotImplementedError(f"Not implemented Dataset for Reader {ds}")
         if self._subscriped:
             await self._subscriped.on_dataset_recived(self._meta, fields)
         else:
-            logger.warn(
-                f"DataSet {self._cfg.Name}: got Message without a SubsripedDataSet Handler"
-            )
+            logger.warning("DataSet %s: got Message without a SubsripedDataSet Handler", self._cfg.Name)
 
-    def _datavalues_from_raw(
-        self, data: UadpDataSetRaw, header: UadpDataSetMessageHeader
-    ) -> List[DataValue]:
+    def _datavalues_from_raw(self, data: UadpDataSetRaw, header: UadpDataSetMessageHeader) -> List[DataValue]:
         """Converts Raw dataset to Datavalue"""
         buf = Buffer(data.Data)
         values = []
@@ -204,11 +190,9 @@ class DataSetReader(PubSubInformationModel):
                 await asyncio.sleep(0.1)
             else:
                 try:
-                    await asyncio.wait_for(
-                        self.timeout_ev.wait(), self._cfg.MessageReceiveTimeout * 1000
-                    )
+                    await asyncio.wait_for(self.timeout_ev.wait(), self._cfg.MessageReceiveTimeout * 1000)
                 except asyncio.TimeoutError:
-                    logger.warn(f"{self._cfg.Name}: Timed out")
+                    logger.warning("%s: Timed out", self._cfg.Name)
                     await self._set_state(PubSubState.Error)
                     if self._subscriped:
                         await self._subscriped.on_state_change(self._cfg, PubSubState.Error)
@@ -246,15 +230,9 @@ class DataSetReader(PubSubInformationModel):
         await self.set_node_value("0:PublisherId", Variant(str(self._cfg.PublisherId)))
         await self.set_node_value("0:WriterGroupId", self._cfg.WriterGroupId)
         await self.set_node_value("0:DataSetMetaData", self._cfg.DataSetMetaData)
-        await self.set_node_value(
-            "0:DataSetFieldContentMask", self._cfg.DataSetFieldContentMask_
-        )
-        await self.set_node_value(
-            "0:MessageReceiveTimeout", self._cfg.MessageReceiveTimeout
-        )
-        await self.set_node_value(
-            "0:KeyFrameCount", Variant(self._cfg.KeyFrameCount, VariantType.UInt32)
-        )
+        await self.set_node_value("0:DataSetFieldContentMask", self._cfg.DataSetFieldContentMask_)
+        await self.set_node_value("0:MessageReceiveTimeout", self._cfg.MessageReceiveTimeout)
+        await self.set_node_value("0:KeyFrameCount", Variant(self._cfg.KeyFrameCount, VariantType.UInt32))
         if self._cfg.HeaderLayoutUri is None:
             self._cfg.HeaderLayoutUri = ""
         await self.set_node_value("0:HeaderLayoutUri", self._cfg.HeaderLayoutUri)
@@ -275,16 +253,10 @@ class DataSetReader(PubSubInformationModel):
         MessageSettings
         """
         if self._subscriped is not None:
-            if (
-                self._cfg.SubscribedDataSet.data_type == SubscribedDataSetMirrorDataType.data_type
-            ):
+            if self._cfg.SubscribedDataSet.data_type == SubscribedDataSetMirrorDataType.data_type:
                 self._subscriped = SubscribedDataSetMirror(self._cfg.SubscribedDataSet, self._node)
-            elif (
-                self._cfg.SubscribedDataSet.data_type == TargetVariablesDataType.data_type
-            ):
-                self._subscriped = SubScripedTargetVariables(
-                    self._server, self._cfg.SubscribedDataSet
-                )
+            elif self._cfg.SubscribedDataSet.data_type == TargetVariablesDataType.data_type:
+                self._subscriped = SubScripedTargetVariables(self._server, self._cfg.SubscribedDataSet)
         if self._subscriped is not None:
             if isinstance(self._subscriped, SubScripedTargetVariables):
                 nodes = await instantiate_util.instantiate(
@@ -353,7 +325,7 @@ class ReaderGroup(PubSubInformationModel):
         self._reader.append(reader)
         self._cfg.DataSetReaders.append(reader._cfg)
         if self.model_is_init():
-            await reader._init_information_model(self._node, self.server)
+            await reader._init_information_model(self._node, self._server)
 
     async def handle_msg(self, msg: UadpNetworkMessage) -> None:
         if msg.DataSetPayloadHeader is None or not msg.DataSetPayloadHeader:
@@ -370,10 +342,7 @@ class ReaderGroup(PubSubInformationModel):
             # Check if the message is for this reader WriterGroupId = 0 and DatSetWriterId = 0 are wildcards
             if reader._cfg.Enabled:
                 if reader._cfg.PublisherId == pubid:
-                    if (
-                        reader._cfg.WriterGroupId == 0
-                        or reader._cfg.WriterGroupId == writer_id_groupe
-                    ):
+                    if reader._cfg.WriterGroupId == 0 or reader._cfg.WriterGroupId == writer_id_groupe:
                         if reader._cfg.DataSetWriterId != 0:
                             for i, dsid in enumerate(msg.DataSetPayloadHeader):
                                 if dsid == reader._cfg.DataSetWriterId:
@@ -383,9 +352,7 @@ class ReaderGroup(PubSubInformationModel):
                             await reader.handle_dataset(msg.Payload[i])
                             found_reader = True
         if not found_reader:
-            logger.info(
-                f"Got Message with no matching reader: {msg.Header.PublisherId} {msg}!"
-            )
+            logger.info("Got Message with no matching reader: %s %s!", msg.Header.PublisherId, msg)
 
     async def start(self):
         await self._set_state(PubSubState.Operational)
@@ -423,14 +390,13 @@ class ReaderGroup(PubSubInformationModel):
             "0:MaxNetworkMessageSize",
             Variant(self._cfg.MaxNetworkMessageSize, VariantType.UInt32),
         )
-        await self._node.add_variable(
-            NodeId(NamespaceIndex=1), "0:SecurityGroupId", self._cfg.SecurityGroupId
-        )
+        if self._node is not None:
+            await self._node.add_variable(NodeId(NamespaceIndex=1), "0:SecurityGroupId", self._cfg.SecurityGroupId)
+        else:
+            logger.warning("self._node is None, cannot add variable")
         await self.set_node_value(
             "0:GroupProperties",
-            Variant(
-                self._cfg.GroupProperties, VariantType.ExtensionObject, is_array=True
-            ),
+            Variant(self._cfg.GroupProperties, VariantType.ExtensionObject, is_array=True),
         )
         # await self._node.add_variable(NodeId(NamespaceIndex=1), "0:SecurityKeyServices", Variant(self._cfg.SecurityKeyServices, VariantType.ExtensionObject, is_array=True), VariantType.ExtensionObject)
         # @TODO fill methods

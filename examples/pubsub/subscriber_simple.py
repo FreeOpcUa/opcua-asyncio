@@ -1,11 +1,13 @@
 """
 Example creating a subscriber that recives an Int32, String, Bool and ArrayInt16 matching the publisher_simple.py
 """
+
 import asyncio
 import logging
 from typing import List
 from asyncua import ua, pubsub, Node, Server
 from dataclasses import dataclass
+
 
 # This Parameter must match the Publisher Settings!
 @dataclass
@@ -28,17 +30,13 @@ def create_meta_data():
     return dataset
 
 
-async def init_pubsub_connection(
-    server: Server, nodes: List[Node]
-) -> pubsub.PubSubConnection:
+async def init_pubsub_connection(server: Server, nodes: List[Node]) -> pubsub.PubSubConnection:
     metadata = create_meta_data()
     # link metafields with the nodes in the addresspace
     subscriped_ds = pubsub.SubScripedTargetVariables(
         server,
         [
-            pubsub.FieldTargets.createTarget(
-                metadata.get_field((await n.read_browse_name()).Name), n.nodeid
-            )
+            pubsub.FieldTargets.createTarget(metadata.get_field((await n.read_browse_name()).Name), n.nodeid)
             for n in nodes
         ],
     )
@@ -69,17 +67,11 @@ async def init_pubsub_connection(
 
 
 async def create_variables(node: Node, ns: ua.UInt16) -> List[Node]:
-    folder = await node.add_folder(
-        ua.NodeId("SubscriberDemo", ns), "PublisherDemoNodes"
-    )
+    folder = await node.add_folder(ua.NodeId("SubscriberDemo", ns), "PublisherDemoNodes")
     return [
-        await folder.add_variable(
-            ua.NodeId("SubInt32", ns), "Int32", 1, ua.VariantType.Int32
-        ),
+        await folder.add_variable(ua.NodeId("SubInt32", ns), "Int32", 1, ua.VariantType.Int32),
         await folder.add_variable(ua.NodeId("SubString", ns), "String", "DemoString"),
-        await folder.add_variable(
-            ua.NodeId("SubBool", ns), "Bool", True, ua.VariantType.Boolean
-        ),
+        await folder.add_variable(ua.NodeId("SubBool", ns), "Bool", True, ua.VariantType.Boolean),
         await folder.add_variable(
             ua.NodeId("SubArrayInt16", ns),
             "ArrayInt16",

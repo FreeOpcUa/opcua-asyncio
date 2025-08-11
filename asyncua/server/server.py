@@ -123,7 +123,7 @@ class Server:
             max_chunk_count=math.ceil(max_msg_sz / buffer_sz),  # Round up to allow max msg size
             max_message_size=max_msg_sz,
         )
-        self._pubsub = None
+        self._pubsub: Optional[PubSub] = None
 
     async def init(self, shelf_file: Optional[Path] = None):
         await self.iserver.init(shelf_file)

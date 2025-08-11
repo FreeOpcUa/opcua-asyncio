@@ -1,6 +1,7 @@
 """
-    A DataSet (ds) descripes the data of pubsub
+A DataSet (ds) descripes the data of pubsub
 """
+
 from __future__ import annotations
 from asyncua.common.methods import uamethod
 from asyncua.ua import uaerrors
@@ -42,9 +43,7 @@ if TYPE_CHECKING:
     from ..server.server import Server
 
 
-def _get_datatype_or_build_in(
-    datatype: Union[NodeId, ObjectIds, VariantType, int]
-) -> Tuple[NodeId, int]:
+def _get_datatype_or_build_in(datatype: Union[NodeId, ObjectIds, VariantType, int]) -> Tuple[NodeId, int]:
     """
     Returns the DataType NodeId and the corresponding BuildIn number if
     possible to determine.
@@ -54,11 +53,7 @@ def _get_datatype_or_build_in(
     elif isinstance(datatype, int):
         datatype = NodeId(datatype)
     if isinstance(datatype, NodeId):
-        if (
-            datatype.NamespaceIndex == 0
-            and isinstance(datatype.Identifier, int)
-            and datatype.Identifier < 24
-        ):
+        if datatype.NamespaceIndex == 0 and isinstance(datatype.Identifier, int) and datatype.Identifier < 24:
             dt = NodeId()
             build_in = datatype.Identifier
         else:
@@ -78,16 +73,12 @@ class DataSetField:
 
     def __init__(self, meta: Optional[FieldMetaData] = None) -> None:
         if meta is None:
-            self._meta = FieldMetaData(
-                DataSetFieldId=uuid.uuid4(), FieldFlags=DataSetFieldFlags(0)
-            )
+            self._meta = FieldMetaData(DataSetFieldId=uuid.uuid4(), FieldFlags=DataSetFieldFlags(0))
         else:
             self._meta = meta
 
     @classmethod
-    def CreateScalar(
-        cls, name: String, datatype: Union[NodeId, ObjectIds, VariantType]
-    ):
+    def CreateScalar(cls, name: String, datatype: Union[NodeId, ObjectIds, VariantType]):
         """
         Creates a scalar Field with datatype and name
         """
@@ -115,14 +106,10 @@ class DataSetField:
         return cls(meta)
 
     def set_promoted(self, promoted: bool) -> None:
-        self._meta.FieldFlags = (
-            DataSetFieldFlags.PromotedField if promoted else DataSetFieldFlags(0)
-        )
+        self._meta.FieldFlags = DataSetFieldFlags.PromotedField if promoted else DataSetFieldFlags(0)
 
     def get_promoted(self) -> bool:
-        return (
-            True if DataSetFieldFlags.PromotedField in self._meta.FieldFlags else False
-        )
+        return True if DataSetFieldFlags.PromotedField in self._meta.FieldFlags else False
 
     def get_dataset_field_id(self) -> Guid:
         return self._meta.DataSetFieldId
@@ -230,10 +217,10 @@ class DataSetMeta:
         return next((f for f in self._fields if f.Name == name), None)
 
     def remove_field(self, field_name: str) -> None:
-        f = next((f for f in self._fields if f.name == field_name), None)
+        f = next((f for f in self._fields if f.Name == field_name), None)
         if f is not None:
             del f
-            f = next((f for f in self._meta if f.Name == field_name), None)
+            f = next((f for f in self._meta.Fields if f.Name == field_name), None)
             if f is not None:
                 del f
 
@@ -259,9 +246,7 @@ class PubSubDataSource:
                 st = v.StatusCode
         return (ret, st, dt)
 
-    async def get_value(
-        self, status: bool, server_timestamp: bool, source_timestamp: bool
-    ) -> List[DataValue]:
+    async def get_value(self, status: bool, server_timestamp: bool, source_timestamp: bool) -> List[DataValue]:
         """
         returns all values for a dataset as DataValues
         """
@@ -281,7 +266,8 @@ class PubSubDataSource:
         """
         dt = DateTime.utcnow()
         vars = await self.on_get_value()
-        ret = [ pack_uatype(v.VariantType, v.Value) for v in vars]
+        ret = [pack_uatype(v.Value.VariantType, v.Value) for v in vars if v.Value is not None]
+
         st = StatusCode(StatusCodes.Good)
         for v in vars:
             if v.StatusCode is not None and not v.StatusCode.is_good():
@@ -328,9 +314,7 @@ class PubSubDataSourceServer(PubSubDataSource):
     Implements getting the values to publishing.
     """
 
-    def __init__(
-        self, server: Server, ds: DataSetMeta, data_items: PublishedDataItemsDataType
-    ) -> None:
+    def __init__(self, server: Server, ds: DataSetMeta, data_items: PublishedDataItemsDataType) -> None:
         super().__init__()
         self.ds = ds
         self.data_items = data_items
@@ -342,13 +326,8 @@ class PubSubDataSourceServer(PubSubDataSource):
         """
         ret = []
         for pd in self.data_items.PublishedData:
-            dv = self._server.read_attribute_value(
-                pd.PublishedVariable, attr=pd.AttributeId
-            )
-            if (
-                not dv.StatusCode_.is_good()
-                and pd.SubstituteValue.VariantType != VariantType.Null
-            ):
+            dv = self._server.read_attribute_value(pd.PublishedVariable, attr=pd.AttributeId)
+            if not dv.StatusCode_.is_good() and pd.SubstituteValue.VariantType != VariantType.Null:
                 dv = DataValue(
                     pd.SubstituteValue,
                     SourceTimestamp=DateTime.utcnow(),
@@ -398,9 +377,14 @@ class PublishedDataSet(PubSubInformationModel):
         pds_obj = instance[0]
         await self._init_node(pds_obj, server)
         await self.set_node_value("0:DataSetMetaData", self.dataset)
-        await self.set_node_value(
-            "0:ConfigurationVersion", self.dataset._meta.ConfigurationVersion
-        )
+        if self._node is not None:
+            await self._node.add_variable(
+                ua.NodeId(NamespaceIndex=1),
+                "0:DataSetClassId",
+                self.dataset._meta.DataSetClassId,
+            )
+        else:
+            raise RuntimeError("self._node is not initialized")
         await self._node.add_variable(
             ua.NodeId(NamespaceIndex=1),
             "0:DataSetClassId",
@@ -433,6 +417,9 @@ class PublishedDataSet(PubSubInformationModel):
     def get_name(self) -> String:
         # @TODO return node value
         return self._data.Name
+
+    def get_config(self) -> PublishedDataSetDataType:
+        return self._data
 
     async def get_meta(self) -> DataSetMeta:
         # @TODO return node value
@@ -483,9 +470,7 @@ class PublishedDataItems(PubSubInformationModel):
         else:
             self.dataset = DataSetMeta(self._data.DataSetMetaData)
         self._published_data: PublishedDataItemsDataType = self._data.DataSetSource
-        self._source = PubSubDataSourceServer(
-            server, self.dataset, self._published_data
-        )
+        self._source = PubSubDataSourceServer(server, self.dataset, self._published_data)
         self._server = server
 
     async def _init_information_model(self, parent: Node, server: Server) -> None:
@@ -501,14 +486,15 @@ class PublishedDataItems(PubSubInformationModel):
         pds_obj = instance[0]
         await self._init_node(pds_obj, server)
         await self.set_node_value("0:DataSetMetaData", self.dataset)
-        await self.set_node_value(
-            "0:ConfigurationVersion", self.dataset._meta.ConfigurationVersion
-        )
-        await self._node.add_variable(
-            ua.NodeId(NamespaceIndex=1),
-            "0:DataSetClassId",
-            self.dataset._meta.DataSetClassId,
-        )
+        await self.set_node_value("0:ConfigurationVersion", self.dataset._meta.ConfigurationVersion)
+        if self._node is not None:
+            await self._node.add_variable(
+                ua.NodeId(NamespaceIndex=1),
+                "0:DataSetClassId",
+                self.dataset._meta.DataSetClassId,
+            )
+        else:
+            raise RuntimeError("self._node is not initialized")
         # @TODO ExtensionFields
         # @TODO fill method
         await self.set_node_value(
@@ -553,9 +539,7 @@ class PublishedDataItems(PubSubInformationModel):
             raise uaerrors.UaStatusCodeError(StatusCodes.Bad_NotWritable)
         self._source
         self._results = []
-        if len(field_name_aliases) != len(promoted_fields) or len(
-            promoted_fields
-        ) != len(published_variable_data_type):
+        if len(field_name_aliases) != len(promoted_fields) or len(promoted_fields) != len(published_variable_data_type):
             raise uaerrors.UaStatusCodeError(StatusCodes.BadInvalidArgument)
         raise uaerrors.UaStatusCodeError(StatusCodes.BadNotImplemented)
 
@@ -576,19 +560,15 @@ class PublishedDataItems(PubSubInformationModel):
         raise uaerrors.UaStatusCodeError(StatusCodes.BadNotImplemented)
 
     @classmethod
-    async def Create(cls, name: String, server: Server, variables: TargetVariable):
+    async def Create(cls, name: String, server: Server, variables: List[TargetVariable]):
         """Allows to construct a PublishedDataItems without using the ua structures."""
         items = PublishedDataItemsDataType()
         fields = []
         for v in variables:
             items.PublishedData.append(
-                PublishedVariableDataType(
-                    v.SourceNode, AttributeIds.Value, SubstituteValue=v.SubstituteValue
-                )
+                PublishedVariableDataType(v.SourceNode, AttributeIds.Value, SubstituteValue=v.SubstituteValue)
             )
-            flags = (
-                DataSetFieldFlags(0) if v.Promoted else DataSetFieldFlags.PromotedField
-            )
+            flags = DataSetFieldFlags(0) if v.Promoted else DataSetFieldFlags.PromotedField
             meta = FieldMetaData(
                 Name=v.Name,
                 DataSetFieldId=uuid.uuid4(),
@@ -601,13 +581,9 @@ class PublishedDataItems(PubSubInformationModel):
                 datatype = await server.get_node(v.SourceNode).read_data_type()
             meta.DataType, meta.BuiltInType = _get_datatype_or_build_in(datatype)
             fields.append(DataSetField(meta))
-        meta = DataSetMetaDataType(
-            Name=name, Fields=fields, DataSetClassId=uuid.uuid4()
-        )
+        meta = DataSetMetaDataType(Name=name, Fields=fields, DataSetClassId=uuid.uuid4())
         s = cls(
-            PublishedDataSetDataType(
-                Name=name, DataSetSource=items, DataSetMetaData=meta
-            ),
+            PublishedDataSetDataType(Name=name, DataSetSource=items, DataSetMetaData=meta),
             server,
         )
         return s

@@ -1,6 +1,7 @@
 """
 Example creating a publisher that sends an Int32, String, Bool and ArrayInt16 from AddressSpace
 """
+
 import asyncio
 import logging
 from typing import List
@@ -14,9 +15,7 @@ URL = "opc.udp://239.0.0.1:4840"
 PDSNAME = "SimpleDataSet"
 
 
-async def create_published_dataset(
-    server: Server, nodes: List[Node]
-) -> pubsub.PublishedDataItems:
+async def create_published_dataset(server: Server, nodes: List[Node]) -> pubsub.PublishedDataItems:
     # Links nodes from AddressSpace to PubSub (To simplfy use displayname as fieldname)
     variables = []
     for node in nodes:
@@ -28,22 +27,10 @@ async def create_published_dataset(
 async def create_variables(node: Node, ns: ua.UInt16) -> List[Node]:
     nodes = []
     folder = await node.add_folder(NodeId("PublisherDemo", ns), "PublisherDemoNodes")
-    nodes.append(
-        await folder.add_variable(NodeId("PubInt32", ns), "Int32", 1, VariantType.Int32)
-    )
-    nodes.append(
-        await folder.add_variable(NodeId("PubString", ns), "String", "DemoString")
-    )
-    nodes.append(
-        await folder.add_variable(
-            NodeId("PubBool", ns), "Bool", True, VariantType.Boolean
-        )
-    )
-    nodes.append(
-        await folder.add_variable(
-            NodeId("PubArrayInt16", ns), "ArrayInt16", [1, 2, 3], VariantType.Int16
-        )
-    )
+    nodes.append(await folder.add_variable(NodeId("PubInt32", ns), "Int32", 1, VariantType.Int32))
+    nodes.append(await folder.add_variable(NodeId("PubString", ns), "String", "DemoString"))
+    nodes.append(await folder.add_variable(NodeId("PubBool", ns), "Bool", True, VariantType.Boolean))
+    nodes.append(await folder.add_variable(NodeId("PubArrayInt16", ns), "ArrayInt16", [1, 2, 3], VariantType.Int16))
     for n in nodes:
         await n.set_writable()
     return nodes
@@ -73,12 +60,14 @@ async def main():
                     name="WriterGroup1",
                     writer_group_id=ua.UInt32(1),
                     publishing_interval=5000,
-                    writer=[pubsub.DataSetWriter.new_uadp(
-                        name="Writer1",
-                        dataset_writer_id=ua.UInt32(32),
-                        dataset_name=PDSNAME,
-                        datavalue=True,
-                    )],
+                    writer=[
+                        pubsub.DataSetWriter.new_uadp(
+                            name="Writer1",
+                            dataset_writer_id=ua.UInt32(32),
+                            dataset_name=PDSNAME,
+                            datavalue=True,
+                        )
+                    ],
                 )
             ],
         )

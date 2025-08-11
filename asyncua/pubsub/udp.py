@@ -1,5 +1,5 @@
 """
-    NetworkLayer for udp
+NetworkLayer for udp
 """
 
 from urllib.parse import urlparse
@@ -70,9 +70,7 @@ class UdpSettings:
 
     def get_address(self) -> NetworkAddressUrlDataType:
         adapter = "" if self.Adapter[0] is None else self.Adapter[0]
-        return NetworkAddressUrlDataType(
-            adapter, f"opc.udp://{self.Addr[0]}:{self.Addr[1]}"
-        )
+        return NetworkAddressUrlDataType(adapter, f"opc.udp://{self.Addr[0]}:{self.Addr[1]}")
 
     def set_key_value(self, kvs: Optional[List[KeyValuePair]]) -> None:
         if kvs is not None:
@@ -95,9 +93,7 @@ class UdpSettings:
         return kvs
 
     def create_socket(self) -> Tuple[socket.socket, Union[Tuple[str, int], Tuple[str, int, int, int]], Tuple[str, int]]:
-        family, type, proto, _, addr = socket.getaddrinfo(
-            self.Addr[0], self.Addr[1], 0, socket.SOCK_DGRAM
-        )[0]
+        family, type, proto, _, addr = socket.getaddrinfo(self.Addr[0], self.Addr[1], 0, socket.SOCK_DGRAM)[0]
         sock = socket.socket(family, type, proto)
         if self.Reuse:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -107,16 +103,12 @@ class UdpSettings:
             else:
                 local = self.Adapter
             if self.Loopback:
-                sock.setsockopt(
-                    socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, self.Loopback
-                )
+                sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, self.Loopback)
             if self.TTL is not None:
                 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, self.TTL)
             try:
                 if ip_address(addr[0]).is_multicast:
-                    req = struct.pack(
-                        "=4sl", socket.inet_aton(addr[0]), socket.INADDR_ANY
-                    )
+                    req = struct.pack("=4sl", socket.inet_aton(addr[0]), socket.INADDR_ANY)
                     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, req)
             except ValueError:
                 # Invalid IPAddress => no multicast
@@ -127,18 +119,12 @@ class UdpSettings:
             else:
                 local = self.Adapter
             if self.Loopback:
-                sock.setsockopt(
-                    socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, int(self.Loopback)
-                )
+                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, int(self.Loopback))
             if self.TTL is not None:
-                sock.setsockopt(
-                    socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, self.TTL
-                )
+                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, self.TTL)
             try:
                 if ip_address(addr[0]).is_multicast:
-                    req = struct.pack(
-                        "=16si", socket.inet_pton(socket.AF_INET6, addr[0]), 0
-                    )
+                    req = struct.pack("=16si", socket.inet_pton(socket.AF_INET6, addr[0]), 0)
                     sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, req)
             except ValueError:
                 # Invalid IPAddress => no multicast
@@ -151,9 +137,7 @@ class UdpSettings:
 
 
 class OpcUdp(asyncio.DatagramProtocol):
-    def __init__(
-        self, cfg: UdpSettings, reciver: Optional[PubSubReciver], publisher_id: Variant
-    ) -> None:
+    def __init__(self, cfg: UdpSettings, reciver: Optional[PubSubReciver], publisher_id: Variant) -> None:
         super().__init__()
         self.cfg = cfg
         self.reciver = reciver
@@ -164,17 +148,20 @@ class OpcUdp(asyncio.DatagramProtocol):
 
     def datagram_received(self, data: bytes, source: Tuple[str, int]) -> None:
         try:
-            logger.debug(f"Recived Datagramm from {source} - {str(data)}")
+            logger.debug("Received Datagram from %s - %s", source, data)
             buffer = Buffer(data)
             msg = UadpNetworkMessage.from_binary(buffer)
             logger.debug(msg)
-            asyncio.ensure_future(self.reciver.got_uadp(msg))
+            if self.reciver is not None:
+                asyncio.ensure_future(self.reciver.got_uadp(msg))
+            else:
+                logger.warning("No receiver set — dropping UADP message")
         except Exception:
             logging.exception("Recived Invalid UadpPacket")
 
     def send_uadp(self, msgs: List[UadpNetworkMessage]) -> None:
         for msg in msgs:
-            logger.debug(f"Sending UadpMsg {msg}")
+            logger.debug("Sending UadpMsg %s", msg)
             self.transport.sendto(msg.to_binary(), self.cfg.Addr)
 
     def set_receiver(self, reciver: PubSubReciver) -> None:

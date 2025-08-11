@@ -1,12 +1,14 @@
 """
 Example creating a standalone subscriber that recives an Int32, String, Bool and ArrayInt16 matching the pubsubpublisher standalone example
 """
+
 import asyncio
 import logging
 from typing import List
 from asyncua import ua, pubsub
 from asyncua.pubsub.udp import UdpSettings
 from dataclasses import dataclass
+
 
 # This Parameter must match the Publisher Settings!
 @dataclass
@@ -35,9 +37,7 @@ class OnDataRecived:
     This is called when a dataset is recived
     """
 
-    async def on_dataset_recived(
-        self, _meta: pubsub.DataSetMeta, fields: List[pubsub.DataSetValue]
-    ):
+    async def on_dataset_recived(self, _meta: pubsub.DataSetMeta, fields: List[pubsub.DataSetValue]):
         print("Got Msg:")
         for f in fields:
             print(f"{f.Name} -> {f.Value}")

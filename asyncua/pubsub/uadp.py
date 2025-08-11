@@ -2,6 +2,7 @@
 Implements Uadp Network Encoding defined in Part14 7.2
     Missing: RawDeltaFrame read
 """
+
 from __future__ import annotations
 import logging
 from asyncua.ua.ua_binary import (
@@ -56,7 +57,9 @@ class MessageHeaderFlags(IntFlag):
     """
 
     NONE = 0
-    PUBLISHER_ID = 0b00010000  # If the PublisherId is enabled, the type of PublisherId is indicated in the ExtendedFlags1 field.
+    PUBLISHER_ID = (
+        0b00010000  # If the PublisherId is enabled, the type of PublisherId is indicated in the ExtendedFlags1 field.
+    )
     GROUP_HEADER = 0b00100000
     PAYLOAD_HEADER = 0b01000000
     EXTENDED_FLAGS_1 = 0b10000000
@@ -359,9 +362,7 @@ class UadpDataSetWriterResp:
     """
 
     DataSetWriterIds: List[UInt16] = field(default_factory=list)
-    DataSetWriterConfig: WriterGroupDataType = field(
-        default_factory=WriterGroupDataType
-    )
+    DataSetWriterConfig: WriterGroupDataType = field(default_factory=WriterGroupDataType)
     Status: List[StatusCode] = field(default_factory=list)
 
 
@@ -374,10 +375,12 @@ class UadpDiscoveryRequest:
 @dataclass
 class UadpDiscoveryResponse:
     Type: InformationType  # Which type of discovery message
-    SequenceNumber: UInt16  # Sequence number for responses, should be incremented for each discovery response from the connection
-    Response: Union[
-        UadpPublisherEndpointsResp, UadpDataSetMetaDataResp, UadpDataSetWriterResp
-    ] = 0  # the specific response
+    SequenceNumber: (
+        UInt16  # Sequence number for responses, should be incremented for each discovery response from the connection
+    )
+    Response: Union[UadpPublisherEndpointsResp, UadpDataSetMetaDataResp, UadpDataSetWriterResp] = (
+        0  # the specific response
+    )
 
 
 @dataclass
@@ -412,13 +415,8 @@ class UadpDataSetDeltaVariant:
         return b"".join(b)
 
     @staticmethod
-    def message_from_binary(
-        header: UadpDataSetMessageHeader, data
-    ) -> UadpDataSetMessage:
-        Data = [
-            struct_from_binary(DeltaVariant, data)
-            for _ in range(0, Primitives.UInt16.unpack(data))
-        ]
+    def message_from_binary(header: UadpDataSetMessageHeader, data) -> UadpDataSetMessage:
+        Data = [struct_from_binary(DeltaVariant, data) for _ in range(0, Primitives.UInt16.unpack(data))]
         return UadpDataSetDeltaVariant(header, Data)
 
 
@@ -429,24 +427,15 @@ class UadpDataSetDeltaDataValue:
 
     def message_to_binary(self) -> bytes:
         b = []
-        b.append(
-            self.Header.to_binary(
-                MessageDataSetFlags.DELTA_FRAME | MessageDataSetFlags.DATA_VALUE
-            )
-        )
+        b.append(self.Header.to_binary(MessageDataSetFlags.DELTA_FRAME | MessageDataSetFlags.DATA_VALUE))
         b.append(Primitives.UInt16.pack(len(self.Data)))
         for value in self.Data:
             b.append(struct_to_binary(value))
         return b"".join(b)
 
     @staticmethod
-    def message_from_binary(
-        header: UadpDataSetMessageHeader, data
-    ) -> UadpDataSetMessage:
-        Data = [
-            struct_from_binary(DeltaDataValue, data)
-            for _ in range(0, Primitives.UInt16.unpack(data))
-        ]
+    def message_from_binary(header: UadpDataSetMessageHeader, data) -> UadpDataSetMessage:
+        Data = [struct_from_binary(DeltaDataValue, data) for _ in range(0, Primitives.UInt16.unpack(data))]
         return UadpDataSetDeltaDataValue(header, Data)
 
 
@@ -459,9 +448,7 @@ class UadpDataSetDeltaRaw:
         raise NotImplementedError("Raw Message is not implemented!")
 
     @staticmethod
-    def message_from_binary(
-        header: UadpDataSetMessageHeader, data
-    ) -> UadpDataSetMessage:
+    def message_from_binary(header: UadpDataSetMessageHeader, data) -> UadpDataSetMessage:
         raise NotImplementedError("Raw Message is not implemented!")
 
 
@@ -479,13 +466,8 @@ class UadpDataSetVariant:
         return b"".join(b)
 
     @staticmethod
-    def message_from_binary(
-        header: UadpDataSetMessageHeader, data
-    ) -> UadpDataSetMessage:
-        Data = [
-            unpack_uatype(VariantType.Variant, data)
-            for _ in range(0, Primitives.UInt16.unpack(data))
-        ]
+    def message_from_binary(header: UadpDataSetMessageHeader, data) -> UadpDataSetMessage:
+        Data = [unpack_uatype(VariantType.Variant, data) for _ in range(0, Primitives.UInt16.unpack(data))]
         return UadpDataSetVariant(header, Data)
 
 
@@ -503,13 +485,8 @@ class UadpDataSetDataValue:
         return b"".join(b)
 
     @staticmethod
-    def message_from_binary(
-        header: UadpDataSetMessageHeader, data
-    ) -> UadpDataSetMessage:
-        Data = [
-            struct_from_binary(DataValue, data)
-            for _ in range(0, Primitives.UInt16.unpack(data))
-        ]
+    def message_from_binary(header: UadpDataSetMessageHeader, data) -> UadpDataSetMessage:
+        Data = [struct_from_binary(DataValue, data) for _ in range(0, Primitives.UInt16.unpack(data))]
         return UadpDataSetDataValue(header, Data)
 
 
@@ -519,19 +496,13 @@ class UadpDataSetRaw:
     Data: bytes = field(default_factory=list)
 
     def message_to_binary(self) -> bytes:
-        return b"".join(
-            [self.Header.to_binary(MessageDataSetFlags.RAW_DATA), self.Data]
-        )
+        return b"".join([self.Header.to_binary(MessageDataSetFlags.RAW_DATA), self.Data])
 
     @staticmethod
-    def message_from_binary(
-        header: UadpDataSetMessageHeader, data
-    ) -> UadpDataSetMessage:
+    def message_from_binary(header: UadpDataSetMessageHeader, data) -> UadpDataSetMessage:
         sz = Primitives.UInt16.unpack(data)
         if sz == 0:
-            logger.warn(
-                "Recived DataSetRaw Message without length! Reading hole message as dataset"
-            )
+            logger.warn("Recived DataSetRaw Message without length! Reading hole message as dataset")
             return UadpDataSetRaw(header, bytes(data))
         return UadpDataSetRaw(header, data.read(sz))
 
@@ -544,21 +515,17 @@ class UadpDataSetKeepAlive:
         return self.Header.to_binary(MessageDataSetFlags.KEEP_ALIVE)
 
     @staticmethod
-    def message_from_binary(
-        header: UadpDataSetMessageHeader, data
-    ) -> UadpDataSetMessage:
+    def message_from_binary(header: UadpDataSetMessageHeader, data) -> UadpDataSetMessage:
         return UadpDataSetKeepAlive(header)
 
 
-@dataclass
+# @dataclass
 class UadpDataSetMessage(Protocol):
     def message_to_binary(self) -> bytes:
         raise NotImplementedError("UadpDataSetMessage is a abstract class")
 
     @staticmethod
-    def message_from_binary(
-        header: UadpDataSetMessageHeader, data
-    ) -> UadpDataSetMessage:
+    def message_from_binary(header: UadpDataSetMessageHeader, data) -> UadpDataSetMessage:
         raise NotImplementedError("UadpDataSetMessage is a abstract class")
 
 
@@ -585,28 +552,21 @@ def _unpack_payload(data, payload_size: Optional[int]) -> List[UadpDataSetMessag
             payload.append(UadpDataSetKeepAlive.message_from_binary(header, data))
         elif MessageDataSetFlags.RAW_DATA in flags:
             if MessageDataSetFlags.DELTA_FRAME in flags:
-                payload.append(
-                    UadpDataSetDeltaRaw.message_from_binary(header, data)
-                )
+                payload.append(UadpDataSetDeltaRaw.message_from_binary(header, data))
             else:
                 payload.append(UadpDataSetRaw.message_from_binary(header, data))
         elif MessageDataSetFlags.DATA_VALUE in flags:
             if MessageDataSetFlags.DELTA_FRAME in flags:
-                payload.append(
-                    UadpDataSetDeltaDataValue.message_from_binary(header, data)
-                )
+                payload.append(UadpDataSetDeltaDataValue.message_from_binary(header, data))
             else:
-                payload.append(
-                    UadpDataSetDataValue.message_from_binary(header, data)
-                )
+                payload.append(UadpDataSetDataValue.message_from_binary(header, data))
         else:
             if MessageDataSetFlags.DELTA_FRAME in flags:
-                payload.append(
-                    UadpDataSetDeltaVariant.message_from_binary(header, data)
-                )
+                payload.append(UadpDataSetDeltaVariant.message_from_binary(header, data))
             else:
                 payload.append(UadpDataSetVariant.message_from_binary(header, data))
     return payload
+
 
 @dataclass
 class UadpNetworkMessage:
@@ -620,9 +580,7 @@ class UadpNetworkMessage:
     TimeStamp: Optional[DateTime] = None
     PicoSeconds: Optional[UInt16] = None
     PromotedFields: List[Variant] = field(default_factory=list)
-    Payload: Union[
-        List[UadpDataSetMessage], UadpDiscoveryRequest, UadpDiscoveryResponse, UadpChunk
-    ] = None
+    Payload: Union[List[UadpDataSetMessage], UadpDiscoveryRequest, UadpDiscoveryResponse, UadpChunk] = None
 
     def to_binary(self) -> bytes:
         flags = MessageHeaderFlags.NONE
@@ -676,18 +634,14 @@ class UadpNetworkMessage:
             msg.GroupHeader = UadpGroupHeader.from_binary(data)
         if MessageHeaderFlags.PAYLOAD_HEADER in flags:
             sz = Primitives.Byte.unpack(data)
-            msg.DataSetPayloadHeader = [
-                Primitives.UInt16.unpack(data) for _ in range(sz)
-            ]
+            msg.DataSetPayloadHeader = [Primitives.UInt16.unpack(data) for _ in range(sz)]
         if MessageHeaderFlags.TIMESTAMP in flags:
             msg.TimeStamp = Primitives.DateTime.unpack(data)
         if MessageHeaderFlags.PICO_SECONDS in flags:
             msg.PicoSeconds = Primitives.UInt16.unpack(data)
         if MessageHeaderFlags.PROMOTEDFIELDS in flags:
             sz = Primitives.UInt16.unpack(data)
-            msg.PromotedFields = [
-                unpack_uatype(VariantType.Variant, data) for _ in range(sz)
-            ]
+            msg.PromotedFields = [unpack_uatype(VariantType.Variant, data) for _ in range(sz)]
         if MessageHeaderFlags.CHUNK in flags:
             msg.Payload = UadpChunk.from_binary(data)
         elif MessageHeaderFlags.DISCOVERYREQUEST in flags:
