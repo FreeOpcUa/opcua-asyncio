@@ -1,33 +1,34 @@
 """
-Links PubSub recived DataSets to the addresspace
+Links PubSub received DataSets to the AddressSpace
 """
 
 from __future__ import annotations
 import logging
 from typing import List, Union, TYPE_CHECKING
-from asyncua.common.node import Node
-from asyncua.pubsub.dataset import DataSetField, DataSetMeta, DataSetValue
-from asyncua.ua import TargetVariablesDataType, SubscribedDataSetMirrorDataType
-from asyncua.ua.attribute_ids import AttributeIds
-from asyncua.ua.uaprotocol_auto import (
+from ..common.node import Node
+from ..ua import TargetVariablesDataType, SubscribedDataSetMirrorDataType
+from ..ua.attribute_ids import AttributeIds
+from ..ua.uaprotocol_auto import (
     FieldMetaData,
     FieldTargetDataType,
     OverrideValueHandling,
     PubSubState,
 )
-from asyncua.ua.uatypes import (
+from ..ua.uatypes import (
+    Int16,
     NodeId,
     Variant,
 )
+from .dataset import DataSetField, DataSetMeta, DataSetValue
 
 if TYPE_CHECKING:
-    from asyncua import Server
+    from .. import Server
 
 logger = logging.getLogger(__name__)
 
 
 class SubscribedDataSetMirror:
-    """Mirrors DataSet Varaibles in the addresspace, needs a parent node where the variables are inserts"""
+    """Mirrors DataSet Variables in the AddressSpace, needs a parent node where the variables are inserts"""
 
     def __init__(self, cfg: SubscribedDataSetMirrorDataType, node: Node):
         self._cfg = cfg
@@ -40,7 +41,9 @@ class SubscribedDataSetMirror:
             raise RuntimeError(
                 "SubscribedDataSetMirror._node is not initialized. Did you forget to call on_state_change?"
             )
-        n = await self._node.add_variable(NodeId(NamespaceIndex=1), "1:" + str(f.Name), Variant(), datatype=f.DataType)
+        n = await self._node.add_variable(
+            NodeId(NamespaceIndex=Int16(1)), "1:" + str(f.Name), Variant(), datatype=f.DataType
+        )
         await n.write_attribute(AttributeIds.Description, f.Description)
         await n.write_attribute(AttributeIds.ValueRank, f.ValueRank)
         await n.write_attribute(AttributeIds.ArrayDimensions, f.ArrayDimensions)
@@ -51,7 +54,7 @@ class SubscribedDataSetMirror:
         if state == PubSubState.Operational:
             if self._node is None:
                 self._node = await self._parent.add_object(
-                    NodeId(NamespaceIndex=1),
+                    NodeId(NamespaceIndex=Int16(1)),  # FIXME this NamespaceIndex looks wrong
                     bname="1:" + str(self._cfg.ParentNodeName),
                 )
             self.nodes = {f.DataSetFieldId: await self._create_and_set_node(f) for f in meta.get_config().Fields}
@@ -77,8 +80,8 @@ class FieldTargets:
         return cls(cfg)
 
 
-class SubScripedTargetVariables:
-    """Maps the values to targeted variables in the addresspace"""
+class SubScribedTargetVariables:
+    """Maps the values to targeted variables in the AddressSpace"""
 
     def __init__(self, server: Server, cfg: Union[TargetVariablesDataType, List[FieldTargets]]):
         if isinstance(cfg, TargetVariablesDataType):
@@ -90,8 +93,8 @@ class SubScripedTargetVariables:
         self.server = server
         self.nodes = {}
 
-    async def on_dataset_recived(self, meta: DataSetMeta, fields: List[DataSetValue]) -> None:
-        """Called when a published dataset recived an update"""
+    async def on_dataset_received(self, meta: DataSetMeta, fields: List[DataSetValue]) -> None:
+        """Called when a published dataset received an update"""
         for field in fields:
             try:
                 node, cfg = self.nodes[field.Meta.DataSetFieldId]

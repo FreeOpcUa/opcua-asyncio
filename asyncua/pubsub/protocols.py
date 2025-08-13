@@ -1,11 +1,11 @@
 """
-Protocols which are used to decople components from pubsub
+Protocols which are used to decouple components from pubsub
 """
 
-from asyncua.ua.uatypes import Byte, ExtensionObject, String, UInt16, UInt32, UInt64
-from asyncua import ua
-from .uadp import UadpNetworkMessage
 from typing import List, Optional, Union
+from ..ua.uatypes import Byte, ExtensionObject, String, UInt16, UInt32, UInt64
+from ..ua.uaprotocol_auto import PubSubState
+from .uadp import UadpNetworkMessage
 from .dataset import DataSetMeta, DataSetValue, PublishedDataSet
 
 try:
@@ -26,13 +26,13 @@ class PubSubSender(Protocol):
         """
         Sends a UadpMessage if supported!
         """
-        pass
+        raise NotImplementedError
 
     def get_publisher_id(self) -> Union[Byte, UInt16, UInt32, UInt64, String]:
         """
         Returns the publisher id for creating messages
         """
-        pass
+        raise NotImplementedError
 
 
 class IPubSub(Protocol):
@@ -41,32 +41,32 @@ class IPubSub(Protocol):
     """
 
     def get_published_dataset(self, name: String) -> Optional[PublishedDataSet]:
-        pass
+        raise NotImplementedError
 
 
-class PubSubReciver(Protocol):
+class PubSubReceiver(Protocol):
     """
-    Reciver for Pubsub Messages
+    Receiver for Pubsub Messages
     """
 
     async def got_uadp(self, msg: UadpNetworkMessage):
-        """Called when a msg is recived"""
-        pass
+        """Called when a msg is received"""
+        raise NotImplementedError
 
 
-class SubscripedDataSet(Protocol):
-    """Reciver for subscriped datasets"""
+class SubscribedDataSet(Protocol):
+    """Receiver for subscribed datasets"""
 
-    async def on_dataset_recived(self, meta: DataSetMeta, fields: List[DataSetValue]):
-        """Called when a published dataset recived an update"""
-        pass
+    async def on_dataset_received(self, meta: DataSetMeta, fields: List[DataSetValue]):
+        """Called when a published dataset received an update"""
+        raise NotImplementedError
 
-    async def on_state_change(self, meta: DataSetMeta, state: ua.PubSubState):
+    async def on_state_change(self, meta: DataSetMeta, state: PubSubState):
         """Called when a DataSet state changes"""
-        pass
+        raise NotImplementedError
 
     def get_subscribed_dataset(self) -> ExtensionObject:
         """
         Returns the ExtensionObject
         """
-        pass
+        raise NotImplementedError

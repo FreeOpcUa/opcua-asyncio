@@ -1,5 +1,5 @@
 """
-Example creating a standalone publisher that recives an Int32, String, Bool and ArrayInt16 matching the pubsubpublisher standalone example
+Example creating a standalone publisher that receives an Int32, String, Bool and ArrayInt16 matching the pubsubpublisher standalone example
 """
 
 import asyncio
@@ -27,7 +27,7 @@ def create_meta_data():
     return dataset
 
 
-def create_reader(handler: pubsub.SubscripedDataSet):
+def create_reader(handler: pubsub.SubscribedDataSet):
     # Register Handler to get the DataSetResults
     cfg = pubsub.ReaderGroupDataType("ReaderGroup1", True)
     reader = pubsub.ReaderGroup(cfg)
@@ -35,7 +35,7 @@ def create_reader(handler: pubsub.SubscripedDataSet):
         "SimpleDataSetReader", True, CFG["PublisherID"], CFG["WriterId"], CFG["DataSetWriterId"]
     )
     dsr = pubsub.DataSetReader(cfg)
-    dsr.set_subscriped(handler)
+    dsr.set_subscribed(handler)
     meatadata = create_meta_data()
     dsr.set_meta_data(meatadata)
     reader.add_dataset_reader(dsr)
@@ -44,17 +44,17 @@ def create_reader(handler: pubsub.SubscripedDataSet):
 
 def create_connection() -> pubsub.PubSubConnection:
     # The PublisherId here is 2 but could be any number because we are just subscribing
-    return pubsub.PubSubConnection.udp_udadp(
+    return pubsub.PubSubConnection.udp_uadp(
         "Subscriber Connection1 UDP UADP", ua.UInt16(2), UdpSettings(Url=CFG["url"])
     )
 
 
-class OnDataRecived:
+class OnDataReceived:
     """
-    This is called when a dataset is recived
+    This is called when a dataset is received
     """
 
-    def on_dataset_recived(self, meta: pubsub.DataSetMeta, fields: List[pubsub.DataSetValue]):
+    def on_dataset_received(self, meta: pubsub.DataSetMeta, fields: List[pubsub.DataSetValue]):
         print("Got Msg:")
         for f in fields:
             print(f"{f.Name} -> {f.Value}")
@@ -65,7 +65,7 @@ class OnDataRecived:
 
 
 async def main():
-    handler = OnDataRecived()
+    handler = OnDataReceived()
     logging.basicConfig(level=logging.INFO)
     app = pubsub.PubSubApplication()
     con = create_connection()

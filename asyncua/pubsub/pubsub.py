@@ -4,23 +4,26 @@ top level of PubSub, similar to the Client/Server
 
 from __future__ import annotations
 import asyncio
+import logging
 from pathlib import Path
 from typing import List, Optional, TYPE_CHECKING, Union
-from asyncua.common.utils import Buffer
-from asyncua.pubsub.information_model import PubSubInformationModel
+
 import aiofiles
 
-from asyncua.ua.ua_binary import extensionobject_from_binary, to_binary
+from ..common.utils import Buffer
+from ..ua import String, PubSubConfigurationDataType
+from ..ua.object_ids import ObjectIds
+from ..ua.uaerrors import BadInvalidArgument, UaError
+from ..ua.ua_binary import extensionobject_from_binary, to_binary
+from ..ua.uaprotocol_auto import PubSubState, UABinaryFileDataType
+from ..ua.uatypes import NodeId, Variant
 
-if TYPE_CHECKING:
-    from asyncua.server.server import Server
-from asyncua.ua import String, PubSubConfigurationDataType, uaerrors
-from asyncua.ua.object_ids import ObjectIds
-from asyncua.ua.uaprotocol_auto import PubSubState, UABinaryFileDataType
-from asyncua.ua.uatypes import NodeId, Variant
 from .dataset import PublishedDataSet
 from .connection import PubSubConnection
-import logging
+from .information_model import PubSubInformationModel
+
+if TYPE_CHECKING:
+    from ..server.server import Server
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +107,7 @@ class PubSub(PubSubInformationModel):
     async def remove_published_dataset(self, name: String) -> None:
         elm = self.get_published_dataset(name)
         if elm is None:
-            raise ValueError(f"Unkown Published Dataset {name}")
+            raise ValueError(f"Unknown Published Dataset {name}")
         else:
             if self._node is not None:
                 elm._node.delete()
@@ -113,7 +116,7 @@ class PubSub(PubSubInformationModel):
     async def remove_connection(self, name: String) -> None:
         elm = self.get_connection(name)
         if elm is None:
-            raise ValueError(f"Unkown Connection {name}")
+            raise ValueError(f"Unknown Connection {name}")
         else:
             del elm
             if self._node is not None:
@@ -121,7 +124,7 @@ class PubSub(PubSubInformationModel):
 
     async def start(self) -> None:
         """
-        Starts the pubsub applications. All writer and reader will publish and subscripe message from now on.
+        Starts the pubsub applications. All writer and reader will publish and subscribe message from now on.
         """
         if not self._running:
             self._enabled = True
@@ -154,6 +157,14 @@ class PubSub(PubSubInformationModel):
             ex_obj = ex_obj.Body.Value
             if isinstance(ex_obj, PubSubConfigurationDataType):
                 cfg: PubSubConfigurationDataType = ex_obj
+                # When loading a configuration file, it should replace any existing
+                # datasets or connections rather than append to the current state.
+                # Previous runs may have populated ``self._pds`` and ``self._con``
+                # via ``server.get_pubsub()``, so make sure we start from a clean
+                # slate before instantiating objects from the file.
+                self._pds.clear()
+                self._con.clear()
+                self._enabled = cfg.Enabled
                 for ds in cfg.PublishedDataSets:
                     await self.add_published_dataset(PublishedDataSet(ds))
                 for con in cfg.Connections:
@@ -163,7 +174,7 @@ class PubSub(PubSubInformationModel):
                 logger.error("File has ExtensionObject of type: %s instead of UABinaryFileDataType", ex_obj)
         else:
             logger.error("File has ExtensionObject of type: %s instead of UABinaryFileDataType", ex_obj)
-        raise uaerrors.UaError(uaerrors.BadInvalidArgument)
+        raise UaError(BadInvalidArgument)
 
     async def save_binary_file(self, file: Union[str, Path]) -> None:  # @TODO save structs and enums, namespaces
         cfg = PubSubConfigurationDataType(

@@ -107,7 +107,7 @@ class UaProcessor:
         try:
             msg = self._connection.receive_from_header_and_body(header, body)
         except ua.uaerrors.BadRequestTooLarge as e:
-            _logger.warning("Recived request that exceed the transport limits")
+            _logger.warning("Received request that exceed the transport limits")
             err = ua.ErrorMessage(ua.StatusCode(e.code), str(e))
             data = uatcp_to_binary(ua.MessageType.Error, err)
             self._transport.write(data)

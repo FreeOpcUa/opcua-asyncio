@@ -6,4 +6,4 @@ from .connection import *
 from .writer import *
 from .reader import *
 from .udp import UdpSettings
-from .subscriped_dataset import *
+from .subscribed_dataset import *

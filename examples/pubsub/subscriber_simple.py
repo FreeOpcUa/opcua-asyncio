@@ -1,5 +1,5 @@
 """
-Example creating a subscriber that recives an Int32, String, Bool and ArrayInt16 matching the publisher_simple.py
+Example creating a subscriber that receives an Int32, String, Bool and ArrayInt16 matching the publisher_simple.py
 """
 
 import asyncio
@@ -32,8 +32,8 @@ def create_meta_data():
 
 async def init_pubsub_connection(server: Server, nodes: List[Node]) -> pubsub.PubSubConnection:
     metadata = create_meta_data()
-    # link metafields with the nodes in the addresspace
-    subscriped_ds = pubsub.SubScripedTargetVariables(
+    # link metafields with the nodes in the AddressSpace
+    subscribed_ds = pubsub.SubScribedTargetVariables(
         server,
         [
             pubsub.FieldTargets.createTarget(metadata.get_field((await n.read_browse_name()).Name), n.nodeid)
@@ -51,14 +51,14 @@ async def init_pubsub_connection(server: Server, nodes: List[Node]) -> pubsub.Pu
                 CFG.DataSetWriterId,
                 metadata,
                 name="SimpleDataSetReader",
-                subscriped=subscriped_ds,
+                subscribed=subscribed_ds,
                 enabled=True,
             )
         ],
     )
     # Create a connection
     # The PublisherId here is 2 but could be any number because we are just subscribing
-    return pubsub.PubSubConnection.udp_udadp(
+    return pubsub.PubSubConnection.udp_uadp(
         "Subscriber Connection1 UDP UADP",
         ua.UInt16(2),
         pubsub.UdpSettings(Url=CFG.Url),

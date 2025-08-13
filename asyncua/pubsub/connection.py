@@ -1,19 +1,20 @@
 """
-Connection which sends/generates and recives/handles pubsub message
+Connection which sends/generates and receives/handles pubsub message
 over the network
 """
 
 from __future__ import annotations
+import logging
+import asyncio
 from typing import List, Optional, Union, TYPE_CHECKING
-from asyncua.ua.status_codes import StatusCodes
-from asyncua.ua.uaprotocol_auto import ReaderGroupDataType, WriterGroupDataType
 
-if TYPE_CHECKING:
-    from ..server.server import Server
+from ..common.methods import uamethod
+from ..common.instantiate_util import instantiate
 from ..pubsub.information_model import PubSubInformationModel
 from ..ua import (
     ObjectIds,
     Byte,
+    Int32,
     LocalizedText,
     NodeId,
     UInt16,
@@ -25,23 +26,24 @@ from ..ua import (
     PubSubConnectionDataType,
     PubSubState,
 )
-from ..common.methods import uamethod
-from ..ua.uaerrors import UaError
-from ..common.instantiate_util import instantiate
+from ..ua.status_codes import StatusCodes
+from ..ua.uaprotocol_auto import ReaderGroupDataType, WriterGroupDataType
+from ..ua.uaerrors import UaError, UaStatusCodeError
+
 from .reader import DataSetReader, ReaderGroup
-from .protocols import IPubSub, PubSubReciver
+from .protocols import IPubSub, PubSubReceiver
 from .writer import WriterGroup
 from .uadp import UadpNetworkMessage
 from .udp import OpcUdp, UdpSettings
-import logging
-import asyncio
 
-from asyncua.ua import uaerrors
+if TYPE_CHECKING:
+    from ..server.server import Server
+
 
 logger = logging.getLogger(__name__)
 
 
-UDP_UADP_PROFILE = "http://opcfoundation.org/UA-Profile/Transport/pubsub-udp-uadp"
+UDP_UADP_PROFILE = String("http://opcfoundation.org/UA-Profile/Transport/pubsub-udp-uadp")
 
 
 class PubSubConnection(PubSubInformationModel):
@@ -74,7 +76,7 @@ class PubSubConnection(PubSubInformationModel):
         self._nodes = {}
 
     @classmethod
-    def udp_udadp(
+    def udp_uadp(
         cls,
         name: str,
         publisher_id: Union[Byte, UInt16, UInt32, UInt64, String, Variant],
@@ -104,11 +106,11 @@ class PubSubConnection(PubSubInformationModel):
         address = network_cfg.get_address()
         properties = network_cfg.get_key_value()
         cfg = PubSubConnectionDataType(
-            Name=name,
+            Name=String(name),
             Enabled=True,
             PublisherId=pubid,
             TransportProfileUri=UDP_UADP_PROFILE,
-            Address=address,
+            Address=address,  # this assignment is valid
             ConnectionProperties=properties,
         )
         o = cls(cfg)
@@ -236,9 +238,9 @@ class PubSubConnection(PubSubInformationModel):
         """
         self._app = ps
 
-    def set_receiver(self, receiver: PubSubReciver) -> None:
+    def set_receiver(self, receiver: PubSubReceiver) -> None:
         """
-        Sets a PubSubReciver which recives pubsub events
+        Sets a PubSubReceiver which receives pubsub events
         """
         if self._protocol is not None:
             self._protocol.set_receiver(receiver)
@@ -277,14 +279,14 @@ class PubSubConnection(PubSubInformationModel):
             if w._node is not None and w._node.nodeid == nid:
                 await self.remove_writer_group(w)
                 return
-        raise uaerrors.UaStatusCodeError(StatusCodes.BadNodeIdUnknown)
+        raise UaStatusCodeError(StatusCodes.BadNodeIdUnknown)
 
     async def _init_information_model(self, server: Server) -> None:
         """
         Inits the information model
         """
-        parent_pubsub = server.get_node(NodeId(ObjectIds.PublishSubscribe, 0))
-        con_type = server.get_node(NodeId(ObjectIds.PubSubConnectionType, 0))
+        parent_pubsub = server.get_node(NodeId(Int32(ObjectIds.PublishSubscribe)))
+        con_type = server.get_node(NodeId(Int32(ObjectIds.PubSubConnectionType)))
         objs = await instantiate(
             parent_pubsub,
             con_type,
@@ -294,10 +296,10 @@ class PubSubConnection(PubSubInformationModel):
             dname=LocalizedText(self._cfg.Name, ""),
         )
         con_var = objs[0]
-        await parent_pubsub.add_reference(con_var, NodeId(ObjectIds.HasPubSubConnection))
+        await parent_pubsub.add_reference(con_var, NodeId(Int32(ObjectIds.HasPubSubConnection)))
         await parent_pubsub.delete_reference(con_var, ObjectIds.HasComponent)
         await self._init_node(con_var, server)
-        # @FIXME currently the datatype is wrong in the addresspace! Need to change schema generator
+        # @FIXME currently the datatype is wrong in the AddressSpace! Need to change schema generator
         await self.set_node_value("0:PublisherId", Variant(str(self._cfg.PublisherId)))
         await self.set_node_value("0:TransportProfileUri", self._cfg.TransportProfileUri)
         await self.set_node_value(
@@ -307,7 +309,7 @@ class PubSubConnection(PubSubInformationModel):
         if self._node is not None:
             addr = await self._node.get_child("0:Address")
             await addr.delete()
-        object_type_id = NodeId(ObjectIds.NetworkAddressUrlType, 0)
+        object_type_id = NodeId(Int32(ObjectIds.NetworkAddressUrlType))
         await instantiate(
             con_var,
             server.get_node(object_type_id),
@@ -320,7 +322,7 @@ class PubSubConnection(PubSubInformationModel):
         await self.set_node_value(["0:Address", "0:Url"], con_addr.Url)
         meth = await instantiate(
             con_var,
-            server.get_node(NodeId(ObjectIds.PubSubConnectionType_AddReaderGroup)),
+            server.get_node(NodeId(Int32(ObjectIds.PubSubConnectionType_AddReaderGroup))),
             idx=1,
             bname="0:AddReaderGroup",
             dname=LocalizedText("AddReaderGroup"),
@@ -328,7 +330,7 @@ class PubSubConnection(PubSubInformationModel):
         server.link_method(meth[0], self._add_reader_group)
         meth = await instantiate(
             con_var,
-            server.get_node(NodeId(ObjectIds.PubSubConnectionType_AddWriterGroup)),
+            server.get_node(NodeId(Int32(ObjectIds.PubSubConnectionType_AddWriterGroup))),
             idx=1,
             bname="0:AddWriterGroup",
             dname=LocalizedText("AddWriterGroup"),
@@ -336,7 +338,7 @@ class PubSubConnection(PubSubInformationModel):
         server.link_method(meth[0], self._add_writer_group)
         meth = await instantiate(
             con_var,
-            server.get_node(NodeId(ObjectIds.PubSubConnectionType_RemoveGroup)),
+            server.get_node(NodeId(Int32(ObjectIds.PubSubConnectionType_RemoveGroup))),
             idx=1,
             bname="0:RemoveGroup",
             dname=LocalizedText("RemoveGroup"),

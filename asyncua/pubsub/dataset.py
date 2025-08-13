@@ -1,30 +1,38 @@
 """
-A DataSet (ds) descripes the data of pubsub
+A DataSet (ds) describes the data of pubsub
 """
 
 from __future__ import annotations
-from asyncua.common.methods import uamethod
-from asyncua.ua import uaerrors
+
+import uuid
+from dataclasses import dataclass, field
+from datetime import timezone
+from typing import Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+
 from ..common import instantiate_util
+from ..common.methods import uamethod
 from ..common.node import Node
 from ..pubsub.information_model import PubSubInformationModel
-from ..ua.attribute_ids import AttributeIds
-from ..ua.ua_binary import pack_uatype
 from ..ua import DataSetMetaDataType, String, LocalizedText, FieldMetaData, ObjectIds
+from ..ua.attribute_ids import AttributeIds
 from ..ua.status_codes import StatusCodes
-from .untils import version_time_now
+from ..ua.ua_binary import pack_uatype
+from ..ua.uaerrors import UaStatusCodeError
 from ..ua.uatypes import (
     Boolean,
     DataValue,
     DateTime,
     Guid,
+    Int16,
     Int32,
     NodeId,
     StatusCode,
     UInt32,
     Byte,
+    ValueRank,
     Variant,
     VariantType,
+    extension_objects_by_datatype,
 )
 from ..ua.uaprotocol_auto import (
     ConfigurationVersionDataType,
@@ -33,42 +41,37 @@ from ..ua.uaprotocol_auto import (
     PublishedDataSetDataType,
     PublishedVariableDataType,
 )
-from asyncua import ua
-
-import uuid
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from .utils import version_time_now
 
 if TYPE_CHECKING:
     from ..server.server import Server
 
 
-def _get_datatype_or_build_in(datatype: Union[NodeId, ObjectIds, VariantType, int]) -> Tuple[NodeId, int]:
+def _get_datatype_or_built_in(datatype: Union[NodeId, VariantType, int]) -> Tuple[NodeId, Byte]:
     """
-    Returns the DataType NodeId and the corresponding BuildIn number if
+    Returns the DataType NodeId and the corresponding BuiltIn number if
     possible to determine.
     """
-    if isinstance(datatype, ObjectIds):
-        datatype = NodeId(datatype)
-    elif isinstance(datatype, int):
-        datatype = NodeId(datatype)
-    if isinstance(datatype, NodeId):
-        if datatype.NamespaceIndex == 0 and isinstance(datatype.Identifier, int) and datatype.Identifier < 24:
-            dt = NodeId()
-            build_in = datatype.Identifier
-        else:
-            dt = datatype
-            build_in = 0
+    if isinstance(datatype, VariantType):
+        dt = NodeId(Int32(datatype))
+        built_in = Byte(datatype.value)
+        return (dt, built_in)
+
+    if isinstance(datatype, int):  # Assume it's in ObjectIds
+        datatype = NodeId(Int32(datatype))
+
+    if datatype.NamespaceIndex == 0 and isinstance(datatype.Identifier, int) and datatype.Identifier < 24:
+        dt = datatype
+        built_in = Byte(datatype.Identifier)
     else:
-        id = int(datatype.value)
-        dt = NodeId(id)
-        build_in = id
-    return (dt, build_in)
+        dt = datatype
+        built_in = Byte(0)
+    return (dt, built_in)
 
 
 class DataSetField:
     """
-    DataSetField class descripes the content of a field
+    DataSetField class describes the content of a field
     """
 
     def __init__(self, meta: Optional[FieldMetaData] = None) -> None:
@@ -78,31 +81,35 @@ class DataSetField:
             self._meta = meta
 
     @classmethod
-    def CreateScalar(cls, name: String, datatype: Union[NodeId, ObjectIds, VariantType]):
+    def CreateScalar(cls, name: String, datatype: Union[NodeId, VariantType]):
         """
         Creates a scalar Field with datatype and name
         """
+        datatype_nid, built_in = _get_datatype_or_built_in(datatype)
         meta = FieldMetaData(
             Name=name,
             DataSetFieldId=uuid.uuid4(),
             FieldFlags=DataSetFieldFlags(0),
-            ValueRank=-1,
+            BuiltInType=built_in,
+            DataType=datatype_nid,
+            ValueRank=Int32(-1),
         )
-        meta.DataType, meta.BuiltInType = _get_datatype_or_build_in(datatype)
         return cls(meta)
 
     @classmethod
-    def CreateArray(cls, name: String, datatype: Union[NodeId, ObjectIds, VariantType]):
+    def CreateArray(cls, name: String, datatype: Union[NodeId, VariantType]):
         """
         Creates a scalar Field with datatype and name
         """
+        datatype_nid, built_in = _get_datatype_or_built_in(datatype)
         meta = FieldMetaData(
             Name=name,
             DataSetFieldId=uuid.uuid4(),
             FieldFlags=DataSetFieldFlags(0),
-            ValueRank=1,
+            BuiltInType=built_in,
+            DataType=datatype_nid,
+            ValueRank=Int32(1),
         )
-        meta.DataType, meta.BuiltInType = _get_datatype_or_build_in(datatype)
         return cls(meta)
 
     def set_promoted(self, promoted: bool) -> None:
@@ -143,7 +150,7 @@ class DataSetField:
         return self._meta.DataType
 
     @property
-    def BuildInType(self) -> Byte:
+    def BuiltInType(self) -> Byte:
         return self._meta.BuiltInType
 
     def get_config(self) -> FieldMetaData:
@@ -153,15 +160,14 @@ class DataSetField:
         """
         returns the name of DataType
         """
-        if self._meta.DataType.is_null():
-            if self._meta.BuiltInType != 0:
-                return VariantType(self._meta.BuiltInType).name
-        return ua.extension_objects_by_datatype[self._meta.DataType].__name__
+        if self._meta.BuiltInType != 0:
+            return VariantType(self._meta.BuiltInType).name
+        return extension_objects_by_datatype[self._meta.DataType].__name__
 
 
 class DataSetMeta:
     """
-    Descripes a the meta data of a dataset
+    Describes a the meta data of a dataset
     """
 
     def __init__(
@@ -207,10 +213,10 @@ class DataSetMeta:
         self._fields.append(ds_field)
         self._meta.Fields.append(ds_field._meta)
 
-    def add_scalar(self, name: String, datatype: Union[NodeId, ObjectIds, VariantType]):
+    def add_scalar(self, name: String, datatype: Union[NodeId, VariantType]):
         self.add_field(DataSetField.CreateScalar(name, datatype))
 
-    def add_array(self, name: String, datatype: Union[NodeId, ObjectIds, VariantType]):
+    def add_array(self, name: String, datatype: Union[NodeId, VariantType]):
         self.add_field(DataSetField.CreateScalar(name, datatype))
 
     def get_field(self, name) -> Optional[DataSetField]:
@@ -237,10 +243,10 @@ class PubSubDataSource:
         """
         return all variants for a dataset as Variant
         """
-        dt = DateTime.utcnow()
+        dt = DateTime.now(timezone.utc)
         vars = await self.on_get_value()
         ret = [v.Value for v in vars]
-        st = StatusCode(StatusCodes.Good)
+        st = StatusCode(UInt32(StatusCodes.Good))
         for v in vars:
             if v.StatusCode is not None and not v.StatusCode.is_good():
                 st = v.StatusCode
@@ -264,11 +270,11 @@ class PubSubDataSource:
         """
         returns all values for a dataset as rawbytes
         """
-        dt = DateTime.utcnow()
+        dt = DateTime.now(timezone.utc)
         vars = await self.on_get_value()
-        ret = [pack_uatype(v.Value.VariantType, v.Value) for v in vars if v.Value is not None]
+        ret = [pack_uatype(v.Value.VariantType, v.Value.Value) for v in vars if v.Value is not None]
 
-        st = StatusCode(StatusCodes.Good)
+        st = StatusCode(UInt32(StatusCodes.Good))
         for v in vars:
             if v.StatusCode is not None and not v.StatusCode.is_good():
                 st = v.StatusCode
@@ -278,7 +284,7 @@ class PubSubDataSource:
         """
         Return all values of the dataset
         """
-        raise ua.UaStatusCodeError(StatusCodes.BadNotImplemented)
+        raise UaStatusCodeError(StatusCodes.BadNotImplemented)
 
 
 class PubSubDataSourceDict(PubSubDataSource):
@@ -295,7 +301,7 @@ class PubSubDataSourceDict(PubSubDataSource):
 
     async def on_get_value(self) -> List[DataValue]:
         """
-        returns all values for a datatset
+        returns all values for a dataset
         """
         fields = self.datasources.get(self.ds._meta.Name, {})
         ret = []
@@ -303,7 +309,7 @@ class PubSubDataSourceDict(PubSubDataSource):
             ret.append(
                 fields.get(
                     fld.Name,
-                    DataValue(StatusCode_=StatusCode(StatusCodes.BadNoDataAvailable)),
+                    DataValue(StatusCode_=StatusCode(UInt32(StatusCodes.BadNoDataAvailable))),
                 )
             )
         return ret
@@ -322,17 +328,21 @@ class PubSubDataSourceServer(PubSubDataSource):
 
     async def on_get_value(self) -> List[DataValue]:
         """
-        returns all values for a datatset
+        returns all values for a dataset
         """
         ret = []
         for pd in self.data_items.PublishedData:
             dv = self._server.read_attribute_value(pd.PublishedVariable, attr=pd.AttributeId)
-            if not dv.StatusCode_.is_good() and pd.SubstituteValue.VariantType != VariantType.Null:
+            if (
+                dv.StatusCode_ is not None
+                and not dv.StatusCode_.is_good()
+                and pd.SubstituteValue.VariantType != VariantType.Null
+            ):
                 dv = DataValue(
                     pd.SubstituteValue,
-                    SourceTimestamp=DateTime.utcnow(),
-                    ServerTimestamp=DateTime.utcnow(),
-                    StatusCode_=StatusCodes.UncertainSubstituteValue,
+                    SourceTimestamp=DateTime.now(timezone.utc),
+                    ServerTimestamp=DateTime.now(timezone.utc),
+                    StatusCode_=StatusCode(UInt32(StatusCodes.UncertainSubstituteValue)),
                 )
             ret.append(dv)
         return ret
@@ -365,7 +375,7 @@ class PublishedDataSet(PubSubInformationModel):
             self._source = PubSubDataSourceDict(self.dataset)
 
     async def _init_information_model(self, parent: Node, server: Server) -> None:
-        pds_type = server.get_node(NodeId(ObjectIds.PublishedDataItemsType, 0))
+        pds_type = server.get_node(NodeId(Int32(ObjectIds.PublishedDataItemsType)))
         instance = await instantiate_util.instantiate(
             parent,
             pds_type,
@@ -379,14 +389,14 @@ class PublishedDataSet(PubSubInformationModel):
         await self.set_node_value("0:DataSetMetaData", self.dataset)
         if self._node is not None:
             await self._node.add_variable(
-                ua.NodeId(NamespaceIndex=1),
+                NodeId(NamespaceIndex=Int16(1)),
                 "0:DataSetClassId",
                 self.dataset._meta.DataSetClassId,
             )
         else:
             raise RuntimeError("self._node is not initialized")
         await self._node.add_variable(
-            ua.NodeId(NamespaceIndex=1),
+            NodeId(NamespaceIndex=Int16(1)),
             "0:DataSetClassId",
             self.dataset._meta.DataSetClassId,
         )
@@ -445,7 +455,7 @@ class TargetVariable:
 
     Name: String = None
     SourceNode: NodeId = None
-    ValueRank: ua.ValueRank = ua.ValueRank.Scalar
+    ValueRank: ValueRank = ValueRank.Scalar
     DataType: Optional[NodeId] = None
     SubstituteValue: Variant = field(default_factory=Variant)
     Promoted: Boolean = False
@@ -453,7 +463,7 @@ class TargetVariable:
 
 class PublishedDataItems(PubSubInformationModel):
     """
-    Defines a PublishedDataItems which links variables in the server Addresspace
+    Defines a PublishedDataItems which links variables in the server AddressSpace
     """
 
     def __init__(
@@ -474,7 +484,7 @@ class PublishedDataItems(PubSubInformationModel):
         self._server = server
 
     async def _init_information_model(self, parent: Node, server: Server) -> None:
-        pds_type = server.get_node(NodeId(ObjectIds.PublishedDataItemsType, 0))
+        pds_type = server.get_node(NodeId(Int32(ObjectIds.PublishedDataItemsType)))
         instance = await instantiate_util.instantiate(
             parent,
             pds_type,
@@ -489,7 +499,7 @@ class PublishedDataItems(PubSubInformationModel):
         await self.set_node_value("0:ConfigurationVersion", self.dataset._meta.ConfigurationVersion)
         if self._node is not None:
             await self._node.add_variable(
-                ua.NodeId(NamespaceIndex=1),
+                NodeId(NamespaceIndex=Int16(1)),
                 "0:DataSetClassId",
                 self.dataset._meta.DataSetClassId,
             )
@@ -506,7 +516,7 @@ class PublishedDataItems(PubSubInformationModel):
         )
         meth = await instantiate_util.instantiate(
             pds_obj,
-            server.get_node(NodeId(ObjectIds.PublishedDataItemsType_AddVariables)),
+            server.get_node(NodeId(Int32(ObjectIds.PublishedDataItemsType_AddVariables))),
             idx=1,
             bname="0:AddVariables",
             dname=LocalizedText("AddVariables"),
@@ -514,7 +524,7 @@ class PublishedDataItems(PubSubInformationModel):
         server.link_method(meth[0], self._add_variables)
         meth = await instantiate_util.instantiate(
             pds_obj,
-            server.get_node(NodeId(ObjectIds.PublishedDataItemsType_RemoveVariables)),
+            server.get_node(NodeId(Int32(ObjectIds.PublishedDataItemsType_RemoveVariables))),
             idx=1,
             bname="0:RemoveVariables",
             dname=LocalizedText("RemoveVariables"),
@@ -530,18 +540,18 @@ class PublishedDataItems(PubSubInformationModel):
         published_variable_data_type: List[PublishedVariableDataType],
     ) -> Tuple[ConfigurationVersionDataType, List[StatusCodes]]:
         if self._data.DataSetMetaData.ConfigurationVersion != config_version:
-            raise uaerrors.UaStatusCodeError(StatusCodes.BadInvalidState)
+            raise UaStatusCodeError(StatusCodes.BadInvalidState)
         if not field_name_aliases:
-            # When emtpy arguments
-            raise uaerrors.UaStatusCodeError(StatusCodes.BadNothingToDo)
+            # When empty arguments
+            raise UaStatusCodeError(StatusCodes.BadNothingToDo)
         if self._source is None:
             # If no source then no variables can be added
-            raise uaerrors.UaStatusCodeError(StatusCodes.Bad_NotWritable)
+            raise UaStatusCodeError(StatusCodes.BadNotWritable)
         self._source
         self._results = []
         if len(field_name_aliases) != len(promoted_fields) or len(promoted_fields) != len(published_variable_data_type):
-            raise uaerrors.UaStatusCodeError(StatusCodes.BadInvalidArgument)
-        raise uaerrors.UaStatusCodeError(StatusCodes.BadNotImplemented)
+            raise UaStatusCodeError(StatusCodes.BadInvalidArgument)
+        raise UaStatusCodeError(StatusCodes.BadNotImplemented)
 
     @uamethod
     async def _remove_variables(
@@ -550,14 +560,14 @@ class PublishedDataItems(PubSubInformationModel):
         variables_to_remove: List[UInt32],
     ) -> Tuple[ConfigurationVersionDataType, List[StatusCodes]]:
         if self._data.DataSetMetaData.ConfigurationVersion != config_version:
-            raise uaerrors.UaStatusCodeError(StatusCodes.BadInvalidState)
+            raise UaStatusCodeError(StatusCodes.BadInvalidState)
         if not variables_to_remove:
-            # When emtpy arguments
-            raise uaerrors.UaStatusCodeError(StatusCodes.BadNothingToDo)
+            # When empty arguments
+            raise UaStatusCodeError(StatusCodes.BadNothingToDo)
         if self._source is None:
             # If no source then no variables can be added
-            raise uaerrors.UaStatusCodeError(StatusCodes.BadNotWritable)
-        raise uaerrors.UaStatusCodeError(StatusCodes.BadNotImplemented)
+            raise UaStatusCodeError(StatusCodes.BadNotWritable)
+        raise UaStatusCodeError(StatusCodes.BadNotImplemented)
 
     @classmethod
     async def Create(cls, name: String, server: Server, variables: List[TargetVariable]):
@@ -579,7 +589,7 @@ class PublishedDataItems(PubSubInformationModel):
                 datatype = v.DataType
             else:
                 datatype = await server.get_node(v.SourceNode).read_data_type()
-            meta.DataType, meta.BuiltInType = _get_datatype_or_build_in(datatype)
+            meta.DataType, meta.BuiltInType = _get_datatype_or_built_in(datatype)
             fields.append(DataSetField(meta))
         meta = DataSetMetaDataType(Name=name, Fields=fields, DataSetClassId=uuid.uuid4())
         s = cls(
@@ -602,7 +612,7 @@ class PublishedDataItems(PubSubInformationModel):
 
 @dataclass
 class DataSetValue:
-    """Value of a subscriped value, with all infos need to proccess it"""
+    """Value of a subscribed value, with all infos need to process it"""
 
     Name: String
     Value: DataValue

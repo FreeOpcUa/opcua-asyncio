@@ -58,7 +58,7 @@ async def main():
     pds = create_published_dataset()
     source = pds.get_source()
     init_data_source(source)
-    con = pubsub.PubSubConnection.udp_udadp(
+    con = pubsub.PubSubConnection.udp_uadp(
         "Publisher Connection1 UDP UADP",
         ua.UInt16(1),
         UdpSettings(Url=URL),

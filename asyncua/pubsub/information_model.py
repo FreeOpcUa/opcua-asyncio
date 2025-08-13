@@ -1,22 +1,21 @@
 from __future__ import annotations
 from typing import List, Optional, Union, TYPE_CHECKING
-from asyncua.common.methods import uamethod
-from asyncua.common.node import Node
-from asyncua.ua import uaerrors
 
-from asyncua.ua.status_codes import StatusCodes
-from asyncua.ua.uaprotocol_auto import PubSubState
-from asyncua.ua.uatypes import QualifiedName, String, Variant
+from ..common.methods import uamethod
+from ..common.node import Node
+from ..ua.status_codes import StatusCodes
+from ..ua.uaerrors import UaStatusCodeError
+from ..ua.uaprotocol_auto import PubSubState
+from ..ua.uatypes import DataValue, QualifiedName, String, Variant
 
 if TYPE_CHECKING:
-    from asyncua import server
-from asyncua import ua
+    from ..server import Server
 
 
 class PubSubInformationModel:
     """
-    Wraps some helper for PubSubObjects in the Addressspace.
-    If used without node it provids fallbacks.
+    Wraps some helper for PubSubObjects in the AddressSpace.
+    If used without node it provides fallbacks.
     Also the class handles the state of the  pubsub component (PubSubState)
     """
 
@@ -31,13 +30,13 @@ class PubSubInformationModel:
 
     @uamethod
     async def enable(self) -> StatusCodes:
-        raise uaerrors.UaStatusCodeError(StatusCodes.BadNotImplemented)
+        raise UaStatusCodeError(StatusCodes.BadNotImplemented)
 
     @uamethod
     async def disable(self) -> StatusCodes:
-        raise uaerrors.UaStatusCodeError(StatusCodes.BadNotImplemented)
+        raise UaStatusCodeError(StatusCodes.BadNotImplemented)
 
-    async def _init_node(self, node: Node, server: Optional[server.Server]) -> None:
+    async def _init_node(self, node: Node, server: Optional[Server]) -> None:
         """
         links a node to the pubsub internals
         and prepares common nodes
@@ -47,7 +46,7 @@ class PubSubInformationModel:
         if self._has_state:
             try:
                 self._state_node = await node.get_child(["0:Status", "0:State"])
-            except uaerrors.UaStatusCodeError:
+            except UaStatusCodeError:
                 pass
             # @TODO fill methods
             # en = await self._node.get_child(["0:Status", "0:Enable"])
@@ -63,7 +62,7 @@ class PubSubInformationModel:
         """
         if self._node is not None:
             n = await self._node.get_child(path)
-            await n.write_value(ua.DataValue(value))
+            await n.write_value(DataValue(value))
 
     async def get_node_value(
         self, path: Union[str, QualifiedName, List[str], List[QualifiedName]]
@@ -82,7 +81,7 @@ class PubSubInformationModel:
         Internal sets the state of the information model
         """
         if self._state_node is not None:
-            await self._state_node.write_value(ua.DataValue(state))
+            await self._state_node.write_value(DataValue(state))
         else:
             self.__state_fallback = state
 

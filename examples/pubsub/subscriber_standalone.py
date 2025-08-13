@@ -1,5 +1,5 @@
 """
-Example creating a standalone subscriber that recives an Int32, String, Bool and ArrayInt16 matching the pubsubpublisher standalone example
+Example creating a standalone subscriber that receives an Int32, String, Bool and ArrayInt16 matching the pubsubpublisher standalone example
 """
 
 import asyncio
@@ -32,12 +32,12 @@ def create_meta_data():
     return dataset
 
 
-class OnDataRecived:
+class OnDataReceived:
     """
-    This is called when a dataset is recived
+    This is called when a dataset is received
     """
 
-    async def on_dataset_recived(self, _meta: pubsub.DataSetMeta, fields: List[pubsub.DataSetValue]):
+    async def on_dataset_received(self, _meta: pubsub.DataSetMeta, fields: List[pubsub.DataSetValue]):
         print("Got Msg:")
         for f in fields:
             print(f"{f.Name} -> {f.Value}")
@@ -48,7 +48,7 @@ class OnDataRecived:
 
 
 async def main():
-    handler = OnDataRecived()
+    handler = OnDataReceived()
     logging.basicConfig(level=logging.INFO)
     metadata = create_meta_data()
     # Configure ReaderGroup and DataSetReader this must match the WriterGroup/DataSetWriter configured on the publisher
@@ -62,14 +62,14 @@ async def main():
                 CFG.DataSetWriterId,
                 metadata,
                 name="SimpleDataSetReader",
-                subscriped=handler,
+                subscribed=handler,
                 enabled=True,
             )
         ],
     )
     # Create a connection
     # The PublisherId here is 2 but could be any number because we are just subscribing
-    connection = pubsub.PubSubConnection.udp_udadp(
+    connection = pubsub.PubSubConnection.udp_uadp(
         "Subscriber Connection1 UDP UADP",
         ua.UInt16(2),
         UdpSettings(Url=CFG.Url),

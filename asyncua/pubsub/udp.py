@@ -2,20 +2,21 @@
 NetworkLayer for udp
 """
 
+import asyncio
+import logging
+import struct
+import socket
+from dataclasses import InitVar, dataclass
+from ipaddress import ip_address
+from typing import List, Optional, Tuple, Union
 from urllib.parse import urlparse
-from asyncua.ua.uaprotocol_auto import (
+
+from ..ua import KeyValuePair
+from ..ua.uaprotocol_auto import (
     NetworkAddressUrlDataType,
     PubSubConnectionDataType,
 )
-from .connection import PubSubReciver
-from asyncua.ua import KeyValuePair
-import asyncio
-from dataclasses import InitVar, dataclass
-from ipaddress import ip_address
-import socket
-from typing import List, Optional, Tuple, Union
-import struct
-from asyncua.ua.uatypes import (
+from ..ua.uatypes import (
     Byte,
     QualifiedName,
     String,
@@ -25,14 +26,15 @@ from asyncua.ua.uatypes import (
     Variant,
     VariantType,
 )
-from asyncua.common.utils import Buffer
-import logging
+from ..common.utils import Buffer
+
+from .connection import PubSubReceiver
 from .uadp import UadpNetworkMessage
 
 logger = logging.getLogger(__name__)
 
 
-def _get_address_adatper(address: NetworkAddressUrlDataType):
+def _get_address_adapter(address: NetworkAddressUrlDataType):
     addr = None
     if address.NetworkInterface is not None:
         addr = address.NetworkInterface
@@ -47,7 +49,7 @@ class UdpSettings:
     """
 
     Addr: Tuple[str, int] = None  # Address, Port
-    Reuse: bool = True  # Resuse Port
+    Reuse: bool = True  # Reuse Port
     TTL: Optional[int] = None  # Sets the time to live for UDP
     Loopback: bool = True  # Sends Messages to loopback
     Adapter: Tuple[Optional[str], int] = None  # Listening address
@@ -63,7 +65,7 @@ class UdpSettings:
 
     @classmethod
     def from_cfg(cls, cfg: PubSubConnectionDataType):
-        addr, adpater = _get_address_adatper(cfg.Address)
+        addr, adpater = _get_address_adapter(cfg.Address)
         s = cls(addr, Adapter=(adpater, addr[1]))
         s.set_key_value(cfg.ConnectionProperties)
         return s
@@ -93,8 +95,8 @@ class UdpSettings:
         return kvs
 
     def create_socket(self) -> Tuple[socket.socket, Union[Tuple[str, int], Tuple[str, int, int, int]], Tuple[str, int]]:
-        family, type, proto, _, addr = socket.getaddrinfo(self.Addr[0], self.Addr[1], 0, socket.SOCK_DGRAM)[0]
-        sock = socket.socket(family, type, proto)
+        family, typ, proto, _, addr = socket.getaddrinfo(self.Addr[0], self.Addr[1], 0, socket.SOCK_DGRAM)[0]
+        sock = socket.socket(family, typ, proto)
         if self.Reuse:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         if sock.family == socket.AF_INET:
@@ -130,17 +132,17 @@ class UdpSettings:
                 # Invalid IPAddress => no multicast
                 pass
         else:
-            raise NotImplementedError("Unsupporte socket family f{sock.family}")
+            raise NotImplementedError("Unsupported socket family f{sock.family}")
         sock.setblocking(False)
         sock.bind(local)
         return (sock, addr, local)
 
 
 class OpcUdp(asyncio.DatagramProtocol):
-    def __init__(self, cfg: UdpSettings, reciver: Optional[PubSubReciver], publisher_id: Variant) -> None:
+    def __init__(self, cfg: UdpSettings, receiver: Optional[PubSubReceiver], publisher_id: Variant) -> None:
         super().__init__()
         self.cfg = cfg
-        self.reciver = reciver
+        self.receiver = receiver
         self.publisher_id = publisher_id.Value
 
     def connection_made(self, transport: asyncio.transports.BaseTransport) -> None:
@@ -152,20 +154,20 @@ class OpcUdp(asyncio.DatagramProtocol):
             buffer = Buffer(data)
             msg = UadpNetworkMessage.from_binary(buffer)
             logger.debug(msg)
-            if self.reciver is not None:
-                asyncio.ensure_future(self.reciver.got_uadp(msg))
+            if self.receiver is not None:
+                asyncio.ensure_future(self.receiver.got_uadp(msg))
             else:
                 logger.warning("No receiver set — dropping UADP message")
         except Exception:
-            logging.exception("Recived Invalid UadpPacket")
+            logging.exception("Received Invalid UadpPacket")
 
     def send_uadp(self, msgs: List[UadpNetworkMessage]) -> None:
         for msg in msgs:
             logger.debug("Sending UadpMsg %s", msg)
             self.transport.sendto(msg.to_binary(), self.cfg.Addr)
 
-    def set_receiver(self, reciver: PubSubReciver) -> None:
-        self.reciver = reciver
+    def set_receiver(self, receiver: PubSubReceiver) -> None:
+        self.receiver = receiver
 
     def get_publisher_id(self) -> Union[Byte, UInt16, UInt32, UInt64, String]:
         """

@@ -50,7 +50,7 @@ async def main():
     ps = await server.get_pubsub()
     async with server:
         pds = await create_published_dataset(server, nodes)
-        con = pubsub.PubSubConnection.udp_udadp(
+        con = pubsub.PubSubConnection.udp_uadp(
             "Publisher Connection1 UDP UADP",
             ua.UInt16(1),
             pubsub.UdpSettings(Url=URL),
