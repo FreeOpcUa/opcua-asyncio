@@ -23,19 +23,13 @@ def release():
     v = bump_version()
     ans = input("version bumped, committing?(Y/n)")
     if ans in ("", "y", "yes"):
-        os.system("git add setup.py")
+        os.system("git add pyproject.toml")
         os.system(f"git commit -m 'new release v{v}'")
         os.system(f"git tag v{v} -m 'new release v{v}'")
         ans = input("change committed, push to server?(Y/n)")
         if ans in ("", "y", "yes"):
             os.system("git push")
             os.system("git push --tags")
-        ans = input("upload to pip?(Y/n)")
-        if ans in ("", "y", "yes"):
-            os.system("rm -rf dist/*")
-            os.system("uv build")
-            os.system("uv publish")
-            os.system("git log -s --format=oneline")
 
 
 if __name__ == "__main__":
