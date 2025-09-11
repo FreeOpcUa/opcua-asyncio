@@ -134,7 +134,7 @@ class MonitoredItemService:
                          params.ItemToMonitor.AttributeId)
 
         result, mdata = self._make_monitored_item_common(params)
-        result.FilterResult = params.RequestedParameters.Filter
+        # result.FilterResult = ua.EventFilterResult()  # spec says we can ignore if not error
         result.StatusCode, handle = self.aspace.add_datachange_callback(
             params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId, self.datachange_callback)
 
