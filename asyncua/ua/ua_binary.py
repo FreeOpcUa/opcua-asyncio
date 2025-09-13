@@ -71,11 +71,15 @@ class _Bytes:
         return data.read(length)
 
 
+class LowApiConfig:
+    String_Encoding: str = "utf-8"
+
+
 class _String:
     @staticmethod
     def pack(string):
         if string is not None:
-            string = string.encode("utf-8")
+            string = string.encode(LowApiConfig.String_Encoding, errors="surrogateescape")
         return _Bytes.pack(string)
 
     @staticmethod
@@ -83,7 +87,7 @@ class _String:
         b = _Bytes.unpack(data)
         if b is None:
             return b
-        return b.decode("utf-8", errors="replace")  # not need to be strict here, this is user data
+        return b.decode(LowApiConfig.String_Encoding, errors="surrogateescape")
 
 
 class _Null:
