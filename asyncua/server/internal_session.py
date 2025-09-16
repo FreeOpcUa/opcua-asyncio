@@ -2,19 +2,18 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import Iterable, Optional, List, Tuple, TYPE_CHECKING
+from typing import Iterable, Optional, List, Tuple
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
+from asyncua.ua.uaprotocol_auto import CreateSubscriptionParameters, ModifySubscriptionParameters
 from ..common.callback import CallbackType, ServerItemCallback
 from ..common.utils import create_nonce, ServiceError
 from ..crypto.uacrypto import x509
-from .address_space import AddressSpace
-from asyncua.crypto.permission_rules import User, UserRole
+from .base import AbstractInternalServer
+from .address_space import AbstractAddressSpace
 from .subscription_service import SubscriptionService
-
-if TYPE_CHECKING:
-    from .internal_server import InternalServer
+from asyncua.crypto.permission_rules import User, UserRole
 
 
 class SessionState(Enum):
@@ -33,19 +32,15 @@ class InternalSession(AbstractSession):
 
     def __init__(
         self,
-        internal_server: InternalServer,
-        aspace: AddressSpace,
-        submgr: SubscriptionService,
+        internal_server: AbstractInternalServer,
         name,
         user=User(role=UserRole.Anonymous),
         external=False,
     ):
         self.logger = logging.getLogger(__name__)
-        self.iserver: InternalServer = internal_server
+        self.iserver: AbstractInternalServer = internal_server
         # define if session is external, we need to copy some objects if it is internal
-        self.external = external
-        self.aspace: AddressSpace = aspace
-        self.subscription_service: SubscriptionService = submgr
+        self.external: bool = external
         self.name = name
         self.user = user
         self.nonce = None
@@ -56,6 +51,16 @@ class InternalSession(AbstractSession):
         InternalSession._auth_counter += 1
         self.logger.info("Created internal session %s", self.name)
         self.session_timeout = None
+
+    @property
+    def aspace(self) -> AbstractAddressSpace:
+        """The address space of the server."""
+        return self.iserver.aspace
+
+    @property
+    def subscription_service(self) -> SubscriptionService:
+        """The subscription service of the server."""
+        return self.iserver.subscription_service
 
     def __str__(self):
         return (
@@ -68,7 +73,11 @@ class InternalSession(AbstractSession):
     def is_activated(self) -> bool:
         return self.state == SessionState.Activated
 
-    async def create_session(self, params: ua.CreateSessionParameters, sockname: Optional[Tuple[str, int]] = None):
+    async def create_session(
+        self,
+        params: ua.CreateSessionParameters,
+        sockname: Optional[Tuple[str, int]] = None,
+    ) -> ua.CreateSessionResult:
         self.logger.info("Create session request")
         result = ua.CreateSessionResult()
         result.SessionId = self.session_id
@@ -102,7 +111,7 @@ class InternalSession(AbstractSession):
                 [id for id, sub in self.subscription_service.subscriptions.items() if sub.session_id == self.session_id]
             )
 
-    def activate_session(self, params, peer_certificate):
+    def activate_session(self, params, peer_certificate) -> ua.ActivateSessionResult:
         self.logger.info("activate session")
         result = ua.ActivateSessionResult()
         if self.state != SessionState.Created:
@@ -123,7 +132,7 @@ class InternalSession(AbstractSession):
         if self.iserver.user_manager is not None:
             try:
                 if isinstance(id_token, ua.UserNameIdentityToken):
-                    username, password = self.iserver.decrypt_user_token(self, id_token)
+                    username, password = self.iserver.decrypt_user_token(token=id_token)
                 elif isinstance(id_token, ua.X509IdentityToken):
                     peer_certificate = self.iserver.verify_x509_token(self, id_token, params.UserTokenSignature)
                     username, password = None, None
@@ -148,7 +157,7 @@ class InternalSession(AbstractSession):
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)
         return result
 
-    async def read(self, params):
+    async def read(self, params) -> List[ua.DataValue]:
         if self.user is None:
             user = User()
         else:
@@ -165,7 +174,7 @@ class InternalSession(AbstractSession):
     async def history_read(self, params) -> List[ua.HistoryReadResult]:
         return await self.iserver.history_manager.read_history(params)
 
-    async def write(self, params):
+    async def write(self, params) -> List[ua.StatusCode]:
         if self.user is None:
             user = User()
         else:
@@ -179,7 +188,7 @@ class InternalSession(AbstractSession):
         )
         return write_result
 
-    async def browse(self, params):
+    async def browse(self, params) -> List[ua.BrowseResult]:
         return self.iserver.view_service.browse(params)
 
     async def browse_next(self, parameters: ua.BrowseNextParameters) -> List[ua.BrowseResult]:
@@ -197,19 +206,19 @@ class InternalSession(AbstractSession):
         self.logger.info("Node registration not implemented")
         return nodes
 
-    async def translate_browsepaths_to_nodeids(self, params):
+    async def translate_browsepaths_to_nodeids(self, params) -> List[ua.BrowsePathResult]:
         return self.iserver.view_service.translate_browsepaths_to_nodeids(params)
 
-    async def add_nodes(self, params):
+    async def add_nodes(self, params) -> List[ua.AddNodesResult]:
         return self.iserver.node_mgt_service.add_nodes(params, self.user)
 
-    async def delete_nodes(self, params):
+    async def delete_nodes(self, params) -> List[ua.StatusCode]:
         return self.iserver.node_mgt_service.delete_nodes(params, self.user)
 
-    async def add_references(self, params):
+    async def add_references(self, params) -> List[ua.StatusCode]:
         return self.iserver.node_mgt_service.add_references(params, self.user)
 
-    async def delete_references(self, params):
+    async def delete_references(self, params) -> List[ua.StatusCode]:
         return self.iserver.node_mgt_service.delete_references(params, self.user)
 
     def add_method_callback(self, methodid, callback):
@@ -219,7 +228,12 @@ class InternalSession(AbstractSession):
         """COROUTINE"""
         return await self.iserver.method_service.call(params)
 
-    async def create_subscription(self, params, callback, request_callback=None):
+    async def create_subscription(
+        self,
+        params: CreateSubscriptionParameters,
+        callback,
+        request_callback=None,
+    ) -> ua.CreateSubscriptionResult:
         result = await self.subscription_service.create_subscription(
             params, callback, self.session_id, request_callback=request_callback
         )
@@ -240,7 +254,7 @@ class InternalSession(AbstractSession):
         )
         return subscription_result
 
-    def republish(self, params):
+    def republish(self, params) -> ua.NotificationMessage:
         return self.subscription_service.republish(params)
 
     async def delete_subscriptions(self, ids):
@@ -259,8 +273,8 @@ class InternalSession(AbstractSession):
     def publish(self, acks: Optional[Iterable[ua.SubscriptionAcknowledgement]] = None):
         return self.subscription_service.publish(acks or [])
 
-    def modify_subscription(self, params):
-        return self.subscription_service.modify_subscription(params)
+    async def modify_subscription(self, params: ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
+        return self.subscription_service.modify_subscription(params=params)
 
     async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
         # Subscriptions aren't bound to a Session and can be transfered!
