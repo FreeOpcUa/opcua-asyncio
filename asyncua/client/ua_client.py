@@ -115,10 +115,12 @@ class UASocketProtocol(asyncio.Protocol):
                 data = bytes(buf)
             except ua.UaStatusCodeError as e:
                 self.logger.error("Got error status from server: {}".format(e))
+                self._fail_all_pending(e)
                 self.disconnect_socket()
                 return
-            except Exception:
+            except Exception as e:
                 self.logger.exception("Exception raised while parsing message from server")
+                self._fail_all_pending(e)
                 self.disconnect_socket()
                 return
 
@@ -183,6 +185,8 @@ class UASocketProtocol(asyncio.Protocol):
         try:
             data = await wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
         except Exception as ex:
+            if isinstance(ex, ua.UaStatusCodeError):
+                raise
             if self.state != self.OPEN:
                 raise ConnectionError("Connection is closed") from None
             raise UaError("Failed to send request to OPC UA server") from ex
@@ -203,6 +207,13 @@ class UASocketProtocol(asyncio.Protocol):
             hdr.ServiceResult.check()
             return False
         return True
+
+    def _fail_all_pending(self, exc: Exception) -> None:
+        """Fail all pending request futures with the given exception."""
+        for fut in self._callbackmap.values():
+            if not fut.done():
+                fut.set_exception(exc)
+        self._callbackmap.clear()
 
     def _call_callback(self, request_id, body):
         try:
