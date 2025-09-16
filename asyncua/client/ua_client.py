@@ -115,6 +115,7 @@ class UASocketProtocol(asyncio.Protocol):
                 data = bytes(buf)
             except ua.UaStatusCodeError as e:
                 self.logger.error("Got error status from server: {}".format(e))
+                self._fail_all_pending(e)
                 self.disconnect_socket()
                 return
             except Exception:
@@ -203,6 +204,12 @@ class UASocketProtocol(asyncio.Protocol):
             hdr.ServiceResult.check()
             return False
         return True
+
+    def _fail_all_pending(self, exc: Exception) -> None:
+        for fut in self._callbackmap.values():
+            if not fut.done():
+                fut.set_exception(exc)
+        self._callbackmap.clear()
 
     def _call_callback(self, request_id, body):
         try:
