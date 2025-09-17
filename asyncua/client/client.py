@@ -1,29 +1,30 @@
 import asyncio
+import dataclasses
 import logging
 import socket
-import dataclasses
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast, Callable, Coroutine
-from urllib.parse import urlparse, unquote, ParseResult
 from pathlib import Path
+from typing import Any, Callable, Coroutine, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast
+from urllib.parse import ParseResult, unquote, urlparse
 
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 
 import asyncua
 from asyncua import ua
-from .ua_client import UaClient
-from ..common.xmlimporter import XmlImporter
-from ..common.xmlexporter import XmlExporter
-from ..common.node import Node
+
 from ..common.manage_nodes import delete_nodes
-from ..common.subscription import Subscription, SubscriptionHandler
+from ..common.node import Node
 from ..common.shortcuts import Shortcuts
-from ..common.structures import load_type_definitions, load_enums
+from ..common.structures import load_enums, load_type_definitions
 from ..common.structures104 import load_data_type_definitions
-from ..common.utils import create_nonce, ServiceError
-from ..common.ua_utils import value_to_datavalue, copy_dataclass_attr
-from ..crypto import uacrypto, security_policies
+from ..common.subscription import Subscription, SubscriptionHandler
+from ..common.ua_utils import copy_dataclass_attr, value_to_datavalue
+from ..common.utils import ServiceError, create_nonce
+from ..common.xmlexporter import XmlExporter
+from ..common.xmlimporter import XmlImporter
+from ..crypto import security_policies, uacrypto
 from ..crypto.validator import CertificateValidatorMethod
+from .ua_client import UaClient
 
 _logger = logging.getLogger(__name__)
 
@@ -198,6 +199,7 @@ class Client:
         private_key_password: Optional[Union[str, bytes]] = None,
         server_certificate: Optional[Union[str, uacrypto.CertProperties, bytes]] = None,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
+        certificate_chain: Optional[Sequence[Union[str, uacrypto.CertProperties, bytes, Path]]] = None,
     ) -> None:
         """
         Set SecureConnection mode.
@@ -222,9 +224,14 @@ class Client:
             server_certificate = uacrypto.CertProperties(server_certificate)
         if not isinstance(certificate, uacrypto.CertProperties):
             certificate = uacrypto.CertProperties(certificate)
+        certificate_chain = certificate_chain or []
+        chain = [
+            cert if isinstance(cert, uacrypto.CertProperties) else uacrypto.CertProperties(cert)
+            for cert in certificate_chain
+        ]
         if not isinstance(private_key, uacrypto.CertProperties):
             private_key = uacrypto.CertProperties(private_key, password=private_key_password)
-        return await self._set_security(policy, certificate, private_key, server_certificate, mode)
+        return await self._set_security(policy, certificate, private_key, server_certificate, mode, chain)
 
     async def _set_security(
         self,
@@ -233,17 +240,22 @@ class Client:
         private_key: uacrypto.CertProperties,
         server_cert: uacrypto.CertProperties,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
+        certificate_chain: Optional[Sequence[uacrypto.CertProperties]] = None,
     ) -> None:
         if isinstance(server_cert, uacrypto.CertProperties):
             server_cert = await uacrypto.load_certificate(server_cert.path_or_content, server_cert.extension)
         cert = await uacrypto.load_certificate(certificate.path_or_content, certificate.extension)
+        certificate_chain = certificate_chain or []
+        chain = await asyncio.gather(
+            *(uacrypto.load_certificate(cert.path_or_content, cert.extension) for cert in certificate_chain)
+        )
         pk = await uacrypto.load_private_key(
             private_key.path_or_content,
             private_key.password,
             private_key.extension,
         )
         uacrypto.check_certificate(cert, self.application_uri, socket.gethostname())
-        self.security_policy = policy(server_cert, cert, pk, mode)  # type: ignore
+        self.security_policy = policy(server_cert, cert, pk, mode, host_cert_chain=chain)
         self.uaclient.set_security(self.security_policy)
 
     async def load_client_certificate(self, path: str, extension: Optional[str] = None) -> None:

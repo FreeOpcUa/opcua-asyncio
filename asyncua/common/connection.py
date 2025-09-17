@@ -1,14 +1,14 @@
-from dataclasses import dataclass
-import hashlib
-from datetime import datetime, timedelta, timezone
-import logging
 import copy
+import hashlib
+import logging
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 
 from asyncua import ua
 from asyncua.ua.uaerrors import UaInvalidParameterError
-from ..ua.ua_binary import struct_from_binary, struct_to_binary, header_from_binary, header_to_binary
-from ..crypto.uacrypto import InvalidSignature
 
+from ..crypto.uacrypto import InvalidSignature
+from ..ua.ua_binary import header_from_binary, header_to_binary, struct_from_binary, struct_to_binary
 
 _logger = logging.getLogger("asyncua.uaprotocol")
 
@@ -190,6 +190,8 @@ class MessageChunk:
             chunk.SecurityHeader.SecurityPolicyURI = security_policy.URI
             if security_policy.host_certificate and security_policy.Mode != ua.MessageSecurityMode.None_:
                 chunk.SecurityHeader.SenderCertificate = security_policy.host_certificate
+                for cert in security_policy.host_certificate_chain:
+                    chunk.SecurityHeader.SenderCertificate += cert
             if security_policy.peer_certificate:
                 chunk.SecurityHeader.ReceiverCertificateThumbPrint = hashlib.sha1(
                     security_policy.peer_certificate
