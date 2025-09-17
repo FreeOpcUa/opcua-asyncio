@@ -261,13 +261,13 @@ class Client:
 
     async def load_client_certificate(self, path: str, extension: Optional[str] = None) -> None:
         """
-        Load our certificate from file, either pem or der
+        Load user certificate from file, either pem or der
         """
         self.user_certificate = await uacrypto.load_certificate(path, extension)
 
     async def load_client_chain(self, certs: Iterable[uacrypto.CertProperties]) -> None:
         """
-        Load intermediate chain certificates, either pem or der
+        Load user intermediate chain certificates, either pem or der
         """
         self.user_certificate_chain = await asyncio.gather(
             *(uacrypto.load_certificate(cert.path_or_content, cert.extension) for cert in certs)
@@ -343,10 +343,7 @@ class Client:
                 await self.create_session()
                 try:
                     await self.activate_session(
-                        username=self._username,
-                        password=self._password,
-                        certificate=self.user_certificate,
-                        certificate_chain=self.user_certificate_chain,
+                        username=self._username, password=self._password, certificate=self.user_certificate
                     )
                 except Exception:
                     # clean up session
@@ -666,7 +663,6 @@ class Client:
         username: Optional[str] = None,
         password: Optional[str] = None,
         certificate: Optional[x509.Certificate] = None,
-        certificate_chain: Optional[x509.Certificate] = None,
     ) -> ua.ActivateSessionResult:
         """
         Activate session using either username and password or private_key
@@ -687,7 +683,7 @@ class Client:
         if not username and not (user_certificate and self.user_private_key):
             self._add_anonymous_auth(params)
         elif user_certificate:
-            self._add_certificate_auth(params, user_certificate, challenge, certificate_chain)
+            self._add_certificate_auth(params, user_certificate, challenge, self.user_certificate_chain)
         else:
             self._add_user_auth(params, username, password)
         res = await self.uaclient.activate_session(params)
