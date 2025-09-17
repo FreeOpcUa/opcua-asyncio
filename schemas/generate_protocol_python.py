@@ -1,5 +1,10 @@
+from __future__ import annotations
 from pathlib import Path
+from typing import Optional, TYPE_CHECKING
 import datetime
+
+if TYPE_CHECKING:
+    from generate_model_from_nodeset import Enum, Field, Model, Struct
 
 BASE_DIR = Path(__file__).absolute().parent.parent
 
@@ -10,16 +15,18 @@ MyPyIgnoredStructs = ["Union"]
 
 
 class CodeGenerator:
+    """Generate uaprotocol from UA nodeset."""
 
-    def __init__(self, model, output):
+    def __init__(self, model: Model, output: Path):
         self.model = model
         self.output_path = output
         self.output_file = None
         self.indent = '    '
         self.iidx = 0  # indent index
 
-    def run(self):
-        print('Writting python protocol code to ', self.output_path)
+    def run(self) -> None:
+        """Generate and write out code."""
+        print('Writing python protocol code to ', self.output_path)
         self.output_file = open(self.output_path, 'w', encoding='utf-8')
         self.make_header()
         for alias in self.model.aliases.values():
@@ -39,25 +46,35 @@ class CodeGenerator:
         self.iidx = 0
         self.write("")
         self.write("")
+
+        # Most Json structs do not have a DefaultBinary Encoding in ObjectIds,
+        # but I know of three exceptions:
+        json_to_keep = (
+            'JsonWriterGroupMessageDataType',
+            'JsonDataSetWriterMessageDataType',
+            'JsonDataSetReaderMessageDataType',
+        )
         for struct in self.model.structs:
             if struct.name in IgnoredStructs:
-                continue
                 continue
             if struct.name.endswith('Node') or struct.name.endswith('NodeId'):
                 continue
             if struct.do_not_register:
                 continue
-            if not struct.name.startswith("Json"):  #FIXME: might filter out too many things but these do not have
+            #FIXME: might filter out too many things but these do not have
+            if not struct.name.startswith("Json") or struct.name in json_to_keep:
                 self.write(f"nid = FourByteNodeId(ObjectIds.{struct.name}_Encoding_DefaultBinary)")
-            self.write(f"extension_objects_by_typeid[nid] = {struct.name}")
-            self.write(f"extension_object_typeids['{struct.name}'] = nid")
+                self.write(f"extension_objects_by_typeid[nid] = {struct.name}")
+                self.write(f"extension_object_typeids['{struct.name}'] = nid")
 
-    def write(self, line):
+    def write(self, line: str) -> None:
+        """Write a properly indented line with newline."""
         if line:
             line = f'{self.indent * self.iidx}{line}'
         self.output_file.write(f'{line}\n')
 
-    def make_header(self):
+    def make_header(self) -> None:
+        """Write file header."""
         self.write('"""')
         self.write(f'Autogenerate code from xml spec\nDate:{datetime.datetime.now(datetime.timezone.utc)}')
         self.write('"""')
@@ -70,14 +87,15 @@ class CodeGenerator:
         self.write('from asyncua.ua.uatypes import FROZEN')
         self.write('from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32')
         self.write('from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid')
-        self.write('from asyncua.ua.uatypes import AccessLevel, EventNotifier  ')
+        self.write('from asyncua.ua.uatypes import AccessLevel, EventNotifier')
         self.write('from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue')
         self.write('from asyncua.ua.uatypes import RelativePath, RelativePathElement')
         self.write('from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo')
         self.write('from asyncua.ua.uatypes import extension_object_typeids, extension_objects_by_typeid')
         self.write('from asyncua.ua.object_ids import ObjectIds')
 
-    def generate_enum_code(self, enum):
+    def generate_enum_code(self, enum: Enum) -> None:
+        """Write IntFlag class definition for an Enum."""
         self.write('')
         self.write('')
         if enum.is_option_set:
@@ -113,7 +131,8 @@ class CodeGenerator:
                 self.write(f'{val.name} = {val.value}')
             self.iidx = 0
 
-    def generate_struct_code(self, obj):
+    def generate_struct_code(self, obj: Struct) -> None:
+        """Write dataclass definition for a Struct."""
         self.write('')
         self.write('')
         self.iidx = 0
@@ -163,7 +182,7 @@ class CodeGenerator:
             if field.name == "Encoding":
                 val = 0 if not extobj_hack else 1
                 self.write(f"{field.name}: Byte = field(default={val}, repr=False, init=False, compare=False)")
-            elif field.data_type == obj.name:  # help!!! selv referencing class
+            elif field.data_type == obj.name:  # help!!! self referencing class
                 # FIXME: Might not be good enough
                 self.write(f"{fieldname}: Optional[ExtensionObject] = None")
             elif obj.name not in ("ExtensionObject") and \
@@ -188,7 +207,8 @@ class CodeGenerator:
 
         self.iidx = 0
 
-    def get_default_value(self, field):
+    def get_default_value(self, field: Field) -> Optional[str]:
+        """Get default value for a field."""
         if field.is_optional:
             return None
         dtype = field.data_type
@@ -213,7 +233,7 @@ class CodeGenerator:
         if dtype == 'DateTime':
             return 'field(default_factory=lambda: datetime.now(timezone.utc))'
         if dtype in ('Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'Double', 'Float', 'Byte'):
-            return 0
+            return '0'
         if dtype in 'ExtensionObject':
             return 'ExtensionObject()'
         return f'field(default_factory={dtype})'

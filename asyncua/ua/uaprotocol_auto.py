@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2025-03-31 12:18:27.134351+00:00
+Date:2025-09-17 16:50:25.317057+00:00
 """
 
 from datetime import datetime, timezone
@@ -11421,42 +11421,6 @@ extension_object_typeids['JsonDataSetWriterMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.JsonDataSetReaderMessageDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = JsonDataSetReaderMessageDataType
 extension_object_typeids['JsonDataSetReaderMessageDataType'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonNetworkMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonNetworkMessage
-# extension_object_typeids['JsonNetworkMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonDataSetMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonDataSetMessage
-# extension_object_typeids['JsonDataSetMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonStatusMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonStatusMessage
-# extension_object_typeids['JsonStatusMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonActionNetworkMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonActionNetworkMessage
-# extension_object_typeids['JsonActionNetworkMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonActionRequestMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonActionRequestMessage
-# extension_object_typeids['JsonActionRequestMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonActionResponseMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonActionResponseMessage
-# extension_object_typeids['JsonActionResponseMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonDataSetMetaDataMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonDataSetMetaDataMessage
-# extension_object_typeids['JsonDataSetMetaDataMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonActionMetaDataMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonActionMetaDataMessage
-# extension_object_typeids['JsonActionMetaDataMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonApplicationDescriptionMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonApplicationDescriptionMessage
-# extension_object_typeids['JsonApplicationDescriptionMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonPubSubConnectionMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonPubSubConnectionMessage
-# extension_object_typeids['JsonPubSubConnectionMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonActionResponderMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonActionResponderMessage
-# extension_object_typeids['JsonActionResponderMessage'] = nid
-# nid = FourByteNodeId(ObjectIds.JsonServerEndpointsMessage_Encoding_DefaultBinary)
-# extension_objects_by_typeid[nid] = JsonServerEndpointsMessage
-# extension_object_typeids['JsonServerEndpointsMessage'] = nid
 nid = FourByteNodeId(ObjectIds.QosDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = QosDataType
 extension_object_typeids['QosDataType'] = nid
