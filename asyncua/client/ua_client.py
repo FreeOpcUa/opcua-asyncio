@@ -183,10 +183,13 @@ class UASocketProtocol(asyncio.Protocol):
             await self.pre_request_hook()
         try:
             data = await wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
+        except UaError as ex:
+            # Recieved UA error, re-raise it to the caller
+            raise ex
         except Exception as ex:
             if self.state != self.OPEN:
                 raise ConnectionError("Connection is closed") from None
-            raise UaError("Failed to send request to OPC UA server") from ex
+            raise Exception("Unhandled exception while sending request to OPC UA server") from ex
         self.check_answer(data, f" in response to {request.__class__.__name__}")
         return data
 
