@@ -800,11 +800,11 @@ async def test_message_limits_fail_write(restore_transport_limits_server: Server
     n = await server.nodes.objects.add_variable(1, "MyLimitVariable", test_string)
     await n.set_writable(True)
     client = Client(server.endpoint.geturl())
-    # This should trigger a timeout error because the message is to large
+    # This should trigger a UA error because the message is too large
     async with client:
         n = client.get_node(n.nodeid)
         await n.read_value()
-        with pytest.raises(ConnectionError):
+        with pytest.raises(ua.uaerrors.BadRequestTooLarge):
             await n.write_value(test_string, ua.VariantType.ByteString)
 
 
@@ -818,11 +818,11 @@ async def test_message_limits_fail_read(restore_transport_limits_server: Server)
     n = await server.nodes.objects.add_variable(1, "MyLimitVariable", test_string)
     await n.set_writable(True)
     client = Client(server.endpoint.geturl())
-    # This should trigger a connection error because the message is to large
+    # This should trigger a UA error because the message is too large
     async with client:
         n = client.get_node(n.nodeid)
         await n.write_value(test_string, ua.VariantType.ByteString)
-        with pytest.raises(ConnectionError):
+        with pytest.raises(ua.uaerrors.BadRequestTooLarge):
             await n.read_value()
 
 
