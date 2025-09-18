@@ -1,5 +1,20 @@
+"""
+Generates the certificate chain looking like:
+root
+|
+| - server
+|
+| - inter1
+    |
+    | - inter 2
+        |
+        | - client
+
+"""
+
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import List, Optional
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -36,11 +51,12 @@ def save_key_pem(key: rsa.RSAPrivateKey, file: Path) -> None:
 def save_cert_pem(cert: x509.Certificate, file: Path) -> None:
     file.with_suffix(".cert.pem").write_bytes(cert.public_bytes(serialization.Encoding.PEM))
 
+
 def save_cert_der(cert: x509.Certificate, file: Path) -> None:
     file.with_suffix(".cert.der").write_bytes(cert.public_bytes(serialization.Encoding.DER))
 
+
 def generate_private_rsa_key() -> rsa.RSAPrivateKey:
-    """Generates an RSA private key."""
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=4096,
@@ -50,7 +66,6 @@ def generate_private_rsa_key() -> rsa.RSAPrivateKey:
 
 
 def create_subject_name(common_name) -> x509.Name:
-    """Creates an X.509 Name object for the certificate subject."""
     return x509.Name(
         [
             x509.NameAttribute(NameOID.COUNTRY_NAME, COUNTRY),
@@ -159,8 +174,8 @@ def generate_inter_certificate(
 def generate_leaf_certificate(
     issuer_cert: x509.Certificate,
     issuer_cert_private_key: rsa.RSAPrivateKey,
-    common_name: str | None,
-    uris: list[str] | None = None,
+    common_name: str,
+    uris: Optional[List[str]] = None,
 ) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
     private_key = generate_private_rsa_key()
 
