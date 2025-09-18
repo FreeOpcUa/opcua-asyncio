@@ -32,6 +32,8 @@ from ..common.connection import TransportLimits
 from ..crypto import security_policies, uacrypto, validator
 from ..crypto.permission_rules import SimpleRoleRuleset
 
+from ..pubsub.pubsub import PubSub
+
 _logger = logging.getLogger(__name__)
 
 
@@ -121,6 +123,7 @@ class Server:
             max_chunk_count=math.ceil(max_msg_sz / buffer_sz),  # Round up to allow max msg size
             max_message_size=max_msg_sz,
         )
+        self._pubsub: Optional[PubSub] = None
 
     async def init(self, shelf_file: Optional[Path] = None):
         await self.iserver.init(shelf_file)
@@ -516,6 +519,8 @@ class Server:
             await asyncio.gather(*[client.disconnect() for client in self._discovery_clients.values()])
         await self.bserver.stop()
         await self.iserver.stop()
+        if self._pubsub is not None:
+            await self._pubsub.stop()
         _logger.debug("%s Internal server stopped, everything closed", self)
 
     def get_root_node(self):
@@ -821,3 +826,12 @@ class Server:
                     raise ServiceError(ua.StatusCodes.BadCertificateInvalid)
         """
         self.iserver.certificate_validator = validator
+
+    async def get_pubsub(self) -> PubSub:
+        """
+        gets the pubsub model
+        """
+        if self._pubsub is None:
+            self._pubsub = PubSub(server=self)
+            await self._pubsub.init_information_model()
+        return self._pubsub

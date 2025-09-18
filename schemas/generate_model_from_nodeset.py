@@ -1,17 +1,18 @@
 """
 Generate address space code from xml file specification
 """
+from __future__ import annotations
 from xml.etree import ElementTree
 from logging import getLogger
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 import re
 from pathlib import Path
 
 _logger = getLogger(__name__)
 
-IgnoredEnums = []
-IgnoredStructs = []
+IgnoredEnums: List[str] = []
+IgnoredStructs: List[str] = []
 
 # by default, we split requests and responses in header and parameters, but some are so simple we do not split them
 NoSplitStruct = [
@@ -136,6 +137,13 @@ class Alias:
 
 
 class Model:
+    structs: List[Struct]
+    enums: List[Enum]
+    struct_list: List[str]
+    enum_list: List[str]
+    known_structs: List[str]
+    aliases: Dict[str, Alias]
+
     def __init__(self):
         self.structs = []
         self.enums = []
@@ -144,32 +152,32 @@ class Model:
         self.known_structs = []
         self.aliases = {}
 
-    def get_struct(self, name):
+    def get_struct(self, name: str) -> Struct:
         for struct in self.structs:
             if name == struct.name:
                 return struct
         raise Exception("No struct named: " + name)
 
-    def get_struct_by_nodeid(self, nodeid):
+    def get_struct_by_nodeid(self, nodeid: str) -> Struct:
         for struct in self.structs:
             if nodeid == struct.node_id:
                 return struct
         raise Exception("No struct with node id: " + nodeid)
 
-    def get_enum(self, name):
+    def get_enum(self, name: str) -> Enum:
         for s in self.enums:
             if name == s.name:
                 return s
         raise Exception("No enum named: " + str(name))
 
-    def get_alias(self, name):
+    def get_alias(self, name: str) -> Optional[Alias]:
         for alias in self.aliases.values():
             if alias.name == name:
                 return alias
         return None
 
 
-def _add_struct(struct, newstructs, waiting_structs, known_structs):
+def _add_struct(struct: Struct, newstructs: List[Struct], waiting_structs, known_structs: List[str]):
     newstructs.append(struct)
     known_structs.append(struct.name)
     # now seeing if some struct where waiting for this one
@@ -181,8 +189,8 @@ def _add_struct(struct, newstructs, waiting_structs, known_structs):
                 _add_struct(s, newstructs, waiting_structs, known_structs)
 
 
-def reorder_structs(model):
-    types = IgnoredStructs + IgnoredEnums + buildin_types + [
+def reorder_structs(model: Model):
+    types: List[str] = IgnoredStructs + IgnoredEnums + buildin_types + [
         'StatusCode',
         'DiagnosticInfo',
         "ExtensionObject",
@@ -196,8 +204,8 @@ def reorder_structs(model):
         "DataValue",
         "LocalizedText",
     ] + [enum.name for enum in model.enums] + ['VariableAccessLevel'] + [alias.name for alias in model.aliases.values()]
-    waiting_structs = {}
-    newstructs = []
+    waiting_structs: Dict[str, List[Struct]] = {}
+    newstructs: List[Struct] = []
     for s in model.structs:
         s.waitingfor = []
         ok = True
@@ -222,7 +230,7 @@ def reorder_structs(model):
     model.structs = newstructs
 
 
-def nodeid_to_names(model):
+def nodeid_to_names(model: Model):
     ids = {}
     with open(Path.cwd() / "UA-Nodeset-master" / "Schema" / "NodeIds.csv") as f:
         for line in f:
@@ -246,7 +254,7 @@ def nodeid_to_names(model):
             enum.base_type = ids[enum.base_type[2:]]
 
 
-def split_requests(model):
+def split_requests(model: Model):
     structs = []
     for struct in model.structs:
         structtype = None
@@ -278,7 +286,7 @@ def split_requests(model):
     model.structs = structs
 
 
-def get_basetypes(el) -> List[str]:
+def get_basetypes(el: ElementTree.Element) -> List[str]:
     # return all basetypes
     basetypes = []
     for ref in el.findall("./{*}References/{*}Reference"):
@@ -290,12 +298,14 @@ def get_basetypes(el) -> List[str]:
 
 
 class Parser:
-    def __init__(self, path):
+    model: Optional[Model]
+
+    def __init__(self, path: Path):
         self.path = path
         self.model = None
         self._tag_re = re.compile(r"\{.*\}(.*)")
 
-    def parse(self):
+    def parse(self) -> Model:
         _logger.debug("Parsing: %s", self.path)
         self.model = Model()
         tree = ElementTree.parse(self.path)
@@ -305,8 +315,13 @@ class Parser:
 
         return self.model
 
-    def _add_data_type(self, el):
+    def _add_data_type(self, el: ElementTree.Element):
+        if self.model is None:
+            raise RuntimeError("Model not initialized")
+
         name = el.get("BrowseName")
+        if name is None:
+            raise RuntimeError(f'No BrowseName for element: {el}')
 
         for ref in el.findall("./{*}References/{*}Reference"):
             if ref.get("ReferenceType") == "HasSubtype" and ref.get("IsForward", "true") == "false":
@@ -315,6 +330,7 @@ class Parser:
                     self.model.enums.append(enum)
                     self.model.enum_list.append(enum.name)
                     return
+
                 if ref.text in ("i=2", "i=3", "i=4", "i=5", "i=6", "i=7", "i=8", "i=9"):
                     # looks like some enums are defined there too
                     enum = self.parse_enum(name, el, ref.text)
@@ -337,20 +353,25 @@ class Parser:
                     self.model.known_structs.append(struct.node_id)
                     self.model.struct_list.append(struct.name)
                     return
+
                 if 0 < int(ref.text[2:]) < 21:
                     alias = Alias(name, el.get("NodeId"), ref.text)
                     self.model.aliases[alias.data_type] = alias
                     return
+
                 if ref.text in self.model.aliases:
                     alias = Alias(name, el.get("NodeId"), self.model.aliases[ref.text].real_type)
                     self.model.aliases[alias.data_type] = alias
                     return
+
                 if ref.text in ("i=24"):
                     return
+
                 _logger.warning(" %s is of unknown type %s", name, ref.text)
 
     @staticmethod
-    def parse_struct(name, el):
+    def parse_struct(name: str, el: ElementTree.Element) -> Struct:
+        """Parse the XML element into a Struct."""
         doc_el = el.find("{*}Documentation")
         if doc_el is not None:
             doc = doc_el.text
@@ -385,17 +406,19 @@ class Parser:
         return struct
 
     @staticmethod
-    def parse_enum(name, el, base_type):
+    def parse_enum(name: str, el: ElementTree.Element, base_type: str) -> Enum:
+        """Parse the XML element into a Enum."""
         doc_el = el.find("{*}Documentation")
         if doc_el is not None:
             doc = doc_el.text
         else:
             doc = ""
+        is_option_set = el.find("./{*}Definition/[@IsOptionSet]")
         enum = Enum(
             name=name,
             data_type=el.get("NodeId"),
             doc=doc,
-            is_option_set=el.find("./{*}Definition/[@IsOptionSet]"),
+            is_option_set=bool(is_option_set and is_option_set.text and is_option_set.text != 'false'),
             base_type=base_type
         )
         for f in el.findall("./{*}Definition/{*}Field"):
@@ -404,7 +427,7 @@ class Parser:
         return enum
 
 
-def fix_names(model):
+def fix_names(model: Model):
     for s in model.enums:
         for f in s.fields:
             if f.name == 'None':
@@ -415,7 +438,7 @@ def fix_names(model):
             for f in s.fields:
                 if f.data_type[0] == "3":
                     f.data_type = "Three" + s.name[1:]
-        # Next code mght be better but the only case is the "3" above and
+        # Next code might be better but the only case is the "3" above and
         # at many places the structs are call Three instead of 3 so the
         # code over ie better for now
 

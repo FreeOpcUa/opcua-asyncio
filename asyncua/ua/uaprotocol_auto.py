@@ -1,6 +1,6 @@
 """
 Autogenerate code from xml spec
-Date:2025-03-31 12:18:27.134351+00:00
+Date:2025-09-17 16:50:25.317057+00:00
 """
 
 from datetime import datetime, timezone
@@ -11412,10 +11412,13 @@ extension_object_typeids['UadpDataSetWriterMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.UadpDataSetReaderMessageDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = UadpDataSetReaderMessageDataType
 extension_object_typeids['UadpDataSetReaderMessageDataType'] = nid
+nid = FourByteNodeId(ObjectIds.JsonWriterGroupMessageDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = JsonWriterGroupMessageDataType
 extension_object_typeids['JsonWriterGroupMessageDataType'] = nid
+nid = FourByteNodeId(ObjectIds.JsonDataSetWriterMessageDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = JsonDataSetWriterMessageDataType
 extension_object_typeids['JsonDataSetWriterMessageDataType'] = nid
+nid = FourByteNodeId(ObjectIds.JsonDataSetReaderMessageDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = JsonDataSetReaderMessageDataType
 extension_object_typeids['JsonDataSetReaderMessageDataType'] = nid
 nid = FourByteNodeId(ObjectIds.QosDataType_Encoding_DefaultBinary)
@@ -11469,18 +11472,6 @@ extension_object_typeids['PubSubConfigurationRefDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PubSubConfigurationValueDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PubSubConfigurationValueDataType
 extension_object_typeids['PubSubConfigurationValueDataType'] = nid
-extension_objects_by_typeid[nid] = JsonNetworkMessage
-extension_object_typeids['JsonNetworkMessage'] = nid
-extension_objects_by_typeid[nid] = JsonDataSetMessage
-extension_object_typeids['JsonDataSetMessage'] = nid
-extension_objects_by_typeid[nid] = JsonStatusMessage
-extension_object_typeids['JsonStatusMessage'] = nid
-extension_objects_by_typeid[nid] = JsonActionNetworkMessage
-extension_object_typeids['JsonActionNetworkMessage'] = nid
-extension_objects_by_typeid[nid] = JsonActionRequestMessage
-extension_object_typeids['JsonActionRequestMessage'] = nid
-extension_objects_by_typeid[nid] = JsonActionResponseMessage
-extension_object_typeids['JsonActionResponseMessage'] = nid
 nid = FourByteNodeId(ObjectIds.AliasNameDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = AliasNameDataType
 extension_object_typeids['AliasNameDataType'] = nid
@@ -11562,10 +11553,6 @@ extension_object_typeids['PublishedActionMethodDataType'] = nid
 nid = FourByteNodeId(ObjectIds.StandaloneSubscribedDataSetDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = StandaloneSubscribedDataSetDataType
 extension_object_typeids['StandaloneSubscribedDataSetDataType'] = nid
-extension_objects_by_typeid[nid] = JsonDataSetMetaDataMessage
-extension_object_typeids['JsonDataSetMetaDataMessage'] = nid
-extension_objects_by_typeid[nid] = JsonActionMetaDataMessage
-extension_object_typeids['JsonActionMetaDataMessage'] = nid
 nid = FourByteNodeId(ObjectIds.OptionSet_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = OptionSet
 extension_object_typeids['OptionSet'] = nid
@@ -11575,8 +11562,6 @@ extension_object_typeids['TimeZoneDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ApplicationDescription_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = ApplicationDescription
 extension_object_typeids['ApplicationDescription'] = nid
-extension_objects_by_typeid[nid] = JsonApplicationDescriptionMessage
-extension_object_typeids['JsonApplicationDescriptionMessage'] = nid
 nid = FourByteNodeId(ObjectIds.RequestHeader_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RequestHeader
 extension_object_typeids['RequestHeader'] = nid
@@ -11634,15 +11619,9 @@ extension_object_typeids['PubSubConnectionDataType'] = nid
 nid = FourByteNodeId(ObjectIds.PubSubConfigurationDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PubSubConfigurationDataType
 extension_object_typeids['PubSubConfigurationDataType'] = nid
-extension_objects_by_typeid[nid] = JsonPubSubConnectionMessage
-extension_object_typeids['JsonPubSubConnectionMessage'] = nid
-extension_objects_by_typeid[nid] = JsonActionResponderMessage
-extension_object_typeids['JsonActionResponderMessage'] = nid
 nid = FourByteNodeId(ObjectIds.PubSubConfiguration2DataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PubSubConfiguration2DataType
 extension_object_typeids['PubSubConfiguration2DataType'] = nid
-extension_objects_by_typeid[nid] = JsonServerEndpointsMessage
-extension_object_typeids['JsonServerEndpointsMessage'] = nid
 nid = FourByteNodeId(ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = GetEndpointsRequest
 extension_object_typeids['GetEndpointsRequest'] = nid
