@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
-from typing import Tuple, Union, List
+from typing import Union
 
 from ..common.utils import Buffer
 from ..ua import VariantType
@@ -173,7 +173,7 @@ class UadpHeader:
         return b"".join(b)
 
     @staticmethod
-    def from_binary(data) -> Tuple[MessageHeaderFlags, UadpHeader]:
+    def from_binary(data) -> tuple[MessageHeaderFlags, UadpHeader]:
         header = UadpHeader()
         flags = MessageHeaderFlags(Primitives.Byte.unpack(data))
         if MessageHeaderFlags.EXTENDED_FLAGS_1 in flags:
@@ -204,7 +204,7 @@ class UadpChunk:
     ChunkData: Bytes = Bytes(b"")
 
     def to_binary(self) -> bytes:
-        b: List[bytes] = []
+        b: list[bytes] = []
         b.append(Primitives.UInt16.pack(self.MessageSequenceNo))
         b.append(Primitives.UInt32.pack(self.ChunkOffset))
         b.append(Primitives.UInt32.pack(self.TotalSize))
@@ -315,7 +315,7 @@ class UadpDataSetMessageHeader:
         return b"".join(b)
 
     @staticmethod
-    def from_binary(data) -> Tuple[MessageDataSetFlags, UadpDataSetMessageHeader]:
+    def from_binary(data) -> tuple[MessageDataSetFlags, UadpDataSetMessageHeader]:
         header = UadpDataSetMessageHeader()
         flags = MessageDataSetFlags(Primitives.Byte.unpack(data))
         if MessageDataSetFlags.FLAGS2 in flags:
@@ -346,7 +346,7 @@ class UadpPublisherEndpointsResp:
     Response with the Endpoint of the publisher
     """
 
-    Endpoints: List[EndpointDescription] = field(default_factory=list)
+    Endpoints: list[EndpointDescription] = field(default_factory=list)
     Status: StatusCode = StatusCode(UInt32(StatusCodes.Good))
 
 
@@ -367,15 +367,15 @@ class UadpDataSetWriterResp:
     Response with the DataSetWriters of a Writer Group
     """
 
-    DataSetWriterIds: List[UInt16] = field(default_factory=list)
+    DataSetWriterIds: list[UInt16] = field(default_factory=list)
     DataSetWriterConfig: WriterGroupDataType = field(default_factory=WriterGroupDataType)
-    Status: List[StatusCode] = field(default_factory=list)
+    Status: list[StatusCode] = field(default_factory=list)
 
 
 @dataclass
 class UadpDiscoveryRequest:
     Type: InformationType = 0
-    DataSetWriterIds: List[UInt16] = field(default_factory=list)
+    DataSetWriterIds: list[UInt16] = field(default_factory=list)
 
 
 @dataclass
@@ -408,7 +408,7 @@ class DeltaRaw:
 @dataclass
 class UadpDataSetDeltaVariant:
     Header: UadpDataSetMessageHeader = field(default_factory=UadpDataSetMessageHeader)
-    Data: List[DeltaVariant] = field(default_factory=list)
+    Data: list[DeltaVariant] = field(default_factory=list)
 
     def message_to_binary(self) -> bytes:
         b = []
@@ -427,7 +427,7 @@ class UadpDataSetDeltaVariant:
 @dataclass
 class UadpDataSetDeltaDataValue:
     Header: UadpDataSetMessageHeader = field(default_factory=UadpDataSetMessageHeader)
-    Data: List[DeltaDataValue] = field(default_factory=list)
+    Data: list[DeltaDataValue] = field(default_factory=list)
 
     def message_to_binary(self) -> bytes:
         b = []
@@ -446,7 +446,7 @@ class UadpDataSetDeltaDataValue:
 @dataclass
 class UadpDataSetDeltaRaw:
     Header: UadpDataSetMessageHeader = field(default_factory=UadpDataSetMessageHeader)
-    Data: List[DeltaRaw] = field(default_factory=bytes)
+    Data: list[DeltaRaw] = field(default_factory=bytes)
 
     def message_to_binary(self) -> bytes:
         raise NotImplementedError("Raw Message is not implemented!")
@@ -459,7 +459,7 @@ class UadpDataSetDeltaRaw:
 @dataclass
 class UadpDataSetVariant:
     Header: UadpDataSetMessageHeader = field(default_factory=UadpDataSetMessageHeader)
-    Data: List[Variant] = field(default_factory=list)
+    Data: list[Variant] = field(default_factory=list)
 
     def message_to_binary(self) -> bytes:
         b = []
@@ -478,7 +478,7 @@ class UadpDataSetVariant:
 @dataclass
 class UadpDataSetDataValue:
     Header: UadpDataSetMessageHeader = field(default_factory=UadpDataSetMessageHeader)
-    Data: List[DataValue] = field(default_factory=list)
+    Data: list[DataValue] = field(default_factory=list)
 
     def message_to_binary(self) -> bytes:
         b = []
@@ -529,7 +529,7 @@ class UadpDataSetMessage(Protocol):
         raise NotImplementedError("UadpDataSetMessage is a abstract class")
 
 
-def _pack_payload(msgs: List[UadpDataSetMessage], has_payload_header: bool) -> bytes:
+def _pack_payload(msgs: list[UadpDataSetMessage], has_payload_header: bool) -> bytes:
     b = []
     for msg in msgs:
         b.append(msg.message_to_binary())
@@ -541,12 +541,12 @@ def _pack_payload(msgs: List[UadpDataSetMessage], has_payload_header: bool) -> b
     return b"".join(b)
 
 
-def _unpack_payload(data: Buffer, payload_header_count: int | None) -> List[UadpDataSetMessage]:
+def _unpack_payload(data: Buffer, payload_header_count: int | None) -> list[UadpDataSetMessage]:
     """
     Unpack (at least one) DataSet payload.
     """
-    sizes: List[int] = []
-    payload: List[UadpDataSetMessage] = []
+    sizes: list[int] = []
+    payload: list[UadpDataSetMessage] = []
     if payload_header_count and payload_header_count > 1:
         # Sizes is omitted if count is 1 *OR* payload header was omitted.
         for _ in range(0, payload_header_count):
@@ -589,11 +589,11 @@ class UadpNetworkMessage:
 
     Header: UadpHeader = field(default_factory=UadpHeader)
     GroupHeader: UadpGroupHeader | None = None
-    DataSetPayloadHeader: List[UInt16] = field(default_factory=list)
+    DataSetPayloadHeader: list[UInt16] = field(default_factory=list)
     Timestamp: DateTime | None = None
     PicoSeconds: UInt16 | None = None
-    PromotedFields: List[Variant] = field(default_factory=list)
-    Payload: Union[List[UadpDataSetMessage], UadpDiscoveryRequest, UadpDiscoveryResponse, UadpChunk] = None
+    PromotedFields: list[Variant] = field(default_factory=list)
+    Payload: Union[list[UadpDataSetMessage], UadpDiscoveryRequest, UadpDiscoveryResponse, UadpChunk] = None
 
     def to_binary(self) -> bytes:
         flags = MessageHeaderFlags.NONE

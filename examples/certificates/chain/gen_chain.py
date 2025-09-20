@@ -14,7 +14,7 @@ root
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import List
+
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -175,7 +175,7 @@ def generate_leaf_certificate(
     issuer_cert: x509.Certificate,
     issuer_cert_private_key: rsa.RSAPrivateKey,
     common_name: str,
-    uris: List[str] | None = None,
+    uris: list[str] | None = None,
 ) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
     private_key = generate_private_rsa_key()
 

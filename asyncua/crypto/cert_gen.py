@@ -2,7 +2,7 @@
 crypothelper contains helper functions to isolate the lower level cryto stuff from the GDS client.
 """
 
-from typing import Dict, List
+from typing import Dict
 import datetime
 from pathlib import Path
 
@@ -25,7 +25,7 @@ OID_NAME_MAP: Dict[str, x509.ObjectIdentifier] = {name: oid for oid, name in OID
 """ Create lookup table for x509.ObjectIdentifier based on textual name, by swapping key<>value of the available mapping"""
 
 
-def _names_to_nameattributes(names: Dict[str, str]) -> List[x509.NameAttribute]:
+def _names_to_nameattributes(names: Dict[str, str]) -> list[x509.NameAttribute]:
     """Convert a dict with key/value of an x509.NameAttribute list
 
     Args:
@@ -65,8 +65,8 @@ def generate_self_signed_app_certificate(
     private_key: rsa.RSAPrivateKey,
     common_name: str,
     names: Dict[str, str],
-    subject_alt_names: List[x509.GeneralName],
-    extended: List[x509.ObjectIdentifier],
+    subject_alt_names: list[x509.GeneralName],
+    extended: list[x509.ObjectIdentifier],
     days: int = 365,
 ) -> x509.Certificate:
     """Generate a self signed certificate for OPC UA client/server application that is according to OPC 10000-4 6.1 / OPC 10000-6 6.2.2
@@ -84,7 +84,7 @@ def generate_self_signed_app_certificate(
         x509.Certificate: The generated certificate.
     """
     generate_ca = len(extended) == 0
-    name_attributes: List[x509.NameAttribute] = _names_to_nameattributes(names)
+    name_attributes: list[x509.NameAttribute] = _names_to_nameattributes(names)
     name_attributes.insert(0, x509.NameAttribute(NameOID.COMMON_NAME, common_name))
 
     public_key = private_key.public_key()
@@ -137,8 +137,8 @@ def generate_app_certificate_signing_request(
     private_key: rsa.RSAPrivateKey,
     common_name: str,
     names: Dict[str, str],
-    subject_alt_names: List[x509.GeneralName],
-    extended: List[x509.ObjectIdentifier],
+    subject_alt_names: list[x509.GeneralName],
+    extended: list[x509.ObjectIdentifier],
 ) -> x509.CertificateSigningRequest:
     """Generate a certificate signing request for a OPC UA client/server application that is according to OPC 10000-4 6.1 / OPC 10000-6 6.2.2
 
@@ -153,7 +153,7 @@ def generate_app_certificate_signing_request(
         x509.CertificateSigningRequest: The generated certificate signing request
     """
 
-    name_attributes: List[x509.NameAttribute] = _names_to_nameattributes(names)
+    name_attributes: list[x509.NameAttribute] = _names_to_nameattributes(names)
     name_attributes.insert(0, x509.NameAttribute(NameOID.COMMON_NAME, common_name))
 
     builder = x509.CertificateSigningRequestBuilder()
@@ -236,7 +236,7 @@ async def setup_self_signed_certificate(
     cert_file: Path,
     app_uri: str,
     host_name: str,
-    cert_use: List[x509.ObjectIdentifier],
+    cert_use: list[x509.ObjectIdentifier],
     subject_attrs: Dict[str, str],
 ):
     """Convenient helper for generating  a key and or basic certificate if needed:
@@ -250,7 +250,7 @@ async def setup_self_signed_certificate(
         cert_file (Path): file that should contains the certificate in DER formar
         app_uri (str): app uri for client or server
         host_name (str): hostname used in certificate sub alternative names
-        cert_use (List[x509.ObjectIdentifier]): constains the use of the cert (ExtendedKeyUsageOID.CLIENT_AUTH and or ExtendedKeyUsageOID.SERVER_AUTH)
+        cert_use (list[x509.ObjectIdentifier]): constains the use of the cert (ExtendedKeyUsageOID.CLIENT_AUTH and or ExtendedKeyUsageOID.SERVER_AUTH)
         subject_attrs (Dict[str, str]): subject fields
     """
 
@@ -270,7 +270,7 @@ async def setup_self_signed_certificate(
         generate_cert = check_certificate(cert, app_uri, host_name)
 
     if generate_cert:
-        subject_alt_names: List[x509.GeneralName] = [
+        subject_alt_names: list[x509.GeneralName] = [
             x509.UniformResourceIdentifier(app_uri),
             x509.DNSName(f"{host_name}"),
         ]

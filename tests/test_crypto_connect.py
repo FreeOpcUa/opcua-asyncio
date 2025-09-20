@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple
+
 import pytest
 import asyncio
 
@@ -495,7 +495,7 @@ async def test_anonymous_rejection():
     await srv.stop()
 
 
-async def test_security_level_endpoints(srv_crypto_all_certs: Tuple[Server, str]):
+async def test_security_level_endpoints(srv_crypto_all_certs: tuple[Server, str]):
     srv = srv_crypto_all_certs[0]
 
     end_points: list[ua.EndpointDescription] = await srv.get_endpoints()

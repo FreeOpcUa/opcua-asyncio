@@ -7,7 +7,6 @@ Use of cryptography module is prefered, but  doesn't provide functionality for t
 
 """
 
-from typing import List
 from pathlib import Path
 import re
 from datetime import datetime, timezone
@@ -28,7 +27,7 @@ class TrustStore:
     It doesn't check other content of extensions of the certificate
     """
 
-    def __init__(self, trust_locations: List[Path], crl_locations: List[Path]):
+    def __init__(self, trust_locations: list[Path], crl_locations: list[Path]):
         """Constructor of the TrustStore
 
         Args:
@@ -36,19 +35,19 @@ class TrustStore:
             crl_locations (list[Path]): one or multiple locations that contain CRL. TYpe should be DER.
         """
 
-        self._trust_locations: List[Path] = trust_locations
-        self._crl_locations: List[Path] = crl_locations
+        self._trust_locations: list[Path] = trust_locations
+        self._crl_locations: list[Path] = crl_locations
 
         self._trust_store: crypto.X509Store = crypto.X509Store()
 
-        self._revoked_list: List[x509.RevokedCertificate] = []
+        self._revoked_list: list[x509.RevokedCertificate] = []
 
     @property
-    def trust_locations(self) -> List[Path]:
+    def trust_locations(self) -> list[Path]:
         return self._trust_locations
 
     @property
-    def crl_locations(self) -> List[Path]:
+    def crl_locations(self) -> list[Path]:
         return self._crl_locations
 
     async def load(self):

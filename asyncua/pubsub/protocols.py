@@ -2,7 +2,7 @@
 Protocols which are used to decouple components from pubsub
 """
 
-from typing import List, Union
+from typing import Union
 from ..ua.uatypes import Byte, ExtensionObject, String, UInt16, UInt32, UInt64
 from ..ua.uaprotocol_auto import PubSubState
 from .uadp import UadpNetworkMessage
@@ -22,7 +22,7 @@ class PubSubSender(Protocol):
     Implements sending Messages
     """
 
-    def send_uadp(self, msgs: List[UadpNetworkMessage]):
+    def send_uadp(self, msgs: list[UadpNetworkMessage]):
         """
         Sends a UadpMessage if supported!
         """
@@ -57,7 +57,7 @@ class PubSubReceiver(Protocol):
 class SubscribedDataSet(Protocol):
     """Receiver for subscribed datasets"""
 
-    async def on_dataset_received(self, meta: DataSetMeta, fields: List[DataSetValue]):
+    async def on_dataset_received(self, meta: DataSetMeta, fields: list[DataSetValue]):
         """Called when a published dataset received an update"""
         raise NotImplementedError
 

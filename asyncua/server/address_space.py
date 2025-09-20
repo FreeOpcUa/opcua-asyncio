@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Dict, List, Union, Tuple
+    from typing import Dict, Union
     from collections.abc import Callable, Generator
     from asyncua.ua.uaprotocol_auto import (
         ObjectAttributes,
@@ -65,7 +65,7 @@ class NodeData:
     def __init__(self, nodeid: ua.NodeId):
         self.nodeid = nodeid
         self.attributes: Dict[ua.AttributeIds, AttributeValue] = {}
-        self.references: List[ua.ReferenceDescription] = []
+        self.references: list[ua.ReferenceDescription] = []
         self.call = None
 
     def __str__(self) -> str:
@@ -84,16 +84,16 @@ class AttributeService:
         self.logger = logging.getLogger(__name__)
         self._aspace: AddressSpace = aspace
 
-    def read(self, params: ua.ReadParameters) -> List[ua.DataValue]:
+    def read(self, params: ua.ReadParameters) -> list[ua.DataValue]:
         # self.logger.debug("read %s", params)
-        res: List[ua.DataValue] = []
+        res: list[ua.DataValue] = []
         for readvalue in params.NodesToRead:
             res.append(self._aspace.read_attribute_value(readvalue.NodeId, readvalue.AttributeId))
         return res
 
-    async def write(self, params: ua.WriteParameters, user: User = User(role=UserRole.Admin)) -> List[ua.StatusCode]:
+    async def write(self, params: ua.WriteParameters, user: User = User(role=UserRole.Admin)) -> list[ua.StatusCode]:
         # self.logger.debug("write %s as user %s", params, user)
-        res: List[ua.StatusCode] = []
+        res: list[ua.StatusCode] = []
         for writevalue in params.NodesToWrite:
             if user.role != UserRole.Admin:
                 if writevalue.AttributeId != ua.AttributeIds.Value:
@@ -131,9 +131,9 @@ class ViewService:
         self.logger = logging.getLogger(__name__)
         self._aspace: AddressSpace = aspace
 
-    def browse(self, params: ua.BrowseParameters) -> List[ua.BrowseResult]:
+    def browse(self, params: ua.BrowseParameters) -> list[ua.BrowseResult]:
         # self.logger.debug("browse %s", params)
-        res: List[ua.BrowseResult] = []
+        res: list[ua.BrowseResult] = []
         for desc in params.NodesToBrowse:
             res.append(self._browse(desc))
         return res
@@ -191,9 +191,9 @@ class ViewService:
             return True
         return False
 
-    def translate_browsepaths_to_nodeids(self, browsepaths: List[ua.BrowsePath]) -> List[ua.BrowsePathResult]:
+    def translate_browsepaths_to_nodeids(self, browsepaths: list[ua.BrowsePath]) -> list[ua.BrowsePathResult]:
         # self.logger.debug("translate browsepath: %s", browsepaths)
-        results: List[ua.BrowsePathResult] = []
+        results: list[ua.BrowsePathResult] = []
         for path in browsepaths:
             results.append(self._translate_browsepath_to_nodeid(path))
         return results
@@ -221,7 +221,7 @@ class ViewService:
         # FIXME: might need to order these one way or another
         return res
 
-    def _navigate(self, start_nodeid: ua.NodeId, elements: List[ua.RelativePathElement]) -> List[ua.NodeId]:
+    def _navigate(self, start_nodeid: ua.NodeId, elements: list[ua.RelativePathElement]) -> list[ua.NodeId]:
         current_nodeids = [start_nodeid]
         for el in elements:
             new_currents = []
@@ -234,9 +234,9 @@ class ViewService:
             current_nodeids = new_currents
         return current_nodeids
 
-    def _find_elements_in_node(self, el: ua.RelativePathElement, nodeid: ua.NodeId) -> List[ua.NodeId]:
+    def _find_elements_in_node(self, el: ua.RelativePathElement, nodeid: ua.NodeId) -> list[ua.NodeId]:
         nodedata: NodeData = self._aspace[nodeid]
-        nodeids: List[ua.NodeId] = []
+        nodeids: list[ua.NodeId] = []
         for ref in nodedata.references:
             if ref.BrowseName != el.TargetName:
                 continue
@@ -259,15 +259,15 @@ class NodeManagementService:
         self._aspace: AddressSpace = aspace
 
     def add_nodes(
-        self, addnodeitems: List[ua.AddNodesItem], user: User = User(role=UserRole.Admin)
-    ) -> List[ua.AddNodesResult]:
-        results: List[ua.AddNodesResult] = []
+        self, addnodeitems: list[ua.AddNodesItem], user: User = User(role=UserRole.Admin)
+    ) -> list[ua.AddNodesResult]:
+        results: list[ua.AddNodesResult] = []
         for item in addnodeitems:
             results.append(self._add_node(item, user))
         return results
 
     def try_add_nodes(
-        self, addnodeitems: List[ua.AddNodesItem], user: User = User(role=UserRole.Admin), check: bool = True
+        self, addnodeitems: list[ua.AddNodesItem], user: User = User(role=UserRole.Admin), check: bool = True
     ):
         for item in addnodeitems:
             ret = self._add_node(item, user, check=check)
@@ -409,8 +409,8 @@ class NodeManagementService:
 
     def delete_nodes(
         self, deletenodeitems: ua.DeleteNodesParameters, user: User = User(role=UserRole.Admin)
-    ) -> List[ua.StatusCode]:
-        results: List[ua.StatusCode] = []
+    ) -> list[ua.StatusCode]:
+        results: list[ua.StatusCode] = []
         for item in deletenodeitems.NodesToDelete:
             results.append(self._delete_node(item, user))
         return results
@@ -447,12 +447,12 @@ class NodeManagementService:
                     )
 
     def add_references(
-        self, refs: List[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)
+        self, refs: list[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)
     ):  # FIXME return type
         result = [self._add_reference(ref, user) for ref in refs]
         return result
 
-    def try_add_references(self, refs: List[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)):
+    def try_add_references(self, refs: list[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)):
         for ref in refs:
             if not self._add_reference(ref, user).is_good():
                 yield ref
@@ -488,9 +488,9 @@ class NodeManagementService:
         return self._add_unique_reference(sourcedata, rdesc)
 
     def delete_references(
-        self, refs: List[ua.DeleteReferencesItem], user: User = User(role=UserRole.Admin)
-    ) -> List[ua.StatusCode]:
-        result: List[ua.StatusCode] = []
+        self, refs: list[ua.DeleteReferencesItem], user: User = User(role=UserRole.Admin)
+    ) -> list[ua.StatusCode]:
+        result: list[ua.StatusCode] = []
         for ref in refs:
             result.append(self._delete_reference(ref, user))
         return result
@@ -638,7 +638,7 @@ class AddressSpace:
         self.force_server_timestamp: bool = True
         self._nodes: Dict[ua.NodeId, NodeData] = {}
         self._datachange_callback_counter = 200
-        self._handle_to_attribute_map: Dict[int, Tuple[ua.NodeId, ua.AttributeIds]] = {}
+        self._handle_to_attribute_map: Dict[int, tuple[ua.NodeId, ua.AttributeIds]] = {}
         self._default_idx = 2
         self._nodeid_counter = {0: 20000, 1: 2000}
 
@@ -890,7 +890,7 @@ class AddressSpace:
 
     def add_datachange_callback(
         self, nodeid: ua.NodeId, attr: ua.AttributeIds, callback: Callable
-    ) -> Tuple[ua.StatusCode, int]:
+    ) -> tuple[ua.StatusCode, int]:
         # self.logger.debug("set attr callback: %s %s %s", nodeid, attr, callback)
         if nodeid not in self._nodes:
             return ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown), 0

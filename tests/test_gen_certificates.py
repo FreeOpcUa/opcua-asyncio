@@ -1,6 +1,5 @@
 """Several tests for certificate /signing request generation"""
 
-from typing import List
 from datetime import datetime, timedelta, timezone
 import socket
 from cryptography import x509
@@ -29,7 +28,7 @@ async def test_create_self_signed_app_certificate() -> None:
         "localityName": "Foo",
         "organizationName": "Bar Ltd",
     }
-    subject_alt_names: List[x509.GeneralName] = [
+    subject_alt_names: list[x509.GeneralName] = [
         x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
         x509.DNSName(f"{hostname}"),
     ]
@@ -125,7 +124,7 @@ async def test_app_create_certificate_signing_request() -> None:
         "localityName": "Foo",
         "organizationName": "Bar Ltd",
     }
-    subject_alt_names: List[x509.GeneralName] = [
+    subject_alt_names: list[x509.GeneralName] = [
         x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
         x509.DNSName(f"{hostname}"),
     ]
@@ -181,7 +180,7 @@ async def test_app_sign_certificate_request() -> None:
         "localityName": "Foo",
         "organizationName": "Bar Ltd",
     }
-    subject_alt_names: List[x509.GeneralName] = [
+    subject_alt_names: list[x509.GeneralName] = [
         x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
         x509.DNSName(f"{hostname}"),
     ]

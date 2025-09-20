@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 
-from typing import List, Union
+from typing import Union
 
 import asyncua
 from asyncua import ua
@@ -30,7 +30,7 @@ async def instantiate(
     dname: ua.LocalizedText | None = None,
     idx: int = 0,
     instantiate_optional: bool = True,
-) -> List[asyncua.Node]:
+) -> list[asyncua.Node]:
     """
     instantiate a node type under a parent node.
     nodeid and browse name of new node can be specified, or just namespace index

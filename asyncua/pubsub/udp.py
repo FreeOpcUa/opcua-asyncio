@@ -8,7 +8,7 @@ import struct
 import socket
 from dataclasses import InitVar, dataclass
 from ipaddress import ip_address
-from typing import List, Tuple, Union
+from typing import Union
 from urllib.parse import urlparse
 
 from ..ua import KeyValuePair
@@ -48,11 +48,11 @@ class UdpSettings:
     settings for the udp layer
     """
 
-    Addr: Tuple[str, int] = None  # Address, Port
+    Addr: tuple[str, int] = None  # Address, Port
     Reuse: bool = True  # Reuse Port
     TTL: int | None = None  # Sets the time to live for UDP
     Loopback: bool = True  # Sends Messages to loopback
-    Adapter: Tuple[str | None, int] = None  # Listening address
+    Adapter: tuple[str | None, int] = None  # Listening address
     Url: InitVar[str] = None  # Url to generate the addr
 
     def __post_init__(self, Url: str):
@@ -74,7 +74,7 @@ class UdpSettings:
         adapter = "" if self.Adapter[0] is None else self.Adapter[0]
         return NetworkAddressUrlDataType(adapter, f"opc.udp://{self.Addr[0]}:{self.Addr[1]}")
 
-    def set_key_value(self, kvs: List[KeyValuePair] | None) -> None:
+    def set_key_value(self, kvs: list[KeyValuePair] | None) -> None:
         if kvs is not None:
             for kv in kvs:
                 key = kv.Key.Name
@@ -86,7 +86,7 @@ class UdpSettings:
                 if key == "reuse" and value.VariantType == VariantType.Boolean:
                     self.Reuse = value.Value
 
-    def get_key_value(self) -> List[KeyValuePair]:
+    def get_key_value(self) -> list[KeyValuePair]:
         kvs = []
         if self.TTL is not None:
             kvs.append(KeyValuePair(QualifiedName("ttl"), Variant(self.TTL)))
@@ -94,7 +94,7 @@ class UdpSettings:
         kvs.append(KeyValuePair(QualifiedName("Loopback"), Variant(self.Loopback)))
         return kvs
 
-    def create_socket(self) -> Tuple[socket.socket, Union[Tuple[str, int], Tuple[str, int, int, int]], Tuple[str, int]]:
+    def create_socket(self) -> tuple[socket.socket, Union[tuple[str, int], tuple[str, int, int, int]], tuple[str, int]]:
         family, typ, proto, _, addr = socket.getaddrinfo(self.Addr[0], self.Addr[1], 0, socket.SOCK_DGRAM)[0]
         sock = socket.socket(family, typ, proto)
         if self.Reuse:
@@ -148,7 +148,7 @@ class OpcUdp(asyncio.DatagramProtocol):
     def connection_made(self, transport: asyncio.transports.BaseTransport) -> None:
         self.transport: asyncio.transports.DatagramTransport = transport
 
-    def datagram_received(self, data: bytes, source: Tuple[str, int]) -> None:
+    def datagram_received(self, data: bytes, source: tuple[str, int]) -> None:
         try:
             logger.debug("Received Datagram from %s - %s", source, data)
             buffer = Buffer(data)
@@ -161,7 +161,7 @@ class OpcUdp(asyncio.DatagramProtocol):
         except Exception:
             logging.exception("Received Invalid UadpPacket")
 
-    def send_uadp(self, msgs: List[UadpNetworkMessage]) -> None:
+    def send_uadp(self, msgs: list[UadpNetworkMessage]) -> None:
         for msg in msgs:
             logger.debug("Sending UadpMsg %s", msg)
             self.transport.sendto(msg.to_binary(), self.cfg.Addr)

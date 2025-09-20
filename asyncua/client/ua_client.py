@@ -5,7 +5,7 @@ Low level binary client
 import asyncio
 import copy
 import logging
-from typing import Dict, List, Union
+from typing import Dict, Union
 from collections.abc import Awaitable, Callable
 
 from asyncua import ua
@@ -595,7 +595,7 @@ class UaClient(AbstractSession):
             self._subscription_callbacks.pop(sid)
         return response.Results
 
-    async def publish(self, acks: List[ua.SubscriptionAcknowledgement]) -> ua.PublishResponse:
+    async def publish(self, acks: list[ua.SubscriptionAcknowledgement]) -> ua.PublishResponse:
         """
         Send a PublishRequest to the server.
         """
@@ -813,7 +813,7 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def set_monitoring_mode(self, params) -> List[ua.uatypes.StatusCode]:
+    async def set_monitoring_mode(self, params) -> list[ua.uatypes.StatusCode]:
         """
         Update the subscription monitoring mode
         """
@@ -826,7 +826,7 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
 
-    async def set_publishing_mode(self, params) -> List[ua.uatypes.StatusCode]:
+    async def set_publishing_mode(self, params) -> list[ua.uatypes.StatusCode]:
         """
         Update the subscription publishing mode
         """
@@ -839,7 +839,7 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
 
-    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
+    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> list[ua.TransferResult]:
         # Subscriptions aren't bound to a Session and can be transferred!
         # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
         raise NotImplementedError
