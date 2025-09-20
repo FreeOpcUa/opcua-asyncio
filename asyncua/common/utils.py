@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 from dataclasses import Field, fields
-from typing import Any, Dict, get_type_hints, Tuple, TypeVar, Union
+from typing import Any, Dict, get_type_hints, TypeVar, Union
 from collections.abc import Awaitable
 
 from ..ua.uaerrors import UaError
@@ -107,7 +107,7 @@ def fields_with_resolved_types(
     globalns: Dict[str, Any] | None = None,
     localns: Dict[str, Any] | None = None,
     include_extras: bool = False,
-) -> Tuple[Field, ...]:
+) -> tuple[Field, ...]:
     """Return a tuple describing the fields of this dataclass.
 
     Accepts a dataclass or an instance of one. Tuple elements are of

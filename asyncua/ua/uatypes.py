@@ -13,7 +13,8 @@ from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import IntEnum
-from typing import Any, Generic, List, Union
+from typing import Any, Generic, Union
+import types
 
 from asyncua.ua.object_ids import ObjectIds
 
@@ -56,6 +57,10 @@ MAX_OPC_FILETIME = (
 MAX_INT64 = 2**63 - 1
 
 
+def type_is_optional(uatype) -> bool:
+    return get_origin(uatype) is types.UnionType and type(None) in get_args(uatype)
+
+
 def type_is_union(uatype):
     return get_origin(uatype) == Union
 
@@ -65,7 +70,7 @@ def type_is_list(uatype):
 
 
 def type_allow_subclass(uatype):
-    return get_origin(uatype) not in [Union, list, None]
+    return get_origin(uatype) not in [types.UnionType, Union, list, None]
 
 
 def types_or_list_from_union(uatype):
@@ -113,6 +118,8 @@ def type_from_allow_subtype(uatype):
 
 
 def type_string_from_type(uatype):
+    if type_is_optional(uatype):
+        uatype = type_from_optional(uatype)
     if type_is_union(uatype):
         uatype = types_from_union(uatype)[0]
     elif type_is_list(uatype):
@@ -759,7 +766,7 @@ class RelativePath:
 
     data_type = NodeId(540)
 
-    Elements: List[RelativePathElement] = field(default_factory=list)
+    Elements: list[RelativePathElement] = field(default_factory=list)
 
     @staticmethod
     def from_string(string: str):
@@ -941,7 +948,7 @@ class Variant:
     # FIXME: typing is wrong here
     Value: Any = None
     VariantType: "VariantType" = None
-    Dimensions: List[Int32] | None = None
+    Dimensions: list[Int32] | None = None
     is_array: bool | None = None
 
     def __post_init__(self):

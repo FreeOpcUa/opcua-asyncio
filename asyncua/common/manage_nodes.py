@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from enum import Enum
 import inspect
-from typing import Any, List, Tuple, Union
+from typing import Any, Union
 from collections.abc import Iterable
 
 import asyncua
@@ -520,13 +520,13 @@ async def delete_nodes(
     nodes: Iterable[asyncua.Node],
     recursive: bool = False,
     delete_target_references: bool = True,
-) -> Tuple[List[asyncua.Node], List[ua.StatusCode]]:
+) -> tuple[list[asyncua.Node], list[ua.StatusCode]]:
     """
     Delete specified nodes. Optionally delete recursively all nodes with a
     downward hierachic references to the node
     return the list of deleted node and the result
     """
-    nodestodelete: List[ua.DeleteNodesItem] = []
+    nodestodelete: list[ua.DeleteNodesItem] = []
     if recursive:
         nodes = await _add_childs(nodes)
     for mynode in nodes:

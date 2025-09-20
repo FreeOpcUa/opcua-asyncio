@@ -15,7 +15,7 @@ unimplemented:
 """
 
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from collections.abc import Iterable
 import asyncio
 import logging
@@ -177,7 +177,7 @@ class DataSetReader(PubSubInformationModel):
         else:
             logger.warning("DataSet %s: got Message without a SubscribedDataSet Handler", self._cfg.Name)
 
-    def _datavalues_from_raw(self, data: UadpDataSetRaw, header: UadpDataSetMessageHeader) -> List[DataValue]:
+    def _datavalues_from_raw(self, data: UadpDataSetRaw, header: UadpDataSetMessageHeader) -> list[DataValue]:
         """Converts Raw dataset to DataValue"""
         buf = Buffer(data.Data)
         values = []
@@ -323,7 +323,7 @@ class ReaderGroup(PubSubInformationModel):
     def new(
         cls,
         name: str | None = None,
-        reader: List[DataSetReader] | None = None,
+        reader: list[DataSetReader] | None = None,
         enable=False,
     ):
         obj = cls(ReaderGroupDataType())

@@ -4,7 +4,7 @@ Example creating a standalone subscriber that receives an Int32, String, Bool an
 
 import asyncio
 import logging
-from typing import List
+
 from asyncua import ua, pubsub
 from asyncua.pubsub.udp import UdpSettings
 from dataclasses import dataclass
@@ -37,7 +37,7 @@ class OnDataReceived:
     This is called when a dataset is received
     """
 
-    async def on_dataset_received(self, _meta: pubsub.DataSetMeta, fields: List[pubsub.DataSetValue]):
+    async def on_dataset_received(self, _meta: pubsub.DataSetMeta, fields: list[pubsub.DataSetValue]):
         print("Got Msg:")
         for f in fields:
             print(f"{f.Name} -> {f.Value}")

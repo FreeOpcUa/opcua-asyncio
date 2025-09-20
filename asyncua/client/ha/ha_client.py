@@ -10,7 +10,7 @@ from sortedcontainers import SortedDict  # type: ignore
 from asyncua import Node, ua, Client
 from asyncua.client.ua_client import UASocketProtocol
 from asyncua.ua.uaerrors import BadSessionClosed, BadSessionNotActivated
-from typing import Dict, List, Set, Tuple, Type, Union
+from typing import Dict, Set, Type, Union
 from collections.abc import Generator, Iterable, Sequence
 
 from .reconciliator import Reconciliator
@@ -88,7 +88,7 @@ class HaConfig:
     request_timeout: int = 30
     secure_channel_timeout: int = 3600
     session_name: str = "HaClient"
-    urls: List[str] = field(default_factory=list)
+    urls: list[str] = field(default_factory=list)
 
 
 class HaClient:
@@ -242,7 +242,7 @@ class HaClient:
                 vs.subscribe_data_change(nodes, attr, queuesize)
                 await self.hook_on_subscribe(nodes=nodes, attr=attr, queuesize=queuesize, url=url)
 
-    async def delete_subscriptions(self, sub_names: List[str]) -> None:
+    async def delete_subscriptions(self, sub_names: list[str]) -> None:
         async with self._ideal_map_lock:
             for sub_name in sub_names:
                 for url in self.urls:
@@ -311,7 +311,7 @@ class HaClient:
                 vs = self.ideal_map[url][sub]
                 vs.publishing = publishing
 
-    async def group_clients_by_health(self) -> Tuple[List[Client], List[Client]]:
+    async def group_clients_by_health(self) -> tuple[list[Client], list[Client]]:
         healthy = []
         unhealthy = []
         async with self._client_lock:
@@ -322,7 +322,7 @@ class HaClient:
                     unhealthy.append(client)
             return healthy, unhealthy
 
-    async def get_serving_client(self, clients: List[Client], serving_client: Client | None) -> Client | None:
+    async def get_serving_client(self, clients: list[Client], serving_client: Client | None) -> Client | None:
         """
         Returns the client with the higher service level.
 
@@ -351,10 +351,10 @@ class HaClient:
             if not a[0].startswith("__") and not inspect.ismethod(a[1]):
                 _logger.debug(a)
 
-    def get_client_warm_mode(self) -> List[Client]:
+    def get_client_warm_mode(self) -> list[Client]:
         return list(self.clients)
 
-    def get_clients(self) -> List[Client]:
+    def get_clients(self) -> list[Client]:
         ha_mode = self.ha_mode
         func = f"get_client_{ha_mode}_mode"
         get_clients = getattr(self, func)
@@ -378,7 +378,7 @@ class HaClient:
         return self._config.ha_mode.name.lower()
 
     @property
-    def urls(self) -> List[str]:
+    def urls(self) -> list[str]:
         return self._config.urls
 
     def generate_sub_name(self) -> Generator[str, None, None]:

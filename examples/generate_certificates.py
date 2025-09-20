@@ -1,6 +1,6 @@
 """Example of several certficate creation helpers"""
 
-from typing import Dict, List
+from typing import Dict
 import asyncio
 from pathlib import Path
 import socket
@@ -48,7 +48,7 @@ def generate_private_key_for_myserver():
 
 
 async def generate_self_signed_certificate():
-    subject_alt_names: List[x509.GeneralName] = [
+    subject_alt_names: list[x509.GeneralName] = [
         x509.UniformResourceIdentifier(f"urn:{HOSTNAME}:foobar:myselfsignedserver"),
         x509.DNSName(f"{HOSTNAME}"),
     ]
@@ -65,7 +65,7 @@ async def generate_self_signed_certificate():
 
 
 def generate_applicationgroup_ca():
-    subject_alt_names: List[x509.GeneralName] = [
+    subject_alt_names: list[x509.GeneralName] = [
         x509.UniformResourceIdentifier(f"urn:{HOSTNAME}:foobar:myserver"),
         x509.DNSName(f"{HOSTNAME}"),
     ]
@@ -83,7 +83,7 @@ def generate_applicationgroup_ca():
 
 
 async def generate_csr():
-    subject_alt_names: List[x509.GeneralName] = [
+    subject_alt_names: list[x509.GeneralName] = [
         x509.UniformResourceIdentifier(f"urn:{HOSTNAME}:foobar:myserver"),
         x509.DNSName(f"{HOSTNAME}"),
     ]

@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import timezone
-from typing import Dict, List, Tuple, Union, TYPE_CHECKING
+from typing import Dict, Union, TYPE_CHECKING
 
 from ..common import instantiate_util
 from ..common.methods import uamethod
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from ..server.server import Server
 
 
-def _get_datatype_or_built_in(datatype: Union[NodeId, VariantType, int]) -> Tuple[NodeId, Byte]:
+def _get_datatype_or_built_in(datatype: Union[NodeId, VariantType, int]) -> tuple[NodeId, Byte]:
     """
     Returns the DataType NodeId and the corresponding BuiltIn number if
     possible to determine.
@@ -134,7 +134,7 @@ class DataSetField:
         return self._meta.Name
 
     @property
-    def ArrayDimensions(self) -> List[UInt32]:
+    def ArrayDimensions(self) -> list[UInt32]:
         return self._meta.ArrayDimensions
 
     @property
@@ -173,7 +173,7 @@ class DataSetMeta:
     def __init__(
         self,
         meta: DataSetMetaDataType,
-        dataset_fields: List[DataSetField] | None = None,
+        dataset_fields: list[DataSetField] | None = None,
     ) -> None:
         self._meta = meta
         if dataset_fields is not None:
@@ -187,7 +187,7 @@ class DataSetMeta:
         cls,
         name: String,
         description: LocalizedText | None = None,
-        dataset_fields: List[DataSetField] | None = None,
+        dataset_fields: list[DataSetField] | None = None,
     ):
         """creates a datasetmeta"""
         meta = DataSetMetaDataType()
@@ -239,7 +239,7 @@ class PubSubDataSource:
     Baseclass for all DataSources
     """
 
-    async def get_variant(self) -> Tuple[List[Variant | None], StatusCode, DateTime]:
+    async def get_variant(self) -> tuple[list[Variant | None], StatusCode, DateTime]:
         """
         return all variants for a dataset as Variant
         """
@@ -252,7 +252,7 @@ class PubSubDataSource:
                 st = v.StatusCode
         return (ret, st, dt)
 
-    async def get_value(self, status: bool, server_timestamp: bool, source_timestamp: bool) -> List[DataValue]:
+    async def get_value(self, status: bool, server_timestamp: bool, source_timestamp: bool) -> list[DataValue]:
         """
         returns all values for a dataset as DataValues
         """
@@ -266,7 +266,7 @@ class PubSubDataSource:
                 v.SourceTimestamp = None
         return vars
 
-    async def get_raw(self) -> Tuple[List[bytes], StatusCode, DateTime]:
+    async def get_raw(self) -> tuple[list[bytes], StatusCode, DateTime]:
         """
         returns all values for a dataset as rawbytes
         """
@@ -280,7 +280,7 @@ class PubSubDataSource:
                 st = v.StatusCode
         return ret, st, dt
 
-    async def on_get_value(self) -> List[DataValue]:
+    async def on_get_value(self) -> list[DataValue]:
         """
         Return all values of the dataset
         """
@@ -299,7 +299,7 @@ class PubSubDataSourceDict(PubSubDataSource):
         self.datasources = {}
         self.ds = ds
 
-    async def on_get_value(self) -> List[DataValue]:
+    async def on_get_value(self) -> list[DataValue]:
         """
         returns all values for a dataset
         """
@@ -326,7 +326,7 @@ class PubSubDataSourceServer(PubSubDataSource):
         self.data_items = data_items
         self._server = server
 
-    async def on_get_value(self) -> List[DataValue]:
+    async def on_get_value(self) -> list[DataValue]:
         """
         returns all values for a dataset
         """
@@ -535,10 +535,10 @@ class PublishedDataItems(PubSubInformationModel):
     async def _add_variables(
         self,
         config_version: ConfigurationVersionDataType,
-        field_name_aliases: List[String],
-        promoted_fields: List[Boolean],
-        published_variable_data_type: List[PublishedVariableDataType],
-    ) -> Tuple[ConfigurationVersionDataType, List[StatusCodes]]:
+        field_name_aliases: list[String],
+        promoted_fields: list[Boolean],
+        published_variable_data_type: list[PublishedVariableDataType],
+    ) -> tuple[ConfigurationVersionDataType, list[StatusCodes]]:
         if self._data.DataSetMetaData.ConfigurationVersion != config_version:
             raise UaStatusCodeError(StatusCodes.BadInvalidState)
         if not field_name_aliases:
@@ -557,8 +557,8 @@ class PublishedDataItems(PubSubInformationModel):
     async def _remove_variables(
         self,
         config_version: ConfigurationVersionDataType,
-        variables_to_remove: List[UInt32],
-    ) -> Tuple[ConfigurationVersionDataType, List[StatusCodes]]:
+        variables_to_remove: list[UInt32],
+    ) -> tuple[ConfigurationVersionDataType, list[StatusCodes]]:
         if self._data.DataSetMetaData.ConfigurationVersion != config_version:
             raise UaStatusCodeError(StatusCodes.BadInvalidState)
         if not variables_to_remove:
@@ -570,7 +570,7 @@ class PublishedDataItems(PubSubInformationModel):
         raise UaStatusCodeError(StatusCodes.BadNotImplemented)
 
     @classmethod
-    async def Create(cls, name: String, server: Server, variables: List[TargetVariable]):
+    async def Create(cls, name: String, server: Server, variables: list[TargetVariable]):
         """Allows to construct a PublishedDataItems without using the ua structures."""
         items = PublishedDataItemsDataType()
         fields = []

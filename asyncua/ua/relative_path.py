@@ -1,6 +1,6 @@
 from enum import IntEnum
 import re
-from typing import List, Tuple
+
 
 from asyncua.ua.uatypes import NodeId, NodeIdType, RelativePath, RelativePathElement, QualifiedName
 from asyncua.ua.uaerrors import UaInvalidParameterError
@@ -50,7 +50,7 @@ class RelativePathElementFormatter:
                 raise UaInvalidParameterError("RelativePathElementType is not specified.")
 
     @staticmethod
-    def parse(string: str) -> Tuple["RelativePathElementFormatter", str]:
+    def parse(string: str) -> tuple["RelativePathElementFormatter", str]:
         el = RelativePathElementFormatter()
 
         rest = string
@@ -79,7 +79,7 @@ class RelativePathElementFormatter:
         return el, rest
 
     @staticmethod
-    def _parse_name(string: str, is_reference: bool) -> Tuple[QualifiedName | None, str]:
+    def _parse_name(string: str, is_reference: bool) -> tuple[QualifiedName | None, str]:
         rest = string
 
         # Extract namespace index if present.
@@ -195,7 +195,7 @@ class RelativePathFormatter:
     https://reference.opcfoundation.org/Core/Part4/v105/docs/A.2
     """
 
-    _elements: List[RelativePathElementFormatter]
+    _elements: list[RelativePathElementFormatter]
 
     def __init__(self, relative_path: RelativePath | None = None):
         self._elements = []

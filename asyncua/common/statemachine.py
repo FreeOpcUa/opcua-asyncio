@@ -20,7 +20,7 @@ import datetime
 
 from asyncua import Server, ua, Node
 from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
-from typing import Union, List, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from asyncua.server.event_generator import EventGenerator
@@ -331,14 +331,14 @@ class FiniteStateMachine(StateMachine):
         self._available_states_node: Node = None
         self._available_transitions_node: Node = None
 
-    async def set_available_states(self, states: List[ua.NodeId]):
+    async def set_available_states(self, states: list[ua.NodeId]):
         if not self._available_states_node:
             self._available_states_node = await self._state_machine_node.get_child(["AvailableStates"])
         if isinstance(states, list) and all(isinstance(state, ua.NodeId) for state in states):
             return await self._available_states_node.write_value(states, varianttype=ua.VariantType.NodeId)
         return ValueError(f"Statemachine: {self._name} -> states: {states} is not a list")
 
-    async def set_available_transitions(self, transitions: List[ua.NodeId]):
+    async def set_available_transitions(self, transitions: list[ua.NodeId]):
         if self._optionals:
             if not self._available_transitions_node:
                 self._available_transitions_node = await self._state_machine_node.get_child(["AvailableTransitions"])

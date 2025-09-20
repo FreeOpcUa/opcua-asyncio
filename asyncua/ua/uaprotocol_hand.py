@@ -1,6 +1,6 @@
 import struct
 from dataclasses import dataclass, field
-from typing import List
+
 
 from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
@@ -150,7 +150,7 @@ class ObjectTypeAttributes(auto.ObjectTypeAttributes):
 
 @dataclass
 class VariableAttributes(auto.VariableAttributes):
-    ArrayDimensions: List[uatypes.UInt32] = None
+    ArrayDimensions: list[uatypes.UInt32] = None
     Historizing: uatypes.Boolean = False
     AccessLevel: uatypes.Byte = auto.AccessLevel.CurrentRead.mask
     UserAccessLevel: uatypes.Byte = auto.AccessLevel.CurrentRead.mask

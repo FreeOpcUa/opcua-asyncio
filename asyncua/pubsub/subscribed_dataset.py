@@ -4,7 +4,7 @@ Links PubSub received DataSets to the AddressSpace
 
 from __future__ import annotations
 import logging
-from typing import List, Union, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING
 from ..common.node import Node
 from ..ua import TargetVariablesDataType, SubscribedDataSetMirrorDataType
 from ..ua.attribute_ids import AttributeIds
@@ -83,7 +83,7 @@ class FieldTargets:
 class SubScribedTargetVariables:
     """Maps the values to targeted variables in the AddressSpace"""
 
-    def __init__(self, server: Server, cfg: Union[TargetVariablesDataType, List[FieldTargets]]):
+    def __init__(self, server: Server, cfg: Union[TargetVariablesDataType, list[FieldTargets]]):
         if isinstance(cfg, TargetVariablesDataType):
             self._cfg = cfg
             self._fields = [FieldTargets(f) for f in cfg.TargetVariables]
@@ -93,7 +93,7 @@ class SubScribedTargetVariables:
         self.server = server
         self.nodes = {}
 
-    async def on_dataset_received(self, meta: DataSetMeta, fields: List[DataSetValue]) -> None:
+    async def on_dataset_received(self, meta: DataSetMeta, fields: list[DataSetValue]) -> None:
         """Called when a published dataset received an update"""
         for field in fields:
             try:
