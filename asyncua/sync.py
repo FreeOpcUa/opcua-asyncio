@@ -7,18 +7,13 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime
 import functools
-import sys
 from cryptography import x509
 from pathlib import Path
 from threading import Thread, Condition
 import logging
-from typing import Any, Dict, List, Set, Tuple, Type, Union, overload
+from typing import Any, Dict, List, Set, Tuple, Type, Union, overload, Literal
 from collections.abc import Callable, Iterable, Sequence
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing import Literal
 
 from asyncua import ua
 from asyncua import client

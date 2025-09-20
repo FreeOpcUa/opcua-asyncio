@@ -5,14 +5,8 @@ and browse address space
 
 from datetime import datetime
 import logging
-import sys
-from typing import Any, List, Optional, Set, Union, overload
+from typing import Any, List, Optional, Set, Union, overload, Literal
 from collections.abc import Iterable
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing import Literal
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
