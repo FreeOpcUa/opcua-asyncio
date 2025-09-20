@@ -4,7 +4,8 @@ server side implementation of subscription service
 
 import asyncio
 import logging
-from typing import Dict, Iterable
+from typing import Dict
+from collections.abc import Iterable
 
 from asyncua import ua
 from asyncua.common import utils, uamethod

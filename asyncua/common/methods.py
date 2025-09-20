@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from asyncio import iscoroutinefunction
 from functools import wraps
-from typing import Any, Iterable, List, Union
+from typing import Any, List, Union
+from collections.abc import Iterable
 
 import asyncua
 from asyncua import ua

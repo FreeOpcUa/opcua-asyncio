@@ -1,4 +1,4 @@
-from typing import Callable, Awaitable, Optional
+from collections.abc import Callable, Awaitable
 import logging
 from datetime import datetime, timezone
 from enum import Flag, auto
@@ -57,10 +57,10 @@ class CertificateValidator:
         self,
         options: CertificateValidatorOptions = CertificateValidatorOptions.BASIC_VALIDATION
         | CertificateValidatorOptions.PEER_CLIENT,
-        trust_store: Optional[TrustStore] = None,
+        trust_store: TrustStore | None = None,
     ):
         self._options = options
-        self._trust_store: Optional[TrustStore] = trust_store
+        self._trust_store: TrustStore | None = trust_store
 
     def set_validate_options(self, options: CertificateValidatorOptions):
         """Change the use validation options at runtime"""

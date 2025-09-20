@@ -10,7 +10,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from threading import Condition, Thread
-from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Sequence, Set, Tuple, Type, Union, overload
+from typing import Any, Callable, Union, overload
+from collections.abc import Callable, Iterable, Sequence
 
 from cryptography import x509
 
@@ -27,7 +28,7 @@ class ThreadLoopNotRunning(Exception):
 
 
 class ThreadLoop(Thread):
-    def __init__(self, timeout: Optional[float] = 120) -> None:
+    def __init__(self, timeout: float | None = 120) -> None:
         Thread.__init__(self)
         self.loop = None
         self._cond = Condition()
@@ -230,7 +231,7 @@ class Client:
         url: str,
         timeout: float = 4,
         tloop=None,
-        sync_wrapper_timeout: Optional[float] = 120,
+        sync_wrapper_timeout: float | None = 120,
         watchdog_intervall: float = 1.0,
     ) -> None:
         self.tloop = tloop
@@ -298,13 +299,11 @@ class Client:
         self.aio_obj.set_locale(locale)
 
     @syncmethod
-    def load_private_key(
-        self, path: str, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None
-    ) -> None:
+    def load_private_key(self, path: str, password: str | bytes | None = None, extension: str | None = None) -> None:
         pass
 
     @syncmethod
-    def load_client_certificate(self, path: str, extension: Optional[str] = None) -> None:
+    def load_client_certificate(self, path: str, extension: str | None = None) -> None:
         pass
 
     @syncmethod
@@ -316,7 +315,7 @@ class Client:
 
     @syncmethod
     def load_data_type_definitions(  # type: ignore[empty-body]
-        self, node: Optional[SyncNode] = None, overwrite_existing: bool = False
+        self, node: SyncNode | None = None, overwrite_existing: bool = False
     ) -> Dict[str, Type]:
         pass
 
@@ -338,7 +337,7 @@ class Client:
 
     def create_subscription(
         self,
-        period: Union[ua.CreateSubscriptionParameters, float],
+        period: ua.CreateSubscriptionParameters | float,
         handler: subscription.SubscriptionHandler,
         publishing: bool = True,
     ) -> Subscription:
@@ -348,7 +347,7 @@ class Client:
 
     def get_subscription_revised_params(
         self, params: ua.CreateSubscriptionParameters, results: ua.CreateSubscriptionResult
-    ) -> Optional[ua.ModifySubscriptionParameters]:  # type: ignore
+    ) -> ua.ModifySubscriptionParameters | None:  # type: ignore
         return self.aio_obj.get_subscription_revised_params(params, results)
 
     @syncmethod
@@ -404,7 +403,7 @@ class Client:
     def register_server(
         self,
         server: Server,
-        discovery_configuration: Optional[ua.DiscoveryConfiguration] = None,
+        discovery_configuration: ua.DiscoveryConfiguration | None = None,
     ) -> None:
         pass
 
@@ -412,12 +411,12 @@ class Client:
     def unregister_server(
         self,
         server: Server,
-        discovery_configuration: Optional[ua.DiscoveryConfiguration] = None,
+        discovery_configuration: ua.DiscoveryConfiguration | None = None,
     ) -> None:
         pass
 
     @syncmethod
-    def find_servers(self, uris: Optional[Iterable[str]] = None) -> List[ua.ApplicationDescription]:  # type: ignore[empty-body]
+    def find_servers(self, uris: Iterable[str] | None = None) -> List[ua.ApplicationDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -438,9 +437,9 @@ class Client:
     @syncmethod
     def activate_session(  # type: ignore[empty-body]
         self,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        certificate: Optional[x509.Certificate] = None,
+        username: str | None = None,
+        password: str | None = None,
+        certificate: x509.Certificate | None = None,
     ) -> ua.ActivateSessionResult:
         pass
 
@@ -559,9 +558,9 @@ class Server:
 
     def __init__(
         self,
-        shelf_file: Optional[Path] = None,
+        shelf_file: Path | None = None,
         tloop=None,
-        sync_wrapper_timeout: Optional[float] = 120,
+        sync_wrapper_timeout: float | None = 120,
     ):
         self.tloop = tloop
         self.close_tloop = False
@@ -725,11 +724,11 @@ class SyncNode:
     nodeid: ua.NodeId = property(__get_nodeid, __set_nodeid)
 
     @syncmethod
-    def read_type_definition(self) -> Optional[ua.NodeId]:  # type: ignore[empty-body]
+    def read_type_definition(self) -> ua.NodeId | None:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def get_parent(self) -> Optional[SyncNode]:  # type: ignore[empty-body]
+    def get_parent(self) -> SyncNode | None:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -740,7 +739,7 @@ class SyncNode:
     def read_attribute(  # type: ignore[empty-body]
         self,
         attr: ua.AttributeIds,
-        indexrange: Optional[str] = None,
+        indexrange: str | None = None,
         raise_on_bad_status: bool = True,
     ) -> ua.DataValue:
         pass
@@ -750,7 +749,7 @@ class SyncNode:
         self,
         attributeid: ua.AttributeIds,
         datavalue: ua.DataValue,
-        indexrange: Optional[str] = None,
+        indexrange: str | None = None,
     ) -> None:
         pass
 
@@ -831,14 +830,14 @@ class SyncNode:
         self,
         paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]],
         raise_on_partial_error: bool = True,
-    ) -> List[List[Optional[SyncNode]]]:
+    ) -> List[List[SyncNode | None]]:
         pass
 
     @syncmethod
     def read_raw_history(  # type: ignore[empty-body]
         self,
-        starttime: Optional[datetime] = None,
-        endtime: Optional[datetime] = None,
+        starttime: datetime | None = None,
+        endtime: datetime | None = None,
         numvalues: int = 0,
         return_bounds: bool = True,
     ) -> List[ua.DataValue]:
@@ -848,7 +847,7 @@ class SyncNode:
     def history_read(  # type: ignore[empty-body]
         self,
         details: ua.ReadRawModifiedDetails,
-        continuation_point: Optional[bytes] = None,
+        continuation_point: bytes | None = None,
     ) -> ua.HistoryReadResult:
         pass
 
@@ -878,8 +877,8 @@ class SyncNode:
         nodeid: Union[ua.NodeId, str],
         bname: Union[ua.QualifiedName, str],
         val: Any,
-        varianttype: Optional[ua.VariantType] = None,
-        datatype: Optional[Union[ua.NodeId, int]] = None,
+        varianttype: ua.VariantType | None = None,
+        datatype: Union[ua.NodeId, int] | None = None,
     ) -> SyncNode:
         pass
 
@@ -889,8 +888,8 @@ class SyncNode:
         nodeid: Union[ua.NodeId, str],
         bname: Union[ua.QualifiedName, str],
         val: Any,
-        varianttype: Optional[ua.VariantType] = None,
-        datatype: Optional[Union[ua.NodeId, int]] = None,
+        varianttype: ua.VariantType | None = None,
+        datatype: Union[ua.NodeId, int] | None = None,
     ) -> SyncNode:
         pass
 
@@ -899,7 +898,7 @@ class SyncNode:
         self,
         nodeid: Union[ua.NodeId, str],
         bname: Union[ua.QualifiedName, str],
-        objecttype: Optional[int] = None,
+        objecttype: int | None = None,
         instantiate_optional: bool = True,
     ) -> SyncNode:
         pass
@@ -924,7 +923,7 @@ class SyncNode:
 
     @syncmethod
     def add_data_type(  # type: ignore[empty-body]
-        self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], description: Optional[str] = None
+        self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], description: str | None = None
     ) -> SyncNode:
         pass
 
@@ -933,7 +932,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def write_value(self, value: Any, varianttype: Optional[ua.VariantType] = None) -> None:
+    def write_value(self, value: Any, varianttype: ua.VariantType | None = None) -> None:
         pass
 
     set_value = write_value  # legacy
@@ -1017,7 +1016,7 @@ class SyncNode:
         nodeid: Union[ua.NodeId, str],
         bname: Union[ua.QualifiedName, str],
         symmetric: bool = True,
-        inversename: Optional[str] = None,
+        inversename: str | None = None,
     ) -> SyncNode:
         pass
 

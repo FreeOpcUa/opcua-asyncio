@@ -1,7 +1,7 @@
 import logging
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import Iterable
+from collections.abc import Iterable
 
 import aiosqlite
 

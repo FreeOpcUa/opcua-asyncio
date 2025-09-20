@@ -6,7 +6,7 @@ over the network
 from __future__ import annotations
 import logging
 import asyncio
-from typing import List, Optional, Union, TYPE_CHECKING
+from typing import List, Union, TYPE_CHECKING
 
 from ..common.methods import uamethod
 from ..common.instantiate_util import instantiate
@@ -81,8 +81,8 @@ class PubSubConnection(PubSubInformationModel):
         name: str,
         publisher_id: Union[Byte, UInt16, UInt32, UInt64, String, Variant],
         network_cfg: UdpSettings,
-        reader_groups: Optional[List[ReaderGroup]] = None,
-        writer_groups: Optional[List[WriterGroup]] = None,
+        reader_groups: List[ReaderGroup] | None = None,
+        writer_groups: List[WriterGroup] | None = None,
     ):
         """
         Creates UDP UADP Connection
@@ -153,13 +153,13 @@ class PubSubConnection(PubSubInformationModel):
         """
         return self._cfg
 
-    def get_writer_group(self, name: String) -> Optional[DataSetReader]:
+    def get_writer_group(self, name: String) -> DataSetReader | None:
         """
         Returns a writer group via name, if found.
         """
         return next((w for w in self._writer_groups if w._cfg.Name == name), None)
 
-    def get_reader_group(self, name: String) -> Optional[DataSetReader]:
+    def get_reader_group(self, name: String) -> DataSetReader | None:
         """
         Returns a reader group via name, if found.
         """

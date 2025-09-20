@@ -10,7 +10,7 @@ missing features:
 from __future__ import annotations
 import asyncio
 import logging
-from typing import List, Optional, TYPE_CHECKING, Tuple, Union
+from typing import List, TYPE_CHECKING, Tuple, Union
 from datetime import timezone
 
 from ..common.node import Node
@@ -70,9 +70,9 @@ class DataSetWriter(PubSubInformationModel):
     Write of an Dataset
     """
 
-    _node: Optional[Node] = None
+    _node: Node | None = None
 
-    def __init__(self, cfg: Optional[DataSetWriterDataType]):
+    def __init__(self, cfg: DataSetWriterDataType | None):
         if cfg is None:
             self._cfg = DataSetWriterDataType()
         else:
@@ -92,12 +92,12 @@ class DataSetWriter(PubSubInformationModel):
         name: String,
         dataset_name: String,
         dataset_writer_id: UInt16,
-        datavalue: Optional[bool] = False,
-        raw: Optional[bool] = False,
-        enabled: Optional[bool] = True,
+        datavalue: bool | None = False,
+        raw: bool | None = False,
+        enabled: bool | None = True,
         *,
-        message_timestamp: Optional[bool] = None,
-        message_status: Optional[bool] = None,
+        message_timestamp: bool | None = None,
+        message_status: bool | None = None,
     ):
         """
         Create a DataSetWriter for UADP with sane defaults
@@ -180,7 +180,7 @@ class DataSetWriter(PubSubInformationModel):
             ds.Header.Timestamp = dt
         return ds
 
-    async def _init_information_model(self, parent: Node, server: Server, pubsub: Optional[IPubSub]) -> None:
+    async def _init_information_model(self, parent: Node, server: Server, pubsub: IPubSub | None) -> None:
         dsw_type = server.get_node(NodeId(Int32(ObjectIds.DataSetWriterType), Int16(0)))
         objs = await instantiate_util.instantiate(
             parent,
@@ -246,11 +246,11 @@ class WriterGroup(PubSubInformationModel):
     Configures a group of datasets writer
     """
 
-    _app: Optional[Server] = None
+    _app: Server | None = None
 
     uadp = True  # Currently only uadp is supported
 
-    def __init__(self, cfg: Optional[WriterGroupDataType]) -> None:
+    def __init__(self, cfg: WriterGroupDataType | None) -> None:
         super().__init__()
         if cfg is not None:
             self._cfg = cfg
@@ -268,13 +268,13 @@ class WriterGroup(PubSubInformationModel):
         name: String,
         writer_group_id: UInt16,
         group_version: VersionTime = VersionTime(0),
-        enabled: Optional[bool] = True,
-        publishing_interval: Optional[Duration] = Duration(1000),
-        keep_alive_time: Optional[Duration] = Duration(5000),
-        max_network_message_size: Optional[UInt32] = UInt32(1500),
-        writer: Optional[List[DataSetWriter]] = None,
+        enabled: bool | None = True,
+        publishing_interval: Duration | None = Duration(1000),
+        keep_alive_time: Duration | None = Duration(5000),
+        max_network_message_size: UInt32 | None = UInt32(1500),
+        writer: List[DataSetWriter] | None = None,
         *,
-        payload_header: Optional[bool] = True,
+        payload_header: bool | None = True,
     ):
         """
         Create a WriterGroup for UADP with sane defaults
@@ -321,7 +321,7 @@ class WriterGroup(PubSubInformationModel):
         if self.model_is_init():
             await writer._init_information_model(self._node, self._server, self._app)
 
-    def get_writer(self, name: String) -> Optional[DataSetWriter]:
+    def get_writer(self, name: String) -> DataSetWriter | None:
         return next((c for c in self._writer if c._cfg.Name == name), None)
 
     def _init_msg(

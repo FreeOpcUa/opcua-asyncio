@@ -20,7 +20,7 @@ import datetime
 
 from asyncua import Server, ua, Node
 from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
-from typing import Optional, Union, List, TYPE_CHECKING
+from typing import Union, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from asyncua.server.event_generator import EventGenerator
@@ -38,7 +38,7 @@ class State:
     number: Number is an integer which uniquely identifies the current state within the StateMachineType.
     """
 
-    def __init__(self, id, name: str = None, number: int = None, node: Optional[Node] = None):
+    def __init__(self, id, name: str = None, number: int = None, node: Node | None = None):
         if id is not None:
             self.id = ua.Variant(id)
         else:
