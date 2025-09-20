@@ -7,14 +7,8 @@ from __future__ import annotations
 import asyncio
 import collections.abc
 import logging
-import sys
-from typing import TYPE_CHECKING, Any, Tuple, Union, List, overload
+from typing import TYPE_CHECKING, Any, Tuple, Union, List, overload, Protocol
 from collections.abc import Iterable
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
 
 from asyncua import ua
 from asyncua.client.ua_client import UaClient

@@ -2,7 +2,6 @@ import logging
 from datetime import datetime, timezone
 import time
 import uuid
-import sys
 
 from asyncua import ua
 from asyncua.server.internal_session import InternalSession
@@ -92,12 +91,8 @@ class EventGenerator:
         self.event.ReceiveTime = datetime.now(timezone.utc)
 
         self.event.LocalTime = ua.uaprotocol_auto.TimeZoneDataType()
-        if sys.version_info.major > 2:
-            localtime = time.localtime(self.event.Time.timestamp())
-            self.event.LocalTime.Offset = localtime.tm_gmtoff // 60
-        else:
-            localtime = time.localtime(time.mktime(self.event.Time.timetuple()))
-            self.event.LocalTime.Offset = -(time.altzone if localtime.tm_isdst else time.timezone)
+        localtime = time.localtime(self.event.Time.timestamp())
+        self.event.LocalTime.Offset = localtime.tm_gmtoff // 60
         self.event.LocalTime.DaylightSavingInOffset = bool(localtime.tm_isdst != -1)
 
         if message:
