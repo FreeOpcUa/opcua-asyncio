@@ -4,7 +4,7 @@ import logging
 import struct
 import time
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from ..ua import MessageSecurityMode, SecurityPolicyType, UaError
 
@@ -485,9 +485,9 @@ class SecurityPolicy:
     asymmetric_cryptography: CryptographyNone
     symmetric_cryptography: CryptographyNone
     Mode: MessageSecurityMode
-    peer_certificate: Optional[bytes]
-    host_certificate: Optional[bytes]
-    permissions: Optional[PermissionRuleset]
+    peer_certificate: bytes | None
+    host_certificate: bytes | None
+    permissions: PermissionRuleset | None
     host_certificate_chain: list[bytes]
 
     @abstractmethod

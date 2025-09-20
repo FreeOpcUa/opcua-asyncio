@@ -4,7 +4,6 @@ Socket server forwarding request to internal server
 
 import logging
 import asyncio
-from typing import Optional
 
 from ..common.connection import TransportLimits
 from ..ua.ua_binary import header_from_binary
@@ -118,7 +117,7 @@ class BinaryServer:
         self.hostname = hostname
         self.port = port
         self.iserver: InternalServer = internal_server
-        self._server: Optional[asyncio.AbstractServer] = None
+        self._server: asyncio.AbstractServer | None = None
         self._policies = []
         self.clients = []
         self.closing_tasks = []

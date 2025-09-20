@@ -3,7 +3,8 @@ import dataclasses
 import logging
 import socket
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import Any, Dict, List, Tuple, Type, Union, cast
+from collections.abc import Callable, Coroutine, Iterable, Sequence
 from urllib.parse import ParseResult, unquote, urlparse
 
 from cryptography import x509
@@ -39,8 +40,8 @@ class Client:
     which offers the raw OPC-UA services interface.
     """
 
-    _username: Optional[str] = None
-    _password: Optional[str] = None
+    _username: str | None = None
+    _password: str | None = None
     strip_url_credentials: bool = True
 
     def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
@@ -75,12 +76,12 @@ class Client:
         self.secure_channel_id = None
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
-        self.connection_lost_callback: Optional[Callable[[Exception], Coroutine[Any, Any, None]]] = None
+        self.connection_lost_callback: Callable[[Exception], Coroutine[Any, Any, None]] | None = None
         self._policy_ids: List[ua.UserTokenPolicy] = []
         self.uaclient: UaClient = UaClient(timeout)
         self.uaclient.pre_request_hook = self.check_connection
-        self.user_certificate: Optional[x509.Certificate] = None
-        self.user_private_key: Optional[PrivateKeyTypes] = None
+        self.user_certificate: x509.Certificate | None = None
+        self.user_private_key: PrivateKeyTypes | None = None
         self.user_certificate_chain: List[x509.Certificate] = []
         self._server_nonce = None
         self._session_counter = 1
@@ -92,7 +93,7 @@ class Client:
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
         self._closing: bool = False
-        self.certificate_validator: Optional[CertificateValidatorMethod] = None
+        self.certificate_validator: CertificateValidatorMethod | None = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
 
     async def __aenter__(self):
@@ -197,10 +198,10 @@ class Client:
         policy: Type[security_policies.SecurityPolicy],
         certificate: Union[str, uacrypto.CertProperties, bytes, Path],
         private_key: Union[str, uacrypto.CertProperties, bytes, Path],
-        private_key_password: Optional[Union[str, bytes]] = None,
-        server_certificate: Optional[Union[str, uacrypto.CertProperties, bytes]] = None,
+        private_key_password: Union[str, bytes] | None = None,
+        server_certificate: Union[str, uacrypto.CertProperties, bytes] | None = None,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
-        certificate_chain: Optional[Sequence[Union[str, uacrypto.CertProperties, bytes, Path]]] = None,
+        certificate_chain: Sequence[Union[str, uacrypto.CertProperties, bytes, Path]] | None = None,
     ) -> None:
         """
         Set SecureConnection mode.
@@ -241,7 +242,7 @@ class Client:
         private_key: uacrypto.CertProperties,
         server_cert: uacrypto.CertProperties,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
-        certificate_chain: Optional[Sequence[uacrypto.CertProperties]] = None,
+        certificate_chain: Sequence[uacrypto.CertProperties] | None = None,
     ) -> None:
         if isinstance(server_cert, uacrypto.CertProperties):
             server_cert = await uacrypto.load_certificate(server_cert.path_or_content, server_cert.extension)
@@ -259,7 +260,7 @@ class Client:
         self.security_policy = policy(server_cert, cert, pk, mode, host_cert_chain=chain)
         self.uaclient.set_security(self.security_policy)
 
-    async def load_client_certificate(self, path: str, extension: Optional[str] = None) -> None:
+    async def load_client_certificate(self, path: str, extension: str | None = None) -> None:
         """
         Load user certificate from file, either pem or der
         """
@@ -274,7 +275,7 @@ class Client:
         )
 
     async def load_private_key(
-        self, path: Path, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None
+        self, path: Path, password: Union[str, bytes] | None = None, extension: str | None = None
     ) -> None:
         """
         Load user private key. This is used for authenticating using certificate
@@ -448,7 +449,7 @@ class Client:
         return await self.uaclient.get_endpoints(params)
 
     async def register_server(
-        self, server: "asyncua.server.Server", discovery_configuration: Optional[ua.DiscoveryConfiguration] = None
+        self, server: "asyncua.server.Server", discovery_configuration: ua.DiscoveryConfiguration | None = None
     ) -> None:
         """
         register a server to discovery server
@@ -469,7 +470,7 @@ class Client:
         return await self.uaclient.register_server(serv)
 
     async def unregister_server(
-        self, server: "asyncua.server.Server", discovery_configuration: Optional[ua.DiscoveryConfiguration] = None
+        self, server: "asyncua.server.Server", discovery_configuration: ua.DiscoveryConfiguration | None = None
     ) -> None:
         """
         register a server to discovery server
@@ -489,7 +490,7 @@ class Client:
             return await self.uaclient.unregister_server2(params)
         return await self.uaclient.unregister_server(serv)
 
-    async def find_servers(self, uris: Optional[Iterable[str]] = None) -> List[ua.ApplicationDescription]:
+    async def find_servers(self, uris: Iterable[str] | None = None) -> List[ua.ApplicationDescription]:
         """
         send a FindServer request to the server. The answer should be a list of
         servers the server knows about
@@ -660,9 +661,9 @@ class Client:
 
     async def activate_session(
         self,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        certificate: Optional[x509.Certificate] = None,
+        username: str | None = None,
+        password: str | None = None,
+        certificate: x509.Certificate | None = None,
     ) -> ua.ActivateSessionResult:
         """
         Activate session using either username and password or private_key
@@ -811,7 +812,7 @@ class Client:
         self,
         params: ua.CreateSubscriptionParameters,
         results: ua.CreateSubscriptionResult,
-    ) -> Optional[ua.ModifySubscriptionParameters]:
+    ) -> ua.ModifySubscriptionParameters | None:
         if (
             results.RevisedPublishingInterval == params.RequestedPublishingInterval
             and results.RevisedLifetimeCount == params.RequestedLifetimeCount
@@ -915,7 +916,7 @@ class Client:
         return await load_type_definitions(self, nodes)
 
     async def load_data_type_definitions(
-        self, node: Optional[Node] = None, overwrite_existing: bool = False
+        self, node: Node | None = None, overwrite_existing: bool = False
     ) -> Dict[str, Type]:
         """
         Load custom types (custom structures/extension objects) definition from server

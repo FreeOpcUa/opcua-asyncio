@@ -4,7 +4,7 @@ server side implementation of a subscription object
 
 import logging
 from asyncua import ua
-from typing import Dict, Optional
+from typing import Dict
 from .address_space import AddressSpace
 import copy
 
@@ -23,18 +23,18 @@ class MonitoredItemData:
 
 class MonitoredItemValues:
     def __init__(self) -> None:
-        self.current_dvalue: Optional[ua.DataValue] = None
-        self.old_dvalue: Optional[ua.DataValue] = None
+        self.current_dvalue: ua.DataValue | None = None
+        self.old_dvalue: ua.DataValue | None = None
 
     def set_current_datavalue(self, cur_val: ua.DataValue):
         self.old_dvalue = self.current_dvalue
         # We need to clone the value, to prevent referencing the inner value
         self.current_dvalue = copy.deepcopy(cur_val)
 
-    def get_current_datavalue(self) -> Optional[ua.DataValue]:
+    def get_current_datavalue(self) -> ua.DataValue | None:
         return self.current_dvalue
 
-    def get_old_datavalue(self) -> Optional[ua.DataValue]:
+    def get_old_datavalue(self) -> ua.DataValue | None:
         return self.old_dvalue
 
 

@@ -7,7 +7,8 @@ from __future__ import annotations
 import logging
 from enum import Enum
 import inspect
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Any, List, Tuple, Union
+from collections.abc import Iterable
 
 import asyncua
 from asyncua import ua
@@ -64,7 +65,7 @@ async def create_object(
     parent: asyncua.Node,
     nodeid: Union[ua.NodeId, str, int],
     bname: Union[ua.QualifiedName, str],
-    objecttype: Optional[Union[ua.NodeId, int]] = None,
+    objecttype: Union[ua.NodeId, int] | None = None,
     instantiate_optional: bool = True,
 ) -> asyncua.Node:
     """
@@ -93,8 +94,8 @@ async def create_property(
     nodeid: Union[ua.NodeId, str, int],
     bname: Union[ua.QualifiedName, str],
     val: Any,
-    varianttype: Optional[ua.VariantType] = None,
-    datatype: Optional[Union[ua.NodeId, int]] = None,
+    varianttype: ua.VariantType | None = None,
+    datatype: Union[ua.NodeId, int] | None = None,
 ) -> asyncua.Node:
     """
     create a child node property
@@ -118,8 +119,8 @@ async def create_variable(
     nodeid: Union[ua.NodeId, str, int],
     bname: Union[ua.QualifiedName, str],
     val: Any,
-    varianttype: Optional[ua.VariantType] = None,
-    datatype: Optional[Union[ua.NodeId, int]] = None,
+    varianttype: ua.VariantType | None = None,
+    datatype: Union[ua.NodeId, int] | None = None,
 ) -> asyncua.Node:
     """
     create a child node variable
@@ -165,7 +166,7 @@ async def create_reference_type(
     nodeid: Union[ua.NodeId, str, int],
     bname: Union[ua.QualifiedName, str, int],
     symmetric: bool = True,
-    inversename: Optional[str] = None,
+    inversename: str | None = None,
 ) -> asyncua.Node:
     """
     Create a new reference type
@@ -352,7 +353,7 @@ async def create_data_type(
     parent: asyncua.Node,
     nodeid: Union[ua.NodeId, str, int],
     bname: Union[ua.QualifiedName, str],
-    description: Optional[str] = None,
+    description: str | None = None,
 ) -> asyncua.Node:
     """
     Create a new data type to be used in new variables, etc ..

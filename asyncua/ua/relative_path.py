@@ -1,6 +1,6 @@
 from enum import IntEnum
 import re
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from asyncua.ua.uatypes import NodeId, NodeIdType, RelativePath, RelativePathElement, QualifiedName
 from asyncua.ua.uaerrors import UaInvalidParameterError
@@ -23,10 +23,10 @@ class RelativePathElementType(IntEnum):
 class RelativePathElementFormatter:
     _element_type: RelativePathElementType = RelativePathElementType.AnyHierarchical
     _include_subtypes: bool = True
-    _target_name: Optional[QualifiedName] = None
-    _reference_type_name: Optional[QualifiedName] = None
+    _target_name: QualifiedName | None = None
+    _reference_type_name: QualifiedName | None = None
 
-    def __init__(self, element: Optional[RelativePathElement] = None):
+    def __init__(self, element: RelativePathElement | None = None):
         if element is not None:
             self._include_subtypes = element.IncludeSubtypes
             self._target_name = element.TargetName
@@ -79,7 +79,7 @@ class RelativePathElementFormatter:
         return el, rest
 
     @staticmethod
-    def _parse_name(string: str, is_reference: bool) -> Tuple[Optional[QualifiedName], str]:
+    def _parse_name(string: str, is_reference: bool) -> Tuple[QualifiedName | None, str]:
         rest = string
 
         # Extract namespace index if present.
@@ -131,7 +131,7 @@ class RelativePathElementFormatter:
         return QualifiedName("".join(name), idx), rest
 
     def build(self) -> RelativePathElement:
-        reference_type_id: Optional[NodeId] = None
+        reference_type_id: NodeId | None = None
         is_inverse = False
         include_subtypes = self._include_subtypes
         target_name = self._target_name
@@ -197,7 +197,7 @@ class RelativePathFormatter:
 
     _elements: List[RelativePathElementFormatter]
 
-    def __init__(self, relative_path: Optional[RelativePath] = None):
+    def __init__(self, relative_path: RelativePath | None = None):
         self._elements = []
         if relative_path:
             self._elements = [RelativePathElementFormatter(el) for el in relative_path.Elements]
@@ -224,7 +224,7 @@ class RelativePathFormatter:
         return "".join([el.to_string() for el in self._elements])
 
 
-def _peek(string: str) -> Optional[str]:
+def _peek(string: str) -> str | None:
     return string[0] if len(string) > 0 else None
 
 
