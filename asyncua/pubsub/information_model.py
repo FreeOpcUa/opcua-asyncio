@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Union, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING
 
 from ..common.methods import uamethod
 from ..common.node import Node
@@ -54,7 +54,7 @@ class PubSubInformationModel:
 
     async def set_node_value(
         self,
-        path: Union[str, QualifiedName, List[str], List[QualifiedName]],
+        path: Union[str, QualifiedName, list[str], list[QualifiedName]],
         value: Variant,
     ) -> None:
         """
@@ -64,7 +64,7 @@ class PubSubInformationModel:
             n = await self._node.get_child(path)
             await n.write_value(DataValue(value))
 
-    async def get_node_value(self, path: Union[str, QualifiedName, List[str], List[QualifiedName]]) -> Variant | None:
+    async def get_node_value(self, path: Union[str, QualifiedName, list[str], list[QualifiedName]]) -> Variant | None:
         """
         Get value of child node value returns `None` if no information model is used
         """

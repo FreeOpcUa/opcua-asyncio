@@ -10,7 +10,7 @@ missing features:
 from __future__ import annotations
 import asyncio
 import logging
-from typing import List, TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, Union
 from datetime import timezone
 
 from ..common.node import Node
@@ -143,7 +143,7 @@ class DataSetWriter(PubSubInformationModel):
         )
         return cls(dsw_cfg)
 
-    def generate_promoted_fields(self) -> List[Variant]:  # type: ignore[empty-body]
+    def generate_promoted_fields(self) -> list[Variant]:  # type: ignore[empty-body]
         # @TODO
         pass
 
@@ -272,7 +272,7 @@ class WriterGroup(PubSubInformationModel):
         publishing_interval: Duration | None = Duration(1000),
         keep_alive_time: Duration | None = Duration(5000),
         max_network_message_size: UInt32 | None = UInt32(1500),
-        writer: List[DataSetWriter] | None = None,
+        writer: list[DataSetWriter] | None = None,
         *,
         payload_header: bool | None = True,
     ):
@@ -326,7 +326,7 @@ class WriterGroup(PubSubInformationModel):
 
     def _init_msg(
         self, sender: PubSubSender, msg_cfg: UadpWriterGroupMessageDataType, msg_no: int
-    ) -> Tuple[UadpNetworkMessage, bool, bool]:
+    ) -> tuple[UadpNetworkMessage, bool, bool]:
         msg = UadpNetworkMessage()
         payload_header = False
         promoted_fields = False

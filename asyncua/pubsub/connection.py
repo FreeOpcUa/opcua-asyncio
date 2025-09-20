@@ -6,7 +6,7 @@ over the network
 from __future__ import annotations
 import logging
 import asyncio
-from typing import List, Union, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING
 
 from ..common.methods import uamethod
 from ..common.instantiate_util import instantiate
@@ -81,8 +81,8 @@ class PubSubConnection(PubSubInformationModel):
         name: str,
         publisher_id: Union[Byte, UInt16, UInt32, UInt64, String, Variant],
         network_cfg: UdpSettings,
-        reader_groups: List[ReaderGroup] | None = None,
-        writer_groups: List[WriterGroup] | None = None,
+        reader_groups: list[ReaderGroup] | None = None,
+        writer_groups: list[WriterGroup] | None = None,
     ):
         """
         Creates UDP UADP Connection

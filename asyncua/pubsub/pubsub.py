@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import List, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union
 
 import aiofiles
 
@@ -36,8 +36,8 @@ class PubSub(PubSubInformationModel):
     def __init__(self, cfg: PubSubConfigurationDataType = None, server: Server = None) -> None:
         super().__init__()
         self._running = False
-        self._pds: List[PublishedDataSet] = []
-        self._con: List[PubSubConnection] = []
+        self._pds: list[PublishedDataSet] = []
+        self._con: list[PubSubConnection] = []
         self._enabled = False
         self._server = server
         self._node = None
@@ -48,8 +48,8 @@ class PubSub(PubSubInformationModel):
     @classmethod
     def new(
         cls,
-        connections: List[PubSubConnection] | None = None,
-        datasets: List[PublishedDataSet] | None = None,
+        connections: list[PubSubConnection] | None = None,
+        datasets: list[PublishedDataSet] | None = None,
     ):
         o = cls()
         if connections is not None:

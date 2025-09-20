@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, List
+from typing import Any
 
 import asyncua
 from asyncua import ua
@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 
 async def copy_node(
     parent: asyncua.Node, node: asyncua.Node, nodeid: ua.NodeId | None = None, recursive: bool = True
-) -> List[asyncua.Node]:
+) -> list[asyncua.Node]:
     """
     Copy a node or node tree as child of parent node
     """
@@ -68,7 +68,7 @@ async def _rdesc_from_node(parent: asyncua.Node, node: asyncua.Node) -> ua.Refer
             ua.AttributeIds.DisplayName,
         ]
     )
-    variants: List[ua.Variant] = []
+    variants: list[ua.Variant] = []
     for res in results:
         res.StatusCode.check()
         if res.Value is None:

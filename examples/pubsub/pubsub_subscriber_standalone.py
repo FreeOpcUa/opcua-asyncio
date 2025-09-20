@@ -4,7 +4,7 @@ Example creating a standalone publisher that receives an Int32, String, Bool and
 
 import asyncio
 import logging
-from typing import List
+
 from asyncua import ua, pubsub
 from asyncua.pubsub.udp import UdpSettings
 
@@ -54,7 +54,7 @@ class OnDataReceived:
     This is called when a dataset is received
     """
 
-    def on_dataset_received(self, meta: pubsub.DataSetMeta, fields: List[pubsub.DataSetValue]):
+    def on_dataset_received(self, meta: pubsub.DataSetMeta, fields: list[pubsub.DataSetValue]):
         print("Got Msg:")
         for f in fields:
             print(f"{f.Name} -> {f.Value}")

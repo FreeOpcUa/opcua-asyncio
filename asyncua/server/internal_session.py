@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import List, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from collections.abc import Iterable
 
 from asyncua import ua
@@ -69,7 +69,7 @@ class InternalSession(AbstractSession):
     def is_activated(self) -> bool:
         return self.state == SessionState.Activated
 
-    async def create_session(self, params: ua.CreateSessionParameters, sockname: Tuple[str, int] | None = None):
+    async def create_session(self, params: ua.CreateSessionParameters, sockname: tuple[str, int] | None = None):
         self.logger.info("Create session request")
         result = ua.CreateSessionResult()
         result.SessionId = self.session_id
@@ -163,7 +163,7 @@ class InternalSession(AbstractSession):
         )
         return results
 
-    async def history_read(self, params) -> List[ua.HistoryReadResult]:
+    async def history_read(self, params) -> list[ua.HistoryReadResult]:
         return await self.iserver.history_manager.read_history(params)
 
     async def write(self, params):
@@ -183,18 +183,18 @@ class InternalSession(AbstractSession):
     async def browse(self, params):
         return self.iserver.view_service.browse(params)
 
-    async def browse_next(self, parameters: ua.BrowseNextParameters) -> List[ua.BrowseResult]:
+    async def browse_next(self, parameters: ua.BrowseNextParameters) -> list[ua.BrowseResult]:
         # TODO
         # ContinuationPoint: https://reference.opcfoundation.org/v104/Core/docs/Part4/7.6/
         # Add "ContinuationPoints" and some form of management for them to current sessionimplementation
         # BrowseNext: https://reference.opcfoundation.org/Core/Part4/v104/5.8.3/
         raise NotImplementedError
 
-    async def register_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
+    async def register_nodes(self, nodes: list[ua.NodeId]) -> list[ua.NodeId]:
         self.logger.info("Node registration not implemented")
         return nodes
 
-    async def unregister_nodes(self, nodes: List[ua.NodeId]) -> List[ua.NodeId]:
+    async def unregister_nodes(self, nodes: list[ua.NodeId]) -> list[ua.NodeId]:
         self.logger.info("Node registration not implemented")
         return nodes
 
@@ -263,7 +263,7 @@ class InternalSession(AbstractSession):
     def modify_subscription(self, params):
         return self.subscription_service.modify_subscription(params)
 
-    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
+    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> list[ua.TransferResult]:
         # Subscriptions aren't bound to a Session and can be transfered!
         # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
         raise NotImplementedError

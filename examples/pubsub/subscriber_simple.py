@@ -4,7 +4,7 @@ Example creating a subscriber that receives an Int32, String, Bool and ArrayInt1
 
 import asyncio
 import logging
-from typing import List
+
 from asyncua import ua, pubsub, Node, Server
 from dataclasses import dataclass
 
@@ -30,7 +30,7 @@ def create_meta_data():
     return dataset
 
 
-async def init_pubsub_connection(server: Server, nodes: List[Node]) -> pubsub.PubSubConnection:
+async def init_pubsub_connection(server: Server, nodes: list[Node]) -> pubsub.PubSubConnection:
     metadata = create_meta_data()
     # link metafields with the nodes in the AddressSpace
     subscribed_ds = pubsub.SubScribedTargetVariables(
@@ -66,7 +66,7 @@ async def init_pubsub_connection(server: Server, nodes: List[Node]) -> pubsub.Pu
     )
 
 
-async def create_variables(node: Node, ns: ua.UInt16) -> List[Node]:
+async def create_variables(node: Node, ns: ua.UInt16) -> list[Node]:
     folder = await node.add_folder(ua.NodeId("SubscriberDemo", ns), "PublisherDemoNodes")
     return [
         await folder.add_variable(ua.NodeId("SubInt32", ns), "Int32", 1, ua.VariantType.Int32),

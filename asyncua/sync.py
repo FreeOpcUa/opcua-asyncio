@@ -320,7 +320,7 @@ class Client:
         pass
 
     @syncmethod
-    def get_namespace_array(self) -> List[str]:  # type: ignore[empty-body]
+    def get_namespace_array(self) -> list[str]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -351,7 +351,7 @@ class Client:
         return self.aio_obj.get_subscription_revised_params(params, results)
 
     @syncmethod
-    def delete_subscriptions(self, subscription_ids: Iterable[int]) -> List[ua.StatusCode]:  # type: ignore[empty-body]
+    def delete_subscriptions(self, subscription_ids: Iterable[int]) -> list[ua.StatusCode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -372,15 +372,15 @@ class Client:
         return SyncNode(self.tloop, self.aio_obj.get_server_node())
 
     @syncmethod
-    def connect_and_get_server_endpoints(self) -> List[ua.EndpointDescription]:  # type: ignore[empty-body]
+    def connect_and_get_server_endpoints(self) -> list[ua.EndpointDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def connect_and_find_servers(self) -> List[ua.ApplicationDescription]:  # type: ignore[empty-body]
+    def connect_and_find_servers(self) -> list[ua.ApplicationDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def connect_and_find_servers_on_network(self) -> List[ua.FindServersOnNetworkResult]:  # type: ignore[empty-body]
+    def connect_and_find_servers_on_network(self) -> list[ua.FindServersOnNetworkResult]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -396,7 +396,7 @@ class Client:
         pass
 
     @syncmethod
-    def get_endpoints(self) -> List[ua.EndpointDescription]:  # type: ignore[empty-body]
+    def get_endpoints(self) -> list[ua.EndpointDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -416,11 +416,11 @@ class Client:
         pass
 
     @syncmethod
-    def find_servers(self, uris: Iterable[str] | None = None) -> List[ua.ApplicationDescription]:  # type: ignore[empty-body]
+    def find_servers(self, uris: Iterable[str] | None = None) -> list[ua.ApplicationDescription]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def find_servers_on_network(self) -> List[ua.FindServersOnNetworkResult]:  # type: ignore[empty-body]
+    def find_servers_on_network(self) -> list[ua.FindServersOnNetworkResult]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -451,11 +451,11 @@ class Client:
         return self.aio_obj.get_keepalive_count(period)
 
     @syncmethod
-    def delete_nodes(self, nodes: Iterable[SyncNode], recursive=False) -> Tuple[List[SyncNode], List[ua.StatusCode]]:  # type: ignore[empty-body]
+    def delete_nodes(self, nodes: Iterable[SyncNode], recursive=False) -> tuple[list[SyncNode], list[ua.StatusCode]]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> List[ua.NodeId]:  # type: ignore[empty-body]
+    def import_xml(self, path=None, xmlstring=None, strict_mode=True) -> list[ua.NodeId]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -467,7 +467,7 @@ class Client:
         pass
 
     @syncmethod
-    def register_nodes(self, nodes: Iterable[SyncNode]) -> List[SyncNode]:  # type: ignore[empty-body]
+    def register_nodes(self, nodes: Iterable[SyncNode]) -> list[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -477,27 +477,27 @@ class Client:
     @syncmethod
     def read_attributes(  # type: ignore[empty-body]
         self, nodes: Iterable[SyncNode], attr: ua.AttributeIds = ua.AttributeIds.Value
-    ) -> List[ua.DataValue]:
+    ) -> list[ua.DataValue]:
         pass
 
     @syncmethod
-    def read_values(self, nodes: Iterable[SyncNode]) -> List[Any]:  # type: ignore[empty-body]
+    def read_values(self, nodes: Iterable[SyncNode]) -> list[Any]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
     def write_values(  # type: ignore[empty-body]
         self, nodes: Iterable[SyncNode], values: Iterable[Any], raise_on_partial_error: bool = True
-    ) -> List[ua.StatusCode]:
+    ) -> list[ua.StatusCode]:
         pass
 
     @syncmethod
-    def browse_nodes(self, nodes: Iterable[SyncNode]) -> List[Tuple[SyncNode, ua.BrowseResult]]:  # type: ignore[empty-body]
+    def browse_nodes(self, nodes: Iterable[SyncNode]) -> list[tuple[SyncNode, ua.BrowseResult]]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
     def translate_browsepaths(  # type: ignore[empty-body]
         self, starting_node: ua.NodeId, relative_paths: Iterable[Union[ua.RelativePath, str]]
-    ) -> List[ua.BrowsePathResult]:
+    ) -> list[ua.BrowsePathResult]:
         pass
 
     def __enter__(self):
@@ -766,7 +766,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def read_array_dimensions(self) -> List[int]:  # type: ignore[empty-body]
+    def read_array_dimensions(self) -> list[int]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -774,7 +774,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def delete(self, delete_references: bool = True, recursive: bool = False) -> List[SyncNode]:  # type: ignore[empty-body]
+    def delete(self, delete_references: bool = True, recursive: bool = False) -> list[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -782,11 +782,11 @@ class SyncNode:
         self,
         refs: int = ua.ObjectIds.HierarchicalReferences,
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
-    ) -> List[SyncNode]:
+    ) -> list[SyncNode]:
         pass
 
     @syncmethod
-    def get_properties(self) -> List[SyncNode]:  # type: ignore[empty-body]
+    def get_properties(self) -> list[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -796,7 +796,7 @@ class SyncNode:
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
         includesubtypes: bool = True,
         result_mask: ua.BrowseResultMask = ua.BrowseResultMask.All,
-    ) -> List[ua.ReferenceDescription]:
+    ) -> list[ua.ReferenceDescription]:
         pass
 
     @syncmethod
@@ -815,14 +815,14 @@ class SyncNode:
         self,
         path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]],
         return_all: Literal[True] = True,
-    ) -> List[SyncNode]: ...
+    ) -> list[SyncNode]: ...
 
     @syncmethod
     def get_child(  # type: ignore[empty-body]
         self,
         path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]],
         return_all: bool = False,
-    ) -> Union[SyncNode, List[SyncNode]]:
+    ) -> Union[SyncNode, list[SyncNode]]:
         pass
 
     @syncmethod
@@ -830,7 +830,7 @@ class SyncNode:
         self,
         paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]],
         raise_on_partial_error: bool = True,
-    ) -> List[List[SyncNode | None]]:
+    ) -> list[list[SyncNode | None]]:
         pass
 
     @syncmethod
@@ -840,7 +840,7 @@ class SyncNode:
         endtime: datetime | None = None,
         numvalues: int = 0,
         return_bounds: bool = True,
-    ) -> List[ua.DataValue]:
+    ) -> list[ua.DataValue]:
         pass
 
     @syncmethod
@@ -860,7 +860,7 @@ class SyncNode:
         evtypes: Union[
             SyncNode, ua.NodeId, str, int, Iterable[Union[SyncNode, ua.NodeId, str, int]]
         ] = ua.ObjectIds.BaseEventType,
-    ) -> List[Event]:
+    ) -> list[Event]:
         pass
 
     @syncmethod
@@ -938,11 +938,11 @@ class SyncNode:
     set_value = write_value  # legacy
 
     @syncmethod
-    def write_params(self, params: ua.WriteParameters) -> List[ua.StatusCode]:  # type: ignore[empty-body]
+    def write_params(self, params: ua.WriteParameters) -> list[ua.StatusCode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_params(self, params: ua.ReadParameters) -> List[ua.DataValue]:  # type: ignore[empty-body]
+    def read_params(self, params: ua.ReadParameters) -> list[ua.DataValue]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -975,7 +975,7 @@ class SyncNode:
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
         includesubtypes: bool = True,
         result_mask: ua.BrowseResultMask = ua.BrowseResultMask.All,
-    ) -> List[ua.ReferenceDescription]:
+    ) -> list[ua.ReferenceDescription]:
         pass
 
     @syncmethod
@@ -993,21 +993,21 @@ class SyncNode:
         pass
 
     @syncmethod
-    def get_variables(self) -> List[SyncNode]:  # type: ignore[empty-body]
+    def get_variables(self) -> list[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @overload
-    def get_path(self, max_length: int = 20, as_string: Literal[False] = False) -> List[SyncNode]: ...
+    def get_path(self, max_length: int = 20, as_string: Literal[False] = False) -> list[SyncNode]: ...
 
     @overload
-    def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> List[str]: ...
+    def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> list[str]: ...
 
     @syncmethod
-    def get_path(self, max_length: int = 20, as_string: bool = False) -> Union[List[SyncNode], List[str]]:  # type: ignore[empty-body]
+    def get_path(self, max_length: int = 20, as_string: bool = False) -> Union[list[SyncNode], list[str]]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def read_attributes(self, attrs: Iterable[ua.AttributeIds]) -> List[ua.DataValue]:  # type: ignore[empty-body]
+    def read_attributes(self, attrs: Iterable[ua.AttributeIds]) -> list[ua.DataValue]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -1035,15 +1035,15 @@ class SyncNode:
         pass
 
     @syncmethod
-    def get_description_refs(self) -> List[SyncNode]:  # type: ignore[empty-body]
+    def get_description_refs(self) -> list[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def get_encoding_refs(self) -> List[SyncNode]:  # type: ignore[empty-body]
+    def get_encoding_refs(self) -> list[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
-    def get_methods(self) -> List[SyncNode]:  # type: ignore[empty-body]
+    def get_methods(self) -> list[SyncNode]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -1053,7 +1053,7 @@ class SyncNode:
         direction: ua.BrowseDirection = ua.BrowseDirection.Both,
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
         includesubtypes: bool = True,
-    ) -> List[SyncNode]:
+    ) -> list[SyncNode]:
         pass
 
     @syncmethod
@@ -1202,7 +1202,7 @@ def new_enum(  # type: ignore[empty-body]
     server: Union[Server, Client],
     idx: Union[int, ua.NodeId],
     name: Union[int, ua.QualifiedName],
-    values: List[str],
+    values: list[str],
     optional: bool = False,
 ) -> SyncNode:
     pass
@@ -1213,6 +1213,6 @@ def new_struct(  # type: ignore[empty-body]
     server: Union[Server, Client],
     idx: Union[int, ua.NodeId],
     name: Union[int, ua.QualifiedName],
-    fields: List[ua.StructureField],
-) -> Tuple[SyncNode, List[SyncNode]]:
+    fields: list[ua.StructureField],
+) -> tuple[SyncNode, list[SyncNode]]:
     pass

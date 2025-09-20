@@ -8,7 +8,7 @@ import math
 from datetime import timedelta, datetime
 import socket
 from urllib.parse import urlparse
-from typing import Tuple, Union
+from typing import Union
 from collections.abc import Callable
 from pathlib import Path
 
@@ -97,7 +97,7 @@ class Server:
         self.default_timeout: int = 60 * 60 * 1000
         self.iserver: InternalServer = iserver if iserver else InternalServer(user_manager=user_manager)
         self.bserver: BinaryServer | None = None
-        self.socket_address: Tuple[str, int] | None = None
+        self.socket_address: tuple[str, int] | None = None
         self._discovery_clients = {}
         self._discovery_period = 60
         self._discovery_handle = None
@@ -504,7 +504,7 @@ class Server:
         else:
             _logger.debug("%s server started", self)
 
-    def _get_bind_socket_info(self) -> Tuple[str | None, int | None]:
+    def _get_bind_socket_info(self) -> tuple[str | None, int | None]:
         if self.socket_address is not None:
             return self.socket_address
         else:
