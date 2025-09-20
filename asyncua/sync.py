@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from threading import Condition, Thread
-from typing import Any, Callable, Union, overload
+from typing import Any, Union, overload
 from collections.abc import Callable, Iterable, Sequence
 
 from cryptography import x509
