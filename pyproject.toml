@@ -3,6 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
+requires-python = ">=3.10"
 dependencies = [
     "aiofiles",
     "aiosqlite",
@@ -18,7 +19,6 @@ dependencies = [
 version = "1.1.8"
 name = "asyncua"
 description = "Pure Python OPC-UA client and server library"
-requires-python = ">=3.9"
 readme = "README.md"
 license = { text = "GNU Lesser General Public License v3 or later" }
 authors = [
@@ -29,7 +29,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -92,7 +91,6 @@ extend-exclude = [
     "event_objects.py",
     "standard_address_space_services.py",
 ]
-target-version = "py37"
 [tool.ruff.lint]
 select = ["E", "F", "G004", "W", "UP"]
 ignore = [
