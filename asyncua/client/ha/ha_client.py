@@ -10,7 +10,8 @@ from sortedcontainers import SortedDict  # type: ignore
 from asyncua import Node, ua, Client
 from asyncua.client.ua_client import UASocketProtocol
 from asyncua.ua.uaerrors import BadSessionClosed, BadSessionNotActivated
-from typing import Dict, Generator, Iterable, List, Optional, Set, Tuple, Type, Union, Sequence
+from typing import Dict, List, Set, Tuple, Type, Union
+from collections.abc import Generator, Iterable, Sequence
 
 from .reconciliator import Reconciliator
 from .common import ClientNotFound, event_wait
@@ -65,11 +66,11 @@ class ServerInfo:
 
 @dataclass(frozen=True, eq=True)
 class HaSecurityConfig:
-    policy: Optional[Type[SecurityPolicy]] = None
-    certificate: Optional[CertProperties] = None
-    private_key: Optional[CertProperties] = None
-    server_certificate: Optional[CertProperties] = None
-    mode: Optional[ua.MessageSecurityMode] = None
+    policy: Type[SecurityPolicy] | None = None
+    certificate: CertProperties | None = None
+    private_key: CertProperties | None = None
+    server_certificate: CertProperties | None = None
+    mode: ua.MessageSecurityMode | None = None
 
 
 @dataclass(frozen=True, eq=True)
@@ -107,7 +108,7 @@ class HaClient:
     # i.e: You're using an OPC-UA proxy
     HEALTHY_STATE = ConnectionStates.HEALTHY
 
-    def __init__(self, config: HaConfig, security: Optional[HaSecurityConfig] = None) -> None:
+    def __init__(self, config: HaConfig, security: HaSecurityConfig | None = None) -> None:
         self._config: HaConfig = config
         self._keepalive_task: Dict[KeepAlive, asyncio.Task] = {}
         self._manager_task: Dict[HaManager, asyncio.Task] = {}
@@ -120,7 +121,7 @@ class HaClient:
         self._client_lock: asyncio.Lock = asyncio.Lock()
 
         self.clients: Dict[Client, ServerInfo] = {}
-        self.active_client: Optional[Client] = None
+        self.active_client: Client | None = None
         # full type: Dict[str, SortedDict[str, VirtualSubscription]]
         self.ideal_map: Dict[str, SortedDict] = {}
         self.sub_names: Set[str] = set()
@@ -194,7 +195,7 @@ class HaClient:
         policy: Type[SecurityPolicy],
         certificate: CertProperties,
         private_key: CertProperties,
-        server_certificate: Optional[CertProperties] = None,
+        server_certificate: CertProperties | None = None,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
     ) -> None:
         self.security_config = HaSecurityConfig(policy, certificate, private_key, server_certificate, mode)
@@ -287,7 +288,7 @@ class HaClient:
                     vs.unsubscribe(str_nodes)
                     await self.hook_on_unsubscribe(url=url, nodes=str_nodes)
 
-    async def failover_warm(self, primary: Optional[Client], secondaries: Iterable[Client]) -> None:
+    async def failover_warm(self, primary: Client | None, secondaries: Iterable[Client]) -> None:
         async with self._ideal_map_lock:
             if primary:
                 self._set_monitoring_mode(ua.MonitoringMode.Reporting, clients=[primary])
@@ -321,7 +322,7 @@ class HaClient:
                     unhealthy.append(client)
             return healthy, unhealthy
 
-    async def get_serving_client(self, clients: List[Client], serving_client: Optional[Client]) -> Optional[Client]:
+    async def get_serving_client(self, clients: List[Client], serving_client: Client | None) -> Client | None:
         """
         Returns the client with the higher service level.
 
@@ -470,13 +471,13 @@ class HaManager:
     according to the selected HaMode
     """
 
-    def __init__(self, ha_client: HaClient, timer: Optional[int] = None) -> None:
+    def __init__(self, ha_client: HaClient, timer: int | None = None) -> None:
         self.ha_client = ha_client
         self.timer = self.set_loop_timer(timer)
         self.stop_event = asyncio.Event()
         self.is_running = False
 
-    def set_loop_timer(self, timer: Optional[int]):
+    def set_loop_timer(self, timer: int | None):
         return timer if timer else int(self.ha_client.session_timeout)
 
     async def run(self) -> None:

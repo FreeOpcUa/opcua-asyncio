@@ -15,7 +15,8 @@ unimplemented:
 """
 
 from __future__ import annotations
-from typing import Iterable, List, Optional, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
+from collections.abc import Iterable
 import asyncio
 import logging
 
@@ -70,7 +71,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def status_to_status_code(status: Optional[UInt16]) -> StatusCode:
+def status_to_status_code(status: UInt16 | None) -> StatusCode:
     """Upgrade the header status to a full StatusCode."""
     return StatusCode(UInt32(((status or 0) & 0xFFFF) << 16))
 
@@ -96,8 +97,8 @@ class DataSetReader(PubSubInformationModel):
 
     def __init__(
         self,
-        cfg: Optional[DataSetReaderDataType] = None,
-        subscribed: Optional[SubscribedDataSet] = None,
+        cfg: DataSetReaderDataType | None = None,
+        subscribed: SubscribedDataSet | None = None,
     ) -> None:
         super().__init__()
         if cfg is None:
@@ -119,10 +120,10 @@ class DataSetReader(PubSubInformationModel):
         publisherId: Variant,
         writer_group_id: UInt16,
         dataset_writer_id: UInt16,
-        meta: Optional[DataSetMeta] = None,
-        name: Optional[str] = None,
-        enabled: Optional[bool] = False,
-        subscribed: Optional[SubscribedDataSet] = None,
+        meta: DataSetMeta | None = None,
+        name: str | None = None,
+        enabled: bool | None = False,
+        subscribed: SubscribedDataSet | None = None,
     ):
         if name is None:
             name = f"Reader{cls.__reader_cnt}"
@@ -321,8 +322,8 @@ class ReaderGroup(PubSubInformationModel):
     @classmethod
     def new(
         cls,
-        name: Optional[str] = None,
-        reader: Optional[List[DataSetReader]] = None,
+        name: str | None = None,
+        reader: List[DataSetReader] | None = None,
         enable=False,
     ):
         obj = cls(ReaderGroupDataType())

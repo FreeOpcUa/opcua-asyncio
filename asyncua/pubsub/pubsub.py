@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import List, Optional, TYPE_CHECKING, Union
+from typing import List, TYPE_CHECKING, Union
 
 import aiofiles
 
@@ -48,8 +48,8 @@ class PubSub(PubSubInformationModel):
     @classmethod
     def new(
         cls,
-        connections: Optional[List[PubSubConnection]] = None,
-        datasets: Optional[List[PublishedDataSet]] = None,
+        connections: List[PubSubConnection] | None = None,
+        datasets: List[PublishedDataSet] | None = None,
     ):
         o = cls()
         if connections is not None:
@@ -97,11 +97,11 @@ class PubSub(PubSubInformationModel):
         if self._node is not None:
             await con._init_information_model(self._server)
 
-    def get_connection(self, name: String) -> Optional[PubSubConnection]:
+    def get_connection(self, name: String) -> PubSubConnection | None:
         print([c._cfg.Name for c in self._con])
         return next((c for c in self._con if c._cfg.Name == name), None)
 
-    def get_published_dataset(self, name: String) -> Optional[PublishedDataSet]:
+    def get_published_dataset(self, name: String) -> PublishedDataSet | None:
         return next((pds for pds in self._pds if pds.get_name() == name), None)
 
     async def remove_published_dataset(self, name: String) -> None:

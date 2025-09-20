@@ -2,7 +2,7 @@
 Protocols which are used to decouple components from pubsub
 """
 
-from typing import List, Optional, Union
+from typing import List, Union
 from ..ua.uatypes import Byte, ExtensionObject, String, UInt16, UInt32, UInt64
 from ..ua.uaprotocol_auto import PubSubState
 from .uadp import UadpNetworkMessage
@@ -40,7 +40,7 @@ class IPubSub(Protocol):
     Interface to glue PublishedDataSet and Connection together
     """
 
-    def get_published_dataset(self, name: String) -> Optional[PublishedDataSet]:
+    def get_published_dataset(self, name: String) -> PublishedDataSet | None:
         raise NotImplementedError
 
 

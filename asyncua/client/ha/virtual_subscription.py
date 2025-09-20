@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Optional, Set
+from typing import Any, Set
+from collections.abc import Iterable
 
 from asyncua import ua
 from sortedcontainers import SortedDict  # type: ignore
@@ -10,7 +11,7 @@ TypeSubHandler = Any
 
 @dataclass(frozen=True)
 class NodeAttr:
-    attr: Optional[ua.AttributeIds] = None
+    attr: ua.AttributeIds | None = None
     queuesize: int = 0
 
 

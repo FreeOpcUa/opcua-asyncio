@@ -8,7 +8,7 @@ import struct
 import socket
 from dataclasses import InitVar, dataclass
 from ipaddress import ip_address
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 from urllib.parse import urlparse
 
 from ..ua import KeyValuePair
@@ -50,9 +50,9 @@ class UdpSettings:
 
     Addr: Tuple[str, int] = None  # Address, Port
     Reuse: bool = True  # Reuse Port
-    TTL: Optional[int] = None  # Sets the time to live for UDP
+    TTL: int | None = None  # Sets the time to live for UDP
     Loopback: bool = True  # Sends Messages to loopback
-    Adapter: Tuple[Optional[str], int] = None  # Listening address
+    Adapter: Tuple[str | None, int] = None  # Listening address
     Url: InitVar[str] = None  # Url to generate the addr
 
     def __post_init__(self, Url: str):
@@ -74,7 +74,7 @@ class UdpSettings:
         adapter = "" if self.Adapter[0] is None else self.Adapter[0]
         return NetworkAddressUrlDataType(adapter, f"opc.udp://{self.Addr[0]}:{self.Addr[1]}")
 
-    def set_key_value(self, kvs: Optional[List[KeyValuePair]]) -> None:
+    def set_key_value(self, kvs: List[KeyValuePair] | None) -> None:
         if kvs is not None:
             for kv in kvs:
                 key = kv.Key.Name
@@ -139,7 +139,7 @@ class UdpSettings:
 
 
 class OpcUdp(asyncio.DatagramProtocol):
-    def __init__(self, cfg: UdpSettings, receiver: Optional[PubSubReceiver], publisher_id: Variant) -> None:
+    def __init__(self, cfg: UdpSettings, receiver: PubSubReceiver | None, publisher_id: Variant) -> None:
         super().__init__()
         self.cfg = cfg
         self.receiver = receiver

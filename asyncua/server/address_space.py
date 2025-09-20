@@ -10,10 +10,11 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Callable, Dict, List, Union, Tuple, Generator
+    from typing import Dict, List, Union, Tuple
+    from collections.abc import Callable, Generator
     from asyncua.ua.uaprotocol_auto import (
         ObjectAttributes,
         DataTypeAttributes,
@@ -45,9 +46,9 @@ class AttributeValue:
     """
 
     def __init__(self, value: ua.DataValue):
-        self.value: Optional[ua.DataValue] = value
-        self.value_callback: Optional[Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue]] = None
-        self.value_setter: Optional[Callable[[NodeData, ua.AttributeIds, ua.DataValue], None]] = None
+        self.value: ua.DataValue | None = value
+        self.value_callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue] | None = None
+        self.value_setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None] | None = None
         self.datachange_callbacks = {}
 
     def __str__(self) -> str:

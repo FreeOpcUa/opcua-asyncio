@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Optional, Union, TYPE_CHECKING
+from typing import List, Union, TYPE_CHECKING
 
 from ..common.methods import uamethod
 from ..common.node import Node
@@ -36,7 +36,7 @@ class PubSubInformationModel:
     async def disable(self) -> StatusCodes:
         raise UaStatusCodeError(StatusCodes.BadNotImplemented)
 
-    async def _init_node(self, node: Node, server: Optional[Server]) -> None:
+    async def _init_node(self, node: Node, server: Server | None) -> None:
         """
         links a node to the pubsub internals
         and prepares common nodes
@@ -66,7 +66,7 @@ class PubSubInformationModel:
 
     async def get_node_value(
         self, path: Union[str, QualifiedName, List[str], List[QualifiedName]]
-    ) -> Optional[Variant]:
+    ) -> Variant | None:
         """
         Get value of child node value returns `None` if no information model is used
         """

@@ -1,6 +1,5 @@
 from enum import Enum
 from dataclasses import dataclass
-from typing import Optional
 
 from asyncua import ua
 
@@ -53,7 +52,7 @@ class UserRole(Enum):
 @dataclass
 class User:
     role: UserRole = UserRole.Anonymous
-    name: Optional[str] = None
+    name: str | None = None
 
 
 class PermissionRuleset:

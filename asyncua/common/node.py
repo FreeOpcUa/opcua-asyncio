@@ -6,12 +6,13 @@ and browse address space
 from datetime import datetime
 import logging
 import sys
-from typing import Any, Iterable, List, Optional, Set, Union, overload
+from typing import Any, List, Optional, Set, Union, overload
+from collections.abc import Iterable
 
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
-    from typing_extensions import Literal
+    from typing import Literal
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
@@ -268,7 +269,7 @@ class Node:
             raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return ua.ValueRank(res.Value.Value)
 
-    async def write_value(self, value: Any, varianttype: Optional[ua.VariantType] = None) -> None:
+    async def write_value(self, value: Any, varianttype: ua.VariantType | None = None) -> None:
         """
         Write value of a node. Only variables(properties) have values.
         An exception will be generated for other node types.
@@ -321,7 +322,7 @@ class Node:
         return await self.set_writable(False)
 
     async def write_attribute(
-        self, attributeid: ua.AttributeIds, datavalue: ua.DataValue, indexrange: Optional[str] = None
+        self, attributeid: ua.AttributeIds, datavalue: ua.DataValue, indexrange: str | None = None
     ) -> None:
         """
         Set an attribute of a node
@@ -345,7 +346,7 @@ class Node:
         return result
 
     async def read_attribute(
-        self, attr: ua.AttributeIds, indexrange: Optional[str] = None, raise_on_bad_status: bool = True
+        self, attr: ua.AttributeIds, indexrange: str | None = None, raise_on_bad_status: bool = True
     ) -> ua.DataValue:
         """
         Read one attribute of a node
@@ -513,7 +514,7 @@ class Node:
             nodes.append(node)
         return nodes
 
-    async def read_type_definition(self) -> Optional[ua.NodeId]:
+    async def read_type_definition(self) -> ua.NodeId | None:
         """
         returns type definition of the node.
         """
@@ -676,8 +677,8 @@ class Node:
 
     async def read_raw_history(
         self,
-        starttime: Optional[datetime] = None,
-        endtime: Optional[datetime] = None,
+        starttime: datetime | None = None,
+        endtime: datetime | None = None,
         numvalues: int = 0,
         return_bounds: bool = True,
     ) -> List[ua.DataValue]:
@@ -715,7 +716,7 @@ class Node:
         return history
 
     async def history_read(
-        self, details: ua.ReadRawModifiedDetails, continuation_point: Optional[bytes] = None
+        self, details: ua.ReadRawModifiedDetails, continuation_point: bytes | None = None
     ) -> ua.HistoryReadResult:
         """
         Read raw history of a node, low-level function
@@ -867,7 +868,7 @@ class Node:
         self,
         nodeid: Union[ua.NodeId, str, int],
         bname: Union[ua.QualifiedName, str],
-        objecttype: Optional[Union[ua.NodeId, int]] = None,
+        objecttype: Union[ua.NodeId, int] | None = None,
         instantiate_optional: bool = True,
     ) -> "Node":
         return await create_object(self, nodeid, bname, objecttype, instantiate_optional)
@@ -877,8 +878,8 @@ class Node:
         nodeid: Union[ua.NodeId, str, int],
         bname: Union[ua.QualifiedName, str],
         val: Any,
-        varianttype: Optional[ua.VariantType] = None,
-        datatype: Optional[Union[ua.NodeId, int]] = None,
+        varianttype: ua.VariantType | None = None,
+        datatype: Union[ua.NodeId, int] | None = None,
     ) -> "Node":
         return await create_variable(self, nodeid, bname, val, varianttype, datatype)
 
@@ -891,7 +892,7 @@ class Node:
         return await create_variable_type(self, nodeid, bname, datatype)
 
     async def add_data_type(
-        self, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], description: Optional[str] = None
+        self, nodeid: Union[ua.NodeId, str, int], bname: Union[ua.QualifiedName, str], description: str | None = None
     ) -> "Node":
         return await create_data_type(self, nodeid, bname, description=description)
 
@@ -900,8 +901,8 @@ class Node:
         nodeid: Union[ua.NodeId, str, int],
         bname: Union[ua.QualifiedName, str],
         val: Any,
-        varianttype: Optional[ua.VariantType] = None,
-        datatype: Optional[Union[ua.NodeId, int]] = None,
+        varianttype: ua.VariantType | None = None,
+        datatype: Union[ua.NodeId, int] | None = None,
     ) -> "Node":
         return await create_property(self, nodeid, bname, val, varianttype, datatype)
 
@@ -913,7 +914,7 @@ class Node:
         nodeid: Union[ua.NodeId, str, int],
         bname: Union[ua.QualifiedName, str],
         symmetric: bool = True,
-        inversename: Optional[str] = None,
+        inversename: str | None = None,
     ) -> "Node":
         return await create_reference_type(self, nodeid, bname, symmetric, inversename)
 
