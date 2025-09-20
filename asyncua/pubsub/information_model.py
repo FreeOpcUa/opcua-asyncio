@@ -64,9 +64,7 @@ class PubSubInformationModel:
             n = await self._node.get_child(path)
             await n.write_value(DataValue(value))
 
-    async def get_node_value(
-        self, path: Union[str, QualifiedName, List[str], List[QualifiedName]]
-    ) -> Variant | None:
+    async def get_node_value(self, path: Union[str, QualifiedName, List[str], List[QualifiedName]]) -> Variant | None:
         """
         Get value of child node value returns `None` if no information model is used
         """
