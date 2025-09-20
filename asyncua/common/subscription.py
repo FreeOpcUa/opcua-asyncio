@@ -7,13 +7,8 @@ from __future__ import annotations
 import asyncio
 import collections.abc
 import logging
-import sys
-from typing import TYPE_CHECKING, Any, Tuple, Union, List, Iterable, Optional, overload
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
+from typing import TYPE_CHECKING, Any, Tuple, Union, List, overload, Protocol
+from collections.abc import Iterable
 
 from asyncua import ua
 from asyncua.client.ua_client import UaClient
@@ -136,7 +131,7 @@ class Subscription:
         self._handler: SubscriptionHandler = handler
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items = {}
-        self.subscription_id: Optional[int] = None
+        self.subscription_id: int | None = None
 
     async def init(self) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
@@ -295,7 +290,7 @@ class Subscription:
         evtypes: Union[
             Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]
         ] = ua.ObjectIds.BaseEventType,
-        evfilter: Optional[ua.EventFilter] = None,
+        evfilter: ua.EventFilter | None = None,
         queuesize: int = 0,
         where_clause_generation: bool = True,
     ) -> int:
@@ -331,7 +326,7 @@ class Subscription:
         evtypes: Union[
             Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]
         ] = ua.ObjectIds.ConditionType,
-        evfilter: Optional[ua.EventFilter] = None,
+        evfilter: ua.EventFilter | None = None,
         queuesize: int = 0,
     ) -> int:
         """
@@ -355,7 +350,7 @@ class Subscription:
         self,
         nodes: Node,
         attr=ua.AttributeIds.Value,
-        mfilter: Optional[ua.MonitoringFilter] = None,
+        mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,
@@ -366,7 +361,7 @@ class Subscription:
         self,
         nodes: Iterable[Node],
         attr=ua.AttributeIds.Value,
-        mfilter: Optional[ua.MonitoringFilter] = None,
+        mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,
@@ -376,7 +371,7 @@ class Subscription:
         self,
         nodes: Union[Node, Iterable[Node]],
         attr=ua.AttributeIds.Value,
-        mfilter: Optional[ua.MonitoringFilter] = None,
+        mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,

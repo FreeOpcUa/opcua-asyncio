@@ -200,9 +200,11 @@ async def test_basic256_encrypt_success(srv_crypto_all_certs):
 async def test_basic256_encrypt_use_certificate_bytes(srv_crypto_all_certs):
     clt = Client(uri_crypto)
     _, cert = srv_crypto_all_certs
-    with open(cert, "rb") as server_cert, open(f"{EXAMPLE_PATH / 'certificate-example.der'}", "rb") as user_cert, open(
-        f"{EXAMPLE_PATH / 'private-key-example.pem'}", "rb"
-    ) as user_key:
+    with (
+        open(cert, "rb") as server_cert,
+        open(f"{EXAMPLE_PATH / 'certificate-example.der'}", "rb") as user_cert,
+        open(f"{EXAMPLE_PATH / 'private-key-example.pem'}", "rb") as user_key,
+    ):
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
             user_cert.read(),

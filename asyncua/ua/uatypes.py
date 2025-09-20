@@ -13,7 +13,7 @@ from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import IntEnum
-from typing import Any, Generic, List, Optional, Union
+from typing import Any, Generic, List, Union
 
 from asyncua.ua.object_ids import ObjectIds
 
@@ -676,7 +676,7 @@ class StringNodeId(NodeId):
 
 @dataclass(frozen=True, eq=False, order=False)
 class ExpandedNodeId(NodeId):
-    NamespaceUri: Optional[String] = field(default=None, compare=True)
+    NamespaceUri: String | None = field(default=None, compare=True)
     ServerIndex: Int32 = field(default=0, compare=True)
 
     def to_string(self):
@@ -781,8 +781,8 @@ class LocalizedText:
     """
 
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    Locale: Optional[String] = None
-    Text: Optional[String] = None
+    Locale: String | None = None
+    Text: String | None = None
 
     def __init__(self, Text=None, Locale=None):
         # need to write init method since args ar inverted in original implementation
@@ -828,7 +828,7 @@ class ExtensionObject:
 
     TypeId: NodeId = NodeId()
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    Body: Optional[ByteString] = None
+    Body: ByteString | None = None
 
     def __bool__(self):
         return self.Body is not None
@@ -941,8 +941,8 @@ class Variant:
     # FIXME: typing is wrong here
     Value: Any = None
     VariantType: "VariantType" = None
-    Dimensions: Optional[List[Int32]] = None
-    is_array: Optional[bool] = None
+    Dimensions: List[Int32] | None = None
+    is_array: bool | None = None
 
     def __post_init__(self):
         if self.is_array is None:
@@ -1092,14 +1092,14 @@ class DataValue:
     data_type = NodeId(Int32(ObjectIds.DataValue))
 
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    Value: Optional[Variant] = None
-    StatusCode_: Optional[StatusCode] = field(default_factory=StatusCode)
-    SourceTimestamp: Optional[DateTime] = (
+    Value: Variant | None = None
+    StatusCode_: StatusCode | None = field(default_factory=StatusCode)
+    SourceTimestamp: DateTime | None = (
         None  # FIXME type DateType raises type hinting errors because datetime is assigned
     )
-    ServerTimestamp: Optional[DateTime] = None
-    SourcePicoseconds: Optional[UInt16] = None
-    ServerPicoseconds: Optional[UInt16] = None
+    ServerTimestamp: DateTime | None = None
+    SourcePicoseconds: UInt16 | None = None
+    ServerPicoseconds: UInt16 | None = None
 
     def __post_init__(
         self,
@@ -1139,13 +1139,13 @@ class DiagnosticInfo:
     data_type = NodeId(25)
 
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    SymbolicId: Optional[Int32] = None
-    NamespaceURI: Optional[Int32] = None
-    Locale: Optional[Int32] = None
-    LocalizedText: Optional[Int32] = None
-    AdditionalInfo: Optional[String] = None
-    InnerStatusCode: Optional[StatusCode] = None
-    InnerDiagnosticInfo: Optional[ExtensionObject] = None
+    SymbolicId: Int32 | None = None
+    NamespaceURI: Int32 | None = None
+    Locale: Int32 | None = None
+    LocalizedText: Int32 | None = None
+    AdditionalInfo: String | None = None
+    InnerStatusCode: StatusCode | None = None
+    InnerDiagnosticInfo: ExtensionObject | None = None
 
 
 def datatype_to_varianttype(int_type):

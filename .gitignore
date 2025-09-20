@@ -25,3 +25,4 @@ examples/history.db
 .vscode
 .coverage
 schemas/UA-Nodese*
+uv.lock

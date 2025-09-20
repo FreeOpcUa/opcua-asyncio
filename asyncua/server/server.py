@@ -8,7 +8,8 @@ import math
 from datetime import timedelta, datetime
 import socket
 from urllib.parse import urlparse
-from typing import Callable, Optional, Tuple, Union
+from typing import Tuple, Union
+from collections.abc import Callable
 from pathlib import Path
 
 from asyncua import ua
@@ -95,8 +96,8 @@ class Server:
         self.application_type = ua.ApplicationType.ClientAndServer
         self.default_timeout: int = 60 * 60 * 1000
         self.iserver: InternalServer = iserver if iserver else InternalServer(user_manager=user_manager)
-        self.bserver: Optional[BinaryServer] = None
-        self.socket_address: Optional[Tuple[str, int]] = None
+        self.bserver: BinaryServer | None = None
+        self.socket_address: Tuple[str, int] | None = None
         self._discovery_clients = {}
         self._discovery_period = 60
         self._discovery_handle = None
@@ -123,9 +124,9 @@ class Server:
             max_chunk_count=math.ceil(max_msg_sz / buffer_sz),  # Round up to allow max msg size
             max_message_size=max_msg_sz,
         )
-        self._pubsub: Optional[PubSub] = None
+        self._pubsub: PubSub | None = None
 
-    async def init(self, shelf_file: Optional[Path] = None):
+    async def init(self, shelf_file: Path | None = None):
         await self.iserver.init(shelf_file)
         # setup some expected values
         await self.set_application_uri(self._application_uri)
@@ -503,7 +504,7 @@ class Server:
         else:
             _logger.debug("%s server started", self)
 
-    def _get_bind_socket_info(self) -> Tuple[Optional[str], Optional[int]]:
+    def _get_bind_socket_info(self) -> Tuple[str | None, int | None]:
         if self.socket_address is not None:
             return self.socket_address
         else:

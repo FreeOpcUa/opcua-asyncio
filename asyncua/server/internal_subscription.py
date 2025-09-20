@@ -6,7 +6,8 @@ import logging
 import asyncio
 import time
 
-from typing import Union, Iterable, Dict, List
+from typing import Union, Dict, List
+from collections.abc import Iterable
 from asyncua import ua
 from .monitored_item_service import MonitoredItemService
 from .address_space import AddressSpace

@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import timezone
-from typing import Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Dict, List, Tuple, Union, TYPE_CHECKING
 
 from ..common import instantiate_util
 from ..common.methods import uamethod
@@ -74,7 +74,7 @@ class DataSetField:
     DataSetField class describes the content of a field
     """
 
-    def __init__(self, meta: Optional[FieldMetaData] = None) -> None:
+    def __init__(self, meta: FieldMetaData | None = None) -> None:
         if meta is None:
             self._meta = FieldMetaData(DataSetFieldId=uuid.uuid4(), FieldFlags=DataSetFieldFlags(0))
         else:
@@ -173,7 +173,7 @@ class DataSetMeta:
     def __init__(
         self,
         meta: DataSetMetaDataType,
-        dataset_fields: Optional[List[DataSetField]] = None,
+        dataset_fields: List[DataSetField] | None = None,
     ) -> None:
         self._meta = meta
         if dataset_fields is not None:
@@ -186,8 +186,8 @@ class DataSetMeta:
     def Create(
         cls,
         name: String,
-        description: Optional[LocalizedText] = None,
-        dataset_fields: Optional[List[DataSetField]] = None,
+        description: LocalizedText | None = None,
+        dataset_fields: List[DataSetField] | None = None,
     ):
         """creates a datasetmeta"""
         meta = DataSetMetaDataType()
@@ -219,7 +219,7 @@ class DataSetMeta:
     def add_array(self, name: String, datatype: Union[NodeId, VariantType]):
         self.add_field(DataSetField.CreateScalar(name, datatype))
 
-    def get_field(self, name) -> Optional[DataSetField]:
+    def get_field(self, name) -> DataSetField | None:
         return next((f for f in self._fields if f.Name == name), None)
 
     def remove_field(self, field_name: str) -> None:
@@ -239,7 +239,7 @@ class PubSubDataSource:
     Baseclass for all DataSources
     """
 
-    async def get_variant(self) -> Tuple[List[Optional[Variant]], StatusCode, DateTime]:
+    async def get_variant(self) -> Tuple[List[Variant | None], StatusCode, DateTime]:
         """
         return all variants for a dataset as Variant
         """
@@ -359,8 +359,8 @@ class PublishedDataSet(PubSubInformationModel):
     def __init__(
         self,
         cfg: PublishedDataSetDataType,
-        source: Optional[PubSubDataSource] = None,
-        dataset: Optional[DataSetMeta] = None,
+        source: PubSubDataSource | None = None,
+        dataset: DataSetMeta | None = None,
     ) -> None:
         super().__init__(False)
         self._data = cfg
@@ -411,7 +411,7 @@ class PublishedDataSet(PubSubInformationModel):
         cls,
         name: String,
         dataset: DataSetMeta,
-        source: Optional[PubSubDataSource] = None,
+        source: PubSubDataSource | None = None,
     ):
         """Allows to construct a PublishDataSet without using the ua structures."""
         s = cls(PublishedDataSetDataType(Name=name), source, dataset)
@@ -456,7 +456,7 @@ class TargetVariable:
     Name: String = None
     SourceNode: NodeId = None
     ValueRank: ValueRank = ValueRank.Scalar
-    DataType: Optional[NodeId] = None
+    DataType: NodeId | None = None
     SubstituteValue: Variant = field(default_factory=Variant)
     Promoted: Boolean = False
 
@@ -470,7 +470,7 @@ class PublishedDataItems(PubSubInformationModel):
         self,
         cfg: PublishedDataSetDataType,
         server: Server,
-        dataset: Optional[DataSetMeta] = None,
+        dataset: DataSetMeta | None = None,
     ) -> None:
         super().__init__(False)
         self._data = cfg

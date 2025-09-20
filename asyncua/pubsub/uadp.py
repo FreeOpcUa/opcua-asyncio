@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
-from typing import Optional, Tuple, Union, List
+from typing import Tuple, Union, List
 
 from ..common.utils import Buffer
 from ..ua import VariantType
@@ -130,8 +130,8 @@ class UadpHeader:
     Header of an Uadp  Message
     """
 
-    PublisherId: Optional[Union[Byte, UInt16, UInt32, UInt64, String]] = None
-    DataSetClassId: Optional[Guid] = None
+    PublisherId: Union[Byte, UInt16, UInt32, UInt64, String] | None = None
+    DataSetClassId: Guid | None = None
 
     def to_binary(self, flags: MessageHeaderFlags) -> bytes:
         b = []
@@ -227,10 +227,10 @@ class UadpGroupHeader:
     Header of group part of an uadp message
     """
 
-    WriterGroupId: Optional[UInt16] = None
-    GroupVersion: Optional[VersionTime] = None
-    NetworkMessageNo: Optional[UInt16] = None
-    SequenceNo: Optional[UInt16] = None
+    WriterGroupId: UInt16 | None = None
+    GroupVersion: VersionTime | None = None
+    NetworkMessageNo: UInt16 | None = None
+    SequenceNo: UInt16 | None = None
 
     def to_bytes(self) -> bytes:
         flags = MessageGroupHeaderFlags(0)
@@ -272,12 +272,12 @@ class UadpGroupHeader:
 @dataclass
 class UadpDataSetMessageHeader:
     Valid: bool = True
-    SequenceNo: Optional[UInt16] = None
-    Timestamp: Optional[DateTime] = None
-    PicoSeconds: Optional[UInt16] = None
-    Status: Optional[UInt16] = None
-    CfgMajorVersion: Optional[VersionTime] = None
-    CfgMinorVersion: Optional[VersionTime] = None
+    SequenceNo: UInt16 | None = None
+    Timestamp: DateTime | None = None
+    PicoSeconds: UInt16 | None = None
+    Status: UInt16 | None = None
+    CfgMajorVersion: VersionTime | None = None
+    CfgMinorVersion: VersionTime | None = None
 
     def to_binary(self, flags: MessageDataSetFlags) -> bytes:
         if self.Valid:
@@ -541,7 +541,7 @@ def _pack_payload(msgs: List[UadpDataSetMessage], has_payload_header: bool) -> b
     return b"".join(b)
 
 
-def _unpack_payload(data: Buffer, payload_header_count: Optional[int]) -> List[UadpDataSetMessage]:
+def _unpack_payload(data: Buffer, payload_header_count: int | None) -> List[UadpDataSetMessage]:
     """
     Unpack (at least one) DataSet payload.
     """
@@ -588,10 +588,10 @@ class UadpNetworkMessage:
     """
 
     Header: UadpHeader = field(default_factory=UadpHeader)
-    GroupHeader: Optional[UadpGroupHeader] = None
+    GroupHeader: UadpGroupHeader | None = None
     DataSetPayloadHeader: List[UInt16] = field(default_factory=list)
-    Timestamp: Optional[DateTime] = None
-    PicoSeconds: Optional[UInt16] = None
+    Timestamp: DateTime | None = None
+    PicoSeconds: UInt16 | None = None
     PromotedFields: List[Variant] = field(default_factory=list)
     Payload: Union[List[UadpDataSetMessage], UadpDiscoveryRequest, UadpDiscoveryResponse, UadpChunk] = None
 

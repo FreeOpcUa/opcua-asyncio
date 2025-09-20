@@ -6,7 +6,8 @@ import functools
 import struct
 import logging
 from io import BytesIO
-from typing import IO, Any, Callable, Optional, Sequence, Type, TypeVar, Union
+from typing import IO, Any, Type, TypeVar, Union
+from collections.abc import Callable, Sequence
 import typing
 import uuid
 from enum import Enum, IntFlag
@@ -180,7 +181,7 @@ class Primitives(Primitives1):
     Guid = _Guid()
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def create_uatype_serializer(vtype):
     if hasattr(Primitives, vtype.name):
         return getattr(Primitives, vtype.name).pack
@@ -199,7 +200,7 @@ def pack_uatype(vtype, value):
     return create_uatype_serializer(vtype)(value)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _create_uatype_deserializer(vtype):
     if hasattr(Primitives, vtype.name):
         return getattr(Primitives, vtype.name).unpack
@@ -221,7 +222,7 @@ def unpack_uatype(vtype, data):
     return _create_uatype_deserializer(vtype)(data)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def create_uatype_array_serializer(vtype):
     if hasattr(Primitives1, vtype.name):
         data_type = getattr(Primitives1, vtype.name)
@@ -245,7 +246,7 @@ def unpack_uatype_array(vtype, data):
     return _create_uatype_array_deserializer(vtype)(data)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _create_uatype_array_deserializer(vtype):
     if hasattr(Primitives1, vtype.name):  # Fast primitive array deserializer
         unpack_array = getattr(Primitives1, vtype.name).unpack_array
@@ -288,7 +289,7 @@ def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
             return serializer
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def create_dataclass_serializer(dataclazz):
     """Given a dataclass, return a function that serializes instances of this dataclass"""
     data_fields = fields(dataclazz)
@@ -356,7 +357,7 @@ def create_enum_serializer(uatype):
     return Primitives.Int32.pack
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def create_type_serializer(uatype):
     """Create a binary serialization function for the given UA type"""
     if type_allow_subclass(uatype):
@@ -383,8 +384,8 @@ def to_binary(uatype, val):
     return create_type_serializer(uatype)(val)
 
 
-@functools.lru_cache(maxsize=None)
-def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Optional[Sequence[Any]]], bytes]:
+@functools.cache
+def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Sequence[Any] | None], bytes]:
     """
     Given a type, return a function that takes a list of instances
     of that type and serializes it.
@@ -611,7 +612,7 @@ def _create_list_deserializer(uatype, recursive: bool = False):
     return _deserialize
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _create_type_deserializer(uatype, dataclazz):
     if type_is_union(uatype):
         array, uatype = types_or_list_from_union(uatype)
@@ -649,7 +650,7 @@ def from_binary(uatype, data):
     return _create_type_deserializer(uatype, type(None))(data)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _create_dataclass_deserializer(objtype):
     if isinstance(objtype, str):
         objtype = getattr(ua, objtype)
