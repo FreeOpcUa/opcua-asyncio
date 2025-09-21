@@ -104,7 +104,7 @@ ignore = [
     # https://github.com/astral-sh/ruff/issues/5035
     "UP006", # Use `list` instead of `List` for type annotation
     "UP007", # Use `X | Y` for type annotations
-    "UP035", # list instead of List again?? 
+    "UP035", # list instead of List again??
 ]
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
