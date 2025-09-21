@@ -6,7 +6,8 @@ import logging
 import asyncio
 import time
 
-from typing import Union, Iterable, Dict, List
+from typing import Union, Dict
+from collections.abc import Iterable
 from asyncua import ua
 from .monitored_item_service import MonitoredItemService
 from .address_space import AddressSpace
@@ -47,8 +48,8 @@ class InternalSubscription:
         self.monitored_item_srv = MonitoredItemService(self, aspace)
         self.delete_callback = delete_callback
         self.session_id = session_id
-        self._triggered_datachanges: Dict[int, List[ua.MonitoredItemNotification]] = {}
-        self._triggered_events: Dict[int, List[ua.EventFieldList]] = {}
+        self._triggered_datachanges: Dict[int, list[ua.MonitoredItemNotification]] = {}
+        self._triggered_events: Dict[int, list[ua.EventFieldList]] = {}
         self._triggered_statuschanges: list = []
         self._notification_seq = 1
         self._no_acks_limit = 500

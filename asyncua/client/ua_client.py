@@ -5,7 +5,8 @@ Low level binary client
 import asyncio
 import copy
 import logging
-from typing import Awaitable, Callable, Dict, List, Optional, Union
+from typing import Dict, Union
+from collections.abc import Awaitable, Callable
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
@@ -39,8 +40,8 @@ class UASocketProtocol(asyncio.Protocol):
         :param security_policy: Security policy (optional)
         """
         self.logger = logging.getLogger(f"{__name__}.UASocketProtocol")
-        self.transport: Optional[asyncio.Transport] = None
-        self.receive_buffer: Optional[bytes] = None
+        self.transport: asyncio.Transport | None = None
+        self.receive_buffer: bytes | None = None
         self.is_receiving = False
         self.timeout = timeout
         self.authentication_token = ua.NodeId()
@@ -61,13 +62,13 @@ class UASocketProtocol(asyncio.Protocol):
             ua.OpenSecureChannelResponse, ua.OpenSecureChannelParameters, None
         ] = None
         # Hook for upper layer tasks before a request is sent (optional)
-        self.pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
+        self.pre_request_hook: Callable[[], Awaitable[None]] | None = None
 
     def connection_made(self, transport: asyncio.Transport):  # type: ignore[override]
         self.state = self.OPEN
         self.transport = transport
 
-    def connection_lost(self, exc: Optional[Exception]):
+    def connection_lost(self, exc: Exception | None):
         self.logger.info("Socket has closed connection")
         self.state = self.CLOSED
         self.transport = None
@@ -170,7 +171,7 @@ class UASocketProtocol(asyncio.Protocol):
             self.transport.write(msg)
         return future
 
-    async def send_request(self, request, timeout: Optional[float] = None, message_type=ua.MessageType.SecureMessage):
+    async def send_request(self, request, timeout: float | None = None, message_type=ua.MessageType.SecureMessage):
         """
         Send a request to the server.
         Timeout is the timeout written in ua header.
@@ -308,7 +309,7 @@ class UaClient(AbstractSession):
         self.security_policy = security_policies.SecurityPolicyNone()
         self.protocol: UASocketProtocol = None
         self._publish_task = None
-        self._pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
+        self._pre_request_hook: Callable[[], Awaitable[None]] | None = None
         self._closing: bool = False
 
     def set_security(self, policy: security_policies.SecurityPolicy):
@@ -320,11 +321,11 @@ class UaClient(AbstractSession):
         return self.protocol
 
     @property
-    def pre_request_hook(self) -> Optional[Callable[[], Awaitable[None]]]:
+    def pre_request_hook(self) -> Callable[[], Awaitable[None]] | None:
         return self._pre_request_hook
 
     @pre_request_hook.setter
-    def pre_request_hook(self, hook: Optional[Callable[[], Awaitable[None]]]):
+    def pre_request_hook(self, hook: Callable[[], Awaitable[None]] | None):
         self._pre_request_hook = hook
         if self.protocol:
             self.protocol.pre_request_hook = self._pre_request_hook
@@ -594,7 +595,7 @@ class UaClient(AbstractSession):
             self._subscription_callbacks.pop(sid)
         return response.Results
 
-    async def publish(self, acks: List[ua.SubscriptionAcknowledgement]) -> ua.PublishResponse:
+    async def publish(self, acks: list[ua.SubscriptionAcknowledgement]) -> ua.PublishResponse:
         """
         Send a PublishRequest to the server.
         """
@@ -615,7 +616,7 @@ class UaClient(AbstractSession):
         Start a loop that sends a publish requests and waits for the publish responses.
         Forward the `PublishResult` to the matching `Subscription` by callback.
         """
-        ack: Optional[SubscriptionAcknowledgement] = None
+        ack: SubscriptionAcknowledgement | None = None
         while not self._closing:
             try:
                 response = await self.publish([ack] if ack else [])
@@ -812,7 +813,7 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def set_monitoring_mode(self, params) -> List[ua.uatypes.StatusCode]:
+    async def set_monitoring_mode(self, params) -> list[ua.uatypes.StatusCode]:
         """
         Update the subscription monitoring mode
         """
@@ -825,7 +826,7 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
 
-    async def set_publishing_mode(self, params) -> List[ua.uatypes.StatusCode]:
+    async def set_publishing_mode(self, params) -> list[ua.uatypes.StatusCode]:
         """
         Update the subscription publishing mode
         """
@@ -838,7 +839,7 @@ class UaClient(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
 
-    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> List[ua.TransferResult]:
+    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> list[ua.TransferResult]:
         # Subscriptions aren't bound to a Session and can be transferred!
         # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
         raise NotImplementedError

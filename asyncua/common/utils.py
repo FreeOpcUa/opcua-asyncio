@@ -8,7 +8,8 @@ import logging
 import os
 import sys
 from dataclasses import Field, fields
-from typing import Any, Awaitable, Dict, get_type_hints, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, get_type_hints, TypeVar, Union
+from collections.abc import Awaitable
 
 from ..ua.uaerrors import UaError
 
@@ -103,10 +104,10 @@ def create_nonce(size=32):
 
 def fields_with_resolved_types(
     class_or_instance: Any,
-    globalns: Optional[Dict[str, Any]] = None,
-    localns: Optional[Dict[str, Any]] = None,
+    globalns: Dict[str, Any] | None = None,
+    localns: Dict[str, Any] | None = None,
     include_extras: bool = False,
-) -> Tuple[Field, ...]:
+) -> tuple[Field, ...]:
     """Return a tuple describing the fields of this dataclass.
 
     Accepts a dataclass or an instance of one. Tuple elements are of

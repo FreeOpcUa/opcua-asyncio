@@ -2,7 +2,7 @@ import asyncio
 import copy
 import time
 import logging
-from typing import Deque, Optional, Dict
+from typing import Deque, Dict
 from collections import deque
 from datetime import datetime, timedelta, timezone
 
@@ -32,8 +32,8 @@ class UaProcessor:
         self.iserver: InternalServer = internal_server
         self.name = transport.get_extra_info("peername")
         self.sockname = transport.get_extra_info("sockname")
-        self.session: Optional[InternalSession] = None
-        self.session_last_activity: Optional[datetime] = None
+        self.session: InternalSession | None = None
+        self.session_last_activity: datetime | None = None
         self._transport = transport
         # deque for Publish Requests
         self._publish_requests: Deque[PublishRequestData] = deque()
@@ -43,7 +43,7 @@ class UaProcessor:
         self._limits = copy.deepcopy(limits)  # Copy limits because they get overriden
         self._connection = SecureConnection(SecurityPolicyNone(), self._limits)
         self._closing: bool = False
-        self._session_watchdog_task: Optional[asyncio.Task] = None
+        self._session_watchdog_task: asyncio.Task | None = None
         self._watchdog_interval: float = 1.0
 
     def set_policies(self, policies):

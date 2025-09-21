@@ -7,13 +7,8 @@ from __future__ import annotations
 import asyncio
 import collections.abc
 import logging
-import sys
-from typing import TYPE_CHECKING, Any, Tuple, Union, List, Iterable, Optional, overload
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
+from typing import TYPE_CHECKING, Any, Union, overload, Protocol
+from collections.abc import Iterable
 
 from asyncua import ua
 from asyncua.client.ua_client import UaClient
@@ -136,7 +131,7 @@ class Subscription:
         self._handler: SubscriptionHandler = handler
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items = {}
-        self.subscription_id: Optional[int] = None
+        self.subscription_id: int | None = None
 
     async def init(self) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
@@ -181,7 +176,7 @@ class Subscription:
             self.logger.error("DataChange subscription created but handler has no datachange_notification method")
             return
 
-        known_handles_args: List[Tuple] = []
+        known_handles_args: list[tuple] = []
         for item in datachange.MonitoredItems:
             if item.ClientHandle not in self._monitored_items:
                 self.logger.warning("Received a notification for unknown handle: %s", item.ClientHandle)
@@ -247,7 +242,7 @@ class Subscription:
         queuesize: int = 0,
         monitoring=ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,
-    ) -> List[Union[int, ua.StatusCode]]: ...
+    ) -> list[Union[int, ua.StatusCode]]: ...
 
     async def subscribe_data_change(
         self,
@@ -256,7 +251,7 @@ class Subscription:
         queuesize: int = 0,
         monitoring=ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 50.0,
-    ) -> Union[int, List[Union[int, ua.StatusCode]]]:
+    ) -> Union[int, list[Union[int, ua.StatusCode]]]:
         """
         Subscribe to data change events of one or multiple nodes.
         The default attribute used for the subscription is `Value`.
@@ -295,7 +290,7 @@ class Subscription:
         evtypes: Union[
             Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]
         ] = ua.ObjectIds.BaseEventType,
-        evfilter: Optional[ua.EventFilter] = None,
+        evfilter: ua.EventFilter | None = None,
         queuesize: int = 0,
         where_clause_generation: bool = True,
     ) -> int:
@@ -331,7 +326,7 @@ class Subscription:
         evtypes: Union[
             Node, ua.NodeId, str, int, Iterable[Union[Node, ua.NodeId, str, int]]
         ] = ua.ObjectIds.ConditionType,
-        evfilter: Optional[ua.EventFilter] = None,
+        evfilter: ua.EventFilter | None = None,
         queuesize: int = 0,
     ) -> int:
         """
@@ -355,7 +350,7 @@ class Subscription:
         self,
         nodes: Node,
         attr=ua.AttributeIds.Value,
-        mfilter: Optional[ua.MonitoringFilter] = None,
+        mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,
@@ -366,21 +361,21 @@ class Subscription:
         self,
         nodes: Iterable[Node],
         attr=ua.AttributeIds.Value,
-        mfilter: Optional[ua.MonitoringFilter] = None,
+        mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,
-    ) -> List[Union[int, ua.StatusCode]]: ...
+    ) -> list[Union[int, ua.StatusCode]]: ...
 
     async def _subscribe(
         self,
         nodes: Union[Node, Iterable[Node]],
         attr=ua.AttributeIds.Value,
-        mfilter: Optional[ua.MonitoringFilter] = None,
+        mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,
-    ) -> Union[int, List[Union[int, ua.StatusCode]]]:
+    ) -> Union[int, list[Union[int, ua.StatusCode]]]:
         """
         Private low level method for subscribing.
         :param nodes: One Node or an Iterable of Nodes.
@@ -435,7 +430,7 @@ class Subscription:
 
     async def create_monitored_items(
         self, monitored_items: Iterable[ua.MonitoredItemCreateRequest]
-    ) -> List[Union[int, ua.StatusCode]]:
+    ) -> list[Union[int, ua.StatusCode]]:
         """
         low level method to have full control over subscription parameters.
         Client handle must be unique since it will be used as key for internal registration of data.
@@ -490,7 +485,7 @@ class Subscription:
 
     async def modify_monitored_item(
         self, handle: int, new_samp_time: ua.Duration, new_queuesize: int = 0, mod_filter_val: int = -1
-    ) -> List[ua.MonitoredItemModifyResult]:
+    ) -> list[ua.MonitoredItemModifyResult]:
         """
         Modify a monitored item.
         :param handle: Handle returned when originally subscribing
@@ -558,7 +553,7 @@ class Subscription:
         deadbandtype: ua.UInt32 = 1,
         queuesize: int = 0,
         attr: ua.AttributeIds = ua.AttributeIds.Value,
-    ) -> List[Union[int, ua.StatusCode]]: ...
+    ) -> list[Union[int, ua.StatusCode]]: ...
 
     async def deadband_monitor(
         self,
@@ -567,7 +562,7 @@ class Subscription:
         deadbandtype: ua.UInt32 = 1,
         queuesize: int = 0,
         attr: ua.AttributeIds = ua.AttributeIds.Value,
-    ) -> Union[int, List[Union[int, ua.StatusCode]]]:
+    ) -> Union[int, list[Union[int, ua.StatusCode]]]:
         """
         Method to create a subscription with a Deadband Value.
         Default deadband value type is absolute.
@@ -586,7 +581,7 @@ class Subscription:
         deadband_filter.DeadbandValue = deadband_val
         return await self._subscribe(var, attr, deadband_filter, queuesize)
 
-    async def set_monitoring_mode(self, monitoring: ua.MonitoringMode) -> List[ua.uatypes.StatusCode]:
+    async def set_monitoring_mode(self, monitoring: ua.MonitoringMode) -> list[ua.uatypes.StatusCode]:
         """
         The monitoring mode parameter is used
         to enable/disable the sampling of MonitoredItems
@@ -607,7 +602,7 @@ class Subscription:
         params.MonitoringMode = monitoring
         return await self.server.set_monitoring_mode(params)
 
-    async def set_publishing_mode(self, publishing: bool) -> List[ua.uatypes.StatusCode]:
+    async def set_publishing_mode(self, publishing: bool) -> list[ua.uatypes.StatusCode]:
         """
         Disable publishing of NotificationMessages for the subscription,
         but doesn't discontinue the sending of keep-alive Messages,

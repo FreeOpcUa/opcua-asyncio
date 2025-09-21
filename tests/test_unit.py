@@ -10,7 +10,7 @@ import pytest
 import logging
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
-from typing import Optional, List, cast
+from typing import cast
 
 from asyncua import ua
 from asyncua.ua import ua_binary
@@ -724,6 +724,7 @@ def test_text_simple():
     t = ua.LocalizedText("Root")
     b = struct_to_binary(t)
     buf = ua.utils.Buffer(b)
+    print("BUFFER", buf)
     t2 = struct_from_binary(ua.LocalizedText, buf)
     assert t == t2
 
@@ -887,9 +888,9 @@ def test_struct_104() -> None:
     class MyStruct:
         Encoding: ua.Byte = field(default=0, repr=False, init=False)
         a: ua.Int32 = 1
-        b: Optional[ua.Int32] = None
-        c: Optional[ua.String] = None
-        l: List[ua.String] = None  # noqa: E741
+        b: ua.Int32 | None = None
+        c: ua.String | None = None
+        l: list[ua.String] = None  # noqa: E741
 
     m = MyStruct()
     data = struct_to_binary(m)

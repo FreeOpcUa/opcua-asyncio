@@ -3,7 +3,7 @@ Internal server implementing opcu-ua interface.
 Can be used on server side or to implement binary/https opc-ua servers
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
 import asyncio
 from datetime import datetime, timedelta, timezone
 from copy import copy
@@ -63,7 +63,7 @@ class InternalServer:
             _logger.info("No user manager specified. Using default permissive manager instead.")
             user_manager = PermissiveUserManager()
         self.user_manager = user_manager
-        self.certificate_validator: Optional[CertificateValidatorMethod] = None
+        self.certificate_validator: CertificateValidatorMethod | None = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
         # create a session to use on server side
         self.isession = InternalSession(
@@ -76,7 +76,7 @@ class InternalServer:
         self.match_discovery_source_ip: bool = True
         self.supported_tokens = (ua.AnonymousIdentityToken, ua.X509IdentityToken, ua.UserNameIdentityToken)
 
-    async def init(self, shelffile: Optional[Path] = None):
+    async def init(self, shelffile: Path | None = None):
         await self.load_standard_address_space(shelffile)
         await self._address_space_fixes()
         await self.setup_nodes()
@@ -135,7 +135,7 @@ class InternalServer:
         result = await self.isession.write(params)
         result[0].check()
 
-    async def load_standard_address_space(self, shelf_file: Optional[Path] = None):
+    async def load_standard_address_space(self, shelf_file: Path | None = None):
         if shelf_file:
             if shelf_file.is_file() or (shelf_file / ".db").is_file():
                 # import address space from shelf

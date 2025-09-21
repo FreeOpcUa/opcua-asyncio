@@ -7,7 +7,7 @@ from collections import defaultdict
 from dataclasses import astuple
 from enum import Enum
 from functools import partial
-from typing import TYPE_CHECKING, Dict, Set, Union, List
+from typing import TYPE_CHECKING, Dict, Set, Union
 from sortedcontainers import SortedDict  # type: ignore
 from asyncua import ua, Client
 from pickle import PicklingError
@@ -173,8 +173,8 @@ class Reconciliator:
             tasks.extend(self._subs_to_add(url, real_map, ideal_map))
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    def _subs_to_del(self, url: str, real_map: SubMap, ideal_map: SubMap) -> List[asyncio.Task]:
-        to_del: List[asyncio.Task] = []
+    def _subs_to_del(self, url: str, real_map: SubMap, ideal_map: SubMap) -> list[asyncio.Task]:
+        to_del: list[asyncio.Task] = []
         sub_to_del = set(real_map[url]) - set(ideal_map[url])
         if sub_to_del:
             _logger.info("Removing %d subscriptions", len(sub_to_del))
@@ -185,8 +185,8 @@ class Reconciliator:
             to_del.append(task)
         return to_del
 
-    def _subs_to_add(self, url: str, real_map: SubMap, ideal_map: SubMap) -> List[asyncio.Task]:
-        to_add: List[asyncio.Task] = []
+    def _subs_to_add(self, url: str, real_map: SubMap, ideal_map: SubMap) -> list[asyncio.Task]:
+        to_add: list[asyncio.Task] = []
         sub_to_add = set(ideal_map[url]) - set(real_map[url])
         if sub_to_add:
             _logger.info("Adding %d subscriptions", len(sub_to_add))
@@ -235,8 +235,8 @@ class Reconciliator:
         client: Client,
         vs_real: VirtualSubscription,
         vs_ideal: VirtualSubscription,
-    ) -> List[asyncio.Task]:
-        tasks: List[asyncio.Task] = []
+    ) -> list[asyncio.Task]:
+        tasks: list[asyncio.Task] = []
         real_sub: Subscription = self.name_to_subscription[url].get(sub_name)
         monitoring = vs_real.monitoring
         node_to_add = set(vs_ideal.nodes) - set(vs_real.nodes)
@@ -280,8 +280,8 @@ class Reconciliator:
         sub_name: str,
         vs_real: VirtualSubscription,
         vs_ideal: VirtualSubscription,
-    ) -> List[asyncio.Task]:
-        to_del: List[asyncio.Task] = []
+    ) -> list[asyncio.Task]:
+        to_del: list[asyncio.Task] = []
         node_to_del = set(vs_real.nodes) - set(vs_ideal.nodes)
         real_sub: Subscription = self.name_to_subscription[url].get(sub_name)
         if node_to_del:

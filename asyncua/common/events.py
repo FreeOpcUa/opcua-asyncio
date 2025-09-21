@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 from asyncua import ua
 import asyncua
 from ..ua.uaerrors import UaError
@@ -143,7 +143,7 @@ class Event:
         return name
 
 
-async def get_filter_from_event_type(eventtypes: List["Node"], where_clause_generation: bool = True):
+async def get_filter_from_event_type(eventtypes: list["Node"], where_clause_generation: bool = True):
     evfilter = ua.EventFilter()
     evfilter.SelectClauses = await select_clauses_from_evtype(eventtypes)
     if where_clause_generation:
@@ -152,9 +152,9 @@ async def get_filter_from_event_type(eventtypes: List["Node"], where_clause_gene
 
 
 async def _append_new_attribute_to_select_clauses(
-    select_clauses: List[ua.SimpleAttributeOperand],
+    select_clauses: list[ua.SimpleAttributeOperand],
     already_selected: Dict[str, str],
-    browse_path: List[ua.QualifiedName],
+    browse_path: list[ua.QualifiedName],
 ):
     string_path = "/".join(map(str, browse_path))
     if string_path not in already_selected:
@@ -168,10 +168,10 @@ async def _append_new_attribute_to_select_clauses(
 
 async def _select_clause_from_childs(
     child: "Node",
-    refs: List[ua.ReferenceDescription],
-    select_clauses: List[ua.SimpleAttributeOperand],
+    refs: list[ua.ReferenceDescription],
+    select_clauses: list[ua.SimpleAttributeOperand],
     already_selected: Dict[str, str],
-    browse_path: List[ua.QualifiedName],
+    browse_path: list[ua.QualifiedName],
 ):
     for ref in refs:
         if ref.NodeClass == ua.NodeClass.Variable:
@@ -208,7 +208,7 @@ async def _select_clause_from_childs(
             )
 
 
-async def select_clauses_from_evtype(evtypes: List["Node"]):
+async def select_clauses_from_evtype(evtypes: list["Node"]):
     select_clauses = []
     already_selected = {}
     add_condition_id = False
@@ -236,7 +236,7 @@ async def select_clauses_from_evtype(evtypes: List["Node"]):
     return select_clauses
 
 
-async def where_clause_from_evtype(evtypes: List["Node"]):
+async def where_clause_from_evtype(evtypes: list["Node"]):
     cf = ua.ContentFilter()
     el = ua.ContentFilterElement()
     # operands can be ElementOperand, LiteralOperand, AttributeOperand, SimpleAttribute
@@ -279,15 +279,15 @@ async def select_event_attributes_from_type_node(node: "Node", attributeSelector
     return attributes
 
 
-async def get_event_properties_from_type_node(node: "Node") -> List["Node"]:
+async def get_event_properties_from_type_node(node: "Node") -> list["Node"]:
     return await select_event_attributes_from_type_node(node, lambda n: n.get_properties())
 
 
-async def get_event_variables_from_type_node(node: "Node") -> List["Node"]:
+async def get_event_variables_from_type_node(node: "Node") -> list["Node"]:
     return await select_event_attributes_from_type_node(node, lambda n: n.get_variables())
 
 
-async def get_event_objects_from_type_node(node: "Node") -> List["Node"]:
+async def get_event_objects_from_type_node(node: "Node") -> list["Node"]:
     return await select_event_attributes_from_type_node(
         node, lambda n: n.get_children(refs=ua.ObjectIds.HasComponent, nodeclassmask=ua.NodeClass.Object)
     )

@@ -15,7 +15,7 @@ PDSNAME = "SimpleDataSet"
 
 
 def create_published_dataset() -> pubsub.PublishedDataSet:
-    # Create a Published Dataset containing a Int32, String, Bool and List[Int16]
+    # Create a Published Dataset containing a Int32, String, Bool and list[Int16]
     dataset = pubsub.DataSetMeta.Create("Simple")
     dataset.add_scalar("Int32", ua.VariantType.Int32)
     dataset.add_scalar("String", ua.VariantType.String)

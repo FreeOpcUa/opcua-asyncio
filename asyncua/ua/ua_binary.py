@@ -6,7 +6,9 @@ import functools
 import struct
 import logging
 from io import BytesIO
-from typing import IO, Any, Callable, Optional, Sequence, Type, TypeVar, Union
+from types import UnionType
+from typing import IO, Any, Type, TypeVar, Union, get_args, get_origin
+from collections.abc import Callable, Sequence
 import typing
 import uuid
 from enum import Enum, IntFlag
@@ -15,6 +17,7 @@ from asyncua import ua
 from .uaerrors import UaError
 from ..common.utils import Buffer
 from .uatypes import (
+    type_is_optional,
     type_from_optional,
     type_is_list,
     type_is_union,
@@ -180,7 +183,7 @@ class Primitives(Primitives1):
     Guid = _Guid()
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def create_uatype_serializer(vtype):
     if hasattr(Primitives, vtype.name):
         return getattr(Primitives, vtype.name).pack
@@ -199,7 +202,7 @@ def pack_uatype(vtype, value):
     return create_uatype_serializer(vtype)(value)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _create_uatype_deserializer(vtype):
     if hasattr(Primitives, vtype.name):
         return getattr(Primitives, vtype.name).unpack
@@ -221,7 +224,7 @@ def unpack_uatype(vtype, data):
     return _create_uatype_deserializer(vtype)(data)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def create_uatype_array_serializer(vtype):
     if hasattr(Primitives1, vtype.name):
         data_type = getattr(Primitives1, vtype.name)
@@ -245,7 +248,7 @@ def unpack_uatype_array(vtype, data):
     return _create_uatype_array_deserializer(vtype)(data)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _create_uatype_array_deserializer(vtype):
     if hasattr(Primitives1, vtype.name):  # Fast primitive array deserializer
         unpack_array = getattr(Primitives1, vtype.name).unpack_array
@@ -266,7 +269,7 @@ def _create_uatype_array_deserializer(vtype):
 
 
 def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
-    is_optional = type_is_union(ftype)
+    is_optional = type_is_optional(ftype)
     uatype = ftype
     if is_optional:
         # unpack optional because this we will handeled by the decoding
@@ -288,7 +291,7 @@ def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
             return serializer
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def create_dataclass_serializer(dataclazz):
     """Given a dataclass, return a function that serializes instances of this dataclass"""
     data_fields = fields(dataclazz)
@@ -319,7 +322,7 @@ def create_dataclass_serializer(dataclazz):
         return union_serialize
     option_fields_encodings = [  # Name and binary encoding of optional fields
         (field.name, 1 << enc_count)
-        for enc_count, field in enumerate(filter(lambda f: type_is_union(f.type), data_fields))
+        for enc_count, field in enumerate(filter(lambda f: type_is_optional(f.type), data_fields))
     ]
 
     def enc_value(obj):
@@ -356,10 +359,20 @@ def create_enum_serializer(uatype):
     return Primitives.Int32.pack
 
 
-@functools.lru_cache(maxsize=None)
+def strip_optional(tp):
+    """Return the type with NoneType stripped if tp is Optional."""
+    if get_origin(tp) is UnionType:
+        args = tuple(a for a in get_args(tp) if a is not type(None))
+        if len(args) == 1:
+            return args[0]
+        return args  # still a union, but without NoneType
+    return tp
+
+
+@functools.cache
 def create_type_serializer(uatype):
     """Create a binary serialization function for the given UA type"""
-    if type_allow_subclass(uatype):
+    if not type_is_optional(uatype) and type_allow_subclass(uatype):
         return extensionobject_to_binary
     if type_is_list(uatype):
         return create_list_serializer(type_from_list(uatype), type(None))
@@ -383,8 +396,8 @@ def to_binary(uatype, val):
     return create_type_serializer(uatype)(val)
 
 
-@functools.lru_cache(maxsize=None)
-def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Optional[Sequence[Any]]], bytes]:
+@functools.cache
+def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Sequence[Any] | None], bytes]:
     """
     Given a type, return a function that takes a list of instances
     of that type and serializes it.
@@ -611,9 +624,9 @@ def _create_list_deserializer(uatype, recursive: bool = False):
     return _deserialize
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _create_type_deserializer(uatype, dataclazz):
-    if type_is_union(uatype):
+    if not type_is_optional(uatype) and type_is_union(uatype):
         array, uatype = types_or_list_from_union(uatype)
         if not array:
             return _create_type_deserializer(uatype, uatype)
@@ -649,7 +662,7 @@ def from_binary(uatype, data):
     return _create_type_deserializer(uatype, type(None))(data)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _create_dataclass_deserializer(objtype):
     if isinstance(objtype, str):
         objtype = getattr(ua, objtype)
@@ -687,11 +700,12 @@ def _create_dataclass_deserializer(objtype):
     for field in fields(objtype):
         optional_enc_bit = 0
         field_type = resolved_fieldtypes[field.name]
-        subtypes = type_allow_subclass(field.type)
         # if our member has a switch and it is not set we will need to skip it
-        if type_is_union(field_type):
+        if type_is_optional(field_type):
             optional_enc_bit = 1 << enc_count
             enc_count += 1
+            field_type = type_from_optional(field.type)
+        subtypes = type_allow_subclass(field_type)
         if subtypes:
             deserialize_field = extensionobject_from_binary
         else:

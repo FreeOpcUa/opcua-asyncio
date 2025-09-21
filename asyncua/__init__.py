@@ -3,11 +3,7 @@ Pure Python OPC-UA library
 """
 
 import sys
-
-if sys.version_info >= (3, 8):
-    from importlib import metadata
-else:
-    import importlib_metadata as metadata
+from importlib import metadata
 
 __version__ = metadata.version("asyncua")
 

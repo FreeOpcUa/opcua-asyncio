@@ -5,14 +5,14 @@ from __future__ import annotations
 from xml.etree import ElementTree
 from logging import getLogger
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 import re
 from pathlib import Path
 
 _logger = getLogger(__name__)
 
-IgnoredEnums: List[str] = []
-IgnoredStructs: List[str] = []
+IgnoredEnums: list[str] = []
+IgnoredStructs: list[str] = []
 
 # by default, we split requests and responses in header and parameters, but some are so simple we do not split them
 NoSplitStruct = [
@@ -83,7 +83,7 @@ class Field:
     name: str = None
     data_type: str = "i=24"  # i=24 means anything
     value_rank: int = -1
-    array_dimensions: List[int] = None
+    array_dimensions: list[int] = None
     max_string_length: int = None
     value: Any = None
     is_optional: bool = False
@@ -100,11 +100,11 @@ class Struct:
     basetype: Optional[str] = None
     node_id: str = None
     doc: str = ""
-    fields: List[Field] = field(default_factory=list)
+    fields: list[Field] = field(default_factory=list)
     has_optional: bool = False
     needoverride = False
-    children: List[Any] = field(default_factory=list)
-    parents: List[Any] = field(default_factory=list)
+    children: list[Any] = field(default_factory=list)
+    parents: list[Any] = field(default_factory=list)
     # we splt some structs, they must not be registered as extension objects
     do_not_register: bool = False
     is_data_type: bool = False
@@ -123,7 +123,7 @@ class Struct:
 class Enum:
     name: str = None
     data_type: str = None
-    fields: List[Field] = field(default_factory=list)
+    fields: list[Field] = field(default_factory=list)
     doc: str = ""
     is_option_set: bool = False
     base_type: str = None
@@ -137,11 +137,11 @@ class Alias:
 
 
 class Model:
-    structs: List[Struct]
-    enums: List[Enum]
-    struct_list: List[str]
-    enum_list: List[str]
-    known_structs: List[str]
+    structs: list[Struct]
+    enums: list[Enum]
+    struct_list: list[str]
+    enum_list: list[str]
+    known_structs: list[str]
     aliases: Dict[str, Alias]
 
     def __init__(self):
@@ -177,7 +177,7 @@ class Model:
         return None
 
 
-def _add_struct(struct: Struct, newstructs: List[Struct], waiting_structs, known_structs: List[str]):
+def _add_struct(struct: Struct, newstructs: list[Struct], waiting_structs, known_structs: list[str]):
     newstructs.append(struct)
     known_structs.append(struct.name)
     # now seeing if some struct where waiting for this one
@@ -190,7 +190,7 @@ def _add_struct(struct: Struct, newstructs: List[Struct], waiting_structs, known
 
 
 def reorder_structs(model: Model):
-    types: List[str] = IgnoredStructs + IgnoredEnums + buildin_types + [
+    types: list[str] = IgnoredStructs + IgnoredEnums + buildin_types + [
         'StatusCode',
         'DiagnosticInfo',
         "ExtensionObject",
@@ -204,8 +204,8 @@ def reorder_structs(model: Model):
         "DataValue",
         "LocalizedText",
     ] + [enum.name for enum in model.enums] + ['VariableAccessLevel'] + [alias.name for alias in model.aliases.values()]
-    waiting_structs: Dict[str, List[Struct]] = {}
-    newstructs: List[Struct] = []
+    waiting_structs: Dict[str, list[Struct]] = {}
+    newstructs: list[Struct] = []
     for s in model.structs:
         s.waitingfor = []
         ok = True
@@ -286,7 +286,7 @@ def split_requests(model: Model):
     model.structs = structs
 
 
-def get_basetypes(el: ElementTree.Element) -> List[str]:
+def get_basetypes(el: ElementTree.Element) -> list[str]:
     # return all basetypes
     basetypes = []
     for ref in el.findall("./{*}References/{*}Reference"):

@@ -4,7 +4,7 @@ Example creating a publisher that sends an Int32, String, Bool and ArrayInt16 fr
 
 import asyncio
 import logging
-from typing import List
+
 from asyncua import ua, pubsub, Server
 from asyncua.common.node import Node
 
@@ -15,7 +15,7 @@ URL = "opc.udp://239.0.0.1:4840"
 PDSNAME = "SimpleDataSet"
 
 
-async def create_published_dataset(server: Server, nodes: List[Node]) -> pubsub.PublishedDataItems:
+async def create_published_dataset(server: Server, nodes: list[Node]) -> pubsub.PublishedDataItems:
     # Links nodes from AddressSpace to PubSub (To simplfy use displayname as fieldname)
     variables = []
     for node in nodes:
@@ -24,7 +24,7 @@ async def create_published_dataset(server: Server, nodes: List[Node]) -> pubsub.
     return await pubsub.PublishedDataItems.Create(PDSNAME, server, variables)
 
 
-async def create_variables(node: Node, ns: ua.UInt16) -> List[Node]:
+async def create_variables(node: Node, ns: ua.UInt16) -> list[Node]:
     nodes = []
     folder = await node.add_folder(NodeId("PublisherDemo", ns), "PublisherDemoNodes")
     nodes.append(await folder.add_variable(NodeId("PubInt32", ns), "Int32", 1, VariantType.Int32))

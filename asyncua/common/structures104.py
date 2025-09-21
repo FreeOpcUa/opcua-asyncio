@@ -6,7 +6,7 @@ import logging
 import re
 import keyword
 import typing
-from typing import Union, List, TYPE_CHECKING, Tuple, Any, Dict, Set
+from typing import Union, TYPE_CHECKING, Any, Dict, Set
 from dataclasses import dataclass, field
 
 import asyncio
@@ -59,9 +59,9 @@ async def new_struct(
     server: Union["Server", "Client"],
     idx: Union[int, ua.NodeId],
     name: Union[int, ua.QualifiedName],
-    fields: List[ua.StructureField],
+    fields: list[ua.StructureField],
     is_union: bool = False,
-) -> Tuple[Node, List[Node]]:
+) -> tuple[Node, list[Node]]:
     """
     simple way to create a new structure
     return the created data type node and the list of encoding nodes
@@ -118,7 +118,7 @@ async def new_enum(
     server: Union["Server", "Client"],
     idx: Union[int, ua.NodeId],
     name: Union[int, ua.QualifiedName],
-    fields: List[Union[str, ua.EnumField]],
+    fields: list[Union[str, ua.EnumField]],
     option_set: bool = False,
 ) -> Node:
     edef = ua.EnumDefinition()
@@ -254,12 +254,12 @@ class {struct_name}{base_class}:
         if sfield.ValueRank >= 1 and uatype == "Char":
             uatype = "String"
         elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
-            uatype = f"typing.List[{uatype}]"
+            uatype = f"list[{uatype}]"
         if sfield.IsOptional:
             if sdef.StructureType is ua.StructureType.StructureWithSubtypedValues:
                 uatype = f"typing.Annotated[{uatype}, 'AllowSubtypes']"
             else:
-                uatype = f"typing.Optional[{uatype}]"
+                uatype = f"{uatype} | None"
                 default_value = "None"
         fields.append((fname, uatype, default_value))
     if is_union:
@@ -272,7 +272,7 @@ class {struct_name}{base_class}:
             code += f"""
 
     @property
-    def {name}(self) -> typing.Optional[{uatype}]:
+    def {name}(self) -> {uatype} | None:
         if self.Encoding == {enc_idx + 1}:
             return self.Value
         return None

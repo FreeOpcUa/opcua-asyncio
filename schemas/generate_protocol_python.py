@@ -81,7 +81,7 @@ class CodeGenerator:
         self.write('')
         self.write('from datetime import datetime, timezone')
         self.write('from enum import IntEnum, IntFlag')
-        self.write('from typing import Union, List, Optional, Type')
+        self.write('from typing import Union, Optional, Type')
         self.write('from dataclasses import dataclass, field')
         self.write('')
         self.write('from asyncua.ua.uatypes import FROZEN')
@@ -169,7 +169,7 @@ class CodeGenerator:
             if field.allow_subtypes and typestring != 'ExtensionObject':
                 typestring = f"Type[{typestring}]"
             if field.is_array():
-                typestring = f"List[{typestring}]"
+                typestring = f"list[{typestring}]"
             if field.is_optional:
                 typestring = f"Optional[{typestring}]"
             if field.name == field.data_type:

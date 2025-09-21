@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Set, Union, Dict, List, Tuple
+from typing import Set, Union, Dict
 from dataclasses import fields, is_dataclass
 from asyncua.common.structures104 import (
     load_custom_struct_xml_import,
@@ -16,14 +16,21 @@ from asyncua.common.structures104 import (
 )
 import asyncua
 from asyncua import ua, Node
-from asyncua.ua.uatypes import type_is_union, types_from_union, type_is_list, type_from_list
+from asyncua.ua.uatypes import (
+    type_is_optional,
+    type_from_optional,
+    type_is_union,
+    types_from_union,
+    type_is_list,
+    type_from_list,
+)
 from .xmlparser import XMLParser, ua_type_to_python
 from ..ua.uaerrors import UaError
 
 _logger = logging.getLogger(__name__)
 
 
-def _parse_version(version_string: str) -> List[int]:
+def _parse_version(version_string: str) -> list[int]:
     return [int(v) for v in version_string.split(".")]
 
 
@@ -192,7 +199,7 @@ class XmlImporter:
         await self._check_if_namespace_meta_information_is_added()
         return nodes
 
-    async def _add_missing_reverse_references(self, new_nodes: List[Node]) -> Set[Node]:
+    async def _add_missing_reverse_references(self, new_nodes: list[Node]) -> Set[Node]:
         __unidirectional_types = {
             ua.ObjectIds.GuardVariableType,
             ua.ObjectIds.HasGuard,
@@ -207,12 +214,12 @@ class XmlImporter:
         }
         dangling_refs_to_missing_nodes = set(new_nodes)
 
-        RefSpecKey = Tuple[ua.NodeId, ua.NodeId, ua.NodeId]  # (source_node_id, target_node_id, ref_type_id)
+        RefSpecKey = tuple[ua.NodeId, ua.NodeId, ua.NodeId]  # (source_node_id, target_node_id, ref_type_id)
         node_reference_map: Dict[RefSpecKey, ua.ReferenceDescription] = {}
 
         for new_node_id in new_nodes:
             node = self.session.get_node(new_node_id)
-            node_ref_list: List[ua.ReferenceDescription] = await node.get_references()
+            node_ref_list: list[ua.ReferenceDescription] = await node.get_references()
 
             for ref in node_ref_list:
                 dangling_refs_to_missing_nodes.discard(new_node_id)
@@ -504,7 +511,10 @@ class XmlImporter:
         # tow possible values:
         # either we get value directly
         # or a dict if it s an object or a list
-        if type_is_union(atttype):
+        #
+        if type_is_optional(atttype):
+            atttype = type_from_optional(atttype)
+        elif type_is_union(atttype):
             atttype = types_from_union(atttype)[0]
         if isinstance(val, str):
             pval = ua_type_to_python(val, atttype.__name__)

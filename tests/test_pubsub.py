@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import timezone
-from typing import List
+
 
 import pytest
 
@@ -83,7 +83,7 @@ def test_uadp_basic():
 
 
 class _Receiver:
-    msgs: List[UadpNetworkMessage]
+    msgs: list[UadpNetworkMessage]
 
     def __init__(self) -> None:
         self.msgs = []
@@ -130,7 +130,7 @@ async def create_published_dataset() -> PublishedDataSet:
 class OnDataReceived:
     values = {}
 
-    async def on_dataset_received(self, meta: pubsub.DataSetMeta, fields: List[pubsub.DataSetValue]):
+    async def on_dataset_received(self, meta: pubsub.DataSetMeta, fields: list[pubsub.DataSetValue]):
         _logger.info("Got Dataset %s", meta.Name)
         if meta.Name not in self.values:
             self.values[meta.Name] = {}
@@ -201,7 +201,7 @@ async def test_full_simple():
 
 
 @pytest.fixture
-async def pusbsub_src_nodes(server) -> List[NodeId]:
+async def pusbsub_src_nodes(server) -> list[NodeId]:
     node = server.nodes.objects
     ns = 1
     folder = await node.add_folder(NodeId(String("SrcTestNodes"), Int16(ns)), "TestNodes")
@@ -219,7 +219,7 @@ async def pusbsub_src_nodes(server) -> List[NodeId]:
 
 
 @pytest.fixture
-async def pubsub_dest_nodes(server) -> List[NodeId]:
+async def pubsub_dest_nodes(server) -> list[NodeId]:
     node = server.nodes.objects
     ns = 1
     dest_folder = await node.add_folder(NodeId(String("DestTestNodes"), Int16(ns)), "TestNodes")
@@ -237,7 +237,7 @@ async def pubsub_dest_nodes(server) -> List[NodeId]:
 
 
 async def test_datasource_and_subscribed_dataset(
-    server: Server, pubsub_dest_nodes: List[Node], pusbsub_src_nodes: List[Node]
+    server: Server, pubsub_dest_nodes: list[Node], pusbsub_src_nodes: list[Node]
 ):
     ps = await server.get_pubsub()
     pubid = Variant(UInt32(1))

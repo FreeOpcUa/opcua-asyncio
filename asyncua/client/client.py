@@ -3,7 +3,8 @@ import dataclasses
 import logging
 import socket
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import Any, Dict, Type, Union, cast
+from collections.abc import Callable, Coroutine, Iterable, Sequence
 from urllib.parse import ParseResult, unquote, urlparse
 
 from cryptography import x509
@@ -39,8 +40,8 @@ class Client:
     which offers the raw OPC-UA services interface.
     """
 
-    _username: Optional[str] = None
-    _password: Optional[str] = None
+    _username: str | None = None
+    _password: str | None = None
     strip_url_credentials: bool = True
 
     def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
@@ -75,13 +76,13 @@ class Client:
         self.secure_channel_id = None
         self.secure_channel_timeout = 3600000  # 1 hour
         self.session_timeout = 3600000  # 1 hour
-        self.connection_lost_callback: Optional[Callable[[Exception], Coroutine[Any, Any, None]]] = None
-        self._policy_ids: List[ua.UserTokenPolicy] = []
+        self.connection_lost_callback: Callable[[Exception], Coroutine[Any, Any, None]] | None = None
+        self._policy_ids: list[ua.UserTokenPolicy] = []
         self.uaclient: UaClient = UaClient(timeout)
         self.uaclient.pre_request_hook = self.check_connection
-        self.user_certificate: Optional[x509.Certificate] = None
-        self.user_private_key: Optional[PrivateKeyTypes] = None
-        self.user_certificate_chain: List[x509.Certificate] = []
+        self.user_certificate: x509.Certificate | None = None
+        self.user_private_key: PrivateKeyTypes | None = None
+        self.user_certificate_chain: list[x509.Certificate] = []
         self._server_nonce = None
         self._session_counter = 1
         self.nodes: Shortcuts = Shortcuts(self.uaclient)
@@ -92,7 +93,7 @@ class Client:
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
         self._closing: bool = False
-        self.certificate_validator: Optional[CertificateValidatorMethod] = None
+        self.certificate_validator: CertificateValidatorMethod | None = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
 
     async def __aenter__(self):
@@ -197,10 +198,10 @@ class Client:
         policy: Type[security_policies.SecurityPolicy],
         certificate: Union[str, uacrypto.CertProperties, bytes, Path],
         private_key: Union[str, uacrypto.CertProperties, bytes, Path],
-        private_key_password: Optional[Union[str, bytes]] = None,
-        server_certificate: Optional[Union[str, uacrypto.CertProperties, bytes]] = None,
+        private_key_password: Union[str, bytes] | None = None,
+        server_certificate: Union[str, uacrypto.CertProperties, bytes] | None = None,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
-        certificate_chain: Optional[Sequence[Union[str, uacrypto.CertProperties, bytes, Path]]] = None,
+        certificate_chain: Sequence[Union[str, uacrypto.CertProperties, bytes, Path]] | None = None,
     ) -> None:
         """
         Set SecureConnection mode.
@@ -241,7 +242,7 @@ class Client:
         private_key: uacrypto.CertProperties,
         server_cert: uacrypto.CertProperties,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
-        certificate_chain: Optional[Sequence[uacrypto.CertProperties]] = None,
+        certificate_chain: Sequence[uacrypto.CertProperties] | None = None,
     ) -> None:
         if isinstance(server_cert, uacrypto.CertProperties):
             server_cert = await uacrypto.load_certificate(server_cert.path_or_content, server_cert.extension)
@@ -259,7 +260,7 @@ class Client:
         self.security_policy = policy(server_cert, cert, pk, mode, host_cert_chain=chain)
         self.uaclient.set_security(self.security_policy)
 
-    async def load_client_certificate(self, path: str, extension: Optional[str] = None) -> None:
+    async def load_client_certificate(self, path: str, extension: str | None = None) -> None:
         """
         Load user certificate from file, either pem or der
         """
@@ -274,14 +275,14 @@ class Client:
         )
 
     async def load_private_key(
-        self, path: Path, password: Optional[Union[str, bytes]] = None, extension: Optional[str] = None
+        self, path: Path, password: Union[str, bytes] | None = None, extension: str | None = None
     ) -> None:
         """
         Load user private key. This is used for authenticating using certificate
         """
         self.user_private_key = await uacrypto.load_private_key(path, password, extension)
 
-    async def connect_and_get_server_endpoints(self) -> List[ua.EndpointDescription]:
+    async def connect_and_get_server_endpoints(self) -> list[ua.EndpointDescription]:
         """
         Connect, ask server for endpoints, and disconnect
         """
@@ -297,7 +298,7 @@ class Client:
             self.disconnect_socket()
         return endpoints
 
-    async def connect_and_find_servers(self) -> List[ua.ApplicationDescription]:
+    async def connect_and_find_servers(self) -> list[ua.ApplicationDescription]:
         """
         Connect, ask server for a list of known servers, and disconnect
         """
@@ -313,7 +314,7 @@ class Client:
             self.disconnect_socket()
         return servers
 
-    async def connect_and_find_servers_on_network(self) -> List[ua.FindServersOnNetworkResult]:
+    async def connect_and_find_servers_on_network(self) -> list[ua.FindServersOnNetworkResult]:
         """
         Connect, ask server for a list of known servers on network, and disconnect
         """
@@ -440,7 +441,7 @@ class Client:
     async def close_secure_channel(self):
         return await self.uaclient.close_secure_channel()
 
-    async def get_endpoints(self) -> List[ua.EndpointDescription]:
+    async def get_endpoints(self) -> list[ua.EndpointDescription]:
         """Get a list of OPC-UA endpoints."""
 
         params = ua.GetEndpointsParameters()
@@ -448,7 +449,7 @@ class Client:
         return await self.uaclient.get_endpoints(params)
 
     async def register_server(
-        self, server: "asyncua.server.Server", discovery_configuration: Optional[ua.DiscoveryConfiguration] = None
+        self, server: "asyncua.server.Server", discovery_configuration: ua.DiscoveryConfiguration | None = None
     ) -> None:
         """
         register a server to discovery server
@@ -469,7 +470,7 @@ class Client:
         return await self.uaclient.register_server(serv)
 
     async def unregister_server(
-        self, server: "asyncua.server.Server", discovery_configuration: Optional[ua.DiscoveryConfiguration] = None
+        self, server: "asyncua.server.Server", discovery_configuration: ua.DiscoveryConfiguration | None = None
     ) -> None:
         """
         register a server to discovery server
@@ -489,7 +490,7 @@ class Client:
             return await self.uaclient.unregister_server2(params)
         return await self.uaclient.unregister_server(serv)
 
-    async def find_servers(self, uris: Optional[Iterable[str]] = None) -> List[ua.ApplicationDescription]:
+    async def find_servers(self, uris: Iterable[str] | None = None) -> list[ua.ApplicationDescription]:
         """
         send a FindServer request to the server. The answer should be a list of
         servers the server knows about
@@ -502,7 +503,7 @@ class Client:
         params.ServerUris = list(uris)
         return await self.uaclient.find_servers(params)
 
-    async def find_servers_on_network(self) -> List[ua.FindServersOnNetworkResult]:
+    async def find_servers_on_network(self) -> list[ua.FindServersOnNetworkResult]:
         params = ua.FindServersOnNetworkParameters()
         return await self.uaclient.find_servers_on_network(params)
 
@@ -660,9 +661,9 @@ class Client:
 
     async def activate_session(
         self,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        certificate: Optional[x509.Certificate] = None,
+        username: str | None = None,
+        password: str | None = None,
+        certificate: x509.Certificate | None = None,
     ) -> ua.ActivateSessionResult:
         """
         Activate session using either username and password or private_key
@@ -727,7 +728,7 @@ class Client:
             params.UserIdentityToken.EncryptionAlgorithm = uri
         params.UserIdentityToken.PolicyId = policy.PolicyId
 
-    def _encrypt_password(self, password: str, policy_uri) -> Tuple[bytes, str]:
+    def _encrypt_password(self, password: str, policy_uri) -> tuple[bytes, str]:
         pubkey = uacrypto.x509_from_der(self.security_policy.peer_certificate).public_key()
         # see specs part 4, 7.36.3: if the token is encrypted, password
         # shall be converted to UTF-8 and serialized with server nonce
@@ -811,7 +812,7 @@ class Client:
         self,
         params: ua.CreateSubscriptionParameters,
         results: ua.CreateSubscriptionResult,
-    ) -> Optional[ua.ModifySubscriptionParameters]:
+    ) -> ua.ModifySubscriptionParameters | None:
         if (
             results.RevisedPublishingInterval == params.RequestedPublishingInterval
             and results.RevisedLifetimeCount == params.RequestedLifetimeCount
@@ -842,7 +843,7 @@ class Client:
             return modified_params
         return None
 
-    async def delete_subscriptions(self, subscription_ids: Iterable[int]) -> List[ua.StatusCode]:
+    async def delete_subscriptions(self, subscription_ids: Iterable[int]) -> list[ua.StatusCode]:
         """
         Deletes the provided list of subscription_ids
         """
@@ -861,7 +862,7 @@ class Client:
         period = period or 1000
         return int((self.session_timeout / period) * 0.75)
 
-    async def get_namespace_array(self) -> List[str]:
+    async def get_namespace_array(self) -> list[str]:
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
         return await ns_node.read_value()
 
@@ -870,12 +871,12 @@ class Client:
         _logger.info("get_namespace_index %s %r", type(uries), uries)
         return uries.index(uri)
 
-    async def delete_nodes(self, nodes: Iterable[Node], recursive=False) -> Tuple[List[Node], List[ua.StatusCode]]:
+    async def delete_nodes(self, nodes: Iterable[Node], recursive=False) -> tuple[list[Node], list[ua.StatusCode]]:
         return await delete_nodes(self.uaclient, nodes, recursive)
 
     async def import_xml(
         self, path=None, xmlstring=None, strict_mode=True, auto_load_definitions: bool = True
-    ) -> List[ua.NodeId]:
+    ) -> list[ua.NodeId]:
         """
         Import nodes defined in xml
         """
@@ -915,7 +916,7 @@ class Client:
         return await load_type_definitions(self, nodes)
 
     async def load_data_type_definitions(
-        self, node: Optional[Node] = None, overwrite_existing: bool = False
+        self, node: Node | None = None, overwrite_existing: bool = False
     ) -> Dict[str, Type]:
         """
         Load custom types (custom structures/extension objects) definition from server
@@ -932,7 +933,7 @@ class Client:
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_enums(self)
 
-    async def register_nodes(self, nodes: Iterable[Node]) -> List[Node]:
+    async def register_nodes(self, nodes: Iterable[Node]) -> list[Node]:
         """
         Register nodes for faster read and write access (if supported by server)
         Rmw: This call modifies the nodeid of the nodes, the original nodeid is
@@ -959,14 +960,14 @@ class Client:
 
     async def read_attributes(
         self, nodes: Iterable[Node], attr: ua.AttributeIds = ua.AttributeIds.Value
-    ) -> List[ua.DataValue]:
+    ) -> list[ua.DataValue]:
         """
         Read the attributes of multiple nodes.
         """
         nodeids = [node.nodeid for node in nodes]
         return await self.uaclient.read_attributes(nodeids, attr)
 
-    async def read_values(self, nodes: Iterable[Node]) -> List[Any]:
+    async def read_values(self, nodes: Iterable[Node]) -> list[Any]:
         """
         Read the value of multiple nodes in one ua call.
         """
@@ -975,7 +976,7 @@ class Client:
 
     async def write_values(
         self, nodes: Iterable[Node], values: Iterable[Any], raise_on_partial_error: bool = True
-    ) -> List[ua.StatusCode]:
+    ) -> list[ua.StatusCode]:
         """
         Write values to multiple nodes in one ua call
         """
@@ -990,7 +991,7 @@ class Client:
     get_values = read_values  # legacy compatibility
     set_values = write_values  # legacy compatibility
 
-    async def browse_nodes(self, nodes: Iterable[Node]) -> List[Tuple[Node, ua.BrowseResult]]:
+    async def browse_nodes(self, nodes: Iterable[Node]) -> list[tuple[Node, ua.BrowseResult]]:
         """
         Browses multiple nodes in one ua call
         returns a List of Tuples(Node, BrowseResult)
@@ -1010,7 +1011,7 @@ class Client:
 
     async def translate_browsepaths(
         self, starting_node: ua.NodeId, relative_paths: Iterable[Union[ua.RelativePath, str]]
-    ) -> List[ua.BrowsePathResult]:
+    ) -> list[ua.BrowsePathResult]:
         bpaths = []
         for p in relative_paths:
             try:

@@ -6,7 +6,7 @@ import re
 import asyncio
 import base64
 import logging
-from typing import List, Tuple
+
 import xml.etree.ElementTree as ET
 
 from pytz import utc
@@ -447,7 +447,7 @@ class XMLParser:
                 required_models.append(child.attrib)
         return required_models
 
-    def get_nodeset_namespaces(self) -> List[Tuple[str, ua.String, ua.DateTime]]:
+    def get_nodeset_namespaces(self) -> list[tuple[str, ua.String, ua.DateTime]]:
         """
         Get all namespaces that are registered with version and date_time
         """
