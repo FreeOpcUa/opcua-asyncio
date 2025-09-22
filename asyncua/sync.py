@@ -35,7 +35,7 @@ class ThreadLoopNotRunning(Exception):
 
 class ThreadLoop(Thread):
     def __init__(self, timeout: Optional[float] = 120) -> None:
-        Thread.__init__(self)
+        Thread.__init__(self, daemon=True)
         self.loop = None
         self._cond = Condition()
         self.timeout = timeout
