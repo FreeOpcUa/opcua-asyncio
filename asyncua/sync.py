@@ -5,27 +5,19 @@ sync API of asyncua
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
 import functools
-import sys
-from asyncua.crypto import uacrypto
-from cryptography import x509
-from pathlib import Path
-from threading import Thread, Condition
 import logging
-from typing import Any, Callable, Dict, Iterable, List, Sequence, Set, Tuple, Type, Union, Optional, overload
+from datetime import datetime
+from pathlib import Path
+from threading import Condition, Thread
+from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Sequence, Set, Tuple, Type, Union, overload
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+from cryptography import x509
 
-from asyncua import ua
-from asyncua import client
-from asyncua import server
-from asyncua import common
-from asyncua.common import node, subscription, shortcuts, xmlexporter, type_dictionary_builder
+from asyncua import client, common, server, ua
+from asyncua.common import node, shortcuts, subscription, type_dictionary_builder, xmlexporter
 from asyncua.common.events import Event
+from asyncua.crypto import uacrypto
 
 _logger = logging.getLogger(__name__)
 
