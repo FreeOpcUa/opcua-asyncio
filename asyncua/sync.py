@@ -8,6 +8,7 @@ import asyncio
 from datetime import datetime
 import functools
 import sys
+from asyncua.crypto import uacrypto
 from cryptography import x509
 from pathlib import Path
 from threading import Thread, Condition
@@ -313,6 +314,10 @@ class Client:
     @syncmethod
     def load_client_certificate(self, path: str, extension: Optional[str] = None) -> None:
         pass
+
+    @syncmethod
+    def load_client_chain(self, certs: Iterable[uacrypto.CertProperties]) -> None:
+        ...
 
     @syncmethod
     def load_type_definitions(self, nodes=None):
