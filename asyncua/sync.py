@@ -316,8 +316,7 @@ class Client:
         pass
 
     @syncmethod
-    def load_client_chain(self, certs: Iterable[uacrypto.CertProperties]) -> None:
-        ...
+    def load_client_chain(self, certs: Iterable[uacrypto.CertProperties]) -> None: ...
 
     @syncmethod
     def load_type_definitions(self, nodes=None):
