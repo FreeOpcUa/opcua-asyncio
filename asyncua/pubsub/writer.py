@@ -174,7 +174,8 @@ class DataSetWriter(PubSubInformationModel):
             dt = DateTime.now(timezone.utc)
             status = StatusCode(UInt32(status_codes.StatusCodes.Good))
         if UadpDataSetMessageContentMask.Status in msg_cfg.DataSetMessageContentMask:
-            ds.Header.Status = UInt16(status.value)
+            # per OPC UA v1.05, 7.2.4.5.4, Header.Status is the high word of a StatusCode
+            ds.Header.Status = UInt16((status.value >> 16) & 0xFFFF)
         if UadpDataSetMessageContentMask.Timestamp in msg_cfg.DataSetMessageContentMask:
             ds.Header.Timestamp = dt
         return ds
