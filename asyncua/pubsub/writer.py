@@ -10,7 +10,7 @@ missing features:
 from __future__ import annotations
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 from datetime import timezone
 
 from ..common.node import Node
@@ -139,7 +139,7 @@ class DataSetWriter(PubSubInformationModel):
             DataSetName=dataset_name,
             KeyFrameCount=UInt32(1),
             MessageSettings=message_settings,
-            DataSetFieldContentMask_=mask,
+            DataSetFieldContentMask=mask,
         )
         return cls(dsw_cfg)
 
@@ -202,7 +202,7 @@ class DataSetWriter(PubSubInformationModel):
                 if ds._node is None:
                     raise RuntimeError(f"DataSet node for '{self._cfg.DataSetName}' is not initialized")
                 await ds._node.add_reference(dsw_obj, NodeId(Int32(ObjectIds.DataSetToWriter)))
-        await self.set_node_value("0:DataSetFieldContentMask", self._cfg.DataSetFieldContentMask_)
+        await self.set_node_value("0:DataSetFieldContentMask", self._cfg.DataSetFieldContentMask)
 
         await self._node.add_variable(NodeId(NamespaceIndex=Int16(1)), "0:KeyFrameCount", self._cfg.KeyFrameCount)
 
@@ -218,7 +218,7 @@ class DataSetWriter(PubSubInformationModel):
         #      await self.set_node_value("0:Enabled", self._cfg.Enabled)
         # UadpDataSetWriterMessageType
 
-        msg_cfg: Union[UadpDataSetWriterMessageDataType, None] = self._cfg.MessageSettings
+        msg_cfg: UadpDataSetWriterMessageDataType | None = self._cfg.MessageSettings
         if isinstance(msg_cfg, UadpDataSetWriterMessageDataType):
             object_type_id = NodeId(Int32(ObjectIds.UadpDataSetWriterMessageType), Int16(0))
             nodes = await instantiate_util.instantiate(
@@ -409,7 +409,7 @@ class WriterGroup(PubSubInformationModel):
             await self._set_state(PubSubState.Error)
             raise
 
-    def get_msg_cfg(self) -> Union[UadpWriterGroupMessageDataType, JsonWriterGroupMessageDataType]:
+    def get_msg_cfg(self) -> UadpWriterGroupMessageDataType | JsonWriterGroupMessageDataType:
         if isinstance(self._cfg.MessageSettings, UadpWriterGroupMessageDataType):
             return self._cfg.MessageSettings
         if isinstance(self._cfg.MessageSettings, JsonWriterGroupMessageDataType):

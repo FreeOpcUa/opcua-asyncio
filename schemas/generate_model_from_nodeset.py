@@ -142,7 +142,7 @@ class Model:
     struct_list: list[str]
     enum_list: list[str]
     known_structs: list[str]
-    aliases: Dict[str, Alias]
+    aliases: dict[str, Alias]
 
     def __init__(self):
         self.structs = []
@@ -204,7 +204,7 @@ def reorder_structs(model: Model):
         "DataValue",
         "LocalizedText",
     ] + [enum.name for enum in model.enums] + ['VariableAccessLevel'] + [alias.name for alias in model.aliases.values()]
-    waiting_structs: Dict[str, list[Struct]] = {}
+    waiting_structs: dict[str, list[Struct]] = {}
     newstructs: list[Struct] = []
     for s in model.structs:
         s.waitingfor = []

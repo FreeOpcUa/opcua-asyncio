@@ -44,7 +44,7 @@ if __name__ == "__main__":
             doc = doc.strip()
             outputfile.write("    {0} = {1}\n".format(name, val))
         outputfile.write(f"\n\n")
-        outputfile.write("code_to_name_doc: Dict[int, tuple[str, str]] = {\n")
+        outputfile.write("code_to_name_doc: dict[int, tuple[str, str]] = {\n")
         for name, val, doc in codes:
             doc = doc.strip()
             doc = doc.replace("'", '"')

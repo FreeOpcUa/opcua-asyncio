@@ -2,7 +2,6 @@ import asyncio
 import copy
 import time
 import logging
-from typing import Deque, Dict
 from collections import deque
 from datetime import datetime, timedelta, timezone
 
@@ -36,10 +35,10 @@ class UaProcessor:
         self.session_last_activity: datetime | None = None
         self._transport = transport
         # deque for Publish Requests
-        self._publish_requests: Deque[PublishRequestData] = deque()
+        self._publish_requests: deque[PublishRequestData] = deque()
         # queue for publish results callbacks (using SubscriptionId)
         # rely on dict insertion order (therefore can't use set())
-        self._publish_results_subs: Dict[ua.IntegerId, bool] = {}
+        self._publish_results_subs: dict[ua.IntegerId, bool] = {}
         self._limits = copy.deepcopy(limits)  # Copy limits because they get overriden
         self._connection = SecureConnection(SecurityPolicyNone(), self._limits)
         self._closing: bool = False

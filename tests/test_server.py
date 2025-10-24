@@ -843,22 +843,29 @@ async def test_message_limits_works(restore_transport_limits_server: Server):
         await n.read_value()
 
 
-async def test_runTest(tmp_path: Path):
+async def test_loading_shelf(tmp_path: Path):
     demo_shelf_file: Path = tmp_path / "some_shelf"
 
     # create cache file
     server = Server()
     await server.init(shelf_file=demo_shelf_file)
+    del server
 
     # modify cache content
     id = ua.NodeId(ua.ObjectIds.Server_ServerStatus_SecondsTillShutdown)
-    s = shelve.open(str(demo_shelf_file), "w", writeback=True)
-    s[id.to_string()].attributes[ua.AttributeIds.Value].value = ua.DataValue(123)
-    s.close()
+    sh = shelve.open(str(demo_shelf_file), "w", writeback=True)
+    obj = sh[id.to_string()]
+    obj.attributes[ua.AttributeIds.Value].value = ua.DataValue(123)
+    sh[id.to_string()] = obj  # reassign to ensure re-pickling
+    nod = obj.attributes[ua.AttributeIds.Value]
+    sh.close()
 
     # ensure that we are actually loading from the cache
     server = Server()
     await server.init(shelf_file=demo_shelf_file)
+    sh2 = shelve.open(str(demo_shelf_file), "w", writeback=False)
+    nod2 = sh2[id.to_string()].attributes[ua.AttributeIds.Value]
+    assert nod.value == nod2.value
     assert await server.get_node(id).read_value() == 123
 
 

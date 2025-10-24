@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 from enum import IntEnum, IntFlag
 from datetime import datetime, timezone
@@ -6,7 +8,7 @@ import logging
 import re
 import keyword
 import typing
-from typing import Union, TYPE_CHECKING, Any, Dict, Set
+from typing import TYPE_CHECKING, Any
 from dataclasses import dataclass, field
 
 import asyncio
@@ -23,7 +25,7 @@ _logger = logging.getLogger(__name__)
 
 def new_struct_field(
     name: str,
-    dtype: Union[ua.NodeId, Node, ua.VariantType],
+    dtype: ua.NodeId | Node | ua.VariantType,
     array: bool = False,
     optional: bool = False,
     description: str = "",
@@ -56,9 +58,9 @@ def new_struct_field(
 
 
 async def new_struct(
-    server: Union["Server", "Client"],
-    idx: Union[int, ua.NodeId],
-    name: Union[int, ua.QualifiedName],
+    server: Server | Client,
+    idx: int | ua.NodeId,
+    name: int | ua.QualifiedName,
     fields: list[ua.StructureField],
     is_union: bool = False,
 ) -> tuple[Node, list[Node]]:
@@ -115,10 +117,10 @@ def new_enum_field(
 
 
 async def new_enum(
-    server: Union["Server", "Client"],
-    idx: Union[int, ua.NodeId],
-    name: Union[int, ua.QualifiedName],
-    fields: list[Union[str, ua.EnumField]],
+    server: Server | Client,
+    idx: int | ua.NodeId,
+    name: int | ua.QualifiedName,
+    fields: list[str | ua.EnumField],
     option_set: bool = False,
 ) -> Node:
     edef = ua.EnumDefinition()
@@ -203,6 +205,8 @@ def make_structure_code(data_type, struct_name, sdef, log_error=True):
     base_class = "" if not is_union else "(ua.UaUnion)"
     code = f"""
 
+from __future__ import annotations
+
 @dataclass
 class {struct_name}{base_class}:
 
@@ -250,9 +254,9 @@ class {struct_name}{base_class}:
             uatype = f"ua.{uatype}"
         else:
             # when field point to itself datatype use forward reference for typing
-            uatype = f"'ua.{uatype}'"
+            uatype = f"ua.{uatype}"
         if sfield.ValueRank >= 1 and uatype == "Char":
-            uatype = "String"
+            uatype = "ua.String"
         elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
             uatype = f"list[{uatype}]"
         if sfield.IsOptional:
@@ -266,7 +270,7 @@ class {struct_name}{base_class}:
         # Generate getter and setter to mimic opc ua union access
         names = [f[1] for f in fields]
         code += "    _union_types = [" + ",".join(names) + "]\n"
-        code += "    Value: typing.Union[None, " + ",".join(names) + "] = field(default=None, init=False)"
+        code += "    Value: None | " + "|".join(names) + " = field(default=None, init=False)"
         for enc_idx, fd in enumerate(fields):
             name, uatype, _ = fd
             code += f"""
@@ -285,7 +289,7 @@ class {struct_name}{base_class}:
             """
     else:
         for fname, uatype, default_value in fields:
-            code += f"    {fname}: {uatype} = {default_value}\n"
+            code += f"    {fname}: '{uatype}' = {default_value}\n"
     return code
 
 
@@ -331,8 +335,8 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False, opt
 
 
 class DataTypeSorter:
-    dtype_index: Dict[ua.NodeId, "DataTypeSorter"] = {}
-    referenced_dtypes: Set[ua.NodeId] = set()
+    dtype_index: dict[ua.NodeId, DataTypeSorter] = {}
+    referenced_dtypes: set[ua.NodeId] = set()
 
     def __init__(self, data_type: ua.NodeId, name: str, desc: ua.ReferenceDescription, sdef: ua.StructureDefinition):
         self.data_type = data_type
@@ -345,7 +349,7 @@ class DataTypeSorter:
         self.dtype_index[self.desc.NodeId] = self
         self.referenced_dtypes.update(self.deps)
 
-    def depends_on(self, other: "DataTypeSorter"):
+    def depends_on(self, other: DataTypeSorter):
         if other.desc.NodeId in self.deps:
             return True
         for dep_nodeid in self.deps:
@@ -356,7 +360,7 @@ class DataTypeSorter:
                 return True
         return False
 
-    def __lt__(self, other: "DataTypeSorter"):
+    def __lt__(self, other: DataTypeSorter):
         return other.depends_on(self)
 
     def __repr__(self):
@@ -487,7 +491,7 @@ def make_basetype_code(name, parent_datatype):
     return env
 
 
-async def _load_base_datatypes(server: Union["Server", "Client"]) -> Any:
+async def _load_base_datatypes(server: Server | Client) -> Any:
     new_alias = {}
     descriptions = await server.nodes.base_data_type.get_children_descriptions()
     for desc in descriptions:
@@ -497,9 +501,7 @@ async def _load_base_datatypes(server: Union["Server", "Client"]) -> Any:
     return new_alias
 
 
-async def load_data_type_definitions(
-    server: Union["Server", "Client"], base_node: Node = None, overwrite_existing=False
-) -> Dict:
+async def load_data_type_definitions(server: Server | Client, base_node: Node = None, overwrite_existing=False) -> dict:
     """
     Read DataTypeDefinition attribute on all Structure and Enumeration defined
     on server and generate Python objects in ua namespace to be used to talk with server
@@ -587,7 +589,7 @@ class {name}({enum_type}):
     return code
 
 
-async def load_enums(server: Union["Server", "Client"], base_node: Node = None, option_set: bool = False) -> Dict:
+async def load_enums(server: Server | Client, base_node: Node = None, option_set: bool = False) -> dict:
     typename = "OptionSet" if option_set else "Enum"
     if base_node is None:
         base_node = server.nodes.enum_data_type

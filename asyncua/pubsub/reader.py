@@ -251,7 +251,7 @@ class DataSetReader(PubSubInformationModel):
         await self.set_node_value("0:PublisherId", Variant(str(self._cfg.PublisherId)))
         await self.set_node_value("0:WriterGroupId", self._cfg.WriterGroupId)
         await self.set_node_value("0:DataSetMetaData", self._cfg.DataSetMetaData)
-        await self.set_node_value("0:DataSetFieldContentMask", self._cfg.DataSetFieldContentMask_)
+        await self.set_node_value("0:DataSetFieldContentMask", self._cfg.DataSetFieldContentMask)
         await self.set_node_value("0:MessageReceiveTimeout", self._cfg.MessageReceiveTimeout)
         await self.set_node_value("0:KeyFrameCount", Variant(self._cfg.KeyFrameCount, VariantType.UInt32))
         if self._cfg.HeaderLayoutUri is None:

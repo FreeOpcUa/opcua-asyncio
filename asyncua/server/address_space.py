@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Dict, Union
     from collections.abc import Callable, Generator
     from asyncua.ua.uaprotocol_auto import (
         ObjectAttributes,
@@ -24,14 +23,14 @@ if TYPE_CHECKING:
         ObjectTypeAttributes,
     )
 
-    __TYPE_ATTRIBUTES = Union[
-        DataTypeAttributes,
-        ReferenceTypeAttributes,
-        VariableTypeAttributes,
-        VariableAttributes,
-        ObjectTypeAttributes,
-        ObjectAttributes,
-    ]  # FIXME Check, if there are missing attribute types.
+    __TYPE_ATTRIBUTES = (
+        DataTypeAttributes
+        | ReferenceTypeAttributes
+        | VariableTypeAttributes
+        | VariableAttributes
+        | ObjectTypeAttributes
+        | ObjectAttributes
+    )  # FIXME Check, if there are missing attribute types.
 
 from asyncua import ua
 from asyncua.crypto.permission_rules import User, UserRole
@@ -46,9 +45,9 @@ class AttributeValue:
     """
 
     def __init__(self, value: ua.DataValue):
-        self.value: ua.DataValue | None = value
-        self.value_callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue] | None = None
-        self.value_setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None] | None = None
+        self.value: "ua.DataValue | None" = value
+        self.value_callback: "Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue] | None" = None
+        self.value_setter: "Callable[[NodeData, ua.AttributeIds, ua.DataValue], None] | None" = None
         self.datachange_callbacks = {}
 
     def __str__(self) -> str:
@@ -63,9 +62,9 @@ class NodeData:
     """
 
     def __init__(self, nodeid: ua.NodeId):
-        self.nodeid = nodeid
-        self.attributes: Dict[ua.AttributeIds, AttributeValue] = {}
-        self.references: list[ua.ReferenceDescription] = []
+        self.nodeid: "ua.NodeId" = nodeid
+        self.attributes: "dict[ua.AttributeIds, AttributeValue]" = {}
+        self.references: "list[ua.ReferenceDescription]" = []
         self.call = None
 
     def __str__(self) -> str:
@@ -636,16 +635,16 @@ class AddressSpace:
     def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
         self.force_server_timestamp: bool = True
-        self._nodes: Dict[ua.NodeId, NodeData] = {}
+        self._nodes: dict[ua.NodeId, NodeData] = {}
         self._datachange_callback_counter = 200
-        self._handle_to_attribute_map: Dict[int, tuple[ua.NodeId, ua.AttributeIds]] = {}
+        self._handle_to_attribute_map: dict[int, tuple[ua.NodeId, ua.AttributeIds]] = {}
         self._default_idx = 2
         self._nodeid_counter = {0: 20000, 1: 2000}
 
     def __getitem__(self, nodeid: ua.NodeId) -> NodeData:
         return self._nodes.__getitem__(nodeid)
 
-    def get(self, nodeid: ua.NodeId) -> Union[NodeData, None]:
+    def get(self, nodeid: ua.NodeId) -> NodeData | None:
         return self._nodes.get(
             nodeid, None
         )  # Fixme This is another behaviour than __getitem__ where an KeyError exception is thrown, right?
@@ -659,7 +658,7 @@ class AddressSpace:
     def __delitem__(self, nodeid: ua.NodeId):
         self._nodes.__delitem__(nodeid)
 
-    def generate_nodeid(self, idx: Union[int, None] = None) -> ua.NodeId:
+    def generate_nodeid(self, idx: int | None = None) -> ua.NodeId:
         if idx is None:
             idx = self._default_idx
         if idx in self._nodeid_counter:
@@ -783,11 +782,11 @@ class AddressSpace:
     def read_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds) -> ua.DataValue:
         # self.logger.debug("get attr val: %s %s", nodeid, attr)
         if nodeid not in self._nodes:
-            dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
+            dv = ua.DataValue(StatusCode=ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
             return dv
         node = self._nodes[nodeid]
         if attr not in node.attributes:
-            dv = ua.DataValue(StatusCode_=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
+            dv = ua.DataValue(StatusCode=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
             return dv
         attval = node.attributes[attr]
         # TODO: async support by using asyncio.iscoroutinefunction()

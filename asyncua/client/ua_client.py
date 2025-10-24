@@ -5,7 +5,6 @@ Low level binary client
 import asyncio
 import copy
 import logging
-from typing import Dict, Union
 from collections.abc import Awaitable, Callable
 
 from asyncua import ua
@@ -47,7 +46,7 @@ class UASocketProtocol(asyncio.Protocol):
         self.authentication_token = ua.NodeId()
         self._request_id = 0
         self._request_handle = 0
-        self._callbackmap: Dict[int, asyncio.Future] = {}
+        self._callbackmap: dict[int, asyncio.Future] = {}
         if limits is None:
             limits = TransportLimits(65535, 65535, 0, 0)
         else:
@@ -58,9 +57,7 @@ class UASocketProtocol(asyncio.Protocol):
         self.closed: bool = False
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
         # passing back the processed response to the request so that it can return it.
-        self._open_secure_channel_exchange: Union[
-            ua.OpenSecureChannelResponse, ua.OpenSecureChannelParameters, None
-        ] = None
+        self._open_secure_channel_exchange: ua.OpenSecureChannelResponse | ua.OpenSecureChannelParameters | None = None
         # Hook for upper layer tasks before a request is sent (optional)
         self.pre_request_hook: Callable[[], Awaitable[None]] | None = None
 
@@ -124,7 +121,7 @@ class UASocketProtocol(asyncio.Protocol):
                 self.disconnect_socket()
                 return
 
-    def _process_received_message(self, msg: Union[ua.Message, ua.Acknowledge, ua.ErrorMessage]):
+    def _process_received_message(self, msg: ua.Message | ua.Acknowledge | ua.ErrorMessage):
         if msg is None:
             pass
         elif isinstance(msg, ua.Message):
@@ -564,7 +561,7 @@ class UaClient(AbstractSession):
         notification_message = ua.NotificationMessage(NotificationData=[status_message])  # type: ignore[list-item]
         for subid, callback in self._subscription_callbacks.items():
             try:
-                parameters = ua.PublishResult(subid, NotificationMessage_=notification_message)
+                parameters = ua.PublishResult(subid, NotificationMessage=notification_message)
                 if asyncio.iscoroutinefunction(callback):
                     await callback(parameters)
                 else:

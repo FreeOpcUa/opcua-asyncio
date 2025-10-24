@@ -95,7 +95,7 @@ class {self.name}:
                 compatible with 1.04 structs we added
                 the 'Encoding' Field before and skip the SwitchField Field
                 """
-                uatype = f"'ua.{sfield.uatype}'"
+                uatype = f"ua.{sfield.uatype}"
                 if sfield.array:
                     uatype = f"list[{uatype}]"
                 if uatype == "list[ua.Char]":
@@ -106,7 +106,7 @@ class {self.name}:
                     uavalue = sfield.value
                     if isinstance(uavalue, str) and uavalue.startswith("ua."):
                         uavalue = f"field(default_factory=lambda: {uavalue})"
-                    code += f"    {sfield.name}:{uatype} = {uavalue}\n"
+                    code += f"    {sfield.name}:'{uatype}' = {uavalue}\n"
         return code
 
 

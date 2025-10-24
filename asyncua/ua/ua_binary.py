@@ -2,12 +2,14 @@
 Binary protocol specific functions and constants
 """
 
+from __future__ import annotations
+
 import functools
 import struct
 import logging
 from io import BytesIO
 from types import UnionType
-from typing import IO, Any, Type, TypeVar, Union, get_args, get_origin
+from typing import IO, Any, TypeVar, get_args, get_origin, get_type_hints
 from collections.abc import Callable, Sequence
 import typing
 import uuid
@@ -29,6 +31,16 @@ from .uatypes import (
 _logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
+
+
+def get_safe_type_hints(cls, extra_globals=None):
+    # Start with the globals you want (e.g., {'ua': ua})
+    globalns = dict(extra_globals or {})
+
+    # Filter out properties from the class dict to avoid shadowing
+    localns = {k: v for k, v in cls.__dict__.items() if not isinstance(v, property)}
+
+    return typing.get_type_hints(cls, globalns=globalns, localns=localns)
 
 
 def test_bit(data: int, offset: int) -> int:
@@ -144,7 +156,7 @@ class _Primitive1:
     def pack_array(self, data):
         if data is None:
             return Primitives.Int32.pack(-1)
-        if not isinstance(data, (tuple, list)):
+        if not isinstance(data, tuple | list):
             _logger.warning('ua_binary.py > _Primitive1 > pack_array > data: %s is not a instance of "list"!', data)
             return Primitives.Int32.pack(-1)  # to prevent crashing while runtime
         size_data = Primitives.Int32.pack(len(data))
@@ -297,10 +309,7 @@ def create_dataclass_serializer(dataclazz):
     data_fields = fields(dataclazz)
     # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
     #       it is possible that the type annotations also refere to classes defined in other modules.
-    try:
-        resolved_fieldtypes = typing.get_type_hints(dataclazz, {"ua": ua})
-    except NameError:
-        resolved_fieldtypes = typing.get_type_hints(dataclazz)
+    resolved_fieldtypes = get_type_hints(dataclazz, {"ua": ua})
 
     for f in data_fields:
         f.type = resolved_fieldtypes[f.name]
@@ -376,10 +385,10 @@ def create_type_serializer(uatype):
         return extensionobject_to_binary
     if type_is_list(uatype):
         return create_list_serializer(type_from_list(uatype), type(None))
-    if hasattr(Primitives, uatype.__name__):
-        return getattr(Primitives, uatype.__name__).pack
     if issubclass(uatype, Enum):
         return create_enum_serializer(uatype)
+    if hasattr(Primitives, uatype.__name__):
+        return getattr(Primitives, uatype.__name__).pack
     if hasattr(ua.VariantType, uatype.__name__):
         vtype = getattr(ua.VariantType, uatype.__name__)
         return create_uatype_serializer(vtype)
@@ -465,7 +474,7 @@ def nodeid_to_binary(nodeid):
     return data
 
 
-def nodeid_from_binary(data: Union[BytesIO, Buffer]) -> Union[ua.NodeId, ua.ExpandedNodeId]:
+def nodeid_from_binary(data: BytesIO | Buffer) -> ua.NodeId | ua.ExpandedNodeId:
     encoding = ord(data.read(1))
     nidtype = ua.NodeIdType(encoding & 0b00111111)
     uri = None
@@ -502,7 +511,7 @@ def nodeid_from_binary(data: Union[BytesIO, Buffer]) -> Union[ua.NodeId, ua.Expa
 
 def variant_to_binary(var):
     encoding = var.VariantType.value & 0b0011_1111
-    if var.is_array or isinstance(var.Value, (list, tuple)):
+    if var.is_array or isinstance(var.Value, list | tuple):
         body = pack_uatype_array(var.VariantType, ua.flatten(var.Value))
         if var.Dimensions is None:
             encoding |= 0b1000_0000
@@ -692,11 +701,7 @@ def _create_dataclass_deserializer(objtype):
     field_deserializers = []
     # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
     #       its possible that the type annotations also refere to classes defined in other modules.
-    try:
-        resolved_fieldtypes = typing.get_type_hints(objtype, {"ua": ua})
-    except NameError:
-        resolved_fieldtypes = typing.get_type_hints(objtype)
-
+    resolved_fieldtypes = get_type_hints(objtype, {"ua": ua})
     for field in fields(objtype):
         optional_enc_bit = 0
         field_type = resolved_fieldtypes[field.name]
@@ -704,7 +709,7 @@ def _create_dataclass_deserializer(objtype):
         if type_is_optional(field_type):
             optional_enc_bit = 1 << enc_count
             enc_count += 1
-            field_type = type_from_optional(field.type)
+            field_type = type_from_optional(field_type)
         subtypes = type_allow_subclass(field_type)
         if subtypes:
             deserialize_field = extensionobject_from_binary
@@ -725,7 +730,7 @@ def _create_dataclass_deserializer(objtype):
     return decode
 
 
-def struct_from_binary(objtype: Union[Type[T], str], data: IO) -> T:
+def struct_from_binary(objtype: type[T] | str, data: IO) -> T:
     """
     unpack an ua struct. Arguments are an objtype as Python dataclass or string
     """

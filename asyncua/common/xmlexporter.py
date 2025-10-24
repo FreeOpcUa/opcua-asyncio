@@ -9,7 +9,7 @@ import logging
 import asyncio
 import functools
 from collections import OrderedDict
-from typing import Any, Union
+from typing import Any
 import xml.etree.ElementTree as Et
 import base64
 from dataclasses import is_dataclass
@@ -35,7 +35,7 @@ class XmlExporter:
         ua.NodeId(ua.ObjectIds.Argument): ["Name", "DataType", "ValueRank", "ArrayDimensions", "Description"]
     }
 
-    def __init__(self, server: Union[asyncua.Server, asyncua.Client], export_values: bool = False):
+    def __init__(self, server: asyncua.Server | asyncua.Client, export_values: bool = False):
         """
         param: export_values: exports values from variants (CustomDataTypes are not support!)
         """
@@ -421,7 +421,7 @@ class XmlExporter:
 
     async def member_to_etree(self, el, name, dtype, val):
         member_el = Et.SubElement(el, "uax:" + name)
-        if isinstance(val, (list, tuple)):
+        if isinstance(val, list | tuple):
             for v in val:
                 try:
                     type_name = ua.ObjectIdNames[dtype.Identifier]
@@ -488,7 +488,7 @@ class XmlExporter:
         if val is None:
             return
 
-        if isinstance(val, (list, tuple)):
+        if isinstance(val, list | tuple):
             if not isinstance(dtype.Identifier, int):
                 raise UaInvalidParameterError(f"Expected int, got {type(dtype.Identifier)}")
             if dtype.NamespaceIndex == 0 and dtype.Identifier <= 21:
@@ -536,7 +536,10 @@ class XmlExporter:
     async def _all_fields_to_etree(self, struct_el: Et.Element, val: Any) -> None:
         # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
         #       it is possible that the type annotations also refere to classes defined in other modules.
-        for field in fields_with_resolved_types(val, globalns={"ua": ua}):
+        globalns = {"ua": ua}
+        globalns.update(vars(globalns["ua"]))  # some types will be defined with the ua namespace
+        resolved_fields = fields_with_resolved_types(val, globalns=globalns)
+        for field in resolved_fields:
             # FIXME; what happened if we have a custom type which is not part of ObjectIds???
             if field.name == "Encoding":
                 continue

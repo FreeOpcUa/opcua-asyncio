@@ -6,7 +6,6 @@ import logging
 import asyncio
 import time
 
-from typing import Union, Dict
 from collections.abc import Iterable
 from asyncua import ua
 from .monitored_item_service import MonitoredItemService
@@ -48,12 +47,12 @@ class InternalSubscription:
         self.monitored_item_srv = MonitoredItemService(self, aspace)
         self.delete_callback = delete_callback
         self.session_id = session_id
-        self._triggered_datachanges: Dict[int, list[ua.MonitoredItemNotification]] = {}
-        self._triggered_events: Dict[int, list[ua.EventFieldList]] = {}
+        self._triggered_datachanges: dict[int, list[ua.MonitoredItemNotification]] = {}
+        self._triggered_events: dict[int, list[ua.EventFieldList]] = {}
         self._triggered_statuschanges: list = []
         self._notification_seq = 1
         self._no_acks_limit = 500
-        self._not_acknowledged_results: Dict[int, ua.PublishResult] = {}
+        self._not_acknowledged_results: dict[int, ua.PublishResult] = {}
         self._startup = True
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
@@ -262,7 +261,7 @@ class InternalSubscription:
         await self._trigger_publish()
 
     async def _enqueue_event(
-        self, mid: int, eventdata: Union[ua.MonitoredItemNotification, ua.EventFieldList], size: int, queue: dict
+        self, mid: int, eventdata: ua.MonitoredItemNotification | ua.EventFieldList, size: int, queue: dict
     ):
         if mid not in queue:
             # New Monitored Item Id

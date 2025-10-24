@@ -1,11 +1,11 @@
+from __future__ import annotations
 """
 Autogenerate code from xml spec
-Date:2025-09-17 16:50:25.317057+00:00
+Date:2025-10-27 13:49:11.102743+00:00
 """
 
 from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
-from typing import Union, Optional, Type
 from dataclasses import dataclass, field
 
 from asyncua.ua.uatypes import FROZEN
@@ -1958,8 +1958,8 @@ class KeyValuePair:
 
     data_type = NodeId(ObjectIds.KeyValuePair)
 
-    Key: QualifiedName = field(default_factory=QualifiedName)
-    Value: Variant = field(default_factory=Variant)
+    Key: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
+    Value: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
 @dataclass(frozen=FROZEN)
@@ -1973,7 +1973,7 @@ class AdditionalParametersType:
 
     data_type = NodeId(ObjectIds.AdditionalParametersType)
 
-    Parameters: list[KeyValuePair] = field(default_factory=list)
+    Parameters: 'list[ua.KeyValuePair]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -1989,8 +1989,8 @@ class EphemeralKeyType:
 
     data_type = NodeId(ObjectIds.EphemeralKeyType)
 
-    PublicKey: ByteString = None
-    Signature: ByteString = None
+    PublicKey: 'ua.ByteString' = None
+    Signature: 'ua.ByteString' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -2010,10 +2010,10 @@ class EndpointType:
 
     data_type = NodeId(ObjectIds.EndpointType)
 
-    EndpointUrl: String = None
-    SecurityMode: MessageSecurityMode = MessageSecurityMode.Invalid
-    SecurityPolicyUri: String = None
-    TransportProfileUri: String = None
+    EndpointUrl: 'ua.String' = None
+    SecurityMode: 'ua.MessageSecurityMode' = field(default_factory=lambda:MessageSecurityMode.Invalid)
+    SecurityPolicyUri: 'ua.String' = None
+    TransportProfileUri: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -2035,11 +2035,11 @@ class BitFieldDefinition:
 
     data_type = NodeId(ObjectIds.BitFieldDefinition)
 
-    Name: String = None
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    Reserved: Boolean = True
-    StartingBitPosition: UInt32 = 0
-    EndingBitPosition: UInt32 = 0
+    Name: 'ua.String' = None
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Reserved: 'ua.Boolean' = True
+    StartingBitPosition: 'ua.UInt32' = 0
+    EndingBitPosition: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2055,8 +2055,8 @@ class RationalNumber:
 
     data_type = NodeId(ObjectIds.RationalNumber)
 
-    Numerator: Int32 = 0
-    Denominator: UInt32 = 0
+    Numerator: 'ua.Int32' = 0
+    Denominator: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2084,9 +2084,9 @@ class ThreeDVector(Vector):
 
     data_type = NodeId(ObjectIds.ThreeDVector)
 
-    X: Double = 0
-    Y: Double = 0
-    Z: Double = 0
+    X: 'ua.Double' = 0
+    Y: 'ua.Double' = 0
+    Z: 'ua.Double' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2114,9 +2114,9 @@ class ThreeDCartesianCoordinates(CartesianCoordinates):
 
     data_type = NodeId(ObjectIds.ThreeDCartesianCoordinates)
 
-    X: Double = 0
-    Y: Double = 0
-    Z: Double = 0
+    X: 'ua.Double' = 0
+    Y: 'ua.Double' = 0
+    Z: 'ua.Double' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2144,9 +2144,9 @@ class ThreeDOrientation(Orientation):
 
     data_type = NodeId(ObjectIds.ThreeDOrientation)
 
-    A: Double = 0
-    B: Double = 0
-    C: Double = 0
+    A: 'ua.Double' = 0
+    B: 'ua.Double' = 0
+    C: 'ua.Double' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2172,8 +2172,8 @@ class ThreeDFrame(Frame):
 
     data_type = NodeId(ObjectIds.ThreeDFrame)
 
-    CartesianCoordinates: ThreeDCartesianCoordinates = field(default_factory=ThreeDCartesianCoordinates)
-    Orientation: ThreeDOrientation = field(default_factory=ThreeDOrientation)
+    CartesianCoordinates: 'ua.ThreeDCartesianCoordinates' = field(default_factory=lambda: ThreeDCartesianCoordinates())
+    Orientation: 'ua.ThreeDOrientation' = field(default_factory=lambda: ThreeDOrientation())
 
 
 @dataclass(frozen=FROZEN)
@@ -2189,8 +2189,8 @@ class IdentityMappingRuleType:
 
     data_type = NodeId(ObjectIds.IdentityMappingRuleType)
 
-    CriteriaType: IdentityCriteriaType = IdentityCriteriaType.UserName
-    Criteria: String = None
+    CriteriaType: 'ua.IdentityCriteriaType' = field(default_factory=lambda:IdentityCriteriaType.UserName)
+    Criteria: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -2210,10 +2210,10 @@ class CurrencyUnitType:
 
     data_type = NodeId(ObjectIds.CurrencyUnitType)
 
-    NumericCode: Int16 = 0
-    Exponent: SByte = field(default_factory=SByte)
-    AlphabeticCode: String = None
-    Currency: LocalizedText = field(default_factory=LocalizedText)
+    NumericCode: 'ua.Int16' = 0
+    Exponent: 'ua.SByte' = field(default_factory=lambda: SByte())
+    AlphabeticCode: 'ua.String' = None
+    Currency: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
 @dataclass(frozen=FROZEN)
@@ -2231,9 +2231,9 @@ class AnnotationDataType:
 
     data_type = NodeId(ObjectIds.AnnotationDataType)
 
-    Annotation: String = None
-    Discipline: String = None
-    Uri: String = None
+    Annotation: 'ua.String' = None
+    Discipline: 'ua.String' = None
+    Uri: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -2253,10 +2253,10 @@ class LinearConversionDataType:
 
     data_type = NodeId(ObjectIds.LinearConversionDataType)
 
-    InitialAddend: Float = 0
-    Multiplicand: Float = 0
-    Divisor: Float = 0
-    FinalAddend: Float = 0
+    InitialAddend: 'ua.Float' = 0
+    Multiplicand: 'ua.Float' = 0
+    Divisor: 'ua.Float' = 0
+    FinalAddend: 'ua.Float' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2284,14 +2284,14 @@ class QuantityDimension:
 
     data_type = NodeId(ObjectIds.QuantityDimension)
 
-    MassExponent: SByte = field(default_factory=SByte)
-    LengthExponent: SByte = field(default_factory=SByte)
-    TimeExponent: SByte = field(default_factory=SByte)
-    ElectricCurrentExponent: SByte = field(default_factory=SByte)
-    AmountOfSubstanceExponent: SByte = field(default_factory=SByte)
-    LuminousIntensityExponent: SByte = field(default_factory=SByte)
-    AbsoluteTemperatureExponent: SByte = field(default_factory=SByte)
-    DimensionlessExponent: SByte = field(default_factory=SByte)
+    MassExponent: 'ua.SByte' = field(default_factory=lambda: SByte())
+    LengthExponent: 'ua.SByte' = field(default_factory=lambda: SByte())
+    TimeExponent: 'ua.SByte' = field(default_factory=lambda: SByte())
+    ElectricCurrentExponent: 'ua.SByte' = field(default_factory=lambda: SByte())
+    AmountOfSubstanceExponent: 'ua.SByte' = field(default_factory=lambda: SByte())
+    LuminousIntensityExponent: 'ua.SByte' = field(default_factory=lambda: SByte())
+    AbsoluteTemperatureExponent: 'ua.SByte' = field(default_factory=lambda: SByte())
+    DimensionlessExponent: 'ua.SByte' = field(default_factory=lambda: SByte())
 
 
 @dataclass(frozen=FROZEN)
@@ -2313,11 +2313,11 @@ class TrustListDataType:
 
     data_type = NodeId(ObjectIds.TrustListDataType)
 
-    SpecifiedLists: UInt32 = 0
-    TrustedCertificates: list[ByteString] = field(default_factory=list)
-    TrustedCrls: list[ByteString] = field(default_factory=list)
-    IssuerCertificates: list[ByteString] = field(default_factory=list)
-    IssuerCrls: list[ByteString] = field(default_factory=list)
+    SpecifiedLists: 'ua.UInt32' = 0
+    TrustedCertificates: 'list[ua.ByteString]' = field(default_factory=list)
+    TrustedCrls: 'list[ua.ByteString]' = field(default_factory=list)
+    IssuerCertificates: 'list[ua.ByteString]' = field(default_factory=list)
+    IssuerCrls: 'list[ua.ByteString]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -2335,9 +2335,9 @@ class TransactionErrorType:
 
     data_type = NodeId(ObjectIds.TransactionErrorType)
 
-    TargetId: NodeId = field(default_factory=NodeId)
-    Error: StatusCode = field(default_factory=StatusCode)
-    Message: LocalizedText = field(default_factory=LocalizedText)
+    TargetId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    Error: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    Message: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
 @dataclass(frozen=FROZEN)
@@ -2351,8 +2351,8 @@ class DecimalDataType:
 
     data_type = NodeId(ObjectIds.DecimalDataType)
 
-    Scale: Int16 = 0
-    Value: ByteString = None
+    Scale: 'ua.Int16' = 0
+    Value: 'ua.ByteString' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -2368,8 +2368,8 @@ class DataTypeDescription:
 
     data_type = NodeId(ObjectIds.DataTypeDescription)
 
-    DataTypeId: NodeId = field(default_factory=NodeId)
-    Name: QualifiedName = field(default_factory=QualifiedName)
+    DataTypeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    Name: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
 
 
 @dataclass(frozen=FROZEN)
@@ -2389,10 +2389,10 @@ class SimpleTypeDescription(DataTypeDescription):
 
     data_type = NodeId(ObjectIds.SimpleTypeDescription)
 
-    DataTypeId: NodeId = field(default_factory=NodeId)
-    Name: QualifiedName = field(default_factory=QualifiedName)
-    BaseDataType: NodeId = field(default_factory=NodeId)
-    BuiltInType: Byte = 0
+    DataTypeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    Name: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
+    BaseDataType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    BuiltInType: 'ua.Byte' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2408,8 +2408,8 @@ class PortableQualifiedName:
 
     data_type = NodeId(ObjectIds.PortableQualifiedName)
 
-    NamespaceUri: String = None
-    Name: String = None
+    NamespaceUri: 'ua.String' = None
+    Name: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -2425,8 +2425,8 @@ class UnsignedRationalNumber:
 
     data_type = NodeId(ObjectIds.UnsignedRationalNumber)
 
-    Numerator: UInt32 = 0
-    Denominator: UInt32 = 0
+    Numerator: 'ua.UInt32' = 0
+    Denominator: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2458,16 +2458,16 @@ class FieldMetaData:
 
     data_type = NodeId(ObjectIds.FieldMetaData)
 
-    Name: String = None
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    FieldFlags: DataSetFieldFlags = field(default_factory=lambda:DataSetFieldFlags(0))
-    BuiltInType: Byte = 0
-    DataType: NodeId = field(default_factory=NodeId)
-    ValueRank: Int32 = 0
-    ArrayDimensions: list[UInt32] = field(default_factory=list)
-    MaxStringLength: UInt32 = 0
-    DataSetFieldId: Guid = Guid(int=0)
-    Properties: list[KeyValuePair] = field(default_factory=list)
+    Name: 'ua.String' = None
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    FieldFlags: 'ua.DataSetFieldFlags' = field(default_factory=lambda:DataSetFieldFlags(0))
+    BuiltInType: 'ua.Byte' = 0
+    DataType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ValueRank: 'ua.Int32' = 0
+    ArrayDimensions: 'list[ua.UInt32]' = field(default_factory=list)
+    MaxStringLength: 'ua.UInt32' = 0
+    DataSetFieldId: 'ua.Guid' = Guid(int=0)
+    Properties: 'list[ua.KeyValuePair]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -2483,8 +2483,8 @@ class ConfigurationVersionDataType:
 
     data_type = NodeId(ObjectIds.ConfigurationVersionDataType)
 
-    MajorVersion: VersionTime = 0
-    MinorVersion: VersionTime = 0
+    MajorVersion: 'ua.VersionTime' = 0
+    MinorVersion: 'ua.VersionTime' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2522,14 +2522,14 @@ class PublishedVariableDataType:
 
     data_type = NodeId(ObjectIds.PublishedVariableDataType)
 
-    PublishedVariable: NodeId = field(default_factory=NodeId)
-    AttributeId: IntegerId = 0
-    SamplingIntervalHint: Duration = 0
-    DeadbandType: UInt32 = 0
-    DeadbandValue: Double = 0
-    IndexRange: NumericRange = None
-    SubstituteValue: Variant = field(default_factory=Variant)
-    MetaDataProperties: list[QualifiedName] = field(default_factory=list)
+    PublishedVariable: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    AttributeId: 'ua.IntegerId' = 0
+    SamplingIntervalHint: 'ua.Duration' = 0
+    DeadbandType: 'ua.UInt32' = 0
+    DeadbandValue: 'ua.Double' = 0
+    IndexRange: 'ua.NumericRange' = None
+    SubstituteValue: 'ua.Variant' = field(default_factory=lambda: Variant())
+    MetaDataProperties: 'list[ua.QualifiedName]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -2543,7 +2543,7 @@ class PublishedDataItemsDataType(PublishedDataSetSourceDataType):
 
     data_type = NodeId(ObjectIds.PublishedDataItemsDataType)
 
-    PublishedData: list[PublishedVariableDataType] = field(default_factory=list)
+    PublishedData: 'list[ua.PublishedVariableDataType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -2557,7 +2557,7 @@ class PublishedDataSetCustomSourceDataType(PublishedDataSetSourceDataType):
 
     data_type = NodeId(ObjectIds.PublishedDataSetCustomSourceDataType)
 
-    CyclicDataSet: Boolean = True
+    CyclicDataSet: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -2575,9 +2575,9 @@ class ActionTargetDataType:
 
     data_type = NodeId(ObjectIds.ActionTargetDataType)
 
-    ActionTargetId: UInt16 = 0
-    Name: String = None
-    Description: LocalizedText = field(default_factory=LocalizedText)
+    ActionTargetId: 'ua.UInt16' = 0
+    Name: 'ua.String' = None
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
 @dataclass(frozen=FROZEN)
@@ -2593,8 +2593,8 @@ class ActionMethodDataType:
 
     data_type = NodeId(ObjectIds.ActionMethodDataType)
 
-    ObjectId: NodeId = field(default_factory=NodeId)
-    MethodId: NodeId = field(default_factory=NodeId)
+    ObjectId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    MethodId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
 
 
 @dataclass(frozen=FROZEN)
@@ -2644,23 +2644,15 @@ class DataSetWriterDataType:
 
     data_type = NodeId(ObjectIds.DataSetWriterDataType)
 
-    Name: String = None
-    Enabled: Boolean = True
-    DataSetWriterId: UInt16 = 0
-    DataSetFieldContentMask_: DataSetFieldContentMask = field(default_factory=lambda:DataSetFieldContentMask(0))
-    KeyFrameCount: UInt32 = 0
-    DataSetName: String = None
-    DataSetWriterProperties: list[KeyValuePair] = field(default_factory=list)
-    TransportSettings: Type[DataSetWriterTransportDataType] = field(default_factory=DataSetWriterTransportDataType)
-    MessageSettings: Type[DataSetWriterMessageDataType] = field(default_factory=DataSetWriterMessageDataType)
-
-    @property
-    def DataSetFieldContentMask(self):
-        return self.DataSetFieldContentMask_
-
-    @DataSetFieldContentMask.setter
-    def DataSetFieldContentMask(self, val):
-        self.DataSetFieldContentMask_ = val
+    Name: 'ua.String' = None
+    Enabled: 'ua.Boolean' = True
+    DataSetWriterId: 'ua.UInt16' = 0
+    DataSetFieldContentMask: 'ua.DataSetFieldContentMask' = field(default_factory=lambda:DataSetFieldContentMask(0))
+    KeyFrameCount: 'ua.UInt32' = 0
+    DataSetName: 'ua.String' = None
+    DataSetWriterProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    TransportSettings: 'type[ua.DataSetWriterTransportDataType]' = field(default_factory=lambda: DataSetWriterTransportDataType())
+    MessageSettings: 'type[ua.DataSetWriterMessageDataType]' = field(default_factory=lambda: DataSetWriterMessageDataType())
 
 
 @dataclass(frozen=FROZEN)
@@ -2704,7 +2696,7 @@ class NetworkAddressDataType:
 
     data_type = NodeId(ObjectIds.NetworkAddressDataType)
 
-    NetworkInterface: String = None
+    NetworkInterface: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -2720,8 +2712,8 @@ class NetworkAddressUrlDataType(NetworkAddressDataType):
 
     data_type = NodeId(ObjectIds.NetworkAddressUrlDataType)
 
-    NetworkInterface: String = None
-    Url: String = None
+    NetworkInterface: 'ua.String' = None
+    Url: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -2797,21 +2789,13 @@ class FieldTargetDataType:
 
     data_type = NodeId(ObjectIds.FieldTargetDataType)
 
-    DataSetFieldId: Guid = Guid(int=0)
-    ReceiverIndexRange: NumericRange = None
-    TargetNodeId: NodeId = field(default_factory=NodeId)
-    AttributeId: IntegerId = 0
-    WriteIndexRange: NumericRange = None
-    OverrideValueHandling_: OverrideValueHandling = OverrideValueHandling.Disabled
-    OverrideValue: Variant = field(default_factory=Variant)
-
-    @property
-    def OverrideValueHandling(self):
-        return self.OverrideValueHandling_
-
-    @OverrideValueHandling.setter
-    def OverrideValueHandling(self, val):
-        self.OverrideValueHandling_ = val
+    DataSetFieldId: 'ua.Guid' = Guid(int=0)
+    ReceiverIndexRange: 'ua.NumericRange' = None
+    TargetNodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    AttributeId: 'ua.IntegerId' = 0
+    WriteIndexRange: 'ua.NumericRange' = None
+    OverrideValueHandling: 'ua.OverrideValueHandling' = field(default_factory=lambda:OverrideValueHandling.Disabled)
+    OverrideValue: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
 @dataclass(frozen=FROZEN)
@@ -2825,7 +2809,7 @@ class TargetVariablesDataType(SubscribedDataSetDataType):
 
     data_type = NodeId(ObjectIds.TargetVariablesDataType)
 
-    TargetVariables: list[FieldTargetDataType] = field(default_factory=list)
+    TargetVariables: 'list[ua.FieldTargetDataType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -2839,7 +2823,7 @@ class StandaloneSubscribedDataSetRefDataType(SubscribedDataSetDataType):
 
     data_type = NodeId(ObjectIds.StandaloneSubscribedDataSetRefDataType)
 
-    DataSetName: String = None
+    DataSetName: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -2861,11 +2845,11 @@ class UadpWriterGroupMessageDataType(WriterGroupMessageDataType):
 
     data_type = NodeId(ObjectIds.UadpWriterGroupMessageDataType)
 
-    GroupVersion: VersionTime = 0
-    DataSetOrdering: DataSetOrderingType = DataSetOrderingType.Undefined
-    NetworkMessageContentMask: UadpNetworkMessageContentMask = field(default_factory=lambda:UadpNetworkMessageContentMask(0))
-    SamplingOffset: Duration = 0
-    PublishingOffset: list[Duration] = field(default_factory=list)
+    GroupVersion: 'ua.VersionTime' = 0
+    DataSetOrdering: 'ua.DataSetOrderingType' = field(default_factory=lambda:DataSetOrderingType.Undefined)
+    NetworkMessageContentMask: 'ua.UadpNetworkMessageContentMask' = field(default_factory=lambda:UadpNetworkMessageContentMask(0))
+    SamplingOffset: 'ua.Duration' = 0
+    PublishingOffset: 'list[ua.Duration]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -2885,10 +2869,10 @@ class UadpDataSetWriterMessageDataType(DataSetWriterMessageDataType):
 
     data_type = NodeId(ObjectIds.UadpDataSetWriterMessageDataType)
 
-    DataSetMessageContentMask: UadpDataSetMessageContentMask = field(default_factory=lambda:UadpDataSetMessageContentMask(0))
-    ConfiguredSize: UInt16 = 0
-    NetworkMessageNumber: UInt16 = 0
-    DataSetOffset: UInt16 = 0
+    DataSetMessageContentMask: 'ua.UadpDataSetMessageContentMask' = field(default_factory=lambda:UadpDataSetMessageContentMask(0))
+    ConfiguredSize: 'ua.UInt16' = 0
+    NetworkMessageNumber: 'ua.UInt16' = 0
+    DataSetOffset: 'ua.UInt16' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2918,15 +2902,15 @@ class UadpDataSetReaderMessageDataType(DataSetReaderMessageDataType):
 
     data_type = NodeId(ObjectIds.UadpDataSetReaderMessageDataType)
 
-    GroupVersion: VersionTime = 0
-    NetworkMessageNumber: UInt16 = 0
-    DataSetOffset: UInt16 = 0
-    DataSetClassId: Guid = Guid(int=0)
-    NetworkMessageContentMask: UadpNetworkMessageContentMask = field(default_factory=lambda:UadpNetworkMessageContentMask(0))
-    DataSetMessageContentMask: UadpDataSetMessageContentMask = field(default_factory=lambda:UadpDataSetMessageContentMask(0))
-    PublishingInterval: Duration = 0
-    ReceiveOffset: Duration = 0
-    ProcessingOffset: Duration = 0
+    GroupVersion: 'ua.VersionTime' = 0
+    NetworkMessageNumber: 'ua.UInt16' = 0
+    DataSetOffset: 'ua.UInt16' = 0
+    DataSetClassId: 'ua.Guid' = Guid(int=0)
+    NetworkMessageContentMask: 'ua.UadpNetworkMessageContentMask' = field(default_factory=lambda:UadpNetworkMessageContentMask(0))
+    DataSetMessageContentMask: 'ua.UadpDataSetMessageContentMask' = field(default_factory=lambda:UadpDataSetMessageContentMask(0))
+    PublishingInterval: 'ua.Duration' = 0
+    ReceiveOffset: 'ua.Duration' = 0
+    ProcessingOffset: 'ua.Duration' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -2940,7 +2924,7 @@ class JsonWriterGroupMessageDataType(WriterGroupMessageDataType):
 
     data_type = NodeId(ObjectIds.JsonWriterGroupMessageDataType)
 
-    NetworkMessageContentMask: JsonNetworkMessageContentMask = field(default_factory=lambda:JsonNetworkMessageContentMask(0))
+    NetworkMessageContentMask: 'ua.JsonNetworkMessageContentMask' = field(default_factory=lambda:JsonNetworkMessageContentMask(0))
 
 
 @dataclass(frozen=FROZEN)
@@ -2954,7 +2938,7 @@ class JsonDataSetWriterMessageDataType(DataSetWriterMessageDataType):
 
     data_type = NodeId(ObjectIds.JsonDataSetWriterMessageDataType)
 
-    DataSetMessageContentMask: JsonDataSetMessageContentMask = field(default_factory=lambda:JsonDataSetMessageContentMask(0))
+    DataSetMessageContentMask: 'ua.JsonDataSetMessageContentMask' = field(default_factory=lambda:JsonDataSetMessageContentMask(0))
 
 
 @dataclass(frozen=FROZEN)
@@ -2970,8 +2954,8 @@ class JsonDataSetReaderMessageDataType(DataSetReaderMessageDataType):
 
     data_type = NodeId(ObjectIds.JsonDataSetReaderMessageDataType)
 
-    NetworkMessageContentMask: JsonNetworkMessageContentMask = field(default_factory=lambda:JsonNetworkMessageContentMask(0))
-    DataSetMessageContentMask: JsonDataSetMessageContentMask = field(default_factory=lambda:JsonDataSetMessageContentMask(0))
+    NetworkMessageContentMask: 'ua.JsonNetworkMessageContentMask' = field(default_factory=lambda:JsonNetworkMessageContentMask(0))
+    DataSetMessageContentMask: 'ua.JsonDataSetMessageContentMask' = field(default_factory=lambda:JsonDataSetMessageContentMask(0))
 
 
 @dataclass(frozen=FROZEN)
@@ -3005,7 +2989,7 @@ class TransmitQosPriorityDataType(TransmitQosDataType):
 
     data_type = NodeId(ObjectIds.TransmitQosPriorityDataType)
 
-    PriorityLabel: String = None
+    PriorityLabel: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -3029,7 +3013,7 @@ class ReceiveQosPriorityDataType(ReceiveQosDataType):
 
     data_type = NodeId(ObjectIds.ReceiveQosPriorityDataType)
 
-    PriorityLabel: String = None
+    PriorityLabel: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -3043,7 +3027,7 @@ class DatagramConnectionTransportDataType(ConnectionTransportDataType):
 
     data_type = NodeId(ObjectIds.DatagramConnectionTransportDataType)
 
-    DiscoveryAddress: Type[NetworkAddressDataType] = field(default_factory=NetworkAddressDataType)
+    DiscoveryAddress: 'type[ua.NetworkAddressDataType]' = field(default_factory=lambda: NetworkAddressDataType())
 
 
 @dataclass(frozen=FROZEN)
@@ -3065,11 +3049,11 @@ class DatagramConnectionTransport2DataType(DatagramConnectionTransportDataType):
 
     data_type = NodeId(ObjectIds.DatagramConnectionTransport2DataType)
 
-    DiscoveryAddress: Type[NetworkAddressDataType] = field(default_factory=NetworkAddressDataType)
-    DiscoveryAnnounceRate: UInt32 = 0
-    DiscoveryMaxMessageSize: UInt32 = 0
-    QosCategory: String = None
-    DatagramQos: list[Type[QosDataType]] = field(default_factory=list)
+    DiscoveryAddress: 'type[ua.NetworkAddressDataType]' = field(default_factory=lambda: NetworkAddressDataType())
+    DiscoveryAnnounceRate: 'ua.UInt32' = 0
+    DiscoveryMaxMessageSize: 'ua.UInt32' = 0
+    QosCategory: 'ua.String' = None
+    DatagramQos: 'list[type[ua.QosDataType]]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -3085,8 +3069,8 @@ class DatagramWriterGroupTransportDataType(WriterGroupTransportDataType):
 
     data_type = NodeId(ObjectIds.DatagramWriterGroupTransportDataType)
 
-    MessageRepeatCount: Byte = 0
-    MessageRepeatDelay: Duration = 0
+    MessageRepeatCount: 'ua.Byte' = 0
+    MessageRepeatDelay: 'ua.Duration' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -3112,13 +3096,13 @@ class DatagramWriterGroupTransport2DataType(DatagramWriterGroupTransportDataType
 
     data_type = NodeId(ObjectIds.DatagramWriterGroupTransport2DataType)
 
-    MessageRepeatCount: Byte = 0
-    MessageRepeatDelay: Duration = 0
-    Address: Type[NetworkAddressDataType] = field(default_factory=NetworkAddressDataType)
-    QosCategory: String = None
-    DatagramQos: list[Type[TransmitQosDataType]] = field(default_factory=list)
-    DiscoveryAnnounceRate: UInt32 = 0
-    Topic: String = None
+    MessageRepeatCount: 'ua.Byte' = 0
+    MessageRepeatDelay: 'ua.Duration' = 0
+    Address: 'type[ua.NetworkAddressDataType]' = field(default_factory=lambda: NetworkAddressDataType())
+    QosCategory: 'ua.String' = None
+    DatagramQos: 'list[type[ua.TransmitQosDataType]]' = field(default_factory=list)
+    DiscoveryAnnounceRate: 'ua.UInt32' = 0
+    Topic: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -3138,10 +3122,10 @@ class DatagramDataSetReaderTransportDataType(DataSetReaderTransportDataType):
 
     data_type = NodeId(ObjectIds.DatagramDataSetReaderTransportDataType)
 
-    Address: Type[NetworkAddressDataType] = field(default_factory=NetworkAddressDataType)
-    QosCategory: String = None
-    DatagramQos: list[Type[ReceiveQosDataType]] = field(default_factory=list)
-    Topic: String = None
+    Address: 'type[ua.NetworkAddressDataType]' = field(default_factory=lambda: NetworkAddressDataType())
+    QosCategory: 'ua.String' = None
+    DatagramQos: 'list[type[ua.ReceiveQosDataType]]' = field(default_factory=list)
+    Topic: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -3163,11 +3147,11 @@ class DtlsPubSubConnectionDataType:
 
     data_type = NodeId(ObjectIds.DtlsPubSubConnectionDataType)
 
-    ClientCipherSuite: String = None
-    ServerCipherSuites: list[String] = field(default_factory=list)
-    ZeroRTT: Boolean = True
-    CertificateGroupId: NodeId = field(default_factory=NodeId)
-    VerifyClientCertificate: Boolean = True
+    ClientCipherSuite: 'ua.String' = None
+    ServerCipherSuites: 'list[ua.String]' = field(default_factory=list)
+    ZeroRTT: 'ua.Boolean' = True
+    CertificateGroupId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    VerifyClientCertificate: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -3183,8 +3167,8 @@ class BrokerConnectionTransportDataType(ConnectionTransportDataType):
 
     data_type = NodeId(ObjectIds.BrokerConnectionTransportDataType)
 
-    ResourceUri: String = None
-    AuthenticationProfileUri: String = None
+    ResourceUri: 'ua.String' = None
+    AuthenticationProfileUri: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -3204,10 +3188,10 @@ class BrokerWriterGroupTransportDataType(WriterGroupTransportDataType):
 
     data_type = NodeId(ObjectIds.BrokerWriterGroupTransportDataType)
 
-    QueueName: String = None
-    ResourceUri: String = None
-    AuthenticationProfileUri: String = None
-    RequestedDeliveryGuarantee: BrokerTransportQualityOfService = BrokerTransportQualityOfService.NotSpecified
+    QueueName: 'ua.String' = None
+    ResourceUri: 'ua.String' = None
+    AuthenticationProfileUri: 'ua.String' = None
+    RequestedDeliveryGuarantee: 'ua.BrokerTransportQualityOfService' = field(default_factory=lambda:BrokerTransportQualityOfService.NotSpecified)
 
 
 @dataclass(frozen=FROZEN)
@@ -3231,12 +3215,12 @@ class BrokerDataSetWriterTransportDataType(DataSetWriterTransportDataType):
 
     data_type = NodeId(ObjectIds.BrokerDataSetWriterTransportDataType)
 
-    QueueName: String = None
-    ResourceUri: String = None
-    AuthenticationProfileUri: String = None
-    RequestedDeliveryGuarantee: BrokerTransportQualityOfService = BrokerTransportQualityOfService.NotSpecified
-    MetaDataQueueName: String = None
-    MetaDataUpdateTime: Duration = 0
+    QueueName: 'ua.String' = None
+    ResourceUri: 'ua.String' = None
+    AuthenticationProfileUri: 'ua.String' = None
+    RequestedDeliveryGuarantee: 'ua.BrokerTransportQualityOfService' = field(default_factory=lambda:BrokerTransportQualityOfService.NotSpecified)
+    MetaDataQueueName: 'ua.String' = None
+    MetaDataUpdateTime: 'ua.Duration' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -3258,11 +3242,11 @@ class BrokerDataSetReaderTransportDataType(DataSetReaderTransportDataType):
 
     data_type = NodeId(ObjectIds.BrokerDataSetReaderTransportDataType)
 
-    QueueName: String = None
-    ResourceUri: String = None
-    AuthenticationProfileUri: String = None
-    RequestedDeliveryGuarantee: BrokerTransportQualityOfService = BrokerTransportQualityOfService.NotSpecified
-    MetaDataQueueName: String = None
+    QueueName: 'ua.String' = None
+    ResourceUri: 'ua.String' = None
+    AuthenticationProfileUri: 'ua.String' = None
+    RequestedDeliveryGuarantee: 'ua.BrokerTransportQualityOfService' = field(default_factory=lambda:BrokerTransportQualityOfService.NotSpecified)
+    MetaDataQueueName: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -3282,10 +3266,10 @@ class PubSubConfigurationRefDataType:
 
     data_type = NodeId(ObjectIds.PubSubConfigurationRefDataType)
 
-    ConfigurationMask: PubSubConfigurationRefMask = field(default_factory=lambda:PubSubConfigurationRefMask(0))
-    ElementIndex: UInt16 = 0
-    ConnectionIndex: UInt16 = 0
-    GroupIndex: UInt16 = 0
+    ConfigurationMask: 'ua.PubSubConfigurationRefMask' = field(default_factory=lambda:PubSubConfigurationRefMask(0))
+    ElementIndex: 'ua.UInt16' = 0
+    ConnectionIndex: 'ua.UInt16' = 0
+    GroupIndex: 'ua.UInt16' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -3303,9 +3287,9 @@ class PubSubConfigurationValueDataType:
 
     data_type = NodeId(ObjectIds.PubSubConfigurationValueDataType)
 
-    ConfigurationElement: PubSubConfigurationRefDataType = field(default_factory=PubSubConfigurationRefDataType)
-    Name: String = None
-    Identifier: Variant = field(default_factory=Variant)
+    ConfigurationElement: 'ua.PubSubConfigurationRefDataType' = field(default_factory=lambda: PubSubConfigurationRefDataType())
+    Name: 'ua.String' = None
+    Identifier: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
 @dataclass(frozen=FROZEN)
@@ -3327,12 +3311,12 @@ class JsonNetworkMessage:
 
     data_type = NodeId(ObjectIds.JsonNetworkMessage)
 
-    MessageId: String = None
-    MessageType: String = None
-    PublisherId: String = None
-    WriterGroupName: String = None
-    DataSetClassId: String = None
-    Messages: list[ExtensionObject] = field(default_factory=list)
+    MessageId: 'ua.String' = None
+    MessageType: 'ua.String' = None
+    PublisherId: 'ua.String' = None
+    WriterGroupName: 'ua.String' = None
+    DataSetClassId: 'ua.String' = None
+    Messages: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -3364,17 +3348,17 @@ class JsonDataSetMessage:
 
     data_type = NodeId(ObjectIds.JsonDataSetMessage)
 
-    DataSetWriterId: UInt16 = 0
-    DataSetWriterName: String = None
-    PublisherId: String = None
-    WriterGroupName: String = None
-    SequenceNumber: UInt32 = 0
-    MetaDataVersion: ConfigurationVersionDataType = field(default_factory=ConfigurationVersionDataType)
-    MinorVersion: VersionTime = 0
-    Timestamp: DateTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    Status: StatusCode = field(default_factory=StatusCode)
-    MessageType: String = None
-    Payload: ExtensionObject = ExtensionObject()
+    DataSetWriterId: 'ua.UInt16' = 0
+    DataSetWriterName: 'ua.String' = None
+    PublisherId: 'ua.String' = None
+    WriterGroupName: 'ua.String' = None
+    SequenceNumber: 'ua.UInt32' = 0
+    MetaDataVersion: 'ua.ConfigurationVersionDataType' = field(default_factory=lambda: ConfigurationVersionDataType())
+    MinorVersion: 'ua.VersionTime' = 0
+    Timestamp: 'ua.DateTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Status: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    MessageType: 'ua.String' = None
+    Payload: 'ua.ExtensionObject' = ExtensionObject()
 
 
 @dataclass(frozen=FROZEN)
@@ -3398,13 +3382,13 @@ class JsonStatusMessage:
 
     data_type = NodeId(ObjectIds.JsonStatusMessage)
 
-    MessageId: String = None
-    MessageType: String = None
-    PublisherId: String = None
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    IsCyclic: Boolean = True
-    Status: PubSubState = PubSubState.Disabled
-    NextReportTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    MessageId: 'ua.String' = None
+    MessageType: 'ua.String' = None
+    PublisherId: 'ua.String' = None
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    IsCyclic: 'ua.Boolean' = True
+    Status: 'ua.PubSubState' = field(default_factory=lambda:PubSubState.Disabled)
+    NextReportTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass(frozen=FROZEN)
@@ -3432,15 +3416,15 @@ class JsonActionNetworkMessage:
 
     data_type = NodeId(ObjectIds.JsonActionNetworkMessage)
 
-    MessageId: String = None
-    MessageType: String = None
-    PublisherId: String = None
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    ResponseAddress: String = None
-    CorrelationData: ByteString = None
-    RequestorId: String = None
-    TimeoutHint: Duration = 0
-    Messages: list[ExtensionObject] = field(default_factory=list)
+    MessageId: 'ua.String' = None
+    MessageType: 'ua.String' = None
+    PublisherId: 'ua.String' = None
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    ResponseAddress: 'ua.String' = None
+    CorrelationData: 'ua.ByteString' = None
+    RequestorId: 'ua.String' = None
+    TimeoutHint: 'ua.Duration' = 0
+    Messages: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -3472,25 +3456,17 @@ class JsonActionRequestMessage:
 
     data_type = NodeId(ObjectIds.JsonActionRequestMessage)
 
-    DataSetWriterId: UInt16 = 0
-    ActionTargetId: UInt16 = 0
-    DataSetWriterName: String = None
-    WriterGroupName: String = None
-    MetaDataVersion: ConfigurationVersionDataType = field(default_factory=ConfigurationVersionDataType)
-    MinorVersion: VersionTime = 0
-    Timestamp: DateTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    MessageType: String = None
-    RequestId: UInt16 = 0
-    ActionState_: ActionState = ActionState.Idle
-    Payload: ExtensionObject = ExtensionObject()
-
-    @property
-    def ActionState(self):
-        return self.ActionState_
-
-    @ActionState.setter
-    def ActionState(self, val):
-        self.ActionState_ = val
+    DataSetWriterId: 'ua.UInt16' = 0
+    ActionTargetId: 'ua.UInt16' = 0
+    DataSetWriterName: 'ua.String' = None
+    WriterGroupName: 'ua.String' = None
+    MetaDataVersion: 'ua.ConfigurationVersionDataType' = field(default_factory=lambda: ConfigurationVersionDataType())
+    MinorVersion: 'ua.VersionTime' = 0
+    Timestamp: 'ua.DateTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    MessageType: 'ua.String' = None
+    RequestId: 'ua.UInt16' = 0
+    ActionState: 'ua.ActionState' = field(default_factory=lambda:ActionState.Idle)
+    Payload: 'ua.ExtensionObject' = ExtensionObject()
 
 
 @dataclass(frozen=FROZEN)
@@ -3524,26 +3500,18 @@ class JsonActionResponseMessage:
 
     data_type = NodeId(ObjectIds.JsonActionResponseMessage)
 
-    DataSetWriterId: UInt16 = 0
-    ActionTargetId: UInt16 = 0
-    DataSetWriterName: String = None
-    WriterGroupName: String = None
-    MetaDataVersion: ConfigurationVersionDataType = field(default_factory=ConfigurationVersionDataType)
-    MinorVersion: VersionTime = 0
-    Timestamp: DateTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    Status: StatusCode = field(default_factory=StatusCode)
-    MessageType: String = None
-    RequestId: UInt16 = 0
-    ActionState_: ActionState = ActionState.Idle
-    Payload: ExtensionObject = ExtensionObject()
-
-    @property
-    def ActionState(self):
-        return self.ActionState_
-
-    @ActionState.setter
-    def ActionState(self, val):
-        self.ActionState_ = val
+    DataSetWriterId: 'ua.UInt16' = 0
+    ActionTargetId: 'ua.UInt16' = 0
+    DataSetWriterName: 'ua.String' = None
+    WriterGroupName: 'ua.String' = None
+    MetaDataVersion: 'ua.ConfigurationVersionDataType' = field(default_factory=lambda: ConfigurationVersionDataType())
+    MinorVersion: 'ua.VersionTime' = 0
+    Timestamp: 'ua.DateTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Status: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    MessageType: 'ua.String' = None
+    RequestId: 'ua.UInt16' = 0
+    ActionState: 'ua.ActionState' = field(default_factory=lambda:ActionState.Idle)
+    Payload: 'ua.ExtensionObject' = ExtensionObject()
 
 
 @dataclass(frozen=FROZEN)
@@ -3559,8 +3527,8 @@ class AliasNameDataType:
 
     data_type = NodeId(ObjectIds.AliasNameDataType)
 
-    AliasName: QualifiedName = field(default_factory=QualifiedName)
-    ReferencedNodes: list[ExpandedNodeId] = field(default_factory=list)
+    AliasName: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
+    ReferencedNodes: 'list[ua.ExpandedNodeId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -3578,9 +3546,9 @@ class UserManagementDataType:
 
     data_type = NodeId(ObjectIds.UserManagementDataType)
 
-    UserName: String = None
-    UserConfiguration: UserConfigurationMask = field(default_factory=lambda:UserConfigurationMask(0))
-    Description: String = None
+    UserName: 'ua.String' = None
+    UserConfiguration: 'ua.UserConfigurationMask' = field(default_factory=lambda:UserConfigurationMask(0))
+    Description: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -3600,10 +3568,10 @@ class PriorityMappingEntryType:
 
     data_type = NodeId(ObjectIds.PriorityMappingEntryType)
 
-    MappingUri: String = None
-    PriorityLabel: String = None
-    PriorityValue_PCP: Byte = 0
-    PriorityValue_DSCP: UInt32 = 0
+    MappingUri: 'ua.String' = None
+    PriorityLabel: 'ua.String' = None
+    PriorityValue_PCP: 'ua.Byte' = 0
+    PriorityValue_DSCP: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -3627,12 +3595,12 @@ class LldpManagementAddressTxPortType:
 
     data_type = NodeId(ObjectIds.LldpManagementAddressTxPortType)
 
-    AddressSubtype: UInt32 = 0
-    ManAddress: String = None
-    TxEnable: Boolean = True
-    AddrLen: UInt32 = 0
-    IfSubtype: ManAddrIfSubtype = ManAddrIfSubtype.None_
-    IfId: UInt32 = 0
+    AddressSubtype: 'ua.UInt32' = 0
+    ManAddress: 'ua.String' = None
+    TxEnable: 'ua.Boolean' = True
+    AddrLen: 'ua.UInt32' = 0
+    IfSubtype: 'ua.ManAddrIfSubtype' = field(default_factory=lambda:ManAddrIfSubtype.None_)
+    IfId: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -3652,10 +3620,10 @@ class LldpManagementAddressType:
 
     data_type = NodeId(ObjectIds.LldpManagementAddressType)
 
-    AddressSubtype: UInt32 = 0
-    Address: String = None
-    IfSubtype: ManAddrIfSubtype = ManAddrIfSubtype.None_
-    IfId: UInt32 = 0
+    AddressSubtype: 'ua.UInt32' = 0
+    Address: 'ua.String' = None
+    IfSubtype: 'ua.ManAddrIfSubtype' = field(default_factory=lambda:ManAddrIfSubtype.None_)
+    IfId: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -3671,8 +3639,8 @@ class LldpTlvType:
 
     data_type = NodeId(ObjectIds.LldpTlvType)
 
-    TlvType: UInt32 = 0
-    TlvInfo: ByteString = None
+    TlvType: 'ua.UInt32' = 0
+    TlvInfo: 'ua.ByteString' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -3690,10 +3658,10 @@ class ReferenceDescriptionDataType:
 
     data_type = NodeId(ObjectIds.ReferenceDescriptionDataType)
 
-    SourceNode: NodeId = field(default_factory=NodeId)
-    ReferenceType: NodeId = field(default_factory=NodeId)
-    IsForward: Boolean = True
-    TargetNode: ExpandedNodeId = field(default_factory=ExpandedNodeId)
+    SourceNode: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ReferenceType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    IsForward: 'ua.Boolean' = True
+    TargetNode: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
 
 
 @dataclass(frozen=FROZEN)
@@ -3709,9 +3677,9 @@ class ReferenceListEntryDataType:
 
     data_type = NodeId(ObjectIds.ReferenceListEntryDataType)
 
-    ReferenceType: NodeId = field(default_factory=NodeId)
-    IsForward: Boolean = True
-    TargetNode: ExpandedNodeId = field(default_factory=ExpandedNodeId)
+    ReferenceType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    IsForward: 'ua.Boolean' = True
+    TargetNode: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
 
 
 @dataclass(frozen=FROZEN)
@@ -3727,8 +3695,8 @@ class RolePermissionType:
 
     data_type = NodeId(ObjectIds.RolePermissionType)
 
-    RoleId: NodeId = field(default_factory=NodeId)
-    Permissions: PermissionType = field(default_factory=lambda:PermissionType(0))
+    RoleId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    Permissions: 'ua.PermissionType' = field(default_factory=lambda:PermissionType(0))
 
 
 @dataclass(frozen=FROZEN)
@@ -3744,8 +3712,8 @@ class SubscribedDataSetMirrorDataType(SubscribedDataSetDataType):
 
     data_type = NodeId(ObjectIds.SubscribedDataSetMirrorDataType)
 
-    ParentNodeName: String = None
-    RolePermissions: list[RolePermissionType] = field(default_factory=list)
+    ParentNodeName: 'ua.String' = None
+    RolePermissions: 'list[ua.RolePermissionType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -3775,15 +3743,15 @@ class SecurityGroupDataType:
 
     data_type = NodeId(ObjectIds.SecurityGroupDataType)
 
-    Name: String = None
-    SecurityGroupFolder: list[String] = field(default_factory=list)
-    KeyLifetime: Duration = 0
-    SecurityPolicyUri: String = None
-    MaxFutureKeyCount: UInt32 = 0
-    MaxPastKeyCount: UInt32 = 0
-    SecurityGroupId: String = None
-    RolePermissions: list[RolePermissionType] = field(default_factory=list)
-    GroupProperties: list[KeyValuePair] = field(default_factory=list)
+    Name: 'ua.String' = None
+    SecurityGroupFolder: 'list[ua.String]' = field(default_factory=list)
+    KeyLifetime: 'ua.Duration' = 0
+    SecurityPolicyUri: 'ua.String' = None
+    MaxFutureKeyCount: 'ua.UInt32' = 0
+    MaxPastKeyCount: 'ua.UInt32' = 0
+    SecurityGroupId: 'ua.String' = None
+    RolePermissions: 'list[ua.RolePermissionType]' = field(default_factory=list)
+    GroupProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -3819,13 +3787,13 @@ class StructureField:
 
     data_type = NodeId(ObjectIds.StructureField)
 
-    Name: String = None
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    DataType: NodeId = field(default_factory=NodeId)
-    ValueRank: Int32 = 0
-    ArrayDimensions: list[UInt32] = field(default_factory=list)
-    MaxStringLength: UInt32 = 0
-    IsOptional: Boolean = True
+    Name: 'ua.String' = None
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    DataType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ValueRank: 'ua.Int32' = 0
+    ArrayDimensions: 'list[ua.UInt32]' = field(default_factory=list)
+    MaxStringLength: 'ua.UInt32' = 0
+    IsOptional: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -3845,18 +3813,10 @@ class StructureDefinition(DataTypeDefinition):
 
     data_type = NodeId(ObjectIds.StructureDefinition)
 
-    DefaultEncodingId: NodeId = field(default_factory=NodeId)
-    BaseDataType: NodeId = field(default_factory=NodeId)
-    StructureType_: StructureType = StructureType.Structure
-    Fields: list[StructureField] = field(default_factory=list)
-
-    @property
-    def StructureType(self):
-        return self.StructureType_
-
-    @StructureType.setter
-    def StructureType(self, val):
-        self.StructureType_ = val
+    DefaultEncodingId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    BaseDataType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    StructureType: 'ua.StructureType' = field(default_factory=lambda:StructureType.Structure)
+    Fields: 'list[ua.StructureField]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -3874,17 +3834,9 @@ class StructureDescription(DataTypeDescription):
 
     data_type = NodeId(ObjectIds.StructureDescription)
 
-    DataTypeId: NodeId = field(default_factory=NodeId)
-    Name: QualifiedName = field(default_factory=QualifiedName)
-    StructureDefinition_: StructureDefinition = field(default_factory=StructureDefinition)
-
-    @property
-    def StructureDefinition(self):
-        return self.StructureDefinition_
-
-    @StructureDefinition.setter
-    def StructureDefinition(self, val):
-        self.StructureDefinition_ = val
+    DataTypeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    Name: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
+    StructureDefinition: 'ua.StructureDefinition' = field(default_factory=lambda: StructureDefinition())
 
 
 @dataclass(frozen=FROZEN)
@@ -3906,11 +3858,11 @@ class Argument:
 
     data_type = NodeId(ObjectIds.Argument)
 
-    Name: String = None
-    DataType: NodeId = field(default_factory=NodeId)
-    ValueRank: Int32 = 0
-    ArrayDimensions: list[UInt32] = field(default_factory=list)
-    Description: LocalizedText = field(default_factory=LocalizedText)
+    Name: 'ua.String' = None
+    DataType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ValueRank: 'ua.Int32' = 0
+    ArrayDimensions: 'list[ua.UInt32]' = field(default_factory=list)
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
 @dataclass(frozen=FROZEN)
@@ -3928,9 +3880,9 @@ class EnumValueType:
 
     data_type = NodeId(ObjectIds.EnumValueType)
 
-    Value: Int64 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
+    Value: 'ua.Int64' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
 @dataclass(frozen=FROZEN)
@@ -3950,10 +3902,10 @@ class EnumField(EnumValueType):
 
     data_type = NodeId(ObjectIds.EnumField)
 
-    Value: Int64 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    Name: String = None
+    Value: 'ua.Int64' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Name: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -3967,7 +3919,7 @@ class EnumDefinition(DataTypeDefinition):
 
     data_type = NodeId(ObjectIds.EnumDefinition)
 
-    Fields: list[EnumField] = field(default_factory=list)
+    Fields: 'list[ua.EnumField]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -3987,18 +3939,10 @@ class EnumDescription(DataTypeDescription):
 
     data_type = NodeId(ObjectIds.EnumDescription)
 
-    DataTypeId: NodeId = field(default_factory=NodeId)
-    Name: QualifiedName = field(default_factory=QualifiedName)
-    EnumDefinition_: EnumDefinition = field(default_factory=EnumDefinition)
-    BuiltInType: Byte = 0
-
-    @property
-    def EnumDefinition(self):
-        return self.EnumDefinition_
-
-    @EnumDefinition.setter
-    def EnumDefinition(self, val):
-        self.EnumDefinition_ = val
+    DataTypeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    Name: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
+    EnumDefinition: 'ua.EnumDefinition' = field(default_factory=lambda: EnumDefinition())
+    BuiltInType: 'ua.Byte' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -4018,10 +3962,10 @@ class DataTypeSchemaHeader:
 
     data_type = NodeId(ObjectIds.DataTypeSchemaHeader)
 
-    Namespaces: list[String] = field(default_factory=list)
-    StructureDataTypes: list[StructureDescription] = field(default_factory=list)
-    EnumDataTypes: list[EnumDescription] = field(default_factory=list)
-    SimpleDataTypes: list[SimpleTypeDescription] = field(default_factory=list)
+    Namespaces: 'list[ua.String]' = field(default_factory=list)
+    StructureDataTypes: 'list[ua.StructureDescription]' = field(default_factory=list)
+    EnumDataTypes: 'list[ua.EnumDescription]' = field(default_factory=list)
+    SimpleDataTypes: 'list[ua.SimpleTypeDescription]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4047,13 +3991,13 @@ class UABinaryFileDataType(DataTypeSchemaHeader):
 
     data_type = NodeId(ObjectIds.UABinaryFileDataType)
 
-    Namespaces: list[String] = field(default_factory=list)
-    StructureDataTypes: list[StructureDescription] = field(default_factory=list)
-    EnumDataTypes: list[EnumDescription] = field(default_factory=list)
-    SimpleDataTypes: list[SimpleTypeDescription] = field(default_factory=list)
-    SchemaLocation: String = None
-    FileHeader: list[KeyValuePair] = field(default_factory=list)
-    Body: Variant = field(default_factory=Variant)
+    Namespaces: 'list[ua.String]' = field(default_factory=list)
+    StructureDataTypes: 'list[ua.StructureDescription]' = field(default_factory=list)
+    EnumDataTypes: 'list[ua.EnumDescription]' = field(default_factory=list)
+    SimpleDataTypes: 'list[ua.SimpleTypeDescription]' = field(default_factory=list)
+    SchemaLocation: 'ua.String' = None
+    FileHeader: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    Body: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
 @dataclass(frozen=FROZEN)
@@ -4083,15 +4027,15 @@ class DataSetMetaDataType(DataTypeSchemaHeader):
 
     data_type = NodeId(ObjectIds.DataSetMetaDataType)
 
-    Namespaces: list[String] = field(default_factory=list)
-    StructureDataTypes: list[StructureDescription] = field(default_factory=list)
-    EnumDataTypes: list[EnumDescription] = field(default_factory=list)
-    SimpleDataTypes: list[SimpleTypeDescription] = field(default_factory=list)
-    Name: String = None
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    Fields: list[FieldMetaData] = field(default_factory=list)
-    DataSetClassId: Guid = Guid(int=0)
-    ConfigurationVersion: ConfigurationVersionDataType = field(default_factory=ConfigurationVersionDataType)
+    Namespaces: 'list[ua.String]' = field(default_factory=list)
+    StructureDataTypes: 'list[ua.StructureDescription]' = field(default_factory=list)
+    EnumDataTypes: 'list[ua.EnumDescription]' = field(default_factory=list)
+    SimpleDataTypes: 'list[ua.SimpleTypeDescription]' = field(default_factory=list)
+    Name: 'ua.String' = None
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Fields: 'list[ua.FieldMetaData]' = field(default_factory=list)
+    DataSetClassId: 'ua.Guid' = Guid(int=0)
+    ConfigurationVersion: 'ua.ConfigurationVersionDataType' = field(default_factory=lambda: ConfigurationVersionDataType())
 
 
 @dataclass(frozen=FROZEN)
@@ -4113,11 +4057,11 @@ class PublishedDataSetDataType:
 
     data_type = NodeId(ObjectIds.PublishedDataSetDataType)
 
-    Name: String = None
-    DataSetFolder: list[String] = field(default_factory=list)
-    DataSetMetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
-    ExtensionFields: list[KeyValuePair] = field(default_factory=list)
-    DataSetSource: Type[PublishedDataSetSourceDataType] = field(default_factory=PublishedDataSetSourceDataType)
+    Name: 'ua.String' = None
+    DataSetFolder: 'list[ua.String]' = field(default_factory=list)
+    DataSetMetaData: 'ua.DataSetMetaDataType' = field(default_factory=lambda: DataSetMetaDataType())
+    ExtensionFields: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    DataSetSource: 'type[ua.PublishedDataSetSourceDataType]' = field(default_factory=lambda: PublishedDataSetSourceDataType())
 
 
 @dataclass(frozen=FROZEN)
@@ -4133,8 +4077,8 @@ class PublishedActionDataType(PublishedDataSetSourceDataType):
 
     data_type = NodeId(ObjectIds.PublishedActionDataType)
 
-    RequestDataSetMetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
-    ActionTargets: list[ActionTargetDataType] = field(default_factory=list)
+    RequestDataSetMetaData: 'ua.DataSetMetaDataType' = field(default_factory=lambda: DataSetMetaDataType())
+    ActionTargets: 'list[ua.ActionTargetDataType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4152,9 +4096,9 @@ class PublishedActionMethodDataType(PublishedActionDataType):
 
     data_type = NodeId(ObjectIds.PublishedActionMethodDataType)
 
-    RequestDataSetMetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
-    ActionTargets: list[ActionTargetDataType] = field(default_factory=list)
-    ActionMethods: list[ActionMethodDataType] = field(default_factory=list)
+    RequestDataSetMetaData: 'ua.DataSetMetaDataType' = field(default_factory=lambda: DataSetMetaDataType())
+    ActionTargets: 'list[ua.ActionTargetDataType]' = field(default_factory=list)
+    ActionMethods: 'list[ua.ActionMethodDataType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4174,10 +4118,10 @@ class StandaloneSubscribedDataSetDataType(SubscribedDataSetDataType):
 
     data_type = NodeId(ObjectIds.StandaloneSubscribedDataSetDataType)
 
-    Name: String = None
-    DataSetFolder: list[String] = field(default_factory=list)
-    DataSetMetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
-    SubscribedDataSet: Type[SubscribedDataSetDataType] = field(default_factory=SubscribedDataSetDataType)
+    Name: 'ua.String' = None
+    DataSetFolder: 'list[ua.String]' = field(default_factory=list)
+    DataSetMetaData: 'ua.DataSetMetaDataType' = field(default_factory=lambda: DataSetMetaDataType())
+    SubscribedDataSet: 'type[ua.SubscribedDataSetDataType]' = field(default_factory=lambda: SubscribedDataSetDataType())
 
 
 @dataclass(frozen=FROZEN)
@@ -4203,14 +4147,14 @@ class JsonDataSetMetaDataMessage:
 
     data_type = NodeId(ObjectIds.JsonDataSetMetaDataMessage)
 
-    MessageId: String = None
-    MessageType: String = None
-    PublisherId: String = None
-    DataSetWriterId: UInt16 = 0
-    WriterGroupName: String = None
-    DataSetWriterName: String = None
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    MetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
+    MessageId: 'ua.String' = None
+    MessageType: 'ua.String' = None
+    PublisherId: 'ua.String' = None
+    DataSetWriterId: 'ua.UInt16' = 0
+    WriterGroupName: 'ua.String' = None
+    DataSetWriterName: 'ua.String' = None
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    MetaData: 'ua.DataSetMetaDataType' = field(default_factory=lambda: DataSetMetaDataType())
 
 
 @dataclass(frozen=FROZEN)
@@ -4240,16 +4184,16 @@ class JsonActionMetaDataMessage:
 
     data_type = NodeId(ObjectIds.JsonActionMetaDataMessage)
 
-    MessageId: String = None
-    MessageType: String = None
-    PublisherId: String = None
-    DataSetWriterId: UInt16 = 0
-    DataSetWriterName: String = None
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    ActionTargets: list[ActionTargetDataType] = field(default_factory=list)
-    Request: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
-    Response: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
-    ActionMethods: list[ActionMethodDataType] = field(default_factory=list)
+    MessageId: 'ua.String' = None
+    MessageType: 'ua.String' = None
+    PublisherId: 'ua.String' = None
+    DataSetWriterId: 'ua.UInt16' = 0
+    DataSetWriterName: 'ua.String' = None
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    ActionTargets: 'list[ua.ActionTargetDataType]' = field(default_factory=list)
+    Request: 'ua.DataSetMetaDataType' = field(default_factory=lambda: DataSetMetaDataType())
+    Response: 'ua.DataSetMetaDataType' = field(default_factory=lambda: DataSetMetaDataType())
+    ActionMethods: 'list[ua.ActionMethodDataType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4265,8 +4209,8 @@ class OptionSet:
 
     data_type = NodeId(ObjectIds.OptionSet)
 
-    Value: ByteString = None
-    ValidBits: ByteString = None
+    Value: 'ua.ByteString' = None
+    ValidBits: 'ua.ByteString' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -4282,8 +4226,8 @@ class TimeZoneDataType:
 
     data_type = NodeId(ObjectIds.TimeZoneDataType)
 
-    Offset: Int16 = 0
-    DaylightSavingInOffset: Boolean = True
+    Offset: 'ua.Int16' = 0
+    DaylightSavingInOffset: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -4309,21 +4253,13 @@ class ApplicationDescription:
 
     data_type = NodeId(ObjectIds.ApplicationDescription)
 
-    ApplicationUri: String = None
-    ProductUri: String = None
-    ApplicationName: LocalizedText = field(default_factory=LocalizedText)
-    ApplicationType_: ApplicationType = ApplicationType.Server
-    GatewayServerUri: String = None
-    DiscoveryProfileUri: String = None
-    DiscoveryUrls: list[String] = field(default_factory=list)
-
-    @property
-    def ApplicationType(self):
-        return self.ApplicationType_
-
-    @ApplicationType.setter
-    def ApplicationType(self, val):
-        self.ApplicationType_ = val
+    ApplicationUri: 'ua.String' = None
+    ProductUri: 'ua.String' = None
+    ApplicationName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    ApplicationType: 'ua.ApplicationType' = field(default_factory=lambda:ApplicationType.Server)
+    GatewayServerUri: 'ua.String' = None
+    DiscoveryProfileUri: 'ua.String' = None
+    DiscoveryUrls: 'list[ua.String]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4345,12 +4281,12 @@ class JsonApplicationDescriptionMessage:
 
     data_type = NodeId(ObjectIds.JsonApplicationDescriptionMessage)
 
-    MessageId: String = None
-    MessageType: String = None
-    PublisherId: String = None
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    Description: ApplicationDescription = field(default_factory=ApplicationDescription)
-    ServerCapabilities: list[String] = field(default_factory=list)
+    MessageId: 'ua.String' = None
+    MessageType: 'ua.String' = None
+    PublisherId: 'ua.String' = None
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Description: 'ua.ApplicationDescription' = field(default_factory=lambda: ApplicationDescription())
+    ServerCapabilities: 'list[ua.String]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4376,13 +4312,13 @@ class RequestHeader:
 
     data_type = NodeId(ObjectIds.RequestHeader)
 
-    AuthenticationToken: SessionAuthenticationToken = field(default_factory=NodeId)
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    RequestHandle: IntegerId = 0
-    ReturnDiagnostics: UInt32 = 0
-    AuditEntryId: String = None
-    TimeoutHint: UInt32 = 0
-    AdditionalHeader: ExtensionObject = ExtensionObject()
+    AuthenticationToken: 'ua.SessionAuthenticationToken' = field(default_factory=lambda: NodeId())
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    RequestHandle: 'ua.IntegerId' = 0
+    ReturnDiagnostics: 'ua.UInt32' = 0
+    AuditEntryId: 'ua.String' = None
+    TimeoutHint: 'ua.UInt32' = 0
+    AdditionalHeader: 'ua.ExtensionObject' = ExtensionObject()
 
 
 @dataclass(frozen=FROZEN)
@@ -4406,12 +4342,12 @@ class ResponseHeader:
 
     data_type = NodeId(ObjectIds.ResponseHeader)
 
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    RequestHandle: IntegerId = 0
-    ServiceResult: StatusCode = field(default_factory=StatusCode)
-    ServiceDiagnostics: DiagnosticInfo = field(default_factory=DiagnosticInfo)
-    StringTable: list[String] = field(default_factory=list)
-    AdditionalHeader: ExtensionObject = ExtensionObject()
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    RequestHandle: 'ua.IntegerId' = 0
+    ServiceResult: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    ServiceDiagnostics: 'ua.DiagnosticInfo' = field(default_factory=lambda: DiagnosticInfo())
+    StringTable: 'list[ua.String]' = field(default_factory=list)
+    AdditionalHeader: 'ua.ExtensionObject' = ExtensionObject()
 
 
 @dataclass(frozen=FROZEN)
@@ -4427,16 +4363,8 @@ class ServiceFault:
 
     data_type = NodeId(ObjectIds.ServiceFault)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.ServiceFault_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.ServiceFault_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
 
 
 @dataclass(frozen=FROZEN)
@@ -4456,11 +4384,11 @@ class SessionlessInvokeRequestType:
 
     data_type = NodeId(ObjectIds.SessionlessInvokeRequestType)
 
-    UrisVersion: VersionTime = 0
-    NamespaceUris: list[String] = field(default_factory=list)
-    ServerUris: list[String] = field(default_factory=list)
-    LocaleIds: list[LocaleId] = field(default_factory=list)
-    ServiceId: UInt32 = 0
+    UrisVersion: 'ua.VersionTime' = 0
+    NamespaceUris: 'list[ua.String]' = field(default_factory=list)
+    ServerUris: 'list[ua.String]' = field(default_factory=list)
+    LocaleIds: 'list[ua.LocaleId]' = field(default_factory=list)
+    ServiceId: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -4476,9 +4404,9 @@ class SessionlessInvokeResponseType:
 
     data_type = NodeId(ObjectIds.SessionlessInvokeResponseType)
 
-    NamespaceUris: list[String] = field(default_factory=list)
-    ServerUris: list[String] = field(default_factory=list)
-    ServiceId: UInt32 = 0
+    NamespaceUris: 'list[ua.String]' = field(default_factory=list)
+    ServerUris: 'list[ua.String]' = field(default_factory=list)
+    ServiceId: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -4492,9 +4420,9 @@ class FindServersParameters:
     :vartype ServerUris: String
     """
 
-    EndpointUrl: String = None
-    LocaleIds: list[LocaleId] = field(default_factory=list)
-    ServerUris: list[String] = field(default_factory=list)
+    EndpointUrl: 'ua.String' = None
+    LocaleIds: 'list[ua.LocaleId]' = field(default_factory=list)
+    ServerUris: 'list[ua.String]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4512,17 +4440,9 @@ class FindServersRequest:
 
     data_type = NodeId(ObjectIds.FindServersRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.FindServersRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: FindServersParameters = field(default_factory=FindServersParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.FindServersRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.FindServersParameters' = field(default_factory=lambda: FindServersParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -4540,17 +4460,9 @@ class FindServersResponse:
 
     data_type = NodeId(ObjectIds.FindServersResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.FindServersResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Servers: list[ApplicationDescription] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.FindServersResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Servers: 'list[ua.ApplicationDescription]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4570,10 +4482,10 @@ class ServerOnNetwork:
 
     data_type = NodeId(ObjectIds.ServerOnNetwork)
 
-    RecordId: UInt32 = 0
-    ServerName: String = None
-    DiscoveryUrl: String = None
-    ServerCapabilities: list[String] = field(default_factory=list)
+    RecordId: 'ua.UInt32' = 0
+    ServerName: 'ua.String' = None
+    DiscoveryUrl: 'ua.String' = None
+    ServerCapabilities: 'list[ua.String]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4587,9 +4499,9 @@ class FindServersOnNetworkParameters:
     :vartype ServerCapabilityFilter: String
     """
 
-    StartingRecordId: Counter = 0
-    MaxRecordsToReturn: UInt32 = 0
-    ServerCapabilityFilter: list[String] = field(default_factory=list)
+    StartingRecordId: 'ua.Counter' = 0
+    MaxRecordsToReturn: 'ua.UInt32' = 0
+    ServerCapabilityFilter: 'list[ua.String]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4607,17 +4519,9 @@ class FindServersOnNetworkRequest:
 
     data_type = NodeId(ObjectIds.FindServersOnNetworkRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.FindServersOnNetworkRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: FindServersOnNetworkParameters = field(default_factory=FindServersOnNetworkParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.FindServersOnNetworkRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.FindServersOnNetworkParameters' = field(default_factory=lambda: FindServersOnNetworkParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -4629,8 +4533,8 @@ class FindServersOnNetworkResult:
     :vartype Servers: ServerOnNetwork
     """
 
-    LastCounterResetTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    Servers: list[ServerOnNetwork] = field(default_factory=list)
+    LastCounterResetTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Servers: 'list[ua.ServerOnNetwork]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4648,17 +4552,9 @@ class FindServersOnNetworkResponse:
 
     data_type = NodeId(ObjectIds.FindServersOnNetworkResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.FindServersOnNetworkResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: FindServersOnNetworkResult = field(default_factory=FindServersOnNetworkResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.FindServersOnNetworkResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.FindServersOnNetworkResult' = field(default_factory=lambda: FindServersOnNetworkResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -4680,11 +4576,11 @@ class UserTokenPolicy:
 
     data_type = NodeId(ObjectIds.UserTokenPolicy)
 
-    PolicyId: String = None
-    TokenType: UserTokenType = UserTokenType.Anonymous
-    IssuedTokenType: String = None
-    IssuerEndpointUrl: String = None
-    SecurityPolicyUri: String = None
+    PolicyId: 'ua.String' = None
+    TokenType: 'ua.UserTokenType' = field(default_factory=lambda:UserTokenType.Anonymous)
+    IssuedTokenType: 'ua.String' = None
+    IssuerEndpointUrl: 'ua.String' = None
+    SecurityPolicyUri: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -4714,15 +4610,15 @@ class PubSubKeyPushTargetDataType:
 
     data_type = NodeId(ObjectIds.PubSubKeyPushTargetDataType)
 
-    ApplicationUri: String = None
-    PushTargetFolder: list[String] = field(default_factory=list)
-    EndpointUrl: String = None
-    SecurityPolicyUri: String = None
-    UserTokenType: UserTokenPolicy = field(default_factory=UserTokenPolicy)
-    RequestedKeyCount: UInt16 = 0
-    RetryInterval: Duration = 0
-    PushTargetProperties: list[KeyValuePair] = field(default_factory=list)
-    SecurityGroups: list[String] = field(default_factory=list)
+    ApplicationUri: 'ua.String' = None
+    PushTargetFolder: 'list[ua.String]' = field(default_factory=list)
+    EndpointUrl: 'ua.String' = None
+    SecurityPolicyUri: 'ua.String' = None
+    UserTokenType: 'ua.UserTokenPolicy' = field(default_factory=lambda: UserTokenPolicy())
+    RequestedKeyCount: 'ua.UInt16' = 0
+    RetryInterval: 'ua.Duration' = 0
+    PushTargetProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    SecurityGroups: 'list[ua.String]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4750,14 +4646,14 @@ class EndpointDescription:
 
     data_type = NodeId(ObjectIds.EndpointDescription)
 
-    EndpointUrl: String = None
-    Server: ApplicationDescription = field(default_factory=ApplicationDescription)
-    ServerCertificate: ApplicationInstanceCertificate = None
-    SecurityMode: MessageSecurityMode = MessageSecurityMode.Invalid
-    SecurityPolicyUri: String = None
-    UserIdentityTokens: list[UserTokenPolicy] = field(default_factory=list)
-    TransportProfileUri: String = None
-    SecurityLevel: Byte = 0
+    EndpointUrl: 'ua.String' = None
+    Server: 'ua.ApplicationDescription' = field(default_factory=lambda: ApplicationDescription())
+    ServerCertificate: 'ua.ApplicationInstanceCertificate' = None
+    SecurityMode: 'ua.MessageSecurityMode' = field(default_factory=lambda:MessageSecurityMode.Invalid)
+    SecurityPolicyUri: 'ua.String' = None
+    UserIdentityTokens: 'list[ua.UserTokenPolicy]' = field(default_factory=list)
+    TransportProfileUri: 'ua.String' = None
+    SecurityLevel: 'ua.Byte' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -4783,13 +4679,13 @@ class PubSubGroupDataType:
 
     data_type = NodeId(ObjectIds.PubSubGroupDataType)
 
-    Name: String = None
-    Enabled: Boolean = True
-    SecurityMode: MessageSecurityMode = MessageSecurityMode.Invalid
-    SecurityGroupId: String = None
-    SecurityKeyServices: list[EndpointDescription] = field(default_factory=list)
-    MaxNetworkMessageSize: UInt32 = 0
-    GroupProperties: list[KeyValuePair] = field(default_factory=list)
+    Name: 'ua.String' = None
+    Enabled: 'ua.Boolean' = True
+    SecurityMode: 'ua.MessageSecurityMode' = field(default_factory=lambda:MessageSecurityMode.Invalid)
+    SecurityGroupId: 'ua.String' = None
+    SecurityKeyServices: 'list[ua.EndpointDescription]' = field(default_factory=list)
+    MaxNetworkMessageSize: 'ua.UInt32' = 0
+    GroupProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4833,22 +4729,22 @@ class WriterGroupDataType(PubSubGroupDataType):
 
     data_type = NodeId(ObjectIds.WriterGroupDataType)
 
-    Name: String = None
-    Enabled: Boolean = True
-    SecurityMode: MessageSecurityMode = MessageSecurityMode.Invalid
-    SecurityGroupId: String = None
-    SecurityKeyServices: list[EndpointDescription] = field(default_factory=list)
-    MaxNetworkMessageSize: UInt32 = 0
-    GroupProperties: list[KeyValuePair] = field(default_factory=list)
-    WriterGroupId: UInt16 = 0
-    PublishingInterval: Duration = 0
-    KeepAliveTime: Duration = 0
-    Priority: Byte = 0
-    LocaleIds: list[LocaleId] = field(default_factory=list)
-    HeaderLayoutUri: String = None
-    TransportSettings: Type[WriterGroupTransportDataType] = field(default_factory=WriterGroupTransportDataType)
-    MessageSettings: Type[WriterGroupMessageDataType] = field(default_factory=WriterGroupMessageDataType)
-    DataSetWriters: list[DataSetWriterDataType] = field(default_factory=list)
+    Name: 'ua.String' = None
+    Enabled: 'ua.Boolean' = True
+    SecurityMode: 'ua.MessageSecurityMode' = field(default_factory=lambda:MessageSecurityMode.Invalid)
+    SecurityGroupId: 'ua.String' = None
+    SecurityKeyServices: 'list[ua.EndpointDescription]' = field(default_factory=list)
+    MaxNetworkMessageSize: 'ua.UInt32' = 0
+    GroupProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    WriterGroupId: 'ua.UInt16' = 0
+    PublishingInterval: 'ua.Duration' = 0
+    KeepAliveTime: 'ua.Duration' = 0
+    Priority: 'ua.Byte' = 0
+    LocaleIds: 'list[ua.LocaleId]' = field(default_factory=list)
+    HeaderLayoutUri: 'ua.String' = None
+    TransportSettings: 'type[ua.WriterGroupTransportDataType]' = field(default_factory=lambda: WriterGroupTransportDataType())
+    MessageSettings: 'type[ua.WriterGroupMessageDataType]' = field(default_factory=lambda: WriterGroupMessageDataType())
+    DataSetWriters: 'list[ua.DataSetWriterDataType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4894,31 +4790,23 @@ class DataSetReaderDataType:
 
     data_type = NodeId(ObjectIds.DataSetReaderDataType)
 
-    Name: String = None
-    Enabled: Boolean = True
-    PublisherId: Variant = field(default_factory=Variant)
-    WriterGroupId: UInt16 = 0
-    DataSetWriterId: UInt16 = 0
-    DataSetMetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
-    DataSetFieldContentMask_: DataSetFieldContentMask = field(default_factory=lambda:DataSetFieldContentMask(0))
-    MessageReceiveTimeout: Duration = 0
-    KeyFrameCount: UInt32 = 0
-    HeaderLayoutUri: String = None
-    SecurityMode: MessageSecurityMode = MessageSecurityMode.Invalid
-    SecurityGroupId: String = None
-    SecurityKeyServices: list[EndpointDescription] = field(default_factory=list)
-    DataSetReaderProperties: list[KeyValuePair] = field(default_factory=list)
-    TransportSettings: Type[DataSetReaderTransportDataType] = field(default_factory=DataSetReaderTransportDataType)
-    MessageSettings: Type[DataSetReaderMessageDataType] = field(default_factory=DataSetReaderMessageDataType)
-    SubscribedDataSet: Type[SubscribedDataSetDataType] = field(default_factory=SubscribedDataSetDataType)
-
-    @property
-    def DataSetFieldContentMask(self):
-        return self.DataSetFieldContentMask_
-
-    @DataSetFieldContentMask.setter
-    def DataSetFieldContentMask(self, val):
-        self.DataSetFieldContentMask_ = val
+    Name: 'ua.String' = None
+    Enabled: 'ua.Boolean' = True
+    PublisherId: 'ua.Variant' = field(default_factory=lambda: Variant())
+    WriterGroupId: 'ua.UInt16' = 0
+    DataSetWriterId: 'ua.UInt16' = 0
+    DataSetMetaData: 'ua.DataSetMetaDataType' = field(default_factory=lambda: DataSetMetaDataType())
+    DataSetFieldContentMask: 'ua.DataSetFieldContentMask' = field(default_factory=lambda:DataSetFieldContentMask(0))
+    MessageReceiveTimeout: 'ua.Duration' = 0
+    KeyFrameCount: 'ua.UInt32' = 0
+    HeaderLayoutUri: 'ua.String' = None
+    SecurityMode: 'ua.MessageSecurityMode' = field(default_factory=lambda:MessageSecurityMode.Invalid)
+    SecurityGroupId: 'ua.String' = None
+    SecurityKeyServices: 'list[ua.EndpointDescription]' = field(default_factory=list)
+    DataSetReaderProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    TransportSettings: 'type[ua.DataSetReaderTransportDataType]' = field(default_factory=lambda: DataSetReaderTransportDataType())
+    MessageSettings: 'type[ua.DataSetReaderMessageDataType]' = field(default_factory=lambda: DataSetReaderMessageDataType())
+    SubscribedDataSet: 'type[ua.SubscribedDataSetDataType]' = field(default_factory=lambda: SubscribedDataSetDataType())
 
 
 @dataclass(frozen=FROZEN)
@@ -4950,16 +4838,16 @@ class ReaderGroupDataType(PubSubGroupDataType):
 
     data_type = NodeId(ObjectIds.ReaderGroupDataType)
 
-    Name: String = None
-    Enabled: Boolean = True
-    SecurityMode: MessageSecurityMode = MessageSecurityMode.Invalid
-    SecurityGroupId: String = None
-    SecurityKeyServices: list[EndpointDescription] = field(default_factory=list)
-    MaxNetworkMessageSize: UInt32 = 0
-    GroupProperties: list[KeyValuePair] = field(default_factory=list)
-    TransportSettings: Type[ReaderGroupTransportDataType] = field(default_factory=ReaderGroupTransportDataType)
-    MessageSettings: Type[ReaderGroupMessageDataType] = field(default_factory=ReaderGroupMessageDataType)
-    DataSetReaders: list[DataSetReaderDataType] = field(default_factory=list)
+    Name: 'ua.String' = None
+    Enabled: 'ua.Boolean' = True
+    SecurityMode: 'ua.MessageSecurityMode' = field(default_factory=lambda:MessageSecurityMode.Invalid)
+    SecurityGroupId: 'ua.String' = None
+    SecurityKeyServices: 'list[ua.EndpointDescription]' = field(default_factory=list)
+    MaxNetworkMessageSize: 'ua.UInt32' = 0
+    GroupProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    TransportSettings: 'type[ua.ReaderGroupTransportDataType]' = field(default_factory=lambda: ReaderGroupTransportDataType())
+    MessageSettings: 'type[ua.ReaderGroupMessageDataType]' = field(default_factory=lambda: ReaderGroupMessageDataType())
+    DataSetReaders: 'list[ua.DataSetReaderDataType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4989,15 +4877,15 @@ class PubSubConnectionDataType:
 
     data_type = NodeId(ObjectIds.PubSubConnectionDataType)
 
-    Name: String = None
-    Enabled: Boolean = True
-    PublisherId: Variant = field(default_factory=Variant)
-    TransportProfileUri: String = None
-    Address: Type[NetworkAddressDataType] = field(default_factory=NetworkAddressDataType)
-    ConnectionProperties: list[KeyValuePair] = field(default_factory=list)
-    TransportSettings: Type[ConnectionTransportDataType] = field(default_factory=ConnectionTransportDataType)
-    WriterGroups: list[WriterGroupDataType] = field(default_factory=list)
-    ReaderGroups: list[ReaderGroupDataType] = field(default_factory=list)
+    Name: 'ua.String' = None
+    Enabled: 'ua.Boolean' = True
+    PublisherId: 'ua.Variant' = field(default_factory=lambda: Variant())
+    TransportProfileUri: 'ua.String' = None
+    Address: 'type[ua.NetworkAddressDataType]' = field(default_factory=lambda: NetworkAddressDataType())
+    ConnectionProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    TransportSettings: 'type[ua.ConnectionTransportDataType]' = field(default_factory=lambda: ConnectionTransportDataType())
+    WriterGroups: 'list[ua.WriterGroupDataType]' = field(default_factory=list)
+    ReaderGroups: 'list[ua.ReaderGroupDataType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -5015,9 +4903,9 @@ class PubSubConfigurationDataType:
 
     data_type = NodeId(ObjectIds.PubSubConfigurationDataType)
 
-    PublishedDataSets: list[PublishedDataSetDataType] = field(default_factory=list)
-    Connections: list[PubSubConnectionDataType] = field(default_factory=list)
-    Enabled: Boolean = True
+    PublishedDataSets: 'list[ua.PublishedDataSetDataType]' = field(default_factory=list)
+    Connections: 'list[ua.PubSubConnectionDataType]' = field(default_factory=list)
+    Enabled: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -5037,11 +4925,11 @@ class JsonPubSubConnectionMessage:
 
     data_type = NodeId(ObjectIds.JsonPubSubConnectionMessage)
 
-    MessageId: String = None
-    MessageType: String = None
-    PublisherId: String = None
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    Connection: PubSubConnectionDataType = field(default_factory=PubSubConnectionDataType)
+    MessageId: 'ua.String' = None
+    MessageType: 'ua.String' = None
+    PublisherId: 'ua.String' = None
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Connection: 'ua.PubSubConnectionDataType' = field(default_factory=lambda: PubSubConnectionDataType())
 
 
 @dataclass(frozen=FROZEN)
@@ -5061,11 +4949,11 @@ class JsonActionResponderMessage:
 
     data_type = NodeId(ObjectIds.JsonActionResponderMessage)
 
-    MessageId: String = None
-    MessageType: String = None
-    PublisherId: String = None
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    Connection: PubSubConnectionDataType = field(default_factory=PubSubConnectionDataType)
+    MessageId: 'ua.String' = None
+    MessageType: 'ua.String' = None
+    PublisherId: 'ua.String' = None
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Connection: 'ua.PubSubConnectionDataType' = field(default_factory=lambda: PubSubConnectionDataType())
 
 
 @dataclass(frozen=FROZEN)
@@ -5097,16 +4985,16 @@ class PubSubConfiguration2DataType(PubSubConfigurationDataType):
 
     data_type = NodeId(ObjectIds.PubSubConfiguration2DataType)
 
-    PublishedDataSets: list[PublishedDataSetDataType] = field(default_factory=list)
-    Connections: list[PubSubConnectionDataType] = field(default_factory=list)
-    Enabled: Boolean = True
-    SubscribedDataSets: list[StandaloneSubscribedDataSetDataType] = field(default_factory=list)
-    DataSetClasses: list[DataSetMetaDataType] = field(default_factory=list)
-    DefaultSecurityKeyServices: list[EndpointDescription] = field(default_factory=list)
-    SecurityGroups: list[SecurityGroupDataType] = field(default_factory=list)
-    PubSubKeyPushTargets: list[PubSubKeyPushTargetDataType] = field(default_factory=list)
-    ConfigurationVersion: VersionTime = 0
-    ConfigurationProperties: list[KeyValuePair] = field(default_factory=list)
+    PublishedDataSets: 'list[ua.PublishedDataSetDataType]' = field(default_factory=list)
+    Connections: 'list[ua.PubSubConnectionDataType]' = field(default_factory=list)
+    Enabled: 'ua.Boolean' = True
+    SubscribedDataSets: 'list[ua.StandaloneSubscribedDataSetDataType]' = field(default_factory=list)
+    DataSetClasses: 'list[ua.DataSetMetaDataType]' = field(default_factory=list)
+    DefaultSecurityKeyServices: 'list[ua.EndpointDescription]' = field(default_factory=list)
+    SecurityGroups: 'list[ua.SecurityGroupDataType]' = field(default_factory=list)
+    PubSubKeyPushTargets: 'list[ua.PubSubKeyPushTargetDataType]' = field(default_factory=list)
+    ConfigurationVersion: 'ua.VersionTime' = 0
+    ConfigurationProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -5128,12 +5016,12 @@ class JsonServerEndpointsMessage:
 
     data_type = NodeId(ObjectIds.JsonServerEndpointsMessage)
 
-    MessageId: String = None
-    MessageType: String = None
-    PublisherId: String = None
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    Description: ApplicationDescription = field(default_factory=ApplicationDescription)
-    Endpoints: list[EndpointDescription] = field(default_factory=list)
+    MessageId: 'ua.String' = None
+    MessageType: 'ua.String' = None
+    PublisherId: 'ua.String' = None
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Description: 'ua.ApplicationDescription' = field(default_factory=lambda: ApplicationDescription())
+    Endpoints: 'list[ua.EndpointDescription]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -5147,9 +5035,9 @@ class GetEndpointsParameters:
     :vartype ProfileUris: String
     """
 
-    EndpointUrl: String = None
-    LocaleIds: list[LocaleId] = field(default_factory=list)
-    ProfileUris: list[String] = field(default_factory=list)
+    EndpointUrl: 'ua.String' = None
+    LocaleIds: 'list[ua.LocaleId]' = field(default_factory=list)
+    ProfileUris: 'list[ua.String]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -5167,17 +5055,9 @@ class GetEndpointsRequest:
 
     data_type = NodeId(ObjectIds.GetEndpointsRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: GetEndpointsParameters = field(default_factory=GetEndpointsParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.GetEndpointsRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.GetEndpointsParameters' = field(default_factory=lambda: GetEndpointsParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -5195,17 +5075,9 @@ class GetEndpointsResponse:
 
     data_type = NodeId(ObjectIds.GetEndpointsResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.GetEndpointsResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Endpoints: list[EndpointDescription] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.GetEndpointsResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Endpoints: 'list[ua.EndpointDescription]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -5233,14 +5105,14 @@ class RegisteredServer:
 
     data_type = NodeId(ObjectIds.RegisteredServer)
 
-    ServerUri: String = None
-    ProductUri: String = None
-    ServerNames: list[LocalizedText] = field(default_factory=list)
-    ServerType: ApplicationType = ApplicationType.Server
-    GatewayServerUri: String = None
-    DiscoveryUrls: list[String] = field(default_factory=list)
-    SemaphoreFilePath: String = None
-    IsOnline: Boolean = True
+    ServerUri: 'ua.String' = None
+    ProductUri: 'ua.String' = None
+    ServerNames: 'list[ua.LocalizedText]' = field(default_factory=list)
+    ServerType: 'ua.ApplicationType' = field(default_factory=lambda:ApplicationType.Server)
+    GatewayServerUri: 'ua.String' = None
+    DiscoveryUrls: 'list[ua.String]' = field(default_factory=list)
+    SemaphoreFilePath: 'ua.String' = None
+    IsOnline: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -5258,17 +5130,9 @@ class RegisterServerRequest:
 
     data_type = NodeId(ObjectIds.RegisterServerRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.RegisterServerRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Server: RegisteredServer = field(default_factory=RegisteredServer)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.RegisterServerRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Server: 'ua.RegisteredServer' = field(default_factory=lambda: RegisteredServer())
 
 
 @dataclass(frozen=FROZEN)
@@ -5284,16 +5148,8 @@ class RegisterServerResponse:
 
     data_type = NodeId(ObjectIds.RegisterServerResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.RegisterServerResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.RegisterServerResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
 
 
 @dataclass(frozen=FROZEN)
@@ -5319,8 +5175,8 @@ class MdnsDiscoveryConfiguration(DiscoveryConfiguration):
 
     data_type = NodeId(ObjectIds.MdnsDiscoveryConfiguration)
 
-    MdnsServerName: String = None
-    ServerCapabilities: list[String] = field(default_factory=list)
+    MdnsServerName: 'ua.String' = None
+    ServerCapabilities: 'list[ua.String]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -5332,8 +5188,8 @@ class RegisterServer2Parameters:
     :vartype DiscoveryConfiguration: ExtensionObject
     """
 
-    Server: RegisteredServer = field(default_factory=RegisteredServer)
-    DiscoveryConfiguration: list[ExtensionObject] = field(default_factory=list)
+    Server: 'ua.RegisteredServer' = field(default_factory=lambda: RegisteredServer())
+    DiscoveryConfiguration: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -5351,17 +5207,9 @@ class RegisterServer2Request:
 
     data_type = NodeId(ObjectIds.RegisterServer2Request)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.RegisterServer2Request_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: RegisterServer2Parameters = field(default_factory=RegisterServer2Parameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.RegisterServer2Request_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.RegisterServer2Parameters' = field(default_factory=lambda: RegisterServer2Parameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -5381,18 +5229,10 @@ class RegisterServer2Response:
 
     data_type = NodeId(ObjectIds.RegisterServer2Response)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.RegisterServer2Response_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    ConfigurationResults: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.RegisterServer2Response_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    ConfigurationResults: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -5410,10 +5250,10 @@ class ChannelSecurityToken:
 
     data_type = NodeId(ObjectIds.ChannelSecurityToken)
 
-    ChannelId: UInt32 = 0
-    TokenId: UInt32 = 0
-    CreatedAt: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    RevisedLifetime: UInt32 = 0
+    ChannelId: 'ua.UInt32' = 0
+    TokenId: 'ua.UInt32' = 0
+    CreatedAt: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    RevisedLifetime: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -5431,11 +5271,11 @@ class OpenSecureChannelParameters:
     :vartype RequestedLifetime: UInt32
     """
 
-    ClientProtocolVersion: UInt32 = 0
-    RequestType: SecurityTokenRequestType = SecurityTokenRequestType.Issue
-    SecurityMode: MessageSecurityMode = MessageSecurityMode.Invalid
-    ClientNonce: ByteString = None
-    RequestedLifetime: UInt32 = 0
+    ClientProtocolVersion: 'ua.UInt32' = 0
+    RequestType: 'ua.SecurityTokenRequestType' = field(default_factory=lambda:SecurityTokenRequestType.Issue)
+    SecurityMode: 'ua.MessageSecurityMode' = field(default_factory=lambda:MessageSecurityMode.Invalid)
+    ClientNonce: 'ua.ByteString' = None
+    RequestedLifetime: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -5451,17 +5291,9 @@ class OpenSecureChannelRequest:
 
     data_type = NodeId(ObjectIds.OpenSecureChannelRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.OpenSecureChannelRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: OpenSecureChannelParameters = field(default_factory=OpenSecureChannelParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.OpenSecureChannelRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.OpenSecureChannelParameters' = field(default_factory=lambda: OpenSecureChannelParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -5475,9 +5307,9 @@ class OpenSecureChannelResult:
     :vartype ServerNonce: ByteString
     """
 
-    ServerProtocolVersion: UInt32 = 0
-    SecurityToken: ChannelSecurityToken = field(default_factory=ChannelSecurityToken)
-    ServerNonce: ByteString = None
+    ServerProtocolVersion: 'ua.UInt32' = 0
+    SecurityToken: 'ua.ChannelSecurityToken' = field(default_factory=lambda: ChannelSecurityToken())
+    ServerNonce: 'ua.ByteString' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -5493,17 +5325,9 @@ class OpenSecureChannelResponse:
 
     data_type = NodeId(ObjectIds.OpenSecureChannelResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.OpenSecureChannelResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: OpenSecureChannelResult = field(default_factory=OpenSecureChannelResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.OpenSecureChannelResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.OpenSecureChannelResult' = field(default_factory=lambda: OpenSecureChannelResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -5517,16 +5341,8 @@ class CloseSecureChannelRequest:
 
     data_type = NodeId(ObjectIds.CloseSecureChannelRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CloseSecureChannelRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CloseSecureChannelRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
 
 
 @dataclass(frozen=FROZEN)
@@ -5540,16 +5356,8 @@ class CloseSecureChannelResponse:
 
     data_type = NodeId(ObjectIds.CloseSecureChannelResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CloseSecureChannelResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CloseSecureChannelResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
 
 
 @dataclass(frozen=FROZEN)
@@ -5565,8 +5373,8 @@ class SignedSoftwareCertificate:
 
     data_type = NodeId(ObjectIds.SignedSoftwareCertificate)
 
-    CertificateData: ByteString = None
-    Signature: ByteString = None
+    CertificateData: 'ua.ByteString' = None
+    Signature: 'ua.ByteString' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -5582,8 +5390,8 @@ class SignatureData:
 
     data_type = NodeId(ObjectIds.SignatureData)
 
-    Algorithm: String = None
-    Signature: ByteString = None
+    Algorithm: 'ua.String' = None
+    Signature: 'ua.ByteString' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -5607,14 +5415,14 @@ class CreateSessionParameters:
     :vartype MaxResponseMessageSize: UInt32
     """
 
-    ClientDescription: ApplicationDescription = field(default_factory=ApplicationDescription)
-    ServerUri: String = None
-    EndpointUrl: String = None
-    SessionName: String = None
-    ClientNonce: ByteString = None
-    ClientCertificate: ApplicationInstanceCertificate = None
-    RequestedSessionTimeout: Duration = 0
-    MaxResponseMessageSize: UInt32 = 0
+    ClientDescription: 'ua.ApplicationDescription' = field(default_factory=lambda: ApplicationDescription())
+    ServerUri: 'ua.String' = None
+    EndpointUrl: 'ua.String' = None
+    SessionName: 'ua.String' = None
+    ClientNonce: 'ua.ByteString' = None
+    ClientCertificate: 'ua.ApplicationInstanceCertificate' = None
+    RequestedSessionTimeout: 'ua.Duration' = 0
+    MaxResponseMessageSize: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -5632,17 +5440,9 @@ class CreateSessionRequest:
 
     data_type = NodeId(ObjectIds.CreateSessionRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CreateSessionRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: CreateSessionParameters = field(default_factory=CreateSessionParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CreateSessionRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.CreateSessionParameters' = field(default_factory=lambda: CreateSessionParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -5668,15 +5468,15 @@ class CreateSessionResult:
     :vartype MaxRequestMessageSize: UInt32
     """
 
-    SessionId: NodeId = field(default_factory=NodeId)
-    AuthenticationToken: SessionAuthenticationToken = field(default_factory=NodeId)
-    RevisedSessionTimeout: Duration = 0
-    ServerNonce: ByteString = None
-    ServerCertificate: ApplicationInstanceCertificate = None
-    ServerEndpoints: list[EndpointDescription] = field(default_factory=list)
-    ServerSoftwareCertificates: list[SignedSoftwareCertificate] = field(default_factory=list)
-    ServerSignature: SignatureData = field(default_factory=SignatureData)
-    MaxRequestMessageSize: UInt32 = 0
+    SessionId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    AuthenticationToken: 'ua.SessionAuthenticationToken' = field(default_factory=lambda: NodeId())
+    RevisedSessionTimeout: 'ua.Duration' = 0
+    ServerNonce: 'ua.ByteString' = None
+    ServerCertificate: 'ua.ApplicationInstanceCertificate' = None
+    ServerEndpoints: 'list[ua.EndpointDescription]' = field(default_factory=list)
+    ServerSoftwareCertificates: 'list[ua.SignedSoftwareCertificate]' = field(default_factory=list)
+    ServerSignature: 'ua.SignatureData' = field(default_factory=lambda: SignatureData())
+    MaxRequestMessageSize: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -5694,17 +5494,9 @@ class CreateSessionResponse:
 
     data_type = NodeId(ObjectIds.CreateSessionResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CreateSessionResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: CreateSessionResult = field(default_factory=CreateSessionResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CreateSessionResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.CreateSessionResult' = field(default_factory=lambda: CreateSessionResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -5718,7 +5510,7 @@ class UserIdentityToken:
 
     data_type = NodeId(ObjectIds.UserIdentityToken)
 
-    PolicyId: String = None
+    PolicyId: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -5732,7 +5524,7 @@ class AnonymousIdentityToken(UserIdentityToken):
 
     data_type = NodeId(ObjectIds.AnonymousIdentityToken)
 
-    PolicyId: String = None
+    PolicyId: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -5752,10 +5544,10 @@ class UserNameIdentityToken(UserIdentityToken):
 
     data_type = NodeId(ObjectIds.UserNameIdentityToken)
 
-    PolicyId: String = None
-    UserName: String = None
-    Password: ByteString = None
-    EncryptionAlgorithm: String = None
+    PolicyId: 'ua.String' = None
+    UserName: 'ua.String' = None
+    Password: 'ua.ByteString' = None
+    EncryptionAlgorithm: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -5771,8 +5563,8 @@ class X509IdentityToken(UserIdentityToken):
 
     data_type = NodeId(ObjectIds.X509IdentityToken)
 
-    PolicyId: String = None
-    CertificateData: ByteString = None
+    PolicyId: 'ua.String' = None
+    CertificateData: 'ua.ByteString' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -5790,9 +5582,9 @@ class IssuedIdentityToken(UserIdentityToken):
 
     data_type = NodeId(ObjectIds.IssuedIdentityToken)
 
-    PolicyId: String = None
-    TokenData: ByteString = None
-    EncryptionAlgorithm: String = None
+    PolicyId: 'ua.String' = None
+    TokenData: 'ua.ByteString' = None
+    EncryptionAlgorithm: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -5810,11 +5602,11 @@ class ActivateSessionParameters:
     :vartype UserTokenSignature: SignatureData
     """
 
-    ClientSignature: SignatureData = field(default_factory=SignatureData)
-    ClientSoftwareCertificates: list[SignedSoftwareCertificate] = field(default_factory=list)
-    LocaleIds: list[LocaleId] = field(default_factory=list)
-    UserIdentityToken: ExtensionObject = ExtensionObject()
-    UserTokenSignature: SignatureData = field(default_factory=SignatureData)
+    ClientSignature: 'ua.SignatureData' = field(default_factory=lambda: SignatureData())
+    ClientSoftwareCertificates: 'list[ua.SignedSoftwareCertificate]' = field(default_factory=list)
+    LocaleIds: 'list[ua.LocaleId]' = field(default_factory=list)
+    UserIdentityToken: 'ua.ExtensionObject' = ExtensionObject()
+    UserTokenSignature: 'ua.SignatureData' = field(default_factory=lambda: SignatureData())
 
 
 @dataclass(frozen=FROZEN)
@@ -5832,17 +5624,9 @@ class ActivateSessionRequest:
 
     data_type = NodeId(ObjectIds.ActivateSessionRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: ActivateSessionParameters = field(default_factory=ActivateSessionParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.ActivateSessionParameters' = field(default_factory=lambda: ActivateSessionParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -5856,9 +5640,9 @@ class ActivateSessionResult:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    ServerNonce: ByteString = None
-    Results: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
+    ServerNonce: 'ua.ByteString' = None
+    Results: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -5876,17 +5660,9 @@ class ActivateSessionResponse:
 
     data_type = NodeId(ObjectIds.ActivateSessionResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.ActivateSessionResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: ActivateSessionResult = field(default_factory=ActivateSessionResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.ActivateSessionResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.ActivateSessionResult' = field(default_factory=lambda: ActivateSessionResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -5904,17 +5680,9 @@ class CloseSessionRequest:
 
     data_type = NodeId(ObjectIds.CloseSessionRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CloseSessionRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    DeleteSubscriptions: Boolean = True
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CloseSessionRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    DeleteSubscriptions: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -5930,16 +5698,8 @@ class CloseSessionResponse:
 
     data_type = NodeId(ObjectIds.CloseSessionResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CloseSessionResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CloseSessionResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
 
 
 @dataclass(frozen=FROZEN)
@@ -5949,7 +5709,7 @@ class CancelParameters:
     :vartype RequestHandle: IntegerId
     """
 
-    RequestHandle: IntegerId = 0
+    RequestHandle: 'ua.IntegerId' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -5967,17 +5727,9 @@ class CancelRequest:
 
     data_type = NodeId(ObjectIds.CancelRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CancelRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: CancelParameters = field(default_factory=CancelParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CancelRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.CancelParameters' = field(default_factory=lambda: CancelParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -5987,7 +5739,7 @@ class CancelResult:
     :vartype CancelCount: UInt32
     """
 
-    CancelCount: UInt32 = 0
+    CancelCount: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -6005,17 +5757,9 @@ class CancelResponse:
 
     data_type = NodeId(ObjectIds.CancelResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CancelResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: CancelResult = field(default_factory=CancelResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CancelResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.CancelResult' = field(default_factory=lambda: CancelResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -6037,11 +5781,11 @@ class NodeAttributes:
 
     data_type = NodeId(ObjectIds.NodeAttributes)
 
-    SpecifiedAttributes: UInt32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    WriteMask: UInt32 = 0
-    UserWriteMask: UInt32 = 0
+    SpecifiedAttributes: 'ua.UInt32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    WriteMask: 'ua.UInt32' = 0
+    UserWriteMask: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -6065,12 +5809,12 @@ class ObjectAttributes(NodeAttributes):
 
     data_type = NodeId(ObjectIds.ObjectAttributes)
 
-    SpecifiedAttributes: UInt32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    WriteMask: UInt32 = 0
-    UserWriteMask: UInt32 = 0
-    EventNotifier: Byte = 0
+    SpecifiedAttributes: 'ua.UInt32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    WriteMask: 'ua.UInt32' = 0
+    UserWriteMask: 'ua.UInt32' = 0
+    EventNotifier: 'ua.Byte' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -6108,19 +5852,19 @@ class VariableAttributes(NodeAttributes):
 
     data_type = NodeId(ObjectIds.VariableAttributes)
 
-    SpecifiedAttributes: UInt32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    WriteMask: UInt32 = 0
-    UserWriteMask: UInt32 = 0
-    Value: Variant = field(default_factory=Variant)
-    DataType: NodeId = field(default_factory=NodeId)
-    ValueRank: Int32 = 0
-    ArrayDimensions: list[UInt32] = field(default_factory=list)
-    AccessLevel: Byte = 0
-    UserAccessLevel: Byte = 0
-    MinimumSamplingInterval: Duration = 0
-    Historizing: Boolean = True
+    SpecifiedAttributes: 'ua.UInt32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    WriteMask: 'ua.UInt32' = 0
+    UserWriteMask: 'ua.UInt32' = 0
+    Value: 'ua.Variant' = field(default_factory=lambda: Variant())
+    DataType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ValueRank: 'ua.Int32' = 0
+    ArrayDimensions: 'list[ua.UInt32]' = field(default_factory=list)
+    AccessLevel: 'ua.Byte' = 0
+    UserAccessLevel: 'ua.Byte' = 0
+    MinimumSamplingInterval: 'ua.Duration' = 0
+    Historizing: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -6146,13 +5890,13 @@ class MethodAttributes(NodeAttributes):
 
     data_type = NodeId(ObjectIds.MethodAttributes)
 
-    SpecifiedAttributes: UInt32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    WriteMask: UInt32 = 0
-    UserWriteMask: UInt32 = 0
-    Executable: Boolean = True
-    UserExecutable: Boolean = True
+    SpecifiedAttributes: 'ua.UInt32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    WriteMask: 'ua.UInt32' = 0
+    UserWriteMask: 'ua.UInt32' = 0
+    Executable: 'ua.Boolean' = True
+    UserExecutable: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -6176,12 +5920,12 @@ class ObjectTypeAttributes(NodeAttributes):
 
     data_type = NodeId(ObjectIds.ObjectTypeAttributes)
 
-    SpecifiedAttributes: UInt32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    WriteMask: UInt32 = 0
-    UserWriteMask: UInt32 = 0
-    IsAbstract: Boolean = True
+    SpecifiedAttributes: 'ua.UInt32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    WriteMask: 'ua.UInt32' = 0
+    UserWriteMask: 'ua.UInt32' = 0
+    IsAbstract: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -6213,16 +5957,16 @@ class VariableTypeAttributes(NodeAttributes):
 
     data_type = NodeId(ObjectIds.VariableTypeAttributes)
 
-    SpecifiedAttributes: UInt32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    WriteMask: UInt32 = 0
-    UserWriteMask: UInt32 = 0
-    Value: Variant = field(default_factory=Variant)
-    DataType: NodeId = field(default_factory=NodeId)
-    ValueRank: Int32 = 0
-    ArrayDimensions: list[UInt32] = field(default_factory=list)
-    IsAbstract: Boolean = True
+    SpecifiedAttributes: 'ua.UInt32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    WriteMask: 'ua.UInt32' = 0
+    UserWriteMask: 'ua.UInt32' = 0
+    Value: 'ua.Variant' = field(default_factory=lambda: Variant())
+    DataType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ValueRank: 'ua.Int32' = 0
+    ArrayDimensions: 'list[ua.UInt32]' = field(default_factory=list)
+    IsAbstract: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -6250,14 +5994,14 @@ class ReferenceTypeAttributes(NodeAttributes):
 
     data_type = NodeId(ObjectIds.ReferenceTypeAttributes)
 
-    SpecifiedAttributes: UInt32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    WriteMask: UInt32 = 0
-    UserWriteMask: UInt32 = 0
-    IsAbstract: Boolean = True
-    Symmetric: Boolean = True
-    InverseName: LocalizedText = field(default_factory=LocalizedText)
+    SpecifiedAttributes: 'ua.UInt32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    WriteMask: 'ua.UInt32' = 0
+    UserWriteMask: 'ua.UInt32' = 0
+    IsAbstract: 'ua.Boolean' = True
+    Symmetric: 'ua.Boolean' = True
+    InverseName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
 @dataclass(frozen=FROZEN)
@@ -6281,12 +6025,12 @@ class DataTypeAttributes(NodeAttributes):
 
     data_type = NodeId(ObjectIds.DataTypeAttributes)
 
-    SpecifiedAttributes: UInt32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    WriteMask: UInt32 = 0
-    UserWriteMask: UInt32 = 0
-    IsAbstract: Boolean = True
+    SpecifiedAttributes: 'ua.UInt32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    WriteMask: 'ua.UInt32' = 0
+    UserWriteMask: 'ua.UInt32' = 0
+    IsAbstract: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -6312,13 +6056,13 @@ class ViewAttributes(NodeAttributes):
 
     data_type = NodeId(ObjectIds.ViewAttributes)
 
-    SpecifiedAttributes: UInt32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    WriteMask: UInt32 = 0
-    UserWriteMask: UInt32 = 0
-    ContainsNoLoops: Boolean = True
-    EventNotifier: Byte = 0
+    SpecifiedAttributes: 'ua.UInt32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    WriteMask: 'ua.UInt32' = 0
+    UserWriteMask: 'ua.UInt32' = 0
+    ContainsNoLoops: 'ua.Boolean' = True
+    EventNotifier: 'ua.Byte' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -6334,8 +6078,8 @@ class GenericAttributeValue:
 
     data_type = NodeId(ObjectIds.GenericAttributeValue)
 
-    AttributeId: IntegerId = 0
-    Value: Variant = field(default_factory=Variant)
+    AttributeId: 'ua.IntegerId' = 0
+    Value: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
 @dataclass(frozen=FROZEN)
@@ -6359,12 +6103,12 @@ class GenericAttributes(NodeAttributes):
 
     data_type = NodeId(ObjectIds.GenericAttributes)
 
-    SpecifiedAttributes: UInt32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
-    WriteMask: UInt32 = 0
-    UserWriteMask: UInt32 = 0
-    AttributeValues: list[GenericAttributeValue] = field(default_factory=list)
+    SpecifiedAttributes: 'ua.UInt32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    WriteMask: 'ua.UInt32' = 0
+    UserWriteMask: 'ua.UInt32' = 0
+    AttributeValues: 'list[ua.GenericAttributeValue]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6390,21 +6134,13 @@ class AddNodesItem:
 
     data_type = NodeId(ObjectIds.AddNodesItem)
 
-    ParentNodeId: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-    ReferenceTypeId: NodeId = field(default_factory=NodeId)
-    RequestedNewNodeId: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-    BrowseName: QualifiedName = field(default_factory=QualifiedName)
-    NodeClass_: NodeClass = NodeClass.Unspecified
-    NodeAttributes: ExtensionObject = ExtensionObject()
-    TypeDefinition: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-
-    @property
-    def NodeClass(self):
-        return self.NodeClass_
-
-    @NodeClass.setter
-    def NodeClass(self, val):
-        self.NodeClass_ = val
+    ParentNodeId: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
+    ReferenceTypeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    RequestedNewNodeId: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
+    BrowseName: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
+    NodeClass: 'ua.NodeClass' = field(default_factory=lambda:NodeClass.Unspecified)
+    NodeAttributes: 'ua.ExtensionObject' = ExtensionObject()
+    TypeDefinition: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
 
 
 @dataclass(frozen=FROZEN)
@@ -6420,16 +6156,8 @@ class AddNodesResult:
 
     data_type = NodeId(ObjectIds.AddNodesResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    AddedNodeId: NodeId = field(default_factory=NodeId)
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    AddedNodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
 
 
 @dataclass(frozen=FROZEN)
@@ -6439,7 +6167,7 @@ class AddNodesParameters:
     :vartype NodesToAdd: AddNodesItem
     """
 
-    NodesToAdd: list[AddNodesItem] = field(default_factory=list)
+    NodesToAdd: 'list[ua.AddNodesItem]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6457,17 +6185,9 @@ class AddNodesRequest:
 
     data_type = NodeId(ObjectIds.AddNodesRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.AddNodesRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: AddNodesParameters = field(default_factory=AddNodesParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.AddNodesRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.AddNodesParameters' = field(default_factory=lambda: AddNodesParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -6487,18 +6207,10 @@ class AddNodesResponse:
 
     data_type = NodeId(ObjectIds.AddNodesResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.AddNodesResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[AddNodesResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.AddNodesResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.AddNodesResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6522,12 +6234,12 @@ class AddReferencesItem:
 
     data_type = NodeId(ObjectIds.AddReferencesItem)
 
-    SourceNodeId: NodeId = field(default_factory=NodeId)
-    ReferenceTypeId: NodeId = field(default_factory=NodeId)
-    IsForward: Boolean = True
-    TargetServerUri: String = None
-    TargetNodeId: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-    TargetNodeClass: NodeClass = NodeClass.Unspecified
+    SourceNodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ReferenceTypeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    IsForward: 'ua.Boolean' = True
+    TargetServerUri: 'ua.String' = None
+    TargetNodeId: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
+    TargetNodeClass: 'ua.NodeClass' = field(default_factory=lambda:NodeClass.Unspecified)
 
 
 @dataclass(frozen=FROZEN)
@@ -6537,7 +6249,7 @@ class AddReferencesParameters:
     :vartype ReferencesToAdd: AddReferencesItem
     """
 
-    ReferencesToAdd: list[AddReferencesItem] = field(default_factory=list)
+    ReferencesToAdd: 'list[ua.AddReferencesItem]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6555,17 +6267,9 @@ class AddReferencesRequest:
 
     data_type = NodeId(ObjectIds.AddReferencesRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.AddReferencesRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: AddReferencesParameters = field(default_factory=AddReferencesParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.AddReferencesRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.AddReferencesParameters' = field(default_factory=lambda: AddReferencesParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -6585,18 +6289,10 @@ class AddReferencesResponse:
 
     data_type = NodeId(ObjectIds.AddReferencesResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.AddReferencesResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.AddReferencesResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6612,16 +6308,8 @@ class DeleteNodesItem:
 
     data_type = NodeId(ObjectIds.DeleteNodesItem)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    DeleteTargetReferences: Boolean = True
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    DeleteTargetReferences: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -6631,7 +6319,7 @@ class DeleteNodesParameters:
     :vartype NodesToDelete: DeleteNodesItem
     """
 
-    NodesToDelete: list[DeleteNodesItem] = field(default_factory=list)
+    NodesToDelete: 'list[ua.DeleteNodesItem]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6649,17 +6337,9 @@ class DeleteNodesRequest:
 
     data_type = NodeId(ObjectIds.DeleteNodesRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.DeleteNodesRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: DeleteNodesParameters = field(default_factory=DeleteNodesParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.DeleteNodesRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.DeleteNodesParameters' = field(default_factory=lambda: DeleteNodesParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -6679,18 +6359,10 @@ class DeleteNodesResponse:
 
     data_type = NodeId(ObjectIds.DeleteNodesResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.DeleteNodesResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.DeleteNodesResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6712,11 +6384,11 @@ class DeleteReferencesItem:
 
     data_type = NodeId(ObjectIds.DeleteReferencesItem)
 
-    SourceNodeId: NodeId = field(default_factory=NodeId)
-    ReferenceTypeId: NodeId = field(default_factory=NodeId)
-    IsForward: Boolean = True
-    TargetNodeId: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-    DeleteBidirectional: Boolean = True
+    SourceNodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ReferenceTypeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    IsForward: 'ua.Boolean' = True
+    TargetNodeId: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
+    DeleteBidirectional: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -6726,7 +6398,7 @@ class DeleteReferencesParameters:
     :vartype ReferencesToDelete: DeleteReferencesItem
     """
 
-    ReferencesToDelete: list[DeleteReferencesItem] = field(default_factory=list)
+    ReferencesToDelete: 'list[ua.DeleteReferencesItem]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6744,17 +6416,9 @@ class DeleteReferencesRequest:
 
     data_type = NodeId(ObjectIds.DeleteReferencesRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.DeleteReferencesRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: DeleteReferencesParameters = field(default_factory=DeleteReferencesParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.DeleteReferencesRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.DeleteReferencesParameters' = field(default_factory=lambda: DeleteReferencesParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -6766,8 +6430,8 @@ class DeleteReferencesResult:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    Results: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
+    Results: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6785,17 +6449,9 @@ class DeleteReferencesResponse:
 
     data_type = NodeId(ObjectIds.DeleteReferencesResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.DeleteReferencesResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: DeleteReferencesResult = field(default_factory=DeleteReferencesResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.DeleteReferencesResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.DeleteReferencesResult' = field(default_factory=lambda: DeleteReferencesResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -6813,9 +6469,9 @@ class ViewDescription:
 
     data_type = NodeId(ObjectIds.ViewDescription)
 
-    ViewId: NodeId = field(default_factory=NodeId)
-    Timestamp: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    ViewVersion: UInt32 = 0
+    ViewId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    Timestamp: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    ViewVersion: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -6839,27 +6495,12 @@ class BrowseDescription:
 
     data_type = NodeId(ObjectIds.BrowseDescription)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    BrowseDirection_: BrowseDirection = BrowseDirection.Forward
-    ReferenceTypeId: NodeId = field(default_factory=NodeId)
-    IncludeSubtypes: Boolean = True
-    NodeClassMask: UInt32 = 0
-    ResultMask: UInt32 = 0
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
-    @property
-    def BrowseDirection(self):
-        return self.BrowseDirection_
-
-    @BrowseDirection.setter
-    def BrowseDirection(self, val):
-        self.BrowseDirection_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    BrowseDirection: 'ua.BrowseDirection' = field(default_factory=lambda:BrowseDirection.Forward)
+    ReferenceTypeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    IncludeSubtypes: 'ua.Boolean' = True
+    NodeClassMask: 'ua.UInt32' = 0
+    ResultMask: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -6885,21 +6526,13 @@ class ReferenceDescription:
 
     data_type = NodeId(ObjectIds.ReferenceDescription)
 
-    ReferenceTypeId: NodeId = field(default_factory=NodeId)
-    IsForward: Boolean = True
-    NodeId: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-    BrowseName: QualifiedName = field(default_factory=QualifiedName)
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    NodeClass_: NodeClass = NodeClass.Unspecified
-    TypeDefinition: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-
-    @property
-    def NodeClass(self):
-        return self.NodeClass_
-
-    @NodeClass.setter
-    def NodeClass(self, val):
-        self.NodeClass_ = val
+    ReferenceTypeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    IsForward: 'ua.Boolean' = True
+    NodeId: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
+    BrowseName: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    NodeClass: 'ua.NodeClass' = field(default_factory=lambda:NodeClass.Unspecified)
+    TypeDefinition: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
 
 
 @dataclass(frozen=FROZEN)
@@ -6917,24 +6550,9 @@ class BrowseResult:
 
     data_type = NodeId(ObjectIds.BrowseResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    ContinuationPoint_: ContinuationPoint = None
-    References: list[ReferenceDescription] = field(default_factory=list)
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
-    @property
-    def ContinuationPoint(self):
-        return self.ContinuationPoint_
-
-    @ContinuationPoint.setter
-    def ContinuationPoint(self, val):
-        self.ContinuationPoint_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    ContinuationPoint: 'ua.ContinuationPoint' = None
+    References: 'list[ua.ReferenceDescription]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6948,9 +6566,9 @@ class BrowseParameters:
     :vartype NodesToBrowse: BrowseDescription
     """
 
-    View: ViewDescription = field(default_factory=ViewDescription)
-    RequestedMaxReferencesPerNode: Counter = 0
-    NodesToBrowse: list[BrowseDescription] = field(default_factory=list)
+    View: 'ua.ViewDescription' = field(default_factory=lambda: ViewDescription())
+    RequestedMaxReferencesPerNode: 'ua.Counter' = 0
+    NodesToBrowse: 'list[ua.BrowseDescription]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -6968,17 +6586,9 @@ class BrowseRequest:
 
     data_type = NodeId(ObjectIds.BrowseRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.BrowseRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: BrowseParameters = field(default_factory=BrowseParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.BrowseRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.BrowseParameters' = field(default_factory=lambda: BrowseParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -6998,18 +6608,10 @@ class BrowseResponse:
 
     data_type = NodeId(ObjectIds.BrowseResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.BrowseResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[BrowseResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.BrowseResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.BrowseResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7021,8 +6623,8 @@ class BrowseNextParameters:
     :vartype ContinuationPoints: ContinuationPoint
     """
 
-    ReleaseContinuationPoints: Boolean = True
-    ContinuationPoints: list[ContinuationPoint] = field(default_factory=list)
+    ReleaseContinuationPoints: 'ua.Boolean' = True
+    ContinuationPoints: 'list[ua.ContinuationPoint]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7040,17 +6642,9 @@ class BrowseNextRequest:
 
     data_type = NodeId(ObjectIds.BrowseNextRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.BrowseNextRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: BrowseNextParameters = field(default_factory=BrowseNextParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.BrowseNextRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.BrowseNextParameters' = field(default_factory=lambda: BrowseNextParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -7062,8 +6656,8 @@ class BrowseNextResult:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    Results: list[BrowseResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
+    Results: 'list[ua.BrowseResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7081,17 +6675,9 @@ class BrowseNextResponse:
 
     data_type = NodeId(ObjectIds.BrowseNextResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.BrowseNextResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: BrowseNextResult = field(default_factory=BrowseNextResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.BrowseNextResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.BrowseNextResult' = field(default_factory=lambda: BrowseNextResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -7107,16 +6693,8 @@ class BrowsePath:
 
     data_type = NodeId(ObjectIds.BrowsePath)
 
-    StartingNode: NodeId = field(default_factory=NodeId)
-    RelativePath_: RelativePath = field(default_factory=RelativePath)
-
-    @property
-    def RelativePath(self):
-        return self.RelativePath_
-
-    @RelativePath.setter
-    def RelativePath(self, val):
-        self.RelativePath_ = val
+    StartingNode: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    RelativePath: 'ua.RelativePath' = field(default_factory=lambda: RelativePath())
 
 
 @dataclass(frozen=FROZEN)
@@ -7132,8 +6710,8 @@ class BrowsePathTarget:
 
     data_type = NodeId(ObjectIds.BrowsePathTarget)
 
-    TargetId: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-    RemainingPathIndex: Index = 0
+    TargetId: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
+    RemainingPathIndex: 'ua.Index' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -7149,16 +6727,8 @@ class BrowsePathResult:
 
     data_type = NodeId(ObjectIds.BrowsePathResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    Targets: list[BrowsePathTarget] = field(default_factory=list)
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    Targets: 'list[ua.BrowsePathTarget]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7168,7 +6738,7 @@ class TranslateBrowsePathsToNodeIdsParameters:
     :vartype BrowsePaths: BrowsePath
     """
 
-    BrowsePaths: list[BrowsePath] = field(default_factory=list)
+    BrowsePaths: 'list[ua.BrowsePath]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7186,17 +6756,9 @@ class TranslateBrowsePathsToNodeIdsRequest:
 
     data_type = NodeId(ObjectIds.TranslateBrowsePathsToNodeIdsRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.TranslateBrowsePathsToNodeIdsRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: TranslateBrowsePathsToNodeIdsParameters = field(default_factory=TranslateBrowsePathsToNodeIdsParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.TranslateBrowsePathsToNodeIdsRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.TranslateBrowsePathsToNodeIdsParameters' = field(default_factory=lambda: TranslateBrowsePathsToNodeIdsParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -7216,18 +6778,10 @@ class TranslateBrowsePathsToNodeIdsResponse:
 
     data_type = NodeId(ObjectIds.TranslateBrowsePathsToNodeIdsResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.TranslateBrowsePathsToNodeIdsResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[BrowsePathResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.TranslateBrowsePathsToNodeIdsResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.BrowsePathResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7237,7 +6791,7 @@ class RegisterNodesParameters:
     :vartype NodesToRegister: NodeId
     """
 
-    NodesToRegister: list[NodeId] = field(default_factory=list)
+    NodesToRegister: 'list[ua.NodeId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7255,17 +6809,9 @@ class RegisterNodesRequest:
 
     data_type = NodeId(ObjectIds.RegisterNodesRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.RegisterNodesRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: RegisterNodesParameters = field(default_factory=RegisterNodesParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.RegisterNodesRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.RegisterNodesParameters' = field(default_factory=lambda: RegisterNodesParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -7275,7 +6821,7 @@ class RegisterNodesResult:
     :vartype RegisteredNodeIds: NodeId
     """
 
-    RegisteredNodeIds: list[NodeId] = field(default_factory=list)
+    RegisteredNodeIds: 'list[ua.NodeId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7293,17 +6839,9 @@ class RegisterNodesResponse:
 
     data_type = NodeId(ObjectIds.RegisterNodesResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.RegisterNodesResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: RegisterNodesResult = field(default_factory=RegisterNodesResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.RegisterNodesResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.RegisterNodesResult' = field(default_factory=lambda: RegisterNodesResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -7313,7 +6851,7 @@ class UnregisterNodesParameters:
     :vartype NodesToUnregister: NodeId
     """
 
-    NodesToUnregister: list[NodeId] = field(default_factory=list)
+    NodesToUnregister: 'list[ua.NodeId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7331,17 +6869,9 @@ class UnregisterNodesRequest:
 
     data_type = NodeId(ObjectIds.UnregisterNodesRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.UnregisterNodesRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: UnregisterNodesParameters = field(default_factory=UnregisterNodesParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.UnregisterNodesRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.UnregisterNodesParameters' = field(default_factory=lambda: UnregisterNodesParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -7357,16 +6887,8 @@ class UnregisterNodesResponse:
 
     data_type = NodeId(ObjectIds.UnregisterNodesResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.UnregisterNodesResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.UnregisterNodesResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
 
 
 @dataclass(frozen=FROZEN)
@@ -7394,15 +6916,15 @@ class EndpointConfiguration:
 
     data_type = NodeId(ObjectIds.EndpointConfiguration)
 
-    OperationTimeout: Int32 = 0
-    UseBinaryEncoding: Boolean = True
-    MaxStringLength: Int32 = 0
-    MaxByteStringLength: Int32 = 0
-    MaxArrayLength: Int32 = 0
-    MaxMessageSize: Int32 = 0
-    MaxBufferSize: Int32 = 0
-    ChannelLifetime: Int32 = 0
-    SecurityTokenLifetime: Int32 = 0
+    OperationTimeout: 'ua.Int32' = 0
+    UseBinaryEncoding: 'ua.Boolean' = True
+    MaxStringLength: 'ua.Int32' = 0
+    MaxByteStringLength: 'ua.Int32' = 0
+    MaxArrayLength: 'ua.Int32' = 0
+    MaxMessageSize: 'ua.Int32' = 0
+    MaxBufferSize: 'ua.Int32' = 0
+    ChannelLifetime: 'ua.Int32' = 0
+    SecurityTokenLifetime: 'ua.Int32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -7420,17 +6942,9 @@ class QueryDataDescription:
 
     data_type = NodeId(ObjectIds.QueryDataDescription)
 
-    RelativePath_: RelativePath = field(default_factory=RelativePath)
-    AttributeId: IntegerId = 0
-    IndexRange: NumericRange = None
-
-    @property
-    def RelativePath(self):
-        return self.RelativePath_
-
-    @RelativePath.setter
-    def RelativePath(self, val):
-        self.RelativePath_ = val
+    RelativePath: 'ua.RelativePath' = field(default_factory=lambda: RelativePath())
+    AttributeId: 'ua.IntegerId' = 0
+    IndexRange: 'ua.NumericRange' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -7448,9 +6962,9 @@ class NodeTypeDescription:
 
     data_type = NodeId(ObjectIds.NodeTypeDescription)
 
-    TypeDefinitionNode: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-    IncludeSubTypes: Boolean = True
-    DataToReturn: list[QueryDataDescription] = field(default_factory=list)
+    TypeDefinitionNode: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
+    IncludeSubTypes: 'ua.Boolean' = True
+    DataToReturn: 'list[ua.QueryDataDescription]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7468,9 +6982,9 @@ class QueryDataSet:
 
     data_type = NodeId(ObjectIds.QueryDataSet)
 
-    NodeId: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-    TypeDefinitionNode: ExpandedNodeId = field(default_factory=ExpandedNodeId)
-    Values: list[Variant] = field(default_factory=list)
+    NodeId: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
+    TypeDefinitionNode: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
+    Values: 'list[ua.Variant]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7488,18 +7002,10 @@ class NodeReference:
 
     data_type = NodeId(ObjectIds.NodeReference)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    ReferenceTypeId: NodeId = field(default_factory=NodeId)
-    IsForward: Boolean = True
-    ReferencedNodeIds: list[NodeId] = field(default_factory=list)
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ReferenceTypeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    IsForward: 'ua.Boolean' = True
+    ReferencedNodeIds: 'list[ua.NodeId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7515,16 +7021,8 @@ class ContentFilterElement:
 
     data_type = NodeId(ObjectIds.ContentFilterElement)
 
-    FilterOperator_: FilterOperator = FilterOperator.Equals
-    FilterOperands: list[ExtensionObject] = field(default_factory=list)
-
-    @property
-    def FilterOperator(self):
-        return self.FilterOperator_
-
-    @FilterOperator.setter
-    def FilterOperator(self, val):
-        self.FilterOperator_ = val
+    FilterOperator: 'ua.FilterOperator' = field(default_factory=lambda:FilterOperator.Equals)
+    FilterOperands: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7538,7 +7036,7 @@ class ContentFilter:
 
     data_type = NodeId(ObjectIds.ContentFilter)
 
-    Elements: list[ContentFilterElement] = field(default_factory=list)
+    Elements: 'list[ua.ContentFilterElement]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7562,7 +7060,7 @@ class ElementOperand(FilterOperand):
 
     data_type = NodeId(ObjectIds.ElementOperand)
 
-    Index: UInt32 = 0
+    Index: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -7576,7 +7074,7 @@ class LiteralOperand(FilterOperand):
 
     data_type = NodeId(ObjectIds.LiteralOperand)
 
-    Value: Variant = field(default_factory=Variant)
+    Value: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
 @dataclass(frozen=FROZEN)
@@ -7598,19 +7096,11 @@ class AttributeOperand(FilterOperand):
 
     data_type = NodeId(ObjectIds.AttributeOperand)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    Alias: String = None
-    BrowsePath: RelativePath = field(default_factory=RelativePath)
-    AttributeId: IntegerId = 0
-    IndexRange: NumericRange = None
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    Alias: 'ua.String' = None
+    BrowsePath: 'ua.RelativePath' = field(default_factory=lambda: RelativePath())
+    AttributeId: 'ua.IntegerId' = 0
+    IndexRange: 'ua.NumericRange' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -7630,10 +7120,10 @@ class SimpleAttributeOperand(FilterOperand):
 
     data_type = NodeId(ObjectIds.SimpleAttributeOperand)
 
-    TypeDefinitionId: NodeId = field(default_factory=NodeId)
-    BrowsePath: list[QualifiedName] = field(default_factory=list)
-    AttributeId: IntegerId = 0
-    IndexRange: NumericRange = None
+    TypeDefinitionId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    BrowsePath: 'list[ua.QualifiedName]' = field(default_factory=list)
+    AttributeId: 'ua.IntegerId' = 0
+    IndexRange: 'ua.NumericRange' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -7651,9 +7141,9 @@ class PublishedEventsDataType(PublishedDataSetSourceDataType):
 
     data_type = NodeId(ObjectIds.PublishedEventsDataType)
 
-    EventNotifier: NodeId = field(default_factory=NodeId)
-    SelectedFields: list[SimpleAttributeOperand] = field(default_factory=list)
-    Filter: ContentFilter = field(default_factory=ContentFilter)
+    EventNotifier: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    SelectedFields: 'list[ua.SimpleAttributeOperand]' = field(default_factory=list)
+    Filter: 'ua.ContentFilter' = field(default_factory=lambda: ContentFilter())
 
 
 @dataclass(frozen=FROZEN)
@@ -7671,17 +7161,9 @@ class ContentFilterElementResult:
 
     data_type = NodeId(ObjectIds.ContentFilterElementResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    OperandStatusCodes: list[StatusCode] = field(default_factory=list)
-    OperandDiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    OperandStatusCodes: 'list[ua.StatusCode]' = field(default_factory=list)
+    OperandDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7697,8 +7179,8 @@ class ContentFilterResult:
 
     data_type = NodeId(ObjectIds.ContentFilterResult)
 
-    ElementResults: list[ContentFilterElementResult] = field(default_factory=list)
-    ElementDiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
+    ElementResults: 'list[ua.ContentFilterElementResult]' = field(default_factory=list)
+    ElementDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7716,17 +7198,9 @@ class ParsingResult:
 
     data_type = NodeId(ObjectIds.ParsingResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    DataStatusCodes: list[StatusCode] = field(default_factory=list)
-    DataDiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    DataStatusCodes: 'list[ua.StatusCode]' = field(default_factory=list)
+    DataDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7744,11 +7218,11 @@ class QueryFirstParameters:
     :vartype MaxReferencesToReturn: Counter
     """
 
-    View: ViewDescription = field(default_factory=ViewDescription)
-    NodeTypes: list[NodeTypeDescription] = field(default_factory=list)
-    Filter: ContentFilter = field(default_factory=ContentFilter)
-    MaxDataSetsToReturn: Counter = 0
-    MaxReferencesToReturn: Counter = 0
+    View: 'ua.ViewDescription' = field(default_factory=lambda: ViewDescription())
+    NodeTypes: 'list[ua.NodeTypeDescription]' = field(default_factory=list)
+    Filter: 'ua.ContentFilter' = field(default_factory=lambda: ContentFilter())
+    MaxDataSetsToReturn: 'ua.Counter' = 0
+    MaxReferencesToReturn: 'ua.Counter' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -7766,17 +7240,9 @@ class QueryFirstRequest:
 
     data_type = NodeId(ObjectIds.QueryFirstRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.QueryFirstRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: QueryFirstParameters = field(default_factory=QueryFirstParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.QueryFirstRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.QueryFirstParameters' = field(default_factory=lambda: QueryFirstParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -7794,19 +7260,11 @@ class QueryFirstResult:
     :vartype FilterResult: ContentFilterResult
     """
 
-    QueryDataSets: list[QueryDataSet] = field(default_factory=list)
-    ContinuationPoint_: ContinuationPoint = None
-    ParsingResults: list[ParsingResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-    FilterResult: ContentFilterResult = field(default_factory=ContentFilterResult)
-
-    @property
-    def ContinuationPoint(self):
-        return self.ContinuationPoint_
-
-    @ContinuationPoint.setter
-    def ContinuationPoint(self, val):
-        self.ContinuationPoint_ = val
+    QueryDataSets: 'list[ua.QueryDataSet]' = field(default_factory=list)
+    ContinuationPoint: 'ua.ContinuationPoint' = None
+    ParsingResults: 'list[ua.ParsingResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
+    FilterResult: 'ua.ContentFilterResult' = field(default_factory=lambda: ContentFilterResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -7824,17 +7282,9 @@ class QueryFirstResponse:
 
     data_type = NodeId(ObjectIds.QueryFirstResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.QueryFirstResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: QueryFirstResult = field(default_factory=QueryFirstResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.QueryFirstResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.QueryFirstResult' = field(default_factory=lambda: QueryFirstResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -7846,16 +7296,8 @@ class QueryNextParameters:
     :vartype ContinuationPoint: ContinuationPoint
     """
 
-    ReleaseContinuationPoint: Boolean = True
-    ContinuationPoint_: ContinuationPoint = None
-
-    @property
-    def ContinuationPoint(self):
-        return self.ContinuationPoint_
-
-    @ContinuationPoint.setter
-    def ContinuationPoint(self, val):
-        self.ContinuationPoint_ = val
+    ReleaseContinuationPoint: 'ua.Boolean' = True
+    ContinuationPoint: 'ua.ContinuationPoint' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -7873,17 +7315,9 @@ class QueryNextRequest:
 
     data_type = NodeId(ObjectIds.QueryNextRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.QueryNextRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: QueryNextParameters = field(default_factory=QueryNextParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.QueryNextRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.QueryNextParameters' = field(default_factory=lambda: QueryNextParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -7895,8 +7329,8 @@ class QueryNextResult:
     :vartype RevisedContinuationPoint: ContinuationPoint
     """
 
-    QueryDataSets: list[QueryDataSet] = field(default_factory=list)
-    RevisedContinuationPoint: ContinuationPoint = None
+    QueryDataSets: 'list[ua.QueryDataSet]' = field(default_factory=list)
+    RevisedContinuationPoint: 'ua.ContinuationPoint' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -7914,17 +7348,9 @@ class QueryNextResponse:
 
     data_type = NodeId(ObjectIds.QueryNextResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.QueryNextResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: QueryNextResult = field(default_factory=QueryNextResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.QueryNextResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.QueryNextResult' = field(default_factory=lambda: QueryNextResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -7944,18 +7370,10 @@ class ReadValueId:
 
     data_type = NodeId(ObjectIds.ReadValueId)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    AttributeId: IntegerId = 0
-    IndexRange: NumericRange = None
-    DataEncoding: QualifiedName = field(default_factory=QualifiedName)
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    AttributeId: 'ua.IntegerId' = 0
+    IndexRange: 'ua.NumericRange' = None
+    DataEncoding: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
 
 
 @dataclass(frozen=FROZEN)
@@ -7969,17 +7387,9 @@ class ReadParameters:
     :vartype NodesToRead: ReadValueId
     """
 
-    MaxAge: Duration = 0
-    TimestampsToReturn_: TimestampsToReturn = TimestampsToReturn.Source
-    NodesToRead: list[ReadValueId] = field(default_factory=list)
-
-    @property
-    def TimestampsToReturn(self):
-        return self.TimestampsToReturn_
-
-    @TimestampsToReturn.setter
-    def TimestampsToReturn(self, val):
-        self.TimestampsToReturn_ = val
+    MaxAge: 'ua.Duration' = 0
+    TimestampsToReturn: 'ua.TimestampsToReturn' = field(default_factory=lambda:TimestampsToReturn.Source)
+    NodesToRead: 'list[ua.ReadValueId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -7997,17 +7407,9 @@ class ReadRequest:
 
     data_type = NodeId(ObjectIds.ReadRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.ReadRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: ReadParameters = field(default_factory=ReadParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.ReadRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.ReadParameters' = field(default_factory=lambda: ReadParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -8027,18 +7429,10 @@ class ReadResponse:
 
     data_type = NodeId(ObjectIds.ReadResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.ReadResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[DataValue] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.ReadResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.DataValue]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8058,25 +7452,10 @@ class HistoryReadValueId:
 
     data_type = NodeId(ObjectIds.HistoryReadValueId)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    IndexRange: NumericRange = None
-    DataEncoding: QualifiedName = field(default_factory=QualifiedName)
-    ContinuationPoint_: ContinuationPoint = None
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
-    @property
-    def ContinuationPoint(self):
-        return self.ContinuationPoint_
-
-    @ContinuationPoint.setter
-    def ContinuationPoint(self, val):
-        self.ContinuationPoint_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    IndexRange: 'ua.NumericRange' = None
+    DataEncoding: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
+    ContinuationPoint: 'ua.ContinuationPoint' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -8094,24 +7473,9 @@ class HistoryReadResult:
 
     data_type = NodeId(ObjectIds.HistoryReadResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    ContinuationPoint_: ContinuationPoint = None
-    HistoryData: ExtensionObject = ExtensionObject()
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
-    @property
-    def ContinuationPoint(self):
-        return self.ContinuationPoint_
-
-    @ContinuationPoint.setter
-    def ContinuationPoint(self, val):
-        self.ContinuationPoint_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    ContinuationPoint: 'ua.ContinuationPoint' = None
+    HistoryData: 'ua.ExtensionObject' = ExtensionObject()
 
 
 @dataclass(frozen=FROZEN)
@@ -8137,8 +7501,8 @@ class SortRuleElement:
 
     data_type = NodeId(ObjectIds.SortRuleElement)
 
-    SortOrder: SortOrderType = SortOrderType.Ascending
-    EventField: SimpleAttributeOperand = field(default_factory=SimpleAttributeOperand)
+    SortOrder: 'ua.SortOrderType' = field(default_factory=lambda:SortOrderType.Ascending)
+    EventField: 'ua.SimpleAttributeOperand' = field(default_factory=lambda: SimpleAttributeOperand())
 
 
 @dataclass(frozen=FROZEN)
@@ -8160,11 +7524,11 @@ class ReadRawModifiedDetails(HistoryReadDetails):
 
     data_type = NodeId(ObjectIds.ReadRawModifiedDetails)
 
-    IsReadModified: Boolean = True
-    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    NumValuesPerNode: Counter = 0
-    ReturnBounds: Boolean = True
+    IsReadModified: 'ua.Boolean' = True
+    StartTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    NumValuesPerNode: 'ua.Counter' = 0
+    ReturnBounds: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -8180,8 +7544,8 @@ class ReadAtTimeDetails(HistoryReadDetails):
 
     data_type = NodeId(ObjectIds.ReadAtTimeDetails)
 
-    ReqTimes: list[UtcTime] = field(default_factory=list)
-    UseSimpleBounds: Boolean = True
+    ReqTimes: 'list[ua.UtcTime]' = field(default_factory=list)
+    UseSimpleBounds: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -8195,7 +7559,7 @@ class ReadAnnotationDataDetails(HistoryReadDetails):
 
     data_type = NodeId(ObjectIds.ReadAnnotationDataDetails)
 
-    ReqTimes: list[UtcTime] = field(default_factory=list)
+    ReqTimes: 'list[ua.UtcTime]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8209,7 +7573,7 @@ class HistoryData:
 
     data_type = NodeId(ObjectIds.HistoryData)
 
-    DataValues: list[DataValue] = field(default_factory=list)
+    DataValues: 'list[ua.DataValue]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8227,9 +7591,9 @@ class ModificationInfo:
 
     data_type = NodeId(ObjectIds.ModificationInfo)
 
-    ModificationTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    UpdateType: HistoryUpdateType = HistoryUpdateType.Insert
-    UserName: String = None
+    ModificationTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    UpdateType: 'ua.HistoryUpdateType' = field(default_factory=lambda:HistoryUpdateType.Insert)
+    UserName: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -8245,8 +7609,8 @@ class HistoryModifiedData(HistoryData):
 
     data_type = NodeId(ObjectIds.HistoryModifiedData)
 
-    DataValues: list[DataValue] = field(default_factory=list)
-    ModificationInfos: list[ModificationInfo] = field(default_factory=list)
+    DataValues: 'list[ua.DataValue]' = field(default_factory=list)
+    ModificationInfos: 'list[ua.ModificationInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8262,18 +7626,10 @@ class HistoryReadParameters:
     :vartype NodesToRead: HistoryReadValueId
     """
 
-    HistoryReadDetails: ExtensionObject = ExtensionObject()
-    TimestampsToReturn_: TimestampsToReturn = TimestampsToReturn.Source
-    ReleaseContinuationPoints: Boolean = True
-    NodesToRead: list[HistoryReadValueId] = field(default_factory=list)
-
-    @property
-    def TimestampsToReturn(self):
-        return self.TimestampsToReturn_
-
-    @TimestampsToReturn.setter
-    def TimestampsToReturn(self, val):
-        self.TimestampsToReturn_ = val
+    HistoryReadDetails: 'ua.ExtensionObject' = ExtensionObject()
+    TimestampsToReturn: 'ua.TimestampsToReturn' = field(default_factory=lambda:TimestampsToReturn.Source)
+    ReleaseContinuationPoints: 'ua.Boolean' = True
+    NodesToRead: 'list[ua.HistoryReadValueId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8291,17 +7647,9 @@ class HistoryReadRequest:
 
     data_type = NodeId(ObjectIds.HistoryReadRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.HistoryReadRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: HistoryReadParameters = field(default_factory=HistoryReadParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.HistoryReadRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.HistoryReadParameters' = field(default_factory=lambda: HistoryReadParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -8321,18 +7669,10 @@ class HistoryReadResponse:
 
     data_type = NodeId(ObjectIds.HistoryReadResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.HistoryReadResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[HistoryReadResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.HistoryReadResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.HistoryReadResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8352,18 +7692,10 @@ class WriteValue:
 
     data_type = NodeId(ObjectIds.WriteValue)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    AttributeId: IntegerId = 0
-    IndexRange: NumericRange = None
-    Value: DataValue = field(default_factory=DataValue)
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    AttributeId: 'ua.IntegerId' = 0
+    IndexRange: 'ua.NumericRange' = None
+    Value: 'ua.DataValue' = field(default_factory=lambda: DataValue())
 
 
 @dataclass(frozen=FROZEN)
@@ -8373,7 +7705,7 @@ class WriteParameters:
     :vartype NodesToWrite: WriteValue
     """
 
-    NodesToWrite: list[WriteValue] = field(default_factory=list)
+    NodesToWrite: 'list[ua.WriteValue]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8391,17 +7723,9 @@ class WriteRequest:
 
     data_type = NodeId(ObjectIds.WriteRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.WriteRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: WriteParameters = field(default_factory=WriteParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.WriteRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.WriteParameters' = field(default_factory=lambda: WriteParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -8421,18 +7745,10 @@ class WriteResponse:
 
     data_type = NodeId(ObjectIds.WriteResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.WriteResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.WriteResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8460,17 +7776,9 @@ class UpdateDataDetails(HistoryUpdateDetails):
 
     data_type = NodeId(ObjectIds.UpdateDataDetails)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    PerformInsertReplace: PerformUpdateType = PerformUpdateType.Insert
-    UpdateValues: list[DataValue] = field(default_factory=list)
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    PerformInsertReplace: 'ua.PerformUpdateType' = field(default_factory=lambda:PerformUpdateType.Insert)
+    UpdateValues: 'list[ua.DataValue]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8488,17 +7796,9 @@ class UpdateStructureDataDetails(HistoryUpdateDetails):
 
     data_type = NodeId(ObjectIds.UpdateStructureDataDetails)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    PerformInsertReplace: PerformUpdateType = PerformUpdateType.Insert
-    UpdateValues: list[DataValue] = field(default_factory=list)
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    PerformInsertReplace: 'ua.PerformUpdateType' = field(default_factory=lambda:PerformUpdateType.Insert)
+    UpdateValues: 'list[ua.DataValue]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8518,18 +7818,10 @@ class DeleteRawModifiedDetails(HistoryUpdateDetails):
 
     data_type = NodeId(ObjectIds.DeleteRawModifiedDetails)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    IsDeleteModified: Boolean = True
-    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    IsDeleteModified: 'ua.Boolean' = True
+    StartTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass(frozen=FROZEN)
@@ -8545,16 +7837,8 @@ class DeleteAtTimeDetails(HistoryUpdateDetails):
 
     data_type = NodeId(ObjectIds.DeleteAtTimeDetails)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    ReqTimes: list[UtcTime] = field(default_factory=list)
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ReqTimes: 'list[ua.UtcTime]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8570,16 +7854,8 @@ class DeleteEventDetails(HistoryUpdateDetails):
 
     data_type = NodeId(ObjectIds.DeleteEventDetails)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    EventIds: list[ByteString] = field(default_factory=list)
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    EventIds: 'list[ua.ByteString]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8597,17 +7873,9 @@ class HistoryUpdateResult:
 
     data_type = NodeId(ObjectIds.HistoryUpdateResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    OperationResults: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    OperationResults: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8617,7 +7885,7 @@ class HistoryUpdateParameters:
     :vartype HistoryUpdateDetails: ExtensionObject
     """
 
-    HistoryUpdateDetails: list[ExtensionObject] = field(default_factory=list)
+    HistoryUpdateDetails: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8635,17 +7903,9 @@ class HistoryUpdateRequest:
 
     data_type = NodeId(ObjectIds.HistoryUpdateRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.HistoryUpdateRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: HistoryUpdateParameters = field(default_factory=HistoryUpdateParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.HistoryUpdateRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.HistoryUpdateParameters' = field(default_factory=lambda: HistoryUpdateParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -8665,18 +7925,10 @@ class HistoryUpdateResponse:
 
     data_type = NodeId(ObjectIds.HistoryUpdateResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.HistoryUpdateResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[HistoryUpdateResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.HistoryUpdateResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.HistoryUpdateResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8694,9 +7946,9 @@ class CallMethodRequest:
 
     data_type = NodeId(ObjectIds.CallMethodRequest)
 
-    ObjectId: NodeId = field(default_factory=NodeId)
-    MethodId: NodeId = field(default_factory=NodeId)
-    InputArguments: list[Variant] = field(default_factory=list)
+    ObjectId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    MethodId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    InputArguments: 'list[ua.Variant]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8716,18 +7968,10 @@ class CallMethodResult:
 
     data_type = NodeId(ObjectIds.CallMethodResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    InputArgumentResults: list[StatusCode] = field(default_factory=list)
-    InputArgumentDiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-    OutputArguments: list[Variant] = field(default_factory=list)
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    InputArgumentResults: 'list[ua.StatusCode]' = field(default_factory=list)
+    InputArgumentDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
+    OutputArguments: 'list[ua.Variant]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8737,7 +7981,7 @@ class CallParameters:
     :vartype MethodsToCall: CallMethodRequest
     """
 
-    MethodsToCall: list[CallMethodRequest] = field(default_factory=list)
+    MethodsToCall: 'list[ua.CallMethodRequest]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8755,17 +7999,9 @@ class CallRequest:
 
     data_type = NodeId(ObjectIds.CallRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CallRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: CallParameters = field(default_factory=CallParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CallRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.CallParameters' = field(default_factory=lambda: CallParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -8785,18 +8021,10 @@ class CallResponse:
 
     data_type = NodeId(ObjectIds.CallResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CallResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[CallMethodResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CallResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.CallMethodResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8824,9 +8052,9 @@ class DataChangeFilter(MonitoringFilter):
 
     data_type = NodeId(ObjectIds.DataChangeFilter)
 
-    Trigger: DataChangeTrigger = DataChangeTrigger.Status
-    DeadbandType: UInt32 = 0
-    DeadbandValue: Double = 0
+    Trigger: 'ua.DataChangeTrigger' = field(default_factory=lambda:DataChangeTrigger.Status)
+    DeadbandType: 'ua.UInt32' = 0
+    DeadbandValue: 'ua.Double' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -8842,8 +8070,8 @@ class EventFilter(MonitoringFilter):
 
     data_type = NodeId(ObjectIds.EventFilter)
 
-    SelectClauses: list[SimpleAttributeOperand] = field(default_factory=list)
-    WhereClause: ContentFilter = field(default_factory=ContentFilter)
+    SelectClauses: 'list[ua.SimpleAttributeOperand]' = field(default_factory=list)
+    WhereClause: 'ua.ContentFilter' = field(default_factory=lambda: ContentFilter())
 
 
 @dataclass(frozen=FROZEN)
@@ -8863,10 +8091,10 @@ class ReadEventDetails(HistoryReadDetails):
 
     data_type = NodeId(ObjectIds.ReadEventDetails)
 
-    NumValuesPerNode: Counter = 0
-    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    Filter: EventFilter = field(default_factory=EventFilter)
+    NumValuesPerNode: 'ua.Counter' = 0
+    StartTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Filter: 'ua.EventFilter' = field(default_factory=lambda: EventFilter())
 
 
 @dataclass(frozen=FROZEN)
@@ -8888,11 +8116,11 @@ class ReadEventDetails2(ReadEventDetails):
 
     data_type = NodeId(ObjectIds.ReadEventDetails2)
 
-    NumValuesPerNode: Counter = 0
-    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    Filter: EventFilter = field(default_factory=EventFilter)
-    ReadModified: Boolean = True
+    NumValuesPerNode: 'ua.Counter' = 0
+    StartTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Filter: 'ua.EventFilter' = field(default_factory=lambda: EventFilter())
+    ReadModified: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -8914,11 +8142,11 @@ class ReadEventDetailsSorted(ReadEventDetails):
 
     data_type = NodeId(ObjectIds.ReadEventDetailsSorted)
 
-    NumValuesPerNode: Counter = 0
-    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    Filter: EventFilter = field(default_factory=EventFilter)
-    SortClause: list[SortRuleElement] = field(default_factory=list)
+    NumValuesPerNode: 'ua.Counter' = 0
+    StartTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Filter: 'ua.EventFilter' = field(default_factory=lambda: EventFilter())
+    SortClause: 'list[ua.SortRuleElement]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -8940,11 +8168,11 @@ class AggregateConfiguration:
 
     data_type = NodeId(ObjectIds.AggregateConfiguration)
 
-    UseServerCapabilitiesDefaults: Boolean = True
-    TreatUncertainAsBad: Boolean = True
-    PercentDataBad: Byte = 0
-    PercentDataGood: Byte = 0
-    UseSlopedExtrapolation: Boolean = True
+    UseServerCapabilitiesDefaults: 'ua.Boolean' = True
+    TreatUncertainAsBad: 'ua.Boolean' = True
+    PercentDataBad: 'ua.Byte' = 0
+    PercentDataGood: 'ua.Byte' = 0
+    UseSlopedExtrapolation: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -8966,19 +8194,11 @@ class ReadProcessedDetails(HistoryReadDetails):
 
     data_type = NodeId(ObjectIds.ReadProcessedDetails)
 
-    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    EndTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    ProcessingInterval: Duration = 0
-    AggregateType: list[NodeId] = field(default_factory=list)
-    AggregateConfiguration_: AggregateConfiguration = field(default_factory=AggregateConfiguration)
-
-    @property
-    def AggregateConfiguration(self):
-        return self.AggregateConfiguration_
-
-    @AggregateConfiguration.setter
-    def AggregateConfiguration(self, val):
-        self.AggregateConfiguration_ = val
+    StartTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    EndTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    ProcessingInterval: 'ua.Duration' = 0
+    AggregateType: 'list[ua.NodeId]' = field(default_factory=list)
+    AggregateConfiguration: 'ua.AggregateConfiguration' = field(default_factory=lambda: AggregateConfiguration())
 
 
 @dataclass(frozen=FROZEN)
@@ -8998,18 +8218,10 @@ class AggregateFilter(MonitoringFilter):
 
     data_type = NodeId(ObjectIds.AggregateFilter)
 
-    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    AggregateType: NodeId = field(default_factory=NodeId)
-    ProcessingInterval: Duration = 0
-    AggregateConfiguration_: AggregateConfiguration = field(default_factory=AggregateConfiguration)
-
-    @property
-    def AggregateConfiguration(self):
-        return self.AggregateConfiguration_
-
-    @AggregateConfiguration.setter
-    def AggregateConfiguration(self, val):
-        self.AggregateConfiguration_ = val
+    StartTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    AggregateType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ProcessingInterval: 'ua.Duration' = 0
+    AggregateConfiguration: 'ua.AggregateConfiguration' = field(default_factory=lambda: AggregateConfiguration())
 
 
 @dataclass(frozen=FROZEN)
@@ -9035,9 +8247,9 @@ class EventFilterResult(MonitoringFilterResult):
 
     data_type = NodeId(ObjectIds.EventFilterResult)
 
-    SelectClauseResults: list[StatusCode] = field(default_factory=list)
-    SelectClauseDiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-    WhereClauseResult: ContentFilterResult = field(default_factory=ContentFilterResult)
+    SelectClauseResults: 'list[ua.StatusCode]' = field(default_factory=list)
+    SelectClauseDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
+    WhereClauseResult: 'ua.ContentFilterResult' = field(default_factory=lambda: ContentFilterResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -9055,9 +8267,9 @@ class AggregateFilterResult(MonitoringFilterResult):
 
     data_type = NodeId(ObjectIds.AggregateFilterResult)
 
-    RevisedStartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    RevisedProcessingInterval: Duration = 0
-    RevisedAggregateConfiguration: AggregateConfiguration = field(default_factory=AggregateConfiguration)
+    RevisedStartTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    RevisedProcessingInterval: 'ua.Duration' = 0
+    RevisedAggregateConfiguration: 'ua.AggregateConfiguration' = field(default_factory=lambda: AggregateConfiguration())
 
 
 @dataclass(frozen=FROZEN)
@@ -9079,11 +8291,11 @@ class MonitoringParameters:
 
     data_type = NodeId(ObjectIds.MonitoringParameters)
 
-    ClientHandle: IntegerId = 0
-    SamplingInterval: Duration = 0
-    Filter: ExtensionObject = ExtensionObject()
-    QueueSize: Counter = 0
-    DiscardOldest: Boolean = True
+    ClientHandle: 'ua.IntegerId' = 0
+    SamplingInterval: 'ua.Duration' = 0
+    Filter: 'ua.ExtensionObject' = ExtensionObject()
+    QueueSize: 'ua.Counter' = 0
+    DiscardOldest: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -9101,17 +8313,9 @@ class MonitoredItemCreateRequest:
 
     data_type = NodeId(ObjectIds.MonitoredItemCreateRequest)
 
-    ItemToMonitor: ReadValueId = field(default_factory=ReadValueId)
-    MonitoringMode_: MonitoringMode = MonitoringMode.Disabled
-    RequestedParameters: MonitoringParameters = field(default_factory=MonitoringParameters)
-
-    @property
-    def MonitoringMode(self):
-        return self.MonitoringMode_
-
-    @MonitoringMode.setter
-    def MonitoringMode(self, val):
-        self.MonitoringMode_ = val
+    ItemToMonitor: 'ua.ReadValueId' = field(default_factory=lambda: ReadValueId())
+    MonitoringMode: 'ua.MonitoringMode' = field(default_factory=lambda:MonitoringMode.Disabled)
+    RequestedParameters: 'ua.MonitoringParameters' = field(default_factory=lambda: MonitoringParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -9133,19 +8337,11 @@ class MonitoredItemCreateResult:
 
     data_type = NodeId(ObjectIds.MonitoredItemCreateResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    MonitoredItemId: IntegerId = 0
-    RevisedSamplingInterval: Duration = 0
-    RevisedQueueSize: Counter = 0
-    FilterResult: ExtensionObject = ExtensionObject()
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    MonitoredItemId: 'ua.IntegerId' = 0
+    RevisedSamplingInterval: 'ua.Duration' = 0
+    RevisedQueueSize: 'ua.Counter' = 0
+    FilterResult: 'ua.ExtensionObject' = ExtensionObject()
 
 
 @dataclass(frozen=FROZEN)
@@ -9159,17 +8355,9 @@ class CreateMonitoredItemsParameters:
     :vartype ItemsToCreate: MonitoredItemCreateRequest
     """
 
-    SubscriptionId: IntegerId = 0
-    TimestampsToReturn_: TimestampsToReturn = TimestampsToReturn.Source
-    ItemsToCreate: list[MonitoredItemCreateRequest] = field(default_factory=list)
-
-    @property
-    def TimestampsToReturn(self):
-        return self.TimestampsToReturn_
-
-    @TimestampsToReturn.setter
-    def TimestampsToReturn(self, val):
-        self.TimestampsToReturn_ = val
+    SubscriptionId: 'ua.IntegerId' = 0
+    TimestampsToReturn: 'ua.TimestampsToReturn' = field(default_factory=lambda:TimestampsToReturn.Source)
+    ItemsToCreate: 'list[ua.MonitoredItemCreateRequest]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9187,17 +8375,9 @@ class CreateMonitoredItemsRequest:
 
     data_type = NodeId(ObjectIds.CreateMonitoredItemsRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CreateMonitoredItemsRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: CreateMonitoredItemsParameters = field(default_factory=CreateMonitoredItemsParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CreateMonitoredItemsRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.CreateMonitoredItemsParameters' = field(default_factory=lambda: CreateMonitoredItemsParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -9217,18 +8397,10 @@ class CreateMonitoredItemsResponse:
 
     data_type = NodeId(ObjectIds.CreateMonitoredItemsResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CreateMonitoredItemsResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[MonitoredItemCreateResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CreateMonitoredItemsResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.MonitoredItemCreateResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9244,8 +8416,8 @@ class MonitoredItemModifyRequest:
 
     data_type = NodeId(ObjectIds.MonitoredItemModifyRequest)
 
-    MonitoredItemId: IntegerId = 0
-    RequestedParameters: MonitoringParameters = field(default_factory=MonitoringParameters)
+    MonitoredItemId: 'ua.IntegerId' = 0
+    RequestedParameters: 'ua.MonitoringParameters' = field(default_factory=lambda: MonitoringParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -9265,18 +8437,10 @@ class MonitoredItemModifyResult:
 
     data_type = NodeId(ObjectIds.MonitoredItemModifyResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    RevisedSamplingInterval: Duration = 0
-    RevisedQueueSize: Counter = 0
-    FilterResult: ExtensionObject = ExtensionObject()
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    RevisedSamplingInterval: 'ua.Duration' = 0
+    RevisedQueueSize: 'ua.Counter' = 0
+    FilterResult: 'ua.ExtensionObject' = ExtensionObject()
 
 
 @dataclass(frozen=FROZEN)
@@ -9290,17 +8454,9 @@ class ModifyMonitoredItemsParameters:
     :vartype ItemsToModify: MonitoredItemModifyRequest
     """
 
-    SubscriptionId: IntegerId = 0
-    TimestampsToReturn_: TimestampsToReturn = TimestampsToReturn.Source
-    ItemsToModify: list[MonitoredItemModifyRequest] = field(default_factory=list)
-
-    @property
-    def TimestampsToReturn(self):
-        return self.TimestampsToReturn_
-
-    @TimestampsToReturn.setter
-    def TimestampsToReturn(self, val):
-        self.TimestampsToReturn_ = val
+    SubscriptionId: 'ua.IntegerId' = 0
+    TimestampsToReturn: 'ua.TimestampsToReturn' = field(default_factory=lambda:TimestampsToReturn.Source)
+    ItemsToModify: 'list[ua.MonitoredItemModifyRequest]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9318,17 +8474,9 @@ class ModifyMonitoredItemsRequest:
 
     data_type = NodeId(ObjectIds.ModifyMonitoredItemsRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.ModifyMonitoredItemsRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: ModifyMonitoredItemsParameters = field(default_factory=ModifyMonitoredItemsParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.ModifyMonitoredItemsRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.ModifyMonitoredItemsParameters' = field(default_factory=lambda: ModifyMonitoredItemsParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -9348,18 +8496,10 @@ class ModifyMonitoredItemsResponse:
 
     data_type = NodeId(ObjectIds.ModifyMonitoredItemsResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.ModifyMonitoredItemsResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[MonitoredItemModifyResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.ModifyMonitoredItemsResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.MonitoredItemModifyResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9373,17 +8513,9 @@ class SetMonitoringModeParameters:
     :vartype MonitoredItemIds: IntegerId
     """
 
-    SubscriptionId: IntegerId = 0
-    MonitoringMode_: MonitoringMode = MonitoringMode.Disabled
-    MonitoredItemIds: list[IntegerId] = field(default_factory=list)
-
-    @property
-    def MonitoringMode(self):
-        return self.MonitoringMode_
-
-    @MonitoringMode.setter
-    def MonitoringMode(self, val):
-        self.MonitoringMode_ = val
+    SubscriptionId: 'ua.IntegerId' = 0
+    MonitoringMode: 'ua.MonitoringMode' = field(default_factory=lambda:MonitoringMode.Disabled)
+    MonitoredItemIds: 'list[ua.IntegerId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9401,17 +8533,9 @@ class SetMonitoringModeRequest:
 
     data_type = NodeId(ObjectIds.SetMonitoringModeRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.SetMonitoringModeRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: SetMonitoringModeParameters = field(default_factory=SetMonitoringModeParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.SetMonitoringModeRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.SetMonitoringModeParameters' = field(default_factory=lambda: SetMonitoringModeParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -9423,8 +8547,8 @@ class SetMonitoringModeResult:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    Results: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
+    Results: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9442,17 +8566,9 @@ class SetMonitoringModeResponse:
 
     data_type = NodeId(ObjectIds.SetMonitoringModeResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.SetMonitoringModeResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: SetMonitoringModeResult = field(default_factory=SetMonitoringModeResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.SetMonitoringModeResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.SetMonitoringModeResult' = field(default_factory=lambda: SetMonitoringModeResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -9468,10 +8584,10 @@ class SetTriggeringParameters:
     :vartype LinksToRemove: IntegerId
     """
 
-    SubscriptionId: IntegerId = 0
-    TriggeringItemId: IntegerId = 0
-    LinksToAdd: list[IntegerId] = field(default_factory=list)
-    LinksToRemove: list[IntegerId] = field(default_factory=list)
+    SubscriptionId: 'ua.IntegerId' = 0
+    TriggeringItemId: 'ua.IntegerId' = 0
+    LinksToAdd: 'list[ua.IntegerId]' = field(default_factory=list)
+    LinksToRemove: 'list[ua.IntegerId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9489,17 +8605,9 @@ class SetTriggeringRequest:
 
     data_type = NodeId(ObjectIds.SetTriggeringRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.SetTriggeringRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: SetTriggeringParameters = field(default_factory=SetTriggeringParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.SetTriggeringRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.SetTriggeringParameters' = field(default_factory=lambda: SetTriggeringParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -9515,10 +8623,10 @@ class SetTriggeringResult:
     :vartype RemoveDiagnosticInfos: DiagnosticInfo
     """
 
-    AddResults: list[StatusCode] = field(default_factory=list)
-    AddDiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-    RemoveResults: list[StatusCode] = field(default_factory=list)
-    RemoveDiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
+    AddResults: 'list[ua.StatusCode]' = field(default_factory=list)
+    AddDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
+    RemoveResults: 'list[ua.StatusCode]' = field(default_factory=list)
+    RemoveDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9536,17 +8644,9 @@ class SetTriggeringResponse:
 
     data_type = NodeId(ObjectIds.SetTriggeringResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.SetTriggeringResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: SetTriggeringResult = field(default_factory=SetTriggeringResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.SetTriggeringResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.SetTriggeringResult' = field(default_factory=lambda: SetTriggeringResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -9558,8 +8658,8 @@ class DeleteMonitoredItemsParameters:
     :vartype MonitoredItemIds: IntegerId
     """
 
-    SubscriptionId: IntegerId = 0
-    MonitoredItemIds: list[IntegerId] = field(default_factory=list)
+    SubscriptionId: 'ua.IntegerId' = 0
+    MonitoredItemIds: 'list[ua.IntegerId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9577,17 +8677,9 @@ class DeleteMonitoredItemsRequest:
 
     data_type = NodeId(ObjectIds.DeleteMonitoredItemsRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.DeleteMonitoredItemsRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: DeleteMonitoredItemsParameters = field(default_factory=DeleteMonitoredItemsParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.DeleteMonitoredItemsRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.DeleteMonitoredItemsParameters' = field(default_factory=lambda: DeleteMonitoredItemsParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -9607,18 +8699,10 @@ class DeleteMonitoredItemsResponse:
 
     data_type = NodeId(ObjectIds.DeleteMonitoredItemsResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.DeleteMonitoredItemsResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.DeleteMonitoredItemsResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9638,12 +8722,12 @@ class CreateSubscriptionParameters:
     :vartype Priority: Byte
     """
 
-    RequestedPublishingInterval: Duration = 0
-    RequestedLifetimeCount: Counter = 0
-    RequestedMaxKeepAliveCount: Counter = 0
-    MaxNotificationsPerPublish: Counter = 0
-    PublishingEnabled: Boolean = True
-    Priority: Byte = 0
+    RequestedPublishingInterval: 'ua.Duration' = 0
+    RequestedLifetimeCount: 'ua.Counter' = 0
+    RequestedMaxKeepAliveCount: 'ua.Counter' = 0
+    MaxNotificationsPerPublish: 'ua.Counter' = 0
+    PublishingEnabled: 'ua.Boolean' = True
+    Priority: 'ua.Byte' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -9661,17 +8745,9 @@ class CreateSubscriptionRequest:
 
     data_type = NodeId(ObjectIds.CreateSubscriptionRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CreateSubscriptionRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: CreateSubscriptionParameters = field(default_factory=CreateSubscriptionParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CreateSubscriptionRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.CreateSubscriptionParameters' = field(default_factory=lambda: CreateSubscriptionParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -9687,10 +8763,10 @@ class CreateSubscriptionResult:
     :vartype RevisedMaxKeepAliveCount: Counter
     """
 
-    SubscriptionId: IntegerId = 0
-    RevisedPublishingInterval: Duration = 0
-    RevisedLifetimeCount: Counter = 0
-    RevisedMaxKeepAliveCount: Counter = 0
+    SubscriptionId: 'ua.IntegerId' = 0
+    RevisedPublishingInterval: 'ua.Duration' = 0
+    RevisedLifetimeCount: 'ua.Counter' = 0
+    RevisedMaxKeepAliveCount: 'ua.Counter' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -9708,17 +8784,9 @@ class CreateSubscriptionResponse:
 
     data_type = NodeId(ObjectIds.CreateSubscriptionResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.CreateSubscriptionResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: CreateSubscriptionResult = field(default_factory=CreateSubscriptionResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.CreateSubscriptionResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.CreateSubscriptionResult' = field(default_factory=lambda: CreateSubscriptionResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -9738,12 +8806,12 @@ class ModifySubscriptionParameters:
     :vartype Priority: Byte
     """
 
-    SubscriptionId: IntegerId = 0
-    RequestedPublishingInterval: Duration = 0
-    RequestedLifetimeCount: Counter = 0
-    RequestedMaxKeepAliveCount: Counter = 0
-    MaxNotificationsPerPublish: Counter = 0
-    Priority: Byte = 0
+    SubscriptionId: 'ua.IntegerId' = 0
+    RequestedPublishingInterval: 'ua.Duration' = 0
+    RequestedLifetimeCount: 'ua.Counter' = 0
+    RequestedMaxKeepAliveCount: 'ua.Counter' = 0
+    MaxNotificationsPerPublish: 'ua.Counter' = 0
+    Priority: 'ua.Byte' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -9761,17 +8829,9 @@ class ModifySubscriptionRequest:
 
     data_type = NodeId(ObjectIds.ModifySubscriptionRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.ModifySubscriptionRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: ModifySubscriptionParameters = field(default_factory=ModifySubscriptionParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.ModifySubscriptionRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.ModifySubscriptionParameters' = field(default_factory=lambda: ModifySubscriptionParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -9785,9 +8845,9 @@ class ModifySubscriptionResult:
     :vartype RevisedMaxKeepAliveCount: Counter
     """
 
-    RevisedPublishingInterval: Duration = 0
-    RevisedLifetimeCount: Counter = 0
-    RevisedMaxKeepAliveCount: Counter = 0
+    RevisedPublishingInterval: 'ua.Duration' = 0
+    RevisedLifetimeCount: 'ua.Counter' = 0
+    RevisedMaxKeepAliveCount: 'ua.Counter' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -9805,17 +8865,9 @@ class ModifySubscriptionResponse:
 
     data_type = NodeId(ObjectIds.ModifySubscriptionResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.ModifySubscriptionResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: ModifySubscriptionResult = field(default_factory=ModifySubscriptionResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.ModifySubscriptionResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.ModifySubscriptionResult' = field(default_factory=lambda: ModifySubscriptionResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -9827,8 +8879,8 @@ class SetPublishingModeParameters:
     :vartype SubscriptionIds: IntegerId
     """
 
-    PublishingEnabled: Boolean = True
-    SubscriptionIds: list[IntegerId] = field(default_factory=list)
+    PublishingEnabled: 'ua.Boolean' = True
+    SubscriptionIds: 'list[ua.IntegerId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9846,17 +8898,9 @@ class SetPublishingModeRequest:
 
     data_type = NodeId(ObjectIds.SetPublishingModeRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.SetPublishingModeRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: SetPublishingModeParameters = field(default_factory=SetPublishingModeParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.SetPublishingModeRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.SetPublishingModeParameters' = field(default_factory=lambda: SetPublishingModeParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -9868,8 +8912,8 @@ class SetPublishingModeResult:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    Results: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
+    Results: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9887,17 +8931,9 @@ class SetPublishingModeResponse:
 
     data_type = NodeId(ObjectIds.SetPublishingModeResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.SetPublishingModeResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: SetPublishingModeResult = field(default_factory=SetPublishingModeResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.SetPublishingModeResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.SetPublishingModeResult' = field(default_factory=lambda: SetPublishingModeResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -9915,9 +8951,9 @@ class NotificationMessage:
 
     data_type = NodeId(ObjectIds.NotificationMessage)
 
-    SequenceNumber: Counter = 0
-    PublishTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    NotificationData: list[ExtensionObject] = field(default_factory=list)
+    SequenceNumber: 'ua.Counter' = 0
+    PublishTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    NotificationData: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9943,8 +8979,8 @@ class MonitoredItemNotification:
 
     data_type = NodeId(ObjectIds.MonitoredItemNotification)
 
-    ClientHandle: IntegerId = 0
-    Value: DataValue = field(default_factory=DataValue)
+    ClientHandle: 'ua.IntegerId' = 0
+    Value: 'ua.DataValue' = field(default_factory=lambda: DataValue())
 
 
 @dataclass(frozen=FROZEN)
@@ -9960,8 +8996,8 @@ class DataChangeNotification(NotificationData):
 
     data_type = NodeId(ObjectIds.DataChangeNotification)
 
-    MonitoredItems: list[MonitoredItemNotification] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
+    MonitoredItems: 'list[ua.MonitoredItemNotification]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9977,8 +9013,8 @@ class EventFieldList:
 
     data_type = NodeId(ObjectIds.EventFieldList)
 
-    ClientHandle: IntegerId = 0
-    EventFields: list[Variant] = field(default_factory=list)
+    ClientHandle: 'ua.IntegerId' = 0
+    EventFields: 'list[ua.Variant]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -9992,7 +9028,7 @@ class EventNotificationList(NotificationData):
 
     data_type = NodeId(ObjectIds.EventNotificationList)
 
-    Events: list[EventFieldList] = field(default_factory=list)
+    Events: 'list[ua.EventFieldList]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10006,7 +9042,7 @@ class HistoryEventFieldList:
 
     data_type = NodeId(ObjectIds.HistoryEventFieldList)
 
-    EventFields: list[Variant] = field(default_factory=list)
+    EventFields: 'list[ua.Variant]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10020,7 +9056,7 @@ class HistoryEvent:
 
     data_type = NodeId(ObjectIds.HistoryEvent)
 
-    Events: list[HistoryEventFieldList] = field(default_factory=list)
+    Events: 'list[ua.HistoryEventFieldList]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10036,8 +9072,8 @@ class HistoryModifiedEvent(HistoryEvent):
 
     data_type = NodeId(ObjectIds.HistoryModifiedEvent)
 
-    Events: list[HistoryEventFieldList] = field(default_factory=list)
-    ModificationInfos: list[ModificationInfo] = field(default_factory=list)
+    Events: 'list[ua.HistoryEventFieldList]' = field(default_factory=list)
+    ModificationInfos: 'list[ua.ModificationInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10057,18 +9093,10 @@ class UpdateEventDetails(HistoryUpdateDetails):
 
     data_type = NodeId(ObjectIds.UpdateEventDetails)
 
-    NodeId_: NodeId = field(default_factory=NodeId)
-    PerformInsertReplace: PerformUpdateType = PerformUpdateType.Insert
-    Filter: EventFilter = field(default_factory=EventFilter)
-    EventData: list[HistoryEventFieldList] = field(default_factory=list)
-
-    @property
-    def NodeId(self):
-        return self.NodeId_
-
-    @NodeId.setter
-    def NodeId(self, val):
-        self.NodeId_ = val
+    NodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    PerformInsertReplace: 'ua.PerformUpdateType' = field(default_factory=lambda:PerformUpdateType.Insert)
+    Filter: 'ua.EventFilter' = field(default_factory=lambda: EventFilter())
+    EventData: 'list[ua.HistoryEventFieldList]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10084,16 +9112,8 @@ class StatusChangeNotification(NotificationData):
 
     data_type = NodeId(ObjectIds.StatusChangeNotification)
 
-    Status: StatusCode = field(default_factory=StatusCode)
-    DiagnosticInfo_: DiagnosticInfo = field(default_factory=DiagnosticInfo)
-
-    @property
-    def DiagnosticInfo(self):
-        return self.DiagnosticInfo_
-
-    @DiagnosticInfo.setter
-    def DiagnosticInfo(self, val):
-        self.DiagnosticInfo_ = val
+    Status: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    DiagnosticInfo: 'ua.DiagnosticInfo' = field(default_factory=lambda: DiagnosticInfo())
 
 
 @dataclass(frozen=FROZEN)
@@ -10109,8 +9129,8 @@ class SubscriptionAcknowledgement:
 
     data_type = NodeId(ObjectIds.SubscriptionAcknowledgement)
 
-    SubscriptionId: IntegerId = 0
-    SequenceNumber: Counter = 0
+    SubscriptionId: 'ua.IntegerId' = 0
+    SequenceNumber: 'ua.Counter' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -10120,7 +9140,7 @@ class PublishParameters:
     :vartype SubscriptionAcknowledgements: SubscriptionAcknowledgement
     """
 
-    SubscriptionAcknowledgements: list[SubscriptionAcknowledgement] = field(default_factory=list)
+    SubscriptionAcknowledgements: 'list[ua.SubscriptionAcknowledgement]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10138,17 +9158,9 @@ class PublishRequest:
 
     data_type = NodeId(ObjectIds.PublishRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.PublishRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: PublishParameters = field(default_factory=PublishParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.PublishRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.PublishParameters' = field(default_factory=lambda: PublishParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -10168,20 +9180,12 @@ class PublishResult:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    SubscriptionId: IntegerId = 0
-    AvailableSequenceNumbers: list[Counter] = field(default_factory=list)
-    MoreNotifications: Boolean = True
-    NotificationMessage_: NotificationMessage = field(default_factory=NotificationMessage)
-    Results: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def NotificationMessage(self):
-        return self.NotificationMessage_
-
-    @NotificationMessage.setter
-    def NotificationMessage(self, val):
-        self.NotificationMessage_ = val
+    SubscriptionId: 'ua.IntegerId' = 0
+    AvailableSequenceNumbers: 'list[ua.Counter]' = field(default_factory=list)
+    MoreNotifications: 'ua.Boolean' = True
+    NotificationMessage: 'ua.NotificationMessage' = field(default_factory=lambda: NotificationMessage())
+    Results: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10199,17 +9203,9 @@ class PublishResponse:
 
     data_type = NodeId(ObjectIds.PublishResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.PublishResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: PublishResult = field(default_factory=PublishResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.PublishResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.PublishResult' = field(default_factory=lambda: PublishResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -10221,8 +9217,8 @@ class RepublishParameters:
     :vartype RetransmitSequenceNumber: Counter
     """
 
-    SubscriptionId: IntegerId = 0
-    RetransmitSequenceNumber: Counter = 0
+    SubscriptionId: 'ua.IntegerId' = 0
+    RetransmitSequenceNumber: 'ua.Counter' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -10240,17 +9236,9 @@ class RepublishRequest:
 
     data_type = NodeId(ObjectIds.RepublishRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.RepublishRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: RepublishParameters = field(default_factory=RepublishParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.RepublishRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.RepublishParameters' = field(default_factory=lambda: RepublishParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -10268,24 +9256,9 @@ class RepublishResponse:
 
     data_type = NodeId(ObjectIds.RepublishResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.RepublishResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    NotificationMessage_: NotificationMessage = field(default_factory=NotificationMessage)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
-    @property
-    def NotificationMessage(self):
-        return self.NotificationMessage_
-
-    @NotificationMessage.setter
-    def NotificationMessage(self, val):
-        self.NotificationMessage_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.RepublishResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    NotificationMessage: 'ua.NotificationMessage' = field(default_factory=lambda: NotificationMessage())
 
 
 @dataclass(frozen=FROZEN)
@@ -10301,16 +9274,8 @@ class TransferResult:
 
     data_type = NodeId(ObjectIds.TransferResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    AvailableSequenceNumbers: list[Counter] = field(default_factory=list)
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    AvailableSequenceNumbers: 'list[ua.Counter]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10322,8 +9287,8 @@ class TransferSubscriptionsParameters:
     :vartype SendInitialValues: Boolean
     """
 
-    SubscriptionIds: list[IntegerId] = field(default_factory=list)
-    SendInitialValues: Boolean = True
+    SubscriptionIds: 'list[ua.IntegerId]' = field(default_factory=list)
+    SendInitialValues: 'ua.Boolean' = True
 
 
 @dataclass(frozen=FROZEN)
@@ -10341,17 +9306,9 @@ class TransferSubscriptionsRequest:
 
     data_type = NodeId(ObjectIds.TransferSubscriptionsRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.TransferSubscriptionsRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: TransferSubscriptionsParameters = field(default_factory=TransferSubscriptionsParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.TransferSubscriptionsRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.TransferSubscriptionsParameters' = field(default_factory=lambda: TransferSubscriptionsParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -10363,8 +9320,8 @@ class TransferSubscriptionsResult:
     :vartype DiagnosticInfos: DiagnosticInfo
     """
 
-    Results: list[TransferResult] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
+    Results: 'list[ua.TransferResult]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10382,17 +9339,9 @@ class TransferSubscriptionsResponse:
 
     data_type = NodeId(ObjectIds.TransferSubscriptionsResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.TransferSubscriptionsResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Parameters: TransferSubscriptionsResult = field(default_factory=TransferSubscriptionsResult)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.TransferSubscriptionsResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Parameters: 'ua.TransferSubscriptionsResult' = field(default_factory=lambda: TransferSubscriptionsResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -10402,7 +9351,7 @@ class DeleteSubscriptionsParameters:
     :vartype SubscriptionIds: IntegerId
     """
 
-    SubscriptionIds: list[IntegerId] = field(default_factory=list)
+    SubscriptionIds: 'list[ua.IntegerId]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10420,17 +9369,9 @@ class DeleteSubscriptionsRequest:
 
     data_type = NodeId(ObjectIds.DeleteSubscriptionsRequest)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.DeleteSubscriptionsRequest_Encoding_DefaultBinary)
-    RequestHeader_: RequestHeader = field(default_factory=RequestHeader)
-    Parameters: DeleteSubscriptionsParameters = field(default_factory=DeleteSubscriptionsParameters)
-
-    @property
-    def RequestHeader(self):
-        return self.RequestHeader_
-
-    @RequestHeader.setter
-    def RequestHeader(self, val):
-        self.RequestHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.DeleteSubscriptionsRequest_Encoding_DefaultBinary)
+    RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
+    Parameters: 'ua.DeleteSubscriptionsParameters' = field(default_factory=lambda: DeleteSubscriptionsParameters())
 
 
 @dataclass(frozen=FROZEN)
@@ -10450,18 +9391,10 @@ class DeleteSubscriptionsResponse:
 
     data_type = NodeId(ObjectIds.DeleteSubscriptionsResponse)
 
-    TypeId: NodeId = FourByteNodeId(ObjectIds.DeleteSubscriptionsResponse_Encoding_DefaultBinary)
-    ResponseHeader_: ResponseHeader = field(default_factory=ResponseHeader)
-    Results: list[StatusCode] = field(default_factory=list)
-    DiagnosticInfos: list[DiagnosticInfo] = field(default_factory=list)
-
-    @property
-    def ResponseHeader(self):
-        return self.ResponseHeader_
-
-    @ResponseHeader.setter
-    def ResponseHeader(self, val):
-        self.ResponseHeader_ = val
+    TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.DeleteSubscriptionsResponse_Encoding_DefaultBinary)
+    ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
+    Results: 'list[ua.StatusCode]' = field(default_factory=list)
+    DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10485,12 +9418,12 @@ class BuildInfo:
 
     data_type = NodeId(ObjectIds.BuildInfo)
 
-    ProductUri: String = None
-    ManufacturerName: String = None
-    ProductName: String = None
-    SoftwareVersion: String = None
-    BuildNumber: String = None
-    BuildDate: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    ProductUri: 'ua.String' = None
+    ManufacturerName: 'ua.String' = None
+    ProductName: 'ua.String' = None
+    SoftwareVersion: 'ua.String' = None
+    BuildNumber: 'ua.String' = None
+    BuildDate: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass(frozen=FROZEN)
@@ -10508,17 +9441,9 @@ class RedundantServerDataType:
 
     data_type = NodeId(ObjectIds.RedundantServerDataType)
 
-    ServerId: String = None
-    ServiceLevel: Byte = 0
-    ServerState_: ServerState = ServerState.Running
-
-    @property
-    def ServerState(self):
-        return self.ServerState_
-
-    @ServerState.setter
-    def ServerState(self, val):
-        self.ServerState_ = val
+    ServerId: 'ua.String' = None
+    ServiceLevel: 'ua.Byte' = 0
+    ServerState: 'ua.ServerState' = field(default_factory=lambda:ServerState.Running)
 
 
 @dataclass(frozen=FROZEN)
@@ -10532,7 +9457,7 @@ class EndpointUrlListDataType:
 
     data_type = NodeId(ObjectIds.EndpointUrlListDataType)
 
-    EndpointUrlList: list[String] = field(default_factory=list)
+    EndpointUrlList: 'list[ua.String]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10548,8 +9473,8 @@ class NetworkGroupDataType:
 
     data_type = NodeId(ObjectIds.NetworkGroupDataType)
 
-    ServerUri: String = None
-    NetworkPaths: list[EndpointUrlListDataType] = field(default_factory=list)
+    ServerUri: 'ua.String' = None
+    NetworkPaths: 'list[ua.EndpointUrlListDataType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -10569,10 +9494,10 @@ class SamplingIntervalDiagnosticsDataType:
 
     data_type = NodeId(ObjectIds.SamplingIntervalDiagnosticsDataType)
 
-    SamplingInterval: Duration = 0
-    MonitoredItemCount: UInt32 = 0
-    MaxMonitoredItemCount: UInt32 = 0
-    DisabledMonitoredItemCount: UInt32 = 0
+    SamplingInterval: 'ua.Duration' = 0
+    MonitoredItemCount: 'ua.UInt32' = 0
+    MaxMonitoredItemCount: 'ua.UInt32' = 0
+    DisabledMonitoredItemCount: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -10608,18 +9533,18 @@ class ServerDiagnosticsSummaryDataType:
 
     data_type = NodeId(ObjectIds.ServerDiagnosticsSummaryDataType)
 
-    ServerViewCount: UInt32 = 0
-    CurrentSessionCount: UInt32 = 0
-    CumulatedSessionCount: UInt32 = 0
-    SecurityRejectedSessionCount: UInt32 = 0
-    RejectedSessionCount: UInt32 = 0
-    SessionTimeoutCount: UInt32 = 0
-    SessionAbortCount: UInt32 = 0
-    CurrentSubscriptionCount: UInt32 = 0
-    CumulatedSubscriptionCount: UInt32 = 0
-    PublishingIntervalCount: UInt32 = 0
-    SecurityRejectedRequestsCount: UInt32 = 0
-    RejectedRequestsCount: UInt32 = 0
+    ServerViewCount: 'ua.UInt32' = 0
+    CurrentSessionCount: 'ua.UInt32' = 0
+    CumulatedSessionCount: 'ua.UInt32' = 0
+    SecurityRejectedSessionCount: 'ua.UInt32' = 0
+    RejectedSessionCount: 'ua.UInt32' = 0
+    SessionTimeoutCount: 'ua.UInt32' = 0
+    SessionAbortCount: 'ua.UInt32' = 0
+    CurrentSubscriptionCount: 'ua.UInt32' = 0
+    CumulatedSubscriptionCount: 'ua.UInt32' = 0
+    PublishingIntervalCount: 'ua.UInt32' = 0
+    SecurityRejectedRequestsCount: 'ua.UInt32' = 0
+    RejectedRequestsCount: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -10643,20 +9568,12 @@ class ServerStatusDataType:
 
     data_type = NodeId(ObjectIds.ServerStatusDataType)
 
-    StartTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    CurrentTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    State: ServerState = ServerState.Running
-    BuildInfo_: BuildInfo = field(default_factory=BuildInfo)
-    SecondsTillShutdown: UInt32 = 0
-    ShutdownReason: LocalizedText = field(default_factory=LocalizedText)
-
-    @property
-    def BuildInfo(self):
-        return self.BuildInfo_
-
-    @BuildInfo.setter
-    def BuildInfo(self, val):
-        self.BuildInfo_ = val
+    StartTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    CurrentTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    State: 'ua.ServerState' = field(default_factory=lambda:ServerState.Running)
+    BuildInfo: 'ua.BuildInfo' = field(default_factory=lambda: BuildInfo())
+    SecondsTillShutdown: 'ua.UInt32' = 0
+    ShutdownReason: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
 @dataclass(frozen=FROZEN)
@@ -10686,15 +9603,15 @@ class SessionSecurityDiagnosticsDataType:
 
     data_type = NodeId(ObjectIds.SessionSecurityDiagnosticsDataType)
 
-    SessionId: NodeId = field(default_factory=NodeId)
-    ClientUserIdOfSession: String = None
-    ClientUserIdHistory: list[String] = field(default_factory=list)
-    AuthenticationMechanism: String = None
+    SessionId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    ClientUserIdOfSession: 'ua.String' = None
+    ClientUserIdHistory: 'list[ua.String]' = field(default_factory=list)
+    AuthenticationMechanism: 'ua.String' = None
     Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    TransportProtocol: String = None
-    SecurityMode: MessageSecurityMode = MessageSecurityMode.Invalid
-    SecurityPolicyUri: String = None
-    ClientCertificate: ByteString = None
+    TransportProtocol: 'ua.String' = None
+    SecurityMode: 'ua.MessageSecurityMode' = field(default_factory=lambda:MessageSecurityMode.Invalid)
+    SecurityPolicyUri: 'ua.String' = None
+    ClientCertificate: 'ua.ByteString' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -10710,8 +9627,8 @@ class ServiceCounterDataType:
 
     data_type = NodeId(ObjectIds.ServiceCounterDataType)
 
-    TotalCount: UInt32 = 0
-    ErrorCount: UInt32 = 0
+    TotalCount: 'ua.UInt32' = 0
+    ErrorCount: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -10809,49 +9726,49 @@ class SessionDiagnosticsDataType:
 
     data_type = NodeId(ObjectIds.SessionDiagnosticsDataType)
 
-    SessionId: NodeId = field(default_factory=NodeId)
-    SessionName: String = None
-    ClientDescription: ApplicationDescription = field(default_factory=ApplicationDescription)
-    ServerUri: String = None
-    EndpointUrl: String = None
-    LocaleIds: list[LocaleId] = field(default_factory=list)
-    ActualSessionTimeout: Duration = 0
-    MaxResponseMessageSize: UInt32 = 0
-    ClientConnectionTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    ClientLastContactTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    CurrentSubscriptionsCount: UInt32 = 0
-    CurrentMonitoredItemsCount: UInt32 = 0
-    CurrentPublishRequestsInQueue: UInt32 = 0
-    TotalRequestCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    UnauthorizedRequestCount: UInt32 = 0
-    ReadCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    HistoryReadCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    WriteCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    HistoryUpdateCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    CallCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    CreateMonitoredItemsCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    ModifyMonitoredItemsCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    SetMonitoringModeCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    SetTriggeringCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    DeleteMonitoredItemsCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    CreateSubscriptionCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    ModifySubscriptionCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    SetPublishingModeCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    PublishCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    RepublishCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    TransferSubscriptionsCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    DeleteSubscriptionsCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    AddNodesCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    AddReferencesCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    DeleteNodesCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    DeleteReferencesCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    BrowseCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    BrowseNextCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    TranslateBrowsePathsToNodeIdsCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    QueryFirstCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    QueryNextCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    RegisterNodesCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
-    UnregisterNodesCount: ServiceCounterDataType = field(default_factory=ServiceCounterDataType)
+    SessionId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    SessionName: 'ua.String' = None
+    ClientDescription: 'ua.ApplicationDescription' = field(default_factory=lambda: ApplicationDescription())
+    ServerUri: 'ua.String' = None
+    EndpointUrl: 'ua.String' = None
+    LocaleIds: 'list[ua.LocaleId]' = field(default_factory=list)
+    ActualSessionTimeout: 'ua.Duration' = 0
+    MaxResponseMessageSize: 'ua.UInt32' = 0
+    ClientConnectionTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    ClientLastContactTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    CurrentSubscriptionsCount: 'ua.UInt32' = 0
+    CurrentMonitoredItemsCount: 'ua.UInt32' = 0
+    CurrentPublishRequestsInQueue: 'ua.UInt32' = 0
+    TotalRequestCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    UnauthorizedRequestCount: 'ua.UInt32' = 0
+    ReadCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    HistoryReadCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    WriteCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    HistoryUpdateCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    CallCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    CreateMonitoredItemsCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    ModifyMonitoredItemsCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    SetMonitoringModeCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    SetTriggeringCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    DeleteMonitoredItemsCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    CreateSubscriptionCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    ModifySubscriptionCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    SetPublishingModeCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    PublishCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    RepublishCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    TransferSubscriptionsCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    DeleteSubscriptionsCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    AddNodesCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    AddReferencesCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    DeleteNodesCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    DeleteReferencesCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    BrowseCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    BrowseNextCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    TranslateBrowsePathsToNodeIdsCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    QueryFirstCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    QueryNextCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    RegisterNodesCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
+    UnregisterNodesCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
 
 
 @dataclass(frozen=FROZEN)
@@ -10867,23 +9784,8 @@ class StatusResult:
 
     data_type = NodeId(ObjectIds.StatusResult)
 
-    StatusCode_: StatusCode = field(default_factory=StatusCode)
-    DiagnosticInfo_: DiagnosticInfo = field(default_factory=DiagnosticInfo)
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
-
-    @StatusCode.setter
-    def StatusCode(self, val):
-        self.StatusCode_ = val
-    @property
-    def DiagnosticInfo(self):
-        return self.DiagnosticInfo_
-
-    @DiagnosticInfo.setter
-    def DiagnosticInfo(self, val):
-        self.DiagnosticInfo_ = val
+    StatusCode: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
+    DiagnosticInfo: 'ua.DiagnosticInfo' = field(default_factory=lambda: DiagnosticInfo())
 
 
 @dataclass(frozen=FROZEN)
@@ -10957,37 +9859,37 @@ class SubscriptionDiagnosticsDataType:
 
     data_type = NodeId(ObjectIds.SubscriptionDiagnosticsDataType)
 
-    SessionId: NodeId = field(default_factory=NodeId)
-    SubscriptionId: UInt32 = 0
-    Priority: Byte = 0
-    PublishingInterval: Duration = 0
-    MaxKeepAliveCount: UInt32 = 0
-    MaxLifetimeCount: UInt32 = 0
-    MaxNotificationsPerPublish: UInt32 = 0
-    PublishingEnabled: Boolean = True
-    ModifyCount: UInt32 = 0
-    EnableCount: UInt32 = 0
-    DisableCount: UInt32 = 0
-    RepublishRequestCount: UInt32 = 0
-    RepublishMessageRequestCount: UInt32 = 0
-    RepublishMessageCount: UInt32 = 0
-    TransferRequestCount: UInt32 = 0
-    TransferredToAltClientCount: UInt32 = 0
-    TransferredToSameClientCount: UInt32 = 0
-    PublishRequestCount: UInt32 = 0
-    DataChangeNotificationsCount: UInt32 = 0
-    EventNotificationsCount: UInt32 = 0
-    NotificationsCount: UInt32 = 0
-    LatePublishRequestCount: UInt32 = 0
-    CurrentKeepAliveCount: UInt32 = 0
-    CurrentLifetimeCount: UInt32 = 0
-    UnacknowledgedMessageCount: UInt32 = 0
-    DiscardedMessageCount: UInt32 = 0
-    MonitoredItemCount: UInt32 = 0
-    DisabledMonitoredItemCount: UInt32 = 0
-    MonitoringQueueOverflowCount: UInt32 = 0
-    NextSequenceNumber: UInt32 = 0
-    EventQueueOverflowCount: UInt32 = 0
+    SessionId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    SubscriptionId: 'ua.UInt32' = 0
+    Priority: 'ua.Byte' = 0
+    PublishingInterval: 'ua.Duration' = 0
+    MaxKeepAliveCount: 'ua.UInt32' = 0
+    MaxLifetimeCount: 'ua.UInt32' = 0
+    MaxNotificationsPerPublish: 'ua.UInt32' = 0
+    PublishingEnabled: 'ua.Boolean' = True
+    ModifyCount: 'ua.UInt32' = 0
+    EnableCount: 'ua.UInt32' = 0
+    DisableCount: 'ua.UInt32' = 0
+    RepublishRequestCount: 'ua.UInt32' = 0
+    RepublishMessageRequestCount: 'ua.UInt32' = 0
+    RepublishMessageCount: 'ua.UInt32' = 0
+    TransferRequestCount: 'ua.UInt32' = 0
+    TransferredToAltClientCount: 'ua.UInt32' = 0
+    TransferredToSameClientCount: 'ua.UInt32' = 0
+    PublishRequestCount: 'ua.UInt32' = 0
+    DataChangeNotificationsCount: 'ua.UInt32' = 0
+    EventNotificationsCount: 'ua.UInt32' = 0
+    NotificationsCount: 'ua.UInt32' = 0
+    LatePublishRequestCount: 'ua.UInt32' = 0
+    CurrentKeepAliveCount: 'ua.UInt32' = 0
+    CurrentLifetimeCount: 'ua.UInt32' = 0
+    UnacknowledgedMessageCount: 'ua.UInt32' = 0
+    DiscardedMessageCount: 'ua.UInt32' = 0
+    MonitoredItemCount: 'ua.UInt32' = 0
+    DisabledMonitoredItemCount: 'ua.UInt32' = 0
+    MonitoringQueueOverflowCount: 'ua.UInt32' = 0
+    NextSequenceNumber: 'ua.UInt32' = 0
+    EventQueueOverflowCount: 'ua.UInt32' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -11005,9 +9907,9 @@ class ModelChangeStructureDataType:
 
     data_type = NodeId(ObjectIds.ModelChangeStructureDataType)
 
-    Affected: NodeId = field(default_factory=NodeId)
-    AffectedType: NodeId = field(default_factory=NodeId)
-    Verb: Byte = 0
+    Affected: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    AffectedType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    Verb: 'ua.Byte' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -11023,8 +9925,8 @@ class SemanticChangeStructureDataType:
 
     data_type = NodeId(ObjectIds.SemanticChangeStructureDataType)
 
-    Affected: NodeId = field(default_factory=NodeId)
-    AffectedType: NodeId = field(default_factory=NodeId)
+    Affected: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    AffectedType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
 
 
 @dataclass(frozen=FROZEN)
@@ -11040,8 +9942,8 @@ class Range:
 
     data_type = NodeId(ObjectIds.Range)
 
-    Low: Double = 0
-    High: Double = 0
+    Low: 'ua.Double' = 0
+    High: 'ua.Double' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -11061,10 +9963,10 @@ class EUInformation:
 
     data_type = NodeId(ObjectIds.EUInformation)
 
-    NamespaceUri: String = None
-    UnitId: Int32 = 0
-    DisplayName: LocalizedText = field(default_factory=LocalizedText)
-    Description: LocalizedText = field(default_factory=LocalizedText)
+    NamespaceUri: 'ua.String' = None
+    UnitId: 'ua.Int32' = 0
+    DisplayName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
 @dataclass(frozen=FROZEN)
@@ -11080,8 +9982,8 @@ class ComplexNumberType:
 
     data_type = NodeId(ObjectIds.ComplexNumberType)
 
-    Real: Float = 0
-    Imaginary: Float = 0
+    Real: 'ua.Float' = 0
+    Imaginary: 'ua.Float' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -11097,8 +9999,8 @@ class DoubleComplexNumberType:
 
     data_type = NodeId(ObjectIds.DoubleComplexNumberType)
 
-    Real: Double = 0
-    Imaginary: Double = 0
+    Real: 'ua.Double' = 0
+    Imaginary: 'ua.Double' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -11120,11 +10022,11 @@ class AxisInformation:
 
     data_type = NodeId(ObjectIds.AxisInformation)
 
-    EngineeringUnits: EUInformation = field(default_factory=EUInformation)
-    EURange: Range = field(default_factory=Range)
-    Title: LocalizedText = field(default_factory=LocalizedText)
-    AxisScaleType: AxisScaleEnumeration = AxisScaleEnumeration.Linear
-    AxisSteps: list[Double] = field(default_factory=list)
+    EngineeringUnits: 'ua.EUInformation' = field(default_factory=lambda: EUInformation())
+    EURange: 'ua.Range' = field(default_factory=lambda: Range())
+    Title: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    AxisScaleType: 'ua.AxisScaleEnumeration' = field(default_factory=lambda:AxisScaleEnumeration.Linear)
+    AxisSteps: 'list[ua.Double]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -11140,8 +10042,8 @@ class XVType:
 
     data_type = NodeId(ObjectIds.XVType)
 
-    X: Double = 0
-    Value: Float = 0
+    X: 'ua.Double' = 0
+    Value: 'ua.Float' = 0
 
 
 @dataclass(frozen=FROZEN)
@@ -11171,16 +10073,16 @@ class ProgramDiagnosticDataType:
 
     data_type = NodeId(ObjectIds.ProgramDiagnosticDataType)
 
-    CreateSessionId: NodeId = field(default_factory=NodeId)
-    CreateClientName: String = None
-    InvocationCreationTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    LastTransitionTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    LastMethodCall: String = None
-    LastMethodSessionId: NodeId = field(default_factory=NodeId)
-    LastMethodInputArguments: list[Argument] = field(default_factory=list)
-    LastMethodOutputArguments: list[Argument] = field(default_factory=list)
-    LastMethodCallTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    LastMethodReturnStatus: StatusResult = field(default_factory=StatusResult)
+    CreateSessionId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    CreateClientName: 'ua.String' = None
+    InvocationCreationTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    LastTransitionTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    LastMethodCall: 'ua.String' = None
+    LastMethodSessionId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    LastMethodInputArguments: 'list[ua.Argument]' = field(default_factory=list)
+    LastMethodOutputArguments: 'list[ua.Argument]' = field(default_factory=list)
+    LastMethodCallTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    LastMethodReturnStatus: 'ua.StatusResult' = field(default_factory=lambda: StatusResult())
 
 
 @dataclass(frozen=FROZEN)
@@ -11216,18 +10118,18 @@ class ProgramDiagnostic2DataType:
 
     data_type = NodeId(ObjectIds.ProgramDiagnostic2DataType)
 
-    CreateSessionId: NodeId = field(default_factory=NodeId)
-    CreateClientName: String = None
-    InvocationCreationTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    LastTransitionTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    LastMethodCall: String = None
-    LastMethodSessionId: NodeId = field(default_factory=NodeId)
-    LastMethodInputArguments: list[Argument] = field(default_factory=list)
-    LastMethodOutputArguments: list[Argument] = field(default_factory=list)
-    LastMethodInputValues: list[Variant] = field(default_factory=list)
-    LastMethodOutputValues: list[Variant] = field(default_factory=list)
-    LastMethodCallTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
-    LastMethodReturnStatus: StatusCode = field(default_factory=StatusCode)
+    CreateSessionId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    CreateClientName: 'ua.String' = None
+    InvocationCreationTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    LastTransitionTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    LastMethodCall: 'ua.String' = None
+    LastMethodSessionId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    LastMethodInputArguments: 'list[ua.Argument]' = field(default_factory=list)
+    LastMethodOutputArguments: 'list[ua.Argument]' = field(default_factory=list)
+    LastMethodInputValues: 'list[ua.Variant]' = field(default_factory=list)
+    LastMethodOutputValues: 'list[ua.Variant]' = field(default_factory=list)
+    LastMethodCallTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    LastMethodReturnStatus: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
 
 
 @dataclass(frozen=FROZEN)
@@ -11245,9 +10147,9 @@ class Annotation:
 
     data_type = NodeId(ObjectIds.Annotation)
 
-    Message: String = None
-    UserName: String = None
-    AnnotationTime: UtcTime = field(default_factory=lambda: datetime.now(timezone.utc))
+    Message: 'ua.String' = None
+    UserName: 'ua.String' = None
+    AnnotationTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 nid = FourByteNodeId(ObjectIds.Union_Encoding_DefaultBinary)

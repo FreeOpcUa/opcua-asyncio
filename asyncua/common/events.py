@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from asyncua import ua
 import asyncua
 from ..ua.uaerrors import UaError
@@ -153,7 +153,7 @@ async def get_filter_from_event_type(eventtypes: list["Node"], where_clause_gene
 
 async def _append_new_attribute_to_select_clauses(
     select_clauses: list[ua.SimpleAttributeOperand],
-    already_selected: Dict[str, str],
+    already_selected: dict[str, str],
     browse_path: list[ua.QualifiedName],
 ):
     string_path = "/".join(map(str, browse_path))
@@ -170,7 +170,7 @@ async def _select_clause_from_childs(
     child: "Node",
     refs: list[ua.ReferenceDescription],
     select_clauses: list[ua.SimpleAttributeOperand],
-    already_selected: Dict[str, str],
+    already_selected: dict[str, str],
     browse_path: list[ua.QualifiedName],
 ):
     for ref in refs:

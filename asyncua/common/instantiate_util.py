@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import logging
 
-from typing import Union
 
 import asyncua
 from asyncua import ua
@@ -26,7 +25,7 @@ async def instantiate(
     parent: asyncua.Node,
     node_type: asyncua.Node,
     nodeid: ua.NodeId | None = None,
-    bname: Union[ua.QualifiedName, str] | None = None,
+    bname: ua.QualifiedName | str | None = None,
     dname: ua.LocalizedText | None = None,
     idx: int = 0,
     instantiate_optional: bool = True,

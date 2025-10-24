@@ -8,7 +8,6 @@ import struct
 import socket
 from dataclasses import InitVar, dataclass
 from ipaddress import ip_address
-from typing import Union
 from urllib.parse import urlparse
 
 from ..ua import KeyValuePair
@@ -94,7 +93,9 @@ class UdpSettings:
         kvs.append(KeyValuePair(QualifiedName("Loopback"), Variant(self.Loopback)))
         return kvs
 
-    def create_socket(self) -> tuple[socket.socket, Union[tuple[str, int], tuple[str, int, int, int]], tuple[str, int]]:
+    def create_socket(
+        self,
+    ) -> tuple[socket.socket, tuple[str, int] | tuple[str, int, int, int] | tuple[int, bytes], tuple[str, int]]:
         family, typ, proto, _, addr = socket.getaddrinfo(self.Addr[0], self.Addr[1], 0, socket.SOCK_DGRAM)[0]
         sock = socket.socket(family, typ, proto)
         if self.Reuse:
@@ -169,7 +170,7 @@ class OpcUdp(asyncio.DatagramProtocol):
     def set_receiver(self, receiver: PubSubReceiver) -> None:
         self.receiver = receiver
 
-    def get_publisher_id(self) -> Union[Byte, UInt16, UInt32, UInt64, String]:
+    def get_publisher_id(self) -> Byte | UInt16 | UInt32 | UInt64 | String:
         """
         Returns the publisher id for creating messages
         """

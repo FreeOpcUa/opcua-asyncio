@@ -167,7 +167,7 @@ class CodeGenerator:
             f'''    node = ua.AddNodesItem(\n'''
             f'''        RequestedNewNodeId={nodeid_code(obj.nodeid)},\n'''
             f'''        BrowseName={bname_code(obj.browsename)},\n'''
-            f'''        NodeClass_=NodeClass.{obj.nodetype[2:]},'''
+            f'''        NodeClass=NodeClass.{obj.nodetype[2:]},'''
             )
         if obj.parent and obj.parentlink:
             self.writecode(

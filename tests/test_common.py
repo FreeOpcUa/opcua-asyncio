@@ -746,7 +746,7 @@ async def test_write_value(opc):
 async def test_write_value_statuscode_bad(opc):
     o = opc.opc.nodes.objects
     var = ua.Variant("Some value that should not be set!")
-    dvar = ua.DataValue(None, StatusCode_=ua.StatusCode(ua.StatusCodes.BadDeviceFailure))
+    dvar = ua.DataValue(None, StatusCode=ua.StatusCode(ua.StatusCodes.BadDeviceFailure))
     v = await o.add_variable(3, "VariableValueBad", var)
     await v.write_value(dvar)
     with pytest.raises(ua.UaStatusCodeError) as error_read:

@@ -2,7 +2,6 @@
 Protocols which are used to decouple components from pubsub
 """
 
-from typing import Union
 from ..ua.uatypes import Byte, ExtensionObject, String, UInt16, UInt32, UInt64
 from ..ua.uaprotocol_auto import PubSubState
 from .uadp import UadpNetworkMessage
@@ -28,7 +27,7 @@ class PubSubSender(Protocol):
         """
         raise NotImplementedError
 
-    def get_publisher_id(self) -> Union[Byte, UInt16, UInt32, UInt64, String]:
+    def get_publisher_id(self) -> Byte | UInt16 | UInt32 | UInt64 | String:
         """
         Returns the publisher id for creating messages
         """
