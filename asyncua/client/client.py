@@ -3,7 +3,7 @@ import dataclasses
 import logging
 import socket
 from pathlib import Path
-from typing import Any, Dict, Type, Union, cast
+from typing import Any, cast
 from collections.abc import Callable, Coroutine, Iterable, Sequence
 from urllib.parse import ParseResult, unquote, urlparse
 
@@ -195,13 +195,13 @@ class Client:
 
     async def set_security(
         self,
-        policy: Type[security_policies.SecurityPolicy],
-        certificate: Union[str, uacrypto.CertProperties, bytes, Path],
-        private_key: Union[str, uacrypto.CertProperties, bytes, Path],
-        private_key_password: Union[str, bytes] | None = None,
-        server_certificate: Union[str, uacrypto.CertProperties, bytes] | None = None,
+        policy: type[security_policies.SecurityPolicy],
+        certificate: str | uacrypto.CertProperties | bytes | Path,
+        private_key: str | uacrypto.CertProperties | bytes | Path,
+        private_key_password: str | bytes | None = None,
+        server_certificate: str | uacrypto.CertProperties | bytes | None = None,
         mode: ua.MessageSecurityMode = ua.MessageSecurityMode.SignAndEncrypt,
-        certificate_chain: Sequence[Union[str, uacrypto.CertProperties, bytes, Path]] | None = None,
+        certificate_chain: Sequence[str | uacrypto.CertProperties | bytes | Path] | None = None,
     ) -> None:
         """
         Set SecureConnection mode.
@@ -237,7 +237,7 @@ class Client:
 
     async def _set_security(
         self,
-        policy: Type[security_policies.SecurityPolicy],
+        policy: type[security_policies.SecurityPolicy],
         certificate: uacrypto.CertProperties,
         private_key: uacrypto.CertProperties,
         server_cert: uacrypto.CertProperties,
@@ -275,7 +275,7 @@ class Client:
         )
 
     async def load_private_key(
-        self, path: Path, password: Union[str, bytes] | None = None, extension: str | None = None
+        self, path: Path, password: str | bytes | None = None, extension: str | None = None
     ) -> None:
         """
         Load user private key. This is used for authenticating using certificate
@@ -770,7 +770,7 @@ class Client:
     def get_server_node(self) -> Node:
         return self.get_node(ua.FourByteNodeId(ua.ObjectIds.Server))
 
-    def get_node(self, nodeid: Union[Node, ua.NodeId, str, int]) -> Node:
+    def get_node(self, nodeid: Node | ua.NodeId | str | int) -> Node:
         """
         Get node using NodeId object or a string representing a NodeId.
         """
@@ -778,7 +778,7 @@ class Client:
 
     async def create_subscription(
         self,
-        period: Union[ua.CreateSubscriptionParameters, float],
+        period: ua.CreateSubscriptionParameters | float,
         handler: SubscriptionHandler,
         publishing: bool = True,
     ) -> Subscription:
@@ -917,7 +917,7 @@ class Client:
 
     async def load_data_type_definitions(
         self, node: Node | None = None, overwrite_existing: bool = False
-    ) -> Dict[str, Type]:
+    ) -> dict[str, type]:
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
@@ -925,7 +925,7 @@ class Client:
         """
         return await load_data_type_definitions(self, node, overwrite_existing=overwrite_existing)
 
-    async def load_enums(self) -> Dict[str, Type]:
+    async def load_enums(self) -> dict[str, type]:
         """
         generate Python enums for custom enums on server.
         This enums will be available in ua module
@@ -1010,7 +1010,7 @@ class Client:
         return list(zip(nodes, results))
 
     async def translate_browsepaths(
-        self, starting_node: ua.NodeId, relative_paths: Iterable[Union[ua.RelativePath, str]]
+        self, starting_node: ua.NodeId, relative_paths: Iterable[ua.RelativePath | str]
     ) -> list[ua.BrowsePathResult]:
         bpaths = []
         for p in relative_paths:

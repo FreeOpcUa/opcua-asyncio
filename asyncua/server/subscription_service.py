@@ -4,7 +4,6 @@ server side implementation of subscription service
 
 import asyncio
 import logging
-from typing import Dict
 from collections.abc import Iterable
 
 from asyncua import ua
@@ -22,7 +21,7 @@ class SubscriptionService:
     def __init__(self, aspace: AddressSpace):
         self.logger = logging.getLogger(__name__)
         self.aspace: AddressSpace = aspace
-        self.subscriptions: Dict[int, InternalSubscription] = {}
+        self.subscriptions: dict[int, InternalSubscription] = {}
         self._sub_id_counter = 77
         self.standard_events = {}
         self._conditions = {}

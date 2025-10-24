@@ -6,14 +6,14 @@ from __future__ import annotations
 
 from asyncio import iscoroutinefunction
 from functools import wraps
-from typing import Any, Union
+from typing import Any
 from collections.abc import Iterable
 
 import asyncua
 from asyncua import ua
 
 
-async def call_method(parent: asyncua.Node, methodid: Union[ua.NodeId, ua.QualifiedName, str], *args) -> Any:
+async def call_method(parent: asyncua.Node, methodid: ua.NodeId | ua.QualifiedName | str, *args) -> Any:
     """
     Call an OPC-UA method. methodid is browse name of child method or the
     nodeid of method as a NodeId object
@@ -33,7 +33,7 @@ async def call_method(parent: asyncua.Node, methodid: Union[ua.NodeId, ua.Qualif
 
 
 async def call_method_full(
-    parent: asyncua.Node, methodid: Union[ua.NodeId, ua.QualifiedName, str], *args
+    parent: asyncua.Node, methodid: ua.NodeId | ua.QualifiedName | str, *args
 ) -> ua.CallMethodResult:
     """
     Call an OPC-UA method. methodid is browse name of child method or the
@@ -43,7 +43,7 @@ async def call_method_full(
     returns a CallMethodResult object with converted OutputArguments
     : param: parent `Node`
     """
-    if isinstance(methodid, (str, ua.uatypes.QualifiedName)):
+    if isinstance(methodid, str | ua.uatypes.QualifiedName):
         methodid = (await parent.get_child(methodid)).nodeid
     elif hasattr(methodid, "nodeid"):
         methodid = methodid.nodeid

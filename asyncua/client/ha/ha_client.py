@@ -10,7 +10,6 @@ from sortedcontainers import SortedDict  # type: ignore
 from asyncua import Node, ua, Client
 from asyncua.client.ua_client import UASocketProtocol
 from asyncua.ua.uaerrors import BadSessionClosed, BadSessionNotActivated
-from typing import Dict, Set, Type, Union
 from collections.abc import Generator, Iterable, Sequence
 
 from .reconciliator import Reconciliator
@@ -66,7 +65,7 @@ class ServerInfo:
 
 @dataclass(frozen=True, eq=True)
 class HaSecurityConfig:
-    policy: Type[SecurityPolicy] | None = None
+    policy: type[SecurityPolicy] | None = None
     certificate: CertProperties | None = None
     private_key: CertProperties | None = None
     server_certificate: CertProperties | None = None
@@ -110,9 +109,9 @@ class HaClient:
 
     def __init__(self, config: HaConfig, security: HaSecurityConfig | None = None) -> None:
         self._config: HaConfig = config
-        self._keepalive_task: Dict[KeepAlive, asyncio.Task] = {}
-        self._manager_task: Dict[HaManager, asyncio.Task] = {}
-        self._reconciliator_task: Dict[Reconciliator, asyncio.Task] = {}
+        self._keepalive_task: dict[KeepAlive, asyncio.Task] = {}
+        self._manager_task: dict[HaManager, asyncio.Task] = {}
+        self._reconciliator_task: dict[Reconciliator, asyncio.Task] = {}
         self._gen_sub: Generator[str, None, None] = self.generate_sub_name()
 
         # An event loop must be set in the current thread
@@ -120,12 +119,12 @@ class HaClient:
         self._ideal_map_lock: asyncio.Lock = asyncio.Lock()
         self._client_lock: asyncio.Lock = asyncio.Lock()
 
-        self.clients: Dict[Client, ServerInfo] = {}
+        self.clients: dict[Client, ServerInfo] = {}
         self.active_client: Client | None = None
-        # full type: Dict[str, SortedDict[str, VirtualSubscription]]
-        self.ideal_map: Dict[str, SortedDict] = {}
-        self.sub_names: Set[str] = set()
-        self.url_to_reset: Set[str] = set()
+        # full type: dict[str, Sorteddict[str, VirtualSubscription]]
+        self.ideal_map: dict[str, SortedDict] = {}
+        self.sub_names: set[str] = set()
+        self.url_to_reset: set[str] = set()
         self.is_running = False
 
         if config.ha_mode != HaMode.WARM:
@@ -164,7 +163,7 @@ class HaClient:
         self.is_running = True
 
     async def stop(self):
-        to_stop: Sequence[Union[KeepAlive, HaManager, Reconciliator]] = chain(
+        to_stop: Sequence[KeepAlive | HaManager | Reconciliator] = chain(
             self._keepalive_task, self._manager_task, self._reconciliator_task
         )
         stop = [p.stop() for p in to_stop]
@@ -192,7 +191,7 @@ class HaClient:
 
     def set_security(
         self,
-        policy: Type[SecurityPolicy],
+        policy: type[SecurityPolicy],
         certificate: CertProperties,
         private_key: CertProperties,
         server_certificate: CertProperties | None = None,
@@ -225,7 +224,7 @@ class HaClient:
     async def subscribe_data_change(
         self,
         sub_name: str,
-        nodes: Union[Iterable[Node], Iterable[str]],
+        nodes: Iterable[Node] | Iterable[str],
         attr=ua.AttributeIds.Value,
         queuesize=0,
     ) -> None:
@@ -269,7 +268,7 @@ class HaClient:
             await client.set_security(**self.security_config.__dict__)
         await client.connect()
 
-    async def unsubscribe(self, nodes: Union[Iterable[Node], Iterable[str]]) -> None:
+    async def unsubscribe(self, nodes: Iterable[Node] | Iterable[str]) -> None:
         async with self._ideal_map_lock:
             sub_to_nodes = {}
             first_url = self.urls[0]

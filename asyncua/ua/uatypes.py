@@ -2,6 +2,8 @@
 implement ua datatypes
 """
 
+from __future__ import annotations
+
 import binascii
 import collections
 import itertools
@@ -12,11 +14,14 @@ import uuid
 from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from enum import IntEnum
-from typing import Any, Generic, Union
+from typing import Any, Generic, Union, TYPE_CHECKING
 import types
 
 from asyncua.ua.object_ids import ObjectIds
+from enum import IntEnum
+
+if TYPE_CHECKING:
+    import asyncua.ua as ua
 
 # hack to support python < 3.8
 if sys.version_info.minor < 10:
@@ -376,7 +381,7 @@ class StatusCode:
     :vartype doc: string
     """
 
-    value: UInt32 = status_codes.StatusCodes.Good
+    value: "ua.UInt32" = status_codes.StatusCodes.Good
 
     def __post_init__(self):
         if isinstance(self.value, str):
@@ -439,9 +444,6 @@ class NodeIdType(IntEnum):
     ByteString = 5
 
 
-_NodeIdType = NodeIdType  # ugly hack
-
-
 @dataclass(frozen=True, eq=False, order=False)
 class NodeId:
     """
@@ -464,9 +466,9 @@ class NodeId:
     :vartype ServerIndex: Int
     """
 
-    Identifier: Union[Int32, String, Guid, ByteString] = 0
-    NamespaceIndex: Int16 = 0
-    NodeIdType: _NodeIdType = None
+    Identifier: "ua.Int32 | ua.String | ua.Guid | ua.ByteString" = 0
+    NamespaceIndex: "ua.Int16" = 0
+    NodeIdType: "ua.NodeIdType" = None
 
     def __post_init__(self):
         if self.NodeIdType is None:
@@ -702,8 +704,8 @@ class QualifiedName:
     A string qualified with a namespace index.
     """
 
-    NamespaceIndex: UInt16 = 0
-    Name: String = ""
+    NamespaceIndex: "ua.Int16" = 0
+    Name: "ua.String" = ""
 
     def __init__(self, Name=None, NamespaceIndex=0):
         object.__setattr__(self, "Name", Name)
@@ -712,7 +714,7 @@ class QualifiedName:
             # originally the order or argument was inversed, try to support it
             _logger.warning("QualifiedName are str, int, while int, str is expected, switching")
 
-        if not isinstance(self.NamespaceIndex, int) or not isinstance(self.Name, (str, type(None))):
+        if not isinstance(self.NamespaceIndex, int) or not isinstance(self.Name, str | type(None)):
             raise ValueError(f"QualifiedName constructor args have wrong types, {self}")
 
     def to_string(self):
@@ -749,10 +751,10 @@ class RelativePathElement:
 
     data_type = NodeId(537)
 
-    ReferenceTypeId: NodeId = field(default_factory=NodeId)
-    IsInverse: Boolean = True
-    IncludeSubtypes: Boolean = True
-    TargetName: QualifiedName = field(default_factory=QualifiedName)
+    ReferenceTypeId: "ua.NodeId" = field(default_factory=NodeId)
+    IsInverse: "ua.Boolean" = True
+    IncludeSubtypes: "ua.Boolean" = True
+    TargetName: "ua.QualifiedName" = field(default_factory=QualifiedName)
 
 
 @dataclass(frozen=False)
@@ -766,7 +768,7 @@ class RelativePath:
 
     data_type = NodeId(540)
 
-    Elements: list[RelativePathElement] = field(default_factory=list)
+    Elements: "list[ua.RelativePathElement]" = field(default_factory=list)
 
     @staticmethod
     def from_string(string: str):
@@ -787,9 +789,9 @@ class LocalizedText:
     A string qualified with a namespace index.
     """
 
-    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    Locale: String | None = None
-    Text: String | None = None
+    Encoding: "ua.Byte" = field(default=0, repr=False, init=False, compare=False)
+    Locale: "ua.String| None" = None
+    Text: "ua.String | None" = None
 
     def __init__(self, Text=None, Locale=None):
         # need to write init method since args ar inverted in original implementation
@@ -833,9 +835,9 @@ class ExtensionObject:
     :vartype Body: bytes
     """
 
-    TypeId: NodeId = NodeId()
-    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    Body: ByteString | None = None
+    TypeId: "ua.NodeId" = NodeId()
+    Encoding: "ua.Byte" = field(default=0, repr=False, init=False, compare=False)
+    Body: "ua.ByteString | None" = None
 
     def __bool__(self):
         return self.Body is not None
@@ -947,13 +949,13 @@ class Variant:
 
     # FIXME: typing is wrong here
     Value: Any = None
-    VariantType: "VariantType" = None
-    Dimensions: list[Int32] | None = None
+    VariantType: "ua.VariantType" = None
+    Dimensions: "list[ua.Int32]" | None = None
     is_array: bool | None = None
 
     def __post_init__(self):
         if self.is_array is None:
-            if isinstance(self.Value, (list, tuple)) or self.Dimensions:
+            if isinstance(self.Value, list | tuple) or self.Dimensions:
                 object.__setattr__(self, "is_array", True)
             else:
                 object.__setattr__(self, "is_array", False)
@@ -962,7 +964,7 @@ class Variant:
             object.__setattr__(self, "VariantType", self.Value.VariantType)
             object.__setattr__(self, "Value", self.Value.Value)
 
-        if not isinstance(self.VariantType, (VariantType, VariantTypeCustom)):
+        if not isinstance(self.VariantType, VariantType | VariantTypeCustom):
             if self.VariantType is None:
                 object.__setattr__(self, "VariantType", self._guess_type(self.Value))
             else:
@@ -985,7 +987,7 @@ class Variant:
             ):
                 raise UaError(f"Non array Variant of type {self.VariantType} cannot have value None")
 
-        if self.Dimensions is None and isinstance(self.Value, (list, tuple)):
+        if self.Dimensions is None and isinstance(self.Value, list | tuple):
             dims = get_shape(self.Value)
             if len(dims) > 1:
                 object.__setattr__(self, "Dimensions", dims)
@@ -1000,9 +1002,9 @@ class Variant:
 
     def _guess_type(self, val):
         error_val = None
-        if isinstance(val, (list, tuple)):
+        if isinstance(val, list | tuple):
             error_val = val
-        while isinstance(val, (list, tuple)):
+        while isinstance(val, list | tuple):
             if len(val) == 0:
                 raise UaError(f"could not guess UA type of variable {error_val}")
             val = val[0]
@@ -1039,7 +1041,7 @@ class Variant:
 
 def flatten_and_get_shape(mylist):
     dims = [len(mylist)]
-    while isinstance(mylist[0], (list, tuple)):
+    while isinstance(mylist[0], list | tuple):
         dims.append(len(mylist[0]))
         mylist = [item for sublist in mylist for item in sublist]
         if len(mylist) == 0:
@@ -1052,7 +1054,7 @@ def flatten(mylist):
         return None
     if len(mylist) == 0:
         return mylist
-    while isinstance(mylist[0], (list, tuple)):
+    while isinstance(mylist[0], list | tuple):
         mylist = [item for sublist in mylist for item in sublist]
         if len(mylist) == 0:
             break
@@ -1061,7 +1063,7 @@ def flatten(mylist):
 
 def get_shape(mylist):
     dims = []
-    while isinstance(mylist, (list, tuple)):
+    while isinstance(mylist, list | tuple):
         dims.append(len(mylist))
         if len(mylist) == 0:
             break
@@ -1084,7 +1086,7 @@ class DataValue:
 
     :ivar Value:
     :vartype Value: Variant
-    :ivar StatusCode_:
+    :ivar StatusCode:
     :vartype StatusCode: StatusCode
     :ivar SourceTimestamp:
     :vartype SourceTimestamp: datetime
@@ -1098,25 +1100,19 @@ class DataValue:
 
     data_type = NodeId(Int32(ObjectIds.DataValue))
 
-    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    Value: Variant | None = None
-    StatusCode_: StatusCode | None = field(default_factory=StatusCode)
-    SourceTimestamp: DateTime | None = (
-        None  # FIXME type DateType raises type hinting errors because datetime is assigned
-    )
-    ServerTimestamp: DateTime | None = None
-    SourcePicoseconds: UInt16 | None = None
-    ServerPicoseconds: UInt16 | None = None
+    Encoding: "ua.Byte" = field(default=0, repr=False, init=False, compare=False)
+    Value: "ua.Variant | None" = None
+    StatusCode: "ua.StatusCode | None" = field(default_factory=StatusCode)
+    SourceTimestamp: "ua.DateTime | None" = None
+    ServerTimestamp: "ua.DateTime | None" = None
+    SourcePicoseconds: "ua.UInt16 | None" = None
+    ServerPicoseconds: "ua.UInt16 | None" = None
 
     def __post_init__(
         self,
     ):
         if not isinstance(self.Value, Variant):
             object.__setattr__(self, "Value", Variant(self.Value))
-
-    @property
-    def StatusCode(self):
-        return self.StatusCode_
 
 
 @dataclass(frozen=True)
@@ -1145,14 +1141,14 @@ class DiagnosticInfo:
 
     data_type = NodeId(25)
 
-    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
-    SymbolicId: Int32 | None = None
-    NamespaceURI: Int32 | None = None
-    Locale: Int32 | None = None
-    LocalizedText: Int32 | None = None
-    AdditionalInfo: String | None = None
-    InnerStatusCode: StatusCode | None = None
-    InnerDiagnosticInfo: ExtensionObject | None = None
+    Encoding: "ua.Byte" = field(default=0, repr=False, init=False, compare=False)
+    SymbolicId: "ua.Int32 | None" = None
+    NamespaceURI: "ua.Int32 | None" = None
+    Locale: "ua.Int32 | None" = None
+    LocalizedText: "ua.Int32 | None" = None
+    AdditionalInfo: "ua.String | None" = None
+    InnerStatusCode: "ua.StatusCode | None" = None
+    InnerDiagnosticInfo: "ua.ExtensionObject | None" = None
 
 
 def datatype_to_varianttype(int_type):
@@ -1249,8 +1245,8 @@ def register_enum(name, nodeid, class_type):
 
 # These dictionaries are used to register extensions classes for automatic
 # decoding and encoding
-extension_objects_by_datatype = {}  # Dict[Datatype, type]
-extension_objects_by_typeid = {}  # Dict[EncodingId, type]
+extension_objects_by_datatype = {}  # dict[Datatype, type]
+extension_objects_by_typeid = {}  # dict[EncodingId, type]
 extension_object_typeids = {}
 datatype_by_extension_object = {}
 

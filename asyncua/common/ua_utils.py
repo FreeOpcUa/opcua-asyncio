@@ -34,7 +34,7 @@ def val_to_string(val, truncate=False):
     if truncate is true then huge strings or bytes are truncated
 
     """
-    if isinstance(val, (list, tuple)):
+    if isinstance(val, list | tuple):
         res = []
         for v in val:
             res.append(val_to_string(v))
@@ -44,7 +44,7 @@ def val_to_string(val, truncate=False):
         val = val.to_string()
     elif isinstance(val, ua.StatusCode):
         val = val.name
-    elif isinstance(val, (Enum, IntEnum, IntFlag)):
+    elif isinstance(val, Enum | IntEnum | IntFlag):
         val = val.name
     elif isinstance(val, ua.DataValue):
         val = variant_to_string(val.Value)
@@ -60,7 +60,7 @@ def val_to_string(val, truncate=False):
             val = val.decode("utf-8", errors="replace")
     elif isinstance(val, datetime):
         val = val.isoformat()
-    elif isinstance(val, (int, float)):
+    elif isinstance(val, int | float):
         val = str(val)
     else:
         # FIXME: Some types are probably missing!
@@ -283,7 +283,7 @@ async def get_nodes_of_namespace(server, namespaces=None):
 
     if not namespaces:
         namespaces = ns_available[1:]
-    elif isinstance(namespaces, (str, int)):
+    elif isinstance(namespaces, str | int):
         namespaces = [namespaces]
 
     # make sure all namespace are indexes (if needed, convert strings to indexes)

@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import timezone
-from typing import Dict, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from ..common import instantiate_util
 from ..common.methods import uamethod
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from ..server.server import Server
 
 
-def _get_datatype_or_built_in(datatype: Union[NodeId, VariantType, int]) -> tuple[NodeId, Byte]:
+def _get_datatype_or_built_in(datatype: NodeId | VariantType | int) -> tuple[NodeId, Byte]:
     """
     Returns the DataType NodeId and the corresponding BuiltIn number if
     possible to determine.
@@ -81,7 +81,7 @@ class DataSetField:
             self._meta = meta
 
     @classmethod
-    def CreateScalar(cls, name: String, datatype: Union[NodeId, VariantType]):
+    def CreateScalar(cls, name: String, datatype: NodeId | VariantType):
         """
         Creates a scalar Field with datatype and name
         """
@@ -97,7 +97,7 @@ class DataSetField:
         return cls(meta)
 
     @classmethod
-    def CreateArray(cls, name: String, datatype: Union[NodeId, VariantType]):
+    def CreateArray(cls, name: String, datatype: NodeId | VariantType):
         """
         Creates a scalar Field with datatype and name
         """
@@ -207,16 +207,16 @@ class DataSetMeta:
     def Description(self) -> LocalizedText:
         return self._meta.Description
 
-    def add_field(self, ds_field: Union[DataSetField, FieldMetaData]) -> None:
+    def add_field(self, ds_field: DataSetField | FieldMetaData) -> None:
         if isinstance(ds_field, FieldMetaData):
             ds_field = DataSetField(ds_field)
         self._fields.append(ds_field)
         self._meta.Fields.append(ds_field._meta)
 
-    def add_scalar(self, name: String, datatype: Union[NodeId, VariantType]):
+    def add_scalar(self, name: String, datatype: NodeId | VariantType):
         self.add_field(DataSetField.CreateScalar(name, datatype))
 
-    def add_array(self, name: String, datatype: Union[NodeId, VariantType]):
+    def add_array(self, name: String, datatype: NodeId | VariantType):
         self.add_field(DataSetField.CreateScalar(name, datatype))
 
     def get_field(self, name) -> DataSetField | None:
@@ -292,7 +292,7 @@ class PubSubDataSourceDict(PubSubDataSource):
     Implements getting the values to publishing.
     """
 
-    datasources: Dict[String, Dict[String, DataValue]]
+    datasources: dict[String, dict[String, DataValue]]
 
     def __init__(self, ds: DataSetMeta) -> None:
         super().__init__()
@@ -309,7 +309,7 @@ class PubSubDataSourceDict(PubSubDataSource):
             ret.append(
                 fields.get(
                     fld.Name,
-                    DataValue(StatusCode_=StatusCode(UInt32(StatusCodes.BadNoDataAvailable))),
+                    DataValue(StatusCode=StatusCode(UInt32(StatusCodes.BadNoDataAvailable))),
                 )
             )
         return ret
@@ -334,15 +334,15 @@ class PubSubDataSourceServer(PubSubDataSource):
         for pd in self.data_items.PublishedData:
             dv = self._server.read_attribute_value(pd.PublishedVariable, attr=pd.AttributeId)
             if (
-                dv.StatusCode_ is not None
-                and not dv.StatusCode_.is_good()
+                dv.StatusCode is not None
+                and not dv.StatusCode.is_good()
                 and pd.SubstituteValue.VariantType != VariantType.Null
             ):
                 dv = DataValue(
                     pd.SubstituteValue,
                     SourceTimestamp=DateTime.now(timezone.utc),
                     ServerTimestamp=DateTime.now(timezone.utc),
-                    StatusCode_=StatusCode(UInt32(StatusCodes.UncertainSubstituteValue)),
+                    StatusCode=StatusCode(UInt32(StatusCodes.UncertainSubstituteValue)),
                 )
             ret.append(dv)
         return ret

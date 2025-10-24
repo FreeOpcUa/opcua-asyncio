@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
 import aiofiles
-from typing import Union
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -28,12 +27,12 @@ class InvalidSignature(Exception):  # type: ignore # noqa: F811
 
 @dataclass
 class CertProperties:
-    path_or_content: Union[bytes, Path, str]
+    path_or_content: bytes | Path | str
     extension: str | None = None
-    password: Union[str, bytes] | None = None
+    password: str | bytes | None = None
 
 
-async def get_content(path_or_content: Union[str, bytes, Path]) -> bytes:
+async def get_content(path_or_content: str | bytes | Path) -> bytes:
     if isinstance(path_or_content, bytes):
         return path_or_content
 
@@ -41,7 +40,7 @@ async def get_content(path_or_content: Union[str, bytes, Path]) -> bytes:
         return await f.read()
 
 
-async def load_certificate(path_or_content: Union[bytes, str, Path], extension: str | None = None):
+async def load_certificate(path_or_content: bytes | str | Path, extension: str | None = None):
     if isinstance(path_or_content, str):
         ext = Path(path_or_content).suffix
     elif isinstance(path_or_content, Path):
@@ -110,8 +109,8 @@ def x509_from_der(data):
 
 
 async def load_private_key(
-    path_or_content: Union[str, Path, bytes],
-    password: Union[str, bytes] | None = None,
+    path_or_content: str | Path | bytes,
+    password: str | bytes | None = None,
     extension: str | None = None,
 ):
     if isinstance(path_or_content, str):

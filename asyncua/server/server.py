@@ -8,7 +8,6 @@ import math
 from datetime import timedelta, datetime
 import socket
 from urllib.parse import urlparse
-from typing import Union
 from collections.abc import Callable
 from pathlib import Path
 
@@ -231,13 +230,13 @@ class Server:
 
     __repr__ = __str__
 
-    async def load_certificate(self, path_or_content: Union[str, bytes, Path], format: str = None):
+    async def load_certificate(self, path_or_content: str | bytes | Path, format: str = None):
         """
         load server certificate from file, either pem or der
         """
         self.iserver.certificate = await uacrypto.load_certificate(path_or_content, format)
 
-    async def load_private_key(self, path_or_content: Union[str, Path, bytes], password=None, format=None):
+    async def load_private_key(self, path_or_content: str | Path | bytes, password=None, format=None):
         self.iserver.private_key = await uacrypto.load_private_key(path_or_content, password, format)
 
     def disable_clock(self, val: bool = True):
@@ -536,7 +535,7 @@ class Server:
         """
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.ObjectsFolder))
 
-    def get_node(self, nodeid: Union[Node, ua.NodeId, str, int]) -> Node:
+    def get_node(self, nodeid: Node | ua.NodeId | str | int) -> Node:
         """
         Get a specific node using NodeId object or a string representing a NodeId
         """
@@ -703,7 +702,7 @@ class Server:
         :param period: time delta to store the history; older data will be deleted from the storage
         :param count: number of changes to store in the history
         """
-        nodes = node if isinstance(node, (list, tuple)) else [node]
+        nodes = node if isinstance(node, list | tuple) else [node]
         for n in nodes:
             await self.iserver.enable_history_data_change(n, period, count)
 
@@ -712,7 +711,7 @@ class Server:
         Stop historizing supplied nodes; see history module
         :param node: node or list of nodes that can be historized (UA variables/properties)
         """
-        nodes = node if isinstance(node, (list, tuple)) else [node]
+        nodes = node if isinstance(node, list | tuple) else [node]
         for n in nodes:
             await self.iserver.disable_history_data_change(n)
 
@@ -723,7 +722,7 @@ class Server:
         :param period: time delta to store the history; older data will be deleted from the storage
         :param count: number of events to store in the history
         """
-        nodes = node if isinstance(node, (list, tuple)) else [node]
+        nodes = node if isinstance(node, list | tuple) else [node]
         for n in nodes:
             await self.iserver.enable_history_event(n, period, count)
 
@@ -732,7 +731,7 @@ class Server:
         Stop historizing events from node (typically a UA object); see history module
         :param node: node or list of nodes that can be historized (UA objects)
         """
-        nodes = node if isinstance(node, (list, tuple)) else [node]
+        nodes = node if isinstance(node, list | tuple) else [node]
         for n in nodes:
             await self.iserver.disable_history_event(n)
 

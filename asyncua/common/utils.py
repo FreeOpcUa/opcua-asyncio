@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 from dataclasses import Field, fields
-from typing import Any, Dict, get_type_hints, TypeVar, Union
+from typing import Any, get_type_hints, TypeVar
 from collections.abc import Awaitable
 
 from ..ua.uaerrors import UaError
@@ -104,8 +104,8 @@ def create_nonce(size=32):
 
 def fields_with_resolved_types(
     class_or_instance: Any,
-    globalns: Dict[str, Any] | None = None,
-    localns: Dict[str, Any] | None = None,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
     include_extras: bool = False,
 ) -> tuple[Field, ...]:
     """Return a tuple describing the fields of this dataclass.
@@ -115,12 +115,10 @@ def fields_with_resolved_types(
     """
 
     fields_ = fields(class_or_instance)
-    if sys.version_info.major == 3 and sys.version_info.minor <= 8:
-        resolved_fieldtypes = get_type_hints(class_or_instance, globalns=globalns, localns=localns)
-    else:
-        resolved_fieldtypes = get_type_hints(  # type: ignore[call-arg]
-            class_or_instance, globalns=globalns, localns=localns, include_extras=include_extras
-        )
+    resolved_fieldtypes = get_type_hints(  # type: ignore[call-arg]
+        class_or_instance, globalns=globalns, localns=localns, include_extras=include_extras
+    )
+
     for field in fields_:
         try:
             field.type = resolved_fieldtypes[field.name]
@@ -134,7 +132,7 @@ def fields_with_resolved_types(
 _T = TypeVar("_T")
 
 
-async def wait_for(aw: Awaitable[_T], timeout: Union[int, float, None]) -> _T:
+async def wait_for(aw: Awaitable[_T], timeout: int | float | None) -> _T:
     """
     Wrapped version of asyncio.wait_for that does not swallow cancellations
 

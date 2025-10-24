@@ -7,7 +7,6 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
-from typing import Union
 
 from ..common.utils import Buffer
 from ..ua import VariantType
@@ -130,7 +129,7 @@ class UadpHeader:
     Header of an Uadp  Message
     """
 
-    PublisherId: Union[Byte, UInt16, UInt32, UInt64, String] | None = None
+    PublisherId: Byte | UInt16 | UInt32 | UInt64 | String | None = None
     DataSetClassId: Guid | None = None
 
     def to_binary(self, flags: MessageHeaderFlags) -> bytes:
@@ -384,7 +383,7 @@ class UadpDiscoveryResponse:
     SequenceNumber: (
         UInt16  # Sequence number for responses, should be incremented for each discovery response from the connection
     )
-    Response: Union[UadpPublisherEndpointsResp, UadpDataSetMetaDataResp, UadpDataSetWriterResp]
+    Response: UadpPublisherEndpointsResp | UadpDataSetMetaDataResp | UadpDataSetWriterResp
 
 
 @dataclass
@@ -593,7 +592,7 @@ class UadpNetworkMessage:
     Timestamp: DateTime | None = None
     PicoSeconds: UInt16 | None = None
     PromotedFields: list[Variant] = field(default_factory=list)
-    Payload: Union[list[UadpDataSetMessage], UadpDiscoveryRequest, UadpDiscoveryResponse, UadpChunk] = None
+    Payload: list[UadpDataSetMessage] | UadpDiscoveryRequest | UadpDiscoveryResponse | UadpChunk = None
 
     def to_binary(self) -> bytes:
         flags = MessageHeaderFlags.NONE

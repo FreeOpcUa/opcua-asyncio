@@ -52,6 +52,7 @@ uawrite = "asyncua.tools:uawrite"
 dev = [
   "asynctest",
   "coverage",
+  "mypy",
   "pytest",
   "pytest-asyncio",
   "pytest-cov",
@@ -59,9 +60,10 @@ dev = [
   "pytest-repeat",
   "ruff",
   "types-aiofiles",
+  "types-cryptography",
   "types-pyOpenSSL",
   "types-python-dateutil",
-  "types-pytz",
+  "types-pytz"
 ]
 lint = ["mypy", "pre-commit", "ruff"]
 
@@ -88,6 +90,10 @@ check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = "asynctest.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "aiosqlite.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -118,12 +124,10 @@ ignore = [
   "E501",  # conflicts with ruff format, cf doc
   "UP032",  # Use f-string instead of `format` call
   "UP030",  # Use implicit references for positional format fields
-  # The following can be removed once the minimum supported Python version is 3.10
-  # https://github.com/astral-sh/ruff/issues/5035
-  "UP006",  # Use `list` instead of `List` for type annotation
-  "UP007",  # Use `X | Y` for type annotations
+  "UP037",  # due to protocol using class member name same as object type we want to use quotes and precise ua namespace
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
 "examples/*" = ["F841", "E402"]
+"stubs/wait_for2/*" = ["UP007"]

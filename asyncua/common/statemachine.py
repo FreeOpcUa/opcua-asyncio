@@ -20,7 +20,7 @@ import datetime
 
 from asyncua import Server, ua, Node
 from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
-from typing import Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from asyncua.server.event_generator import EventGenerator
@@ -187,7 +187,7 @@ class StateMachine:
         self,
         state: State,
         transition: Transition = None,
-        event_msg: Union[str, ua.LocalizedText] = None,
+        event_msg: str | ua.LocalizedText = None,
         severity: int = 500,
     ):
         """

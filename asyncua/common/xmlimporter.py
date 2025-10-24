@@ -7,8 +7,10 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Set, Union, Dict
 from dataclasses import fields, is_dataclass
+from typing import get_type_hints
+
+
 from asyncua.common.structures104 import (
     load_custom_struct_xml_import,
     load_enum_xml_import,
@@ -37,7 +39,7 @@ def _parse_version(version_string: str) -> list[int]:
 class XmlImporter:
     def __init__(
         self,
-        server: Union[asyncua.Server, asyncua.Client],
+        server: asyncua.Server | asyncua.Client,
         strict_mode: bool = True,
         auto_load_definitions: bool = True,
     ):
@@ -48,9 +50,9 @@ class XmlImporter:
         """
         self.parser = None
         self.session = server
-        self.namespaces: Dict[int, int] = {}  # Dict[IndexInXml, IndexInServer]
-        self.aliases: Dict[str, ua.NodeId] = {}
-        self._unmigrated_aliases: Dict[str, str] = {}  # Dict[name, nodeId string]
+        self.namespaces: dict[int, int] = {}  # dict[IndexInXml, IndexInServer]
+        self.aliases: dict[str, ua.NodeId] = {}
+        self._unmigrated_aliases: dict[str, str] = {}  # dict[name, nodeId string]
         self.refs = None
         self.strict_mode = strict_mode
         self.auto_load_definitions = auto_load_definitions
@@ -199,7 +201,7 @@ class XmlImporter:
         await self._check_if_namespace_meta_information_is_added()
         return nodes
 
-    async def _add_missing_reverse_references(self, new_nodes: list[Node]) -> Set[Node]:
+    async def _add_missing_reverse_references(self, new_nodes: list[Node]) -> set[Node]:
         __unidirectional_types = {
             ua.ObjectIds.GuardVariableType,
             ua.ObjectIds.HasGuard,
@@ -215,7 +217,7 @@ class XmlImporter:
         dangling_refs_to_missing_nodes = set(new_nodes)
 
         RefSpecKey = tuple[ua.NodeId, ua.NodeId, ua.NodeId]  # (source_node_id, target_node_id, ref_type_id)
-        node_reference_map: Dict[RefSpecKey, ua.ReferenceDescription] = {}
+        node_reference_map: dict[RefSpecKey, ua.ReferenceDescription] = {}
 
         for new_node_id in new_nodes:
             node = self.session.get_node(new_node_id)
@@ -334,7 +336,7 @@ class XmlImporter:
                     field.datatype = self._to_migrated_nodeid(field.datatype)
         return new_nodes
 
-    def _migrate_ns(self, obj: Union[ua.NodeId, ua.QualifiedName]) -> Union[ua.NodeId, ua.QualifiedName]:
+    def _migrate_ns(self, obj: ua.NodeId | ua.QualifiedName) -> ua.NodeId | ua.QualifiedName:
         """
         Check if the index of nodeid or browsename  given in the xml model file
         must be converted to an already existing namespace id based on the files
@@ -386,11 +388,11 @@ class XmlImporter:
         )
         return node
 
-    def _to_migrated_nodeid(self, nodeid: Union[ua.NodeId, None, str]) -> Union[ua.NodeId, ua.QualifiedName]:
+    def _to_migrated_nodeid(self, nodeid: ua.NodeId | None | str) -> ua.NodeId | ua.QualifiedName:
         nodeid = self._to_nodeid(nodeid)
         return self._migrate_ns(nodeid)
 
-    def _to_nodeid(self, nodeid: Union[ua.NodeId, None, str]) -> ua.NodeId:
+    def _to_nodeid(self, nodeid: ua.NodeId | None | str) -> ua.NodeId:
         if isinstance(nodeid, ua.NodeId):
             return nodeid
         if not nodeid:
@@ -485,6 +487,7 @@ class XmlImporter:
                 extclass = self._get_ext_class(obj.objname)
             else:
                 raise exp
+        resolved_types = get_type_hints(extclass, {"ua": ua})
         args = {}
         for name, val in obj.body:
             if not isinstance(val, list):
@@ -497,7 +500,7 @@ class XmlImporter:
             for attname, v in val:
                 if attname != "EncodingMask":
                     # Skip Encoding Mask used for optional types
-                    atttype = self._get_val_type(extclass, attname)
+                    atttype = resolved_types[attname]
                     self._set_attr(atttype, args, attname, v)
         return extclass(**args)
 

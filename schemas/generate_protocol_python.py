@@ -75,13 +75,13 @@ class CodeGenerator:
 
     def make_header(self) -> None:
         """Write file header."""
+        self.write('from __future__ import annotations')
         self.write('"""')
         self.write(f'Autogenerate code from xml spec\nDate:{datetime.datetime.now(datetime.timezone.utc)}')
         self.write('"""')
         self.write('')
         self.write('from datetime import datetime, timezone')
         self.write('from enum import IntEnum, IntFlag')
-        self.write('from typing import Union, Optional, Type')
         self.write('from dataclasses import dataclass, field')
         self.write('')
         self.write('from asyncua.ua.uatypes import FROZEN')
@@ -163,47 +163,30 @@ class CodeGenerator:
         if "BodyLength" in [f.name for f in obj.fields]:
             extobj_hack = True
 
-        hack_names = []
         for field in obj.fields:
-            typestring = field.data_type
-            if field.allow_subtypes and typestring != 'ExtensionObject':
-                typestring = f"Type[{typestring}]"
+            typestring = f"ua.{field.data_type}"
+            if field.allow_subtypes and typestring != 'ua.ExtensionObject':
+                typestring = f"type[{typestring}]"
             if field.is_array():
                 typestring = f"list[{typestring}]"
             if field.is_optional:
-                typestring = f"Optional[{typestring}]"
-            if field.name == field.data_type:
-                # variable name and type name are the same. Dataclass do not like it
-                hack_names.append(field.name)
-                fieldname = field.name + "_"
-            else:
-                fieldname = field.name
+                typestring = f"{typestring} | None"
+            fieldname = field.name
 
             if field.name == "Encoding":
                 val = 0 if not extobj_hack else 1
                 self.write(f"{field.name}: Byte = field(default={val}, repr=False, init=False, compare=False)")
             elif field.data_type == obj.name:  # help!!! self referencing class
                 # FIXME: Might not be good enough
-                self.write(f"{fieldname}: Optional[ExtensionObject] = None")
+                self.write(f"{fieldname}: 'Optional[ExtensionObject]' = None")
             elif obj.name not in ("ExtensionObject") and \
                     field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
                 if obj.name.startswith("Json"):
-                    self.write(f"TypeId: NodeId = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultJson)")
+                    self.write(f"TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultJson)")
                 else:
-                    self.write(f"TypeId: NodeId = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultBinary)")
+                    self.write(f"TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultBinary)")
             else:
-                self.write(f"{fieldname}: {typestring} = {'field(default_factory=list)' if field.is_array() else self.get_default_value(field)}")
-
-        if hack_names:
-            self.write("")
-        for name in hack_names:
-            self.write("@property")
-            self.write(f"def {name}(self):")
-            self.write(f"    return self.{name}_")
-            self.write("")
-            self.write(f"@{name}.setter")
-            self.write(f"def {name}(self, val):")
-            self.write(f"    self.{name}_ = val")
+                self.write(f"{fieldname}: '{typestring}' = {'field(default_factory=list)' if field.is_array() else self.get_default_value(field)}")
 
         self.iidx = 0
 
@@ -216,7 +199,7 @@ class CodeGenerator:
             enum = self.model.get_enum(dtype)
             if enum.is_option_set:
                 return f'field(default_factory=lambda:{enum.name}(0))'
-            return f'{enum.name}.{enum.fields[0].name}'
+            return f'field(default_factory=lambda:{enum.name}.{enum.fields[0].name})'
 
         al = self.model.get_alias(dtype)
         if al is not None:
@@ -236,7 +219,7 @@ class CodeGenerator:
             return '0'
         if dtype in 'ExtensionObject':
             return 'ExtensionObject()'
-        return f'field(default_factory={dtype})'
+        return f'field(default_factory=lambda: {dtype}())'
 
 
 if __name__ == '__main__':

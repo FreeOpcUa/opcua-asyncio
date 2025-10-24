@@ -4,7 +4,6 @@ server side implementation of a subscription object
 
 import logging
 from asyncua import ua
-from typing import Dict
 from .address_space import AddressSpace
 import copy
 
@@ -47,9 +46,9 @@ class MonitoredItemService:
         self.logger = logging.getLogger(f"{__name__}.{isub.data.SubscriptionId}")
         self.isub = isub
         self.aspace: AddressSpace = aspace
-        self._monitored_items: Dict[int, MonitoredItemData] = {}
+        self._monitored_items: dict[int, MonitoredItemData] = {}
         self._monitored_events = {}
-        self._monitored_datachange: Dict[int, int] = {}
+        self._monitored_datachange: dict[int, int] = {}
         self._monitored_item_counter = 111
 
     def __str__(self):

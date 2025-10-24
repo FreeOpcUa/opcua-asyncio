@@ -128,7 +128,7 @@ class InternalServer:
             attr.AttributeId = ua.AttributeIds.Value
             attr.Value = ua.DataValue(
                 ua.Variant(10000, ua.VariantType.UInt32),
-                StatusCode_=ua.StatusCode(ua.StatusCodes.Good),
+                StatusCode=ua.StatusCode(ua.StatusCodes.Good),
                 SourceTimestamp=datetime.now(timezone.utc),
             )
             params.NodesToWrite.append(attr)
@@ -137,7 +137,7 @@ class InternalServer:
 
     async def load_standard_address_space(self, shelf_file: Path | None = None):
         if shelf_file:
-            if shelf_file.is_file() or (shelf_file / ".db").is_file():
+            if shelf_file.is_file() or shelf_file.with_suffix(".db").is_file():
                 # import address space from shelf
                 self.aspace.load_aspace_shelf(shelf_file)
                 return

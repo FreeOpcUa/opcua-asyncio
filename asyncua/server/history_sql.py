@@ -125,7 +125,7 @@ class HistorySQLite(HistoryStorageInterface):
                         variant_from_binary(Buffer(row[6])),
                         ServerTimestamp=row[1],
                         SourceTimestamp=row[2],
-                        StatusCode_=ua.StatusCode(row[3]),
+                        StatusCode=ua.StatusCode(row[3]),
                     )
                     results.append(dv)
         except aiosqlite.Error as e:

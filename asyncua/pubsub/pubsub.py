@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import aiofiles
 
@@ -148,7 +148,7 @@ class PubSub(PubSubInformationModel):
     async def __aexit__(self, exc_type, exc, tb) -> None:
         await self.stop()
 
-    async def load_binary_file(self, file: Union[str, Path]) -> None:
+    async def load_binary_file(self, file: str | Path) -> None:
         async with aiofiles.open(file, mode="rb") as f:
             buf = Buffer(await f.read())
         # ex_obj = extensionobject_from_binary(buf)
@@ -176,7 +176,7 @@ class PubSub(PubSubInformationModel):
             logger.error("File has ExtensionObject of type: %s instead of UABinaryFileDataType", ex_obj)
         raise UaError(BadInvalidArgument)
 
-    async def save_binary_file(self, file: Union[str, Path]) -> None:  # @TODO save structs and enums, namespaces
+    async def save_binary_file(self, file: str | Path) -> None:  # @TODO save structs and enums, namespaces
         cfg = PubSubConfigurationDataType(
             [pds._data for pds in self._pds], [con._cfg for con in self._con], self._enabled
         )

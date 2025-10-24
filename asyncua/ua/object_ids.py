@@ -5780,7 +5780,7 @@ class ObjectIds:
     WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MessageSequenceNumber = 17804
     WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MessageSequenceNumber_DiagnosticsLevel = 17805
     WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCode = 17806
-    WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCode_DiagnosticsLevel = 17807
+    WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCodeDiagnosticsLevel = 17807
     WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MajorVersion = 17808
     WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MajorVersion_DiagnosticsLevel = 17809
     WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MinorVersion = 17810
@@ -6128,7 +6128,7 @@ class ObjectIds:
     ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_MessageSequenceNumber = 18148
     ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_MessageSequenceNumber_DiagnosticsLevel = 18149
     ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_StatusCode = 18150
-    ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_StatusCode_DiagnosticsLevel = 18151
+    ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_StatusCodeDiagnosticsLevel = 18151
     ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_MajorVersion = 18152
     ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_MajorVersion_DiagnosticsLevel = 18153
     ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_MinorVersion = 18154
@@ -6900,7 +6900,7 @@ class ObjectIds:
         18923
     )
     PublishedDataSetType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCode = 18924
-    PublishedDataSetType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCode_DiagnosticsLevel = 18925
+    PublishedDataSetType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCodeDiagnosticsLevel = 18925
     PublishedDataSetType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MajorVersion = 18926
     PublishedDataSetType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MajorVersion_DiagnosticsLevel = 18927
     PublishedDataSetType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MinorVersion = 18928
@@ -7506,7 +7506,7 @@ class ObjectIds:
     DataSetWriterType_Diagnostics_LiveValues_MessageSequenceNumber = 19601
     DataSetWriterType_Diagnostics_LiveValues_MessageSequenceNumber_DiagnosticsLevel = 19602
     DataSetWriterType_Diagnostics_LiveValues_StatusCode = 19603
-    DataSetWriterType_Diagnostics_LiveValues_StatusCode_DiagnosticsLevel = 19604
+    DataSetWriterType_Diagnostics_LiveValues_StatusCodeDiagnosticsLevel = 19604
     DataSetWriterType_Diagnostics_LiveValues_MajorVersion = 19605
     DataSetWriterType_Diagnostics_LiveValues_MajorVersion_DiagnosticsLevel = 19606
     DataSetWriterType_Diagnostics_LiveValues_MinorVersion = 19607
@@ -7570,7 +7570,7 @@ class ObjectIds:
     DataSetReaderType_Diagnostics_LiveValues_MessageSequenceNumber = 19665
     DataSetReaderType_Diagnostics_LiveValues_MessageSequenceNumber_DiagnosticsLevel = 19666
     DataSetReaderType_Diagnostics_LiveValues_StatusCode = 19667
-    DataSetReaderType_Diagnostics_LiveValues_StatusCode_DiagnosticsLevel = 19668
+    DataSetReaderType_Diagnostics_LiveValues_StatusCodeDiagnosticsLevel = 19668
     DataSetReaderType_Diagnostics_LiveValues_MajorVersion = 19669
     DataSetReaderType_Diagnostics_LiveValues_MajorVersion_DiagnosticsLevel = 19670
     DataSetReaderType_Diagnostics_LiveValues_MinorVersion = 19671
@@ -7797,7 +7797,7 @@ class ObjectIds:
     PubSubDiagnosticsDataSetWriterType_LiveValues_MessageSequenceNumber = 20019
     PubSubDiagnosticsDataSetWriterType_LiveValues_MessageSequenceNumber_DiagnosticsLevel = 20020
     PubSubDiagnosticsDataSetWriterType_LiveValues_StatusCode = 20021
-    PubSubDiagnosticsDataSetWriterType_LiveValues_StatusCode_DiagnosticsLevel = 20022
+    PubSubDiagnosticsDataSetWriterType_LiveValues_StatusCodeDiagnosticsLevel = 20022
     PubSubDiagnosticsDataSetWriterType_LiveValues_MajorVersion = 20023
     PubSubDiagnosticsDataSetWriterType_LiveValues_MajorVersion_DiagnosticsLevel = 20024
     PubSubDiagnosticsDataSetWriterType_LiveValues_MinorVersion = 20025
@@ -7848,7 +7848,7 @@ class ObjectIds:
     PubSubDiagnosticsDataSetReaderType_LiveValues_MessageSequenceNumber = 20083
     PubSubDiagnosticsDataSetReaderType_LiveValues_MessageSequenceNumber_DiagnosticsLevel = 20084
     PubSubDiagnosticsDataSetReaderType_LiveValues_StatusCode = 20085
-    PubSubDiagnosticsDataSetReaderType_LiveValues_StatusCode_DiagnosticsLevel = 20086
+    PubSubDiagnosticsDataSetReaderType_LiveValues_StatusCodeDiagnosticsLevel = 20086
     PubSubDiagnosticsDataSetReaderType_LiveValues_MajorVersion = 20087
     PubSubDiagnosticsDataSetReaderType_LiveValues_MajorVersion_DiagnosticsLevel = 20088
     PubSubDiagnosticsDataSetReaderType_LiveValues_MinorVersion = 20089
@@ -21884,9 +21884,7 @@ ObjectIdNames[17805] = (
     "WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MessageSequenceNumber_DiagnosticsLevel"
 )
 ObjectIdNames[17806] = "WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCode"
-ObjectIdNames[17807] = (
-    "WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCode_DiagnosticsLevel"
-)
+ObjectIdNames[17807] = "WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCodeDiagnosticsLevel"
 ObjectIdNames[17808] = "WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MajorVersion"
 ObjectIdNames[17809] = (
     "WriterGroupType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MajorVersion_DiagnosticsLevel"
@@ -22576,9 +22574,7 @@ ObjectIdNames[18149] = (
     "ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_MessageSequenceNumber_DiagnosticsLevel"
 )
 ObjectIdNames[18150] = "ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_StatusCode"
-ObjectIdNames[18151] = (
-    "ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_StatusCode_DiagnosticsLevel"
-)
+ObjectIdNames[18151] = "ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_StatusCodeDiagnosticsLevel"
 ObjectIdNames[18152] = "ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_MajorVersion"
 ObjectIdNames[18153] = (
     "ReaderGroupType_DataSetReaderName_Placeholder_Diagnostics_LiveValues_MajorVersion_DiagnosticsLevel"
@@ -24071,7 +24067,7 @@ ObjectIdNames[18923] = (
 )
 ObjectIdNames[18924] = "PublishedDataSetType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCode"
 ObjectIdNames[18925] = (
-    "PublishedDataSetType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCode_DiagnosticsLevel"
+    "PublishedDataSetType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_StatusCodeDiagnosticsLevel"
 )
 ObjectIdNames[18926] = "PublishedDataSetType_DataSetWriterName_Placeholder_Diagnostics_LiveValues_MajorVersion"
 ObjectIdNames[18927] = (
@@ -24800,7 +24796,7 @@ ObjectIdNames[19600] = "DataSetWriterType_Diagnostics_Counters_FailedDataSetMess
 ObjectIdNames[19601] = "DataSetWriterType_Diagnostics_LiveValues_MessageSequenceNumber"
 ObjectIdNames[19602] = "DataSetWriterType_Diagnostics_LiveValues_MessageSequenceNumber_DiagnosticsLevel"
 ObjectIdNames[19603] = "DataSetWriterType_Diagnostics_LiveValues_StatusCode"
-ObjectIdNames[19604] = "DataSetWriterType_Diagnostics_LiveValues_StatusCode_DiagnosticsLevel"
+ObjectIdNames[19604] = "DataSetWriterType_Diagnostics_LiveValues_StatusCodeDiagnosticsLevel"
 ObjectIdNames[19605] = "DataSetWriterType_Diagnostics_LiveValues_MajorVersion"
 ObjectIdNames[19606] = "DataSetWriterType_Diagnostics_LiveValues_MajorVersion_DiagnosticsLevel"
 ObjectIdNames[19607] = "DataSetWriterType_Diagnostics_LiveValues_MinorVersion"
@@ -24864,7 +24860,7 @@ ObjectIdNames[19664] = "DataSetReaderType_Diagnostics_Counters_DecryptionErrors_
 ObjectIdNames[19665] = "DataSetReaderType_Diagnostics_LiveValues_MessageSequenceNumber"
 ObjectIdNames[19666] = "DataSetReaderType_Diagnostics_LiveValues_MessageSequenceNumber_DiagnosticsLevel"
 ObjectIdNames[19667] = "DataSetReaderType_Diagnostics_LiveValues_StatusCode"
-ObjectIdNames[19668] = "DataSetReaderType_Diagnostics_LiveValues_StatusCode_DiagnosticsLevel"
+ObjectIdNames[19668] = "DataSetReaderType_Diagnostics_LiveValues_StatusCodeDiagnosticsLevel"
 ObjectIdNames[19669] = "DataSetReaderType_Diagnostics_LiveValues_MajorVersion"
 ObjectIdNames[19670] = "DataSetReaderType_Diagnostics_LiveValues_MajorVersion_DiagnosticsLevel"
 ObjectIdNames[19671] = "DataSetReaderType_Diagnostics_LiveValues_MinorVersion"
@@ -25091,7 +25087,7 @@ ObjectIdNames[20018] = "PubSubDiagnosticsDataSetWriterType_Counters_FailedDataSe
 ObjectIdNames[20019] = "PubSubDiagnosticsDataSetWriterType_LiveValues_MessageSequenceNumber"
 ObjectIdNames[20020] = "PubSubDiagnosticsDataSetWriterType_LiveValues_MessageSequenceNumber_DiagnosticsLevel"
 ObjectIdNames[20021] = "PubSubDiagnosticsDataSetWriterType_LiveValues_StatusCode"
-ObjectIdNames[20022] = "PubSubDiagnosticsDataSetWriterType_LiveValues_StatusCode_DiagnosticsLevel"
+ObjectIdNames[20022] = "PubSubDiagnosticsDataSetWriterType_LiveValues_StatusCodeDiagnosticsLevel"
 ObjectIdNames[20023] = "PubSubDiagnosticsDataSetWriterType_LiveValues_MajorVersion"
 ObjectIdNames[20024] = "PubSubDiagnosticsDataSetWriterType_LiveValues_MajorVersion_DiagnosticsLevel"
 ObjectIdNames[20025] = "PubSubDiagnosticsDataSetWriterType_LiveValues_MinorVersion"
@@ -25142,7 +25138,7 @@ ObjectIdNames[20082] = "PubSubDiagnosticsDataSetReaderType_Counters_DecryptionEr
 ObjectIdNames[20083] = "PubSubDiagnosticsDataSetReaderType_LiveValues_MessageSequenceNumber"
 ObjectIdNames[20084] = "PubSubDiagnosticsDataSetReaderType_LiveValues_MessageSequenceNumber_DiagnosticsLevel"
 ObjectIdNames[20085] = "PubSubDiagnosticsDataSetReaderType_LiveValues_StatusCode"
-ObjectIdNames[20086] = "PubSubDiagnosticsDataSetReaderType_LiveValues_StatusCode_DiagnosticsLevel"
+ObjectIdNames[20086] = "PubSubDiagnosticsDataSetReaderType_LiveValues_StatusCodeDiagnosticsLevel"
 ObjectIdNames[20087] = "PubSubDiagnosticsDataSetReaderType_LiveValues_MajorVersion"
 ObjectIdNames[20088] = "PubSubDiagnosticsDataSetReaderType_LiveValues_MajorVersion_DiagnosticsLevel"
 ObjectIdNames[20089] = "PubSubDiagnosticsDataSetReaderType_LiveValues_MinorVersion"

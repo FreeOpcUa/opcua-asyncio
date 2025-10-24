@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from threading import Condition, Thread
-from typing import Any, Union, overload
+from typing import Any, overload, Literal
 from collections.abc import Callable, Iterable, Sequence
 
 from cryptography import x509
@@ -73,9 +73,9 @@ class ThreadLoop(Thread):
 def _to_async(args, kwargs):
     args = list(args)  # FIXME: might be very inefficient...
     for idx, arg in enumerate(args):
-        if isinstance(arg, (SyncNode, Client, Server)):
+        if isinstance(arg, SyncNode | Client | Server):
             args[idx] = arg.aio_obj
-        elif isinstance(arg, (list, tuple)):
+        elif isinstance(arg, list | tuple):
             args[idx] = _to_async(arg, {})[0]
     for k, v in kwargs.items():
         if isinstance(v, SyncNode):
@@ -86,7 +86,7 @@ def _to_async(args, kwargs):
 def _to_sync(tloop, result):
     if isinstance(result, node.Node):
         return SyncNode(tloop, result)
-    if isinstance(result, (list, tuple)):
+    if isinstance(result, list | tuple):
         return [_to_sync(tloop, item) for item in result]
     if isinstance(result, server.event_generator.EventGenerator):
         return EventGenerator(tloop, result)
@@ -316,7 +316,7 @@ class Client:
     @syncmethod
     def load_data_type_definitions(  # type: ignore[empty-body]
         self, node: SyncNode | None = None, overwrite_existing: bool = False
-    ) -> Dict[str, Type]:
+    ) -> dict[str, type]:
         pass
 
     @syncmethod
@@ -332,7 +332,7 @@ class Client:
         pass
 
     @syncmethod
-    def load_enums(self) -> Dict[str, Type]:  # type: ignore[empty-body]
+    def load_enums(self) -> dict[str, type]:  # type: ignore[empty-body]
         pass
 
     def create_subscription(
@@ -358,7 +358,7 @@ class Client:
     def get_namespace_index(self, uri: str) -> int:  # type: ignore[empty-body]
         pass
 
-    def get_node(self, nodeid: Union[SyncNode, ua.NodeId, str, int]) -> SyncNode:
+    def get_node(self, nodeid: SyncNode | ua.NodeId | str | int) -> SyncNode:
         aio_nodeid = nodeid.aio_obj if isinstance(nodeid, SyncNode) else nodeid
         return SyncNode(self.tloop, self.aio_obj.get_node(aio_nodeid))
 
@@ -496,7 +496,7 @@ class Client:
 
     @syncmethod
     def translate_browsepaths(  # type: ignore[empty-body]
-        self, starting_node: ua.NodeId, relative_paths: Iterable[Union[ua.RelativePath, str]]
+        self, starting_node: ua.NodeId, relative_paths: Iterable[ua.RelativePath | str]
     ) -> list[ua.BrowsePathResult]:
         pass
 
@@ -800,35 +800,35 @@ class SyncNode:
         pass
 
     @syncmethod
-    def get_user_access_level(self) -> Set[ua.AccessLevel]:  # type: ignore[empty-body]
+    def get_user_access_level(self) -> set[ua.AccessLevel]:  # type: ignore[empty-body]
         pass
 
     @overload
     def get_child(
         self,
-        path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]],
+        path: ua.QualifiedName | str | Iterable[ua.QualifiedName | str],
         return_all: Literal[False] = False,
     ) -> SyncNode: ...
 
     @overload
     def get_child(
         self,
-        path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]],
+        path: ua.QualifiedName | str | Iterable[ua.QualifiedName | str],
         return_all: Literal[True] = True,
     ) -> list[SyncNode]: ...
 
     @syncmethod
     def get_child(  # type: ignore[empty-body]
         self,
-        path: Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]],
+        path: ua.QualifiedName | str | Iterable[ua.QualifiedName | str],
         return_all: bool = False,
-    ) -> Union[SyncNode, list[SyncNode]]:
+    ) -> SyncNode | list[SyncNode]:
         pass
 
     @syncmethod
     def get_children_by_path(  # type: ignore[empty-body]
         self,
-        paths: Iterable[Union[ua.QualifiedName, str, Iterable[Union[ua.QualifiedName, str]]]],
+        paths: Iterable[ua.QualifiedName | str | Iterable[ua.QualifiedName | str]],
         raise_on_partial_error: bool = True,
     ) -> list[list[SyncNode | None]]:
         pass
@@ -857,9 +857,11 @@ class SyncNode:
         starttime: datetime = None,
         endtime: datetime = None,
         numvalues: int = 0,
-        evtypes: Union[
-            SyncNode, ua.NodeId, str, int, Iterable[Union[SyncNode, ua.NodeId, str, int]]
-        ] = ua.ObjectIds.BaseEventType,
+        evtypes: SyncNode
+        | ua.NodeId
+        | str
+        | int
+        | Iterable[SyncNode | ua.NodeId | str | int] = ua.ObjectIds.BaseEventType,
     ) -> list[Event]:
         pass
 
@@ -874,47 +876,47 @@ class SyncNode:
     @syncmethod
     def add_variable(  # type: ignore[empty-body]
         self,
-        nodeid: Union[ua.NodeId, str],
-        bname: Union[ua.QualifiedName, str],
+        nodeid: ua.NodeId | str,
+        bname: ua.QualifiedName | str,
         val: Any,
         varianttype: ua.VariantType | None = None,
-        datatype: Union[ua.NodeId, int] | None = None,
+        datatype: ua.NodeId | int | None = None,
     ) -> SyncNode:
         pass
 
     @syncmethod
     def add_property(  # type: ignore[empty-body]
         self,
-        nodeid: Union[ua.NodeId, str],
-        bname: Union[ua.QualifiedName, str],
+        nodeid: ua.NodeId | str,
+        bname: ua.QualifiedName | str,
         val: Any,
         varianttype: ua.VariantType | None = None,
-        datatype: Union[ua.NodeId, int] | None = None,
+        datatype: ua.NodeId | int | None = None,
     ) -> SyncNode:
         pass
 
     @syncmethod
     def add_object(  # type: ignore[empty-body]
         self,
-        nodeid: Union[ua.NodeId, str],
-        bname: Union[ua.QualifiedName, str],
+        nodeid: ua.NodeId | str,
+        bname: ua.QualifiedName | str,
         objecttype: int | None = None,
         instantiate_optional: bool = True,
     ) -> SyncNode:
         pass
 
     @syncmethod
-    def add_object_type(self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]) -> SyncNode:  # type: ignore[empty-body]
+    def add_object_type(self, nodeid: ua.NodeId | str, bname: ua.QualifiedName | str) -> SyncNode:  # type: ignore[empty-body]
         pass
 
     @syncmethod
     def add_variable_type(  # type: ignore[empty-body]
-        self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], datatype: Union[ua.NodeId, int]
+        self, nodeid: ua.NodeId | str, bname: ua.QualifiedName | str, datatype: ua.NodeId | int
     ) -> SyncNode:
         pass
 
     @syncmethod
-    def add_folder(self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str]) -> SyncNode:  # type: ignore[empty-body]
+    def add_folder(self, nodeid: ua.NodeId | str, bname: ua.QualifiedName | str) -> SyncNode:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -923,7 +925,7 @@ class SyncNode:
 
     @syncmethod
     def add_data_type(  # type: ignore[empty-body]
-        self, nodeid: Union[ua.NodeId, str], bname: Union[ua.QualifiedName, str], description: str | None = None
+        self, nodeid: ua.NodeId | str, bname: ua.QualifiedName | str, description: str | None = None
     ) -> SyncNode:
         pass
 
@@ -964,7 +966,7 @@ class SyncNode:
     get_data_type_as_variant_type = read_data_type_as_variant_type  # legacy
 
     @syncmethod
-    def call_method(self, methodid: Union[ua.NodeId, ua.QualifiedName, str], *args) -> Any:  # type: ignore[empty-body]
+    def call_method(self, methodid: ua.NodeId | ua.QualifiedName | str, *args) -> Any:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -981,7 +983,7 @@ class SyncNode:
     @syncmethod
     def add_reference(
         self,
-        target: Union[SyncNode, ua.NodeId, str, int],
+        target: SyncNode | ua.NodeId | str | int,
         reftype: int,
         forward: bool = True,
         bidirectional: bool = True,
@@ -1003,7 +1005,7 @@ class SyncNode:
     def get_path(self, max_length: int = 20, as_string: Literal[True] = True) -> list[str]: ...
 
     @syncmethod
-    def get_path(self, max_length: int = 20, as_string: bool = False) -> Union[list[SyncNode], list[str]]:  # type: ignore[empty-body]
+    def get_path(self, max_length: int = 20, as_string: bool = False) -> list[SyncNode] | list[str]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -1013,8 +1015,8 @@ class SyncNode:
     @syncmethod
     def add_reference_type(  # type: ignore[empty-body]
         self,
-        nodeid: Union[ua.NodeId, str],
-        bname: Union[ua.QualifiedName, str],
+        nodeid: ua.NodeId | str,
+        bname: ua.QualifiedName | str,
         symmetric: bool = True,
         inversename: str | None = None,
     ) -> SyncNode:
@@ -1023,7 +1025,7 @@ class SyncNode:
     @syncmethod
     def delete_reference(  # type: ignore[empty-body]
         self,
-        target: Union[SyncNode, ua.NodeId, str, int],
+        target: SyncNode | ua.NodeId | str | int,
         reftype: int,
         forward: bool = True,
         bidirectional: bool = True,
@@ -1031,7 +1033,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def get_access_level(self) -> Set[ua.AccessLevel]:  # type: ignore[empty-body]
+    def get_access_level(self) -> set[ua.AccessLevel]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -1061,7 +1063,7 @@ class SyncNode:
         pass
 
     @syncmethod
-    def read_event_notifier(self) -> Set[ua.EventNotifier]:  # type: ignore[empty-body]
+    def read_event_notifier(self) -> set[ua.EventNotifier]:  # type: ignore[empty-body]
         pass
 
     @syncmethod
@@ -1187,7 +1189,7 @@ class DataTypeDictionaryBuilder:
 
 def new_struct_field(
     name: str,
-    dtype: Union[ua.NodeId, SyncNode, ua.VariantType],
+    dtype: ua.NodeId | SyncNode | ua.VariantType,
     array: bool = False,
     optional: bool = False,
     description: str = "",
@@ -1199,9 +1201,9 @@ def new_struct_field(
 
 @syncfunc(aio_func=common.structures104.new_enum)
 def new_enum(  # type: ignore[empty-body]
-    server: Union[Server, Client],
-    idx: Union[int, ua.NodeId],
-    name: Union[int, ua.QualifiedName],
+    server: Server | Client,
+    idx: int | ua.NodeId,
+    name: int | ua.QualifiedName,
     values: list[str],
     optional: bool = False,
 ) -> SyncNode:
@@ -1210,9 +1212,9 @@ def new_enum(  # type: ignore[empty-body]
 
 @syncfunc(aio_func=common.structures104.new_struct)
 def new_struct(  # type: ignore[empty-body]
-    server: Union[Server, Client],
-    idx: Union[int, ua.NodeId],
-    name: Union[int, ua.QualifiedName],
+    server: Server | Client,
+    idx: int | ua.NodeId,
+    name: int | ua.QualifiedName,
     fields: list[ua.StructureField],
 ) -> tuple[SyncNode, list[SyncNode]]:
     pass
