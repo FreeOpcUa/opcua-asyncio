@@ -82,5 +82,4 @@ class SimpleRoleRuleset(PermissionRuleset):
     def check_validity(self, user, action_type_id, body):
         if action_type_id in self._permission_dict[user.role]:
             return True
-        else:
-            return False
+        return False

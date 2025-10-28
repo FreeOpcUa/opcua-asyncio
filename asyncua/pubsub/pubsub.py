@@ -108,19 +108,17 @@ class PubSub(PubSubInformationModel):
         elm = self.get_published_dataset(name)
         if elm is None:
             raise ValueError(f"Unknown Published Dataset {name}")
-        else:
-            if self._node is not None:
-                elm._node.delete()
-            del elm
+        if self._node is not None:
+            elm._node.delete()
+        del elm
 
     async def remove_connection(self, name: String) -> None:
         elm = self.get_connection(name)
         if elm is None:
             raise ValueError(f"Unknown Connection {name}")
-        else:
-            del elm
-            if self._node is not None:
-                elm._node.delete()
+        del elm
+        if self._node is not None:
+            self._node.delete()
 
     async def start(self) -> None:
         """
@@ -170,8 +168,7 @@ class PubSub(PubSubInformationModel):
                 for con in cfg.Connections:
                     await self.add_connection(PubSubConnection(con))
                 return
-            else:
-                logger.error("File has ExtensionObject of type: %s instead of UABinaryFileDataType", ex_obj)
+            logger.error("File has ExtensionObject of type: %s instead of UABinaryFileDataType", ex_obj)
         else:
             logger.error("File has ExtensionObject of type: %s instead of UABinaryFileDataType", ex_obj)
         raise UaError(BadInvalidArgument)

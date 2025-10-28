@@ -110,7 +110,7 @@ class XmlImporter:
     async def _check_required_models(self, xmlpath=None, xmlstring=None):
         req_models = self.parser.list_required_models(xmlpath, xmlstring)
         if not req_models:
-            return None
+            return
         server_model_list = await self._get_existing_model_in_namespace()
         for model in server_model_list:
             for req_model in req_models:
@@ -132,7 +132,7 @@ class XmlImporter:
                     missing_model["PublicationDate"],
                 )
             raise ValueError("Server doesn't satisfy required XML-Models. Import them first!")
-        return None
+        return
 
     async def _check_if_namespace_meta_information_is_added(self):
         """

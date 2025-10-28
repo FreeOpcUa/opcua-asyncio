@@ -82,11 +82,10 @@ async def create_object(
             parent, objecttype_node, nodeid, bname=qname, dname=dname, instantiate_optional=instantiate_optional
         )
         return nodes[0]
-    else:
-        return make_node(
-            parent.session,
-            await _create_object(parent.session, parent.nodeid, nodeid, qname, ua.ObjectIds.BaseObjectType),
-        )
+    return make_node(
+        parent.session,
+        await _create_object(parent.session, parent.nodeid, nodeid, qname, ua.ObjectIds.BaseObjectType),
+    )
 
 
 async def create_property(
@@ -507,8 +506,7 @@ def _guess_datatype(variant: ua.Variant):
         if extobj.__class__ in ua.datatype_by_extension_object:
             return ua.datatype_by_extension_object[extobj.__class__]
         raise ua.UaError(f"Cannot guess DataType of {variant} of python type {type(variant)}")
-    else:
-        return ua.NodeId(getattr(ua.ObjectIds, variant.VariantType.name))
+    return ua.NodeId(getattr(ua.ObjectIds, variant.VariantType.name))
 
 
 async def delete_nodes(

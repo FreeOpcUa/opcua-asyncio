@@ -140,8 +140,7 @@ class InternalSession(AbstractSession):
             )
             if user is None:
                 raise ServiceError(ua.StatusCodes.BadUserAccessDenied)
-            else:
-                self.user = user
+            self.user = user
         self.nonce = create_nonce(32)
         result.ServerNonce = self.nonce
         self.state = SessionState.Activated

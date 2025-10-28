@@ -506,8 +506,7 @@ class Server:
     def _get_bind_socket_info(self) -> tuple[str | None, int | None]:
         if self.socket_address is not None:
             return self.socket_address
-        else:
-            return self.endpoint.hostname, self.endpoint.port
+        return self.endpoint.hostname, self.endpoint.port
 
     async def stop(self):
         """

@@ -64,7 +64,7 @@ def types_or_list_from_union(uatype):
             # @hack how to check if a parameter is a list:
             # check if have _paramspec_tvars works for type[X]
             return True, subtype
-        elif hasattr(subtype, "_name"):
+        if hasattr(subtype, "_name"):
             # @hack how to check if parameter is union or list
             # if _name is not List, it is Union
             if subtype._name == "List":

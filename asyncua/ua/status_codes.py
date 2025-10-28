@@ -789,10 +789,8 @@ code_to_name_doc: dict[int, tuple[str, str]] = {
 def get_name_and_doc(val: int) -> tuple[str, str]:
     if val in code_to_name_doc:
         return code_to_name_doc[val]
-    else:
-        if val & 1 << 31:
-            return "Bad", "Unknown StatusCode value: {}".format(val)
-        elif val & 1 << 30:
-            return "Uncertain", "Unknown StatusCode value: {}".format(val)
-        else:
-            return "Good", "Unknown StatusCode value: {}".format(val)
+    if val & 1 << 31:
+        return "Bad", "Unknown StatusCode value: {}".format(val)
+    if val & 1 << 30:
+        return "Uncertain", "Unknown StatusCode value: {}".format(val)
+    return "Good", "Unknown StatusCode value: {}".format(val)

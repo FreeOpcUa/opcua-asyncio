@@ -126,8 +126,7 @@ class PubSubConnection(PubSubInformationModel):
         """
         if self.model_is_init():
             return await self._get_node_name()
-        else:
-            return self._cfg.Name
+        return self._cfg.Name
 
     async def add_writer_group(self, writer_group: WriterGroup) -> None:
         """
@@ -257,8 +256,7 @@ class PubSubConnection(PubSubInformationModel):
         await self.add_reader_group(rgp)
         if rgp._node is not None:
             return rgp._node.nodeid
-        else:
-            raise UaError("ReaderGroup node is not initialized")
+        raise UaError("ReaderGroup node is not initialized")
 
     @uamethod
     async def _add_writer_group(self, wg: WriterGroupDataType) -> NodeId:
@@ -266,8 +264,7 @@ class PubSubConnection(PubSubInformationModel):
         await self.add_reader_group(wgp)
         if wgp._node is not None:
             return wgp._node.nodeid
-        else:
-            raise UaError("WriterGroup node is not initialized")
+        raise UaError("WriterGroup node is not initialized")
 
     @uamethod
     async def _remove_group(self, nid: NodeId) -> None:

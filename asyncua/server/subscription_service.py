@@ -135,7 +135,7 @@ class SubscriptionService:
                 await sub.monitored_item_srv.trigger_event(event)
 
     @uamethod
-    async def condition_refresh(self, parent, subscription_id, mid=None):
+    async def condition_refresh(self, parent, subscription_id, mid=None) -> ua.StatusCode:
         if subscription_id not in self.subscriptions:
             return ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
         sub = self.subscriptions[subscription_id]
@@ -147,3 +147,4 @@ class SubscriptionService:
             await sub.monitored_item_srv.trigger_event(event, mid)
         if ua.ObjectIds.RefreshEndEventType in self.standard_events:
             await self.standard_events[ua.ObjectIds.RefreshEndEventType].trigger(subscription_id=subscription_id)
+        return None  # FIXME: really not sure this is correct, but this is the original behaviour

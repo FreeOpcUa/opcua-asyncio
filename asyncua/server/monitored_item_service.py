@@ -188,9 +188,9 @@ class MonitoredItemService:
         current = values.get_current_datavalue()
         if old is None and current is None:
             return False
-        elif (old is None) != (current is None):
+        if (old is None) != (current is None):
             return True
-        elif old is None or current is None:
+        if old is None or current is None:
             # This should never happen with the above logic, adding this check for mypy
             raise ValueError("This is an implementation error")
 

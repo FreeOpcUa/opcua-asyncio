@@ -758,8 +758,7 @@ async def test_server_read_set_attribute_value_setter(server: Server):
     def setter(node_data, attr, value):
         if value.Value.Value > 100:
             raise ua.uaerrors.BadOutOfRange()
-        else:
-            node_data.attributes[attr].value = value
+        node_data.attributes[attr].value = value
 
     server.set_attribute_value_setter(node.nodeid, setter, attr=ua.AttributeIds.Value)
 
