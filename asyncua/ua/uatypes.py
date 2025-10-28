@@ -117,7 +117,6 @@ class UaUnion:
     """class to identify unions"""
 
 
-
 class Number(float):
     pass
 

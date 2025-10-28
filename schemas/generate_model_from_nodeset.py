@@ -1,6 +1,7 @@
 """
 Generate address space code from xml file specification
 """
+
 from __future__ import annotations
 from xml.etree import ElementTree
 from logging import getLogger
@@ -48,22 +49,22 @@ NoSplitStruct = [
 ]
 
 buildin_types = [
-    'Char',
-    'SByte',
-    'Int16',
-    'Int32',
-    'Int64',
-    'UInt16',
-    'UInt32',
-    'UInt64',
-    'Boolean',
-    'Double',
-    'Float',
-    'Byte',
-    'String',
-    'CharArray',
-    'ByteString',
-    'DateTime',
+    "Char",
+    "SByte",
+    "Int16",
+    "Int32",
+    "Int64",
+    "UInt16",
+    "UInt32",
+    "UInt64",
+    "Boolean",
+    "Double",
+    "Float",
+    "Byte",
+    "String",
+    "CharArray",
+    "ByteString",
+    "DateTime",
     "Guid",
 ]
 
@@ -116,7 +117,7 @@ class Struct:
         for f in self.fields:
             if f.name == name:
                 return f
-        raise Exception(f'field not found: {name}')
+        raise Exception(f"field not found: {name}")
 
 
 @dataclass
@@ -190,20 +191,28 @@ def _add_struct(struct: Struct, newstructs: list[Struct], waiting_structs, known
 
 
 def reorder_structs(model: Model):
-    types: list[str] = IgnoredStructs + IgnoredEnums + buildin_types + [
-        'StatusCode',
-        'DiagnosticInfo',
-        "ExtensionObject",
-        "QualifiedName",
-        "ResponseHeader",
-        "RequestHeader",
-        'AttributeID',
-        "ExpandedNodeId",
-        "NodeId",
-        "Variant",
-        "DataValue",
-        "LocalizedText",
-    ] + [enum.name for enum in model.enums] + ['VariableAccessLevel'] + [alias.name for alias in model.aliases.values()]
+    types: list[str] = (
+        IgnoredStructs
+        + IgnoredEnums
+        + buildin_types
+        + [
+            "StatusCode",
+            "DiagnosticInfo",
+            "ExtensionObject",
+            "QualifiedName",
+            "ResponseHeader",
+            "RequestHeader",
+            "AttributeID",
+            "ExpandedNodeId",
+            "NodeId",
+            "Variant",
+            "DataValue",
+            "LocalizedText",
+        ]
+        + [enum.name for enum in model.enums]
+        + ["VariableAccessLevel"]
+        + [alias.name for alias in model.aliases.values()]
+    )
     waiting_structs: dict[str, list[Struct]] = {}
     newstructs: list[Struct] = []
     for s in model.structs:
@@ -221,12 +230,16 @@ def reorder_structs(model: Model):
             _add_struct(s, newstructs, waiting_structs, types)
 
     if len(model.structs) != len(newstructs):
-        _logger.warning('Error while reordering structs, some structs could not be reinserted: had %s structs, we now have %s structs', len(model.structs), len(newstructs))
+        _logger.warning(
+            "Error while reordering structs, some structs could not be reinserted: had %s structs, we now have %s structs",
+            len(model.structs),
+            len(newstructs),
+        )
         s1 = set(model.structs)
         s2 = set(newstructs)
-        _logger.debug('Variant' in types)
+        _logger.debug("Variant" in types)
         for s in s1 - s2:
-            _logger.warning('%s is waiting_structs for: %s', s.name, s.waitingfor)
+            _logger.warning("%s is waiting_structs for: %s", s.name, s.waitingfor)
     model.structs = newstructs
 
 
@@ -258,10 +271,10 @@ def split_requests(model: Model):
     structs = []
     for struct in model.structs:
         structtype = None
-        if struct.name.endswith('Request') and struct.name not in NotRequest:
-            structtype = 'Request'
-        elif struct.name.endswith('Response') or struct.name == 'ServiceFault':
-            structtype = 'Response'
+        if struct.name.endswith("Request") and struct.name not in NotRequest:
+            structtype = "Request"
+        elif struct.name.endswith("Response") or struct.name == "ServiceFault":
+            structtype = "Response"
         if structtype:
             struct.needconstructor = True
             sfield = Field(name="TypeId", data_type="NodeId")
@@ -269,11 +282,11 @@ def split_requests(model: Model):
 
         if structtype and struct.name not in NoSplitStruct:
             paramstruct = Struct(do_not_register=True)
-            if structtype == 'Request':
-                basename = struct.name.replace('Request', '') + 'Parameters'
+            if structtype == "Request":
+                basename = struct.name.replace("Request", "") + "Parameters"
                 paramstruct.name = basename
             else:
-                basename = struct.name.replace('Response', '') + 'Result'
+                basename = struct.name.replace("Response", "") + "Result"
                 paramstruct.name = basename
             paramstruct.fields = struct.fields[2:]
 
@@ -290,9 +303,7 @@ def get_basetypes(el: ElementTree.Element) -> list[str]:
     # return all basetypes
     basetypes = []
     for ref in el.findall("./{*}References/{*}Reference"):
-        if ref.get("ReferenceType") == "HasSubtype" and \
-           ref.get("IsForward", "true") == "false" and \
-           ref.text != "i=22":
+        if ref.get("ReferenceType") == "HasSubtype" and ref.get("IsForward", "true") == "false" and ref.text != "i=22":
             basetypes.append(ref.text)
     return basetypes
 
@@ -321,7 +332,7 @@ class Parser:
 
         name = el.get("BrowseName")
         if name is None:
-            raise RuntimeError(f'No BrowseName for element: {el}')
+            raise RuntimeError(f"No BrowseName for element: {el}")
 
         for ref in el.findall("./{*}References/{*}Reference"):
             if ref.get("ReferenceType") == "HasSubtype" and ref.get("IsForward", "true") == "false":
@@ -386,10 +397,10 @@ class Parser:
         if basetypes:
             struct.basetype = basetypes[0]
             if len(basetypes) > 1:
-                print(f'Error found mutliple basetypes for {struct} {basetypes}')
+                print(f"Error found mutliple basetypes for {struct} {basetypes}")
         for sfield in el.findall("./{*}Definition/{*}Field"):
             opt = sfield.get("IsOptional", "false")
-            allow_subtypes = True if sfield.get("AllowSubTypes", "false") == 'true' else False
+            allow_subtypes = True if sfield.get("AllowSubTypes", "false") == "true" else False
             is_optional = True if opt == "true" else False
             f = Field(
                 name=sfield.get("Name"),
@@ -398,7 +409,7 @@ class Parser:
                 array_dimensions=sfield.get("ArayDimensions"),
                 value=sfield.get("Value"),
                 is_optional=is_optional,
-                allow_subtypes=allow_subtypes
+                allow_subtypes=allow_subtypes,
             )
             if is_optional:
                 struct.has_optional = True
@@ -418,8 +429,8 @@ class Parser:
             name=name,
             data_type=el.get("NodeId"),
             doc=doc,
-            is_option_set=bool(is_option_set and is_option_set.text and is_option_set.text != 'false'),
-            base_type=base_type
+            is_option_set=bool(is_option_set and is_option_set.text and is_option_set.text != "false"),
+            base_type=base_type,
         )
         for f in el.findall("./{*}Definition/{*}Field"):
             efield = EnumField(name=f.get("Name"), value=int(f.get("Value")))
@@ -430,8 +441,8 @@ class Parser:
 def fix_names(model: Model):
     for s in model.enums:
         for f in s.fields:
-            if f.name == 'None':
-                f.name = 'None_'
+            if f.name == "None":
+                f.name = "None_"
     for s in model.structs:
         if s.name[0] == "3":
             s.name = "Three" + s.name[1:]
@@ -452,7 +463,7 @@ def fix_names(model: Model):
 if __name__ == "__main__":
     # this is jus debug code
     BASE_DIR = Path.cwd()
-    xml_path = BASE_DIR / 'UA-Nodeset-master' / 'Schema' / 'Opc.Ua.NodeSet2.Services.xml'
+    xml_path = BASE_DIR / "UA-Nodeset-master" / "Schema" / "Opc.Ua.NodeSet2.Services.xml"
     p = Parser(xml_path)
     model = p.parse()
     nodeid_to_names(model)

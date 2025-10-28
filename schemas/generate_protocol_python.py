@@ -9,8 +9,18 @@ if TYPE_CHECKING:
 BASE_DIR = Path(__file__).absolute().parent.parent
 
 IgnoredEnums = ["NodeIdType"]
-IgnoredStructs = ["QualifiedName", "NodeId", "ExpandedNodeId", "Variant", "DataValue",
-                  "ExtensionObject", "XmlElement", "LocalizedText", "RelativePath", "RelativePathElement"]
+IgnoredStructs = [
+    "QualifiedName",
+    "NodeId",
+    "ExpandedNodeId",
+    "Variant",
+    "DataValue",
+    "ExtensionObject",
+    "XmlElement",
+    "LocalizedText",
+    "RelativePath",
+    "RelativePathElement",
+]
 MyPyIgnoredStructs = ["Union"]
 
 
@@ -21,13 +31,13 @@ class CodeGenerator:
         self.model = model
         self.output_path = output
         self.output_file = None
-        self.indent = '    '
+        self.indent = "    "
         self.iidx = 0  # indent index
 
     def run(self) -> None:
         """Generate and write out code."""
-        print('Writing python protocol code to ', self.output_path)
-        self.output_file = open(self.output_path, 'w', encoding='utf-8')
+        print("Writing python protocol code to ", self.output_path)
+        self.output_file = open(self.output_path, "w", encoding="utf-8")
         self.make_header()
         for alias in self.model.aliases.values():
             self.write("")
@@ -39,7 +49,7 @@ class CodeGenerator:
         for struct in self.model.structs:
             if struct.name in IgnoredStructs:
                 continue
-            if struct.name.endswith('Node') or struct.name.endswith('NodeId'):
+            if struct.name.endswith("Node") or struct.name.endswith("NodeId"):
                 continue
             self.generate_struct_code(struct)
 
@@ -50,18 +60,18 @@ class CodeGenerator:
         # Most Json structs do not have a DefaultBinary Encoding in ObjectIds,
         # but I know of three exceptions:
         json_to_keep = (
-            'JsonWriterGroupMessageDataType',
-            'JsonDataSetWriterMessageDataType',
-            'JsonDataSetReaderMessageDataType',
+            "JsonWriterGroupMessageDataType",
+            "JsonDataSetWriterMessageDataType",
+            "JsonDataSetReaderMessageDataType",
         )
         for struct in self.model.structs:
             if struct.name in IgnoredStructs:
                 continue
-            if struct.name.endswith('Node') or struct.name.endswith('NodeId'):
+            if struct.name.endswith("Node") or struct.name.endswith("NodeId"):
                 continue
             if struct.do_not_register:
                 continue
-            #FIXME: might filter out too many things but these do not have
+            # FIXME: might filter out too many things but these do not have
             if not struct.name.startswith("Json") or struct.name in json_to_keep:
                 self.write(f"nid = FourByteNodeId(ObjectIds.{struct.name}_Encoding_DefaultBinary)")
                 self.write(f"extension_objects_by_typeid[nid] = {struct.name}")
@@ -70,94 +80,98 @@ class CodeGenerator:
     def write(self, line: str) -> None:
         """Write a properly indented line with newline."""
         if line:
-            line = f'{self.indent * self.iidx}{line}'
-        self.output_file.write(f'{line}\n')
+            line = f"{self.indent * self.iidx}{line}"
+        self.output_file.write(f"{line}\n")
 
     def make_header(self) -> None:
         """Write file header."""
-        self.write('from __future__ import annotations')
+        self.write("from __future__ import annotations")
         self.write('"""')
-        self.write(f'Autogenerate code from xml spec\nDate:{datetime.datetime.now(datetime.timezone.utc)}')
+        self.write(f"Autogenerate code from xml spec\nDate:{datetime.datetime.now(datetime.timezone.utc)}")
         self.write('"""')
-        self.write('')
-        self.write('from datetime import datetime, timezone')
-        self.write('from enum import IntEnum, IntFlag')
-        self.write('from dataclasses import dataclass, field')
-        self.write('')
-        self.write('from asyncua.ua.uatypes import FROZEN')
-        self.write('from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32')
-        self.write('from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid')
-        self.write('from asyncua.ua.uatypes import AccessLevel, EventNotifier')
-        self.write('from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue')
-        self.write('from asyncua.ua.uatypes import RelativePath, RelativePathElement')
-        self.write('from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo')
-        self.write('from asyncua.ua.uatypes import extension_object_typeids, extension_objects_by_typeid')
-        self.write('from asyncua.ua.object_ids import ObjectIds')
+        self.write("")
+        self.write("from datetime import datetime, timezone")
+        self.write("from enum import IntEnum, IntFlag")
+        self.write("from dataclasses import dataclass, field")
+        self.write("")
+        self.write("from asyncua.ua.uatypes import FROZEN")
+        self.write("from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32")
+        self.write(
+            "from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid"
+        )
+        self.write("from asyncua.ua.uatypes import AccessLevel, EventNotifier")
+        self.write("from asyncua.ua.uatypes import LocalizedText, Variant, QualifiedName, StatusCode, DataValue")
+        self.write("from asyncua.ua.uatypes import RelativePath, RelativePathElement")
+        self.write(
+            "from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo"
+        )
+        self.write("from asyncua.ua.uatypes import extension_object_typeids, extension_objects_by_typeid")
+        self.write("from asyncua.ua.object_ids import ObjectIds")
 
     def generate_enum_code(self, enum: Enum) -> None:
         """Write IntFlag class definition for an Enum."""
-        self.write('')
-        self.write('')
+        self.write("")
+        self.write("")
         if enum.is_option_set:
-            self.write(f'class {enum.name}(IntFlag):')
+            self.write(f"class {enum.name}(IntFlag):")
             self.iidx = 1
             self.write('"""')
             if enum.doc:
                 self.write(enum.doc)
                 self.write("")
             for val in enum.fields:
-                self.write(f':ivar {val.name}:')
-                self.write(f':vartype {val.name}: Bit: {val.value}')
+                self.write(f":ivar {val.name}:")
+                self.write(f":vartype {val.name}: Bit: {val.value}")
             self.write('"""')
             for val in enum.fields:
-                self.write(f'{val.name} = 1<<{val.value}')
-            self.write('')
-            self.write('@staticmethod')
-            self.write('def datatype() -> str:')
+                self.write(f"{val.name} = 1<<{val.value}")
+            self.write("")
+            self.write("@staticmethod")
+            self.write("def datatype() -> str:")
             self.write(f'    return "{enum.base_type}"')
             self.iidx = 0
         else:
-            self.write(f'class {enum.name}(IntEnum):')
+            self.write(f"class {enum.name}(IntEnum):")
             self.iidx = 1
             self.write('"""')
             if enum.doc:
                 self.write(enum.doc)
                 self.write("")
             for val in enum.fields:
-                self.write(f':ivar {val.name}:')
-                self.write(f':vartype {val.name}: {val.value}')
+                self.write(f":ivar {val.name}:")
+                self.write(f":vartype {val.name}: {val.value}")
             self.write('"""')
             for val in enum.fields:
-                self.write(f'{val.name} = {val.value}')
+                self.write(f"{val.name} = {val.value}")
             self.iidx = 0
 
     def generate_struct_code(self, obj: Struct) -> None:
         """Write dataclass definition for a Struct."""
-        self.write('')
-        self.write('')
+        self.write("")
+        self.write("")
         self.iidx = 0
-        ignore = ' # type: ignore' if obj.name in MyPyIgnoredStructs else ''
-        self.write('@dataclass(frozen=FROZEN)' + ignore)
+        ignore = " # type: ignore" if obj.name in MyPyIgnoredStructs else ""
+        self.write("@dataclass(frozen=FROZEN)" + ignore)
         if obj.basetype:
-            self.write(f'class {obj.name}({obj.basetype}):{ignore}')
+            self.write(f"class {obj.name}({obj.basetype}):{ignore}")
         else:
-            self.write(f'class {obj.name}:{ignore}')
+            self.write(f"class {obj.name}:{ignore}")
         self.iidx += 1
         self.write('"""')
         if obj.doc:
             self.write(obj.doc)
             self.write("")
         for field in obj.fields:
-            self.write(f':ivar {field.name}:')
-            self.write(f':vartype {field.name}: {field.data_type}')
+            self.write(f":ivar {field.name}:")
+            self.write(f":vartype {field.name}: {field.data_type}")
         self.write('"""')
 
         if obj.is_data_type:
-            self.write('')
-            self.write(f'data_type = NodeId(ObjectIds.{obj.name})')
+            self.write("")
+            self.write(f"data_type = NodeId(ObjectIds.{obj.name})")
 
         if obj.fields:
-            self.write('')
+            self.write("")
         # hack extension object stuff
         extobj_hack = False
         if "BodyLength" in [f.name for f in obj.fields]:
@@ -165,7 +179,7 @@ class CodeGenerator:
 
         for field in obj.fields:
             typestring = f"ua.{field.data_type}"
-            if field.allow_subtypes and typestring != 'ua.ExtensionObject':
+            if field.allow_subtypes and typestring != "ua.ExtensionObject":
                 typestring = f"type[{typestring}]"
             if field.is_array():
                 typestring = f"list[{typestring}]"
@@ -179,14 +193,17 @@ class CodeGenerator:
             elif field.data_type == obj.name:  # help!!! self referencing class
                 # FIXME: Might not be good enough
                 self.write(f"{fieldname}: 'Optional[ExtensionObject]' = None")
-            elif obj.name not in ("ExtensionObject") and \
-                    field.name == "TypeId":  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
+            elif (
+                obj.name not in ("ExtensionObject") and field.name == "TypeId"
+            ):  # and ( obj.name.endswith("Request") or obj.name.endswith("Response")):
                 if obj.name.startswith("Json"):
                     self.write(f"TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultJson)")
                 else:
                     self.write(f"TypeId: 'ua.NodeId' = FourByteNodeId(ObjectIds.{obj.name}_Encoding_DefaultBinary)")
             else:
-                self.write(f"{fieldname}: '{typestring}' = {'field(default_factory=list)' if field.is_array() else self.get_default_value(field)}")
+                self.write(
+                    f"{fieldname}: '{typestring}' = {'field(default_factory=list)' if field.is_array() else self.get_default_value(field)}"
+                )
 
         self.iidx = 0
 
@@ -198,34 +215,34 @@ class CodeGenerator:
         if dtype in self.model.enum_list:
             enum = self.model.get_enum(dtype)
             if enum.is_option_set:
-                return f'field(default_factory=lambda:{enum.name}(0))'
-            return f'field(default_factory=lambda:{enum.name}.{enum.fields[0].name})'
+                return f"field(default_factory=lambda:{enum.name}(0))"
+            return f"field(default_factory=lambda:{enum.name}.{enum.fields[0].name})"
 
         al = self.model.get_alias(dtype)
         if al is not None:
             dtype = al.real_type
 
-        if dtype == 'String':
+        if dtype == "String":
             return None
-        if dtype in ('ByteString', 'CharArray', 'Char'):
+        if dtype in ("ByteString", "CharArray", "Char"):
             return None
-        if dtype == 'Boolean':
-            return 'True'
+        if dtype == "Boolean":
+            return "True"
         if dtype == "Guid":
-            return 'Guid(int=0)'
-        if dtype == 'DateTime':
-            return 'field(default_factory=lambda: datetime.now(timezone.utc))'
-        if dtype in ('Int16', 'Int32', 'Int64', 'UInt16', 'UInt32', 'UInt64', 'Double', 'Float', 'Byte'):
-            return '0'
-        if dtype in 'ExtensionObject':
-            return 'ExtensionObject()'
-        return f'field(default_factory=lambda: {dtype}())'
+            return "Guid(int=0)"
+        if dtype == "DateTime":
+            return "field(default_factory=lambda: datetime.now(timezone.utc))"
+        if dtype in ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte"):
+            return "0"
+        if dtype in "ExtensionObject":
+            return "ExtensionObject()"
+        return f"field(default_factory=lambda: {dtype}())"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import generate_model_from_nodeset as gm
 
-    xml_path = BASE_DIR.joinpath('schemas', 'UA-Nodeset-master', 'Schema', 'Opc.Ua.NodeSet2.Services.xml')
+    xml_path = BASE_DIR.joinpath("schemas", "UA-Nodeset-master", "Schema", "Opc.Ua.NodeSet2.Services.xml")
     protocol_path = BASE_DIR.joinpath("asyncua", "ua", "uaprotocol_auto.py")
     p = gm.Parser(xml_path)
     model = p.parse()

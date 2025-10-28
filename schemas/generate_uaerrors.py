@@ -3,6 +3,7 @@ from generate_statuscode import status_codes
 from string import Template
 from pathlib import Path
 from datetime import datetime, timezone
+
 BASE_DIR = Path.cwd().parent
 
 if __name__ == "__main__":
@@ -24,9 +25,11 @@ if __name__ == "__main__":
             if not name.startswith("Bad"):
                 continue
 
-            template = Template(dedent("""\
+            template = Template(
+                dedent("""\
             class $name(UaStatusCodeError):
                 code = $code
 
-            """))
+            """)
+            )
             print(template.safe_substitute(name=name, code=code), file=f)

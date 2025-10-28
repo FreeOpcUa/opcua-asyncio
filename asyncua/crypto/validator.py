@@ -121,11 +121,10 @@ class CertificateValidator:
                 ]:
                     _logger.warning("mismatch between application type and certificate ExtendedKeyUsage")
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
-                if (
-                    CertificateValidatorOptions.PEER_CLIENT in self._options
-                    and app_description.ApplicationType
-                    not in [ua.ApplicationType.Client, ua.ApplicationType.ClientAndServer]
-                ):
+                if CertificateValidatorOptions.PEER_CLIENT in self._options and app_description.ApplicationType not in [
+                    ua.ApplicationType.Client,
+                    ua.ApplicationType.ClientAndServer,
+                ]:
                     _logger.warning("mismatch between application type and certificate ExtendedKeyUsage")
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
 
