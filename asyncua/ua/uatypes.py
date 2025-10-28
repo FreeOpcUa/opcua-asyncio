@@ -5,16 +5,14 @@ implement ua datatypes
 from __future__ import annotations
 
 import binascii
-import collections
 import itertools
 import logging
 import re
-import sys
 import uuid
 from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import Any, Generic, Union, TYPE_CHECKING
+from typing import Any, Union, TYPE_CHECKING, get_args, get_origin
 import types
 
 from asyncua.ua.object_ids import ObjectIds
@@ -22,26 +20,6 @@ from enum import IntEnum
 
 if TYPE_CHECKING:
     import asyncua.ua as ua
-
-# hack to support python < 3.8
-if sys.version_info.minor < 10:
-
-    def get_origin(tp):
-        if hasattr(tp, "__origin__"):
-            return tp.__origin__
-        if tp is Generic:
-            return Generic
-        return None
-
-    def get_args(tp):
-        if hasattr(tp, "__args__"):
-            res = tp.__args__
-            if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:
-                res = (list(res[:-1]), res[-1])
-            return res
-        return ()
-else:
-    from typing import get_args, get_origin  # type: ignore
 
 
 from asyncua.ua import status_codes
