@@ -148,7 +148,6 @@ class CryptographyNone:
         """
         Verify signature and raise exception if signature is invalid
         """
-        pass
 
     def remove_padding(self, data):
         return data

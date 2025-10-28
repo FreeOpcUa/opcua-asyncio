@@ -116,7 +116,7 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "G004", "W", "UP", "YTT", "ASYNC", "T10", "ISC", "G"]
+select = ["E", "F", "G004", "W", "UP", "YTT", "ASYNC", "T10", "ISC", "G", "PIE"]
 ignore = [
   "E111",  # conflicts with ruff format, cf doc
   "E114",  # conflicts with ruff format, cf doc

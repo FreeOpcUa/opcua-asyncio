@@ -419,7 +419,7 @@ class UadpDataSetDeltaVariant:
 
     @staticmethod
     def message_from_binary(header: UadpDataSetMessageHeader, data: Buffer, size: int) -> UadpDataSetMessage:
-        Data = [struct_from_binary(DeltaVariant, data) for _ in range(0, Primitives.UInt16.unpack(data))]
+        Data = [struct_from_binary(DeltaVariant, data) for _ in range(Primitives.UInt16.unpack(data))]
         return UadpDataSetDeltaVariant(header, Data)
 
 
@@ -438,7 +438,7 @@ class UadpDataSetDeltaDataValue:
 
     @staticmethod
     def message_from_binary(header: UadpDataSetMessageHeader, data: Buffer, size: int) -> UadpDataSetMessage:
-        Data = [struct_from_binary(DeltaDataValue, data) for _ in range(0, Primitives.UInt16.unpack(data))]
+        Data = [struct_from_binary(DeltaDataValue, data) for _ in range(Primitives.UInt16.unpack(data))]
         return UadpDataSetDeltaDataValue(header, Data)
 
 
@@ -470,7 +470,7 @@ class UadpDataSetVariant:
 
     @staticmethod
     def message_from_binary(header: UadpDataSetMessageHeader, data: Buffer, size: int) -> UadpDataSetMessage:
-        Data = [unpack_uatype(VariantType.Variant, data) for _ in range(0, Primitives.UInt16.unpack(data))]
+        Data = [unpack_uatype(VariantType.Variant, data) for _ in range(Primitives.UInt16.unpack(data))]
         return UadpDataSetVariant(header, Data)
 
 
@@ -489,7 +489,7 @@ class UadpDataSetDataValue:
 
     @staticmethod
     def message_from_binary(header: UadpDataSetMessageHeader, data: Buffer, size: int) -> UadpDataSetMessage:
-        Data = [struct_from_binary(DataValue, data) for _ in range(0, Primitives.UInt16.unpack(data))]
+        Data = [struct_from_binary(DataValue, data) for _ in range(Primitives.UInt16.unpack(data))]
         return UadpDataSetDataValue(header, Data)
 
 
@@ -548,7 +548,7 @@ def _unpack_payload(data: Buffer, payload_header_count: int | None) -> list[Uadp
     payload: list[UadpDataSetMessage] = []
     if payload_header_count and payload_header_count > 1:
         # Sizes is omitted if count is 1 *OR* payload header was omitted.
-        for _ in range(0, payload_header_count):
+        for _ in range(payload_header_count):
             sizes.append(Primitives.UInt16.unpack(data))
     else:
         # FIXME: For now, we assume one DataSetMessage if payload header was omitted.

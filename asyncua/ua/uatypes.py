@@ -116,7 +116,6 @@ def type_string_from_type(uatype):
 class UaUnion:
     """class to identify unions"""
 
-    pass
 
 
 class Number(float):

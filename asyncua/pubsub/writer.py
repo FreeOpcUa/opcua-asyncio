@@ -352,7 +352,6 @@ class WriterGroup(PubSubInformationModel):
         if UadpNetworkMessageContentMask.DataSetClassId in msg_cfg.NetworkMessageContentMask:
             # @TODO where to get the DataSetClassId?
             logger.warning("Uadp DataSetClassId is not supported.")
-            pass
             # msg.Header.DataSetClassId = Guid()
         if UadpNetworkMessageContentMask.PromotedFields in msg_cfg.NetworkMessageContentMask:
             promoted_fields = True

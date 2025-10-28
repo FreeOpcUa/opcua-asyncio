@@ -124,7 +124,6 @@ def fields_with_resolved_types(
             field.type = resolved_fieldtypes[field.name]
         except KeyError:
             _logger.info("could not resolve fieldtype for field=%s of class_or_instance=%s", field, class_or_instance)
-            pass
 
     return fields_
 
