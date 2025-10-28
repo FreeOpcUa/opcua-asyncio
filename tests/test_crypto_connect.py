@@ -201,19 +201,17 @@ async def test_basic256_encrypt_success(srv_crypto_all_certs):
 async def test_basic256_encrypt_use_certificate_bytes(srv_crypto_all_certs):
     clt = Client(uri_crypto)
     _, cert = srv_crypto_all_certs
-    with (
-        await aiofiles.open(cert, "rb") as server_cert,
-        await aiofiles.open(f"{EXAMPLE_PATH / 'certificate-example.der'}", "rb") as user_cert,
-        await aiofiles.open(f"{EXAMPLE_PATH / 'private-key-example.pem'}", "rb") as user_key,
-    ):
-        await clt.set_security(
-            security_policies.SecurityPolicyBasic256Sha256,
-            user_cert.read(),
-            CertProperties(user_key.read(), extension="pem"),
-            None,
-            server_cert.read(),
-            ua.MessageSecurityMode.SignAndEncrypt,
-        )
+    async with aiofiles.open(cert, "rb") as server_cert:
+        async with aiofiles.open(f"{EXAMPLE_PATH / 'certificate-example.der'}", "rb") as user_cert:
+            async with aiofiles.open(f"{EXAMPLE_PATH / 'private-key-example.pem'}", "rb") as user_key:
+                await clt.set_security(
+                    security_policies.SecurityPolicyBasic256Sha256,
+                    await user_cert.read(),
+                    CertProperties(await user_key.read(), extension="pem"),
+                    None,
+                    await server_cert.read(),
+                    ua.MessageSecurityMode.SignAndEncrypt,
+                )
 
     async with clt:
         assert await clt.nodes.objects.get_children()
