@@ -1589,7 +1589,7 @@ async def test_custom_struct_union(opc):
 async def test_custom_struct_of_struct(opc):
     idx = 4
 
-    dtype, encs = await new_struct(
+    dtype, _encs = await new_struct(
         opc.opc,
         idx,
         "MySubStruct2",
@@ -1622,7 +1622,7 @@ async def test_custom_struct_of_struct(opc):
 async def test_custom_list_of_struct(opc):
     idx = 4
 
-    dtype, encs = await new_struct(
+    dtype, _encs = await new_struct(
         opc.opc,
         idx,
         "MySubStruct3",
@@ -1703,7 +1703,7 @@ async def test_nested_struct_arrays(opc):
         ],
     )
 
-    snode2, _ = await new_struct(
+    _snode2, _ = await new_struct(
         opc.opc,
         idx,
         "MyNestedStruct",
@@ -1835,7 +1835,7 @@ async def test_custom_struct_of_struct_with_spaces(opc):
 
     nodeid = ua.NodeId("toto.My Identifier", idx)
     qname = ua.QualifiedName("My Sub Struct 1", idx)
-    dtype, encs = await new_struct(
+    dtype, _encs = await new_struct(
         opc.opc,
         nodeid,
         qname,
@@ -1868,7 +1868,7 @@ async def test_custom_struct_of_struct_with_spaces(opc):
 async def test_custom_method_with_struct(opc):
     idx = 4
 
-    data_type, nodes = await new_struct(
+    data_type, _nodes = await new_struct(
         opc.opc,
         idx,
         "MyStructArg",

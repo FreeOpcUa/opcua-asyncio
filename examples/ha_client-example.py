@@ -41,6 +41,7 @@ async def start_servers():
     ports = [4840, 4841]
     urls = []
     loop = asyncio.get_event_loop()
+    tasks = []
     for port in ports:
         server = Server()
         await server.init()
@@ -55,8 +56,8 @@ async def start_servers():
         myobj = await server.nodes.objects.add_object(idx, "MyObject")
         myvar = await myobj.add_variable(idx, "MyVariable", 6.7)
         await server.start()
-        loop.create_task(server_var_update(server, myvar))
-    return urls, myvar
+        tasks.append(loop.create_task(server_var_update(server, myvar)))
+    return urls, myvar, tasks
 
 
 async def server_var_update(server, myvar):
@@ -71,7 +72,7 @@ async def server_var_update(server, myvar):
 
 async def main():
     # start the servers
-    urls, node = await start_servers()
+    urls, node, _tasks = await start_servers()
 
     # set up ha_client with the serveur urls
     ha_config = HaConfig(

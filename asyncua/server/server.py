@@ -124,6 +124,7 @@ class Server:
             max_message_size=max_msg_sz,
         )
         self._pubsub: PubSub | None = None
+        self._discovery_handle: asyncio.Task | None = None
 
     async def init(self, shelf_file: Path | None = None):
         await self.iserver.init(shelf_file)
@@ -230,7 +231,7 @@ class Server:
 
     __repr__ = __str__
 
-    async def load_certificate(self, path_or_content: str | bytes | Path, format: str = None):
+    async def load_certificate(self, path_or_content: str | bytes | Path, format: str | None = None):
         """
         load server certificate from file, either pem or der
         """
@@ -295,7 +296,15 @@ class Server:
         await self._discovery_clients[url].disconnect_sessionless()
         self._discovery_period = period
         if period:
-            asyncio.get_running_loop().call_soon(self._schedule_renew_registration)
+            self._discovery_handle = asyncio.create_task(self._run_renewal_loop())
+
+    async def _run_renewal_loop(self):
+        while True:
+            try:
+                await self._renew_registration()
+            except Exception as e:
+                _logger.warning("Error during registration renewal: %s", e)
+            await asyncio.sleep(self._discovery_period)
 
     async def unregister_from_discovery(self, url: str = "opc.tcp://localhost:4840", discovery_configuration=None):
         """
@@ -307,12 +316,6 @@ class Server:
         del self._discovery_clients[url]
         if not self._discovery_clients and self._discovery_handle:
             self._discovery_handle.cancel()
-
-    def _schedule_renew_registration(self):
-        asyncio.create_task(self._renew_registration())
-        self._discovery_handle = asyncio.get_running_loop().call_later(
-            self._discovery_period, self._schedule_renew_registration
-        )
 
     async def _renew_registration(self):
         for client in self._discovery_clients.values():
@@ -514,6 +517,8 @@ class Server:
         """
         if self._discovery_handle:
             self._discovery_handle.cancel()
+            self._discovery_handle = None
+
         if self._discovery_clients:
             await asyncio.gather(*[client.disconnect() for client in self._discovery_clients.values()])
         await self.bserver.stop()
@@ -677,7 +682,7 @@ class Server:
         await exp.build_etree(nodes)
         await exp.write_xml(path)
 
-    async def export_xml_by_ns(self, path: str, namespaces: list = None, export_values: bool = False):
+    async def export_xml_by_ns(self, path: str, namespaces: list[str | int] | None = None, export_values: bool = False):
         """
         Export nodes of one or more namespaces to an XML file.
         Namespaces used by nodes are always exported for consistency.

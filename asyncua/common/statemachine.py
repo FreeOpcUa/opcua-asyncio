@@ -38,7 +38,7 @@ class State:
     number: Number is an integer which uniquely identifies the current state within the StateMachineType.
     """
 
-    def __init__(self, id, name: str = None, number: int = None, node: Node | None = None):
+    def __init__(self, id, name: str | None = None, number: int | None = None, node: Node | None = None):
         if id is not None:
             self.id = ua.Variant(id)
         else:
@@ -61,12 +61,12 @@ class Transition:
     number: Number is an integer which uniquely identifies the current state within the StateMachineType.
     transitiontime: TransitionTime specifies when the transition occurred.
     effectivetransitiontime: EffectiveTransitionTime specifies the time when the current state or one of its substates was entered.
-    If, for example, a StateA is active and – while active – switches several times between its substates SubA and SubB,
+    If, for example, a StateA is active and - while active - switches several times between its substates SubA and SubB,
     then the TransitionTime stays at the point in time when StateA became active whereas the EffectiveTransitionTime changes
     with each change of a substate.
     """
 
-    def __init__(self, id, name: str = None, number: int = None, node: Node = None):
+    def __init__(self, id, name: str | None = None, number: int | None = None, node: Node | None = None):
         if id is not None:
             self.id = ua.Variant(id)
         else:
@@ -87,7 +87,9 @@ class StateMachine:
     Generates TransitionEvent's
     """
 
-    def __init__(self, server: Server = None, parent: Node = None, idx: int = None, name: str = None):
+    def __init__(
+        self, server: Server = None, parent: Node | None = None, idx: int | None = None, name: str | None = None
+    ):
         if not isinstance(server, Server):
             raise ValueError(f"server: {type(server)} is not a instance of Server class")
         if not isinstance(parent, Node):
@@ -323,7 +325,7 @@ class FiniteStateMachine(StateMachine):
     if you need to know the available states and transition from clientside
     """
 
-    def __init__(self, server: Server = None, parent: Node = None, idx: int = None, name: str = None):
+    def __init__(self, server: Server = None, parent: Node = None, idx: int | None = None, name: str | None = None):
         super().__init__(server, parent, idx, name)
         if name is None:
             self._name = "FiniteStateMachine"

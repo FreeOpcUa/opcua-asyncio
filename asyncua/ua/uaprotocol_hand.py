@@ -61,8 +61,8 @@ class Header:
 
 @dataclass
 class ErrorMessage:
-    Error: uatypes.StatusCode = uatypes.StatusCode()
-    Reason: uatypes.String = ""
+    Error: uatypes.StatusCode = field(default_factory=lambda: uatypes.StatusCode())
+    Reason: uatypes.String = field(default_factory=lambda: uatypes.String())
 
 
 @dataclass

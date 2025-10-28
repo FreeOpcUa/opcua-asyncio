@@ -120,7 +120,7 @@ def test_subscribe_server_time(self, client):
     sub = client.create_subscription(200, msclt)
     handle = sub.subscribe_data_change(server_time_node)
 
-    node, val, data = msclt.future.result()
+    node, val, _data = msclt.future.result()
     self.assertEqual(node, server_time_node)
     delta = datetime.now(timezone.utc) - val
     print("Timedelta is ", delta)

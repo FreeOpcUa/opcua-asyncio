@@ -87,7 +87,7 @@ class {self.name}:
         if self.option_counter > 0:
             field = Field("Encoding")
             field.uatype = "UInt32"
-            self.fields = [field] + self.fields
+            self.fields = [field, *self.fields]
         for sfield in self.fields:
             if sfield.name != "SwitchField":
                 """

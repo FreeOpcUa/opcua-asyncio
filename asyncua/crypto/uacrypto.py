@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
 
 # We redefine InvalidSignature as part of this module. Do not remove this line.
-from cryptography.exceptions import InvalidSignature  # noqa: F811
+from cryptography.exceptions import InvalidSignature
 
 from dataclasses import dataclass
 import logging

@@ -60,7 +60,7 @@ class ConnectionStates(IntEnum):
 @dataclass
 class ServerInfo:
     url: str
-    status: ConnectionStates = ConnectionStates(1)
+    status: ConnectionStates = field(default_factory=lambda: ConnectionStates(1))
 
 
 @dataclass(frozen=True, eq=True)
@@ -521,8 +521,7 @@ class HaManager:
             if (
                 force
                 or not client.uaclient.protocol
-                or client.uaclient.protocol
-                and client.uaclient.protocol.state == UASocketProtocol.CLOSED
+                or (client.uaclient.protocol and client.uaclient.protocol.state == UASocketProtocol.CLOSED)
             ):
                 _logger.info("Virtually reconnecting and resubscribing %s", client)
                 await self.ha_client.reconnect(client=client)

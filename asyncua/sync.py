@@ -585,7 +585,7 @@ class Server:
         self.stop()
 
     @syncmethod
-    def load_certificate(self, path: str, format: str = None):
+    def load_certificate(self, path: str, format: str | None = None):
         pass
 
     @syncmethod
@@ -854,8 +854,8 @@ class SyncNode:
     @syncmethod
     def read_event_history(  # type: ignore[empty-body]
         self,
-        starttime: datetime = None,
-        endtime: datetime = None,
+        starttime: datetime | None = None,
+        endtime: datetime | None = None,
         numvalues: int = 0,
         evtypes: SyncNode
         | ua.NodeId

@@ -7,15 +7,15 @@ import logging
 
 from asyncua import ua, pubsub
 from asyncua.pubsub.udp import UdpSettings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 # This Parameter must match the Publisher Settings!
 @dataclass
 class PubSubCFG:
-    PublisherID: ua.Variant = ua.Variant(ua.UInt16(1))
-    WriterId: ua.UInt16 = ua.UInt16(1)
-    DataSetWriterId: ua.UInt16 = ua.UInt16(32)
+    PublisherID: ua.Variant = field(default_factory=lambda: ua.Variant(ua.UInt16(1)))
+    WriterId: ua.UInt16 = field(default_factory=lambda: ua.UInt16(1))
+    DataSetWriterId: ua.UInt16 = field(default_factory=lambda: ua.UInt16(32))
     Url: str = "opc.udp://239.0.0.1:4840"
 
 

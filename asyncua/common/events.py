@@ -36,7 +36,7 @@ class Event:
         else:
             self.emitting_node = ua.NodeId(emitting_node)
         # save current attributes
-        self.internal_properties = list(self.__dict__.keys())[:] + ["internal_properties"]
+        self.internal_properties = [*self.__dict__.keys(), "internal_properties"]
 
     def __str__(self):
         return "{0}({1})".format(
@@ -177,11 +177,11 @@ async def _select_clause_from_childs(
         if ref.NodeClass == ua.NodeClass.Variable:
             if ref.ReferenceTypeId == ua.ObjectIds.HasProperty:
                 await _append_new_attribute_to_select_clauses(
-                    select_clauses, already_selected, [*browse_path] + [ref.BrowseName]
+                    select_clauses, already_selected, [*browse_path, ref.BrowseName]
                 )
             else:
                 await _append_new_attribute_to_select_clauses(
-                    select_clauses, already_selected, [*browse_path] + [ref.BrowseName]
+                    select_clauses, already_selected, [*browse_path, ref.BrowseName]
                 )
                 var = child.new_node(child.session, ref.NodeId)
                 refs = await var.get_references(
@@ -192,7 +192,7 @@ async def _select_clause_from_childs(
                     _BROWSE_MASK,
                 )
                 await _select_clause_from_childs(
-                    var, refs, select_clauses, already_selected, browse_path + [ref.BrowseName]
+                    var, refs, select_clauses, already_selected, [*browse_path, ref.BrowseName]
                 )
         elif ref.NodeClass == ua.NodeClass.Object:
             obj = child.new_node(child.session, ref.NodeId)
@@ -204,7 +204,7 @@ async def _select_clause_from_childs(
                 _BROWSE_MASK,
             )
             await _select_clause_from_childs(
-                obj, refs, select_clauses, already_selected, browse_path + [ref.BrowseName]
+                obj, refs, select_clauses, already_selected, [*browse_path, ref.BrowseName]
             )
 
 

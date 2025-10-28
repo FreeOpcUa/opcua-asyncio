@@ -156,7 +156,8 @@ class OpcUdp(asyncio.DatagramProtocol):
             msg = UadpNetworkMessage.from_binary(buffer)
             logger.debug(msg)
             if self.receiver is not None:
-                asyncio.ensure_future(self.receiver.got_uadp(msg))
+                # FIXME: cor should be used
+                _coro = asyncio.ensure_future(self.receiver.got_uadp(msg))  # noqa: RUF006
             else:
                 logger.warning("No receiver set — dropping UADP message")
         except Exception:

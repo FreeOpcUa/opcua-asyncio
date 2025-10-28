@@ -116,7 +116,7 @@ class Client:
         is not recommended for security reasons.
         """
         url = self._server_url
-        userinfo, have_info, hostinfo = url.netloc.rpartition("@")
+        _userinfo, have_info, hostinfo = url.netloc.rpartition("@")
         if have_info:
             # remove credentials from url, preventing them to be sent unencrypted in e.g. send_hello
             if self.strip_url_credentials:

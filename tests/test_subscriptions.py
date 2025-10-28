@@ -229,13 +229,13 @@ async def test_subscription_data_change(opc):
     sub = await opc.opc.create_subscription(100, myhandler)
     handle1 = await sub.subscribe_data_change(v1)
     # Now check we get the start value
-    node, val, data = await myhandler.result()
+    node, val, _data = await myhandler.result()
     assert startv1 == val
     assert v1 == node
     myhandler.reset()  # reset future object
     # modify v1 and check we get value
     await v1.write_value([5])
-    node, val, data = await myhandler.result()
+    node, val, _data = await myhandler.result()
     assert v1 == node
     assert [5] == val
     with pytest.raises(ua.UaStatusCodeError):
@@ -270,7 +270,7 @@ async def test_subscription_monitored_item(opc: Opc):
     handles = await sub._subscribe(nodes=v1, mfilter=mfilter)
 
     # # Now check we get the start value
-    node, val, data = await myhandler.result()
+    node, val, _data = await myhandler.result()
     assert startv1 == val
     assert v1 == node
     myhandler.reset()  # reset future object
@@ -280,7 +280,7 @@ async def test_subscription_monitored_item(opc: Opc):
     await v1.write_value(ua.DataValue([5]))
 
     # first change will trigger an event (now the new sourcetimestamp becomes not set)
-    node, val, data = await myhandler.result()
+    node, val, _data = await myhandler.result()
     assert v1 == node
     assert [5] == val
     myhandler.reset()  # reset future object
@@ -289,7 +289,7 @@ async def test_subscription_monitored_item(opc: Opc):
     await v1.write_value(ua.DataValue([6]))
 
     # seccond change will trigger based on value (no change in sourcetimestamp)
-    node, val, data = await myhandler.result()
+    node, val, _data = await myhandler.result()
     assert v1 == node
     assert [6] == val
 
@@ -368,13 +368,13 @@ async def test_subscription_data_change_bool(opc):
     sub = await opc.opc.create_subscription(100, myhandler)
     _ = await sub.subscribe_data_change(v1)
     # Now check we get the start value
-    node, val, data = await myhandler.result()
+    node, val, _data = await myhandler.result()
     assert startv1 == val
     assert v1 == node
     myhandler.reset()  # reset future object
     # modify v1 and check we get value
     await v1.write_value(False)
-    node, val, data = await myhandler.result()
+    node, val, _data = await myhandler.result()
     assert v1 == node
     assert val is False
     await sub.delete()  # should delete our monitoreditem too
@@ -397,14 +397,14 @@ async def test_subscription_data_change_complex(opc):
     sub = await opc.opc.create_subscription(100, myhandler)
     _ = await sub.subscribe_data_change(v1)
     # Now check we get the start value
-    node, val, data = await myhandler.result()
+    node, val, _data = await myhandler.result()
     assert startv1 == val
     assert v1 == node
     myhandler.reset()  # reset future object
     # modify v1 and check we get value
     startv1.ProductUri = "BB"
     await v1.write_value(startv1)
-    node, val, data = await myhandler.result()
+    node, val, _data = await myhandler.result()
     assert v1 == node
     assert startv1 == val
     assert val.ProductUri == "BB"
@@ -426,7 +426,7 @@ async def test_subscription_data_change_many(opc):
     startv2 = [1.22, 1.65]
     v2 = await o.add_variable(3, "SubscriptionVariableMany2", startv2)
     sub = await opc.opc.create_subscription(100, myhandler)
-    handle1, handle2 = await sub.subscribe_data_change([v1, v2])
+    _handle1, _handle2 = await sub.subscribe_data_change([v1, v2])
     # Now check we get the start values
     nodes = [v1, v2]
     count = 0
@@ -480,7 +480,7 @@ async def test_subscribe_server_time(opc):
     sub = await opc.opc.create_subscription(200, myhandler)
     handle = await sub.subscribe_data_change(server_time_node)
     assert isinstance(handle, int)
-    node, val, data = await myhandler.result()
+    node, val, _data = await myhandler.result()
     assert server_time_node == node
     delta = datetime.now(timezone.utc) - val
     assert delta < timedelta(seconds=2)
@@ -1005,7 +1005,7 @@ async def test_internal_server_subscription(opc):
 @pytest.mark.parametrize("opc", ["client"], indirect=True)
 async def test_maxkeepalive_count(opc, mocker):
     sub_handler = MySubHandler()
-    client, server = opc
+    client, _server = opc
 
     period = 1
     max_keepalive_count = client.get_keepalive_count(period)

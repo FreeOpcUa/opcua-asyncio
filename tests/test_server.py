@@ -568,17 +568,17 @@ async def test_get_node_by_ns(server):
         return ns_list
 
     # incase other testss created nodes in unregistered namespace
-    _idx_d = await server.register_namespace("dummy1")  # noqa: F841
-    _idx_d = await server.register_namespace("dummy2")  # noqa: F841
-    _idx_d = await server.register_namespace("dummy3")  # noqa: F841
+    _idx_d = await server.register_namespace("dummy1")
+    _idx_d = await server.register_namespace("dummy2")
+    _idx_d = await server.register_namespace("dummy3")
     # create the test namespaces and vars
     idx_a = await server.register_namespace("a")
     idx_b = await server.register_namespace("b")
     idx_c = await server.register_namespace("c")
     o = server.nodes.objects
-    _myvar2 = await o.add_variable(idx_a, "MyBoolVar2", True)  # noqa: F841
-    _myvar3 = await o.add_variable(idx_b, "MyBoolVar3", True)  # noqa: F841
-    _myvar4 = await o.add_variable(idx_c, "MyBoolVar4", True)  # noqa: F841
+    _myvar2 = await o.add_variable(idx_a, "MyBoolVar2", True)
+    _myvar3 = await o.add_variable(idx_b, "MyBoolVar3", True)
+    _myvar4 = await o.add_variable(idx_c, "MyBoolVar4", True)
     # the tests
     nodes = await ua_utils.get_nodes_of_namespace(server, namespaces=[idx_a, idx_b, idx_c])
     assert 3 == len(nodes)

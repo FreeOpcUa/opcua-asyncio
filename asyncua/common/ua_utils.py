@@ -265,10 +265,10 @@ async def get_base_data_type(datatype):
         if base.nodeid.NamespaceIndex == 0 and isinstance(base.nodeid.Identifier, int) and base.nodeid.Identifier < 30:
             return base
         base = await get_node_supertype(base)
-    raise ua.UaError(f"Datatype must be a subtype of builtin types {str(datatype)}")
+    raise ua.UaError(f"Datatype must be a subtype of builtin types {datatype!s}")
 
 
-async def get_nodes_of_namespace(server, namespaces=None):
+async def get_nodes_of_namespace(server, namespaces: list[str | int] | None = None):
     """
     Get the nodes of one or more namespaces .
     Args:
