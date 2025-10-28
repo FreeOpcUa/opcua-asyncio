@@ -351,7 +351,7 @@ class WriterGroup(PubSubInformationModel):
             msg.PicoSeconds = UInt16(0)  # Not supported
         if UadpNetworkMessageContentMask.DataSetClassId in msg_cfg.NetworkMessageContentMask:
             # @TODO where to get the DataSetClassId?
-            logger.warn("Uadp DataSetClassId is not supported.")
+            logger.warning("Uadp DataSetClassId is not supported.")
             pass
             # msg.Header.DataSetClassId = Guid()
         if UadpNetworkMessageContentMask.PromotedFields in msg_cfg.NetworkMessageContentMask:

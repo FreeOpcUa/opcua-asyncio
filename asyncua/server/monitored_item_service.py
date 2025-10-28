@@ -329,7 +329,7 @@ class WhereClauseEvaluator:
         if el.FilterOperator == ua.FilterOperator.Or:
             return self._eval_op(ops[0], event) or self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.Cast:
-            self.logger.warn("Cast operand not implemented, assuming True")
+            self.logger.warning("Cast operand not implemented, assuming True")
             return True
         if el.FilterOperator == ua.FilterOperator.OfType:
             return event.EventType == self._eval_op(ops[0], event)
