@@ -176,8 +176,7 @@ def _arg_to_variant(val, array, ptype, varianttype=None):
         val = ptype(val)
     if varianttype:
         return ua.Variant(val, varianttype)
-    else:
-        return ua.Variant(val)
+    return ua.Variant(val)
 
 
 def _val_to_variant(val, args):
@@ -192,55 +191,55 @@ def _val_to_variant(val, args):
                 return _arg_to_variant(val, array, float)
             except ValueError:
                 return _arg_to_variant(val, array, str)
-    elif args.datatype == "bool":
+    if args.datatype == "bool":
         if val in ("1", "True", "true"):
             return ua.Variant(True, ua.VariantType.Boolean)
-        else:
-            return ua.Variant(False, ua.VariantType.Boolean)
-    elif args.datatype == "sbyte":
+        return ua.Variant(False, ua.VariantType.Boolean)
+    if args.datatype == "sbyte":
         return _arg_to_variant(val, array, int, ua.VariantType.SByte)
-    elif args.datatype == "byte":
+    if args.datatype == "byte":
         return _arg_to_variant(val, array, int, ua.VariantType.Byte)
     # elif args.datatype == "uint8":
     # return _arg_to_variant(val, array, int, ua.VariantType.Byte)
-    elif args.datatype == "uint16":
+    if args.datatype == "uint16":
         return _arg_to_variant(val, array, int, ua.VariantType.UInt16)
-    elif args.datatype == "uint32":
+    if args.datatype == "uint32":
         return _arg_to_variant(val, array, int, ua.VariantType.UInt32)
-    elif args.datatype == "uint64":
+    if args.datatype == "uint64":
         return _arg_to_variant(val, array, int, ua.VariantType.UInt64)
     # elif args.datatype == "int8":
     # return ua.Variant(int(val), ua.VariantType.Int8)
-    elif args.datatype == "int16":
+    if args.datatype == "int16":
         return _arg_to_variant(val, array, int, ua.VariantType.Int16)
-    elif args.datatype == "int32":
+    if args.datatype == "int32":
         return _arg_to_variant(val, array, int, ua.VariantType.Int32)
-    elif args.datatype == "int64":
+    if args.datatype == "int64":
         return _arg_to_variant(val, array, int, ua.VariantType.Int64)
-    elif args.datatype == "float":
+    if args.datatype == "float":
         return _arg_to_variant(val, array, float, ua.VariantType.Float)
-    elif args.datatype == "double":
+    if args.datatype == "double":
         return _arg_to_variant(val, array, float, ua.VariantType.Double)
-    elif args.datatype == "string":
+    if args.datatype == "string":
         return _arg_to_variant(val, array, str, ua.VariantType.String)
-    elif args.datatype == "datetime":
+    if args.datatype == "datetime":
         raise NotImplementedError
-    elif args.datatype == "Guid":
+    if args.datatype == "Guid":
         return _arg_to_variant(val, array, bytes, ua.VariantType.Guid)
-    elif args.datatype == "ByteString":
+    if args.datatype == "ByteString":
         return _arg_to_variant(val, array, bytes, ua.VariantType.ByteString)
-    elif args.datatype == "xml":
+    if args.datatype == "xml":
         return _arg_to_variant(val, array, str, ua.VariantType.XmlElement)
-    elif args.datatype == "nodeid":
+    if args.datatype == "nodeid":
         return _arg_to_variant(val, array, ua.NodeId.from_string, ua.VariantType.NodeId)
-    elif args.datatype == "expandednodeid":
+    if args.datatype == "expandednodeid":
         return _arg_to_variant(val, array, ua.ExpandedNodeId.from_string, ua.VariantType.ExpandedNodeId)
-    elif args.datatype == "statuscode":
+    if args.datatype == "statuscode":
         return _arg_to_variant(val, array, int, ua.VariantType.StatusCode)
-    elif args.datatype in ("qualifiedname", "browsename"):
+    if args.datatype in ("qualifiedname", "browsename"):
         return _arg_to_variant(val, array, ua.QualifiedName.from_string, ua.VariantType.QualifiedName)
-    elif args.datatype == "LocalizedText":
+    if args.datatype == "LocalizedText":
         return _arg_to_variant(val, array, ua.LocalizedText, ua.VariantType.LocalizedText)
+    raise ValueError(f"Invalid datatype: {args.datatype}")
 
 
 async def _configure_client_with_args(client, args):
@@ -741,7 +740,7 @@ def print_history(o):
         print("{0:30} {1:10} {2}".format(str(d.SourceTimestamp), d.StatusCode.name, d.Value.Value))
 
 
-def str_to_datetime(s, default=None):
+def str_to_datetime(s, default=None) -> datetime.Datetime:
     if not s:
         if default is not None:
             return default
@@ -752,6 +751,7 @@ def str_to_datetime(s, default=None):
             return datetime.strptime(s, fmt)
         except ValueError:
             pass
+    raise ValueError(f"Invalid datetime format: {s}")
 
 
 def uahistoryread():
@@ -887,8 +887,7 @@ async def _uacall():
             methods = await node.get_methods()
             if len(methods) == 0:
                 raise ValueError("No methods in selected node and no method given")
-            else:
-                method_id = methods[0]
+            method_id = methods[0]
         result = await node.call_method(method_id, *val)
         print(f"resulting result_variants={result}")
     except Exception as e:

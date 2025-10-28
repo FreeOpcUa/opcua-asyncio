@@ -262,8 +262,7 @@ class Cryptography(CryptographyNone):
             if self.Prev_Decryptor and self.Prev_Verifier:
                 return True
             raise uacrypto.InvalidSignature
-        else:
-            return False
+        return False
 
     @use_prev_key.setter
     def use_prev_key(self, value: bool):

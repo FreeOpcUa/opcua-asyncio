@@ -33,8 +33,7 @@ def find_free_port():
         if port not in PORTS_USED:
             PORTS_USED.add(port)
             return port
-        else:
-            return find_free_port()
+        return find_free_port()
 
 
 port_num = find_free_port()

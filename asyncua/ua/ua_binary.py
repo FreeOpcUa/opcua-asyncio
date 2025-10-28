@@ -291,16 +291,14 @@ def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
         if is_optional:
             return lambda val: b"" if val is None else create_list_serializer(ft, ft == dataclazz)(val)
         return create_list_serializer(ft, ft == dataclazz)
-    else:
-        if ftype == dataclazz:
-            if is_optional:
-                return lambda val: b"" if val is None else create_type_serializer(uatype)(val)
-            return lambda x: create_type_serializer(uatype)(x)
-        serializer = create_type_serializer(uatype)
+    if ftype == dataclazz:
         if is_optional:
-            return lambda val: b"" if val is None else serializer(val)
-        else:
-            return serializer
+            return lambda val: b"" if val is None else create_type_serializer(uatype)(val)
+        return lambda x: create_type_serializer(uatype)(x)
+    serializer = create_type_serializer(uatype)
+    if is_optional:
+        return lambda val: b"" if val is None else serializer(val)
+    return serializer
 
 
 @functools.cache
@@ -363,7 +361,7 @@ def create_enum_serializer(uatype):
         if hasattr(uatype, "datatype"):
             typename = uatype.datatype()
         return getattr(Primitives, typename).pack
-    elif isinstance(uatype, Enum):
+    if isinstance(uatype, Enum):
         return lambda val: Primitives.Int32.pack(val.value)
     return Primitives.Int32.pack
 
@@ -644,8 +642,7 @@ def _create_type_deserializer(uatype, dataclazz):
         if hasattr(ua.VariantType, utype.__name__):
             vtype = getattr(ua.VariantType, utype.__name__)
             return _create_uatype_array_deserializer(vtype)
-        else:
-            return _create_list_deserializer(utype, utype == dataclazz)
+        return _create_list_deserializer(utype, utype == dataclazz)
     if hasattr(ua.VariantType, uatype.__name__):
         vtype = getattr(ua.VariantType, uatype.__name__)
         return _create_uatype_deserializer(vtype)

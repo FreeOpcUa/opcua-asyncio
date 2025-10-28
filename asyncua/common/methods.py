@@ -26,10 +26,9 @@ async def call_method(parent: asyncua.Node, methodid: ua.NodeId | ua.QualifiedNa
 
     if len(result.OutputArguments) == 0:
         return None
-    elif len(result.OutputArguments) == 1:
+    if len(result.OutputArguments) == 1:
         return result.OutputArguments[0]
-    else:
-        return result.OutputArguments
+    return result.OutputArguments
 
 
 async def call_method_full(
@@ -102,25 +101,23 @@ def uamethod(func):
 def _format_call_inputs(parent, *args):
     if isinstance(parent, ua.NodeId):
         return (parent, *[arg.Value for arg in args])
-    else:
-        self = parent
-        parent = args[0]
-        args = args[1:]
+    self = parent
+    parent = args[0]
+    args = args[1:]
     return (self, parent, *[arg.Value for arg in args])
 
 
 def _format_call_outputs(result):
     if result is None:
         return []
-    elif isinstance(result, ua.CallMethodResult):
+    if isinstance(result, ua.CallMethodResult):
         result.OutputArguments = to_variant(*result.OutputArguments)
         return result
-    elif isinstance(result, ua.StatusCode):
+    if isinstance(result, ua.StatusCode):
         return result
-    elif isinstance(result, tuple):
+    if isinstance(result, tuple):
         return to_variant(*result)
-    else:
-        return to_variant(result)
+    return to_variant(result)
 
 
 def to_variant(*args: Iterable) -> list[ua.Variant]:

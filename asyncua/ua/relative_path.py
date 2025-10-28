@@ -113,11 +113,9 @@ class RelativePathElementFormatter:
                         rest = rest[1:]
                         continue
                     raise ValueError(f"Invalid escape sequence '&{head}' in browse path.")
-                else:
-                    raise ValueError("Unexpected end after escape character '&'.")
-            else:
-                name.append(head)
-                rest = rest[1:]
+                raise ValueError("Unexpected end after escape character '&'.")
+            name.append(head)
+            rest = rest[1:]
 
         if is_reference and head != ">":
             raise ValueError("Missing closing '>' for reference type name in browse path.")
@@ -236,8 +234,7 @@ def _find_reference_type(reference_type_name: QualifiedName) -> NodeId:
     type_id = getattr(ObjectIds, reference_type_name.Name, None)
     if type_id is not None:
         return NodeId(Identifier=type_id, NamespaceIndex=0)
-    else:
-        raise ValueError("Non-standard ReferenceTypes are not supported.")
+    raise ValueError("Non-standard ReferenceTypes are not supported.")
 
 
 def _find_reference_type_name(reference_type_id: NodeId) -> QualifiedName:
@@ -247,5 +244,4 @@ def _find_reference_type_name(reference_type_id: NodeId) -> QualifiedName:
             type_id: int = reference_type_id.Identifier
             return QualifiedName.from_string(ObjectIdNames[type_id])
         raise ValueError("Non-integer NodeIds are not supported.")
-    else:
-        raise ValueError("Non-standard ReferenceTypes are not supported.")
+    raise ValueError("Non-standard ReferenceTypes are not supported.")

@@ -21,10 +21,9 @@ def ua_type_to_python(val, uatype_as_str):
     """
     if hasattr(ua.VariantType, uatype_as_str):
         return string_to_val(val, getattr(ua.VariantType, uatype_as_str))
-    elif hasattr(ua, uatype_as_str):
+    if hasattr(ua, uatype_as_str):
         return string_to_val(val, getattr(ua, uatype_as_str))
-    else:
-        raise ValueError
+    raise ValueError
 
 
 def _to_bool(val):

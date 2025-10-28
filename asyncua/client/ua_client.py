@@ -341,7 +341,7 @@ class UaClient(AbstractSession):
             return
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("disconnect_socket was called but connection is closed")
-            return None
+            return
         self.protocol.disconnect_socket()
         self.protocol = None
 
@@ -358,7 +358,7 @@ class UaClient(AbstractSession):
         """
         if not self.protocol or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("close_secure_channel was called but connection is closed")
-            return
+            return None
         return await self.protocol.close_secure_channel()
 
     async def create_session(self, parameters):

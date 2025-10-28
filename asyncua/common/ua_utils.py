@@ -243,7 +243,7 @@ async def data_type_to_variant_type(dtype_node):
     if base.nodeid.Identifier == 29:
         # we have an enumeration, value is an Int32
         return ua.VariantType.Int32
-    elif base.nodeid.Identifier in [24, 26, 27, 28]:
+    if base.nodeid.Identifier in [24, 26, 27, 28]:
         # BaseDataType, Number, Integer, UInteger -> Variant
         return ua.VariantType.Variant
     return ua.VariantType(base.nodeid.Identifier)

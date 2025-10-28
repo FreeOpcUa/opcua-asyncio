@@ -127,28 +127,27 @@ class HistoryDict(HistoryStorageInterface):
         if node_id not in self._datachanges:
             _logger.warning("Error attempt to read history for a node which is not historized")
             return [], cont
+        if start is None:
+            start = ua.get_win_epoch()
+        if end is None:
+            end = ua.get_win_epoch()
+        if start == ua.get_win_epoch():
+            results = [dv for dv in reversed(self._datachanges[node_id]) if start <= dv.SourceTimestamp]
+        elif end == ua.get_win_epoch():
+            results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp]
+        elif start > end:
+            results = [dv for dv in reversed(self._datachanges[node_id]) if end <= dv.SourceTimestamp <= start]
+
         else:
-            if start is None:
-                start = ua.get_win_epoch()
-            if end is None:
-                end = ua.get_win_epoch()
-            if start == ua.get_win_epoch():
-                results = [dv for dv in reversed(self._datachanges[node_id]) if start <= dv.SourceTimestamp]
-            elif end == ua.get_win_epoch():
-                results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp]
-            elif start > end:
-                results = [dv for dv in reversed(self._datachanges[node_id]) if end <= dv.SourceTimestamp <= start]
+            results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp <= end]
 
-            else:
-                results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp <= end]
+        if nb_values and len(results) > nb_values:
+            results = results[:nb_values]
 
-            if nb_values and len(results) > nb_values:
-                results = results[:nb_values]
-
-            if len(results) > self.max_history_data_response_size:
-                cont = results[self.max_history_data_response_size].SourceTimestamp
-                results = results[: self.max_history_data_response_size]
-            return results, cont
+        if len(results) > self.max_history_data_response_size:
+            cont = results[self.max_history_data_response_size].SourceTimestamp
+            results = results[: self.max_history_data_response_size]
+        return results, cont
 
     async def new_historized_event(self, source_id, evtypes, period, count=0):
         if source_id in self._events:
@@ -178,28 +177,27 @@ class HistoryDict(HistoryStorageInterface):
                 source_id,
             )
             return [], cont
+        if start is None:
+            start = ua.get_win_epoch()
+        if end is None:
+            end = ua.get_win_epoch()
+        if start == ua.get_win_epoch():
+            results = [ev for ev in reversed(self._events[source_id]) if start <= ev.Time]
+        elif end == ua.get_win_epoch():
+            results = [ev for ev in self._events[source_id] if start <= ev.Time]
+        elif start > end:
+            results = [ev for ev in reversed(self._events[source_id]) if end <= ev.Time <= start]
+
         else:
-            if start is None:
-                start = ua.get_win_epoch()
-            if end is None:
-                end = ua.get_win_epoch()
-            if start == ua.get_win_epoch():
-                results = [ev for ev in reversed(self._events[source_id]) if start <= ev.Time]
-            elif end == ua.get_win_epoch():
-                results = [ev for ev in self._events[source_id] if start <= ev.Time]
-            elif start > end:
-                results = [ev for ev in reversed(self._events[source_id]) if end <= ev.Time <= start]
+            results = [ev for ev in self._events[source_id] if start <= ev.Time <= end]
 
-            else:
-                results = [ev for ev in self._events[source_id] if start <= ev.Time <= end]
+        if nb_values and len(results) > nb_values:
+            results = results[:nb_values]
 
-            if nb_values and len(results) > nb_values:
-                results = results[:nb_values]
-
-            if len(results) > self.max_history_data_response_size:
-                cont = results[self.max_history_data_response_size].Time
-                results = results[: self.max_history_data_response_size]
-            return results, cont
+        if len(results) > self.max_history_data_response_size:
+            cont = results[self.max_history_data_response_size].Time
+            results = results[: self.max_history_data_response_size]
+        return results, cont
 
     async def stop(self):
         pass

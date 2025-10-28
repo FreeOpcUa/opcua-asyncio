@@ -71,8 +71,7 @@ class PubSubInformationModel:
         if self._node is not None:
             n = await self._node.get_child(path)
             return n.read_value()
-        else:
-            return None
+        return None
 
     async def _set_state(self, state: PubSubState) -> None:
         """
@@ -89,8 +88,7 @@ class PubSubInformationModel:
         """
         if self._state_node is not None:
             return await self._state_node.read_value()
-        else:
-            return self.__state_fallback
+        return self.__state_fallback
 
     async def _get_node_name(self) -> String:
         if self._node is None:

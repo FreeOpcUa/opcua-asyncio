@@ -75,15 +75,14 @@ class OPCUAProtocol(asyncio.Protocol):
                     _logger.error("Got malformed header %s", header)
                     self.transport.close()
                     return
-                else:
-                    if len(buf) < header.body_size:
-                        _logger.debug(
-                            "We did not receive enough data from client. Need %s got %s", header.body_size, len(buf)
-                        )
-                        return
-                    # we have a complete message
-                    self.messages.put_nowait((header, buf))
-                    self._buffer = self._buffer[(header.header_size + header.body_size) :]
+                if len(buf) < header.body_size:
+                    _logger.debug(
+                        "We did not receive enough data from client. Need %s got %s", header.body_size, len(buf)
+                    )
+                    return
+                # we have a complete message
+                self.messages.put_nowait((header, buf))
+                self._buffer = self._buffer[(header.header_size + header.body_size) :]
             except Exception:
                 _logger.exception("Exception raised while parsing message from client")
                 return

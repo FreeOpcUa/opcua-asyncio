@@ -88,7 +88,7 @@ class CertificateValidator:
             now = datetime.now(timezone.utc)
             if cert.not_valid_after_utc < now:
                 raise ServiceError(ua.StatusCodes.BadCertificateTimeInvalid)
-            elif cert.not_valid_before_utc > now:
+            if cert.not_valid_before_utc > now:
                 raise ServiceError(ua.StatusCodes.BadCertificateTimeInvalid)
         try:
             san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
@@ -121,7 +121,7 @@ class CertificateValidator:
                 ]:
                     _logger.warning("mismatch between application type and certificate ExtendedKeyUsage")
                     raise ServiceError(ua.StatusCodes.BadCertificateUseNotAllowed)
-                elif (
+                if (
                     CertificateValidatorOptions.PEER_CLIENT in self._options
                     and app_description.ApplicationType
                     not in [ua.ApplicationType.Client, ua.ApplicationType.ClientAndServer]

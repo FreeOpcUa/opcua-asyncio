@@ -391,14 +391,13 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_exis
                 parent_sdef=sdef,
                 add_existing=add_existing,
             )
-        else:
-            return _recursive_parse(
-                server,
-                server.get_node(desc.NodeId),
-                dtypes,
-                parent_sdef,
-                add_existing=add_existing,
-            )
+        return _recursive_parse(
+            server,
+            server.get_node(desc.NodeId),
+            dtypes,
+            parent_sdef,
+            add_existing=add_existing,
+        )
 
     requests = [__add_recursion(sdef, desc) for sdef, desc in zip(results, ch)]
 
@@ -415,6 +414,7 @@ async def _get_parent_types(node: Node):
         tmp_node = Node(tmp_node.session, refs[0].NodeId)
         parents.append(tmp_node)
     _logger.warning("Went 10 layers up while look of subtype of given node %s, something is wrong: %s", node, parents)
+    return parents
 
 
 async def load_custom_struct(node: Node) -> Any:

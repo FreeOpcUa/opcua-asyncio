@@ -116,7 +116,20 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "G004", "W", "UP", "YTT", "ASYNC", "T10", "ISC", "G", "PIE"]
+select = [
+  "E",
+  "F",
+  "G004",
+  "W",
+  "UP",
+  "YTT",
+  "ASYNC",
+  "T10",
+  "ISC",
+  "G",
+  "PIE",
+  "RET"
+]
 ignore = [
   "E111",  # conflicts with ruff format, cf doc
   "E114",  # conflicts with ruff format, cf doc
@@ -126,6 +139,7 @@ ignore = [
   "UP030",  # Use implicit references for positional format fields
   "UP037",  # due to protocol using class member name same as object type we want to use quotes and precise ua namespace
   "ASYNC110",  # too many false positives
+  "RET504",  # do not agree
 ]
 
 [tool.ruff.lint.per-file-ignores]

@@ -177,7 +177,7 @@ class Client:
         Call this before connect()
         """
         if not string:
-            return
+            return None
         parts = string.split(",")
         if len(parts) < 4:
             raise ua.UaError(f"Wrong format: `{string}`, expected at least 4 comma-separated values")

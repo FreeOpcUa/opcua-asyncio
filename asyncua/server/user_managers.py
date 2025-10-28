@@ -17,8 +17,7 @@ class PermissiveUserManager:
         """
         if username and iserver.allow_remote_admin and username in ("admin", "Admin"):
             return User(role=UserRole.Admin)
-        else:
-            return User(role=UserRole.User)
+        return User(role=UserRole.User)
 
 
 class CertificateUserManager:
@@ -53,8 +52,7 @@ class CertificateUserManager:
         ]
         if len(correct_users) == 0:
             return None
-        else:
-            return correct_users[0]
+        return correct_users[0]
 
     async def add_user(self, certificate_path: Path, name: str, format: str | None = None):
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.User, name=name, format=format)
