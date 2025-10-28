@@ -8,7 +8,7 @@ import logging
 import re
 import keyword
 import typing
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from dataclasses import dataclass, field
 
 import asyncio
@@ -335,8 +335,8 @@ async def _generate_object(name, sdef, data_type=None, env=None, enum=False, opt
 
 
 class DataTypeSorter:
-    dtype_index: dict[ua.NodeId, DataTypeSorter] = {}
-    referenced_dtypes: set[ua.NodeId] = set()
+    dtype_index: ClassVar[dict[ua.NodeId, DataTypeSorter]] = {}
+    referenced_dtypes: ClassVar[set[ua.NodeId]] = set()
 
     def __init__(self, data_type: ua.NodeId, name: str, desc: ua.ReferenceDescription, sdef: ua.StructureDefinition):
         self.data_type = data_type
@@ -409,7 +409,7 @@ async def _get_parent_types(node: Node):
     tmp_node = node
     for _ in range(10):
         refs = await tmp_node.get_references(refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse)
-        if not refs or refs[0].NodeId.NamespaceIndex == 0 and refs[0].NodeId.Identifier == 22:
+        if not refs or (refs[0].NodeId.NamespaceIndex == 0 and refs[0].NodeId.Identifier == 22):
             return parents
         tmp_node = Node(tmp_node.session, refs[0].NodeId)
         parents.append(tmp_node)

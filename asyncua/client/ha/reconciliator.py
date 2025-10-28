@@ -140,7 +140,7 @@ class Reconciliator:
         """
 
         ideal_map = self.ha_client.ideal_map
-        healthy, unhealthy = await self.ha_client.group_clients_by_health()
+        healthy, _unhealthy = await self.ha_client.group_clients_by_health()
         async with self.ha_client._client_lock:
             valid_urls = {self.ha_client.clients[h].url for h in healthy}
         real_map = self.real_map

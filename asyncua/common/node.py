@@ -731,8 +731,8 @@ class Node:
 
     async def read_event_history(
         self,
-        starttime: datetime = None,
-        endtime: datetime = None,
+        starttime: datetime | None = None,
+        endtime: datetime | None = None,
         numvalues: int = 0,
         evtypes: Node | ua.NodeId | str | int | Iterable[Node | ua.NodeId | str | int] = ua.ObjectIds.BaseEventType,
     ) -> list[Event]:

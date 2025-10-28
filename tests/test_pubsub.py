@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import timezone
+from typing import ClassVar
 
 
 import pytest
@@ -128,7 +129,7 @@ async def create_published_dataset() -> PublishedDataSet:
 
 
 class OnDataReceived:
-    values = {}
+    values: ClassVar = {}
 
     async def on_dataset_received(self, meta: pubsub.DataSetMeta, fields: list[pubsub.DataSetValue]):
         _logger.info("Got Dataset %s", meta.Name)

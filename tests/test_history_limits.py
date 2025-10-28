@@ -7,7 +7,7 @@ NODE_ID = ua.NodeId(123)
 
 
 async def result_count(history):
-    results, cont = await history.read_node_history(NODE_ID, None, None, None)
+    results, _cont = await history.read_node_history(NODE_ID, None, None, None)
     return len(results)
 
 

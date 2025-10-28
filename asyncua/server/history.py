@@ -206,12 +206,14 @@ class HistoryDict(HistoryStorageInterface):
 class SubHandler:
     def __init__(self, storage: HistoryStorageInterface):
         self.storage = storage
+        self.datachange_task = None
+        self.event_task = None
 
     def datachange_notification(self, node, val, data):
-        asyncio.create_task(self.storage.save_node_value(node.nodeid, data.monitored_item.Value))
+        self.datachange_task = asyncio.create_task(self.storage.save_node_value(node.nodeid, data.monitored_item.Value))
 
     def event_notification(self, event):
-        asyncio.create_task(self.storage.save_event(event))
+        self.event_task = asyncio.create_task(self.storage.save_event(event))
 
 
 class HistoryManager:

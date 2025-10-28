@@ -98,7 +98,7 @@ class CallbackService:
                 self.addListener(eventName, getattr(subscriber, params))
             elif isinstance(params, list):
                 if not params:
-                    raise ValueError(f'Invalid params "{repr(params)}" for event "{str(eventName)}"')
+                    raise ValueError(f'Invalid params "{params!r}" for event "{eventName!s}"')
                 if len(params) <= 2 and isinstance(params[0], str):
                     priority = params[1] if len(params) > 1 else 0
                     self.addListener(eventName, getattr(subscriber, params[0]), priority)
@@ -107,4 +107,4 @@ class CallbackService:
                         priority = listener[1] if len(listener) > 1 else 0
                         self.addListener(eventName, getattr(subscriber, listener[0]), priority)
             else:
-                raise ValueError(f'Invalid params for event "{str(eventName)}"')
+                raise ValueError(f'Invalid params for event "{eventName!s}"')

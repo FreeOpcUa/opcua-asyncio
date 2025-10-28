@@ -123,7 +123,7 @@ class TestHaClient:
         primary = await ha_client.get_serving_client(ha_client.get_clients(), None)
         await wait_mode_in_real_map(ha_client, primary, sub, mode="publishing", value=True)
 
-        node_id, val, data = await myhandler.result()
+        node_id, val, _data = await myhandler.result()
         assert node_id == node
         assert val == values
 
@@ -188,7 +188,7 @@ class TestHaClient:
 
         # data collected by sub handler is correct
         await wait_sub_in_real_map(ha_client, sub)
-        node_id, val, data = await myhandler.result()
+        node_id, val, _data = await myhandler.result()
         assert node_id == node
         assert val == values
 
@@ -263,7 +263,7 @@ class TestHaClient:
 
     @pytest.mark.asyncio
     async def test_group_clients_by_health(self, ha_client, ha_servers):
-        srv1, srv2 = ha_servers
+        srv1, _srv2 = ha_servers
         # srv2 service level is already 255
         slevel = srv1.get_node(ua.NodeId(ua.ObjectIds.Server_ServiceLevel))
         await ha_client.start()
@@ -356,7 +356,7 @@ class TestReconciliator:
         for c in ha_client.get_clients():
             await wait_for_status_change(ha_client, c, 255)
 
-        node, values = [(n, v) for n, v in srv_variables.items()][0]
+        node, _values = [(n, v) for n, v in srv_variables.items()][0]
         node_str = node.nodeid.to_string()
 
         # create sub and add node to datachange
@@ -456,7 +456,7 @@ class TestReconciliator:
         the ideal_map is bad, and Reconciliator would try to comply indefinitely.
         """
         await ha_client.start()
-        node, values = [(n, v) for n, v in srv_variables.items()][0]
+        node, _values = [(n, v) for n, v in srv_variables.items()][0]
         node_str = node.nodeid.to_string()
         myhandler = MySubHandler()
         sub = await ha_client.create_subscription(100, myhandler)

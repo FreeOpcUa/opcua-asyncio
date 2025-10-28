@@ -418,7 +418,7 @@ class XMLParser:
                 obj.typedef = ref.text
             elif not struct.forward:
                 parent, parentlink = struct.target, struct.reftype
-                if obj.parent == parent or obj.parent != parent and not obj.parentlink:
+                if obj.parent == parent or (obj.parent != parent and not obj.parentlink):
                     obj.parentlink = parentlink
 
         if obj.parent and not obj.parentlink:

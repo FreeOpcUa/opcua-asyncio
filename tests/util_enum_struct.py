@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
 
@@ -21,7 +21,7 @@ setattr(asyncua.ua, "ExampleEnum", ExampleEnum)
 @dataclass
 class ExampleStruct:
     IntVal1: uatypes.Int16 = 0
-    EnumVal: ExampleEnum = ExampleEnum(0)
+    EnumVal: ExampleEnum = field(default_factory=lambda: ExampleEnum(0))
 
 
 async def add_server_custom_enum_struct(server: Server):

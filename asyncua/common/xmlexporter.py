@@ -9,7 +9,7 @@ import logging
 import asyncio
 import functools
 from collections import OrderedDict
-from typing import Any
+from typing import Any, ClassVar
 import xml.etree.ElementTree as Et
 import base64
 from dataclasses import is_dataclass
@@ -31,7 +31,7 @@ class XmlExporter:
     order it can be added to the dictionary below.
     """
 
-    extobj_ordered_elements = {
+    extobj_ordered_elements: ClassVar[dict] = {
         ua.NodeId(ua.ObjectIds.Argument): ["Name", "DataType", "ValueRank", "ArrayDimensions", "Description"]
     }
 

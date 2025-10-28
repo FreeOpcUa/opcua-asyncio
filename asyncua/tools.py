@@ -419,7 +419,7 @@ async def _lsprint_long(pnode, depth, indent=""):
                 ua.AttributeIds.Value,
             ]
         )
-        name, bname, nclass, mask, umask, dtype, val = (attr.Value.Value for attr in attrs)
+        name, bname, nclass, _mask, _umask, dtype, val = (attr.Value.Value for attr in attrs)
         update = attrs[-1].ServerTimestamp
         if nclass == ua.NodeClass.Variable:
             print(

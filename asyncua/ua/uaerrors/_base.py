@@ -2,6 +2,8 @@
 Define exceptions to be raised at various places in the stack
 """
 
+from typing import ClassVar
+
 
 class UaError(RuntimeError):
     pass
@@ -21,7 +23,7 @@ class UaStatusCodeError(UaError):
     # Dict containing all subclasses keyed to their status code.
     # When instanciating UaStatusCodeError with given code, we will return the
     # appropriate subclass if it exists. See __new__.
-    _subclasses = {}
+    _subclasses: ClassVar = {}
 
     @classmethod
     def __init_subclass__(cls):

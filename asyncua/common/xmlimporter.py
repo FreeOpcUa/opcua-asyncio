@@ -550,8 +550,7 @@ class XmlImporter:
                     # Skip Encoding Mask used for optional types
                     sub_atttype = self._get_val_type(atttype, attname2)
                     self._set_attr(sub_atttype, subargs, attname2, v2)
-            if "Encoding" in subargs:
-                del subargs["Encoding"]
+            subargs.pop("Encoding", None)
             fargs[attname] = atttype(**subargs)  # type: ignore[operator]
         else:
             raise RuntimeError(f"Could not handle type {atttype} of type {type(atttype)}")
@@ -585,8 +584,7 @@ class XmlImporter:
             return ua.Variant(uuid.UUID(obj.value), getattr(ua.VariantType, obj.valuetype))
         if obj.valuetype == "LocalizedText":
             myargs = dict(obj.value)
-            if "Encoding" in myargs:
-                del myargs["Encoding"]
+            myargs.pop("Encoding", None)
             ltext = ua.LocalizedText(**dict(obj.value))
             return ua.Variant(ltext, ua.VariantType.LocalizedText)
         if obj.valuetype == "NodeId":

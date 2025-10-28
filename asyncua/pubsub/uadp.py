@@ -197,10 +197,10 @@ class UadpHeader:
 
 @dataclass
 class UadpChunk:
-    MessageSequenceNo: UInt16 = UInt16(0)
-    ChunkOffset: UInt32 = UInt32(0)
-    TotalSize: UInt32 = UInt32(0)
-    ChunkData: Bytes = Bytes(b"")
+    MessageSequenceNo: UInt16 = field(default_factory=lambda: UInt16(0))
+    ChunkOffset: UInt32 = field(default_factory=lambda: UInt32(0))
+    TotalSize: UInt32 = field(default_factory=lambda: UInt32(0))
+    ChunkData: Bytes = field(default_factory=lambda: Bytes(b""))
 
     def to_binary(self) -> bytes:
         b: list[bytes] = []
@@ -346,7 +346,7 @@ class UadpPublisherEndpointsResp:
     """
 
     Endpoints: list[EndpointDescription] = field(default_factory=list)
-    Status: StatusCode = StatusCode(UInt32(StatusCodes.Good))
+    Status: StatusCode = field(default_factory=lambda: StatusCode(UInt32(StatusCodes.Good)))
 
 
 @dataclass
@@ -355,9 +355,9 @@ class UadpDataSetMetaDataResp:
     Response with the MetaData of an DataSetWriter
     """
 
-    DataSetWriterId: UInt16 = UInt16(0)
+    DataSetWriterId: UInt16 = field(default_factory=lambda: UInt16(0))
     MetaData: DataSetMetaDataType = field(default_factory=DataSetMetaDataType)
-    Status: StatusCode = StatusCode(UInt32(StatusCodes.Good))
+    Status: StatusCode = field(default_factory=lambda: StatusCode(UInt32(StatusCodes.Good)))
 
 
 @dataclass
@@ -388,19 +388,19 @@ class UadpDiscoveryResponse:
 
 @dataclass
 class DeltaVariant:
-    No: UInt16 = UInt16(0)
-    Value: Variant = Variant()
+    No: UInt16 = field(default_factory=lambda: UInt16(0))
+    Value: Variant = field(default_factory=lambda: Variant)
 
 
 @dataclass
 class DeltaDataValue:
-    No: UInt16 = UInt16(0)
-    Value: DataValue = DataValue()
+    No: UInt16 = field(default_factory=lambda: UInt16(0))
+    Value: DataValue = field(default_factory=DataValue)
 
 
 @dataclass
 class DeltaRaw:
-    No: UInt16 = UInt16(0)
+    No: UInt16 = field(default_factory=lambda: UInt16(0))
     Value: bytes = b""
 
 

@@ -84,9 +84,8 @@ class UaProcessor:
                 return None
             # We pop left from the Publish Request deque (FIFO)
             requestdata = self._publish_requests.popleft()
-            if (
-                requestdata.requesthdr.TimeoutHint == 0
-                or requestdata.requesthdr.TimeoutHint != 0
+            if requestdata.requesthdr.TimeoutHint == 0 or (
+                requestdata.requesthdr.TimeoutHint != 0
                 and time.monotonic() - requestdata.timestamp < requestdata.requesthdr.TimeoutHint / 1000
             ):
                 # Continue and use `requestdata` only if there was no timeout

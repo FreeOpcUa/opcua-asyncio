@@ -63,7 +63,8 @@ dev = [
   "types-cryptography",
   "types-pyOpenSSL",
   "types-python-dateutil",
-  "types-pytz"
+  "types-pytz",
+  "wait_for2",
 ]
 lint = ["mypy", "pre-commit", "ruff"]
 
@@ -128,7 +129,9 @@ select = [
   "ISC",
   "G",
   "PIE",
-  "RET"
+  "RET",
+  "INT",
+  "RUF"
 ]
 ignore = [
   "E111",  # conflicts with ruff format, cf doc
@@ -140,9 +143,12 @@ ignore = [
   "UP037",  # due to protocol using class member name same as object type we want to use quotes and precise ua namespace
   "ASYNC110",  # too many false positives
   "RET504",  # do not agree
+  "RUF015",  # Not sure
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
 "examples/*" = ["F841", "E402"]
-"stubs/wait_for2/*" = ["UP007"]
+"asyncua/ua/status_codes.py" = [
+  "RUF001"
+]  # we get some crappy chars from spec
