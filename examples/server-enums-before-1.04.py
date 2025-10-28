@@ -7,7 +7,6 @@ This example demonstrates the use of custom enums by:
 import sys
 
 sys.path.insert(0, "..")
-import time
 import asyncio
 
 
@@ -69,7 +68,7 @@ async def main():
 
     async with server:
         while True:
-            time.sleep(0.5)
+            await asyncio.sleep(0.5)
 
 
 if __name__ == "__main__":

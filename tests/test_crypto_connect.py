@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 import asyncio
+import aiofiles
 
 from asyncio import TimeoutError
 
@@ -201,9 +202,9 @@ async def test_basic256_encrypt_use_certificate_bytes(srv_crypto_all_certs):
     clt = Client(uri_crypto)
     _, cert = srv_crypto_all_certs
     with (
-        open(cert, "rb") as server_cert,
-        open(f"{EXAMPLE_PATH / 'certificate-example.der'}", "rb") as user_cert,
-        open(f"{EXAMPLE_PATH / 'private-key-example.pem'}", "rb") as user_key,
+        await aiofiles.open(cert, "rb") as server_cert,
+        await aiofiles.open(f"{EXAMPLE_PATH / 'certificate-example.der'}", "rb") as user_cert,
+        await aiofiles.open(f"{EXAMPLE_PATH / 'private-key-example.pem'}", "rb") as user_key,
     ):
         await clt.set_security(
             security_policies.SecurityPolicyBasic256Sha256,
