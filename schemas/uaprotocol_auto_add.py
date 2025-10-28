@@ -1,4 +1,3 @@
-
 def extensionobject_from_binary(data):
     """
     Convert binary-coded ExtensionObject to a Python object.
@@ -42,11 +41,11 @@ def extensionobject_to_binary(obj):
     Body = None
     if obj is not None:
         TypeId = FourByteNodeId(getattr(ObjectIds, f"{obj.__class__.__name__}_Encoding_DefaultBinary"))
-        Encoding |= (1 << 0)
+        Encoding |= 1 << 0
         Body = obj.to_binary()
     packet = []
     packet.append(TypeId.to_binary())
     packet.append(uabin.Primitives.UInt8.pack(Encoding))
     if Body:
         packet.append(uabin.Primitives.Bytes.pack(Body))
-    return b''.join(packet)
+    return b"".join(packet)

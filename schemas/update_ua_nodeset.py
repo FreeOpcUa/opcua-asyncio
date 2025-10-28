@@ -33,10 +33,10 @@ def get_new_nodeset(timeout: float = 120, tag: Optional[str] = None, branch: Opt
         target_v2.rename(str(backup_v2))
     try:
         args = ["git", "clone", "--depth=1", "https://github.com/OPCFoundation/UA-Nodeset.git", "UA-Nodeset-master"]
-        if tag is not None: # FIXME: redundant?
-            args.extend(['--branch', f"{tag}"])
+        if tag is not None:  # FIXME: redundant?
+            args.extend(["--branch", f"{tag}"])
         if branch is not None:
-            args.extend(['--branch', f"{branch}"])
+            args.extend(["--branch", f"{branch}"])
         print(args)
         check_call(args, timeout=timeout)
     except CalledProcessError:
