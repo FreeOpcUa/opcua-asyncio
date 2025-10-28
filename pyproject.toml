@@ -28,7 +28,7 @@ dependencies = [
   "pytz",
   "sortedcontainers",
   "typing-extensions",
-  "wait_for2==0.3.2;python_version<'3.12'",
+  "wait_for2;python_version<'3.12'",
 ]
 
 [project.urls]
@@ -64,7 +64,6 @@ dev = [
   "types-pyOpenSSL",
   "types-python-dateutil",
   "types-pytz",
-  "wait_for2",
 ]
 lint = ["mypy", "pre-commit", "ruff"]
 
@@ -131,7 +130,8 @@ select = [
   "PIE",
   "RET",
   "INT",
-  "RUF"
+  "RUF",
+  "PLE"
 ]
 ignore = [
   "E111",  # conflicts with ruff format, cf doc

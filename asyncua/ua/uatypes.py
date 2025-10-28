@@ -811,7 +811,7 @@ class ExtensionObject:
     :vartype Body: bytes
     """
 
-    TypeId: "ua.NodeId" = NodeId()
+    TypeId: "ua.NodeId" = field(default_factory=NodeId)
     Encoding: "ua.Byte" = field(default=0, repr=False, init=False, compare=False)
     Body: "ua.ByteString | None" = None
 
