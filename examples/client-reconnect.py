@@ -23,7 +23,6 @@ class SubHandler:
         """
         called for every event notification from server
         """
-        pass
 
     def status_change_notification(self, status: ua.StatusChangeNotification):
         """

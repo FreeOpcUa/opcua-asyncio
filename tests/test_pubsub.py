@@ -189,7 +189,7 @@ async def test_full_simple():
     await ps.add_published_dataset(pds)
     async with ps:
         await asyncio.sleep(0.5)
-        for x in range(0, 10):
+        for x in range(10):
             i32 = Int32(x)
             source.datasources["Simple"]["Int32"] = DataValue(Variant(i32))
             source.datasources["Simple"]["String"] = DataValue(Variant(str(i32)))
