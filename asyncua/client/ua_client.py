@@ -112,7 +112,7 @@ class UASocketProtocol(asyncio.Protocol):
                 # Buffer still has bytes left, try to process again
                 data = bytes(buf)
             except ua.UaStatusCodeError as e:
-                self.logger.error("Got error status from server: {}".format(e))
+                self.logger.error("Got error status from server: %s", e)
                 self._fail_all_pending(e)
                 self.disconnect_socket()
                 return
