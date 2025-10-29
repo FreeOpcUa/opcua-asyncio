@@ -279,6 +279,7 @@ async def get_nodes_of_namespace(server, namespaces: list[str | int] | None = No
     """
     if namespaces is None:
         namespaces = []
+    assert namespaces is not None
     ns_available = await server.get_namespace_array()
 
     if not namespaces:

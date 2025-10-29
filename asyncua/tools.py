@@ -740,7 +740,7 @@ def print_history(o):
         print("{0:30} {1:10} {2}".format(str(d.SourceTimestamp), d.StatusCode.name, d.Value.Value))
 
 
-def str_to_datetime(s, default=None) -> datetime.Datetime:
+def str_to_datetime(s, default=None) -> datetime:
     if not s:
         if default is not None:
             return default

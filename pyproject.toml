@@ -60,12 +60,10 @@ dev = [
   "pytest-repeat",
   "ruff",
   "types-aiofiles",
-  "types-cryptography",
   "types-pyOpenSSL",
   "types-python-dateutil",
   "types-pytz",
 ]
-lint = ["mypy", "pre-commit", "ruff"]
 
 [build-system]
 requires = ["hatchling"]

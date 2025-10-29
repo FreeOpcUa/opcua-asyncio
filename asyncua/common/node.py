@@ -357,9 +357,12 @@ class Node:
         params = ua.ReadParameters()
         params.NodesToRead.append(rv)
         result = await self.session.read(params)
+        res = result[0]
+        if res.StatusCode is None:
+            raise ua.UaError("No status code received")
         if raise_on_bad_status:
-            result[0].StatusCode.check()
-        return result[0]
+            res.StatusCode.check()
+        return res
 
     async def read_attributes(self, attrs: Iterable[ua.AttributeIds]) -> list[ua.DataValue]:
         """

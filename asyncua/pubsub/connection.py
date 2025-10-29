@@ -30,7 +30,7 @@ from ..ua.status_codes import StatusCodes
 from ..ua.uaprotocol_auto import ReaderGroupDataType, WriterGroupDataType
 from ..ua.uaerrors import UaError, UaStatusCodeError
 
-from .reader import DataSetReader, ReaderGroup
+from .reader import ReaderGroup
 from .protocols import IPubSub, PubSubReceiver
 from .writer import WriterGroup
 from .uadp import UadpNetworkMessage
@@ -152,13 +152,13 @@ class PubSubConnection(PubSubInformationModel):
         """
         return self._cfg
 
-    def get_writer_group(self, name: String) -> DataSetReader | None:
+    def get_writer_group(self, name: String) -> WriterGroup | None:
         """
         Returns a writer group via name, if found.
         """
         return next((w for w in self._writer_groups if w._cfg.Name == name), None)
 
-    def get_reader_group(self, name: String) -> DataSetReader | None:
+    def get_reader_group(self, name: String) -> ReaderGroup | None:
         """
         Returns a reader group via name, if found.
         """

@@ -206,12 +206,6 @@ uv run pytest -v -s --cov asyncua --cov-report=html
 To apply linting checks (including ruff, and mypy) at each commit run,
 
 ```bash
-uv sync --group lint
-uv run pre-commit install
-```
-
-You can also run all linters on all files with,
-
-```bash
-uv run pre-commit run -a
+uv run ruff check .
+uv run mypy asyncua
 ```

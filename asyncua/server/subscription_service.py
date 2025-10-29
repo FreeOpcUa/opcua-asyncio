@@ -135,7 +135,7 @@ class SubscriptionService:
                 await sub.monitored_item_srv.trigger_event(event)
 
     @uamethod
-    async def condition_refresh(self, parent, subscription_id, mid=None) -> ua.StatusCode:
+    async def condition_refresh(self, parent, subscription_id, mid=None) -> ua.StatusCode | None:
         if subscription_id not in self.subscriptions:
             return ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
         sub = self.subscriptions[subscription_id]

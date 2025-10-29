@@ -505,7 +505,7 @@ class XmlExporter:
 
             if dtype_base == ua.NodeId(ua.ObjectIds.Enumeration):
                 dtype_base = ua.NodeId(ua.ObjectIds.Int32)
-                type_name = ua.ObjectIdNames[dtype_base.Identifier]
+                type_name = ua.ObjectIdNames[int(dtype_base.Identifier)]
 
             if dtype_base.NamespaceIndex == 0 and dtype_base.Identifier <= 21:
                 type_name = ua.ObjectIdNames[dtype_base.Identifier]

@@ -28,11 +28,12 @@ jobs:
       - name: Install the project
         run: |
           uv sync --all-extras --dev
-          uv tool install pre-commit
-      - name: Lint with ruff
+      - name: ruff
         run: |
-          uvx ruff format --diff
-          uvx pre-commit run -a
+          uv run ruff check .
+      - name: mypy
+        run: |
+          uv run mypy asyncua tests
 
   build:
     runs-on: ubuntu-latest
