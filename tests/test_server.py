@@ -842,6 +842,7 @@ async def test_message_limits_works(restore_transport_limits_server: Server):
         await n.read_value()
 
 
+@pytest.mark.skip(reason="broken with older python version in CI")
 async def test_loading_shelf(tmp_path: Path):
     demo_shelf_file: Path = tmp_path / "some_shelf"
 

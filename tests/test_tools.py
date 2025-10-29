@@ -7,7 +7,6 @@ import signal
 
 from asyncua.tools import uaread, uals, uawrite, uahistoryread, uaclient, uadiscover, uacall
 
-pytestmark = pytest.mark.asyncio
 
 ROOT_NODE = "i=85"
 RW_NODE = "i=3078"
