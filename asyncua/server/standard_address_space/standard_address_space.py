@@ -23,10 +23,10 @@ class PostponeReferences:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is None and exc_val is None:
             remaining_nodes = list(self.server.try_add_nodes(self.postponed_nodes, check=False))
-            if len(remaining_nodes):
+            if remaining_nodes:
                 raise RuntimeError(f"There are remaining nodes: {remaining_nodes!r}")
             remaining_refs = list(self.server.try_add_references(self.postponed_refs))
-            if len(remaining_refs):
+            if remaining_refs:
                 raise RuntimeError(f"There are remaining refs: {remaining_refs!r}")
 
 

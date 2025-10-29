@@ -124,7 +124,6 @@ class Server:
             max_message_size=max_msg_sz,
         )
         self._pubsub: PubSub | None = None
-        self._discovery_handle: asyncio.Task | None = None
 
     async def init(self, shelf_file: Path | None = None):
         await self.iserver.init(shelf_file)
