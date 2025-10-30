@@ -72,6 +72,7 @@ class Client:
         self.description = self.name
         self.application_uri = "urn:example.org:FreeOpcUa:opcua-asyncio"
         self.product_uri = "urn:freeopcua.github.io:client"
+        self.server_uri: str | None = None
         self.security_policy = security_policies.SecurityPolicyNone()
         self.secure_channel_id = None
         self.secure_channel_timeout = 3600000  # 1 hour
@@ -520,7 +521,7 @@ class Client:
         desc.ApplicationName = ua.LocalizedText(self.name)
         desc.ApplicationType = ua.ApplicationType.Client
         params = ua.CreateSessionParameters()
-        params.ServerUri = f"urn:{self.server_url.hostname}{self.server_url.path.replace('/', ':')}"
+        params.ServerUri = self.server_uri
         # at least 32 random bytes for server to prove possession of private key (specs part 4, 5.6.2.2)
         nonce = create_nonce(32)
         params.ClientNonce = nonce
