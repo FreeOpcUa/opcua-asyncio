@@ -261,7 +261,7 @@ class {struct_name}{base_class}:
             uatype = f"list[{uatype}]"
         if sfield.IsOptional:
             if sdef.StructureType is ua.StructureType.StructureWithSubtypedValues:
-                uatype = f"typing.Annotated[{uatype}, 'AllowSubtypes']"
+                uatype = f'typing.Annotated[{uatype}, "AllowSubtypes"]'
             else:
                 uatype = f"{uatype} | None"
                 default_value = "None"
@@ -269,11 +269,12 @@ class {struct_name}{base_class}:
     if is_union:
         # Generate getter and setter to mimic opc ua union access
         names = [f[1] for f in fields]
-        code += "    _union_types = [" + ",".join(names) + "]\n"
-        code += "    Value: None | " + "|".join(names) + " = field(default=None, init=False)"
-        for enc_idx, fd in enumerate(fields):
-            name, uatype, _ = fd
-            code += f"""
+        if names:
+            code += "    _union_types = [" + ",".join(names) + "]\n"
+            code += "    Value: None | " + "|".join(names) + " = field(default=None, init=False)"
+            for enc_idx, fd in enumerate(fields):
+                name, uatype, _ = fd
+                code += f"""
 
     @property
     def {name}(self) -> {uatype} | None:
@@ -293,7 +294,7 @@ class {struct_name}{base_class}:
     return code
 
 
-async def _generate_object(name, sdef, data_type=None, env=None, enum=False, option_set=False, log_fail=True):
+def _generate_object(name, sdef, data_type=None, env=None, enum=False, option_set=False, log_fail=True):
     """
     generate Python code and execute in a new environment
     return a dict of structures {name: class}
@@ -521,7 +522,7 @@ async def load_data_type_definitions(server: Server | Client, base_node: Node = 
         log_ex = retries == cnt + 1
         for dts in dtypes:
             try:
-                env = await _generate_object(dts.name, dts.sdef, data_type=dts.data_type, log_fail=log_ex)
+                env = _generate_object(dts.name, dts.sdef, data_type=dts.data_type, log_fail=log_ex)
                 ua.register_extension_object(dts.name, dts.encoding_id, env[dts.name], dts.data_type)
                 new_objects[dts.name] = env[dts.name]  # type: ignore
             except NotImplementedError:
