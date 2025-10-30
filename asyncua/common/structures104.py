@@ -427,7 +427,7 @@ async def load_custom_struct(node: Node) -> Any:
         parent_sdef = await parent.read_data_type_definition()
         for f in reversed(parent_sdef.Fields):
             sdef.Fields.insert(0, f)
-    env = await _generate_object(name, sdef, data_type=node.nodeid)
+    env = _generate_object(name, sdef, data_type=node.nodeid)
     struct = env[name]
     ua.register_extension_object(name, sdef.DefaultEncodingId, struct, node.nodeid)
     return env[name]
@@ -442,7 +442,7 @@ async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAt
         return getattr(ua, name)
     # FIXME : mypy attribute not defined
     sdef = attrs.DataTypeDefinition  # type: ignore[attr-defined]
-    env = await _generate_object(name, sdef, data_type=node_id)
+    env = _generate_object(name, sdef, data_type=node_id)
     struct = env[name]
     ua.register_extension_object(name, sdef.DefaultEncodingId, struct, node_id)
     return env[name]
@@ -521,6 +521,8 @@ async def load_data_type_definitions(server: Server | Client, base_node: Node = 
         failed_types = []
         log_ex = retries == cnt + 1
         for dts in dtypes:
+            if hasattr(ua, dts.name):
+                continue
             try:
                 env = _generate_object(dts.name, dts.sdef, data_type=dts.data_type, log_fail=log_ex)
                 ua.register_extension_object(dts.name, dts.encoding_id, env[dts.name], dts.data_type)
@@ -604,7 +606,7 @@ async def load_enums(server: Server | Client, base_node: Node = None, option_set
             edef = await _read_data_type_definition(server, desc)
             if not edef:
                 continue
-            env = await _generate_object(name, edef, enum=True, option_set=option_set, log_fail=False)
+            env = _generate_object(name, edef, enum=True, option_set=option_set, log_fail=False)
         except Exception:
             _logger.exception(
                 "%s %s (NodeId: %s): Failed to generate class from UA datatype", typename, name, desc.NodeId
@@ -623,6 +625,6 @@ async def load_enum_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes,
     if hasattr(ua, name):
         return getattr(ua, name)
     # FIXME: DateTypeDefinition is not a known attribute for mypy
-    env = await _generate_object(name, attrs.DataTypeDefinition, enum=True, option_set=option_set)  # type: ignore[attr-defined]
+    env = _generate_object(name, attrs.DataTypeDefinition, enum=True, option_set=option_set)  # type: ignore[attr-defined]
     ua.register_enum(name, node_id, env[name])
     return env[name]
