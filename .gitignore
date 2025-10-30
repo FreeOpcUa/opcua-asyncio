@@ -26,3 +26,16 @@ examples/history.db
 .coverage
 schemas/UA-Nodese*
 uv.lock
+t
+test_grab.py
+schemas/.python-version
+hello.py
+examples/log.txt
+cert.pem
+key.pem
+log
+my_cert.der
+my_cert.pem
+my_private_key.pem
+examples/sync/c.py
+.python-version
