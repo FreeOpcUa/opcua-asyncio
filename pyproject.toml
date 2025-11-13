@@ -113,7 +113,7 @@ extend-exclude = [
   "schemas",
   "*_auto.py",
   "event_objects.py",
-  "standard_address_space_services.py",
+  "standard_address_space_services*.py",
 ]
 
 [tool.ruff.lint]
