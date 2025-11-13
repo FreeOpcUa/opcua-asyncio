@@ -1,7 +1,7 @@
 from __future__ import annotations
 """
 Autogenerate code from xml spec
-Date:2025-11-13 06:22:47.540292+00:00
+Date:2025-11-13 08:18:24.401269+00:00
 """
 
 from datetime import datetime, timezone
@@ -2594,37 +2594,18 @@ class UserTokenSettingsDataType(BaseConfigurationRecordDataType):
 
 
 @dataclass(frozen=FROZEN)
-class ServiceCertificateDataType:
-    """
-    :ivar Certificate:
-    :vartype Certificate: ByteString
-    :ivar Issuers:
-    :vartype Issuers: ByteString
-    :ivar ValidFrom:
-    :vartype ValidFrom: UtcTime
-    :ivar ValidTo:
-    :vartype ValidTo: UtcTime
-    """
-
-    data_type = NodeId(ObjectIds.ServiceCertificateDataType)
-
-    Certificate: 'ua.ByteString' = None
-    Issuers: 'list[ua.ByteString]' = field(default_factory=list)
-    ValidFrom: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
-    ValidTo: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
-
-
-@dataclass(frozen=FROZEN)
 class AuthorizationServiceConfigurationDataType(BaseConfigurationRecordDataType):
     """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/9.7.5
+
     :ivar Name:
     :vartype Name: String
     :ivar RecordProperties:
     :vartype RecordProperties: KeyValuePair
     :ivar ServiceUri:
     :vartype ServiceUri: UriString
-    :ivar ServiceCertificates:
-    :vartype ServiceCertificates: ServiceCertificateDataType
+    :ivar ServiceCertificate:
+    :vartype ServiceCertificate: ByteString
     :ivar IssuerEndpointSettings:
     :vartype IssuerEndpointSettings: String
     """
@@ -2634,7 +2615,7 @@ class AuthorizationServiceConfigurationDataType(BaseConfigurationRecordDataType)
     Name: 'ua.String' = None
     RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
     ServiceUri: 'ua.UriString' = None
-    ServiceCertificates: 'list[ua.ServiceCertificateDataType]' = field(default_factory=list)
+    ServiceCertificate: 'list[ua.ByteString]' = field(default_factory=list)
     IssuerEndpointSettings: 'ua.String' = None
 
 
@@ -4695,6 +4676,8 @@ class ApplicationIdentityDataType(BaseConfigurationRecordDataType):
 @dataclass(frozen=FROZEN)
 class ApplicationConfigurationDataType(BaseConfigurationDataType):
     """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.19
+
     :ivar ConfigurationVersion:
     :vartype ConfigurationVersion: VersionTime
     :ivar ConfigurationProperties:
@@ -10708,9 +10691,6 @@ extension_object_typeids['SecuritySettingsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.UserTokenSettingsDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = UserTokenSettingsDataType
 extension_object_typeids['UserTokenSettingsDataType'] = nid
-nid = FourByteNodeId(ObjectIds.ServiceCertificateDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ServiceCertificateDataType
-extension_object_typeids['ServiceCertificateDataType'] = nid
 nid = FourByteNodeId(ObjectIds.AuthorizationServiceConfigurationDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = AuthorizationServiceConfigurationDataType
 extension_object_typeids['AuthorizationServiceConfigurationDataType'] = nid
@@ -11562,3 +11542,76 @@ extension_objects_by_typeid[nid] = TransferSubscriptionsResponse
 extension_object_typeids['TransferSubscriptionsResponse'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteSubscriptionsRequest_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = DeleteSubscriptionsRequest
+extension_object_typeids['DeleteSubscriptionsRequest'] = nid
+nid = FourByteNodeId(ObjectIds.DeleteSubscriptionsResponse_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = DeleteSubscriptionsResponse
+extension_object_typeids['DeleteSubscriptionsResponse'] = nid
+nid = FourByteNodeId(ObjectIds.BuildInfo_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = BuildInfo
+extension_object_typeids['BuildInfo'] = nid
+nid = FourByteNodeId(ObjectIds.RedundantServerDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = RedundantServerDataType
+extension_object_typeids['RedundantServerDataType'] = nid
+nid = FourByteNodeId(ObjectIds.EndpointUrlListDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = EndpointUrlListDataType
+extension_object_typeids['EndpointUrlListDataType'] = nid
+nid = FourByteNodeId(ObjectIds.NetworkGroupDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = NetworkGroupDataType
+extension_object_typeids['NetworkGroupDataType'] = nid
+nid = FourByteNodeId(ObjectIds.SamplingIntervalDiagnosticsDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = SamplingIntervalDiagnosticsDataType
+extension_object_typeids['SamplingIntervalDiagnosticsDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ServerDiagnosticsSummaryDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ServerDiagnosticsSummaryDataType
+extension_object_typeids['ServerDiagnosticsSummaryDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ServerStatusDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ServerStatusDataType
+extension_object_typeids['ServerStatusDataType'] = nid
+nid = FourByteNodeId(ObjectIds.SessionSecurityDiagnosticsDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = SessionSecurityDiagnosticsDataType
+extension_object_typeids['SessionSecurityDiagnosticsDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ServiceCounterDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ServiceCounterDataType
+extension_object_typeids['ServiceCounterDataType'] = nid
+nid = FourByteNodeId(ObjectIds.SessionDiagnosticsDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = SessionDiagnosticsDataType
+extension_object_typeids['SessionDiagnosticsDataType'] = nid
+nid = FourByteNodeId(ObjectIds.StatusResult_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = StatusResult
+extension_object_typeids['StatusResult'] = nid
+nid = FourByteNodeId(ObjectIds.SubscriptionDiagnosticsDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = SubscriptionDiagnosticsDataType
+extension_object_typeids['SubscriptionDiagnosticsDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ModelChangeStructureDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ModelChangeStructureDataType
+extension_object_typeids['ModelChangeStructureDataType'] = nid
+nid = FourByteNodeId(ObjectIds.SemanticChangeStructureDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = SemanticChangeStructureDataType
+extension_object_typeids['SemanticChangeStructureDataType'] = nid
+nid = FourByteNodeId(ObjectIds.Range_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = Range
+extension_object_typeids['Range'] = nid
+nid = FourByteNodeId(ObjectIds.EUInformation_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = EUInformation
+extension_object_typeids['EUInformation'] = nid
+nid = FourByteNodeId(ObjectIds.ComplexNumberType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ComplexNumberType
+extension_object_typeids['ComplexNumberType'] = nid
+nid = FourByteNodeId(ObjectIds.DoubleComplexNumberType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = DoubleComplexNumberType
+extension_object_typeids['DoubleComplexNumberType'] = nid
+nid = FourByteNodeId(ObjectIds.AxisInformation_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = AxisInformation
+extension_object_typeids['AxisInformation'] = nid
+nid = FourByteNodeId(ObjectIds.XVType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = XVType
+extension_object_typeids['XVType'] = nid
+nid = FourByteNodeId(ObjectIds.ProgramDiagnosticDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ProgramDiagnosticDataType
+extension_object_typeids['ProgramDiagnosticDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ProgramDiagnostic2DataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ProgramDiagnostic2DataType
+extension_object_typeids['ProgramDiagnostic2DataType'] = nid
+nid = FourByteNodeId(ObjectIds.Annotation_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = Annotation
+extension_object_typeids['Annotation'] = nid
