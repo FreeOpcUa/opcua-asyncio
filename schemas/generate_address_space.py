@@ -5,6 +5,8 @@ It is in asyncua folder, but to avoid importing all code, developer can link xml
 """
 
 import asyncio
+import glob
+import os
 import sys
 import datetime
 import logging
@@ -103,10 +105,22 @@ class CodeGenerator:
 
     async def run(self):
         sys.stderr.write(f"Generating Python code {self.output_path} for XML file {self.input_path}\n")
-        self.output_file = open(self.output_path, "w", encoding="utf-8")
-        self.make_header()
+        file_count = 1
+        file_item_count = 0
+
+        def check_chunk_split():
+            nonlocal file_item_count, file_count
+            file_item_count += 1
+            if file_item_count > 500:
+                file_item_count = 0
+                file_count += 1
+                self.create_output(file_count)
+
+        self.remove_outputs()
+        self.create_output(file_count)
         self.parser = xmlparser.XMLParser()
         self.parser.parse_sync(self.input_path)
+
         for node in self.parser.get_node_datas():
             if node.nodetype == "UAObject":
                 self.make_object_code(node)
@@ -124,16 +138,50 @@ class CodeGenerator:
                 self.make_method_code(node)
             else:
                 sys.stderr.write(f"Not implemented node type: {node.nodetype}\n")
+
+            check_chunk_split()
+
         for obj in self.nodes.values():
             self.make_refs_code(obj, "   ")
+            check_chunk_split()
+
+        # Avoid syntax error if last chunk had no node
+        indent = "   "
+        if file_item_count == 0:
+            self.writecode(indent, 'pass')
+
+        self.create_output(None)
+        imports = [f'from .standard_address_space_services_{i} import create_standard_address_space_Services_{i}' for i in range(1, file_count+1)]
+        self.make_header("", '\n'.join(imports))
+        for i in range(1, file_count + 1):
+            self.writecode(indent, f'create_standard_address_space_Services_{i}(server)')
         self.output_file.close()
+
+    def remove_outputs(self):
+        dir = os.path.dirname(self.output_path)
+        basename = os.path.basename(self.output_path)
+        basename, ext = os.path.splitext(basename)
+        existing_files = glob.glob(os.path.join(dir, f"{basename}*{ext}"))
+        for file in existing_files:
+            os.remove(file)
+
+    def create_output(self, chunk_index):
+        if self.output_file is not None:
+            self.output_file.close()
+        root, ext = os.path.splitext(self.output_path)
+        if chunk_index is not None:
+            suffix = f"_{chunk_index}"
+        else:
+            suffix = ""
+        filename = f"{root}{suffix}{ext}"
+        self.output_file = open(filename, 'w', encoding='utf-8')
+        if suffix != "":
+            self.make_header(suffix)
 
     def writecode(self, *args):
         self.output_file.write(f"{' '.join(args)}\n")
 
-    def make_header(
-        self,
-    ):
+    def make_header(self, suffix, imports=""):
         tree = xmlparser.ET.parse(self.input_path)
         model = ""
         for child in tree.iter():
@@ -162,8 +210,9 @@ class CodeGenerator:
             f"""from asyncua.ua import NodeClass, LocalizedText\n"""
             f"""\n"""
             f"""\n"""
-            f"""def create_standard_address_space_{self.part!s}(server):"""
-        )
+            f'''{imports}\n'''
+            f'''\n'''
+            f'''def create_standard_address_space_{self.part!s}{suffix}(server):''')
 
     def make_node_code(self, obj, indent):
         self.nodes[obj.nodeid] = obj
