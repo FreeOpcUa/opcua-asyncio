@@ -1,7 +1,7 @@
 from __future__ import annotations
 """
 Autogenerate code from xml spec
-Date:2025-10-27 13:49:11.102743+00:00
+Date:2025-11-13 06:22:47.540292+00:00
 """
 
 from datetime import datetime, timezone
@@ -225,7 +225,7 @@ class AlarmMask(IntFlag):
 
 class TrustListValidationOptions(IntFlag):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.8
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.10
 
     :ivar SuppressCertificateExpired:
     :vartype SuppressCertificateExpired: Bit: 0
@@ -257,7 +257,7 @@ class TrustListValidationOptions(IntFlag):
 
 class TrustListMasks(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.7
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.9
 
     :ivar None_:
     :vartype None_: 0
@@ -278,6 +278,25 @@ class TrustListMasks(IntEnum):
     IssuerCertificates = 4
     IssuerCrls = 8
     All = 15
+
+
+class ConfigurationUpdateType(IntEnum):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.7
+
+    :ivar Insert:
+    :vartype Insert: 1
+    :ivar Replace:
+    :vartype Replace: 2
+    :ivar InsertOrReplace:
+    :vartype InsertOrReplace: 3
+    :ivar Delete:
+    :vartype Delete: 4
+    """
+    Insert = 1
+    Replace = 2
+    InsertOrReplace = 3
+    Delete = 4
 
 
 class PubSubState(IntEnum):
@@ -1056,6 +1075,32 @@ class LldpSystemCapabilitiesMap(IntFlag):
         return "UInt32"
 
 
+class LogRecordMask(IntFlag):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.7
+
+    :ivar EventType:
+    :vartype EventType: Bit: 0
+    :ivar SourceNode:
+    :vartype SourceNode: Bit: 1
+    :ivar SourceName:
+    :vartype SourceName: Bit: 2
+    :ivar TraceContext:
+    :vartype TraceContext: Bit: 3
+    :ivar AdditionalData:
+    :vartype AdditionalData: Bit: 4
+    """
+    EventType = 1<<0
+    SourceNode = 1<<1
+    SourceName = 1<<2
+    TraceContext = 1<<3
+    AdditionalData = 1<<4
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
+
+
 class IdType(IntEnum):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.5/#12.2.5.1
@@ -1358,7 +1403,7 @@ class MessageSecurityMode(IntEnum):
 
 class UserTokenType(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.43
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.42
 
     :ivar Anonymous:
     :vartype Anonymous: 0
@@ -1704,7 +1749,7 @@ class FilterOperator(IntEnum):
 
 class TimestampsToReturn(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.40
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.39
 
     :ivar Source:
     :vartype Source: 0
@@ -2297,7 +2342,7 @@ class QuantityDimension:
 @dataclass(frozen=FROZEN)
 class TrustListDataType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.6
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.8
 
     :ivar SpecifiedLists:
     :vartype SpecifiedLists: UInt32
@@ -2321,9 +2366,89 @@ class TrustListDataType:
 
 
 @dataclass(frozen=FROZEN)
+class BaseConfigurationDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.4
+
+    :ivar ConfigurationVersion:
+    :vartype ConfigurationVersion: VersionTime
+    :ivar ConfigurationProperties:
+    :vartype ConfigurationProperties: KeyValuePair
+    """
+
+    data_type = NodeId(ObjectIds.BaseConfigurationDataType)
+
+    ConfigurationVersion: 'ua.VersionTime' = 0
+    ConfigurationProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class BaseConfigurationRecordDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.5
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    """
+
+    data_type = NodeId(ObjectIds.BaseConfigurationRecordDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class CertificateGroupDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.3/#7.8.3.4
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar Purpose:
+    :vartype Purpose: NodeId
+    :ivar CertificateTypes:
+    :vartype CertificateTypes: NodeId
+    :ivar IsCertificateAssigned:
+    :vartype IsCertificateAssigned: Boolean
+    :ivar ValidationOptions:
+    :vartype ValidationOptions: TrustListValidationOptions
+    """
+
+    data_type = NodeId(ObjectIds.CertificateGroupDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    Purpose: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    CertificateTypes: 'list[ua.NodeId]' = field(default_factory=list)
+    IsCertificateAssigned: 'list[ua.Boolean]' = field(default_factory=list)
+    ValidationOptions: 'ua.TrustListValidationOptions' = field(default_factory=lambda:TrustListValidationOptions(0))
+
+
+@dataclass(frozen=FROZEN)
+class ConfigurationUpdateTargetType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.6
+
+    :ivar Path:
+    :vartype Path: String
+    :ivar UpdateType:
+    :vartype UpdateType: ConfigurationUpdateType
+    """
+
+    data_type = NodeId(ObjectIds.ConfigurationUpdateTargetType)
+
+    Path: 'ua.String' = None
+    UpdateType: 'ua.ConfigurationUpdateType' = field(default_factory=lambda:ConfigurationUpdateType.Insert)
+
+
+@dataclass(frozen=FROZEN)
 class TransactionErrorType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.16
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.18
 
     :ivar TargetId:
     :vartype TargetId: NodeId
@@ -2338,6 +2463,179 @@ class TransactionErrorType:
     TargetId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
     Error: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
     Message: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+
+
+@dataclass(frozen=FROZEN)
+class EndpointDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.22
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar DiscoveryUrls:
+    :vartype DiscoveryUrls: UriString
+    :ivar NetworkName:
+    :vartype NetworkName: String
+    :ivar Port:
+    :vartype Port: UInt16
+    """
+
+    data_type = NodeId(ObjectIds.EndpointDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    DiscoveryUrls: 'list[ua.UriString]' = field(default_factory=list)
+    NetworkName: 'ua.String' = None
+    Port: 'ua.UInt16' = 0
+
+
+@dataclass(frozen=FROZEN)
+class ServerEndpointDataType(EndpointDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.23
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar DiscoveryUrls:
+    :vartype DiscoveryUrls: UriString
+    :ivar NetworkName:
+    :vartype NetworkName: String
+    :ivar Port:
+    :vartype Port: UInt16
+    :ivar EndpointUrls:
+    :vartype EndpointUrls: UriString
+    :ivar SecuritySettingNames:
+    :vartype SecuritySettingNames: String
+    :ivar TransportProfileUri:
+    :vartype TransportProfileUri: UriString
+    :ivar UserTokenSettingNames:
+    :vartype UserTokenSettingNames: String
+    :ivar ReverseConnectUrls:
+    :vartype ReverseConnectUrls: String
+    """
+
+    data_type = NodeId(ObjectIds.ServerEndpointDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    DiscoveryUrls: 'list[ua.UriString]' = field(default_factory=list)
+    NetworkName: 'ua.String' = None
+    Port: 'ua.UInt16' = 0
+    EndpointUrls: 'list[ua.UriString]' = field(default_factory=list)
+    SecuritySettingNames: 'list[ua.String]' = field(default_factory=list)
+    TransportProfileUri: 'ua.UriString' = None
+    UserTokenSettingNames: 'list[ua.String]' = field(default_factory=list)
+    ReverseConnectUrls: 'list[ua.String]' = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class SecuritySettingsDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.24
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar SecurityModes:
+    :vartype SecurityModes: MessageSecurityMode
+    :ivar SecurityPolicyUris:
+    :vartype SecurityPolicyUris: String
+    :ivar CertificateGroupName:
+    :vartype CertificateGroupName: String
+    """
+
+    data_type = NodeId(ObjectIds.SecuritySettingsDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    SecurityModes: 'list[ua.MessageSecurityMode]' = field(default_factory=list)
+    SecurityPolicyUris: 'list[ua.String]' = field(default_factory=list)
+    CertificateGroupName: 'ua.String' = None
+
+
+@dataclass(frozen=FROZEN)
+class UserTokenSettingsDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.25
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar TokenType:
+    :vartype TokenType: UserTokenType
+    :ivar IssuedTokenType:
+    :vartype IssuedTokenType: String
+    :ivar IssuerEndpointUrl:
+    :vartype IssuerEndpointUrl: String
+    :ivar SecurityPolicyUri:
+    :vartype SecurityPolicyUri: String
+    :ivar CertificateGroupName:
+    :vartype CertificateGroupName: String
+    :ivar AuthorizationServiceName:
+    :vartype AuthorizationServiceName: String
+    """
+
+    data_type = NodeId(ObjectIds.UserTokenSettingsDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    TokenType: 'ua.UserTokenType' = field(default_factory=lambda:UserTokenType.Anonymous)
+    IssuedTokenType: 'ua.String' = None
+    IssuerEndpointUrl: 'ua.String' = None
+    SecurityPolicyUri: 'ua.String' = None
+    CertificateGroupName: 'ua.String' = None
+    AuthorizationServiceName: 'ua.String' = None
+
+
+@dataclass(frozen=FROZEN)
+class ServiceCertificateDataType:
+    """
+    :ivar Certificate:
+    :vartype Certificate: ByteString
+    :ivar Issuers:
+    :vartype Issuers: ByteString
+    :ivar ValidFrom:
+    :vartype ValidFrom: UtcTime
+    :ivar ValidTo:
+    :vartype ValidTo: UtcTime
+    """
+
+    data_type = NodeId(ObjectIds.ServiceCertificateDataType)
+
+    Certificate: 'ua.ByteString' = None
+    Issuers: 'list[ua.ByteString]' = field(default_factory=list)
+    ValidFrom: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    ValidTo: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(frozen=FROZEN)
+class AuthorizationServiceConfigurationDataType(BaseConfigurationRecordDataType):
+    """
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar ServiceUri:
+    :vartype ServiceUri: UriString
+    :ivar ServiceCertificates:
+    :vartype ServiceCertificates: ServiceCertificateDataType
+    :ivar IssuerEndpointSettings:
+    :vartype IssuerEndpointSettings: String
+    """
+
+    data_type = NodeId(ObjectIds.AuthorizationServiceConfigurationDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    ServiceUri: 'ua.UriString' = None
+    ServiceCertificates: 'list[ua.ServiceCertificateDataType]' = field(default_factory=list)
+    IssuerEndpointSettings: 'ua.String' = None
 
 
 @dataclass(frozen=FROZEN)
@@ -3683,6 +3981,112 @@ class ReferenceListEntryDataType:
 
 
 @dataclass(frozen=FROZEN)
+class SpanContextDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.5.2
+
+    :ivar TraceId:
+    :vartype TraceId: Guid
+    :ivar SpanId:
+    :vartype SpanId: UInt64
+    """
+
+    data_type = NodeId(ObjectIds.SpanContextDataType)
+
+    TraceId: 'ua.Guid' = Guid(int=0)
+    SpanId: 'ua.UInt64' = 0
+
+
+@dataclass(frozen=FROZEN)
+class TraceContextDataType(SpanContextDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.5.3
+
+    :ivar TraceId:
+    :vartype TraceId: Guid
+    :ivar SpanId:
+    :vartype SpanId: UInt64
+    :ivar ParentSpanId:
+    :vartype ParentSpanId: UInt64
+    :ivar ParentIdentifier:
+    :vartype ParentIdentifier: String
+    """
+
+    data_type = NodeId(ObjectIds.TraceContextDataType)
+
+    TraceId: 'ua.Guid' = Guid(int=0)
+    SpanId: 'ua.UInt64' = 0
+    ParentSpanId: 'ua.UInt64' = 0
+    ParentIdentifier: 'ua.String' = None
+
+
+@dataclass(frozen=FROZEN)
+class NameValuePair:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.6
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar Value:
+    :vartype Value: Variant
+    """
+
+    data_type = NodeId(ObjectIds.NameValuePair)
+
+    Name: 'ua.String' = None
+    Value: 'ua.Variant' = field(default_factory=lambda: Variant())
+
+
+@dataclass(frozen=FROZEN)
+class LogRecord:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.4
+
+    :ivar Time:
+    :vartype Time: DateTime
+    :ivar Severity:
+    :vartype Severity: UInt16
+    :ivar EventType:
+    :vartype EventType: NodeId
+    :ivar SourceNode:
+    :vartype SourceNode: NodeId
+    :ivar SourceName:
+    :vartype SourceName: String
+    :ivar Message:
+    :vartype Message: LocalizedText
+    :ivar TraceContext:
+    :vartype TraceContext: TraceContextDataType
+    :ivar AdditionalData:
+    :vartype AdditionalData: NameValuePair
+    """
+
+    data_type = NodeId(ObjectIds.LogRecord)
+
+    Time: 'ua.DateTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Severity: 'ua.UInt16' = 0
+    EventType: 'ua.NodeId | None' = None
+    SourceNode: 'ua.NodeId | None' = None
+    SourceName: 'ua.String | None' = None
+    Message: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    TraceContext: 'ua.TraceContextDataType | None' = None
+    AdditionalData: 'list[ua.NameValuePair] | None' = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class LogRecordsDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.9
+
+    :ivar LogRecordArray:
+    :vartype LogRecordArray: LogRecord
+    """
+
+    data_type = NodeId(ObjectIds.LogRecordsDataType)
+
+    LogRecordArray: 'list[ua.LogRecord]' = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
 class RolePermissionType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.9
@@ -3948,7 +4352,7 @@ class EnumDescription(DataTypeDescription):
 @dataclass(frozen=FROZEN)
 class DataTypeSchemaHeader:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.31
 
     :ivar Namespaces:
     :vartype Namespaces: String
@@ -4233,7 +4637,7 @@ class TimeZoneDataType:
 @dataclass(frozen=FROZEN)
 class ApplicationDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part14/7.2.4/#7.2.4.6.5
+    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.3
 
     :ivar ApplicationUri:
     :vartype ApplicationUri: String
@@ -4260,6 +4664,68 @@ class ApplicationDescription:
     GatewayServerUri: 'ua.String' = None
     DiscoveryProfileUri: 'ua.String' = None
     DiscoveryUrls: 'list[ua.String]' = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class ApplicationIdentityDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.21
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar ApplicationUri:
+    :vartype ApplicationUri: UriString
+    :ivar ApplicationNames:
+    :vartype ApplicationNames: LocalizedText
+    :ivar AdditionalServers:
+    :vartype AdditionalServers: ApplicationDescription
+    """
+
+    data_type = NodeId(ObjectIds.ApplicationIdentityDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    ApplicationUri: 'ua.UriString' = None
+    ApplicationNames: 'list[ua.LocalizedText]' = field(default_factory=list)
+    AdditionalServers: 'list[ua.ApplicationDescription]' = field(default_factory=list)
+
+
+@dataclass(frozen=FROZEN)
+class ApplicationConfigurationDataType(BaseConfigurationDataType):
+    """
+    :ivar ConfigurationVersion:
+    :vartype ConfigurationVersion: VersionTime
+    :ivar ConfigurationProperties:
+    :vartype ConfigurationProperties: KeyValuePair
+    :ivar ApplicationIdentity:
+    :vartype ApplicationIdentity: ApplicationIdentityDataType
+    :ivar CertificateGroups:
+    :vartype CertificateGroups: CertificateGroupDataType
+    :ivar ServerEndpoints:
+    :vartype ServerEndpoints: ServerEndpointDataType
+    :ivar ClientEndpoints:
+    :vartype ClientEndpoints: EndpointDataType
+    :ivar SecuritySettings:
+    :vartype SecuritySettings: SecuritySettingsDataType
+    :ivar UserTokenSettings:
+    :vartype UserTokenSettings: UserTokenSettingsDataType
+    :ivar AuthorizationServices:
+    :vartype AuthorizationServices: AuthorizationServiceConfigurationDataType
+    """
+
+    data_type = NodeId(ObjectIds.ApplicationConfigurationDataType)
+
+    ConfigurationVersion: 'ua.VersionTime' = 0
+    ConfigurationProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    ApplicationIdentity: 'ua.ApplicationIdentityDataType' = field(default_factory=lambda: ApplicationIdentityDataType())
+    CertificateGroups: 'list[ua.CertificateGroupDataType]' = field(default_factory=list)
+    ServerEndpoints: 'list[ua.ServerEndpointDataType]' = field(default_factory=list)
+    ClientEndpoints: 'list[ua.EndpointDataType]' = field(default_factory=list)
+    SecuritySettings: 'list[ua.SecuritySettingsDataType]' = field(default_factory=list)
+    UserTokenSettings: 'list[ua.UserTokenSettingsDataType]' = field(default_factory=list)
+    AuthorizationServices: 'list[ua.AuthorizationServiceConfigurationDataType]' = field(default_factory=list)
 
 
 @dataclass(frozen=FROZEN)
@@ -4292,7 +4758,7 @@ class JsonApplicationDescriptionMessage:
 @dataclass(frozen=FROZEN)
 class RequestHeader:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.33
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.32
 
     :ivar AuthenticationToken:
     :vartype AuthenticationToken: SessionAuthenticationToken
@@ -4324,7 +4790,7 @@ class RequestHeader:
 @dataclass(frozen=FROZEN)
 class ResponseHeader:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.34
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.33
 
     :ivar Timestamp:
     :vartype Timestamp: UtcTime
@@ -4353,7 +4819,7 @@ class ResponseHeader:
 @dataclass(frozen=FROZEN)
 class ServiceFault:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.35
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.34
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4560,7 +5026,7 @@ class FindServersOnNetworkResponse:
 @dataclass(frozen=FROZEN)
 class UserTokenPolicy:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.42
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.41
 
     :ivar PolicyId:
     :vartype PolicyId: String
@@ -5083,7 +5549,7 @@ class GetEndpointsResponse:
 @dataclass(frozen=FROZEN)
 class RegisteredServer:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.32
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.31
 
     :ivar ServerUri:
     :vartype ServerUri: String
@@ -5380,7 +5846,7 @@ class SignedSoftwareCertificate:
 @dataclass(frozen=FROZEN)
 class SignatureData:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.37
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.36
 
     :ivar Algorithm:
     :vartype Algorithm: String
@@ -6457,7 +6923,7 @@ class DeleteReferencesResponse:
 @dataclass(frozen=FROZEN)
 class ViewDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.45
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.44
 
     :ivar ViewId:
     :vartype ViewId: NodeId
@@ -6506,7 +6972,7 @@ class BrowseDescription:
 @dataclass(frozen=FROZEN)
 class ReferenceDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.30
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.29
 
     :ivar ReferenceTypeId:
     :vartype ReferenceTypeId: NodeId
@@ -6683,7 +7149,7 @@ class BrowseNextResponse:
 @dataclass(frozen=FROZEN)
 class BrowsePath:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/6.2.5
 
     :ivar StartingNode:
     :vartype StartingNode: NodeId
@@ -6970,7 +7436,7 @@ class NodeTypeDescription:
 @dataclass(frozen=FROZEN)
 class QueryDataSet:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.28
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/B.2.5
 
     :ivar NodeId:
     :vartype NodeId: ExpandedNodeId
@@ -7356,7 +7822,7 @@ class QueryNextResponse:
 @dataclass(frozen=FROZEN)
 class ReadValueId:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.29
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.28
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -8152,7 +8618,7 @@ class ReadEventDetailsSorted(ReadEventDetails):
 @dataclass(frozen=FROZEN)
 class AggregateConfiguration:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.4/#6.5.4.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.4
 
     :ivar UseServerCapabilitiesDefaults:
     :vartype UseServerCapabilitiesDefaults: Boolean
@@ -10215,9 +10681,39 @@ extension_object_typeids['QuantityDimension'] = nid
 nid = FourByteNodeId(ObjectIds.TrustListDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = TrustListDataType
 extension_object_typeids['TrustListDataType'] = nid
+nid = FourByteNodeId(ObjectIds.BaseConfigurationDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = BaseConfigurationDataType
+extension_object_typeids['BaseConfigurationDataType'] = nid
+nid = FourByteNodeId(ObjectIds.BaseConfigurationRecordDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = BaseConfigurationRecordDataType
+extension_object_typeids['BaseConfigurationRecordDataType'] = nid
+nid = FourByteNodeId(ObjectIds.CertificateGroupDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = CertificateGroupDataType
+extension_object_typeids['CertificateGroupDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ConfigurationUpdateTargetType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ConfigurationUpdateTargetType
+extension_object_typeids['ConfigurationUpdateTargetType'] = nid
 nid = FourByteNodeId(ObjectIds.TransactionErrorType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = TransactionErrorType
 extension_object_typeids['TransactionErrorType'] = nid
+nid = FourByteNodeId(ObjectIds.EndpointDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = EndpointDataType
+extension_object_typeids['EndpointDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ServerEndpointDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ServerEndpointDataType
+extension_object_typeids['ServerEndpointDataType'] = nid
+nid = FourByteNodeId(ObjectIds.SecuritySettingsDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = SecuritySettingsDataType
+extension_object_typeids['SecuritySettingsDataType'] = nid
+nid = FourByteNodeId(ObjectIds.UserTokenSettingsDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = UserTokenSettingsDataType
+extension_object_typeids['UserTokenSettingsDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ServiceCertificateDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ServiceCertificateDataType
+extension_object_typeids['ServiceCertificateDataType'] = nid
+nid = FourByteNodeId(ObjectIds.AuthorizationServiceConfigurationDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = AuthorizationServiceConfigurationDataType
+extension_object_typeids['AuthorizationServiceConfigurationDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DecimalDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = DecimalDataType
 extension_object_typeids['DecimalDataType'] = nid
@@ -10398,6 +10894,21 @@ extension_object_typeids['ReferenceDescriptionDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ReferenceListEntryDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = ReferenceListEntryDataType
 extension_object_typeids['ReferenceListEntryDataType'] = nid
+nid = FourByteNodeId(ObjectIds.SpanContextDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = SpanContextDataType
+extension_object_typeids['SpanContextDataType'] = nid
+nid = FourByteNodeId(ObjectIds.TraceContextDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = TraceContextDataType
+extension_object_typeids['TraceContextDataType'] = nid
+nid = FourByteNodeId(ObjectIds.NameValuePair_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = NameValuePair
+extension_object_typeids['NameValuePair'] = nid
+nid = FourByteNodeId(ObjectIds.LogRecord_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = LogRecord
+extension_object_typeids['LogRecord'] = nid
+nid = FourByteNodeId(ObjectIds.LogRecordsDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = LogRecordsDataType
+extension_object_typeids['LogRecordsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.RolePermissionType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RolePermissionType
 extension_object_typeids['RolePermissionType'] = nid
@@ -10464,6 +10975,12 @@ extension_object_typeids['TimeZoneDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ApplicationDescription_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = ApplicationDescription
 extension_object_typeids['ApplicationDescription'] = nid
+nid = FourByteNodeId(ObjectIds.ApplicationIdentityDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ApplicationIdentityDataType
+extension_object_typeids['ApplicationIdentityDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ApplicationConfigurationDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ApplicationConfigurationDataType
+extension_object_typeids['ApplicationConfigurationDataType'] = nid
 nid = FourByteNodeId(ObjectIds.RequestHeader_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RequestHeader
 extension_object_typeids['RequestHeader'] = nid
@@ -11045,76 +11562,3 @@ extension_objects_by_typeid[nid] = TransferSubscriptionsResponse
 extension_object_typeids['TransferSubscriptionsResponse'] = nid
 nid = FourByteNodeId(ObjectIds.DeleteSubscriptionsRequest_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = DeleteSubscriptionsRequest
-extension_object_typeids['DeleteSubscriptionsRequest'] = nid
-nid = FourByteNodeId(ObjectIds.DeleteSubscriptionsResponse_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = DeleteSubscriptionsResponse
-extension_object_typeids['DeleteSubscriptionsResponse'] = nid
-nid = FourByteNodeId(ObjectIds.BuildInfo_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = BuildInfo
-extension_object_typeids['BuildInfo'] = nid
-nid = FourByteNodeId(ObjectIds.RedundantServerDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = RedundantServerDataType
-extension_object_typeids['RedundantServerDataType'] = nid
-nid = FourByteNodeId(ObjectIds.EndpointUrlListDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = EndpointUrlListDataType
-extension_object_typeids['EndpointUrlListDataType'] = nid
-nid = FourByteNodeId(ObjectIds.NetworkGroupDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = NetworkGroupDataType
-extension_object_typeids['NetworkGroupDataType'] = nid
-nid = FourByteNodeId(ObjectIds.SamplingIntervalDiagnosticsDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = SamplingIntervalDiagnosticsDataType
-extension_object_typeids['SamplingIntervalDiagnosticsDataType'] = nid
-nid = FourByteNodeId(ObjectIds.ServerDiagnosticsSummaryDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ServerDiagnosticsSummaryDataType
-extension_object_typeids['ServerDiagnosticsSummaryDataType'] = nid
-nid = FourByteNodeId(ObjectIds.ServerStatusDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ServerStatusDataType
-extension_object_typeids['ServerStatusDataType'] = nid
-nid = FourByteNodeId(ObjectIds.SessionSecurityDiagnosticsDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = SessionSecurityDiagnosticsDataType
-extension_object_typeids['SessionSecurityDiagnosticsDataType'] = nid
-nid = FourByteNodeId(ObjectIds.ServiceCounterDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ServiceCounterDataType
-extension_object_typeids['ServiceCounterDataType'] = nid
-nid = FourByteNodeId(ObjectIds.SessionDiagnosticsDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = SessionDiagnosticsDataType
-extension_object_typeids['SessionDiagnosticsDataType'] = nid
-nid = FourByteNodeId(ObjectIds.StatusResult_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = StatusResult
-extension_object_typeids['StatusResult'] = nid
-nid = FourByteNodeId(ObjectIds.SubscriptionDiagnosticsDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = SubscriptionDiagnosticsDataType
-extension_object_typeids['SubscriptionDiagnosticsDataType'] = nid
-nid = FourByteNodeId(ObjectIds.ModelChangeStructureDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ModelChangeStructureDataType
-extension_object_typeids['ModelChangeStructureDataType'] = nid
-nid = FourByteNodeId(ObjectIds.SemanticChangeStructureDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = SemanticChangeStructureDataType
-extension_object_typeids['SemanticChangeStructureDataType'] = nid
-nid = FourByteNodeId(ObjectIds.Range_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = Range
-extension_object_typeids['Range'] = nid
-nid = FourByteNodeId(ObjectIds.EUInformation_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = EUInformation
-extension_object_typeids['EUInformation'] = nid
-nid = FourByteNodeId(ObjectIds.ComplexNumberType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ComplexNumberType
-extension_object_typeids['ComplexNumberType'] = nid
-nid = FourByteNodeId(ObjectIds.DoubleComplexNumberType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = DoubleComplexNumberType
-extension_object_typeids['DoubleComplexNumberType'] = nid
-nid = FourByteNodeId(ObjectIds.AxisInformation_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = AxisInformation
-extension_object_typeids['AxisInformation'] = nid
-nid = FourByteNodeId(ObjectIds.XVType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = XVType
-extension_object_typeids['XVType'] = nid
-nid = FourByteNodeId(ObjectIds.ProgramDiagnosticDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ProgramDiagnosticDataType
-extension_object_typeids['ProgramDiagnosticDataType'] = nid
-nid = FourByteNodeId(ObjectIds.ProgramDiagnostic2DataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ProgramDiagnostic2DataType
-extension_object_typeids['ProgramDiagnostic2DataType'] = nid
-nid = FourByteNodeId(ObjectIds.Annotation_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = Annotation
-extension_object_typeids['Annotation'] = nid
