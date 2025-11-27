@@ -158,7 +158,7 @@ def get_default_value(uatype, enums=None, hack=False, optional=False):
     if hasattr(ua, uatype):
         # That type is know, make sure this is not a subtype
         dtype = getattr(ua, uatype)
-        uatype = dtype.__name__
+        uatype = dtype.__alias__ if hasattr(dtype, "__alias__") else dtype.__name__
     if enums is None:
         enums = {}
     if uatype == "String":
@@ -174,7 +174,7 @@ def get_default_value(uatype, enums=None, hack=False, optional=False):
     if uatype in ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte", "SByte"):
         return f"ua.{uatype}(0)"
     if uatype in enums:
-        return f"ua.{uatype}({enums[uatype]})"
+        return f"ua.get_custom_struct_via_name('{uatype}')({enums[uatype]})"
     if hasattr(ua, uatype) and issubclass(getattr(ua, uatype), Enum):
         # We have an enum, try to initilize it correctly
         val = list(getattr(ua, uatype).__members__)[0]
@@ -182,7 +182,7 @@ def get_default_value(uatype, enums=None, hack=False, optional=False):
     if hack:
         # FIXME: This is horrible but necssary for old struc support until
         # someone fixes dependencies og we deprecated it
-        return f"field(default_factory=lambda :ua.{uatype}())"
+        return f"field(default_factory=lambda :ua.get_custom_struct_via_name('{uatype}')())"
     return f"field(default_factory=ua.{uatype})"
 
 
@@ -231,7 +231,7 @@ class {struct_name}{base_class}:
             else:
                 uatype = ua.ObjectIdNames[sfield.DataType.Identifier]
         elif sfield.DataType in ua.extension_objects_by_datatype:
-            uatype = ua.extension_objects_by_datatype[sfield.DataType].__name__
+            uatype = ua.extension_objects_by_datatype[sfield.DataType].__alias__ if hasattr(ua.extension_objects_by_datatype[sfield.DataType], '__alias__') else ua.extension_objects_by_datatype[sfield.DataType].__name__
         elif sfield.DataType in ua.enums_by_datatype:
             uatype = ua.enums_by_datatype[sfield.DataType].__name__
         elif sfield.DataType in ua.basetype_by_datatype:
@@ -435,7 +435,13 @@ async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAt
     """
     This function is used to load custom structs from xmlimporter
     """
-    name = attrs.DisplayName.Text
+    existing_custom_struct = ua.get_custom_struct_via_nodeid(node_id)
+    # Identify the correct name:
+    if existing_custom_struct and existing_custom_struct.__name__ == attrs.DisplayName.Text and hasattr(ua, existing_custom_struct.__alias__):
+        # Cover cases where a mis-match exist or the user deleted one type
+        name = existing_custom_struct.__alias__
+    else:
+        name = attrs.DisplayName.Text
     if hasattr(ua, name):
         return getattr(ua, name)
     # FIXME : mypy attribute not defined
@@ -467,6 +473,10 @@ async def load_basetype_alias_xml_import(server, name, nodeid, parent_datatype_n
     parent = server.get_node(parent_datatype_nid)
     bname = await parent.read_browse_name()
     parent_datatype = clean_name(bname.Name)
+    # remap to saved datatype:
+    remapped_parent_datatype = ua.get_custom_struct_via_nodeid(parent_datatype_nid)
+    if remapped_parent_datatype:
+        parent_datatype = remapped_parent_datatype.__alias__ if hasattr(remapped_parent_datatype, '__alias__') else remapped_parent_datatype.__name__
     env = make_basetype_code(name, parent_datatype)
     ua.register_basetype(name, nodeid, env[name])
     return env[name]
@@ -519,7 +529,7 @@ async def load_data_type_definitions(server: Server | Client, base_node: Node = 
         failed_types = []
         log_ex = retries == cnt + 1
         for dts in dtypes:
-            if hasattr(ua, dts.name):
+            if ua.get_real(dts.name):
                 continue
             try:
                 env = _generate_object(dts.name, dts.sdef, data_type=dts.data_type, log_fail=log_ex)
@@ -542,7 +552,7 @@ async def _read_data_type_definition(server, desc: ua.ReferenceDescription, read
         # FIXME: find out why that one is not in ua namespace...
         return None
     # FIXME: this is fishy, we may have same name in different Namespaces
-    if not read_existing and hasattr(ua, desc.BrowseName.Name):
+    if not read_existing and ua.get_real(desc.BrowseName.Name):
         return None
     _logger.info("Registering data type %s %s", desc.NodeId, desc.BrowseName)
     node = server.get_node(desc.NodeId)

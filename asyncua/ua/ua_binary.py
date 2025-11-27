@@ -42,7 +42,17 @@ def get_safe_type_hints(cls, extra_globals=None):
     # Filter out properties from the class dict to avoid shadowing
     localns = {k: v for k, v in cls.__dict__.items() if not isinstance(v, property)}
 
-    return typing.get_type_hints(cls, globalns=globalns, localns=localns)
+    try:
+        resolved_fieldtypes = typing.get_type_hints(cls, globalns=globalns, localns=localns)
+    except AttributeError:
+        # Some recursion is happening and typing needs to be fixed.
+        # To do that, we will temporarily create the class as it is named (instead of the alias)
+        # Then delete it again
+        setattr(ua, cls.__name__, cls)
+        resolved_fieldtypes = get_type_hints(cls, {"ua": ua})
+        delattr(ua, cls.__name__)
+
+    return resolved_fieldtypes
 
 
 def test_bit(data: int, offset: int) -> int:
@@ -309,7 +319,16 @@ def create_dataclass_serializer(dataclazz):
     data_fields = fields(dataclazz)
     # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
     #       it is possible that the type annotations also refere to classes defined in other modules.
-    resolved_fieldtypes = get_type_hints(dataclazz, {"ua": ua})
+    try:
+        resolved_fieldtypes = get_type_hints(dataclazz, {"ua": ua})
+    except AttributeError:
+        # Some recursion is happening and typing needs to be fixed.
+        # To do that, we will temporarily create the class as it is named (instead of the alias)
+        # Then delete it again
+        setattr(ua, dataclazz.__name__, dataclazz)
+        resolved_fieldtypes = get_type_hints(dataclazz, {"ua": ua})
+        delattr(ua, dataclazz.__name__)
+
 
     for f in data_fields:
         f.type = resolved_fieldtypes[f.name]
@@ -604,7 +623,8 @@ def extensionobject_to_binary(obj):
         encoding = 0
         body = None
     else:
-        type_id = ua.extension_object_typeids[obj.__class__.__name__]
+        name = obj.__class__.__alias__ if hasattr(obj.__class__, '__alias__') else obj.__class__.__name__ 
+        type_id = ua.extension_object_typeids[name]
         encoding = 0x01
         body = struct_to_binary(obj)
     packet = [
@@ -700,7 +720,15 @@ def _create_dataclass_deserializer(objtype):
     field_deserializers = []
     # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
     #       its possible that the type annotations also refere to classes defined in other modules.
-    resolved_fieldtypes = get_type_hints(objtype, {"ua": ua})
+    try:
+        resolved_fieldtypes = get_type_hints(objtype, {"ua": ua})
+    except AttributeError:
+        # Some recursion is happening and typing needs to be fixed.
+        # To do that, we will temporarily create the class as it is named (instead of the alias)
+        # Then delete it again
+        setattr(ua, objtype.__name__, objtype)
+        resolved_fieldtypes = get_type_hints(objtype, {"ua": ua})
+        delattr(ua, objtype.__name__)
     for field in fields(objtype):
         optional_enc_bit = 0
         field_type = resolved_fieldtypes[field.name]

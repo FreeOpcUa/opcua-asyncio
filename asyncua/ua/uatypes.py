@@ -1229,6 +1229,8 @@ extension_objects_by_datatype = {}  # dict[Datatype, type]
 extension_objects_by_typeid = {}  # dict[EncodingId, type]
 extension_object_typeids = {}
 datatype_by_extension_object = {}
+datatype_aliases: dict[str, list[str]] = {}
+dataid_aliases: dict[str, list[str]] = {}
 
 
 def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid=None):
@@ -1242,16 +1244,32 @@ def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid
         class_type,
         datatype_nodeid,
     )
+    unique_id = str(uuid.uuid4()).replace('-', '_')
+    new_name = f"{name}_{unique_id}"
+
+    # Add alias to class_type
+    class_type.__alias__ = new_name
+
+    if name not in datatype_aliases:
+        datatype_aliases[name] = []
+    datatype_aliases[name].append(new_name)
+
     if datatype_nodeid:
+
+        if datatype_nodeid not in dataid_aliases:
+            dataid_aliases[datatype_nodeid] = []
+        dataid_aliases[datatype_nodeid].append(encoding_nodeid)
+
         extension_objects_by_datatype[datatype_nodeid] = class_type
         datatype_by_extension_object[class_type] = datatype_nodeid
     extension_objects_by_typeid[encoding_nodeid] = class_type
-    extension_object_typeids[name] = encoding_nodeid
+    extension_object_typeids[new_name] = encoding_nodeid
     # FIXME: Next line is not exactly a Python best practices, so feel free to propose something else
     # add new extensions objects to ua modules to automate decoding
     import asyncua.ua
 
-    setattr(asyncua.ua, name, class_type)
+    setattr(asyncua.ua, new_name, class_type)
+    logging.info(f"Added {new_name} as custom_type")
 
 
 def get_extensionobject_class_type(typeid):
@@ -1260,6 +1278,12 @@ def get_extensionobject_class_type(typeid):
     """
     if typeid in extension_objects_by_typeid:
         return extension_objects_by_typeid[typeid]
+    if typeid in dataid_aliases:
+        # Small check to the unknown
+        if len(dataid_aliases[typeid]) > 1:
+            for val in dataid_aliases[typeid]:
+                logging.warning(f"{typeid} could be {val}")
+        return extension_objects_by_typeid[dataid_aliases[typeid][0]]
     return None
 
 

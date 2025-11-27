@@ -291,7 +291,7 @@ def test_create_enum_sync_client(client):
 def test_create_struct_sync(server):
     idx = 4
 
-    new_struct(
+    var_node, _ = new_struct(
         server,
         idx,
         "MyMyStruct",
@@ -302,7 +302,7 @@ def test_create_struct_sync(server):
     )
 
     server.load_data_type_definitions()
-    mystruct = ua.MyMyStruct()
+    mystruct = ua.get_custom_struct_via_nodeid(var_node.nodeid)()
     mystruct.MyUInt32 = [78, 79]
     var = server.nodes.objects.add_variable(idx, "my_struct", mystruct)
     val = var.read_value()
@@ -312,7 +312,7 @@ def test_create_struct_sync(server):
 def test_create_struct_sync_client(client):
     idx = 4
 
-    new_struct(
+    var_node, _ = new_struct(
         client,
         idx,
         "MyMyStruct",
@@ -323,7 +323,7 @@ def test_create_struct_sync_client(client):
     )
 
     client.load_data_type_definitions()
-    mystruct = ua.MyMyStruct()
+    mystruct = ua.get_custom_struct_via_nodeid(var_node.nodeid)()
     mystruct.MyUInt32 = [78, 79]
     var = client.nodes.objects.add_variable(idx, "my_struct", mystruct)
     val = var.read_value()
