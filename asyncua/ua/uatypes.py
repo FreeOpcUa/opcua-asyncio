@@ -1232,6 +1232,12 @@ dataid_aliases: dict[str, list[str]] = {}
 def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid=None):
     """
     Register a new extension object for automatic decoding and make them available in ua module
+    over the following functions:
+
+    * :code:`ua.get_custom_struct_via_nodeid(nodeid)` is the preferred method
+    * :code:`ua.get_custom_struct_with_matching_fields('MyStruct', ['field_1', 'field_2'])`
+    * :code:`ua.get_custom_struct_via_nodeid('MyStruct')`
+
     """
     _logger.info(
         "registering new extension object: %s %s %s %s",
@@ -1265,7 +1271,6 @@ def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid
     import asyncua.ua
 
     setattr(asyncua.ua, new_name, class_type)
-    logging.info(f"Added {new_name} as custom_type")
 
 
 def get_extensionobject_class_type(typeid):
@@ -1275,10 +1280,6 @@ def get_extensionobject_class_type(typeid):
     if typeid in extension_objects_by_typeid:
         return extension_objects_by_typeid[typeid]
     if typeid in dataid_aliases:
-        # Small check to the unknown
-        if len(dataid_aliases[typeid]) > 1:
-            for val in dataid_aliases[typeid]:
-                logging.warning(f"{typeid} could be {val}")
         return extension_objects_by_typeid[dataid_aliases[typeid][0]]
     return None
 

@@ -284,7 +284,6 @@ class XmlImporter:
                 nd.parentlink = reftype
 
     async def _add_node_data(self, nodedata, no_namespace_migration=False) -> ua.NodeId:
-        logging.info(f"PARSING {nodedata.displayname} with nodetype: {nodedata.nodetype}")
         if nodedata.nodetype == "UAObject":
             node = await self.add_object(nodedata, no_namespace_migration)
         elif nodedata.nodetype == "UAObjectType":
@@ -484,7 +483,7 @@ class XmlImporter:
             return struct
         # Try to find a perfect matching class
         if fields:
-            struct = ua.get_custom_struct_with_perfect_match(name, fields)
+            struct = ua.get_custom_struct_with_matching_fields(name, fields)
             if struct:
                 return struct
         # If this is not enough, we try to fetch by name
@@ -534,7 +533,7 @@ class XmlImporter:
             if field.name == attname:
                 return field.type
         raise UaError(f"Attribute '{attname}' defined in xml is not found in object '{objclass}'")
-    
+
     def _get_val_type_from_typehint(self, typehint, attname: str):
         return typehint[attname]
 
@@ -740,7 +739,6 @@ class XmlImporter:
         res = await self._get_server().add_nodes([node])
         res[0].StatusCode.check()
         await self._add_refs(obj)
-        logging.info(f"{self.auto_load_definitions} - {is_struct=} - {is_enum=} - {is_alias=} decided for {str(obj)}")
         if self.auto_load_definitions:
             if is_struct:
                 await load_custom_struct_xml_import(node.RequestedNewNodeId, attrs)
