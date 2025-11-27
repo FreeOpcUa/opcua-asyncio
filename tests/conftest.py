@@ -133,7 +133,7 @@ async def server():
             new_struct_field("MyBool", ua.VariantType.Boolean),
             new_struct_field("MyUInt32", ua.VariantType.UInt32),
         ],
-    ) 
+    )
     await srv.load_data_type_definitions()
     fetched_struct = ua.uatypes.get_extensionobject_class_type(var_node.nodeid)
     await srv.nodes.objects.add_variable(idx, "my_struct", ua.Variant(fetched_struct(), ua.VariantType.ExtensionObject))

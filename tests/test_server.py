@@ -908,10 +908,10 @@ async def test_conflicting_datastruct_resolution(server: Server, server_with_con
                 found_child = child
         if found_child:
             return await found_child.read_value()
+        return None
 
     # Fetch parameter
     param1 = await return_struct(server)
     param2 = await return_struct(server_with_conflict_datastruct)
     # We should have 2 different structure
     assert param1 != param2
- 

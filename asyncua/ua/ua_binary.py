@@ -623,7 +623,7 @@ def extensionobject_to_binary(obj):
         encoding = 0
         body = None
     else:
-        name = obj.__class__.__alias__ if hasattr(obj.__class__, '__alias__') else obj.__class__.__name__ 
+        name = obj.__class__.__alias__ if hasattr(obj.__class__, '__alias__') else obj.__class__.__name__
         type_id = ua.extension_object_typeids[name]
         encoding = 0x01
         body = struct_to_binary(obj)

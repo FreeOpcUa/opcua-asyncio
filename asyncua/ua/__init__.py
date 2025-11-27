@@ -6,8 +6,10 @@ from .status_codes import StatusCodes
 from .uaprotocol_auto import *
 from .uaprotocol_hand import *
 from .uatypes import *  # TODO: This should be renamed to uatypes_hand
+from .uatypes import get_extensionobject_class_type
 from .uaerrors import UaStatusCodeErrors
 import dataclasses
+from typing import Any
 
 import sys
 _current_module = sys.modules[__name__]
@@ -28,16 +30,15 @@ def delete_custom_struct_via_name(name: str):
             break
 
     del _current_module.__dict__[found_key]
-    logging.info(f"deleted {found_key}")
 
-def get_custom_struct_via_name(name: str) -> type | None:
+def get_custom_struct_via_name(name: str) -> Any | None:
     """Return the closest found custom struct for the given name
 
     Args:
         name (str): Name of the custom_struct
 
     Returns:
-        type: Associated class or None if nothing was found
+        Any | None: Associated class or None if nothing was found
 
     ..warning::
         It is not recommended to use this function because, in case of custom structs that
@@ -54,7 +55,16 @@ def get_custom_struct_via_name(name: str) -> type | None:
             return val
     return None
 
-def get_custom_struct_with_perfect_match(name: str, fields: list):
+def get_custom_struct_with_matching_fields(name: str, fields: list[str]) -> Any | None:
+    """Return the first found custom struct that matches the given name and list of fields
+
+    Args:
+        name (str): Name of the custom_struct
+        fields (list[str]): List of expected fields the custom struct should have.
+
+    Returns:
+        Any | None: The finding custom struct. Else None.
+    """
     found_classes = []
     for key, val in _current_module.__dict__.items():
         if name in key and name == val.__name__:
@@ -71,13 +81,13 @@ def get_custom_struct_with_perfect_match(name: str, fields: list):
             return clazz
     return None
 
-def get_custom_struct_via_nodeid(node_id: ObjectIds) -> type | None:
+def get_custom_struct_via_nodeid(node_id: ObjectIds) -> Any | None:
     """Return the custom struct associated to the node id
 
     Args:
         node_id (ObjectIds): NodeId
 
     Returns:
-        type | None: Class if found
+        Any | None: Class if found
     """
     return get_extensionobject_class_type(node_id)
