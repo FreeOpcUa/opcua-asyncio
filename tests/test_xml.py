@@ -659,7 +659,7 @@ async def test_xml_union(opc, tmpdir):
     o2 = opc.opc.get_node(new_nodes[0])
     assert o == o2
     await opc.opc.load_data_type_definitions()
-    t = ua.MyUnionStruct2()
+    t = ua.get_custom_struct_via_nodeid(o.nodeid)()
     t.MyString = "abc"
     assert t.MyString == "abc"
     assert t.MyInt64 is None
@@ -706,7 +706,7 @@ async def test_xml_struct_optional(opc, tmpdir):
     o2 = opc.opc.get_node(new_nodes[0])
     assert o == o2
     await opc.opc.load_data_type_definitions()
-    t = ua.MyOptionalStruct2()
+    t = ua.get_custom_struct_via_nodeid(o.nodeid)()
     t.MyInt64 = 5
     assert t.MyString is None
     assert t.MyInt64 == 5
@@ -724,10 +724,10 @@ async def test_xml_struct_with_value(opc, tmpdir):
     )
     await opc.opc.load_data_type_definitions()
     valnode = await opc.opc.nodes.objects.add_variable(
-        idx, "my_struct", ua.Variant(ua.MyStructWithValue(), ua.VariantType.ExtensionObject)
+        idx, "my_struct", ua.Variant(ua.get_custom_struct_via_nodeid(my_struct.nodeid)(), ua.VariantType.ExtensionObject)
     )
 
-    new_value = ua.MyStructWithValue()
+    new_value = ua.get_custom_struct_via_nodeid(my_struct.nodeid)()
     new_value.int_value = 14
     await valnode.write_value(ua.Variant(new_value, ua.VariantType.ExtensionObject))
 
@@ -766,10 +766,10 @@ async def test_xml_struct_in_struct_with_value(opc, tmpdir):
     )
     await opc.opc.load_data_type_definitions()
     valnode = await opc.opc.nodes.objects.add_variable(
-        idx, "my_outer_struct", ua.Variant(ua.MyOuterStruct(), ua.VariantType.ExtensionObject)
+        idx, "my_outer_struct", ua.Variant(ua.get_custom_struct_via_nodeid(outer_struct.nodeid)(), ua.VariantType.ExtensionObject)
     )
 
-    new_value = ua.MyOuterStruct()
+    new_value = ua.get_custom_struct_via_nodeid(outer_struct.nodeid)()
     new_value.inner_struct_value.int_value = 42
     await valnode.write_value(ua.Variant(new_value, ua.VariantType.ExtensionObject))
 
