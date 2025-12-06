@@ -5,10 +5,8 @@ Example creating a publisher that sends an Int32, String, Bool and ArrayInt16 fr
 import asyncio
 import logging
 
-from asyncua import ua, pubsub, Server
+from asyncua import Server, pubsub, ua
 from asyncua.common.node import Node
-
-
 from asyncua.ua.uatypes import NodeId, VariantType
 
 URL = "opc.udp://239.0.0.1:4840"

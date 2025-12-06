@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 
 from asyncua import ua
 from asyncua.common.subscription import Subscription, SubscriptionHandler
-from ..common.utils import Buffer
 
+from ..common.utils import Buffer
 
 _logger = logging.getLogger(__name__)
 

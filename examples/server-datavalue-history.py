@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, "..")
 import math
 
-from asyncua import ua, Server
+from asyncua import Server, ua
 from asyncua.server.history_sql import HistorySQLite
 
 

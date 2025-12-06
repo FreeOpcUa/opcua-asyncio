@@ -7,9 +7,9 @@ import asyncio
 import logging
 import os
 import sys
-from dataclasses import Field, fields
-from typing import Any, get_type_hints, TypeVar
 from collections.abc import Awaitable
+from dataclasses import Field, fields
+from typing import Any, TypeVar, get_type_hints
 
 from ..ua.uaerrors import UaError
 

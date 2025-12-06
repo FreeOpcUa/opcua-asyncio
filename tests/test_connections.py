@@ -1,10 +1,12 @@
 import asyncio
-import pytest
 import struct
+
+import pytest
 
 from asyncua import Client, Server, ua
 from asyncua.ua.uaerrors import BadMaxConnectionsReached, BadSessionNotActivated
-from .conftest import port_num, find_free_port
+
+from .conftest import find_free_port, port_num
 
 pytestmark = pytest.mark.asyncio
 

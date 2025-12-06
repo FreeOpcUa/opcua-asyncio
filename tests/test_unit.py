@@ -4,28 +4,35 @@ Simple unit test that do not need to setup a server or a client
 """
 
 import io
-from pathlib import Path
-import uuid
-import pytest
 import logging
-from datetime import datetime, timezone
+import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import cast
 
+import pytest
+
 from asyncua import ua
-from asyncua.ua import ua_binary
-from asyncua.ua.ua_binary import extensionobject_from_binary
-from asyncua.ua.ua_binary import extensionobject_to_binary
-from asyncua.ua.ua_binary import nodeid_to_binary, variant_to_binary, _reshape, variant_from_binary, nodeid_from_binary
-from asyncua.ua.ua_binary import struct_to_binary, struct_from_binary
-from asyncua.ua import flatten, get_shape
-from asyncua.server.monitored_item_service import WhereClauseEvaluator
-from asyncua.common.event_objects import BaseEvent
-from asyncua.common.ua_utils import string_to_val, val_to_string
-from asyncua.ua.uatypes import _MaskEnum
-from asyncua.common.structures import StructGenerator
 from asyncua.common.connection import MessageChunk
+from asyncua.common.event_objects import BaseEvent
+from asyncua.common.structures import StructGenerator
+from asyncua.common.ua_utils import string_to_val, val_to_string
 from asyncua.crypto.security_policies import SecurityPolicyNone
+from asyncua.server.monitored_item_service import WhereClauseEvaluator
+from asyncua.ua import flatten, get_shape, ua_binary
+from asyncua.ua.ua_binary import (
+    _reshape,
+    extensionobject_from_binary,
+    extensionobject_to_binary,
+    nodeid_from_binary,
+    nodeid_to_binary,
+    struct_from_binary,
+    struct_to_binary,
+    variant_from_binary,
+    variant_to_binary,
+)
+from asyncua.ua.uatypes import _MaskEnum
 
 EXAMPLE_BSD_PATH = Path(__file__).parent.absolute() / "example.bsd"
 

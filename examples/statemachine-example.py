@@ -1,7 +1,8 @@
 import asyncio
 import logging
+
 from asyncua import Server, ua
-from asyncua.common.statemachine import StateMachine, State, Transition
+from asyncua.common.statemachine import State, StateMachine, Transition
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger("asyncua")

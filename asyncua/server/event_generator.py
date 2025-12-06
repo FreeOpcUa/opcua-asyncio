@@ -1,11 +1,12 @@
 import logging
-from datetime import datetime, timezone
 import time
 import uuid
+from datetime import datetime, timezone
 
 from asyncua import ua
 from asyncua.server.internal_session import InternalSession
-from ..common import events, event_objects, Node
+
+from ..common import Node, event_objects, events
 
 
 class EventGenerator:

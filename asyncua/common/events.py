@@ -1,7 +1,9 @@
 import copy
 from typing import TYPE_CHECKING
-from asyncua import ua
+
 import asyncua
+from asyncua import ua
+
 from ..ua.uaerrors import UaError
 from .ua_utils import get_node_subtypes, is_subtype
 

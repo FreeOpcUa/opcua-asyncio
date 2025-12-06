@@ -1,7 +1,9 @@
-from asyncua import Server, Client
-from asyncua.common.callback import CallbackType
 import logging
+
 import pytest
+
+from asyncua import Client, Server
+from asyncua.common.callback import CallbackType
 
 _logger = logging.getLogger(__name__)
 pytestmark = pytest.mark.asyncio

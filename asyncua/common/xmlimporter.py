@@ -10,24 +10,24 @@ import uuid
 from dataclasses import fields, is_dataclass
 from typing import get_type_hints
 
-
+import asyncua
+from asyncua import Node, ua
 from asyncua.common.structures104 import (
+    load_basetype_alias_xml_import,
     load_custom_struct_xml_import,
     load_enum_xml_import,
-    load_basetype_alias_xml_import,
 )
-import asyncua
-from asyncua import ua, Node
 from asyncua.ua.uatypes import (
-    type_is_optional,
+    type_from_list,
     type_from_optional,
+    type_is_list,
+    type_is_optional,
     type_is_union,
     types_from_union,
-    type_is_list,
-    type_from_list,
 )
-from .xmlparser import XMLParser, ua_type_to_python
+
 from ..ua.uaerrors import UaError
+from .xmlparser import XMLParser, ua_type_to_python
 
 _logger = logging.getLogger(__name__)
 

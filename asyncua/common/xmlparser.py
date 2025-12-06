@@ -2,14 +2,14 @@
 parse xml file from asyncua-spec
 """
 
-import re
 import asyncio
 import base64
 import logging
-
+import re
 import xml.etree.ElementTree as ET
 
 from pytz import utc
+
 from asyncua import ua
 
 from .ua_utils import string_to_val

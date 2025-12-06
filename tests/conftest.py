@@ -1,18 +1,18 @@
 import asyncio
-import pytest
 import operator
-from pathlib import Path
 import socket
-from concurrent.futures import ThreadPoolExecutor
-from multiprocessing import Process, Condition, Event
-from collections import namedtuple
 from asyncio import get_event_loop_policy, sleep
+from collections import namedtuple
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
+from multiprocessing import Condition, Event, Process
+from pathlib import Path
 
-from asyncua import Client
-from asyncua import Server, ua
-from asyncua.client.ua_client import UASocketProtocol
+import pytest
+
+from asyncua import Client, Server, ua
 from asyncua.client.ha.ha_client import HaClient, HaConfig, HaMode
+from asyncua.client.ua_client import UASocketProtocol
 from asyncua.server.history import HistoryDict
 from asyncua.server.history_sql import HistorySQLite
 

@@ -1,19 +1,17 @@
 import asyncio
+import logging
+import socket
 import sys
 from pathlib import Path
-import socket
-
-import logging
 
 sys.path.insert(0, "..")
-from asyncua import Server
-from asyncua import ua
-from asyncua.server.user_managers import CertificateUserManager
-from asyncua.crypto.cert_gen import setup_self_signed_certificate
-from asyncua.crypto.validator import CertificateValidator, CertificateValidatorOptions
 from cryptography.x509.oid import ExtendedKeyUsageOID
-from asyncua.crypto.truststore import TrustStore
 
+from asyncua import Server, ua
+from asyncua.crypto.cert_gen import setup_self_signed_certificate
+from asyncua.crypto.truststore import TrustStore
+from asyncua.crypto.validator import CertificateValidator, CertificateValidatorOptions
+from asyncua.server.user_managers import CertificateUserManager
 
 logging.basicConfig(level=logging.INFO)
 

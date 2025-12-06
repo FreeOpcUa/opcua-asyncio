@@ -4,20 +4,19 @@ We only support a subset of features but should be enough
 for custom structures
 """
 
-import uuid
 import logging
 import typing
+import uuid
+from dataclasses import dataclass, field
 
 # The next two imports are for generated code
 from datetime import datetime, timezone
-from enum import IntEnum, EnumMeta
-from dataclasses import dataclass, field
-
-
+from enum import EnumMeta, IntEnum
 from xml.etree import ElementTree as ET
+
 from asyncua import ua
 
-from .structures104 import get_default_value, clean_name
+from .structures104 import clean_name, get_default_value
 
 _logger = logging.getLogger(__name__)
 

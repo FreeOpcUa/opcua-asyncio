@@ -5,9 +5,9 @@ High level method related functions
 from __future__ import annotations
 
 from asyncio import iscoroutinefunction
+from collections.abc import Iterable
 from functools import wraps
 from typing import Any
-from collections.abc import Iterable
 
 import asyncua
 from asyncua import ua

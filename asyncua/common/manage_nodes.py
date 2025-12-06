@@ -4,15 +4,16 @@ High level functions to create nodes
 
 from __future__ import annotations
 
-import logging
-from enum import Enum
 import inspect
-from typing import Any
+import logging
 from collections.abc import Iterable
+from enum import Enum
+from typing import Any
 
 import asyncua
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
+
 from .instantiate_util import instantiate
 from .node_factory import make_node
 

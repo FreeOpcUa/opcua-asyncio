@@ -4,12 +4,13 @@ NetworkLayer for udp
 
 import asyncio
 import logging
-import struct
 import socket
+import struct
 from dataclasses import InitVar, dataclass
 from ipaddress import ip_address
 from urllib.parse import urlparse
 
+from ..common.utils import Buffer
 from ..ua import KeyValuePair
 from ..ua.uaprotocol_auto import (
     NetworkAddressUrlDataType,
@@ -25,8 +26,6 @@ from ..ua.uatypes import (
     Variant,
     VariantType,
 )
-from ..common.utils import Buffer
-
 from .connection import PubSubReceiver
 from .uadp import UadpNetworkMessage
 

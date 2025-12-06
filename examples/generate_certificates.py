@@ -1,22 +1,22 @@
 """Example of several certficate creation helpers"""
 
 import asyncio
-from pathlib import Path
 import socket
+from pathlib import Path
+
 from cryptography import x509
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding  # , load_pem_private_key
 from cryptography.x509.oid import ExtendedKeyUsageOID
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from asyncua.crypto.uacrypto import load_certificate, load_private_key
 
 from asyncua.crypto.cert_gen import (
-    generate_private_key,
-    generate_self_signed_app_certificate,
     dump_private_key_as_pem,
     generate_app_certificate_signing_request,
+    generate_private_key,
+    generate_self_signed_app_certificate,
     sign_certificate_request,
 )
-
+from asyncua.crypto.uacrypto import load_certificate, load_private_key
 
 HOSTNAME: str = socket.gethostname()
 

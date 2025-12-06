@@ -7,8 +7,8 @@ from __future__ import annotations
 import asyncio
 import collections.abc
 import logging
-from typing import TYPE_CHECKING, Any, overload, Protocol
 from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Protocol, overload
 
 from asyncua import ua
 from asyncua.client.ua_client import UaClient

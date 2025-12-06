@@ -1,5 +1,5 @@
-import logging
 import asyncio
+import logging
 import sys
 
 sys.path.insert(0, "..")

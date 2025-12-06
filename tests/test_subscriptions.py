@@ -1,9 +1,11 @@
-import sys
 import asyncio
-import pytest
+import sys
+from asyncio import Future, TimeoutError, sleep, wait_for
 from copy import copy
-from asyncio import Future, sleep, wait_for, TimeoutError
 from datetime import datetime, timedelta, timezone
+
+import pytest
+
 from asyncua.common.subscription import Subscription
 
 try:
@@ -11,7 +13,7 @@ try:
 except ImportError:
     from asynctest import CoroutineMock as AsyncMock  # type: ignore[no-redef]
 import asyncua
-from asyncua import ua, Client
+from asyncua import Client, ua
 
 from .conftest import Opc
 

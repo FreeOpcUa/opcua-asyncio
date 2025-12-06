@@ -7,8 +7,8 @@ import asyncua
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
 from asyncua.ua.uaerrors import UaInvalidParameterError
-from .node_factory import make_node
 
+from .node_factory import make_node
 
 _logger = logging.getLogger(__name__)
 

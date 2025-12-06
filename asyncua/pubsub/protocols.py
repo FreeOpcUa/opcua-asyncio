@@ -2,10 +2,10 @@
 Protocols which are used to decouple components from pubsub
 """
 
-from ..ua.uatypes import Byte, ExtensionObject, String, UInt16, UInt32, UInt64
 from ..ua.uaprotocol_auto import PubSubState
-from .uadp import UadpNetworkMessage
+from ..ua.uatypes import Byte, ExtensionObject, String, UInt16, UInt32, UInt64
 from .dataset import DataSetMeta, DataSetValue, PublishedDataSet
+from .uadp import UadpNetworkMessage
 
 try:
     from typing import Protocol

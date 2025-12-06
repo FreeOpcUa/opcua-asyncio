@@ -9,14 +9,14 @@ These tests ensure that the function correctly handles certificate chains
 that some OPC UA servers might provide, improving compatibility.
 """
 
-import pytest
 from pathlib import Path
 
-from asyncua.crypto import uacrypto
+import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
+from asyncua.crypto import uacrypto
 
 BASE_DIR = Path(__file__).parent.parent
 EXAMPLE_CERT_PATH = BASE_DIR / "examples" / "certificate-example.der"

@@ -1,10 +1,11 @@
 # Sample on instantiating objects from imported nodesets into a server
 
-import os.path
 import asyncio
 import logging
+import os.path
 import random
-from asyncua import ua, Server
+
+from asyncua import Server, ua
 from asyncua.common.instantiate_util import instantiate
 
 

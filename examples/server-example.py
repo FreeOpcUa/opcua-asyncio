@@ -2,10 +2,10 @@ import asyncio
 import copy
 import logging
 import time
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from math import sin
 
-from asyncua import ua, uamethod, Server
+from asyncua import Server, ua, uamethod
 
 _logger = logging.getLogger(__name__)
 

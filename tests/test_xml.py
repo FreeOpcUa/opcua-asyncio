@@ -1,12 +1,12 @@
-import uuid
-import logging
 import datetime
+import logging
 import pathlib
-import pytest
+import uuid
 
+import pytest
 from pytz import timezone
 
-from asyncua import ua, Node, uamethod
+from asyncua import Node, ua, uamethod
 from asyncua.common.structures104 import new_enum, new_enum_field, new_struct, new_struct_field
 from asyncua.ua import uaerrors
 

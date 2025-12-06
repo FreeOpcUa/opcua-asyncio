@@ -3,8 +3,7 @@ import sys
 sys.path.insert(0, "..")
 import time
 
-
-from asyncua import ua, Server
+from asyncua import Server, ua
 
 # INFO: The concept in this example is that the software model is first built in OPC UA via XML. After that, matching
 # python objects are created based on the UA address space design. Do not use this example to build a UA address space

@@ -2,23 +2,25 @@
 
 import datetime
 import shutil
-from pathlib import Path
 import socket
+from pathlib import Path
+
 import pytest
 from cryptography import x509
-from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.hazmat.primitives import hashes
-from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from asyncua.crypto.uacrypto import load_certificate
-from asyncua.crypto.truststore import TrustStore
+from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+
 from asyncua.crypto.cert_gen import (
-    generate_private_key,
-    generate_self_signed_app_certificate,
     dump_private_key_as_pem,
     generate_app_certificate_signing_request,
+    generate_private_key,
+    generate_self_signed_app_certificate,
     sign_certificate_request,
 )
+from asyncua.crypto.truststore import TrustStore
+from asyncua.crypto.uacrypto import load_certificate
 
 # pylint: disable=redefined-outer-name,missing-function-docstring, missing-module-docstring, missing-class-docstring
 

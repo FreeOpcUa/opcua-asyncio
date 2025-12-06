@@ -7,11 +7,11 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
+from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from pathlib import Path
 from threading import Condition, Thread
-from typing import Any, overload, Literal
-from collections.abc import Callable, Iterable, Sequence
+from typing import Any, Literal, overload
 
 from cryptography import x509
 

@@ -1,10 +1,10 @@
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import Iterable
 
-from asyncua import ua
 from sortedcontainers import SortedDict  # type: ignore
 
+from asyncua import ua
 
 TypeSubHandler = Any
 

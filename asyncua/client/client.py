@@ -2,9 +2,9 @@ import asyncio
 import dataclasses
 import logging
 import socket
+from collections.abc import Callable, Coroutine, Iterable, Sequence
 from pathlib import Path
 from typing import Any, cast
-from collections.abc import Callable, Coroutine, Iterable, Sequence
 from urllib.parse import ParseResult, unquote, urlparse
 
 from cryptography import x509

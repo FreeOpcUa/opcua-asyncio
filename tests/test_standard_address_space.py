@@ -1,9 +1,9 @@
-import pytest
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
-from asyncua.server.address_space import AddressSpace
-from asyncua.server.address_space import NodeManagementService
+import pytest
+
+from asyncua.server.address_space import AddressSpace, NodeManagementService
 from asyncua.server.standard_address_space import standard_address_space
 
 

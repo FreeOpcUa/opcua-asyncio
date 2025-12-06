@@ -1,5 +1,6 @@
-from asyncua import Server, ua, uamethod
 import asyncio
+
+from asyncua import Server, ua, uamethod
 
 
 async def main():

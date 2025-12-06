@@ -1,14 +1,13 @@
-import sys
 import asyncio
 import logging
+import sys
 import time
 
 # import asyncua
 sys.path.insert(0, "..")
 
 from asyncua import Server, ua
-from asyncua.client.ha.ha_client import HaClient, HaMode, HaConfig
-
+from asyncua.client.ha.ha_client import HaClient, HaConfig, HaMode
 
 # set up logging
 root = logging.getLogger()

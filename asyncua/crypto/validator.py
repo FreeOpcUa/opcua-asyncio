@@ -1,13 +1,15 @@
-from collections.abc import Callable, Awaitable
 import logging
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from enum import Flag, auto
+
 from cryptography import x509
 from cryptography.x509.oid import ExtendedKeyUsageOID
+
 from asyncua import ua
 from asyncua.common.utils import ServiceError
-from asyncua.ua import ApplicationDescription
 from asyncua.crypto.truststore import TrustStore
+from asyncua.ua import ApplicationDescription
 
 _logger = logging.getLogger(__name__)
 

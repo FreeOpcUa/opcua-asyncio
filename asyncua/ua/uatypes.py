@@ -8,15 +8,15 @@ import binascii
 import itertools
 import logging
 import re
+import types
 import uuid
 from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import Any, Union, TYPE_CHECKING, get_args, get_origin
-import types
+from enum import IntEnum
+from typing import TYPE_CHECKING, Any, Union, get_args, get_origin
 
 from asyncua.ua.object_ids import ObjectIds
-from enum import IntEnum
 
 if TYPE_CHECKING:
     import asyncua.ua as ua

@@ -15,12 +15,12 @@ Transitions - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.3/#5
 Events - https://reference.opcfoundation.org/v104/Core/docs/Part10/5.2.5/
 """
 
-import logging
 import datetime
-
-from asyncua import Server, ua, Node
-from asyncua.common.event_objects import TransitionEvent, ProgramTransitionEvent
+import logging
 from typing import TYPE_CHECKING
+
+from asyncua import Node, Server, ua
+from asyncua.common.event_objects import ProgramTransitionEvent, TransitionEvent
 
 if TYPE_CHECKING:
     from asyncua.server.event_generator import EventGenerator

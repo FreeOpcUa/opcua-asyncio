@@ -1,10 +1,9 @@
-from asyncua import ua
-from enum import Enum
 import logging
-
-import xml.etree.ElementTree as Et
 import re
+import xml.etree.ElementTree as Et
+from enum import Enum
 
+from asyncua import ua
 
 _logger = logging.getLogger(__name__)
 # Indicates which type should be OPC build in types

@@ -1,7 +1,7 @@
 import logging
+from collections.abc import Iterator
 from enum import Enum
 from pathlib import Path
-from collections.abc import Iterator
 
 import pytest
 

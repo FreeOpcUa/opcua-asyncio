@@ -1,8 +1,7 @@
-import logging
 import asyncio
+import logging
 
-from asyncua import Client, ua, Node
-
+from asyncua import Client, Node, ua
 
 _logger = logging.getLogger(__name__)
 

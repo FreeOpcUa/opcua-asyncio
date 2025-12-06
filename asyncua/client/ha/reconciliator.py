@@ -2,15 +2,16 @@ import asyncio
 import inspect
 import logging
 import time
-
 from collections import defaultdict
 from dataclasses import astuple
 from enum import Enum
 from functools import partial
-from typing import TYPE_CHECKING
-from sortedcontainers import SortedDict  # type: ignore
-from asyncua import ua, Client
 from pickle import PicklingError
+from typing import TYPE_CHECKING
+
+from sortedcontainers import SortedDict  # type: ignore
+
+from asyncua import Client, ua
 
 from .common import batch, event_wait, get_digest
 from .virtual_subscription import VirtualSubscription
