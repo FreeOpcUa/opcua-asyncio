@@ -132,7 +132,8 @@ select = [
   "RET",
   "INT",
   "RUF",
-  "PLE"
+  "PLE",
+  "I",
 ]
 ignore = [
   "E111",  # conflicts with ruff format, cf doc
@@ -148,7 +149,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401", "F403"]
+"__init__.py" = ["F401", "F403", "I"]
 "examples/*" = ["F841", "E402"]
 "asyncua/ua/status_codes.py" = [
   "RUF001"

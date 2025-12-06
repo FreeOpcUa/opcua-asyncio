@@ -14,13 +14,14 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
+
     from asyncua.ua.uaprotocol_auto import (
-        ObjectAttributes,
         DataTypeAttributes,
-        ReferenceTypeAttributes,
-        VariableTypeAttributes,
-        VariableAttributes,
+        ObjectAttributes,
         ObjectTypeAttributes,
+        ReferenceTypeAttributes,
+        VariableAttributes,
+        VariableTypeAttributes,
     )
 
     __TYPE_ATTRIBUTES = (
@@ -34,7 +35,6 @@ if TYPE_CHECKING:
 
 from asyncua import ua
 from asyncua.crypto.permission_rules import User, UserRole
-
 
 _logger = logging.getLogger(__name__)
 

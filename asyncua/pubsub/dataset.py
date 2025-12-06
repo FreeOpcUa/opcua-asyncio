@@ -13,13 +13,21 @@ from ..common import instantiate_util
 from ..common.methods import uamethod
 from ..common.node import Node
 from ..pubsub.information_model import PubSubInformationModel
-from ..ua import DataSetMetaDataType, String, LocalizedText, FieldMetaData, ObjectIds
+from ..ua import DataSetMetaDataType, FieldMetaData, LocalizedText, ObjectIds, String
 from ..ua.attribute_ids import AttributeIds
 from ..ua.status_codes import StatusCodes
 from ..ua.ua_binary import pack_uatype
 from ..ua.uaerrors import UaStatusCodeError
+from ..ua.uaprotocol_auto import (
+    ConfigurationVersionDataType,
+    DataSetFieldFlags,
+    PublishedDataItemsDataType,
+    PublishedDataSetDataType,
+    PublishedVariableDataType,
+)
 from ..ua.uatypes import (
     Boolean,
+    Byte,
     DataValue,
     DateTime,
     Guid,
@@ -28,18 +36,10 @@ from ..ua.uatypes import (
     NodeId,
     StatusCode,
     UInt32,
-    Byte,
     ValueRank,
     Variant,
     VariantType,
     extension_objects_by_datatype,
-)
-from ..ua.uaprotocol_auto import (
-    ConfigurationVersionDataType,
-    DataSetFieldFlags,
-    PublishedDataItemsDataType,
-    PublishedDataSetDataType,
-    PublishedVariableDataType,
 )
 from .utils import version_time_now
 

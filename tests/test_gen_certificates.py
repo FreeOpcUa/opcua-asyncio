@@ -1,20 +1,21 @@
 """Several tests for certificate /signing request generation"""
 
-from datetime import datetime, timedelta, timezone
 import socket
+from datetime import datetime, timedelta, timezone
+
 from cryptography import x509
-from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.x509.extensions import _key_identifier_from_public_key as key_identifier_from_public_key
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
-from asyncua.crypto.uacrypto import load_private_key
 from asyncua.crypto.cert_gen import (
-    generate_private_key,
+    dump_private_key_as_pem,
     generate_app_certificate_signing_request,
+    generate_private_key,
     generate_self_signed_app_certificate,
     sign_certificate_request,
-    dump_private_key_as_pem,
 )
+from asyncua.crypto.uacrypto import load_private_key
 
 
 async def test_create_self_signed_app_certificate() -> None:

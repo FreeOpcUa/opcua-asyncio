@@ -2,9 +2,9 @@
 server side implementation of callback event
 """
 
+import asyncio
 from collections import OrderedDict
 from enum import Enum
-import asyncio
 
 
 class CallbackType(Enum):

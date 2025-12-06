@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from asyncua import ua, uamethod, Server
+from asyncua import Server, ua, uamethod
 
 
 # method to be exposed through server

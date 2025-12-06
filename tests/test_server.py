@@ -4,24 +4,24 @@ Tests that can only be run on server side must be defined here
 """
 
 import asyncio
+import logging
 import shelve
+from datetime import timedelta
+from enum import EnumMeta
 from pathlib import Path
 
 import pytest
-import logging
-from datetime import timedelta
-from enum import EnumMeta
 
 import asyncua
-from asyncua import Server, Client, ua, uamethod
-from asyncua.common.event_objects import (
-    BaseEvent,
-    AuditEvent,
-    AuditChannelEvent,
-    AuditSecurityEvent,
-    AuditOpenSecureChannelEvent,
-)
+from asyncua import Client, Server, ua, uamethod
 from asyncua.common import ua_utils
+from asyncua.common.event_objects import (
+    AuditChannelEvent,
+    AuditEvent,
+    AuditOpenSecureChannelEvent,
+    AuditSecurityEvent,
+    BaseEvent,
+)
 
 pytestmark = pytest.mark.asyncio
 _logger = logging.getLogger(__name__)

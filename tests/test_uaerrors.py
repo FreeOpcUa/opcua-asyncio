@@ -1,4 +1,5 @@
 import pytest
+
 import asyncua.ua.uaerrors as uaerrors
 from asyncua.ua.uaerrors import UaStatusCodeError
 

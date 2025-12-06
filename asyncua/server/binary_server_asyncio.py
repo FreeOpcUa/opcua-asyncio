@@ -2,14 +2,14 @@
 Socket server forwarding request to internal server
 """
 
-import logging
 import asyncio
+import logging
 
 from ..common.connection import TransportLimits
-from ..ua.ua_binary import header_from_binary
 from ..common.utils import Buffer, NotEnoughData
-from .uaprocessor import UaProcessor
+from ..ua.ua_binary import header_from_binary
 from .internal_server import InternalServer
+from .uaprocessor import UaProcessor
 
 _logger = logging.getLogger(__name__)
 

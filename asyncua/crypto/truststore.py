@@ -7,12 +7,14 @@ Use of cryptography module is prefered, but  doesn't provide functionality for t
 
 """
 
-from pathlib import Path
+import logging
 import re
 from datetime import datetime, timezone
-import logging
+from pathlib import Path
+
 from cryptography import x509
 from OpenSSL import crypto
+
 from asyncua.crypto.uacrypto import get_content, load_certificate
 
 _logger = logging.getLogger("asyncuagds.validate")

@@ -1,25 +1,25 @@
+import tempfile
 from concurrent.futures import Future
 from pathlib import Path
-import tempfile
 
 import pytest
 
+from asyncua import ua, uamethod
 from asyncua.client import Client as AsyncClient
 from asyncua.client.ua_client import UaClient
 from asyncua.sync import (
     Client,
     Server,
-    ThreadLoop,
     SyncNode,
-    call_method_full,
+    ThreadLoop,
     XmlExporter,
+    call_method_full,
     new_enum,
     new_struct,
     new_struct_field,
     sync_async_client_method,
     sync_uaclient_method,
 )
-from asyncua import ua, uamethod
 
 
 @uamethod

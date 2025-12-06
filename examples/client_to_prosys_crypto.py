@@ -1,8 +1,8 @@
 import sys
 
 sys.path.insert(0, "..")
-import logging
 import asyncio
+import logging
 
 from asyncua import Client
 

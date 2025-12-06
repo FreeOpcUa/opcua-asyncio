@@ -1,8 +1,8 @@
 import asyncio
-import time
-import sys
-import logging
 import cProfile
+import logging
+import sys
+import time
 
 sys.path.insert(0, "..")
 from asyncua import Server, ua

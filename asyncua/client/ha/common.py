@@ -2,7 +2,6 @@ import asyncio
 import hashlib
 import logging
 import pickle
-
 from itertools import chain, islice
 
 from asyncua.common.utils import wait_for

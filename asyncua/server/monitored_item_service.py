@@ -2,10 +2,12 @@
 server side implementation of a subscription object
 """
 
-import logging
-from asyncua import ua
-from .address_space import AddressSpace
 import copy
+import logging
+
+from asyncua import ua
+
+from .address_space import AddressSpace
 
 
 class MonitoredItemData:

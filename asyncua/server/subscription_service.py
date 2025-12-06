@@ -7,7 +7,8 @@ import logging
 from collections.abc import Iterable
 
 from asyncua import ua
-from asyncua.common import utils, uamethod
+from asyncua.common import uamethod, utils
+
 from .address_space import AddressSpace
 from .internal_subscription import InternalSubscription
 

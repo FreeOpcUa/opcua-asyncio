@@ -1,10 +1,10 @@
-import asyncio
-import logging
-import sys
 import argparse
-from datetime import datetime, timedelta, timezone
-import math
+import asyncio
 import concurrent.futures
+import logging
+import math
+import sys
+from datetime import datetime, timedelta, timezone
 
 try:
     from IPython import embed  # type: ignore
@@ -15,9 +15,7 @@ except ImportError:
         code.interact(local=dict(globals(), **locals()))
 
 
-from asyncua import ua
-from asyncua import Client, Server
-from asyncua import Node, uamethod
+from asyncua import Client, Node, Server, ua, uamethod
 from asyncua.ua.uaerrors import UaStatusCodeError
 
 

@@ -1,11 +1,9 @@
-from enum import IntEnum
 import re
+from enum import IntEnum
 
-
-from asyncua.ua.uatypes import NodeId, NodeIdType, RelativePath, RelativePathElement, QualifiedName
+from asyncua.ua.object_ids import ObjectIdNames, ObjectIds
 from asyncua.ua.uaerrors import UaInvalidParameterError
-from asyncua.ua.object_ids import ObjectIds, ObjectIdNames
-
+from asyncua.ua.uatypes import NodeId, NodeIdType, QualifiedName, RelativePath, RelativePathElement
 
 _NS_IDX_PATTERN = re.compile(r"([0-9]*):")
 _REFERENCE_TYPE_PREFIX_CHARS = "/.<"

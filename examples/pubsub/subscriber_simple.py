@@ -4,9 +4,9 @@ Example creating a subscriber that receives an Int32, String, Bool and ArrayInt1
 
 import asyncio
 import logging
-
-from asyncua import ua, pubsub, Node, Server
 from dataclasses import dataclass, field
+
+from asyncua import Node, Server, pubsub, ua
 
 
 # This Parameter must match the Publisher Settings!

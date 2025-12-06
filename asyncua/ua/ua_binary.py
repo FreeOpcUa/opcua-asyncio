@@ -5,27 +5,29 @@ Binary protocol specific functions and constants
 from __future__ import annotations
 
 import functools
-import struct
 import logging
+import struct
+import typing
+import uuid
+from collections.abc import Callable, Sequence
+from dataclasses import fields, is_dataclass
+from enum import Enum, IntFlag
 from io import BytesIO
 from types import UnionType
 from typing import IO, Any, TypeVar, get_args, get_origin, get_type_hints
-from collections.abc import Callable, Sequence
-import typing
-import uuid
-from enum import Enum, IntFlag
-from dataclasses import is_dataclass, fields
+
 from asyncua import ua
-from .uaerrors import UaError
+
 from ..common.utils import Buffer
+from .uaerrors import UaError
 from .uatypes import (
-    type_is_optional,
+    type_allow_subclass,
+    type_from_list,
     type_from_optional,
     type_is_list,
+    type_is_optional,
     type_is_union,
-    type_from_list,
     types_or_list_from_union,
-    type_allow_subclass,
 )
 
 _logger = logging.getLogger(__name__)

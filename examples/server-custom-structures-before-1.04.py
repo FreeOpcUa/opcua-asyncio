@@ -1,7 +1,7 @@
-import logging
 import asyncio
+import logging
 
-from asyncua import ua, Server
+from asyncua import Server, ua
 from asyncua.common.type_dictionary_builder import DataTypeDictionaryBuilder
 
 

@@ -1,10 +1,9 @@
 import struct
 from dataclasses import dataclass, field
 
-
+from asyncua.common import utils
 from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
-from asyncua.common import utils
 
 OPC_TCP_SCHEME = "opc.tcp"
 

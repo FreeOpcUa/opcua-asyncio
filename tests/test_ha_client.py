@@ -1,11 +1,8 @@
-import pytest
 from itertools import chain
 
-from asyncua import ua, Client
-from asyncua.client.ua_client import UASocketProtocol
-from asyncua.common.subscription import Subscription
-from asyncua.crypto import security_policies
-from asyncua.ua.uaerrors import BadSessionClosed
+import pytest
+
+from asyncua import Client, ua
 from asyncua.client.ha import (
     ConnectionStates,
     HaClient,
@@ -13,8 +10,12 @@ from asyncua.client.ha import (
     HaSecurityConfig,
 )
 from asyncua.client.ha.common import ClientNotFound
+from asyncua.client.ua_client import UASocketProtocol
+from asyncua.common.subscription import Subscription
+from asyncua.crypto import security_policies
 from asyncua.crypto.uacrypto import CertProperties
-from .test_subscriptions import MySubHandler
+from asyncua.ua.uaerrors import BadSessionClosed
+
 from .conftest import (
     wait_clients_socket,
     wait_for_status_change,
@@ -22,6 +23,7 @@ from .conftest import (
     wait_node_in_real_map,
     wait_sub_in_real_map,
 )
+from .test_subscriptions import MySubHandler
 
 
 class TestHaClient:

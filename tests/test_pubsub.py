@@ -3,7 +3,6 @@ import logging
 from datetime import timezone
 from typing import ClassVar
 
-
 import pytest
 
 from asyncua import pubsub

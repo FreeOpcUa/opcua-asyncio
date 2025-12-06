@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-from enum import Enum
-from enum import IntEnum, IntFlag
-from datetime import datetime, timezone
-import uuid
+import asyncio
+import keyword
 import logging
 import re
-import keyword
 import typing
-from typing import TYPE_CHECKING, Any, ClassVar
+import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from enum import Enum, IntEnum, IntFlag
+from typing import TYPE_CHECKING, Any, ClassVar
 
-import asyncio
-from asyncua import ua
-from asyncua import Node
-from asyncua.common.manage_nodes import create_encoding, create_data_type
+from asyncua import Node, ua
+from asyncua.common.manage_nodes import create_data_type, create_encoding
 from asyncua.ua.uaerrors import UaInvalidParameterError
 
 if TYPE_CHECKING:

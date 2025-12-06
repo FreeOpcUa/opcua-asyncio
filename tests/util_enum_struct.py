@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
 
+import asyncua.ua
 from asyncua import Server, ua
 from asyncua.ua import uatypes
-import asyncua.ua
 
 TEST_DIR = Path(__file__).parent
 

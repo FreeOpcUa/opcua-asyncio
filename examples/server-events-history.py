@@ -2,9 +2,9 @@ import sys
 
 sys.path.insert(0, "..")
 import time
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
-from asyncua import ua, Server
+from asyncua import Server, ua
 from asyncua.server.history_sql import HistorySQLite
 
 if __name__ == "__main__":

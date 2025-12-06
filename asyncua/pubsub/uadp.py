@@ -4,12 +4,14 @@ Implements Uadp Network Encoding defined in Part14 7.2
 """
 
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
 
 from ..common.utils import Buffer
 from ..ua import VariantType
+from ..ua.status_codes import StatusCodes
 from ..ua.ua_binary import (
     Primitives,
     from_binary,
@@ -27,18 +29,17 @@ from ..ua.uaprotocol_auto import (
 )
 from ..ua.uatypes import (
     Byte,
+    Bytes,
     DataValue,
     DateTime,
     Guid,
     StatusCode,
     String,
     UInt16,
+    UInt32,
     UInt64,
     Variant,
-    UInt32,
-    Bytes,
 )
-from ..ua.status_codes import StatusCodes
 
 try:
     from typing import Protocol

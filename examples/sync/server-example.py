@@ -2,7 +2,7 @@ import copy
 import logging
 import sys
 import time
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from math import sin
 from threading import Thread
 

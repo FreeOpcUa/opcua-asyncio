@@ -7,7 +7,6 @@ from IPython import embed
 
 from asyncua import Client
 
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.WARN)
     client = Client("opc.tcp://localhost:53530/OPCUA/SimulationServer/")

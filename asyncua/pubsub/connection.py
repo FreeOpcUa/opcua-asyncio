@@ -4,37 +4,37 @@ over the network
 """
 
 from __future__ import annotations
-import logging
+
 import asyncio
+import logging
 from typing import TYPE_CHECKING
 
-from ..common.methods import uamethod
 from ..common.instantiate_util import instantiate
+from ..common.methods import uamethod
 from ..pubsub.information_model import PubSubInformationModel
 from ..ua import (
-    ObjectIds,
     Byte,
     Int32,
     LocalizedText,
     NodeId,
+    ObjectIds,
+    PubSubConnectionDataType,
+    PubSubState,
+    String,
     UInt16,
     UInt32,
     UInt64,
-    String,
     Variant,
     VariantType,
-    PubSubConnectionDataType,
-    PubSubState,
 )
 from ..ua.status_codes import StatusCodes
-from ..ua.uaprotocol_auto import ReaderGroupDataType, WriterGroupDataType
 from ..ua.uaerrors import UaError, UaStatusCodeError
-
-from .reader import ReaderGroup
+from ..ua.uaprotocol_auto import ReaderGroupDataType, WriterGroupDataType
 from .protocols import IPubSub, PubSubReceiver
-from .writer import WriterGroup
+from .reader import ReaderGroup
 from .uadp import UadpNetworkMessage
 from .udp import OpcUdp, UdpSettings
+from .writer import WriterGroup
 
 if TYPE_CHECKING:
     from ..server.server import Server

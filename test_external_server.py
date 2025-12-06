@@ -2,14 +2,13 @@
 Test an OPC-UA server with freeopcua python client
 """
 
-import sys
 import asyncio
 import logging
+import sys
+import unittest
 from datetime import datetime, timezone
 
-from asyncua import ua
-from asyncua import Client
-import unittest
+from asyncua import Client, ua
 
 
 class MySubHandler:

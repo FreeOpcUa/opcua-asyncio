@@ -1,5 +1,6 @@
 import asyncio
 import logging
+
 from asyncua import Client, ua
 
 logging.basicConfig(level=logging.INFO)

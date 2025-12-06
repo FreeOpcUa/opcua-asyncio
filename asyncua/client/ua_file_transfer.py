@@ -11,10 +11,8 @@ https://reference.opcfoundation.org/Core/docs/Part5/C.1/
 
 import logging
 
-
 from asyncua.common.node import Node
 from asyncua.ua import NodeId, OpenFileMode, Variant, VariantType
-
 
 _logger = logging.getLogger(__name__)
 

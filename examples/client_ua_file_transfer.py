@@ -20,9 +20,8 @@ import asyncio
 import logging
 
 from asyncua import Client
-from asyncua.client.ua_file_transfer import UaFile, UaDirectory
-from asyncua.ua import OpenFileMode
-from asyncua.ua import uaerrors
+from asyncua.client.ua_file_transfer import UaDirectory, UaFile
+from asyncua.ua import OpenFileMode, uaerrors
 
 _logger = logging.getLogger("asyncua")
 

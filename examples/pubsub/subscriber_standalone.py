@@ -4,10 +4,10 @@ Example creating a standalone subscriber that receives an Int32, String, Bool an
 
 import asyncio
 import logging
-
-from asyncua import ua, pubsub
-from asyncua.pubsub.udp import UdpSettings
 from dataclasses import dataclass, field
+
+from asyncua import pubsub, ua
+from asyncua.pubsub.udp import UdpSettings
 
 
 # This Parameter must match the Publisher Settings!

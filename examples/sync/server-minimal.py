@@ -3,9 +3,7 @@ import sys
 sys.path.insert(0, "../..")
 import time
 
-
 from asyncua.sync import Server
-
 
 if __name__ == "__main__":
     # set up our server

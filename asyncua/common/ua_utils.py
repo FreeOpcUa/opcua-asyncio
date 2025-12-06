@@ -2,8 +2,8 @@
 Useful methods and classes not belonging anywhere and depending on asyncua library
 """
 
-import uuid
 import logging
+import uuid
 from datetime import datetime, timezone
 from enum import Enum, IntEnum, IntFlag
 

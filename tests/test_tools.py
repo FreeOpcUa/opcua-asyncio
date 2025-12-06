@@ -1,12 +1,12 @@
-import pytest
-from unittest.mock import patch
-import sys
-import subprocess
 import concurrent.futures
 import signal
+import subprocess
+import sys
+from unittest.mock import patch
 
-from asyncua.tools import uaread, uals, uawrite, uahistoryread, uaclient, uadiscover, uacall
+import pytest
 
+from asyncua.tools import uacall, uaclient, uadiscover, uahistoryread, uals, uaread, uawrite
 
 ROOT_NODE = "i=85"
 RW_NODE = "i=3078"

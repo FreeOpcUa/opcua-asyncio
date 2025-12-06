@@ -9,8 +9,7 @@ import sys
 sys.path.insert(0, "..")
 import asyncio
 
-
-from asyncua import ua, Server
+from asyncua import Server, ua
 
 
 async def main():

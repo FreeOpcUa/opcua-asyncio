@@ -1,8 +1,8 @@
-import logging
 import asyncio
+import logging
 
-from asyncua import ua, Server
-from asyncua.common.structures104 import new_struct, new_enum, new_struct_field
+from asyncua import Server, ua
+from asyncua.common.structures104 import new_enum, new_struct, new_struct_field
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger("asyncua")

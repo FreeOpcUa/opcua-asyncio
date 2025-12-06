@@ -1,5 +1,7 @@
-import pytest
 from datetime import datetime, timedelta, timezone
+
+import pytest
+
 from asyncua import ua
 
 pytestmark = pytest.mark.asyncio

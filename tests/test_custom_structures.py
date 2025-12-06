@@ -2,11 +2,15 @@ import xml.etree.ElementTree as Et
 
 import pytest
 
-from asyncua import ua
-from asyncua.common.structures import EnumType, StructGenerator, Struct
 import asyncua.common.type_dictionary_builder
-from asyncua.common.type_dictionary_builder import OPCTypeDictionaryBuilder, DataTypeDictionaryBuilder
-from asyncua.common.type_dictionary_builder import get_ua_class, StructNode
+from asyncua import ua
+from asyncua.common.structures import EnumType, Struct, StructGenerator
+from asyncua.common.type_dictionary_builder import (
+    DataTypeDictionaryBuilder,
+    OPCTypeDictionaryBuilder,
+    StructNode,
+    get_ua_class,
+)
 
 port_num = 48540
 ns_urn = "http://test.freeopcua.github.io"
