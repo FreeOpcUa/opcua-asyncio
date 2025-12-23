@@ -621,7 +621,7 @@ class Client:
         try:
             await self.connection_lost_callback(ex)
         except Exception as ex:
-            _logger.exception("Error calling connection_lost_callbak")
+            _logger.exception("Error calling connection_lost_callback")
 
     async def _renew_channel_loop(self):
         """
