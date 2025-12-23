@@ -131,7 +131,7 @@ class Subscription:
         self._client_handle = 200
         self._handler: SubscriptionHandler = handler
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
-        self._monitored_items = {}
+        self._monitored_items: dict[int,SubscriptionItemData] = {}
         self.subscription_id: int | None = None
 
     async def init(self) -> ua.CreateSubscriptionResult:
