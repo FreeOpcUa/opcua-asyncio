@@ -192,6 +192,10 @@ class DateTime(datetime):
 class Guid(uuid.UUID):
     pass
 
+class Enumeration(IntEnum):
+    pass
+
+
 
 _microsecond = timedelta(microseconds=1)
 
@@ -792,9 +796,9 @@ class LocalizedText:
 
     @staticmethod
     def from_string(string):
-        m = re.match(r"^LocalizedText\(Locale='(.*)', Text='(.*)'\)$", string)
+        m = re.match(r"^LocalizedText\(Locale=(None|'(.*?)'), Text='(.*)'\)$", string)
         if m:
-            text = m.group(2) if m.group(2) != str(None) else None
+            text = m.group(3) if m.group(3) != str(None) else None
             locale = m.group(1) if m.group(1) != str(None) else None
             return LocalizedText(Text=text, Locale=locale)
         return LocalizedText(string)
