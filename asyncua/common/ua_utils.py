@@ -133,7 +133,7 @@ def string_to_val(string, vtype):
     elif vtype == ua.VariantType.Guid:
         val = uuid.UUID(string)
     elif issubclass(vtype, Enum):
-        if string.isdigit() == True:
+        if string.isdigit():
             enum_int = int(string)
         else:
             enum_int = int(string.rsplit("_", 1)[1])
