@@ -192,6 +192,10 @@ class DateTime(datetime):
 class Guid(uuid.UUID):
     pass
 
+class Enumeration(IntEnum):
+    pass
+
+
 
 _microsecond = timedelta(microseconds=1)
 

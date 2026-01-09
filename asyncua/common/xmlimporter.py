@@ -548,7 +548,9 @@ class XmlImporter:
             for attname2, v2 in val:
                 if attname2 != "EncodingMask":
                     # Skip Encoding Mask used for optional types
-                    sub_atttype = self._get_val_type(atttype, attname2)
+                    resolved_sub_type = get_type_hints(atttype, {"ua": ua})
+                    sub_atttype = resolved_sub_type[attname2]
+                    # sub_atttype = self._get_val_type(atttype, attname2)
                     self._set_attr(sub_atttype, subargs, attname2, v2)
             subargs.pop("Encoding", None)
             fargs[attname] = atttype(**subargs)  # type: ignore[operator]
