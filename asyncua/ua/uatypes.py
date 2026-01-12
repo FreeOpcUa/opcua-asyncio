@@ -1288,6 +1288,33 @@ def get_extensionobject_class_type(typeid):
     return None
 
 
+def disable_backward_compatibility():
+    """Remove all backward compatibility so that it does not impact the node creation
+    """
+    for type_name in datatype_aliases:
+        import asyncua.ua
+        if hasattr(asyncua.ua, type_name):
+            delattr(asyncua.ua, type_name)
+
+
+def enable_backward_compatibility():
+    """Check all the custom types and create a simpled named for each of them
+    """
+    for type_name, list_of_alias_names in datatype_aliases.items():
+
+        import asyncua.ua
+
+        # Becaue there are no unregister function, we need to verify that the type
+        # is still available and was not manually deleted
+        compatible_type = None
+        for previously_register_type in list_of_alias_names:
+            if hasattr(asyncua.ua, previously_register_type):
+                compatible_type = getattr(asyncua.ua, previously_register_type)
+                break
+        if compatible_type:
+            setattr(asyncua.ua, type_name, compatible_type)
+
+
 class SecurityPolicyType(IntEnum):
     """
     The supported types of SecurityPolicy.

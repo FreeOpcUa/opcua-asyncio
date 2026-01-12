@@ -515,6 +515,9 @@ async def load_data_type_definitions(server: Server | Client, base_node: Node = 
     Read DataTypeDefinition attribute on all Structure and Enumeration defined
     on server and generate Python objects in ua namespace to be used to talk with server
     """
+    # Disable backward compatibility
+    ua.uatypes.disable_backward_compatibility()
+    # Execute the expected data-type definition loading
     new_objects = await _load_base_datatypes(server)  # we need to load all basedatatypes alias first
     new_objects.update(await load_enums(server))  # we need all enums to generate structure code
     new_objects.update(await load_enums(server, server.nodes.option_set_type, True))  # also load all optionsets
@@ -544,6 +547,8 @@ async def load_data_type_definitions(server: Server | Client, base_node: Node = 
         if not failed_types:
             break
         dtypes = failed_types
+    # Enable backward compatibility
+    ua.uatypes.enable_backward_compatibility()
     return new_objects
 
 

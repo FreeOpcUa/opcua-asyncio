@@ -7,14 +7,13 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from multiprocessing import Condition, Event, Process
 from pathlib import Path
+
 import pytest
 
-from asyncua import Client
-from asyncua import Server, ua
-from asyncua.common.structures104 import new_struct, new_struct_field
-from asyncua.client.ua_client import UASocketProtocol
+from asyncua import Client, Server, ua
 from asyncua.client.ha.ha_client import HaClient, HaConfig, HaMode
 from asyncua.client.ua_client import UASocketProtocol
+from asyncua.common.structures104 import new_struct, new_struct_field
 from asyncua.server.history import HistoryDict
 from asyncua.server.history_sql import HistorySQLite
 

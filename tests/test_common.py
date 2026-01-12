@@ -13,8 +13,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
-from asyncua.ua import NodeId, String, NodeIdType, Int16
-import logging
 
 from asyncua import Node, ua, uamethod
 from asyncua.common import ua_utils
@@ -1290,26 +1288,22 @@ async def test_guid_node_id():
 
 
 async def test_import_xml_data_type_definition(opc):
-    logger_to_silence = logging.getLogger('asyncua.server.address_space')
-    logger_to_silence.setLevel('ERROR')
-
-    # Needed because when many test suites are running, residual types make the test fail
-    if ua.get_custom_struct_via_name("MySubstruct"):
-        ua.delete_custom_struct_via_name("MySubstruct")
-    if ua.get_custom_struct_via_name("MyStruct"):
-        ua.delete_custom_struct_via_name("MyStruct")
+    if hasattr(ua, "MySubstruct"):
+        delattr(ua, "MySubstruct")
+    if hasattr(ua, "MyStruct"):
+        delattr(ua, "MyStruct")
 
     nodes = await opc.opc.import_xml("tests/substructs.xml")
-    assert ua.get_custom_struct_via_name("MySubstruct")
-    assert ua.get_custom_struct_via_name("MyStruct")
+    assert hasattr(ua, "MySubstruct")
+    assert hasattr(ua, "MyStruct")
 
-    datatype = opc.opc.get_node(ua.get_custom_struct_via_name("MyStruct").data_type)
+    datatype = opc.opc.get_node(ua.MySubstruct.data_type)
     sdef = await datatype.read_data_type_definition()
     assert isinstance(sdef, ua.StructureDefinition)
-    s = ua.get_custom_struct_via_name("MyStruct")()
+    s = ua.MyStruct()
 
     s.toto = 0.1
-    ss = ua.get_custom_struct_via_name("MySubstruct")()
+    ss = ua.MySubstruct()
     assert ss.titi is None
     assert ss.opt_array is None
     assert isinstance(ss.structs, list)
@@ -1317,7 +1311,7 @@ async def test_import_xml_data_type_definition(opc):
     ss.structs.append(s)
     ss.structs.append(s)
 
-    var = await opc.opc.nodes.objects.add_variable(2, "MySubStructVar", ss, datatype=ua.get_custom_struct_via_name("MySubstruct").data_type)
+    var = await opc.opc.nodes.objects.add_variable(2, "MySubStructVar", ss, datatype=ua.MySubstruct.data_type)
 
     s2 = await var.read_value()
     assert s2.structs[1].toto == ss.structs[1].toto == 0.1
@@ -1334,12 +1328,17 @@ async def test_import_xml_data_type_definition(opc):
 
 async def test_import_xml_data_no_auto_load_type_definition(opc):
     # if al present in ua remove it (left overs of other tests)
-    if ua.get_custom_struct_via_name("MySubstruct"):
-        ua.delete_custom_struct_via_name("MySubstruct")
-    if ua.get_custom_struct_via_name("MyStruct"):
-        ua.delete_custom_struct_via_name("MyStruct")
-    if ua.get_custom_struct_via_name("MyEnum"):
-        ua.delete_custom_struct_via_name("MyEnum")
+    to_delete = ["MySubstruct", "MyStruct", "MyEnum"]
+    to_delete_extended = to_delete.copy()
+    # Extend list with datatype aliases
+    for attr in to_delete:
+        for key, datatype_list in ua.uatypes.datatype_aliases.items():
+            if key in to_delete:
+                to_delete_extended.extend(datatype_list)
+    # Delete all found
+    for attr in to_delete_extended:
+        if hasattr(ua, attr):
+            delattr(ua, attr)
     await opc.opc.import_xml("tests/substructs.xml", auto_load_definitions=False)
     assert hasattr(ua, "MySubstruct") is False
     assert hasattr(ua, "MyStruct") is False
@@ -1472,7 +1471,7 @@ async def test_custom_struct_(opc):
     )
 
     await opc.opc.load_data_type_definitions()
-    mystruct = ua.get_custom_struct_via_name('MyMyStruct')()
+    mystruct = ua.MyMyStruct()
     mystruct.MyUInt32 = [78, 79]
     var = await opc.opc.nodes.objects.add_variable(
         idx, "my_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject)
@@ -1498,7 +1497,7 @@ async def test_custom_struct_with_optional_fields(opc):
 
     await opc.opc.load_data_type_definitions()
 
-    my_struct_optional = ua.get_custom_struct_via_name('MyOptionalStruct')()
+    my_struct_optional = ua.MyOptionalStruct()
     assert my_struct_optional.MyBool is not None
     assert my_struct_optional.MyUInt32 is not None
     assert my_struct_optional.MyString is None
@@ -1517,7 +1516,7 @@ async def test_custom_struct_with_optional_fields(opc):
     assert val.MyInt64 == -67
     assert val.MyString is None
 
-    my_struct_optional = ua.get_custom_struct_via_name('MyOptionalStruct')()
+    my_struct_optional = ua.MyOptionalStruct()
     my_struct_optional.MyUInt32 = 45
     my_struct_optional.MyInt64 = -67
     my_struct_optional.MyString = "abc"
@@ -1541,7 +1540,7 @@ async def test_custom_struct_union(opc):
         is_union=True,
     )
     await opc.opc.load_data_type_definitions()
-    my_union = ua.get_custom_struct_via_name('MyUnionStruct')()
+    my_union = ua.MyUnionStruct()
     my_union.MyInt64 = 555
     var = await opc.opc.nodes.objects.add_variable(
         idx, "my_union_struct", ua.Variant(my_union, ua.VariantType.ExtensionObject)
@@ -1568,7 +1567,7 @@ async def test_custom_struct_union(opc):
         is_union=True,
     )
     await opc.opc.load_data_type_definitions()
-    my_union = ua.get_custom_struct_via_name('MyDuplicateTypeUnionStruct')()
+    my_union = ua.MyDuplicateTypeUnionStruct()
     my_union.MyInt64 = 555
     var = await opc.opc.nodes.objects.add_variable(
         idx,
@@ -1618,8 +1617,8 @@ async def test_custom_struct_of_struct(opc):
 
     await opc.opc.load_data_type_definitions()
 
-    mystruct = ua.get_custom_struct_via_name('MyMotherStruct2')()
-    mystruct.MySubStruct = ua.get_custom_struct_via_name('MySubStruct2')()
+    mystruct = ua.MyMotherStruct2()
+    mystruct.MySubStruct = ua.MySubStruct2()
     mystruct.MySubStruct.MyUInt32 = 78
     var = await opc.opc.nodes.objects.add_variable(idx, "my_mother_struct", mystruct)
     val = await var.read_value()
@@ -1651,8 +1650,8 @@ async def test_custom_list_of_struct(opc):
 
     await opc.opc.load_data_type_definitions()
 
-    mystruct = ua.get_custom_struct_via_name('MyMotherStruct3')()
-    mystruct.MySubStruct = [ua.get_custom_struct_via_name('MyMotherStruct3')()]
+    mystruct = ua.MyMotherStruct3()
+    mystruct.MySubStruct = [ua.MySubStruct3()]
     mystruct.MySubStruct[0].MyUInt32 = 78
     var = await opc.opc.nodes.objects.add_variable(
         idx, "my_mother_struct3", ua.Variant(mystruct, ua.VariantType.ExtensionObject)
@@ -1687,14 +1686,14 @@ async def test_custom_struct_with_enum(opc):
 
     await opc.opc.load_data_type_definitions()
 
-    mystruct = ua.get_custom_struct_via_name('MyStructEnum')()
-    mystruct.MyEnum = ua.get_custom_struct_via_name('MyCustEnum2').tutu
+    mystruct = ua.MyStructEnum()
+    mystruct.MyEnum = ua.MyCustEnum2.tutu
     var = await opc.opc.nodes.objects.add_variable(
         idx, "my_struct2", ua.Variant(mystruct, ua.VariantType.ExtensionObject)
     )
     val = await var.read_value()
-    assert val.MyEnum == ua.get_custom_struct_via_name('MyCustEnum2').tutu
-    assert isinstance(val.MyEnum, ua.get_custom_struct_via_name('MyCustEnum2'))
+    assert val.MyEnum == ua.MyCustEnum2.tutu
+    assert isinstance(val.MyEnum, ua.MyCustEnum2)
 
 
 async def test_nested_struct_arrays(opc):
@@ -1721,9 +1720,8 @@ async def test_nested_struct_arrays(opc):
 
     await opc.opc.load_data_type_definitions()
 
-    mystruct = ua.get_custom_struct_via_name('MyNestedStruct')()
-    mystruct.MyStructArray = [ua.get_custom_struct_via_name('MyStruct4')(), ua.get_custom_struct_via_name('MyStruct4')()]
-    mystruct.MyStructArray = [ua.get_custom_struct_via_name('MyStruct4')(), ua.get_custom_struct_via_name('MyStruct4')()]
+    mystruct = ua.MyNestedStruct()
+    mystruct.MyStructArray = [ua.MyStruct4(), ua.MyStruct4()]
     var = await opc.opc.nodes.objects.add_variable(idx, "nested", ua.Variant(mystruct, ua.VariantType.ExtensionObject))
     val = await var.read_value()
     assert len(val.MyStructArray) == 2
@@ -1806,10 +1804,10 @@ async def test_custom_struct_recursive(opc):
     assert sdef.Fields[0].Name == "Subparameters"
 
     # Check encoding / decoding
-    param = ua.get_custom_struct_via_name('MyParameterType')(Value=2)
-    param.Subparameters.append(ua.get_custom_struct_via_name('MyParameterType')(Value=1))
+    param = ua.MyParameterType(Value=2)
+    param.Subparameters.append(ua.MyParameterType(Value=1))
     bin = struct_to_binary(param)
-    res = struct_from_binary(ua.get_custom_struct_via_name('MyParameterType'), ua.utils.Buffer(bin))
+    res = struct_from_binary(ua.MyParameterType, ua.utils.Buffer(bin))
     assert param == res
 
     with expect_file_creation("custom_struct_recursive_export.xml") as path:
@@ -1865,8 +1863,8 @@ async def test_custom_struct_of_struct_with_spaces(opc):
 
     await opc.opc.load_data_type_definitions()
 
-    mystruct = ua.get_custom_struct_via_name('My_Mother_Struct')()
-    mystruct.My_Sub_Struct = ua.get_custom_struct_via_name('My_Sub_Struct_1')()
+    mystruct = ua.My_Mother_Struct()
+    mystruct.My_Sub_Struct = ua.My_Sub_Struct_1()
     mystruct.My_Sub_Struct.My_UInt32 = 78
     var = await opc.opc.nodes.objects.add_variable(idx, "my mother struct", mystruct)
     val = await var.read_value()
@@ -1897,11 +1895,11 @@ async def test_custom_method_with_struct(opc):
         ua.NodeId("ServerMethodWithStruct", 10),
         ua.QualifiedName("ServerMethodWithStruct", 10),
         func,
-        [ua.get_custom_struct_via_name('MyStructArg')],
-        [ua.get_custom_struct_via_name('MyStructArg')],
+        [ua.MyStructArg],
+        [ua.MyStructArg],
     )
 
-    mystruct = ua.get_custom_struct_via_name('MyStructArg')()
+    mystruct = ua.MyStructArg()
     mystruct.MyUInt32 = [78, 79]
 
     assert data_type.nodeid == mystruct.data_type
@@ -1927,25 +1925,25 @@ async def test_custom_method_with_enum(opc):
 
     @uamethod
     def func(parent, myenum1, myenum2, myenum3):
-        assert myenum1 == ua.get_custom_struct_via_name('MyCustEnumForMethod').titi
-        return ua.get_custom_struct_via_name('MyCustEnumForMethod').toto
+        assert myenum1 == ua.MyCustEnumForMethod.titi
+        return ua.MyCustEnumForMethod.toto
 
     methodid = await opc.server.nodes.objects.add_method(
         ua.NodeId("servermethodwithenum", 10),
         ua.QualifiedName("servermethodwithenum", 10),
         func,
-        [ua.get_custom_struct_via_name('MyCustEnumForMethod'), enum_node, enum_node.nodeid],
-        [ua.get_custom_struct_via_name('MyCustEnumForMethod')],
+        [ua.MyCustEnumForMethod, enum_node, enum_node.nodeid],
+        [ua.MyCustEnumForMethod],
     )
 
     result = await opc.opc.nodes.objects.call_method(
         methodid,
-        ua.get_custom_struct_via_name('MyCustEnumForMethod').titi,
-        ua.get_custom_struct_via_name('MyCustEnumForMethod').titi,
-        ua.get_custom_struct_via_name('MyCustEnumForMethod').titi,
+        ua.MyCustEnumForMethod.titi,
+        ua.MyCustEnumForMethod.titi,
+        ua.MyCustEnumForMethod.titi,
     )
 
-    assert result == ua.get_custom_struct_via_name('MyCustEnumForMethod').toto
+    assert result == ua.MyCustEnumForMethod.toto
 
 
 async def test_sub_class(opc):
@@ -2010,7 +2008,7 @@ async def test_alias(opc):
     val = await var.read_value()
     assert val == "1234"
 
-    v = ua.get_custom_struct_via_name('MyAliasStruct')()
+    v = ua.MyAliasStruct()
     var = await opc.opc.nodes.objects.add_variable(idx, "AliasedStruct", v, datatype=data_type.nodeid)
     val = await var.read_value()
     assert val == v
@@ -2034,7 +2032,7 @@ async def test_custom_struct_with_strange_chars(opc):
     )
 
     await opc.opc.load_data_type_definitions()
-    mystruct = ua.get_custom_struct_via_name('Siemens')()
+    mystruct = ua.Siemens()
     mystruct.My_UInt32 = [78, 79]
     mystruct.My_Bool = False
     var = await opc.opc.nodes.objects.add_variable(

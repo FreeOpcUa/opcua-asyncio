@@ -291,6 +291,48 @@ def test_create_enum_sync_client(client):
 def test_create_struct_sync(server):
     idx = 4
 
+    new_struct(
+        server,
+        idx,
+        "MyMyStruct",
+        [
+            new_struct_field("MyBool", ua.VariantType.Boolean),
+            new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+        ],
+    )
+
+    server.load_data_type_definitions()
+    mystruct = ua.MyMyStruct()
+    mystruct.MyUInt32 = [78, 79]
+    var = server.nodes.objects.add_variable(idx, "my_struct", mystruct)
+    val = var.read_value()
+    assert val.MyUInt32 == [78, 79]
+
+
+def test_create_struct_sync_client(client):
+    idx = 4
+
+    new_struct(
+        client,
+        idx,
+        "MyMyStruct",
+        [
+            new_struct_field("MyBool", ua.VariantType.Boolean),
+            new_struct_field("MyUInt32", ua.VariantType.UInt32, array=True),
+        ],
+    )
+
+    client.load_data_type_definitions()
+    mystruct = ua.MyMyStruct()
+    mystruct.MyUInt32 = [78, 79]
+    var = client.nodes.objects.add_variable(idx, "my_struct", mystruct)
+    val = var.read_value()
+    assert val.MyUInt32 == [78, 79]
+
+
+def test_create_struct_sync_with_nodeid(server):
+    idx = 4
+
     var_node, _ = new_struct(
         server,
         idx,
@@ -309,7 +351,7 @@ def test_create_struct_sync(server):
     assert val.MyUInt32 == [78, 79]
 
 
-def test_create_struct_sync_client(client):
+def test_create_struct_sync_client_with_nodeid(client):
     idx = 4
 
     var_node, _ = new_struct(

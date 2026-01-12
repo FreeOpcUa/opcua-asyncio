@@ -160,6 +160,8 @@ class XmlImporter:
         """
         import xml and return added nodes
         """
+        # Disable backward compatibility
+        ua.uatypes.disable_backward_compatibility()
         if (xmlpath is None and xmlstring is None) or (xmlpath and xmlstring):
             raise ValueError("Expected either xmlpath or xmlstring, not both or neither.")
         _logger.info("Importing XML file %s", xmlpath)
@@ -199,6 +201,8 @@ class XmlImporter:
                 self.refs,
             )
         await self._check_if_namespace_meta_information_is_added()
+        # Enable backward compatibility
+        ua.uatypes.enable_backward_compatibility()
         return nodes
 
     async def _add_missing_reverse_references(self, new_nodes: list[Node]) -> set[Node]:
