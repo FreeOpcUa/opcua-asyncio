@@ -35,7 +35,7 @@ _logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
-_string_encoding: str = contextvars.ContextVar("ua_string_encoding", default="utf-8")
+_string_encoding = contextvars.ContextVar("ua_string_encoding", default="utf-8")
 
 def get_string_encoding() -> str:
     return _string_encoding.get()
