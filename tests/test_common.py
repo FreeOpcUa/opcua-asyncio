@@ -1328,12 +1328,17 @@ async def test_import_xml_data_type_definition(opc):
 
 async def test_import_xml_data_no_auto_load_type_definition(opc):
     # if al present in ua remove it (left overs of other tests)
-    if hasattr(ua, "MySubstruct"):
-        delattr(ua, "MySubstruct")
-    if hasattr(ua, "MyStruct"):
-        delattr(ua, "MyStruct")
-    if hasattr(ua, "MyEnum"):
-        delattr(ua, "MyEnum")
+    to_delete = ["MySubstruct", "MyStruct", "MyEnum"]
+    to_delete_extended = to_delete.copy()
+    # Extend list with datatype aliases
+    for attr in to_delete:
+        for key, datatype_list in ua.uatypes.datatype_aliases.items():
+            if key in to_delete:
+                to_delete_extended.extend(datatype_list)
+    # Delete all found
+    for attr in to_delete_extended:
+        if hasattr(ua, attr):
+            delattr(ua, attr)
     await opc.opc.import_xml("tests/substructs.xml", auto_load_definitions=False)
     assert hasattr(ua, "MySubstruct") is False
     assert hasattr(ua, "MyStruct") is False

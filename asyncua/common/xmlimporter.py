@@ -160,6 +160,8 @@ class XmlImporter:
         """
         import xml and return added nodes
         """
+        # Disable backward compatibility
+        ua.uatypes.disable_backward_compatibility()
         if (xmlpath is None and xmlstring is None) or (xmlpath and xmlstring):
             raise ValueError("Expected either xmlpath or xmlstring, not both or neither.")
         _logger.info("Importing XML file %s", xmlpath)
@@ -199,6 +201,8 @@ class XmlImporter:
                 self.refs,
             )
         await self._check_if_namespace_meta_information_is_added()
+        # Enable backward compatibility
+        ua.uatypes.enable_backward_compatibility()
         return nodes
 
     async def _add_missing_reverse_references(self, new_nodes: list[Node]) -> set[Node]:
@@ -465,9 +469,32 @@ class XmlImporter:
         res[0].StatusCode.check()
         return res[0].AddedNodeId
 
-    def _get_ext_class(self, name: str):
+    def _get_ext_class(self, obj):
+        if hasattr(obj, "value"):
+            name = obj.value.objname
+            fields = []
+            if obj.value.body:
+                fields = [field_name for field_name, default_val in obj.value.body[0][1]]
+        else:
+            name = obj.objname
+            fields = None
+        # Check if the name is in ua
         if hasattr(ua, name):
             return getattr(ua, name)
+        # Else we try to fetch the custom type
+        struct = ua.get_custom_struct_via_nodeid(obj.nodeid)
+        if struct:
+            return struct
+        # Try to find a perfect matching class
+        if fields:
+            struct = ua.get_custom_struct_with_matching_fields(name, fields)
+            if struct:
+                return struct
+        # If this is not enough, we try to fetch by name
+        struct = ua.get_custom_struct_via_name(name)
+        if struct:
+            return struct
+        # Last try is through the alias
         if name in self.aliases.keys():
             nodeid = self.aliases[name]
             class_type = ua.uatypes.get_extensionobject_class_type(nodeid)
@@ -478,18 +505,19 @@ class XmlImporter:
 
     async def _make_ext_obj(self, obj):
         try:
-            extclass = self._get_ext_class(obj.objname)
+            extclass = self._get_ext_class(obj)
         except Exception as exp:
             if self.auto_load_definitions:
                 await (
                     self.session.load_data_type_definitions()
                 )  # load new data type definitions since a customn class should be created
-                extclass = self._get_ext_class(obj.objname)
+                extclass = self._get_ext_class(obj)
             else:
                 raise exp
         resolved_types = get_type_hints(extclass, {"ua": ua})
         args = {}
-        for name, val in obj.body:
+        to_iter = obj.value.body if hasattr(obj, 'value') else obj.body # case array
+        for name, val in to_iter:
             if not isinstance(val, list):
                 raise Exception(
                     "Error val should be a list, this is a python-asyncua bug",
@@ -509,6 +537,9 @@ class XmlImporter:
             if field.name == attname:
                 return field.type
         raise UaError(f"Attribute '{attname}' defined in xml is not found in object '{objclass}'")
+
+    def _get_val_type_from_typehint(self, typehint, attname: str):
+        return typehint[attname]
 
     def _set_attr(self, atttype, fargs, attname: str, val):
         # tow possible values:
@@ -548,10 +579,17 @@ class XmlImporter:
             for attname2, v2 in val:
                 if attname2 != "EncodingMask":
                     # Skip Encoding Mask used for optional types
-                    resolved_sub_type = get_type_hints(atttype, {"ua": ua})
-                    sub_atttype = resolved_sub_type[attname2]
-                    # sub_atttype = self._get_val_type(atttype, attname2)
-                    self._set_attr(sub_atttype, subargs, attname2, v2)
+                    sub_atttype = self._get_val_type(atttype, attname2)
+                    try:
+                        self._set_attr(sub_atttype, subargs, attname2, v2)
+                    except AttributeError:
+                        # Some subtypes where not resolved yet!
+                        resolved_subtype = get_type_hints(atttype, {"ua": ua})
+                        sub_atttype = self._get_val_type_from_typehint(resolved_subtype, attname2)
+                        self._set_attr(sub_atttype, subargs, attname2, v2)
+
+
+
             subargs.pop("Encoding", None)
             fargs[attname] = atttype(**subargs)  # type: ignore[operator]
         else:
@@ -565,6 +603,8 @@ class XmlImporter:
         if obj.valuetype == "ListOfExtensionObject":
             values = []
             for ext in obj.value:
+                # Extend the value with parent nodeid type:
+                ext.nodeid = obj.nodeid
                 extobj = await self._make_ext_obj(ext)
                 values.append(extobj)
             return ua.Variant(values, ua.VariantType.ExtensionObject)
@@ -580,7 +620,7 @@ class XmlImporter:
                 return ua.Variant(obj.value)
             return ua.Variant([getattr(ua, vtype)(v) for v in obj.value])
         if obj.valuetype == "ExtensionObject":
-            extobj = await self._make_ext_obj(obj.value)
+            extobj = await self._make_ext_obj(obj)
             return ua.Variant(extobj, getattr(ua.VariantType, obj.valuetype))
         if obj.valuetype == "Guid":
             return ua.Variant(uuid.UUID(obj.value), getattr(ua.VariantType, obj.valuetype))

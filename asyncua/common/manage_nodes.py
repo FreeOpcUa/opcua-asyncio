@@ -501,7 +501,7 @@ def _guess_datatype(variant: ua.Variant):
             extobj = variant.Value[0]
         else:
             extobj = variant.Value
-        classname = extobj.__class__.__name__
+        classname = extobj.__class__.__alias__ if hasattr(extobj.__class__, '__alias__') else extobj.__class__.__name__
         if hasattr(ua.ObjectIds, classname):
             return ua.NodeId(getattr(ua.ObjectIds, classname))
         if extobj.__class__ in ua.datatype_by_extension_object:
