@@ -9,6 +9,7 @@ import logging
 import struct
 import typing
 import uuid
+import contextvars
 from collections.abc import Callable, Sequence
 from dataclasses import fields, is_dataclass
 from enum import Enum, IntFlag
@@ -34,14 +35,13 @@ _logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
-_string_encoding: str = "utf-8"
+_string_encoding: str = contextvars.ContextVar("ua_string_encoding", default="utf-8")
 
 def get_string_encoding() -> str:
-    return _string_encoding
+    return _string_encoding.get()
 
 def set_string_encoding(new_encoding: str):
-    global _string_encoding
-    _string_encoding = new_encoding
+    _string_encoding.set(new_encoding)
 
 def get_safe_type_hints(cls, extra_globals=None):
     # Start with the globals you want (e.g., {'ua': ua})
