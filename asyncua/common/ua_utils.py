@@ -6,11 +6,12 @@ import logging
 import uuid
 from datetime import datetime, timezone
 from enum import Enum, IntEnum, IntFlag
-from ..ua.ua_binary import string_encoding
 
 from dateutil import parser  # type: ignore[attr-defined]
 
 from asyncua import ua
+
+from ..ua.ua_binary import string_encoding
 
 _logger = logging.getLogger(__name__)
 
