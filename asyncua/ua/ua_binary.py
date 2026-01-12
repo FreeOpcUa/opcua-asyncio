@@ -34,7 +34,14 @@ _logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
-string_encoding: str = "utf-8"
+_string_encoding: str = "utf-8"
+
+def get_string_encoding() -> str:
+    return _string_encoding
+
+def set_string_encoding(new_encoding: str):
+    global _string_encoding
+    _string_encoding = new_encoding
 
 def get_safe_type_hints(cls, extra_globals=None):
     # Start with the globals you want (e.g., {'ua': ua})
