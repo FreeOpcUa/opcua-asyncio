@@ -100,7 +100,7 @@ class _String:
     @staticmethod
     def pack(string):
         if string is not None:
-            string = string.encode(string_encoding, errors="surrogateescape")
+            string = string.encode(get_string_encoding(), errors="surrogateescape")
         return _Bytes.pack(string)
 
     @staticmethod
@@ -108,7 +108,7 @@ class _String:
         b = _Bytes.unpack(data)
         if b is None:
             return b
-        return b.decode(string_encoding, errors="surrogateescape")  # not need to be strict here, this is user data
+        return b.decode(get_string_encoding(), errors="surrogateescape")  # not need to be strict here, this is user data
 
 
 class _Null:
