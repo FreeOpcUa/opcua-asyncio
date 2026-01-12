@@ -34,6 +34,7 @@ _logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
+string_encoding: str = "utf-8"
 
 def get_safe_type_hints(cls, extra_globals=None):
     # Start with the globals you want (e.g., {'ua': ua})
@@ -92,7 +93,7 @@ class _String:
     @staticmethod
     def pack(string):
         if string is not None:
-            string = string.encode("utf-8")
+            string = string.encode(string_encoding, errors="surrogateescape")
         return _Bytes.pack(string)
 
     @staticmethod
@@ -100,7 +101,7 @@ class _String:
         b = _Bytes.unpack(data)
         if b is None:
             return b
-        return b.decode("utf-8", errors="replace")  # not need to be strict here, this is user data
+        return b.decode(string_encoding, errors="surrogateescape")  # not need to be strict here, this is user data
 
 
 class _Null:
