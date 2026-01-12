@@ -4,12 +4,12 @@ Binary protocol specific functions and constants
 
 from __future__ import annotations
 
+import contextvars
 import functools
 import logging
 import struct
 import typing
 import uuid
-import contextvars
 from collections.abc import Callable, Sequence
 from dataclasses import fields, is_dataclass
 from enum import Enum, IntFlag
