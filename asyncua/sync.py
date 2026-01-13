@@ -256,9 +256,12 @@ class Client:
     def application_uri(self, value):
         self.aio_obj.application_uri = value
 
-    @syncmethod
     def connect(self) -> None:
-        pass
+        if not self.tloop.is_alive():
+            self.tloop = ThreadLoop()
+            self.tloop.start()
+            self.close_tloop = True
+        self.tloop.post(self.aio_obj.connect())
 
     def disconnect(self) -> None:
         try:
@@ -267,9 +270,12 @@ class Client:
             if self.close_tloop:
                 self.tloop.stop()
 
-    @syncmethod
     def connect_sessionless(self) -> None:
-        pass
+        if not self.tloop.is_alive():
+            self.tloop = ThreadLoop()
+            self.tloop.start()
+            self.close_tloop = True
+        self.tloop.post(self.aio_obj.connect_sessionless())
 
     def disconnect_sessionless(self) -> None:
         try:
@@ -278,9 +284,12 @@ class Client:
             if self.close_tloop:
                 self.tloop.stop()
 
-    @syncmethod
     def connect_socket(self) -> None:
-        pass
+        if not self.tloop.is_alive():
+            self.tloop = ThreadLoop()
+            self.tloop.start()
+            self.close_tloop = True
+        self.tloop.post(self.aio_obj.connect_sessionless())
 
     def disconnect_socket(self) -> None:
         try:
@@ -618,9 +627,12 @@ class Server:
     def get_namespace_array(self):
         pass
 
-    @syncmethod
     def start(self):
-        pass
+        if not self.tloop.is_alive():
+            self.tloop = ThreadLoop()
+            self.tloop.start()
+            self.close_tloop = True
+        self.tloop.post(self.aio_obj.start())
 
     def stop(self):
         self.tloop.post(self.aio_obj.stop())
