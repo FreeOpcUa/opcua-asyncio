@@ -248,12 +248,12 @@ class {struct_name}{base_class}:
         else:
             default_value = get_default_value(uatype, optional=sfield.IsOptional)
 
-        if sfield.DataType != data_type:
-            uatype = f"ua.{uatype}"
-        else:
-            # when field point to itself datatype use forward reference for typing
-            uatype = f"ua.{uatype}"
-        if sfield.ValueRank >= 1 and uatype == "Char":
+        if uatype != struct_name:
+            uatype = _check_type(sdef, uatype)
+
+        uatype = f"ua.{uatype}"
+
+        if sfield.ValueRank >= 1 and uatype == "ua.Char":
             uatype = "ua.String"
         elif sfield.ValueRank >= 1 or sfield.ArrayDimensions:
             uatype = f"list[{uatype}]"
@@ -290,6 +290,23 @@ class {struct_name}{base_class}:
         for fname, uatype, default_value in fields:
             code += f"    {fname}: '{uatype}' = {default_value}\n"
     return code
+
+
+def _check_type(sdef, uatype) -> str:
+    idx = 2
+    uatype_name = uatype
+    while True:
+        if not hasattr(ua, uatype_name):
+            _logger.debug("we might register wrong data type here: %s, which does not exists yet", uatype_name)
+            return uatype
+        attr = getattr(ua, uatype_name)
+        if not hasattr(ua, "data_type"):
+            _logger.debug("probably fine....")
+            return uatype_name
+        if attr.data_type == sdef.DataType:
+            return uatype
+        uatype_name = f"uatype_{idx}"
+        idx += 1
 
 
 def _generate_object(name, sdef, data_type=None, env=None, enum=False, option_set=False, log_fail=True):
@@ -519,12 +536,13 @@ async def load_data_type_definitions(server: Server | Client, base_node: Node = 
         failed_types = []
         log_ex = retries == cnt + 1
         for dts in dtypes:
-            if hasattr(ua, dts.name):
+            name = _get_name(dts)
+            if name is None:
                 continue
             try:
-                env = _generate_object(dts.name, dts.sdef, data_type=dts.data_type, log_fail=log_ex)
-                ua.register_extension_object(dts.name, dts.encoding_id, env[dts.name], dts.data_type)
-                new_objects[dts.name] = env[dts.name]  # type: ignore
+                env = _generate_object(name, dts.sdef, data_type=dts.data_type, log_fail=log_ex)
+                ua.register_extension_object(name, dts.encoding_id, env[name], dts.data_type)
+                new_objects[name] = env[name]  # type: ignore
             except NotImplementedError:
                 _logger.exception("Structure type %s not implemented", dts.sdef)
             except (AttributeError, RuntimeError):
@@ -535,6 +553,22 @@ async def load_data_type_definitions(server: Server | Client, base_node: Node = 
             break
         dtypes = failed_types
     return new_objects
+
+
+def _get_name(dts) -> str | None:
+    name = dts.name
+    index = 1
+    while hasattr(ua, name):
+        attr = getattr(ua, dts.name)
+        if hasattr(attr, "data_type"):
+            data_type = getattr(attr, "data_type")
+            if dts.data_type == data_type:
+                return None
+        else:
+            return None
+        name = f"{dts.name}_{index}"
+        index += 1
+    return name
 
 
 async def _read_data_type_definition(server, desc: ua.ReferenceDescription, read_existing: bool = False):
