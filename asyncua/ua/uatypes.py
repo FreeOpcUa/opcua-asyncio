@@ -41,11 +41,19 @@ MAX_INT64 = 2**63 - 1
 
 
 def type_is_optional(uatype) -> bool:
-    return get_origin(uatype) is types.UnionType and type(None) in get_args(uatype)
+    origin = get_origin(uatype)
+    union_types = (Union,)
+    if hasattr(types, "UnionType"):
+        union_types += (types.UnionType,)  # type: ignore[attr-defined]
+    return origin in union_types and type(None) in get_args(uatype)
 
 
 def type_is_union(uatype):
-    return get_origin(uatype) == Union
+    origin = get_origin(uatype)
+    union_types = (Union,)
+    if hasattr(types, "UnionType"):
+        union_types += (types.UnionType,)  # type: ignore[attr-defined]
+    return origin in union_types
 
 
 def type_is_list(uatype):
@@ -192,9 +200,9 @@ class DateTime(datetime):
 class Guid(uuid.UUID):
     pass
 
+
 class Enumeration(IntEnum):
     pass
-
 
 
 _microsecond = timedelta(microseconds=1)
