@@ -115,8 +115,9 @@ def fields_with_resolved_types(
     """
 
     fields_ = fields(class_or_instance)
+    cls = class_or_instance if isinstance(class_or_instance, type) else type(class_or_instance)
     resolved_fieldtypes = get_type_hints(  # type: ignore[call-arg]
-        class_or_instance, globalns=globalns, localns=localns, include_extras=include_extras
+        cls, globalns=globalns, localns=localns, include_extras=include_extras
     )
 
     for field in fields_:

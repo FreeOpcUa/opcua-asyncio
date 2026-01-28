@@ -282,18 +282,35 @@ def _create_uatype_array_deserializer(vtype):
     return deserialize
 
 
-def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
+def resolve_uatype(ftype: Any) -> tuple[Any, bool]:
+    if isinstance(ftype, str):
+        # Resolve string hint
+        try:
+            # This is a bit hacky, we assume ftype was derived from a field's hint
+            # But for Unions, we might need a better way.
+            # Actually, let's just use eval if it looks like a simple name
+            if ftype.startswith("ua."):
+                ftype = getattr(ua, ftype[3:])
+            elif hasattr(ua, ftype):
+                ftype = getattr(ua, ftype)
+            else:
+                ftype = eval(ftype, {"ua": ua, "typing": typing, "list": list, "List": list, "Union": typing.Union, "Optional": typing.Optional, "Dict": dict})  # type: ignore[arg-type]
+        except Exception:
+            _logger.exception("Failed to resolve type hint: %s", ftype)
     is_optional = type_is_optional(ftype)
-    uatype = ftype
     if is_optional:
-        # unpack optional because this we will handeled by the decoding
-        uatype = type_from_optional(uatype)
+        ftype = type_from_optional(ftype)
+    return ftype, is_optional
+
+
+def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
+    uatype, is_optional = resolve_uatype(ftype)
     if type_is_list(uatype):
         ft = type_from_list(uatype)
         if is_optional:
             return lambda val: b"" if val is None else create_list_serializer(ft, ft == dataclazz)(val)
         return create_list_serializer(ft, ft == dataclazz)
-    if ftype == dataclazz:
+    if uatype == dataclazz:
         if is_optional:
             return lambda val: b"" if val is None else create_type_serializer(uatype)(val)
         return lambda x: create_type_serializer(uatype)(x)
@@ -307,12 +324,12 @@ def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
 def create_dataclass_serializer(dataclazz):
     """Given a dataclass, return a function that serializes instances of this dataclass"""
     data_fields = fields(dataclazz)
-    # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
-    #       it is possible that the type annotations also refere to classes defined in other modules.
-    resolved_fieldtypes = get_type_hints(dataclazz, {"ua": ua})
-
-    for f in data_fields:
-        f.type = resolved_fieldtypes[f.name]
+    # The result is cached, so get_type_hints only runs once per class.
+    try:
+        resolved_fieldtypes = get_safe_type_hints(dataclazz, {"ua": ua})
+    except Exception:
+        _logger.warning("Failed to resolve type hints for %s", dataclazz)
+        resolved_fieldtypes = {f.name: f.type for f in data_fields}
 
     if issubclass(dataclazz, ua.UaUnion):
         # Union is a class with Encoding and Value field
@@ -331,7 +348,7 @@ def create_dataclass_serializer(dataclazz):
         return union_serialize
     option_fields_encodings = [  # Name and binary encoding of optional fields
         (field.name, 1 << enc_count)
-        for enc_count, field in enumerate(filter(lambda f: type_is_optional(f.type), data_fields))
+        for enc_count, field in enumerate(filter(lambda f: type_is_optional(resolved_fieldtypes[f.name]), data_fields))
     ]
 
     def enc_value(obj):
@@ -341,7 +358,7 @@ def create_dataclass_serializer(dataclazz):
                 enc |= enc_val
         return enc
 
-    encoding_functions = [(f.name, field_serializer(f.type, dataclazz)) for f in data_fields]
+    encoding_functions = [(f.name, field_serializer(resolved_fieldtypes[f.name], dataclazz)) for f in data_fields]
 
     def serialize(obj):
         return b"".join(
@@ -635,7 +652,9 @@ def _create_list_deserializer(uatype, recursive: bool = False):
 
 @functools.cache
 def _create_type_deserializer(uatype, dataclazz):
-    if not type_is_optional(uatype) and type_is_union(uatype):
+    uatype, is_optional = resolve_uatype(uatype)
+
+    if not is_optional and type_is_union(uatype):
         array, uatype = types_or_list_from_union(uatype)
         if not array:
             return _create_type_deserializer(uatype, uatype)
