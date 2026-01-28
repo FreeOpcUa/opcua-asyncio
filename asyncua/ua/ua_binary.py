@@ -4,6 +4,7 @@ Binary protocol specific functions and constants
 
 from __future__ import annotations
 
+import contextvars
 import functools
 import logging
 import struct
@@ -34,6 +35,13 @@ _logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
+_string_encoding = contextvars.ContextVar("ua_string_encoding", default="utf-8")
+
+def get_string_encoding() -> str:
+    return _string_encoding.get()
+
+def set_string_encoding(new_encoding: str):
+    _string_encoding.set(new_encoding)
 
 def get_safe_type_hints(cls, extra_globals=None):
     # Start with the globals you want (e.g., {'ua': ua})
@@ -92,7 +100,7 @@ class _String:
     @staticmethod
     def pack(string):
         if string is not None:
-            string = string.encode("utf-8")
+            string = string.encode(get_string_encoding(), errors="surrogateescape")
         return _Bytes.pack(string)
 
     @staticmethod
@@ -100,7 +108,7 @@ class _String:
         b = _Bytes.unpack(data)
         if b is None:
             return b
-        return b.decode("utf-8", errors="replace")  # not need to be strict here, this is user data
+        return b.decode(get_string_encoding(), errors="surrogateescape")  # not need to be strict here, this is user data
 
 
 class _Null:

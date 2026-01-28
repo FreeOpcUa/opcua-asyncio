@@ -11,6 +11,8 @@ from dateutil import parser  # type: ignore[attr-defined]
 
 from asyncua import ua
 
+from ..ua.ua_binary import get_string_encoding
+
 _logger = logging.getLogger(__name__)
 
 
@@ -55,9 +57,9 @@ def val_to_string(val, truncate=False):
             val = val[:10] + "...." + val[-10:]
     elif isinstance(val, bytes):
         if truncate and len(val) > 100:
-            val = val[:10].decode("utf-8", errors="replace") + "...." + val[-10:].decode("utf-8", errors="replace")
+            val = val[:10].decode(get_string_encoding(), errors="surrogateescape") + "...." + val[-10:].decode(get_string_encoding(), errors="surrogateescape")
         else:
-            val = val.decode("utf-8", errors="replace")
+            val = val.decode(get_string_encoding(), errors="surrogateescape")
     elif isinstance(val, datetime):
         val = val.isoformat()
     elif isinstance(val, int | float):
@@ -119,7 +121,7 @@ def string_to_val(string, vtype):
     elif vtype == ua.VariantType.String:
         val = string
     elif vtype == ua.VariantType.ByteString:
-        val = string.encode()
+        val = string.encode(get_string_encoding(), errors="surrogateescape")
     elif vtype in (ua.VariantType.NodeId, ua.VariantType.ExpandedNodeId):
         val = ua.NodeId.from_string(string)
     elif vtype == ua.VariantType.QualifiedName:
