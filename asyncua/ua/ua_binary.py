@@ -285,26 +285,33 @@ def _create_uatype_array_deserializer(vtype):
 def resolve_uatype(ftype: Any) -> tuple[Any, bool]:
     if isinstance(ftype, str):
         # Resolve string hint
-        try:
-            # This is a bit hacky, we assume ftype was derived from a field's hint
-            # But for Unions, we might need a better way.
-            # Actually, let's just use eval if it looks like a simple name
-            if ftype.startswith("ua."):
-                ftype = getattr(ua, ftype[3:])
-            elif hasattr(ua, ftype):
-                ftype = getattr(ua, ftype)
-            else:
-                ftype = eval(ftype, {"ua": ua, "typing": typing, "list": list, "List": list, "Union": typing.Union, "Optional": typing.Optional, "Dict": dict})  # type: ignore[arg-type]
-        except Exception:
-            _logger.exception("Failed to resolve type hint: %s", ftype)
+        if ftype.startswith("ua."):
+            ftype = getattr(ua, ftype[3:])
+        elif hasattr(ua, ftype):
+            ftype = getattr(ua, ftype)
+        else:
+            try:
+                ftype = eval(
+                    ftype,
+                    {
+                        "ua": ua,
+                        "typing": typing,
+                        "list": list,
+                        "List": list,
+                        "Union": typing.Union,
+                        "Optional": typing.Optional,
+                        "Dict": dict,
+                    },
+                )  # type: ignore[arg-type]
+            except Exception:
+                _logger.exception("Failed to resolve type hint: %s", ftype)
     is_optional = type_is_optional(ftype)
     if is_optional:
         ftype = type_from_optional(ftype)
     return ftype, is_optional
 
 
-def field_serializer(ftype, dataclazz) -> Callable[[Any], bytes]:
-    uatype, is_optional = resolve_uatype(ftype)
+def field_serializer(uatype: Any, is_optional: bool, dataclazz: type) -> Callable[[Any], bytes]:
     if type_is_list(uatype):
         ft = type_from_list(uatype)
         if is_optional:
@@ -334,7 +341,7 @@ def create_dataclass_serializer(dataclazz):
     if issubclass(dataclazz, ua.UaUnion):
         # Union is a class with Encoding and Value field
         # the value depends on encoding
-        encoding_funcs = [field_serializer(t, dataclazz) for t in dataclazz._union_types]
+        encoding_funcs = [field_serializer(*resolve_uatype(t), dataclazz) for t in dataclazz._union_types]
 
         def union_serialize(obj):
             bin = Primitives.UInt32.pack(obj.Encoding)
@@ -358,7 +365,9 @@ def create_dataclass_serializer(dataclazz):
                 enc |= enc_val
         return enc
 
-    encoding_functions = [(f.name, field_serializer(resolved_fieldtypes[f.name], dataclazz)) for f in data_fields]
+    encoding_functions = [
+        (f.name, field_serializer(*resolve_uatype(resolved_fieldtypes[f.name]), dataclazz)) for f in data_fields
+    ]
 
     def serialize(obj):
         return b"".join(
