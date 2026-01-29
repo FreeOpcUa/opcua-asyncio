@@ -897,3 +897,21 @@ async def test_start_server_when_port_is_in_use(server: Server):
         await server2.start()
     # now it should still be possible to stop the server with exceptions
     await server2.stop()
+
+async def test_conflicting_datastruct_resolution(server: Server, server_with_conflict_datastruct: Server):
+    """ Cross check if the stored variable is different depending on the server"""
+    # Define helper functions:
+    async def return_struct(srv: Server):
+        found_child = None
+        for child in await srv.nodes.objects.get_children():
+            if "my_struct" == (await child.read_browse_name()).Name:
+                found_child = child
+        if found_child:
+            return await found_child.read_value()
+        return None
+
+    # Fetch parameter
+    param1 = await return_struct(server)
+    param2 = await return_struct(server_with_conflict_datastruct)
+    # We should have 2 different structure
+    assert param1 != param2

@@ -1229,11 +1229,19 @@ extension_objects_by_datatype = {}  # dict[Datatype, type]
 extension_objects_by_typeid = {}  # dict[EncodingId, type]
 extension_object_typeids = {}
 datatype_by_extension_object = {}
+datatype_aliases: dict[str, list[str]] = {}
+dataid_aliases: dict[str, list[str]] = {}
 
 
 def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid=None):
     """
     Register a new extension object for automatic decoding and make them available in ua module
+    over the following functions:
+
+    * :code:`ua.get_custom_struct_via_nodeid(nodeid)` is the preferred method
+    * :code:`ua.get_custom_struct_with_matching_fields('MyStruct', ['field_1', 'field_2'])`
+    * :code:`ua.get_custom_struct_via_nodeid('MyStruct')`
+
     """
     _logger.info(
         "registering new extension object: %s %s %s %s",
@@ -1242,16 +1250,31 @@ def register_extension_object(name, encoding_nodeid, class_type, datatype_nodeid
         class_type,
         datatype_nodeid,
     )
+    unique_id = str(uuid.uuid4()).replace('-', '_')
+    new_name = f"{name}_{unique_id}"
+
+    # Add alias to class_type
+    class_type.__alias__ = new_name
+
+    if name not in datatype_aliases:
+        datatype_aliases[name] = []
+    datatype_aliases[name].append(new_name)
+
     if datatype_nodeid:
+
+        if datatype_nodeid not in dataid_aliases:
+            dataid_aliases[datatype_nodeid] = []
+        dataid_aliases[datatype_nodeid].append(encoding_nodeid)
+
         extension_objects_by_datatype[datatype_nodeid] = class_type
         datatype_by_extension_object[class_type] = datatype_nodeid
     extension_objects_by_typeid[encoding_nodeid] = class_type
-    extension_object_typeids[name] = encoding_nodeid
+    extension_object_typeids[new_name] = encoding_nodeid
     # FIXME: Next line is not exactly a Python best practices, so feel free to propose something else
     # add new extensions objects to ua modules to automate decoding
     import asyncua.ua
 
-    setattr(asyncua.ua, name, class_type)
+    setattr(asyncua.ua, new_name, class_type)
 
 
 def get_extensionobject_class_type(typeid):
@@ -1260,7 +1283,36 @@ def get_extensionobject_class_type(typeid):
     """
     if typeid in extension_objects_by_typeid:
         return extension_objects_by_typeid[typeid]
+    if typeid in dataid_aliases:
+        return extension_objects_by_typeid[dataid_aliases[typeid][0]]
     return None
+
+
+def disable_backward_compatibility():
+    """Remove all backward compatibility so that it does not impact the node creation
+    """
+    for type_name in datatype_aliases:
+        import asyncua.ua
+        if hasattr(asyncua.ua, type_name):
+            delattr(asyncua.ua, type_name)
+
+
+def enable_backward_compatibility():
+    """Check all the custom types and create a simpled named for each of them
+    """
+    for type_name, list_of_alias_names in datatype_aliases.items():
+
+        import asyncua.ua
+
+        # Becaue there are no unregister function, we need to verify that the type
+        # is still available and was not manually deleted
+        compatible_type = None
+        for previously_register_type in list_of_alias_names:
+            if hasattr(asyncua.ua, previously_register_type):
+                compatible_type = getattr(asyncua.ua, previously_register_type)
+                break
+        if compatible_type:
+            setattr(asyncua.ua, type_name, compatible_type)
 
 
 class SecurityPolicyType(IntEnum):

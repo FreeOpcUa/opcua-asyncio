@@ -292,4 +292,4 @@ class StructNode:
 
 def get_ua_class(ua_class_name):
     # return getattr(ua, _to_camel_case(ua_class_name))
-    return getattr(ua, ua_class_name)
+    return ua.get_custom_struct_via_name(ua_class_name)

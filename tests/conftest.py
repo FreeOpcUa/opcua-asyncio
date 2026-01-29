@@ -13,6 +13,7 @@ import pytest
 from asyncua import Client, Server, ua
 from asyncua.client.ha.ha_client import HaClient, HaConfig, HaMode
 from asyncua.client.ua_client import UASocketProtocol
+from asyncua.common.structures104 import new_struct, new_struct_field
 from asyncua.server.history import HistoryDict
 from asyncua.server.history_sql import HistorySQLite
 
@@ -121,6 +122,48 @@ async def server():
     srv.set_endpoint(f"opc.tcp://127.0.0.1:{port_num}")
     await add_server_methods(srv)
     await add_server_custom_enum_struct(srv)
+    uri = "http://examples.freeopcua.github.io"
+    idx = await srv.register_namespace(uri)
+    var_node, _ = await new_struct(
+        srv,
+        idx,
+        "MyStruct",
+        [
+            new_struct_field("MyBool", ua.VariantType.Boolean),
+            new_struct_field("MyUInt32", ua.VariantType.UInt32),
+        ],
+    )
+    await srv.load_data_type_definitions()
+    fetched_struct = ua.uatypes.get_extensionobject_class_type(var_node.nodeid)
+    await srv.nodes.objects.add_variable(idx, "my_struct", ua.Variant(fetched_struct(), ua.VariantType.ExtensionObject))
+    await srv.start()
+    yield srv
+    # stop the server
+    await srv.stop()
+
+@pytest.fixture(scope="module")
+async def server_with_conflict_datastruct():
+    # start our own server
+    srv = Server()
+    await srv.init()
+    srv.set_endpoint(f"opc.tcp://127.0.0.1:{port_num1}")
+    await add_server_methods(srv)
+    await add_server_custom_enum_struct(srv)
+    uri = "http://examples.freeopcua.github.io"
+    idx = await srv.register_namespace(uri)
+    var_node, _ = await new_struct(
+        srv,
+        idx,
+        "MyStruct",
+        [
+            new_struct_field("MyBool", ua.VariantType.Boolean),
+            new_struct_field("MyUInt32", ua.VariantType.UInt32),
+            new_struct_field("MyUInt16", ua.VariantType.UInt16),
+        ],
+    )
+    await srv.load_data_type_definitions()
+    fetched_struct = ua.uatypes.get_extensionobject_class_type(var_node.nodeid)
+    await srv.nodes.objects.add_variable(idx, "my_struct", ua.Variant(fetched_struct(), ua.VariantType.ExtensionObject))
     await srv.start()
     yield srv
     # stop the server
