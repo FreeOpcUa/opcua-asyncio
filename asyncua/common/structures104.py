@@ -196,7 +196,9 @@ def _make_union_property(name, idx):
     return property(getter, setter)
 
 
-def make_structure(data_type: ua.NodeId, struct_name: str, sdef: ua.StructureDefinition, log_error: bool = True) -> dict[str, type]:
+def make_structure(
+    data_type: ua.NodeId, struct_name: str, sdef: ua.StructureDefinition, log_error: bool = True
+) -> dict[str, type]:
     """
     given a StructureDefinition object, generate Python class
     """
@@ -235,9 +237,6 @@ def make_structure(data_type: ua.NodeId, struct_name: str, sdef: ua.StructureDef
 
     for idx, sfield in enumerate(sdef.Fields, start=1):
         fname = clean_name(sfield.Name)
-        if fname in seen_names:
-            _logger.warning("Field name %s is duplicated in structure %s, renaming to %s_%s", fname, struct_name, fname, idx)
-            fname = f"{fname}_{idx}"
         seen_names.add(fname)
         if sfield.DataType.NamespaceIndex == 0 and sfield.DataType.Identifier in ua.ObjectIdNames:
             if sfield.DataType.Identifier == 24:
@@ -409,28 +408,31 @@ class DataTypeSorter:
         return f"<{self.__class__.__name__}: {self.name!r}>"
 
 
-async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_existing=False):
+async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_existing=False) -> None:
     ch = await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype)
 
     requests = [_read_data_type_definition(server, desc, read_existing=add_existing) for desc in ch]
     results = await asyncio.gather(*requests)
 
-    def __add_recursion(sdef, desc):
+    async def __add_recursion(sdef, desc) -> None:
         name = clean_name(desc.BrowseName.Name)
-        if sdef:
-            if parent_sdef:
+        if isinstance(sdef, ua.StructureDefinition):
+            if isinstance(parent_sdef, ua.StructureDefinition):
+                names = [f.Name for f in sdef.Fields]
                 for sfield in reversed(parent_sdef.Fields):
-                    sdef.Fields.insert(0, sfield)
+                    if sfield.Name not in names:
+                        sdef.Fields.insert(0, sfield)
             if isinstance(sdef, ua.StructureDefinition):
                 dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
-            return _recursive_parse(
+            await _recursive_parse(
                 server,
                 server.get_node(desc.NodeId),
                 dtypes,
                 parent_sdef=sdef,
                 add_existing=add_existing,
             )
-        return _recursive_parse(
+            return
+        await _recursive_parse(
             server,
             server.get_node(desc.NodeId),
             dtypes,
@@ -443,7 +445,7 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, add_exis
     await asyncio.gather(*requests)
 
 
-async def _get_parent_types(node: Node):
+async def _get_parent_types(node: Node) -> list[Node]:
     parents = []
     tmp_node = node
     for _ in range(10):
@@ -463,8 +465,11 @@ async def load_custom_struct(node: Node) -> Any:
     name = (await node.read_browse_name()).Name
     for parent in await _get_parent_types(node):
         parent_sdef = await parent.read_data_type_definition()
-        for f in reversed(parent_sdef.Fields):
-            sdef.Fields.insert(0, f)
+        if isinstance(parent_sdef, ua.StructureDefinition):
+            names = [f.Name for f in sdef.Fields]
+            for f in reversed(parent_sdef.Fields):
+                if f.Name not in names:
+                    sdef.Fields.insert(0, f)
     env = _generate_object(name, sdef, data_type=node.nodeid)
     struct = env[name]
     setattr(ua, name, struct)
@@ -472,7 +477,7 @@ async def load_custom_struct(node: Node) -> Any:
     return struct
 
 
-async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes):
+async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes) -> Any:
     """
     This function is used to load custom structs from xmlimporter
     """
@@ -488,7 +493,7 @@ async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAt
     return struct
 
 
-async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new_alias) -> Any:
+async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new_alias) -> None:
     for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
         name = clean_name(desc.BrowseName.Name)
         if parent_datatype not in "Number":
@@ -500,7 +505,7 @@ async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new
         await _recursive_parse_basedatatypes(server, server.get_node(desc.NodeId), name, new_alias)
 
 
-async def load_basetype_alias_xml_import(server, name, nodeid, parent_datatype_nid):
+async def load_basetype_alias_xml_import(server, name, nodeid, parent_datatype_nid) -> Any:
     """
     Insert alias for a datatype used for xml import
     """
@@ -521,7 +526,7 @@ def make_basetype(name: str, parent_datatype: str) -> dict[str, Any]:
     return {name: getattr(ua, parent_datatype)}
 
 
-async def _load_base_datatypes(server: Server | Client) -> Any:
+async def _load_base_datatypes(server: Server | Client) -> dict[str, Any]:
     new_alias = {}
     descriptions = await server.nodes.base_data_type.get_children_descriptions()
     for desc in descriptions:
