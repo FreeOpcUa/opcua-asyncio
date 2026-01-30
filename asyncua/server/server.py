@@ -6,7 +6,7 @@ import asyncio
 import logging
 import math
 import socket
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
@@ -814,6 +814,16 @@ class Server:
         directly read datavalue of the Attribute
         """
         return self.iserver.read_attribute_value(nodeid, attr)
+
+    async def read_attributes(
+        self, nodes: Iterable[Node], attr: ua.AttributeIds = ua.AttributeIds.Value
+    ) -> list[ua.DataValue]:
+        """
+        directly read the attributes of multiple nodes.
+        async for compatibility with client API
+        """
+        nodeids = [node.nodeid for node in nodes]
+        return [self.iserver.read_attribute_value(nodeid, attr) for nodeid in nodeids]
 
     def set_certificate_validator(self, validator: validator.CertificateValidatorMethod):
         """
