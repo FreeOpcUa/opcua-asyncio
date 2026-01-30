@@ -780,11 +780,10 @@ class AddressSpace:
         self._nodes = LazyLoadingDict(shelve.open(str(path), "r"))
 
     def read_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds) -> ua.DataValue:
-        # self.logger.debug("get attr val: %s %s", nodeid, attr)
-        if nodeid not in self._nodes:
+        node = self._nodes.get(nodeid)
+        if node is None:
             dv = ua.DataValue(StatusCode=ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
             return dv
-        node = self._nodes[nodeid]
         if attr not in node.attributes:
             dv = ua.DataValue(StatusCode=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
             return dv
