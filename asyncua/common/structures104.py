@@ -436,35 +436,36 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, overwrit
     for i, sdef in zip(idxs, results):
         sdefs[i] = sdef
 
-    async def __add_recursion(sdef, desc):
-        if isinstance(sdef, ua.StructureDefinition):
-            name = clean_name(desc.BrowseName.Name)
-            print("NAME", name)
-            if parent_sdef:
-                names = [f.Name for f in sdef.Fields]
-                for sfield in reversed(parent_sdef.Fields):
-                    if sfield.Name not in names:
-                        sdef.Fields.insert(0, sfield)
-            dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
-            await _recursive_parse(
-                server,
-                server.get_node(desc.NodeId),
-                dtypes,
-                parent_sdef=sdef,
-                overwrite_existing=overwrite_existing,
-            )
-            return
+    requests = [
+        __add_recursion(server, sdef, desc, parent_sdef, dtypes, overwrite_existing) for sdef, desc in zip(sdefs, descs)
+    ]
+
+    await asyncio.gather(*requests)
+
+
+async def __add_recursion(server, sdef, desc, parent_sdef, dtypes, overwrite_existing) -> None:
+    if isinstance(sdef, ua.StructureDefinition):
+        name = clean_name(desc.BrowseName.Name)
+        if parent_sdef:
+            names = [f.Name for f in sdef.Fields]
+            for sfield in reversed(parent_sdef.Fields):
+                if sfield.Name not in names:
+                    sdef.Fields.insert(0, sfield)
+        dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
         await _recursive_parse(
             server,
             server.get_node(desc.NodeId),
             dtypes,
-            parent_sdef,
+            parent_sdef=sdef,
             overwrite_existing=overwrite_existing,
         )
-
-    requests = [__add_recursion(sdef, desc) for sdef, desc in zip(sdefs, descs)]
-
-    await asyncio.gather(*requests)
+    await _recursive_parse(
+        server,
+        server.get_node(desc.NodeId),
+        dtypes,
+        parent_sdef,
+        overwrite_existing=overwrite_existing,
+    )
 
 
 async def _get_parent_types(node: Node) -> list[Node]:
