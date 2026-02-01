@@ -416,13 +416,11 @@ class DataTypeSorter:
         return f"<{self.__class__.__name__}: {self.name!r}>"
 
 
-async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, overwrite_existing=False):
+async def get_children_descriptions_type_definitions(server, base_node, overwrite_existing=False):
     descs = await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype)
     nodes = []
     idxs = []
     for idx, desc in enumerate(descs):
-        if desc.BrowseName.Name == "FilterOperand":
-            continue
         if hasattr(ua, desc.BrowseName.Name) and not overwrite_existing:
             continue
         idxs.append(idx)
@@ -435,7 +433,11 @@ async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, overwrit
     sdefs = [None for _ in descs]
     for i, sdef in zip(idxs, results):
         sdefs[i] = sdef
+    return descs, sdefs
 
+
+async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, overwrite_existing=False):
+    descs, sdefs = await get_children_descriptions_type_definitions(server, base_node, overwrite_existing)
     requests = [
         __add_recursion(server, sdef, desc, parent_sdef, dtypes, overwrite_existing) for sdef, desc in zip(sdefs, descs)
     ]
@@ -597,26 +599,6 @@ async def load_data_type_definitions(server: Server | Client, base_node: Node = 
     return new_objects
 
 
-async def _read_data_type_definition(server, desc: ua.ReferenceDescription, read_existing: bool = False):
-    if desc.BrowseName.Name == "FilterOperand":
-        # FIXME: find out why that one is not in ua namespace...
-        return None
-    # FIXME: this is fishy, we may have same name in different Namespaces
-    if not read_existing and hasattr(ua, desc.BrowseName.Name):
-        return None
-    _logger.info("Registering data type %s %s", desc.NodeId, desc.BrowseName)
-    node = server.get_node(desc.NodeId)
-    try:
-        sdef = await node.read_data_type_definition()
-    except ua.uaerrors.BadAttributeIdInvalid:
-        _logger.debug("%s has no DataTypeDefinition attribute", node)
-        return None
-    except Exception:
-        _logger.exception("Error getting datatype for node %s", node)
-        return None
-    return sdef
-
-
 def make_enum(name: str, edef: ua.EnumDefinition, option_set: bool) -> dict[str, type]:
     """
     if node has a DataTypeDefinition attribute, generate enum code
@@ -650,20 +632,23 @@ def make_enum(name: str, edef: ua.EnumDefinition, option_set: bool) -> dict[str,
     return {name: cls}
 
 
-async def load_enums(server: Server | Client, base_node: Node = None, option_set: bool = False) -> dict:
+async def load_enums(
+    server: Server | Client, base_node: Node | None = None, option_set: bool = False, overwrite_existing: bool = False
+) -> dict:
     typename = "OptionSet" if option_set else "Enum"
     if base_node is None:
         base_node = server.nodes.enum_data_type
+    descs, sdefs = await get_children_descriptions_type_definitions(server, base_node, overwrite_existing)
     new_enums = {}
-    for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
+    for idx, desc in enumerate(descs):
         name = clean_name(desc.BrowseName.Name)
         if hasattr(ua, name):
             continue
         _logger.info("Registering %s %s %s", typename, desc.NodeId, name)
+        edef = sdefs[idx]
+        if not edef:
+            continue
         try:
-            edef = await _read_data_type_definition(server, desc)
-            if not edef:
-                continue
             env = _generate_object(name, edef, enum=True, option_set=option_set, log_fail=False)
         except Exception:
             _logger.exception(
