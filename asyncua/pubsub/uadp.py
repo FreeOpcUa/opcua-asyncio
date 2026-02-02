@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
+from typing import Protocol
 
 from ..common.utils import Buffer
 from ..ua import VariantType
@@ -40,15 +41,6 @@ from ..ua.uatypes import (
     UInt64,
     Variant,
 )
-
-try:
-    from typing import Protocol
-except ImportError:
-    # Protocol is only supported in Python >= 3.8
-    # if mypy support is needed we should add typing_extension as requirement
-    class Protocol:  # type: ignore
-        pass
-
 
 logger = logging.getLogger(__name__)
 

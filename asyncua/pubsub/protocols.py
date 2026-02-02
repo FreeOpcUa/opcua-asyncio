@@ -2,18 +2,12 @@
 Protocols which are used to decouple components from pubsub
 """
 
+from typing import Protocol
+
 from ..ua.uaprotocol_auto import PubSubState
 from ..ua.uatypes import Byte, ExtensionObject, String, UInt16, UInt32, UInt64
 from .dataset import DataSetMeta, DataSetValue, PublishedDataSet
 from .uadp import UadpNetworkMessage
-
-try:
-    from typing import Protocol
-except ImportError:
-    # Protocol is only supported in Python >= 3.8
-    # if mypy support is needed we should add typing extension as requirement
-    class Protocol:  # type: ignore
-        pass
 
 
 class PubSubSender(Protocol):
