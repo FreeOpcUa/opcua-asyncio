@@ -16,7 +16,7 @@ except ImportError:
 
 
 from asyncua import Client, Node, Server, ua, uamethod
-from asyncua.ua.uaerrors import UaStatusCodeError
+from asyncua.ua.uaerrors import UaError, UaStatusCodeError
 
 
 def add_minimum_args(parser):
@@ -375,6 +375,14 @@ async def _lsprint_1(node, depth, indent=""):
                 val = await Node(node.session, desc.NodeId).read_value()
             except UaStatusCodeError as err:
                 val = "Bad (0x{0:x})".format(err.code)
+            except UaError:
+                print(f"Warning: Error reading {desc.NodeId}, retrying...", file=sys.stderr)
+                try:
+                    val = await Node(node.session, desc.NodeId).read_value()
+                except UaStatusCodeError as err:
+                    val = "Bad (0x{0:x})".format(err.code)
+                except UaError as err:
+                    val = f"Error: {err}"
             print(
                 "{0}{1:30} {2!s:25} {3!s:25}, {4!s:3}".format(
                     indent,
@@ -406,17 +414,35 @@ async def _lsprint_long(pnode, depth, indent=""):
         )
         print("")
     for node in await pnode.get_children():
-        attrs = await node.read_attributes(
-            [
-                ua.AttributeIds.DisplayName,
-                ua.AttributeIds.BrowseName,
-                ua.AttributeIds.NodeClass,
-                ua.AttributeIds.WriteMask,
-                ua.AttributeIds.UserWriteMask,
-                ua.AttributeIds.DataType,
-                ua.AttributeIds.Value,
-            ]
-        )
+        try:
+            attrs = await node.read_attributes(
+                [
+                    ua.AttributeIds.DisplayName,
+                    ua.AttributeIds.BrowseName,
+                    ua.AttributeIds.NodeClass,
+                    ua.AttributeIds.WriteMask,
+                    ua.AttributeIds.UserWriteMask,
+                    ua.AttributeIds.DataType,
+                    ua.AttributeIds.Value,
+                ]
+            )
+        except UaError:
+            print(f"Warning: Error reading attributes for {node.nodeid}, retrying...", file=sys.stderr)
+            try:
+                attrs = await node.read_attributes(
+                    [
+                        ua.AttributeIds.DisplayName,
+                        ua.AttributeIds.BrowseName,
+                        ua.AttributeIds.NodeClass,
+                        ua.AttributeIds.WriteMask,
+                        ua.AttributeIds.UserWriteMask,
+                        ua.AttributeIds.DataType,
+                        ua.AttributeIds.Value,
+                    ]
+                )
+            except UaError as err:
+                print(f"{indent}{node.nodeid.to_string():25} Error reading attributes: {err}")
+                continue
         name, bname, nclass, _mask, _umask, dtype, val = (attr.Value.Value for attr in attrs)
         update = attrs[-1].ServerTimestamp
         if nclass == ua.NodeClass.Variable:

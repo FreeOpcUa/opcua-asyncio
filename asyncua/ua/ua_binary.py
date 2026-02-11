@@ -35,14 +35,16 @@ _logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-def get_safe_type_hints(cls, extra_globals=None):
-    # Start with the globals you want (e.g., {'ua': ua})
-    globalns = dict(extra_globals or {})
-
-    # Filter out properties from the class dict to avoid shadowing
+def get_safe_type_hints(cls, extra_ns=None):
+    # Use globalns=None so that get_type_hints automatically resolves the
+    # module globals of cls (e.g. bare names like Byte).
+    # Pass extra_ns (e.g. {'ua': ua}) as localns so ua.Xxx annotations resolve too.
+    # Filter out properties from the class dict to avoid shadowing.
     localns = {k: v for k, v in cls.__dict__.items() if not isinstance(v, property)}
+    if extra_ns:
+        localns.update(extra_ns)
 
-    return typing.get_type_hints(cls, globalns=globalns, localns=localns)
+    return typing.get_type_hints(cls, globalns=None, localns=localns)
 
 
 def test_bit(data: int, offset: int) -> int:
@@ -726,9 +728,7 @@ def _create_dataclass_deserializer(objtype):
         return decode_union
     enc_count = 0
     field_deserializers = []
-    # TODO: adding the 'ua' module to the globals to resolve the type hints might not be enough.
-    #       its possible that the type annotations also refere to classes defined in other modules.
-    resolved_fieldtypes = get_type_hints(objtype, {"ua": ua})
+    resolved_fieldtypes = get_type_hints(objtype, None, {"ua": ua})
     for field in fields(objtype):
         optional_enc_bit = 0
         field_type = resolved_fieldtypes[field.name]
