@@ -133,7 +133,7 @@ async def _uaread():
     args = parse_args(parser, requirenodeid=True)
 
     client = Client(args.url, timeout=args.timeout)
-    await client.set_security_string(args.security)
+    await _configure_client_with_args(client, args)
     await client.connect()
 
     try:
