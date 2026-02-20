@@ -242,7 +242,7 @@ class UASocketProtocol(asyncio.Protocol):
         if self.transport:
             self.transport.close()
         else:
-            self.logger.warning("disconnect_socket was called but transport is None")
+            self.logger.debug("disconnect_socket was called but transport is None")
 
     async def send_hello(self, url, max_messagesize: int = 0, max_chunkcount: int = 0):
         hello = ua.Hello()
@@ -341,7 +341,7 @@ class UaClient(AbstractSession):
         if not self.protocol:
             return
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
-            self.logger.warning("disconnect_socket was called but connection is closed")
+            self.logger.debug("disconnect_socket was called but connection is closed")
             return
         self.protocol.disconnect_socket()
         self.protocol = None
@@ -358,7 +358,7 @@ class UaClient(AbstractSession):
         in most servers, so be prepared to reconnect
         """
         if not self.protocol or self.protocol.state == UASocketProtocol.CLOSED:
-            self.logger.warning("close_secure_channel was called but connection is closed")
+            self.logger.debug("close_secure_channel was called but connection is closed")
             return None
         return await self.protocol.close_secure_channel()
 
@@ -390,14 +390,14 @@ class UaClient(AbstractSession):
     async def close_session(self, delete_subscriptions):
         self.logger.info("close_session")
         if not self.protocol:
-            self.logger.warning("close_session but connection wasn't established")
+            self.logger.debug("close_session but connection wasn't established")
             return
         self.protocol.closed = True
         self._closing = True
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
-            self.logger.warning("close_session was called but connection is closed")
+            self.logger.debug("close_session was called but connection is closed")
             return
         request = ua.CloseSessionRequest()
         request.DeleteSubscriptions = delete_subscriptions
