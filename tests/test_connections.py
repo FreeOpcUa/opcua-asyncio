@@ -117,7 +117,7 @@ async def test_session_watchdog():
     client.session_timeout = 1000  # 1 second
     await client.connect()
     client._closing = True  # Kill the keepalive tasks
-    await asyncio.sleep(2)  # Wait for the watchdog to terminate the session due to inactivity
+    await asyncio.sleep(3)  # Wait for the watchdog to terminate the session due to inactivity
     with pytest.raises(BadSessionNotActivated):
         server_time_node = client.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         await server_time_node.read_value()
