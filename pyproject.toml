@@ -20,8 +20,8 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-  "aiofiles",
   "aiosqlite",
+  "anyio",
   "cryptography>42.0.0",
   "pyOpenSSL>23.2.0",
   "python-dateutil",
@@ -59,7 +59,6 @@ dev = [
   "pytest-mock",
   "pytest-repeat",
   "ruff",
-  "types-aiofiles",
   "types-pyOpenSSL",
   "types-python-dateutil",
   "types-pytz",

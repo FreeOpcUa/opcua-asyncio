@@ -150,7 +150,7 @@ class TrustStore:
         Args:
             location (Path): location to scan for certificates
         """
-        files = Path(location).glob("*.*")
+        files = Path(location).glob("*.*")  # noqa: ASYNC240
         for file_name in files:
             if re.match(".*(der|pem)", file_name.name.lower()):
                 _logger.debug("Add certificate to TrustStore : '%s'", file_name)
@@ -163,7 +163,7 @@ class TrustStore:
         Args:
             location (Path): location to scan for crls
         """
-        files = Path(location).glob("*.*")
+        files = Path(location).glob("*.*")  # noqa: ASYNC240
         for file_name in files:
             if re.match(".*(der|pem)", file_name.name.lower()):
                 _logger.debug("Add CRL to list : '%s'", file_name)

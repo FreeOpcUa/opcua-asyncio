@@ -4,6 +4,7 @@ import asyncio
 import socket
 from pathlib import Path
 
+import anyio
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding  # , load_pem_private_key
@@ -97,17 +98,21 @@ async def generate_csr():
     csr_file = base_csr / "myserver.csr"
 
     # key_file.write_bytes(dump_private_key_as_pem(key))
-    csr_file.write_bytes(csr.public_bytes(encoding=Encoding.PEM))
+    async with await anyio.open_file(str(csr_file), "wb") as f:
+        await f.write(csr.public_bytes(encoding=Encoding.PEM))
 
 
 async def sign_csr():
     issuer = await load_certificate(base_certs / "ca_application.der")
     key_ca = await load_private_key(base_private / "ca_application.pem")
     csr_file: Path = base_csr / "myserver.csr"
-    csr = x509.load_pem_x509_csr(csr_file.read_bytes())
+    async with await anyio.open_file(str(csr_file), "rb") as f:
+        csr = x509.load_pem_x509_csr(f.read_file())
 
     cert: x509.Certificate = sign_certificate_request(csr, issuer, key_ca, days=30)
-    (base_certs / "myserver.der").write_bytes(cert.public_bytes(encoding=Encoding.DER))
+
+    async with await anyio.open_file(str(base_certs / "myserver.der"), "wb") as f:
+        await f.write(csr.public_bytes(encoding=Encoding.PEM))
 
 
 async def main():

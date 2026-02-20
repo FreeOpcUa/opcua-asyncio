@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-import aiofiles
+import anyio
 from cryptography import x509
 
 # We redefine InvalidSignature as part of this module. Do not remove this line.
@@ -31,7 +31,7 @@ async def get_content(path_or_content: str | bytes | Path) -> bytes:
     if isinstance(path_or_content, bytes):
         return path_or_content
 
-    async with aiofiles.open(path_or_content, mode="rb") as f:
+    async with await anyio.open_file(path_or_content, mode="rb") as f:
         return await f.read()
 
 
