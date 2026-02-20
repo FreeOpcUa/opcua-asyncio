@@ -2,7 +2,7 @@ import asyncio
 from asyncio import TimeoutError
 from pathlib import Path
 
-import aiofiles
+import anyio
 import pytest
 
 from asyncua import Client, Server, ua
@@ -197,9 +197,9 @@ async def test_basic256_encrypt_success(srv_crypto_all_certs):
 async def test_basic256_encrypt_use_certificate_bytes(srv_crypto_all_certs):
     clt = Client(uri_crypto)
     _, cert = srv_crypto_all_certs
-    async with aiofiles.open(cert, "rb") as server_cert:
-        async with aiofiles.open(f"{EXAMPLE_PATH / 'certificate-example.der'}", "rb") as user_cert:
-            async with aiofiles.open(f"{EXAMPLE_PATH / 'private-key-example.pem'}", "rb") as user_key:
+    async with await anyio.open_file(cert, "rb") as server_cert:
+        async with await anyio.open_file(f"{EXAMPLE_PATH / 'certificate-example.der'}", "rb") as user_cert:
+            async with await anyio.open_file(f"{EXAMPLE_PATH / 'private-key-example.pem'}", "rb") as user_key:
                 await clt.set_security(
                     security_policies.SecurityPolicyBasic256Sha256,
                     await user_cert.read(),

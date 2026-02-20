@@ -138,7 +138,7 @@ class InternalServer:
 
     async def load_standard_address_space(self, shelf_file: Path | None = None):
         if shelf_file:
-            if shelf_file.is_file() or shelf_file.with_suffix(".db").is_file():
+            if shelf_file.is_file() or shelf_file.with_suffix(".db").is_file():  # noqa: ASYNC240
                 # import address space from shelf
                 self.aspace.load_aspace_shelf(shelf_file)
                 return

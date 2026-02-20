@@ -5,6 +5,7 @@ crypothelper contains helper functions to isolate the lower level cryto stuff fr
 import datetime
 from pathlib import Path
 
+import anyio
 from cryptography import x509
 from cryptography.hazmat._oid import _OID_NAMES as OID_NAMES
 from cryptography.hazmat.backends import default_backend
@@ -253,14 +254,16 @@ async def setup_self_signed_certificate(
         subject_attrs (dict[str, str]): subject fields
     """
 
-    generate_key = key_file.is_file() is False
-    generate_cert = generate_key or cert_file.is_file() is False
+    generate_key = key_file.is_file() is False  # noqa: ASYNC240
+    generate_cert = generate_key or cert_file.is_file() is False  # noqa: ASYNC240
 
     key: RSAPrivateKey
     cert: x509.Certificate
     if generate_key:
         key = generate_private_key()
-        key_file.write_bytes(dump_private_key_as_pem(key))
+        key_bytes = dump_private_key_as_pem(key)
+        async with await anyio.open_file(str(key_file), "wb") as f:
+            await f.write(key_bytes)
     else:
         key = await load_private_key(key_file)
 
@@ -278,4 +281,5 @@ async def setup_self_signed_certificate(
             key, app_uri, subject_attrs, subject_alt_names, extended=cert_use, days=365
         )
 
-        cert_file.write_bytes(cert.public_bytes(encoding=Encoding.DER))
+        async with await anyio.open_file(str(cert_file), "wb") as f:
+            await f.write(cert.public_bytes(encoding=Encoding.DER))

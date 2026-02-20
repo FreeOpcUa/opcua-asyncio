@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import aiofiles
+import anyio
 
 from ..common.utils import Buffer
 from ..ua import PubSubConfigurationDataType, String
@@ -147,7 +147,7 @@ class PubSub(PubSubInformationModel):
         await self.stop()
 
     async def load_binary_file(self, file: str | Path) -> None:
-        async with aiofiles.open(file, mode="rb") as f:
+        async with await anyio.open_file(file, mode="rb") as f:
             buf = Buffer(await f.read())
         # ex_obj = extensionobject_from_binary(buf)
         ex_obj: UABinaryFileDataType = extensionobject_from_binary(buf)
@@ -178,5 +178,5 @@ class PubSub(PubSubInformationModel):
             [pds._data for pds in self._pds], [con._cfg for con in self._con], self._enabled
         )
         data = to_binary(UABinaryFileDataType, UABinaryFileDataType(Body=Variant(cfg)))
-        async with aiofiles.open(file, mode="wb") as f:
+        async with await anyio.open_file(file, mode="wb") as f:
             await f.write(data)
