@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import keyword
 import logging
 import re
@@ -428,40 +427,6 @@ async def get_children_descriptions_type_definitions(server, base_node, overwrit
     return descs, sdefs
 
 
-async def _recursive_parse(server, base_node, dtypes, parent_sdef=None, overwrite_existing=False):
-    descs, sdefs = await get_children_descriptions_type_definitions(server, base_node, overwrite_existing)
-    requests = [
-        __add_recursion(server, sdef, desc, parent_sdef, dtypes, overwrite_existing) for sdef, desc in zip(sdefs, descs)
-    ]
-
-    await asyncio.gather(*requests)
-
-
-async def __add_recursion(server, sdef, desc, parent_sdef, dtypes, overwrite_existing) -> None:
-    if isinstance(sdef, ua.StructureDefinition):
-        name = clean_name(desc.BrowseName.Name)
-        if parent_sdef:
-            names = [f.Name for f in sdef.Fields]
-            for sfield in reversed(parent_sdef.Fields):
-                if sfield.Name not in names:
-                    sdef.Fields.insert(0, sfield)
-        dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
-        await _recursive_parse(
-            server,
-            server.get_node(desc.NodeId),
-            dtypes,
-            parent_sdef=sdef,
-            overwrite_existing=overwrite_existing,
-        )
-    await _recursive_parse(
-        server,
-        server.get_node(desc.NodeId),
-        dtypes,
-        parent_sdef,
-        overwrite_existing=overwrite_existing,
-    )
-
-
 async def _get_parent_types(node: Node) -> list[Node]:
     parents = []
     tmp_node = node
@@ -553,6 +518,67 @@ async def _load_base_datatypes(server: Server | Client) -> dict[str, Any]:
     return new_alias
 
 
+class RecursiveParser:
+    def __init__(self, server: Server | Client) -> None:
+        self.server = server
+        self._visited = set()
+        self._dtypes = []
+
+    async def parse(self, base_node, overwrite_existing=False):
+        await self._parse_node(
+            node=base_node,
+            parent_sdef=None,
+            overwrite_existing=overwrite_existing,
+        )
+        return self._dtypes
+
+    async def _parse_node(self, node, parent_sdef, overwrite_existing):
+        if node.nodeid in self._visited:
+            return
+
+        self._visited.add(node.nodeid)
+
+        descs, sdefs = await get_children_descriptions_type_definitions(
+            self.server,
+            node,
+            overwrite_existing,
+        )
+
+        if len(descs) != len(sdefs):
+            _logger.warning("Descriptions and type definitions length mismatch, some data type nodes will be ignored")
+
+        for desc, sdef in zip(descs, sdefs):
+            await self._process_child(
+                desc,
+                sdef,
+                parent_sdef,
+                overwrite_existing,
+            )
+
+    async def _process_child(self, desc, sdef, parent_sdef, overwrite_existing):
+        next_parent = parent_sdef
+
+        if isinstance(sdef, ua.StructureDefinition):
+            name = clean_name(desc.BrowseName.Name)
+
+            if parent_sdef:
+                existing = {f.Name for f in sdef.Fields}
+                inherited = [f for f in parent_sdef.Fields if f.Name not in existing]
+                if inherited:
+                    sdef.Fields = inherited + list(sdef.Fields)
+
+            self._dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
+            next_parent = sdef
+
+        child_node = self.server.get_node(desc.NodeId)
+
+        await self._parse_node(
+            node=child_node,
+            parent_sdef=next_parent,
+            overwrite_existing=overwrite_existing,
+        )
+
+
 async def load_data_type_definitions(server: Server | Client, base_node: Node = None, overwrite_existing=False) -> dict:
     """
     Read DataTypeDefinition attribute on all Structure and Enumeration defined
@@ -564,7 +590,10 @@ async def load_data_type_definitions(server: Server | Client, base_node: Node = 
     if base_node is None:
         base_node = server.nodes.base_structure_type
     dtypes = []
-    await _recursive_parse(server, base_node, dtypes, overwrite_existing=overwrite_existing)
+
+    parser = RecursiveParser(server)
+    dtypes = await parser.parse(base_node)
+
     dtypes.sort()
     retries = 10
     for cnt in range(retries):
