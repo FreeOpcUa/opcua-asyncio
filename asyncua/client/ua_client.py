@@ -4,6 +4,7 @@ Low level binary client
 
 import asyncio
 import copy
+import inspect
 import logging
 from collections.abc import Awaitable, Callable
 
@@ -563,7 +564,7 @@ class UaClient(AbstractSession):
         for subid, callback in self._subscription_callbacks.items():
             try:
                 parameters = ua.PublishResult(subid, NotificationMessage=notification_message)
-                if asyncio.iscoroutinefunction(callback):
+                if inspect.iscoroutinefunction(callback):
                     await callback(parameters)
                 else:
                     callback(parameters)
@@ -657,7 +658,7 @@ class UaClient(AbstractSession):
                 )
             else:
                 try:
-                    if asyncio.iscoroutinefunction(callback):
+                    if inspect.iscoroutinefunction(callback):
                         await callback(response.Parameters)
                     else:
                         callback(response.Parameters)

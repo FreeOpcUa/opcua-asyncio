@@ -4,7 +4,7 @@ High level method related functions
 
 from __future__ import annotations
 
-from asyncio import iscoroutinefunction
+import inspect
 from collections.abc import Iterable
 from functools import wraps
 from typing import Any
@@ -79,7 +79,7 @@ def uamethod(func):
     arguments and output to and from variants
     """
 
-    if iscoroutinefunction(func):
+    if inspect.iscoroutinefunction(func):
 
         @wraps(func)
         async def wrapper(parent, *args):

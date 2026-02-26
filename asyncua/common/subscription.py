@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import collections.abc
+import inspect
 import logging
 from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Protocol, overload
@@ -189,7 +190,7 @@ class Subscription:
 
         try:
             tasks = [self._handler.datachange_notification(*args) for args in known_handles_args]
-            if asyncio.iscoroutinefunction(self._handler.datachange_notification):
+            if inspect.iscoroutinefunction(self._handler.datachange_notification):
                 await asyncio.gather(*tasks)
         except Exception as ex:
             self.logger.exception("Exception calling data change handler. Error: %s", ex)
@@ -204,7 +205,7 @@ class Subscription:
             result.server_handle = data.server_handle
             if hasattr(self._handler, "event_notification"):
                 try:
-                    if asyncio.iscoroutinefunction(self._handler.event_notification):
+                    if inspect.iscoroutinefunction(self._handler.event_notification):
                         await self._handler.event_notification(result)
                     else:
                         self._handler.event_notification(result)
@@ -218,7 +219,7 @@ class Subscription:
             self.logger.error("DataChange subscription has no status_change_notification method")
             return
         try:
-            if asyncio.iscoroutinefunction(self._handler.status_change_notification):
+            if inspect.iscoroutinefunction(self._handler.status_change_notification):
                 await self._handler.status_change_notification(status)
             else:
                 self._handler.status_change_notification(status)
