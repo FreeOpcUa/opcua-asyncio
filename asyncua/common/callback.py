@@ -2,7 +2,7 @@
 server side implementation of callback event
 """
 
-import asyncio
+import inspect
 from collections import OrderedDict
 from enum import Enum
 
@@ -68,7 +68,7 @@ class CallbackService:
         return event
 
     async def call_listener(self, event, listener):
-        if asyncio.iscoroutinefunction(listener):
+        if inspect.iscoroutinefunction(listener):
             await listener(event, self)
         else:
             listener(event, self)
