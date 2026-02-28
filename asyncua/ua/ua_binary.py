@@ -361,7 +361,7 @@ def create_dataclass_serializer(dataclazz):
     def enc_value(obj):
         enc = 0
         for name, enc_val in option_fields_encodings:
-            if obj.__dict__[name] is not None:
+            if getattr(obj, name) is not None:
                 enc |= enc_val
         return enc
 
@@ -370,10 +370,13 @@ def create_dataclass_serializer(dataclazz):
     ]
 
     def serialize(obj):
-        return b"".join(
-            serializer(enc_value(obj)) if name == "Encoding" else serializer(obj.__dict__[name])
-            for name, serializer in encoding_functions
-        )
+        parts = []
+        for name, serializer in encoding_functions:
+            if name == "Encoding":
+                parts.append(serializer(enc_value(obj)))
+            else:
+                parts.append(serializer(getattr(obj, name)))
+        return b"".join(parts)
 
     return serialize
 
