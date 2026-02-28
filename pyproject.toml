@@ -48,6 +48,11 @@ uaserver = "asyncua.tools:uaserver"
 uasubscribe = "asyncua.tools:uasubscribe"
 uawrite = "asyncua.tools:uawrite"
 
+[project.optional-dependencies]
+profile = [
+  "pytest-profiling",
+]
+
 [dependency-groups]
 dev = [
   "asynctest",
