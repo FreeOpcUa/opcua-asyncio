@@ -358,7 +358,7 @@ class EventNotifier(_MaskEnum):
     HistoryWrite = 3
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class StatusCode:
     """
     :ivar value:
@@ -432,7 +432,7 @@ class NodeIdType(IntEnum):
     ByteString = 5
 
 
-@dataclass(frozen=True, eq=False, order=False)
+@dataclass(frozen=True, eq=False, order=False, slots=True)
 class NodeId:
     """
     NodeId Object
@@ -615,7 +615,7 @@ class NodeId:
         return asyncua.ua.ua_binary.nodeid_to_binary(self)
 
 
-@dataclass(frozen=True, eq=False, order=False)
+@dataclass(frozen=True, eq=False, order=False, slots=True)
 class TwoByteNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.TwoByte)
@@ -627,7 +627,7 @@ class TwoByteNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__}  cannot have NamespaceIndex != 0")
 
 
-@dataclass(frozen=True, eq=False, order=False)
+@dataclass(frozen=True, eq=False, order=False, slots=True)
 class FourByteNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.FourByte)
@@ -639,7 +639,7 @@ class FourByteNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__} cannot have NamespaceIndex != 0")
 
 
-@dataclass(frozen=True, eq=False, order=False)
+@dataclass(frozen=True, eq=False, order=False, slots=True)
 class NumericNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.Numeric)
@@ -647,7 +647,7 @@ class NumericNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__} Identifier must be int")
 
 
-@dataclass(frozen=True, eq=False, order=False)
+@dataclass(frozen=True, eq=False, order=False, slots=True)
 class ByteStringNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.ByteString)
@@ -655,7 +655,7 @@ class ByteStringNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__} Identifier must be bytes")
 
 
-@dataclass(frozen=True, eq=False, order=False)
+@dataclass(frozen=True, eq=False, order=False, slots=True)
 class GuidNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.Guid)
@@ -663,7 +663,7 @@ class GuidNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__} Identifier must be uuid")
 
 
-@dataclass(frozen=True, eq=False, order=False)
+@dataclass(frozen=True, eq=False, order=False, slots=True)
 class StringNodeId(NodeId):
     def __post_init__(self):
         object.__setattr__(self, "NodeIdType", NodeIdType.String)
@@ -671,7 +671,7 @@ class StringNodeId(NodeId):
             raise ValueError(f"{self.__class__.__name__} Identifier must be string")
 
 
-@dataclass(frozen=True, eq=False, order=False)
+@dataclass(frozen=True, eq=False, order=False, slots=True)
 class ExpandedNodeId(NodeId):
     NamespaceUri: String | None = field(default=None, compare=True)
     ServerIndex: Int32 = field(default=0, compare=True)
@@ -686,7 +686,7 @@ class ExpandedNodeId(NodeId):
         return ";".join(string)
 
 
-@dataclass(frozen=True, init=False, order=True)
+@dataclass(frozen=True, init=False, order=True, slots=True)
 class QualifiedName:
     """
     A string qualified with a namespace index.
@@ -771,7 +771,7 @@ class RelativePath:
         return RelativePathFormatter(self).to_string()
 
 
-@dataclass(frozen=True, init=False)
+@dataclass(frozen=True, init=False, slots=True)
 class LocalizedText:
     """
     A string qualified with a namespace index.
@@ -785,6 +785,7 @@ class LocalizedText:
         # need to write init method since args ar inverted in original implementation
         object.__setattr__(self, "Text", Text)
         object.__setattr__(self, "Locale", Locale)
+        object.__setattr__(self, "Encoding", 0)
 
         if self.Text is not None:
             if not isinstance(self.Text, str):
@@ -917,7 +918,7 @@ class VariantTypeCustom:
         return self.value.__hash__()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Variant:
     """
     Create an OPC-UA Variant object.
@@ -1066,7 +1067,7 @@ UInteger = Variant
 Integer = Variant
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DataValue:
     """
     A value with an associated timestamp, and quality.
@@ -1103,7 +1104,7 @@ class DataValue:
             object.__setattr__(self, "Value", Variant(self.Value))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DiagnosticInfo:
     """
     A recursive structure containing diagnostic information associated with a status code.
