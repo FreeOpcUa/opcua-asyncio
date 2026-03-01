@@ -1,14 +1,13 @@
 from __future__ import annotations
 """
 Autogenerate code from xml spec
-Date:2025-11-13 08:18:24.401269+00:00
+Date:2026-03-01 09:01:28.394301+00:00
 """
 
 from datetime import datetime, timezone
 from enum import IntEnum, IntFlag
 from dataclasses import dataclass, field
 
-from asyncua.ua.uatypes import FROZEN
 from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32
 from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid
 from asyncua.ua.uatypes import AccessLevel, EventNotifier
@@ -225,7 +224,7 @@ class AlarmMask(IntFlag):
 
 class TrustListValidationOptions(IntFlag):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.10
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.8
 
     :ivar SuppressCertificateExpired:
     :vartype SuppressCertificateExpired: Bit: 0
@@ -257,7 +256,7 @@ class TrustListValidationOptions(IntFlag):
 
 class TrustListMasks(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.9
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.7
 
     :ivar None_:
     :vartype None_: 0
@@ -278,25 +277,6 @@ class TrustListMasks(IntEnum):
     IssuerCertificates = 4
     IssuerCrls = 8
     All = 15
-
-
-class ConfigurationUpdateType(IntEnum):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.7
-
-    :ivar Insert:
-    :vartype Insert: 1
-    :ivar Replace:
-    :vartype Replace: 2
-    :ivar InsertOrReplace:
-    :vartype InsertOrReplace: 3
-    :ivar Delete:
-    :vartype Delete: 4
-    """
-    Insert = 1
-    Replace = 2
-    InsertOrReplace = 3
-    Delete = 4
 
 
 class PubSubState(IntEnum):
@@ -1075,32 +1055,6 @@ class LldpSystemCapabilitiesMap(IntFlag):
         return "UInt32"
 
 
-class LogRecordMask(IntFlag):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.7
-
-    :ivar EventType:
-    :vartype EventType: Bit: 0
-    :ivar SourceNode:
-    :vartype SourceNode: Bit: 1
-    :ivar SourceName:
-    :vartype SourceName: Bit: 2
-    :ivar TraceContext:
-    :vartype TraceContext: Bit: 3
-    :ivar AdditionalData:
-    :vartype AdditionalData: Bit: 4
-    """
-    EventType = 1<<0
-    SourceNode = 1<<1
-    SourceName = 1<<2
-    TraceContext = 1<<3
-    AdditionalData = 1<<4
-
-    @staticmethod
-    def datatype() -> str:
-        return "UInt32"
-
-
 class IdType(IntEnum):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.5/#12.2.5.1
@@ -1403,7 +1357,7 @@ class MessageSecurityMode(IntEnum):
 
 class UserTokenType(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.42
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.43
 
     :ivar Anonymous:
     :vartype Anonymous: 0
@@ -1749,7 +1703,7 @@ class FilterOperator(IntEnum):
 
 class TimestampsToReturn(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.39
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.40
 
     :ivar Source:
     :vartype Source: 0
@@ -1980,7 +1934,7 @@ class ExceptionDeviationFormat(IntEnum):
     Unknown = 4
 
 
-@dataclass(frozen=FROZEN) # type: ignore
+@dataclass(slots=True) # type: ignore
 class Union: # type: ignore
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.12
@@ -1990,7 +1944,7 @@ class Union: # type: ignore
     data_type = NodeId(ObjectIds.Union)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class KeyValuePair:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.21
@@ -2007,7 +1961,7 @@ class KeyValuePair:
     Value: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AdditionalParametersType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.1
@@ -2021,7 +1975,7 @@ class AdditionalParametersType:
     Parameters: 'list[ua.KeyValuePair]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EphemeralKeyType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.15
@@ -2038,7 +1992,7 @@ class EphemeralKeyType:
     Signature: 'ua.ByteString' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EndpointType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part18/4.4.2
@@ -2061,7 +2015,7 @@ class EndpointType:
     TransportProfileUri: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BitFieldDefinition:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.45
@@ -2087,7 +2041,7 @@ class BitFieldDefinition:
     EndingBitPosition: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RationalNumber:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.22
@@ -2104,7 +2058,7 @@ class RationalNumber:
     Denominator: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class Vector:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.23
@@ -2114,7 +2068,7 @@ class Vector:
     data_type = NodeId(ObjectIds.Vector)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ThreeDVector(Vector):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.24
@@ -2134,7 +2088,7 @@ class ThreeDVector(Vector):
     Z: 'ua.Double' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CartesianCoordinates:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.25
@@ -2144,7 +2098,7 @@ class CartesianCoordinates:
     data_type = NodeId(ObjectIds.CartesianCoordinates)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ThreeDCartesianCoordinates(CartesianCoordinates):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.26
@@ -2164,7 +2118,7 @@ class ThreeDCartesianCoordinates(CartesianCoordinates):
     Z: 'ua.Double' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class Orientation:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.27
@@ -2174,7 +2128,7 @@ class Orientation:
     data_type = NodeId(ObjectIds.Orientation)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ThreeDOrientation(Orientation):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.28
@@ -2194,7 +2148,7 @@ class ThreeDOrientation(Orientation):
     C: 'ua.Double' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class Frame:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.29
@@ -2204,7 +2158,7 @@ class Frame:
     data_type = NodeId(ObjectIds.Frame)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ThreeDFrame(Frame):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.30
@@ -2221,7 +2175,7 @@ class ThreeDFrame(Frame):
     Orientation: 'ua.ThreeDOrientation' = field(default_factory=lambda: ThreeDOrientation())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class IdentityMappingRuleType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part18/4.4.3
@@ -2238,7 +2192,7 @@ class IdentityMappingRuleType:
     Criteria: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CurrencyUnitType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.2
@@ -2261,7 +2215,7 @@ class CurrencyUnitType:
     Currency: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AnnotationDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part8/6.6.1
@@ -2281,7 +2235,7 @@ class AnnotationDataType:
     Uri: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class LinearConversionDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part8/6.6.2
@@ -2304,7 +2258,7 @@ class LinearConversionDataType:
     FinalAddend: 'ua.Float' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QuantityDimension:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part8/6.6.4
@@ -2339,10 +2293,10 @@ class QuantityDimension:
     DimensionlessExponent: 'ua.SByte' = field(default_factory=lambda: SByte())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TrustListDataType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.8
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.6
 
     :ivar SpecifiedLists:
     :vartype SpecifiedLists: UInt32
@@ -2365,90 +2319,10 @@ class TrustListDataType:
     IssuerCrls: 'list[ua.ByteString]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
-class BaseConfigurationDataType:
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.4
-
-    :ivar ConfigurationVersion:
-    :vartype ConfigurationVersion: VersionTime
-    :ivar ConfigurationProperties:
-    :vartype ConfigurationProperties: KeyValuePair
-    """
-
-    data_type = NodeId(ObjectIds.BaseConfigurationDataType)
-
-    ConfigurationVersion: 'ua.VersionTime' = 0
-    ConfigurationProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
-
-
-@dataclass(frozen=FROZEN)
-class BaseConfigurationRecordDataType:
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.5
-
-    :ivar Name:
-    :vartype Name: String
-    :ivar RecordProperties:
-    :vartype RecordProperties: KeyValuePair
-    """
-
-    data_type = NodeId(ObjectIds.BaseConfigurationRecordDataType)
-
-    Name: 'ua.String' = None
-    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
-
-
-@dataclass(frozen=FROZEN)
-class CertificateGroupDataType(BaseConfigurationRecordDataType):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.3/#7.8.3.4
-
-    :ivar Name:
-    :vartype Name: String
-    :ivar RecordProperties:
-    :vartype RecordProperties: KeyValuePair
-    :ivar Purpose:
-    :vartype Purpose: NodeId
-    :ivar CertificateTypes:
-    :vartype CertificateTypes: NodeId
-    :ivar IsCertificateAssigned:
-    :vartype IsCertificateAssigned: Boolean
-    :ivar ValidationOptions:
-    :vartype ValidationOptions: TrustListValidationOptions
-    """
-
-    data_type = NodeId(ObjectIds.CertificateGroupDataType)
-
-    Name: 'ua.String' = None
-    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
-    Purpose: 'ua.NodeId' = field(default_factory=lambda: NodeId())
-    CertificateTypes: 'list[ua.NodeId]' = field(default_factory=list)
-    IsCertificateAssigned: 'list[ua.Boolean]' = field(default_factory=list)
-    ValidationOptions: 'ua.TrustListValidationOptions' = field(default_factory=lambda:TrustListValidationOptions(0))
-
-
-@dataclass(frozen=FROZEN)
-class ConfigurationUpdateTargetType:
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.6
-
-    :ivar Path:
-    :vartype Path: String
-    :ivar UpdateType:
-    :vartype UpdateType: ConfigurationUpdateType
-    """
-
-    data_type = NodeId(ObjectIds.ConfigurationUpdateTargetType)
-
-    Path: 'ua.String' = None
-    UpdateType: 'ua.ConfigurationUpdateType' = field(default_factory=lambda:ConfigurationUpdateType.Insert)
-
-
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TransactionErrorType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.18
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.16
 
     :ivar TargetId:
     :vartype TargetId: NodeId
@@ -2465,161 +2339,7 @@ class TransactionErrorType:
     Message: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
-@dataclass(frozen=FROZEN)
-class EndpointDataType(BaseConfigurationRecordDataType):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.22
-
-    :ivar Name:
-    :vartype Name: String
-    :ivar RecordProperties:
-    :vartype RecordProperties: KeyValuePair
-    :ivar DiscoveryUrls:
-    :vartype DiscoveryUrls: UriString
-    :ivar NetworkName:
-    :vartype NetworkName: String
-    :ivar Port:
-    :vartype Port: UInt16
-    """
-
-    data_type = NodeId(ObjectIds.EndpointDataType)
-
-    Name: 'ua.String' = None
-    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
-    DiscoveryUrls: 'list[ua.UriString]' = field(default_factory=list)
-    NetworkName: 'ua.String' = None
-    Port: 'ua.UInt16' = 0
-
-
-@dataclass(frozen=FROZEN)
-class ServerEndpointDataType(EndpointDataType):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.23
-
-    :ivar Name:
-    :vartype Name: String
-    :ivar RecordProperties:
-    :vartype RecordProperties: KeyValuePair
-    :ivar DiscoveryUrls:
-    :vartype DiscoveryUrls: UriString
-    :ivar NetworkName:
-    :vartype NetworkName: String
-    :ivar Port:
-    :vartype Port: UInt16
-    :ivar EndpointUrls:
-    :vartype EndpointUrls: UriString
-    :ivar SecuritySettingNames:
-    :vartype SecuritySettingNames: String
-    :ivar TransportProfileUri:
-    :vartype TransportProfileUri: UriString
-    :ivar UserTokenSettingNames:
-    :vartype UserTokenSettingNames: String
-    :ivar ReverseConnectUrls:
-    :vartype ReverseConnectUrls: String
-    """
-
-    data_type = NodeId(ObjectIds.ServerEndpointDataType)
-
-    Name: 'ua.String' = None
-    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
-    DiscoveryUrls: 'list[ua.UriString]' = field(default_factory=list)
-    NetworkName: 'ua.String' = None
-    Port: 'ua.UInt16' = 0
-    EndpointUrls: 'list[ua.UriString]' = field(default_factory=list)
-    SecuritySettingNames: 'list[ua.String]' = field(default_factory=list)
-    TransportProfileUri: 'ua.UriString' = None
-    UserTokenSettingNames: 'list[ua.String]' = field(default_factory=list)
-    ReverseConnectUrls: 'list[ua.String]' = field(default_factory=list)
-
-
-@dataclass(frozen=FROZEN)
-class SecuritySettingsDataType(BaseConfigurationRecordDataType):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.24
-
-    :ivar Name:
-    :vartype Name: String
-    :ivar RecordProperties:
-    :vartype RecordProperties: KeyValuePair
-    :ivar SecurityModes:
-    :vartype SecurityModes: MessageSecurityMode
-    :ivar SecurityPolicyUris:
-    :vartype SecurityPolicyUris: String
-    :ivar CertificateGroupName:
-    :vartype CertificateGroupName: String
-    """
-
-    data_type = NodeId(ObjectIds.SecuritySettingsDataType)
-
-    Name: 'ua.String' = None
-    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
-    SecurityModes: 'list[ua.MessageSecurityMode]' = field(default_factory=list)
-    SecurityPolicyUris: 'list[ua.String]' = field(default_factory=list)
-    CertificateGroupName: 'ua.String' = None
-
-
-@dataclass(frozen=FROZEN)
-class UserTokenSettingsDataType(BaseConfigurationRecordDataType):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.25
-
-    :ivar Name:
-    :vartype Name: String
-    :ivar RecordProperties:
-    :vartype RecordProperties: KeyValuePair
-    :ivar TokenType:
-    :vartype TokenType: UserTokenType
-    :ivar IssuedTokenType:
-    :vartype IssuedTokenType: String
-    :ivar IssuerEndpointUrl:
-    :vartype IssuerEndpointUrl: String
-    :ivar SecurityPolicyUri:
-    :vartype SecurityPolicyUri: String
-    :ivar CertificateGroupName:
-    :vartype CertificateGroupName: String
-    :ivar AuthorizationServiceName:
-    :vartype AuthorizationServiceName: String
-    """
-
-    data_type = NodeId(ObjectIds.UserTokenSettingsDataType)
-
-    Name: 'ua.String' = None
-    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
-    TokenType: 'ua.UserTokenType' = field(default_factory=lambda:UserTokenType.Anonymous)
-    IssuedTokenType: 'ua.String' = None
-    IssuerEndpointUrl: 'ua.String' = None
-    SecurityPolicyUri: 'ua.String' = None
-    CertificateGroupName: 'ua.String' = None
-    AuthorizationServiceName: 'ua.String' = None
-
-
-@dataclass(frozen=FROZEN)
-class AuthorizationServiceConfigurationDataType(BaseConfigurationRecordDataType):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/9.7.5
-
-    :ivar Name:
-    :vartype Name: String
-    :ivar RecordProperties:
-    :vartype RecordProperties: KeyValuePair
-    :ivar ServiceUri:
-    :vartype ServiceUri: UriString
-    :ivar ServiceCertificate:
-    :vartype ServiceCertificate: ByteString
-    :ivar IssuerEndpointSettings:
-    :vartype IssuerEndpointSettings: String
-    """
-
-    data_type = NodeId(ObjectIds.AuthorizationServiceConfigurationDataType)
-
-    Name: 'ua.String' = None
-    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
-    ServiceUri: 'ua.UriString' = None
-    ServiceCertificate: 'list[ua.ByteString]' = field(default_factory=list)
-    IssuerEndpointSettings: 'ua.String' = None
-
-
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DecimalDataType:
     """
     :ivar Scale:
@@ -2634,7 +2354,7 @@ class DecimalDataType:
     Value: 'ua.ByteString' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataTypeDescription:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.32
@@ -2651,7 +2371,7 @@ class DataTypeDescription:
     Name: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SimpleTypeDescription(DataTypeDescription):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.35
@@ -2674,7 +2394,7 @@ class SimpleTypeDescription(DataTypeDescription):
     BuiltInType: 'ua.Byte' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PortableQualifiedName:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.37
@@ -2691,7 +2411,7 @@ class PortableQualifiedName:
     Name: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UnsignedRationalNumber:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.40
@@ -2708,7 +2428,7 @@ class UnsignedRationalNumber:
     Denominator: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class FieldMetaData:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.4
@@ -2749,7 +2469,7 @@ class FieldMetaData:
     Properties: 'list[ua.KeyValuePair]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ConfigurationVersionDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.6
@@ -2766,7 +2486,7 @@ class ConfigurationVersionDataType:
     MinorVersion: 'ua.VersionTime' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishedDataSetSourceDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.6
@@ -2776,7 +2496,7 @@ class PublishedDataSetSourceDataType:
     data_type = NodeId(ObjectIds.PublishedDataSetSourceDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishedVariableDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.7.1
@@ -2811,7 +2531,7 @@ class PublishedVariableDataType:
     MetaDataProperties: 'list[ua.QualifiedName]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishedDataItemsDataType(PublishedDataSetSourceDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.7.2
@@ -2825,7 +2545,7 @@ class PublishedDataItemsDataType(PublishedDataSetSourceDataType):
     PublishedData: 'list[ua.PublishedVariableDataType]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishedDataSetCustomSourceDataType(PublishedDataSetSourceDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.9.2
@@ -2839,7 +2559,7 @@ class PublishedDataSetCustomSourceDataType(PublishedDataSetSourceDataType):
     CyclicDataSet: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ActionTargetDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.10.3
@@ -2859,7 +2579,7 @@ class ActionTargetDataType:
     Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ActionMethodDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.10.5
@@ -2876,7 +2596,7 @@ class ActionMethodDataType:
     MethodId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataSetWriterTransportDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.4/#6.2.4.5.2
@@ -2886,7 +2606,7 @@ class DataSetWriterTransportDataType:
     data_type = NodeId(ObjectIds.DataSetWriterTransportDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataSetWriterMessageDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.4/#6.2.4.5.3
@@ -2896,7 +2616,7 @@ class DataSetWriterMessageDataType:
     data_type = NodeId(ObjectIds.DataSetWriterMessageDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataSetWriterDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.4/#6.2.4.5.1
@@ -2934,7 +2654,7 @@ class DataSetWriterDataType:
     MessageSettings: 'type[ua.DataSetWriterMessageDataType]' = field(default_factory=lambda: DataSetWriterMessageDataType())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class WriterGroupTransportDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.6/#6.2.6.7.2
@@ -2944,7 +2664,7 @@ class WriterGroupTransportDataType:
     data_type = NodeId(ObjectIds.WriterGroupTransportDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class WriterGroupMessageDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.6/#6.2.6.7.3
@@ -2954,7 +2674,7 @@ class WriterGroupMessageDataType:
     data_type = NodeId(ObjectIds.WriterGroupMessageDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ConnectionTransportDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.7/#6.2.7.5.2
@@ -2964,7 +2684,7 @@ class ConnectionTransportDataType:
     data_type = NodeId(ObjectIds.ConnectionTransportDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class NetworkAddressDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.7/#6.2.7.5.3
@@ -2978,7 +2698,7 @@ class NetworkAddressDataType:
     NetworkInterface: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class NetworkAddressUrlDataType(NetworkAddressDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.7/#6.2.7.5.4
@@ -2995,7 +2715,7 @@ class NetworkAddressUrlDataType(NetworkAddressDataType):
     Url: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReaderGroupTransportDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.8/#6.2.8.2.2
@@ -3005,7 +2725,7 @@ class ReaderGroupTransportDataType:
     data_type = NodeId(ObjectIds.ReaderGroupTransportDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReaderGroupMessageDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.8/#6.2.8.2.3
@@ -3015,7 +2735,7 @@ class ReaderGroupMessageDataType:
     data_type = NodeId(ObjectIds.ReaderGroupMessageDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataSetReaderTransportDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.9/#6.2.9.13.2
@@ -3025,7 +2745,7 @@ class DataSetReaderTransportDataType:
     data_type = NodeId(ObjectIds.DataSetReaderTransportDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataSetReaderMessageDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.9/#6.2.9.13.3
@@ -3035,7 +2755,7 @@ class DataSetReaderMessageDataType:
     data_type = NodeId(ObjectIds.DataSetReaderMessageDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SubscribedDataSetDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.10/#6.2.10.1
@@ -3045,7 +2765,7 @@ class SubscribedDataSetDataType:
     data_type = NodeId(ObjectIds.SubscribedDataSetDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class FieldTargetDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.10/#6.2.10.2.3
@@ -3077,7 +2797,7 @@ class FieldTargetDataType:
     OverrideValue: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TargetVariablesDataType(SubscribedDataSetDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.10/#6.2.10.2.2
@@ -3091,7 +2811,7 @@ class TargetVariablesDataType(SubscribedDataSetDataType):
     TargetVariables: 'list[ua.FieldTargetDataType]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class StandaloneSubscribedDataSetRefDataType(SubscribedDataSetDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.10/#6.2.10.4
@@ -3105,7 +2825,7 @@ class StandaloneSubscribedDataSetRefDataType(SubscribedDataSetDataType):
     DataSetName: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UadpWriterGroupMessageDataType(WriterGroupMessageDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.3.1/#6.3.1.1.7
@@ -3131,7 +2851,7 @@ class UadpWriterGroupMessageDataType(WriterGroupMessageDataType):
     PublishingOffset: 'list[ua.Duration]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UadpDataSetWriterMessageDataType(DataSetWriterMessageDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.3.1/#6.3.1.3.6
@@ -3154,7 +2874,7 @@ class UadpDataSetWriterMessageDataType(DataSetWriterMessageDataType):
     DataSetOffset: 'ua.UInt16' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UadpDataSetReaderMessageDataType(DataSetReaderMessageDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.3.1/#6.3.1.4.10
@@ -3192,7 +2912,7 @@ class UadpDataSetReaderMessageDataType(DataSetReaderMessageDataType):
     ProcessingOffset: 'ua.Duration' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonWriterGroupMessageDataType(WriterGroupMessageDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.3.2/#6.3.2.1.2
@@ -3206,7 +2926,7 @@ class JsonWriterGroupMessageDataType(WriterGroupMessageDataType):
     NetworkMessageContentMask: 'ua.JsonNetworkMessageContentMask' = field(default_factory=lambda:JsonNetworkMessageContentMask(0))
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonDataSetWriterMessageDataType(DataSetWriterMessageDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.3.2/#6.3.2.3.2
@@ -3220,7 +2940,7 @@ class JsonDataSetWriterMessageDataType(DataSetWriterMessageDataType):
     DataSetMessageContentMask: 'ua.JsonDataSetMessageContentMask' = field(default_factory=lambda:JsonDataSetMessageContentMask(0))
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonDataSetReaderMessageDataType(DataSetReaderMessageDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.3.2/#6.3.2.4.3
@@ -3237,7 +2957,7 @@ class JsonDataSetReaderMessageDataType(DataSetReaderMessageDataType):
     DataSetMessageContentMask: 'ua.JsonDataSetMessageContentMask' = field(default_factory=lambda:JsonDataSetMessageContentMask(0))
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QosDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.1.2
@@ -3247,7 +2967,7 @@ class QosDataType:
     data_type = NodeId(ObjectIds.QosDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TransmitQosDataType(QosDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.1.3
@@ -3257,7 +2977,7 @@ class TransmitQosDataType(QosDataType):
     data_type = NodeId(ObjectIds.TransmitQosDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TransmitQosPriorityDataType(TransmitQosDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.1.4.2
@@ -3271,7 +2991,7 @@ class TransmitQosPriorityDataType(TransmitQosDataType):
     PriorityLabel: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReceiveQosDataType(QosDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.1.5
@@ -3281,7 +3001,7 @@ class ReceiveQosDataType(QosDataType):
     data_type = NodeId(ObjectIds.ReceiveQosDataType)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReceiveQosPriorityDataType(ReceiveQosDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.1.6.2
@@ -3295,7 +3015,7 @@ class ReceiveQosPriorityDataType(ReceiveQosDataType):
     PriorityLabel: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DatagramConnectionTransportDataType(ConnectionTransportDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.2.2
@@ -3309,7 +3029,7 @@ class DatagramConnectionTransportDataType(ConnectionTransportDataType):
     DiscoveryAddress: 'type[ua.NetworkAddressDataType]' = field(default_factory=lambda: NetworkAddressDataType())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DatagramConnectionTransport2DataType(DatagramConnectionTransportDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.2.7
@@ -3335,7 +3055,7 @@ class DatagramConnectionTransport2DataType(DatagramConnectionTransportDataType):
     DatagramQos: 'list[type[ua.QosDataType]]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DatagramWriterGroupTransportDataType(WriterGroupTransportDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.3.3
@@ -3352,7 +3072,7 @@ class DatagramWriterGroupTransportDataType(WriterGroupTransportDataType):
     MessageRepeatDelay: 'ua.Duration' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DatagramWriterGroupTransport2DataType(DatagramWriterGroupTransportDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.3.9
@@ -3384,7 +3104,7 @@ class DatagramWriterGroupTransport2DataType(DatagramWriterGroupTransportDataType
     Topic: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DatagramDataSetReaderTransportDataType(DataSetReaderTransportDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.6.5
@@ -3407,7 +3127,7 @@ class DatagramDataSetReaderTransportDataType(DataSetReaderTransportDataType):
     Topic: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DtlsPubSubConnectionDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.1/#6.4.1.7.6
@@ -3433,7 +3153,7 @@ class DtlsPubSubConnectionDataType:
     VerifyClientCertificate: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrokerConnectionTransportDataType(ConnectionTransportDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.2/#6.4.2.2.3
@@ -3450,7 +3170,7 @@ class BrokerConnectionTransportDataType(ConnectionTransportDataType):
     AuthenticationProfileUri: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrokerWriterGroupTransportDataType(WriterGroupTransportDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.2/#6.4.2.3.5
@@ -3473,7 +3193,7 @@ class BrokerWriterGroupTransportDataType(WriterGroupTransportDataType):
     RequestedDeliveryGuarantee: 'ua.BrokerTransportQualityOfService' = field(default_factory=lambda:BrokerTransportQualityOfService.NotSpecified)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrokerDataSetWriterTransportDataType(DataSetWriterTransportDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.2/#6.4.2.5.7
@@ -3502,7 +3222,7 @@ class BrokerDataSetWriterTransportDataType(DataSetWriterTransportDataType):
     MetaDataUpdateTime: 'ua.Duration' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrokerDataSetReaderTransportDataType(DataSetReaderTransportDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.4.2/#6.4.2.6.6
@@ -3528,7 +3248,7 @@ class BrokerDataSetReaderTransportDataType(DataSetReaderTransportDataType):
     MetaDataQueueName: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PubSubConfigurationRefDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/9.1.3/#9.1.3.7.3
@@ -3551,7 +3271,7 @@ class PubSubConfigurationRefDataType:
     GroupIndex: 'ua.UInt16' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PubSubConfigurationValueDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/9.1.3/#9.1.3.7.4
@@ -3571,7 +3291,7 @@ class PubSubConfigurationValueDataType:
     Identifier: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonNetworkMessage:
     """
     :ivar MessageId:
@@ -3598,7 +3318,7 @@ class JsonNetworkMessage:
     Messages: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonDataSetMessage:
     """
     :ivar DataSetWriterId:
@@ -3640,7 +3360,7 @@ class JsonDataSetMessage:
     Payload: 'ua.ExtensionObject' = ExtensionObject()
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonStatusMessage:
     """
     :ivar MessageId:
@@ -3670,7 +3390,7 @@ class JsonStatusMessage:
     NextReportTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonActionNetworkMessage:
     """
     :ivar MessageId:
@@ -3706,7 +3426,7 @@ class JsonActionNetworkMessage:
     Messages: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonActionRequestMessage:
     """
     :ivar DataSetWriterId:
@@ -3748,7 +3468,7 @@ class JsonActionRequestMessage:
     Payload: 'ua.ExtensionObject' = ExtensionObject()
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonActionResponseMessage:
     """
     :ivar DataSetWriterId:
@@ -3793,7 +3513,7 @@ class JsonActionResponseMessage:
     Payload: 'ua.ExtensionObject' = ExtensionObject()
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AliasNameDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part17/7.2
@@ -3810,7 +3530,7 @@ class AliasNameDataType:
     ReferencedNodes: 'list[ua.ExpandedNodeId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UserManagementDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part18/5.2.4
@@ -3830,7 +3550,7 @@ class UserManagementDataType:
     Description: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PriorityMappingEntryType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.2/#5.3.2.1
@@ -3853,7 +3573,7 @@ class PriorityMappingEntryType:
     PriorityValue_DSCP: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class LldpManagementAddressTxPortType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.2/#5.3.2.2
@@ -3882,7 +3602,7 @@ class LldpManagementAddressTxPortType:
     IfId: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class LldpManagementAddressType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.2/#5.3.2.3
@@ -3905,7 +3625,7 @@ class LldpManagementAddressType:
     IfId: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class LldpTlvType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part22/5.3.2/#5.3.2.4
@@ -3922,7 +3642,7 @@ class LldpTlvType:
     TlvInfo: 'ua.ByteString' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReferenceDescriptionDataType:
     """
     :ivar SourceNode:
@@ -3943,7 +3663,7 @@ class ReferenceDescriptionDataType:
     TargetNode: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReferenceListEntryDataType:
     """
     :ivar ReferenceType:
@@ -3961,113 +3681,7 @@ class ReferenceListEntryDataType:
     TargetNode: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
 
 
-@dataclass(frozen=FROZEN)
-class SpanContextDataType:
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.5.2
-
-    :ivar TraceId:
-    :vartype TraceId: Guid
-    :ivar SpanId:
-    :vartype SpanId: UInt64
-    """
-
-    data_type = NodeId(ObjectIds.SpanContextDataType)
-
-    TraceId: 'ua.Guid' = Guid(int=0)
-    SpanId: 'ua.UInt64' = 0
-
-
-@dataclass(frozen=FROZEN)
-class TraceContextDataType(SpanContextDataType):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.5.3
-
-    :ivar TraceId:
-    :vartype TraceId: Guid
-    :ivar SpanId:
-    :vartype SpanId: UInt64
-    :ivar ParentSpanId:
-    :vartype ParentSpanId: UInt64
-    :ivar ParentIdentifier:
-    :vartype ParentIdentifier: String
-    """
-
-    data_type = NodeId(ObjectIds.TraceContextDataType)
-
-    TraceId: 'ua.Guid' = Guid(int=0)
-    SpanId: 'ua.UInt64' = 0
-    ParentSpanId: 'ua.UInt64' = 0
-    ParentIdentifier: 'ua.String' = None
-
-
-@dataclass(frozen=FROZEN)
-class NameValuePair:
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.6
-
-    :ivar Name:
-    :vartype Name: String
-    :ivar Value:
-    :vartype Value: Variant
-    """
-
-    data_type = NodeId(ObjectIds.NameValuePair)
-
-    Name: 'ua.String' = None
-    Value: 'ua.Variant' = field(default_factory=lambda: Variant())
-
-
-@dataclass(frozen=FROZEN)
-class LogRecord:
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.4
-
-    :ivar Time:
-    :vartype Time: DateTime
-    :ivar Severity:
-    :vartype Severity: UInt16
-    :ivar EventType:
-    :vartype EventType: NodeId
-    :ivar SourceNode:
-    :vartype SourceNode: NodeId
-    :ivar SourceName:
-    :vartype SourceName: String
-    :ivar Message:
-    :vartype Message: LocalizedText
-    :ivar TraceContext:
-    :vartype TraceContext: TraceContextDataType
-    :ivar AdditionalData:
-    :vartype AdditionalData: NameValuePair
-    """
-
-    data_type = NodeId(ObjectIds.LogRecord)
-
-    Time: 'ua.DateTime' = field(default_factory=lambda: datetime.now(timezone.utc))
-    Severity: 'ua.UInt16' = 0
-    EventType: 'ua.NodeId | None' = None
-    SourceNode: 'ua.NodeId | None' = None
-    SourceName: 'ua.String | None' = None
-    Message: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
-    TraceContext: 'ua.TraceContextDataType | None' = None
-    AdditionalData: 'list[ua.NameValuePair] | None' = field(default_factory=list)
-
-
-@dataclass(frozen=FROZEN)
-class LogRecordsDataType:
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.9
-
-    :ivar LogRecordArray:
-    :vartype LogRecordArray: LogRecord
-    """
-
-    data_type = NodeId(ObjectIds.LogRecordsDataType)
-
-    LogRecordArray: 'list[ua.LogRecord]' = field(default_factory=list)
-
-
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RolePermissionType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.9
@@ -4084,7 +3698,7 @@ class RolePermissionType:
     Permissions: 'ua.PermissionType' = field(default_factory=lambda:PermissionType(0))
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SubscribedDataSetMirrorDataType(SubscribedDataSetDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.10/#6.2.10.3.4
@@ -4101,7 +3715,7 @@ class SubscribedDataSetMirrorDataType(SubscribedDataSetDataType):
     RolePermissions: 'list[ua.RolePermissionType]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SecurityGroupDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.12/#6.2.12.2
@@ -4139,7 +3753,7 @@ class SecurityGroupDataType:
     GroupProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataTypeDefinition:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.3
@@ -4149,7 +3763,7 @@ class DataTypeDefinition:
     data_type = NodeId(ObjectIds.DataTypeDefinition)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class StructureField:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.10
@@ -4181,7 +3795,7 @@ class StructureField:
     IsOptional: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class StructureDefinition(DataTypeDefinition):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.5
@@ -4204,7 +3818,7 @@ class StructureDefinition(DataTypeDefinition):
     Fields: 'list[ua.StructureField]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class StructureDescription(DataTypeDescription):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.33
@@ -4224,7 +3838,7 @@ class StructureDescription(DataTypeDescription):
     StructureDefinition: 'ua.StructureDefinition' = field(default_factory=lambda: StructureDefinition())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class Argument:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.1
@@ -4250,7 +3864,7 @@ class Argument:
     Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EnumValueType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.6
@@ -4270,7 +3884,7 @@ class EnumValueType:
     Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EnumField(EnumValueType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.7
@@ -4293,7 +3907,7 @@ class EnumField(EnumValueType):
     Name: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EnumDefinition(DataTypeDefinition):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.4
@@ -4307,7 +3921,7 @@ class EnumDefinition(DataTypeDefinition):
     Fields: 'list[ua.EnumField]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EnumDescription(DataTypeDescription):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.34
@@ -4330,10 +3944,10 @@ class EnumDescription(DataTypeDescription):
     BuiltInType: 'ua.Byte' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataTypeSchemaHeader:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.31
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.2
 
     :ivar Namespaces:
     :vartype Namespaces: String
@@ -4353,7 +3967,7 @@ class DataTypeSchemaHeader:
     SimpleDataTypes: 'list[ua.SimpleTypeDescription]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UABinaryFileDataType(DataTypeSchemaHeader):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.36
@@ -4385,7 +3999,7 @@ class UABinaryFileDataType(DataTypeSchemaHeader):
     Body: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataSetMetaDataType(DataTypeSchemaHeader):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.3
@@ -4423,7 +4037,7 @@ class DataSetMetaDataType(DataTypeSchemaHeader):
     ConfigurationVersion: 'ua.ConfigurationVersionDataType' = field(default_factory=lambda: ConfigurationVersionDataType())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishedDataSetDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.5
@@ -4449,7 +4063,7 @@ class PublishedDataSetDataType:
     DataSetSource: 'type[ua.PublishedDataSetSourceDataType]' = field(default_factory=lambda: PublishedDataSetSourceDataType())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishedActionDataType(PublishedDataSetSourceDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.10.4
@@ -4466,7 +4080,7 @@ class PublishedActionDataType(PublishedDataSetSourceDataType):
     ActionTargets: 'list[ua.ActionTargetDataType]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishedActionMethodDataType(PublishedActionDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.10.6
@@ -4486,7 +4100,7 @@ class PublishedActionMethodDataType(PublishedActionDataType):
     ActionMethods: 'list[ua.ActionMethodDataType]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class StandaloneSubscribedDataSetDataType(SubscribedDataSetDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.10/#6.2.10.5
@@ -4509,7 +4123,7 @@ class StandaloneSubscribedDataSetDataType(SubscribedDataSetDataType):
     SubscribedDataSet: 'type[ua.SubscribedDataSetDataType]' = field(default_factory=lambda: SubscribedDataSetDataType())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonDataSetMetaDataMessage:
     """
     :ivar MessageId:
@@ -4542,7 +4156,7 @@ class JsonDataSetMetaDataMessage:
     MetaData: 'ua.DataSetMetaDataType' = field(default_factory=lambda: DataSetMetaDataType())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonActionMetaDataMessage:
     """
     :ivar MessageId:
@@ -4581,7 +4195,7 @@ class JsonActionMetaDataMessage:
     ActionMethods: 'list[ua.ActionMethodDataType]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class OptionSet:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.8
@@ -4598,7 +4212,7 @@ class OptionSet:
     ValidBits: 'ua.ByteString' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TimeZoneDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.11
@@ -4615,10 +4229,10 @@ class TimeZoneDataType:
     DaylightSavingInOffset: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ApplicationDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part14/7.2.4/#7.2.4.6.5
 
     :ivar ApplicationUri:
     :vartype ApplicationUri: String
@@ -4647,71 +4261,7 @@ class ApplicationDescription:
     DiscoveryUrls: 'list[ua.String]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
-class ApplicationIdentityDataType(BaseConfigurationRecordDataType):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.21
-
-    :ivar Name:
-    :vartype Name: String
-    :ivar RecordProperties:
-    :vartype RecordProperties: KeyValuePair
-    :ivar ApplicationUri:
-    :vartype ApplicationUri: UriString
-    :ivar ApplicationNames:
-    :vartype ApplicationNames: LocalizedText
-    :ivar AdditionalServers:
-    :vartype AdditionalServers: ApplicationDescription
-    """
-
-    data_type = NodeId(ObjectIds.ApplicationIdentityDataType)
-
-    Name: 'ua.String' = None
-    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
-    ApplicationUri: 'ua.UriString' = None
-    ApplicationNames: 'list[ua.LocalizedText]' = field(default_factory=list)
-    AdditionalServers: 'list[ua.ApplicationDescription]' = field(default_factory=list)
-
-
-@dataclass(frozen=FROZEN)
-class ApplicationConfigurationDataType(BaseConfigurationDataType):
-    """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.19
-
-    :ivar ConfigurationVersion:
-    :vartype ConfigurationVersion: VersionTime
-    :ivar ConfigurationProperties:
-    :vartype ConfigurationProperties: KeyValuePair
-    :ivar ApplicationIdentity:
-    :vartype ApplicationIdentity: ApplicationIdentityDataType
-    :ivar CertificateGroups:
-    :vartype CertificateGroups: CertificateGroupDataType
-    :ivar ServerEndpoints:
-    :vartype ServerEndpoints: ServerEndpointDataType
-    :ivar ClientEndpoints:
-    :vartype ClientEndpoints: EndpointDataType
-    :ivar SecuritySettings:
-    :vartype SecuritySettings: SecuritySettingsDataType
-    :ivar UserTokenSettings:
-    :vartype UserTokenSettings: UserTokenSettingsDataType
-    :ivar AuthorizationServices:
-    :vartype AuthorizationServices: AuthorizationServiceConfigurationDataType
-    """
-
-    data_type = NodeId(ObjectIds.ApplicationConfigurationDataType)
-
-    ConfigurationVersion: 'ua.VersionTime' = 0
-    ConfigurationProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
-    ApplicationIdentity: 'ua.ApplicationIdentityDataType' = field(default_factory=lambda: ApplicationIdentityDataType())
-    CertificateGroups: 'list[ua.CertificateGroupDataType]' = field(default_factory=list)
-    ServerEndpoints: 'list[ua.ServerEndpointDataType]' = field(default_factory=list)
-    ClientEndpoints: 'list[ua.EndpointDataType]' = field(default_factory=list)
-    SecuritySettings: 'list[ua.SecuritySettingsDataType]' = field(default_factory=list)
-    UserTokenSettings: 'list[ua.UserTokenSettingsDataType]' = field(default_factory=list)
-    AuthorizationServices: 'list[ua.AuthorizationServiceConfigurationDataType]' = field(default_factory=list)
-
-
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonApplicationDescriptionMessage:
     """
     :ivar MessageId:
@@ -4738,10 +4288,10 @@ class JsonApplicationDescriptionMessage:
     ServerCapabilities: 'list[ua.String]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RequestHeader:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.32
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.33
 
     :ivar AuthenticationToken:
     :vartype AuthenticationToken: SessionAuthenticationToken
@@ -4770,10 +4320,10 @@ class RequestHeader:
     AdditionalHeader: 'ua.ExtensionObject' = ExtensionObject()
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ResponseHeader:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.33
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.34
 
     :ivar Timestamp:
     :vartype Timestamp: UtcTime
@@ -4799,10 +4349,10 @@ class ResponseHeader:
     AdditionalHeader: 'ua.ExtensionObject' = ExtensionObject()
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ServiceFault:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.34
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.35
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4816,7 +4366,7 @@ class ServiceFault:
     ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SessionlessInvokeRequestType:
     """
     :ivar UrisVersion:
@@ -4840,7 +4390,7 @@ class SessionlessInvokeRequestType:
     ServiceId: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SessionlessInvokeResponseType:
     """
     :ivar NamespaceUris:
@@ -4858,7 +4408,7 @@ class SessionlessInvokeResponseType:
     ServiceId: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class FindServersParameters:
     """
     :ivar EndpointUrl:
@@ -4874,7 +4424,7 @@ class FindServersParameters:
     ServerUris: 'list[ua.String]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class FindServersRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.2/#5.5.2.2
@@ -4894,7 +4444,7 @@ class FindServersRequest:
     Parameters: 'ua.FindServersParameters' = field(default_factory=lambda: FindServersParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class FindServersResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.2/#5.5.2.2
@@ -4914,7 +4464,7 @@ class FindServersResponse:
     Servers: 'list[ua.ApplicationDescription]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ServerOnNetwork:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.3/#5.5.3.2
@@ -4937,7 +4487,7 @@ class ServerOnNetwork:
     ServerCapabilities: 'list[ua.String]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class FindServersOnNetworkParameters:
     """
     :ivar StartingRecordId:
@@ -4953,7 +4503,7 @@ class FindServersOnNetworkParameters:
     ServerCapabilityFilter: 'list[ua.String]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class FindServersOnNetworkRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.3/#5.5.3.2
@@ -4973,7 +4523,7 @@ class FindServersOnNetworkRequest:
     Parameters: 'ua.FindServersOnNetworkParameters' = field(default_factory=lambda: FindServersOnNetworkParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class FindServersOnNetworkResult:
     """
     :ivar LastCounterResetTime:
@@ -4986,7 +4536,7 @@ class FindServersOnNetworkResult:
     Servers: 'list[ua.ServerOnNetwork]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class FindServersOnNetworkResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.3/#5.5.3.2
@@ -5006,10 +4556,10 @@ class FindServersOnNetworkResponse:
     Parameters: 'ua.FindServersOnNetworkResult' = field(default_factory=lambda: FindServersOnNetworkResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UserTokenPolicy:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.41
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.42
 
     :ivar PolicyId:
     :vartype PolicyId: String
@@ -5032,7 +4582,7 @@ class UserTokenPolicy:
     SecurityPolicyUri: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PubSubKeyPushTargetDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.12/#6.2.12.3
@@ -5070,7 +4620,7 @@ class PubSubKeyPushTargetDataType:
     SecurityGroups: 'list[ua.String]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EndpointDescription:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.14
@@ -5105,7 +4655,7 @@ class EndpointDescription:
     SecurityLevel: 'ua.Byte' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PubSubGroupDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.5/#6.2.5.7
@@ -5137,7 +4687,7 @@ class PubSubGroupDataType:
     GroupProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class WriterGroupDataType(PubSubGroupDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.6/#6.2.6.7.1
@@ -5196,7 +4746,7 @@ class WriterGroupDataType(PubSubGroupDataType):
     DataSetWriters: 'list[ua.DataSetWriterDataType]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataSetReaderDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.9/#6.2.9.13.1
@@ -5258,7 +4808,7 @@ class DataSetReaderDataType:
     SubscribedDataSet: 'type[ua.SubscribedDataSetDataType]' = field(default_factory=lambda: SubscribedDataSetDataType())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReaderGroupDataType(PubSubGroupDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.8/#6.2.8.2.1
@@ -5299,7 +4849,7 @@ class ReaderGroupDataType(PubSubGroupDataType):
     DataSetReaders: 'list[ua.DataSetReaderDataType]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PubSubConnectionDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.7/#6.2.7.5.1
@@ -5337,7 +4887,7 @@ class PubSubConnectionDataType:
     ReaderGroups: 'list[ua.ReaderGroupDataType]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PubSubConfigurationDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.12/#6.2.12.1
@@ -5357,7 +4907,7 @@ class PubSubConfigurationDataType:
     Enabled: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonPubSubConnectionMessage:
     """
     :ivar MessageId:
@@ -5381,7 +4931,7 @@ class JsonPubSubConnectionMessage:
     Connection: 'ua.PubSubConnectionDataType' = field(default_factory=lambda: PubSubConnectionDataType())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonActionResponderMessage:
     """
     :ivar MessageId:
@@ -5405,7 +4955,7 @@ class JsonActionResponderMessage:
     Connection: 'ua.PubSubConnectionDataType' = field(default_factory=lambda: PubSubConnectionDataType())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PubSubConfiguration2DataType(PubSubConfigurationDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.12/#6.2.12.4
@@ -5446,7 +4996,7 @@ class PubSubConfiguration2DataType(PubSubConfigurationDataType):
     ConfigurationProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class JsonServerEndpointsMessage:
     """
     :ivar MessageId:
@@ -5473,7 +5023,7 @@ class JsonServerEndpointsMessage:
     Endpoints: 'list[ua.EndpointDescription]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class GetEndpointsParameters:
     """
     :ivar EndpointUrl:
@@ -5489,7 +5039,7 @@ class GetEndpointsParameters:
     ProfileUris: 'list[ua.String]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class GetEndpointsRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.4/#5.5.4.2
@@ -5509,7 +5059,7 @@ class GetEndpointsRequest:
     Parameters: 'ua.GetEndpointsParameters' = field(default_factory=lambda: GetEndpointsParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class GetEndpointsResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.4/#5.5.4.2
@@ -5529,10 +5079,10 @@ class GetEndpointsResponse:
     Endpoints: 'list[ua.EndpointDescription]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RegisteredServer:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.31
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.32
 
     :ivar ServerUri:
     :vartype ServerUri: String
@@ -5564,7 +5114,7 @@ class RegisteredServer:
     IsOnline: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RegisterServerRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.5/#5.5.5.2
@@ -5584,7 +5134,7 @@ class RegisterServerRequest:
     Server: 'ua.RegisteredServer' = field(default_factory=lambda: RegisteredServer())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RegisterServerResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.5/#5.5.5.2
@@ -5601,7 +5151,7 @@ class RegisterServerResponse:
     ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DiscoveryConfiguration:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.13.1
@@ -5611,7 +5161,7 @@ class DiscoveryConfiguration:
     data_type = NodeId(ObjectIds.DiscoveryConfiguration)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class MdnsDiscoveryConfiguration(DiscoveryConfiguration):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.13.2
@@ -5628,7 +5178,7 @@ class MdnsDiscoveryConfiguration(DiscoveryConfiguration):
     ServerCapabilities: 'list[ua.String]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RegisterServer2Parameters:
     """
     :ivar Server:
@@ -5641,7 +5191,7 @@ class RegisterServer2Parameters:
     DiscoveryConfiguration: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RegisterServer2Request:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.6/#5.5.6.2
@@ -5661,7 +5211,7 @@ class RegisterServer2Request:
     Parameters: 'ua.RegisterServer2Parameters' = field(default_factory=lambda: RegisterServer2Parameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RegisterServer2Response:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.5.6/#5.5.6.2
@@ -5684,7 +5234,7 @@ class RegisterServer2Response:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ChannelSecurityToken:
     """
     :ivar ChannelId:
@@ -5705,7 +5255,7 @@ class ChannelSecurityToken:
     RevisedLifetime: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class OpenSecureChannelParameters:
     """
     :ivar ClientProtocolVersion:
@@ -5727,7 +5277,7 @@ class OpenSecureChannelParameters:
     RequestedLifetime: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class OpenSecureChannelRequest:
     """
     :ivar TypeId:
@@ -5745,7 +5295,7 @@ class OpenSecureChannelRequest:
     Parameters: 'ua.OpenSecureChannelParameters' = field(default_factory=lambda: OpenSecureChannelParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class OpenSecureChannelResult:
     """
     :ivar ServerProtocolVersion:
@@ -5761,7 +5311,7 @@ class OpenSecureChannelResult:
     ServerNonce: 'ua.ByteString' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class OpenSecureChannelResponse:
     """
     :ivar TypeId:
@@ -5779,7 +5329,7 @@ class OpenSecureChannelResponse:
     Parameters: 'ua.OpenSecureChannelResult' = field(default_factory=lambda: OpenSecureChannelResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CloseSecureChannelRequest:
     """
     :ivar TypeId:
@@ -5794,7 +5344,7 @@ class CloseSecureChannelRequest:
     RequestHeader: 'ua.RequestHeader' = field(default_factory=lambda: RequestHeader())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CloseSecureChannelResponse:
     """
     :ivar TypeId:
@@ -5809,7 +5359,7 @@ class CloseSecureChannelResponse:
     ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SignedSoftwareCertificate:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.13
@@ -5826,10 +5376,10 @@ class SignedSoftwareCertificate:
     Signature: 'ua.ByteString' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SignatureData:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.36
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.37
 
     :ivar Algorithm:
     :vartype Algorithm: String
@@ -5843,7 +5393,7 @@ class SignatureData:
     Signature: 'ua.ByteString' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateSessionParameters:
     """
     :ivar ClientDescription:
@@ -5874,7 +5424,7 @@ class CreateSessionParameters:
     MaxResponseMessageSize: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateSessionRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.2/#5.7.2.2
@@ -5894,7 +5444,7 @@ class CreateSessionRequest:
     Parameters: 'ua.CreateSessionParameters' = field(default_factory=lambda: CreateSessionParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateSessionResult:
     """
     :ivar SessionId:
@@ -5928,7 +5478,7 @@ class CreateSessionResult:
     MaxRequestMessageSize: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateSessionResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.2/#5.7.2.2
@@ -5948,7 +5498,7 @@ class CreateSessionResponse:
     Parameters: 'ua.CreateSessionResult' = field(default_factory=lambda: CreateSessionResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UserIdentityToken:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.15
@@ -5962,7 +5512,7 @@ class UserIdentityToken:
     PolicyId: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AnonymousIdentityToken(UserIdentityToken):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.15/#12.3.15.1
@@ -5976,7 +5526,7 @@ class AnonymousIdentityToken(UserIdentityToken):
     PolicyId: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UserNameIdentityToken(UserIdentityToken):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.15/#12.3.15.3
@@ -5999,7 +5549,7 @@ class UserNameIdentityToken(UserIdentityToken):
     EncryptionAlgorithm: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class X509IdentityToken(UserIdentityToken):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.15/#12.3.15.4
@@ -6016,7 +5566,7 @@ class X509IdentityToken(UserIdentityToken):
     CertificateData: 'ua.ByteString' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class IssuedIdentityToken(UserIdentityToken):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.15/#12.3.15.2
@@ -6036,7 +5586,7 @@ class IssuedIdentityToken(UserIdentityToken):
     EncryptionAlgorithm: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ActivateSessionParameters:
     """
     :ivar ClientSignature:
@@ -6058,7 +5608,7 @@ class ActivateSessionParameters:
     UserTokenSignature: 'ua.SignatureData' = field(default_factory=lambda: SignatureData())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ActivateSessionRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.3/#5.7.3.2
@@ -6078,7 +5628,7 @@ class ActivateSessionRequest:
     Parameters: 'ua.ActivateSessionParameters' = field(default_factory=lambda: ActivateSessionParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ActivateSessionResult:
     """
     :ivar ServerNonce:
@@ -6094,7 +5644,7 @@ class ActivateSessionResult:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ActivateSessionResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.3/#5.7.3.2
@@ -6114,7 +5664,7 @@ class ActivateSessionResponse:
     Parameters: 'ua.ActivateSessionResult' = field(default_factory=lambda: ActivateSessionResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CloseSessionRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.4/#5.7.4.2
@@ -6134,7 +5684,7 @@ class CloseSessionRequest:
     DeleteSubscriptions: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CloseSessionResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.4/#5.7.4.2
@@ -6151,7 +5701,7 @@ class CloseSessionResponse:
     ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CancelParameters:
     """
     :ivar RequestHandle:
@@ -6161,7 +5711,7 @@ class CancelParameters:
     RequestHandle: 'ua.IntegerId' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CancelRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.5/#5.7.5.2
@@ -6181,7 +5731,7 @@ class CancelRequest:
     Parameters: 'ua.CancelParameters' = field(default_factory=lambda: CancelParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CancelResult:
     """
     :ivar CancelCount:
@@ -6191,7 +5741,7 @@ class CancelResult:
     CancelCount: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CancelResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.7.5/#5.7.5.2
@@ -6211,7 +5761,7 @@ class CancelResponse:
     Parameters: 'ua.CancelResult' = field(default_factory=lambda: CancelResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class NodeAttributes:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.1
@@ -6237,7 +5787,7 @@ class NodeAttributes:
     UserWriteMask: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ObjectAttributes(NodeAttributes):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.2
@@ -6266,7 +5816,7 @@ class ObjectAttributes(NodeAttributes):
     EventNotifier: 'ua.Byte' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class VariableAttributes(NodeAttributes):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.3
@@ -6316,7 +5866,7 @@ class VariableAttributes(NodeAttributes):
     Historizing: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class MethodAttributes(NodeAttributes):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.4
@@ -6348,7 +5898,7 @@ class MethodAttributes(NodeAttributes):
     UserExecutable: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ObjectTypeAttributes(NodeAttributes):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.5
@@ -6377,7 +5927,7 @@ class ObjectTypeAttributes(NodeAttributes):
     IsAbstract: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class VariableTypeAttributes(NodeAttributes):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.6
@@ -6418,7 +5968,7 @@ class VariableTypeAttributes(NodeAttributes):
     IsAbstract: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReferenceTypeAttributes(NodeAttributes):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.7
@@ -6453,7 +6003,7 @@ class ReferenceTypeAttributes(NodeAttributes):
     InverseName: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataTypeAttributes(NodeAttributes):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.8
@@ -6482,7 +6032,7 @@ class DataTypeAttributes(NodeAttributes):
     IsAbstract: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ViewAttributes(NodeAttributes):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.9
@@ -6514,7 +6064,7 @@ class ViewAttributes(NodeAttributes):
     EventNotifier: 'ua.Byte' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class GenericAttributeValue:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.10
@@ -6531,7 +6081,7 @@ class GenericAttributeValue:
     Value: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class GenericAttributes(NodeAttributes):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.24.10
@@ -6560,7 +6110,7 @@ class GenericAttributes(NodeAttributes):
     AttributeValues: 'list[ua.GenericAttributeValue]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AddNodesItem:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.1
@@ -6592,7 +6142,7 @@ class AddNodesItem:
     TypeDefinition: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AddNodesResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.2/#5.8.2.2
@@ -6609,7 +6159,7 @@ class AddNodesResult:
     AddedNodeId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AddNodesParameters:
     """
     :ivar NodesToAdd:
@@ -6619,7 +6169,7 @@ class AddNodesParameters:
     NodesToAdd: 'list[ua.AddNodesItem]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AddNodesRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.2/#5.8.2.2
@@ -6639,7 +6189,7 @@ class AddNodesRequest:
     Parameters: 'ua.AddNodesParameters' = field(default_factory=lambda: AddNodesParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AddNodesResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.2/#5.8.2.2
@@ -6662,7 +6212,7 @@ class AddNodesResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AddReferencesItem:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.2
@@ -6691,7 +6241,7 @@ class AddReferencesItem:
     TargetNodeClass: 'ua.NodeClass' = field(default_factory=lambda:NodeClass.Unspecified)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AddReferencesParameters:
     """
     :ivar ReferencesToAdd:
@@ -6701,7 +6251,7 @@ class AddReferencesParameters:
     ReferencesToAdd: 'list[ua.AddReferencesItem]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AddReferencesRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.3/#5.8.3.2
@@ -6721,7 +6271,7 @@ class AddReferencesRequest:
     Parameters: 'ua.AddReferencesParameters' = field(default_factory=lambda: AddReferencesParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AddReferencesResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.3/#5.8.3.2
@@ -6744,7 +6294,7 @@ class AddReferencesResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteNodesItem:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.6
@@ -6761,7 +6311,7 @@ class DeleteNodesItem:
     DeleteTargetReferences: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteNodesParameters:
     """
     :ivar NodesToDelete:
@@ -6771,7 +6321,7 @@ class DeleteNodesParameters:
     NodesToDelete: 'list[ua.DeleteNodesItem]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteNodesRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.4/#5.8.4.2
@@ -6791,7 +6341,7 @@ class DeleteNodesRequest:
     Parameters: 'ua.DeleteNodesParameters' = field(default_factory=lambda: DeleteNodesParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteNodesResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.4/#5.8.4.2
@@ -6814,7 +6364,7 @@ class DeleteNodesResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteReferencesItem:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.7
@@ -6840,7 +6390,7 @@ class DeleteReferencesItem:
     DeleteBidirectional: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteReferencesParameters:
     """
     :ivar ReferencesToDelete:
@@ -6850,7 +6400,7 @@ class DeleteReferencesParameters:
     ReferencesToDelete: 'list[ua.DeleteReferencesItem]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteReferencesRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.5/#5.8.5.1
@@ -6870,7 +6420,7 @@ class DeleteReferencesRequest:
     Parameters: 'ua.DeleteReferencesParameters' = field(default_factory=lambda: DeleteReferencesParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteReferencesResult:
     """
     :ivar Results:
@@ -6883,7 +6433,7 @@ class DeleteReferencesResult:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteReferencesResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.5/#5.8.5.1
@@ -6903,10 +6453,10 @@ class DeleteReferencesResponse:
     Parameters: 'ua.DeleteReferencesResult' = field(default_factory=lambda: DeleteReferencesResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ViewDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.44
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.45
 
     :ivar ViewId:
     :vartype ViewId: NodeId
@@ -6923,7 +6473,7 @@ class ViewDescription:
     ViewVersion: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowseDescription:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.2/#5.9.2.2
@@ -6952,10 +6502,10 @@ class BrowseDescription:
     ResultMask: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReferenceDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.29
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.30
 
     :ivar ReferenceTypeId:
     :vartype ReferenceTypeId: NodeId
@@ -6984,7 +6534,7 @@ class ReferenceDescription:
     TypeDefinition: 'ua.ExpandedNodeId' = field(default_factory=lambda: ExpandedNodeId())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowseResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.6
@@ -7004,7 +6554,7 @@ class BrowseResult:
     References: 'list[ua.ReferenceDescription]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowseParameters:
     """
     :ivar View:
@@ -7020,7 +6570,7 @@ class BrowseParameters:
     NodesToBrowse: 'list[ua.BrowseDescription]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowseRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.2/#5.9.2.2
@@ -7040,7 +6590,7 @@ class BrowseRequest:
     Parameters: 'ua.BrowseParameters' = field(default_factory=lambda: BrowseParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowseResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.2/#5.9.2.2
@@ -7063,7 +6613,7 @@ class BrowseResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowseNextParameters:
     """
     :ivar ReleaseContinuationPoints:
@@ -7076,7 +6626,7 @@ class BrowseNextParameters:
     ContinuationPoints: 'list[ua.ContinuationPoint]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowseNextRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.3/#5.9.3.2
@@ -7096,7 +6646,7 @@ class BrowseNextRequest:
     Parameters: 'ua.BrowseNextParameters' = field(default_factory=lambda: BrowseNextParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowseNextResult:
     """
     :ivar Results:
@@ -7109,7 +6659,7 @@ class BrowseNextResult:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowseNextResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.3/#5.9.3.2
@@ -7129,10 +6679,10 @@ class BrowseNextResponse:
     Parameters: 'ua.BrowseNextResult' = field(default_factory=lambda: BrowseNextResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowsePath:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part3/6.2.5
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
 
     :ivar StartingNode:
     :vartype StartingNode: NodeId
@@ -7146,7 +6696,7 @@ class BrowsePath:
     RelativePath: 'ua.RelativePath' = field(default_factory=lambda: RelativePath())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowsePathTarget:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
@@ -7163,7 +6713,7 @@ class BrowsePathTarget:
     RemainingPathIndex: 'ua.Index' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BrowsePathResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
@@ -7180,7 +6730,7 @@ class BrowsePathResult:
     Targets: 'list[ua.BrowsePathTarget]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TranslateBrowsePathsToNodeIdsParameters:
     """
     :ivar BrowsePaths:
@@ -7190,7 +6740,7 @@ class TranslateBrowsePathsToNodeIdsParameters:
     BrowsePaths: 'list[ua.BrowsePath]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TranslateBrowsePathsToNodeIdsRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
@@ -7210,7 +6760,7 @@ class TranslateBrowsePathsToNodeIdsRequest:
     Parameters: 'ua.TranslateBrowsePathsToNodeIdsParameters' = field(default_factory=lambda: TranslateBrowsePathsToNodeIdsParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TranslateBrowsePathsToNodeIdsResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.4/#5.9.4.2
@@ -7233,7 +6783,7 @@ class TranslateBrowsePathsToNodeIdsResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RegisterNodesParameters:
     """
     :ivar NodesToRegister:
@@ -7243,7 +6793,7 @@ class RegisterNodesParameters:
     NodesToRegister: 'list[ua.NodeId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RegisterNodesRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.5/#5.9.5.2
@@ -7263,7 +6813,7 @@ class RegisterNodesRequest:
     Parameters: 'ua.RegisterNodesParameters' = field(default_factory=lambda: RegisterNodesParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RegisterNodesResult:
     """
     :ivar RegisteredNodeIds:
@@ -7273,7 +6823,7 @@ class RegisterNodesResult:
     RegisteredNodeIds: 'list[ua.NodeId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RegisterNodesResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.5/#5.9.5.2
@@ -7293,7 +6843,7 @@ class RegisterNodesResponse:
     Parameters: 'ua.RegisterNodesResult' = field(default_factory=lambda: RegisterNodesResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UnregisterNodesParameters:
     """
     :ivar NodesToUnregister:
@@ -7303,7 +6853,7 @@ class UnregisterNodesParameters:
     NodesToUnregister: 'list[ua.NodeId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UnregisterNodesRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.6/#5.9.6.2
@@ -7323,7 +6873,7 @@ class UnregisterNodesRequest:
     Parameters: 'ua.UnregisterNodesParameters' = field(default_factory=lambda: UnregisterNodesParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UnregisterNodesResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.9.6/#5.9.6.2
@@ -7340,7 +6890,7 @@ class UnregisterNodesResponse:
     ResponseHeader: 'ua.ResponseHeader' = field(default_factory=lambda: ResponseHeader())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EndpointConfiguration:
     """
     :ivar OperationTimeout:
@@ -7376,7 +6926,7 @@ class EndpointConfiguration:
     SecurityTokenLifetime: 'ua.Int32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QueryDataDescription:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.1
@@ -7396,7 +6946,7 @@ class QueryDataDescription:
     IndexRange: 'ua.NumericRange' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class NodeTypeDescription:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.1
@@ -7416,10 +6966,10 @@ class NodeTypeDescription:
     DataToReturn: 'list[ua.QueryDataDescription]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QueryDataSet:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/B.2.5
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.28
 
     :ivar NodeId:
     :vartype NodeId: ExpandedNodeId
@@ -7436,7 +6986,7 @@ class QueryDataSet:
     Values: 'list[ua.Variant]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class NodeReference:
     """
     :ivar NodeId:
@@ -7457,7 +7007,7 @@ class NodeReference:
     ReferencedNodeIds: 'list[ua.NodeId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ContentFilterElement:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.7.1
@@ -7474,7 +7024,7 @@ class ContentFilterElement:
     FilterOperands: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ContentFilter:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.4
@@ -7488,7 +7038,7 @@ class ContentFilter:
     Elements: 'list[ua.ContentFilterElement]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class FilterOperand:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.7.4
@@ -7498,7 +7048,7 @@ class FilterOperand:
     data_type = NodeId(ObjectIds.FilterOperand)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ElementOperand(FilterOperand):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.7.4/#7.7.4.2
@@ -7512,7 +7062,7 @@ class ElementOperand(FilterOperand):
     Index: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class LiteralOperand(FilterOperand):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.7.4/#7.7.4.3
@@ -7526,7 +7076,7 @@ class LiteralOperand(FilterOperand):
     Value: 'ua.Variant' = field(default_factory=lambda: Variant())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AttributeOperand(FilterOperand):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.7.4/#7.7.4.4
@@ -7552,7 +7102,7 @@ class AttributeOperand(FilterOperand):
     IndexRange: 'ua.NumericRange' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SimpleAttributeOperand(FilterOperand):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.7.4/#7.7.4.5
@@ -7575,7 +7125,7 @@ class SimpleAttributeOperand(FilterOperand):
     IndexRange: 'ua.NumericRange' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishedEventsDataType(PublishedDataSetSourceDataType):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.8.4
@@ -7595,7 +7145,7 @@ class PublishedEventsDataType(PublishedDataSetSourceDataType):
     Filter: 'ua.ContentFilter' = field(default_factory=lambda: ContentFilter())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ContentFilterElementResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.7.2
@@ -7615,7 +7165,7 @@ class ContentFilterElementResult:
     OperandDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ContentFilterResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.7.2
@@ -7632,7 +7182,7 @@ class ContentFilterResult:
     ElementDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ParsingResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.1
@@ -7652,7 +7202,7 @@ class ParsingResult:
     DataDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QueryFirstParameters:
     """
     :ivar View:
@@ -7674,7 +7224,7 @@ class QueryFirstParameters:
     MaxReferencesToReturn: 'ua.Counter' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QueryFirstRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.1
@@ -7694,7 +7244,7 @@ class QueryFirstRequest:
     Parameters: 'ua.QueryFirstParameters' = field(default_factory=lambda: QueryFirstParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QueryFirstResult:
     """
     :ivar QueryDataSets:
@@ -7716,7 +7266,7 @@ class QueryFirstResult:
     FilterResult: 'ua.ContentFilterResult' = field(default_factory=lambda: ContentFilterResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QueryFirstResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.3/#5.10.3.1
@@ -7736,7 +7286,7 @@ class QueryFirstResponse:
     Parameters: 'ua.QueryFirstResult' = field(default_factory=lambda: QueryFirstResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QueryNextParameters:
     """
     :ivar ReleaseContinuationPoint:
@@ -7749,7 +7299,7 @@ class QueryNextParameters:
     ContinuationPoint: 'ua.ContinuationPoint' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QueryNextRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.4/#5.10.4.2
@@ -7769,7 +7319,7 @@ class QueryNextRequest:
     Parameters: 'ua.QueryNextParameters' = field(default_factory=lambda: QueryNextParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QueryNextResult:
     """
     :ivar QueryDataSets:
@@ -7782,7 +7332,7 @@ class QueryNextResult:
     RevisedContinuationPoint: 'ua.ContinuationPoint' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class QueryNextResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.10.4/#5.10.4.2
@@ -7802,10 +7352,10 @@ class QueryNextResponse:
     Parameters: 'ua.QueryNextResult' = field(default_factory=lambda: QueryNextResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadValueId:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.28
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.29
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -7825,7 +7375,7 @@ class ReadValueId:
     DataEncoding: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadParameters:
     """
     :ivar MaxAge:
@@ -7841,7 +7391,7 @@ class ReadParameters:
     NodesToRead: 'list[ua.ReadValueId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.2/#5.11.2.2
@@ -7861,7 +7411,7 @@ class ReadRequest:
     Parameters: 'ua.ReadParameters' = field(default_factory=lambda: ReadParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.2/#5.11.2.2
@@ -7884,7 +7434,7 @@ class ReadResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryReadValueId:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.3/#5.11.3.2
@@ -7907,7 +7457,7 @@ class HistoryReadValueId:
     ContinuationPoint: 'ua.ContinuationPoint' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryReadResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.3/#5.11.3.2
@@ -7927,7 +7477,7 @@ class HistoryReadResult:
     HistoryData: 'ua.ExtensionObject' = ExtensionObject()
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryReadDetails:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.1
@@ -7937,7 +7487,7 @@ class HistoryReadDetails:
     data_type = NodeId(ObjectIds.HistoryReadDetails)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SortRuleElement:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.7
@@ -7954,7 +7504,7 @@ class SortRuleElement:
     EventField: 'ua.SimpleAttributeOperand' = field(default_factory=lambda: SimpleAttributeOperand())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadRawModifiedDetails(HistoryReadDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.3/#6.5.3.1
@@ -7980,7 +7530,7 @@ class ReadRawModifiedDetails(HistoryReadDetails):
     ReturnBounds: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadAtTimeDetails(HistoryReadDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.5/#6.5.5.1
@@ -7997,7 +7547,7 @@ class ReadAtTimeDetails(HistoryReadDetails):
     UseSimpleBounds: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadAnnotationDataDetails(HistoryReadDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.6/#6.5.6.1
@@ -8011,7 +7561,7 @@ class ReadAnnotationDataDetails(HistoryReadDetails):
     ReqTimes: 'list[ua.UtcTime]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryData:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.2
@@ -8025,7 +7575,7 @@ class HistoryData:
     DataValues: 'list[ua.DataValue]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ModificationInfo:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.5
@@ -8045,7 +7595,7 @@ class ModificationInfo:
     UserName: 'ua.String' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryModifiedData(HistoryData):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.3
@@ -8062,7 +7612,7 @@ class HistoryModifiedData(HistoryData):
     ModificationInfos: 'list[ua.ModificationInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryReadParameters:
     """
     :ivar HistoryReadDetails:
@@ -8081,7 +7631,7 @@ class HistoryReadParameters:
     NodesToRead: 'list[ua.HistoryReadValueId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryReadRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.3/#5.11.3.2
@@ -8101,7 +7651,7 @@ class HistoryReadRequest:
     Parameters: 'ua.HistoryReadParameters' = field(default_factory=lambda: HistoryReadParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryReadResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.3/#5.11.3.2
@@ -8124,7 +7674,7 @@ class HistoryReadResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class WriteValue:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.4/#5.11.4.2
@@ -8147,7 +7697,7 @@ class WriteValue:
     Value: 'ua.DataValue' = field(default_factory=lambda: DataValue())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class WriteParameters:
     """
     :ivar NodesToWrite:
@@ -8157,7 +7707,7 @@ class WriteParameters:
     NodesToWrite: 'list[ua.WriteValue]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class WriteRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.4/#5.11.4.2
@@ -8177,7 +7727,7 @@ class WriteRequest:
     Parameters: 'ua.WriteParameters' = field(default_factory=lambda: WriteParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class WriteResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.4/#5.11.4.2
@@ -8200,7 +7750,7 @@ class WriteResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryUpdateDetails:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.1
@@ -8210,7 +7760,7 @@ class HistoryUpdateDetails:
     data_type = NodeId(ObjectIds.HistoryUpdateDetails)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UpdateDataDetails(HistoryUpdateDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.2/#6.9.2.1
@@ -8230,7 +7780,7 @@ class UpdateDataDetails(HistoryUpdateDetails):
     UpdateValues: 'list[ua.DataValue]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UpdateStructureDataDetails(HistoryUpdateDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.3/#6.9.3.1
@@ -8250,7 +7800,7 @@ class UpdateStructureDataDetails(HistoryUpdateDetails):
     UpdateValues: 'list[ua.DataValue]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteRawModifiedDetails(HistoryUpdateDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.5/#6.9.5.1
@@ -8273,7 +7823,7 @@ class DeleteRawModifiedDetails(HistoryUpdateDetails):
     EndTime: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteAtTimeDetails(HistoryUpdateDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.6/#6.9.6.1
@@ -8290,7 +7840,7 @@ class DeleteAtTimeDetails(HistoryUpdateDetails):
     ReqTimes: 'list[ua.UtcTime]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteEventDetails(HistoryUpdateDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.7/#6.9.7.1
@@ -8307,7 +7857,7 @@ class DeleteEventDetails(HistoryUpdateDetails):
     EventIds: 'list[ua.ByteString]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryUpdateResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.5/#5.11.5.2
@@ -8327,7 +7877,7 @@ class HistoryUpdateResult:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryUpdateParameters:
     """
     :ivar HistoryUpdateDetails:
@@ -8337,7 +7887,7 @@ class HistoryUpdateParameters:
     HistoryUpdateDetails: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryUpdateRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.5/#5.11.5.2
@@ -8357,7 +7907,7 @@ class HistoryUpdateRequest:
     Parameters: 'ua.HistoryUpdateParameters' = field(default_factory=lambda: HistoryUpdateParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryUpdateResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.11.5/#5.11.5.2
@@ -8380,7 +7930,7 @@ class HistoryUpdateResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CallMethodRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
@@ -8400,7 +7950,7 @@ class CallMethodRequest:
     InputArguments: 'list[ua.Variant]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CallMethodResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
@@ -8423,7 +7973,7 @@ class CallMethodResult:
     OutputArguments: 'list[ua.Variant]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CallParameters:
     """
     :ivar MethodsToCall:
@@ -8433,7 +7983,7 @@ class CallParameters:
     MethodsToCall: 'list[ua.CallMethodRequest]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CallRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
@@ -8453,7 +8003,7 @@ class CallRequest:
     Parameters: 'ua.CallParameters' = field(default_factory=lambda: CallParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CallResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.12.2/#5.12.2.2
@@ -8476,7 +8026,7 @@ class CallResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class MonitoringFilter:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.1
@@ -8486,7 +8036,7 @@ class MonitoringFilter:
     data_type = NodeId(ObjectIds.MonitoringFilter)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataChangeFilter(MonitoringFilter):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.2
@@ -8506,7 +8056,7 @@ class DataChangeFilter(MonitoringFilter):
     DeadbandValue: 'ua.Double' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EventFilter(MonitoringFilter):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.3
@@ -8523,7 +8073,7 @@ class EventFilter(MonitoringFilter):
     WhereClause: 'ua.ContentFilter' = field(default_factory=lambda: ContentFilter())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadEventDetails(HistoryReadDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.2/#6.5.2.1
@@ -8546,7 +8096,7 @@ class ReadEventDetails(HistoryReadDetails):
     Filter: 'ua.EventFilter' = field(default_factory=lambda: EventFilter())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadEventDetails2(ReadEventDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.2/#6.5.2.3
@@ -8572,7 +8122,7 @@ class ReadEventDetails2(ReadEventDetails):
     ReadModified: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadEventDetailsSorted(ReadEventDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.2/#6.5.2.5
@@ -8598,10 +8148,10 @@ class ReadEventDetailsSorted(ReadEventDetails):
     SortClause: 'list[ua.SortRuleElement]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AggregateConfiguration:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.4
+    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.4/#6.5.4.1
 
     :ivar UseServerCapabilitiesDefaults:
     :vartype UseServerCapabilitiesDefaults: Boolean
@@ -8624,7 +8174,7 @@ class AggregateConfiguration:
     UseSlopedExtrapolation: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ReadProcessedDetails(HistoryReadDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.4/#6.5.4.1
@@ -8650,7 +8200,7 @@ class ReadProcessedDetails(HistoryReadDetails):
     AggregateConfiguration: 'ua.AggregateConfiguration' = field(default_factory=lambda: AggregateConfiguration())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AggregateFilter(MonitoringFilter):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.4
@@ -8673,7 +8223,7 @@ class AggregateFilter(MonitoringFilter):
     AggregateConfiguration: 'ua.AggregateConfiguration' = field(default_factory=lambda: AggregateConfiguration())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class MonitoringFilterResult:
     """
     """
@@ -8681,7 +8231,7 @@ class MonitoringFilterResult:
     data_type = NodeId(ObjectIds.MonitoringFilterResult)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EventFilterResult(MonitoringFilterResult):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.3
@@ -8701,7 +8251,7 @@ class EventFilterResult(MonitoringFilterResult):
     WhereClauseResult: 'ua.ContentFilterResult' = field(default_factory=lambda: ContentFilterResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AggregateFilterResult(MonitoringFilterResult):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.4
@@ -8721,7 +8271,7 @@ class AggregateFilterResult(MonitoringFilterResult):
     RevisedAggregateConfiguration: 'ua.AggregateConfiguration' = field(default_factory=lambda: AggregateConfiguration())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class MonitoringParameters:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.21
@@ -8747,7 +8297,7 @@ class MonitoringParameters:
     DiscardOldest: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class MonitoredItemCreateRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.2/#5.13.2.2
@@ -8767,7 +8317,7 @@ class MonitoredItemCreateRequest:
     RequestedParameters: 'ua.MonitoringParameters' = field(default_factory=lambda: MonitoringParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class MonitoredItemCreateResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.2/#5.13.2.2
@@ -8793,7 +8343,7 @@ class MonitoredItemCreateResult:
     FilterResult: 'ua.ExtensionObject' = ExtensionObject()
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateMonitoredItemsParameters:
     """
     :ivar SubscriptionId:
@@ -8809,7 +8359,7 @@ class CreateMonitoredItemsParameters:
     ItemsToCreate: 'list[ua.MonitoredItemCreateRequest]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateMonitoredItemsRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.2/#5.13.2.2
@@ -8829,7 +8379,7 @@ class CreateMonitoredItemsRequest:
     Parameters: 'ua.CreateMonitoredItemsParameters' = field(default_factory=lambda: CreateMonitoredItemsParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateMonitoredItemsResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.2/#5.13.2.2
@@ -8852,7 +8402,7 @@ class CreateMonitoredItemsResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class MonitoredItemModifyRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.3/#5.13.3.2
@@ -8869,7 +8419,7 @@ class MonitoredItemModifyRequest:
     RequestedParameters: 'ua.MonitoringParameters' = field(default_factory=lambda: MonitoringParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class MonitoredItemModifyResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.3/#5.13.3.2
@@ -8892,7 +8442,7 @@ class MonitoredItemModifyResult:
     FilterResult: 'ua.ExtensionObject' = ExtensionObject()
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ModifyMonitoredItemsParameters:
     """
     :ivar SubscriptionId:
@@ -8908,7 +8458,7 @@ class ModifyMonitoredItemsParameters:
     ItemsToModify: 'list[ua.MonitoredItemModifyRequest]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ModifyMonitoredItemsRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.3/#5.13.3.2
@@ -8928,7 +8478,7 @@ class ModifyMonitoredItemsRequest:
     Parameters: 'ua.ModifyMonitoredItemsParameters' = field(default_factory=lambda: ModifyMonitoredItemsParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ModifyMonitoredItemsResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.3/#5.13.3.2
@@ -8951,7 +8501,7 @@ class ModifyMonitoredItemsResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetMonitoringModeParameters:
     """
     :ivar SubscriptionId:
@@ -8967,7 +8517,7 @@ class SetMonitoringModeParameters:
     MonitoredItemIds: 'list[ua.IntegerId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetMonitoringModeRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.4/#5.13.4.2
@@ -8987,7 +8537,7 @@ class SetMonitoringModeRequest:
     Parameters: 'ua.SetMonitoringModeParameters' = field(default_factory=lambda: SetMonitoringModeParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetMonitoringModeResult:
     """
     :ivar Results:
@@ -9000,7 +8550,7 @@ class SetMonitoringModeResult:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetMonitoringModeResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.4/#5.13.4.2
@@ -9020,7 +8570,7 @@ class SetMonitoringModeResponse:
     Parameters: 'ua.SetMonitoringModeResult' = field(default_factory=lambda: SetMonitoringModeResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetTriggeringParameters:
     """
     :ivar SubscriptionId:
@@ -9039,7 +8589,7 @@ class SetTriggeringParameters:
     LinksToRemove: 'list[ua.IntegerId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetTriggeringRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.5/#5.13.5.2
@@ -9059,7 +8609,7 @@ class SetTriggeringRequest:
     Parameters: 'ua.SetTriggeringParameters' = field(default_factory=lambda: SetTriggeringParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetTriggeringResult:
     """
     :ivar AddResults:
@@ -9078,7 +8628,7 @@ class SetTriggeringResult:
     RemoveDiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetTriggeringResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.5/#5.13.5.2
@@ -9098,7 +8648,7 @@ class SetTriggeringResponse:
     Parameters: 'ua.SetTriggeringResult' = field(default_factory=lambda: SetTriggeringResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteMonitoredItemsParameters:
     """
     :ivar SubscriptionId:
@@ -9111,7 +8661,7 @@ class DeleteMonitoredItemsParameters:
     MonitoredItemIds: 'list[ua.IntegerId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteMonitoredItemsRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.6/#5.13.6.2
@@ -9131,7 +8681,7 @@ class DeleteMonitoredItemsRequest:
     Parameters: 'ua.DeleteMonitoredItemsParameters' = field(default_factory=lambda: DeleteMonitoredItemsParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteMonitoredItemsResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.13.6/#5.13.6.2
@@ -9154,7 +8704,7 @@ class DeleteMonitoredItemsResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateSubscriptionParameters:
     """
     :ivar RequestedPublishingInterval:
@@ -9179,7 +8729,7 @@ class CreateSubscriptionParameters:
     Priority: 'ua.Byte' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateSubscriptionRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.2/#5.14.2.2
@@ -9199,7 +8749,7 @@ class CreateSubscriptionRequest:
     Parameters: 'ua.CreateSubscriptionParameters' = field(default_factory=lambda: CreateSubscriptionParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateSubscriptionResult:
     """
     :ivar SubscriptionId:
@@ -9218,7 +8768,7 @@ class CreateSubscriptionResult:
     RevisedMaxKeepAliveCount: 'ua.Counter' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class CreateSubscriptionResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.2/#5.14.2.2
@@ -9238,7 +8788,7 @@ class CreateSubscriptionResponse:
     Parameters: 'ua.CreateSubscriptionResult' = field(default_factory=lambda: CreateSubscriptionResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ModifySubscriptionParameters:
     """
     :ivar SubscriptionId:
@@ -9263,7 +8813,7 @@ class ModifySubscriptionParameters:
     Priority: 'ua.Byte' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ModifySubscriptionRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.3/#5.14.3.2
@@ -9283,7 +8833,7 @@ class ModifySubscriptionRequest:
     Parameters: 'ua.ModifySubscriptionParameters' = field(default_factory=lambda: ModifySubscriptionParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ModifySubscriptionResult:
     """
     :ivar RevisedPublishingInterval:
@@ -9299,7 +8849,7 @@ class ModifySubscriptionResult:
     RevisedMaxKeepAliveCount: 'ua.Counter' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ModifySubscriptionResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.3/#5.14.3.2
@@ -9319,7 +8869,7 @@ class ModifySubscriptionResponse:
     Parameters: 'ua.ModifySubscriptionResult' = field(default_factory=lambda: ModifySubscriptionResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetPublishingModeParameters:
     """
     :ivar PublishingEnabled:
@@ -9332,7 +8882,7 @@ class SetPublishingModeParameters:
     SubscriptionIds: 'list[ua.IntegerId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetPublishingModeRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.4/#5.14.4.2
@@ -9352,7 +8902,7 @@ class SetPublishingModeRequest:
     Parameters: 'ua.SetPublishingModeParameters' = field(default_factory=lambda: SetPublishingModeParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetPublishingModeResult:
     """
     :ivar Results:
@@ -9365,7 +8915,7 @@ class SetPublishingModeResult:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SetPublishingModeResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.4/#5.14.4.2
@@ -9385,7 +8935,7 @@ class SetPublishingModeResponse:
     Parameters: 'ua.SetPublishingModeResult' = field(default_factory=lambda: SetPublishingModeResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class NotificationMessage:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.26
@@ -9405,7 +8955,7 @@ class NotificationMessage:
     NotificationData: 'list[ua.ExtensionObject]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class NotificationData:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.25.1
@@ -9415,7 +8965,7 @@ class NotificationData:
     data_type = NodeId(ObjectIds.NotificationData)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class MonitoredItemNotification:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.25.2
@@ -9432,7 +8982,7 @@ class MonitoredItemNotification:
     Value: 'ua.DataValue' = field(default_factory=lambda: DataValue())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DataChangeNotification(NotificationData):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.25.2
@@ -9449,7 +8999,7 @@ class DataChangeNotification(NotificationData):
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EventFieldList:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.25.3
@@ -9466,7 +9016,7 @@ class EventFieldList:
     EventFields: 'list[ua.Variant]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EventNotificationList(NotificationData):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.25.3
@@ -9480,7 +9030,7 @@ class EventNotificationList(NotificationData):
     Events: 'list[ua.EventFieldList]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryEventFieldList:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.4
@@ -9494,7 +9044,7 @@ class HistoryEventFieldList:
     EventFields: 'list[ua.Variant]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryEvent:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.4
@@ -9508,7 +9058,7 @@ class HistoryEvent:
     Events: 'list[ua.HistoryEventFieldList]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class HistoryModifiedEvent(HistoryEvent):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.5
@@ -9525,7 +9075,7 @@ class HistoryModifiedEvent(HistoryEvent):
     ModificationInfos: 'list[ua.ModificationInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class UpdateEventDetails(HistoryUpdateDetails):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.9.4/#6.9.4.1
@@ -9548,7 +9098,7 @@ class UpdateEventDetails(HistoryUpdateDetails):
     EventData: 'list[ua.HistoryEventFieldList]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class StatusChangeNotification(NotificationData):
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/7.25.4
@@ -9565,7 +9115,7 @@ class StatusChangeNotification(NotificationData):
     DiagnosticInfo: 'ua.DiagnosticInfo' = field(default_factory=lambda: DiagnosticInfo())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SubscriptionAcknowledgement:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.5/#5.14.5.2
@@ -9582,7 +9132,7 @@ class SubscriptionAcknowledgement:
     SequenceNumber: 'ua.Counter' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishParameters:
     """
     :ivar SubscriptionAcknowledgements:
@@ -9592,7 +9142,7 @@ class PublishParameters:
     SubscriptionAcknowledgements: 'list[ua.SubscriptionAcknowledgement]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.5/#5.14.5.2
@@ -9612,7 +9162,7 @@ class PublishRequest:
     Parameters: 'ua.PublishParameters' = field(default_factory=lambda: PublishParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishResult:
     """
     :ivar SubscriptionId:
@@ -9637,7 +9187,7 @@ class PublishResult:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class PublishResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.5/#5.14.5.2
@@ -9657,7 +9207,7 @@ class PublishResponse:
     Parameters: 'ua.PublishResult' = field(default_factory=lambda: PublishResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RepublishParameters:
     """
     :ivar SubscriptionId:
@@ -9670,7 +9220,7 @@ class RepublishParameters:
     RetransmitSequenceNumber: 'ua.Counter' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RepublishRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.6/#5.14.6.2
@@ -9690,7 +9240,7 @@ class RepublishRequest:
     Parameters: 'ua.RepublishParameters' = field(default_factory=lambda: RepublishParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RepublishResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.6/#5.14.6.2
@@ -9710,7 +9260,7 @@ class RepublishResponse:
     NotificationMessage: 'ua.NotificationMessage' = field(default_factory=lambda: NotificationMessage())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TransferResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.7/#5.14.7.2
@@ -9727,7 +9277,7 @@ class TransferResult:
     AvailableSequenceNumbers: 'list[ua.Counter]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TransferSubscriptionsParameters:
     """
     :ivar SubscriptionIds:
@@ -9740,7 +9290,7 @@ class TransferSubscriptionsParameters:
     SendInitialValues: 'ua.Boolean' = True
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TransferSubscriptionsRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.7/#5.14.7.2
@@ -9760,7 +9310,7 @@ class TransferSubscriptionsRequest:
     Parameters: 'ua.TransferSubscriptionsParameters' = field(default_factory=lambda: TransferSubscriptionsParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TransferSubscriptionsResult:
     """
     :ivar Results:
@@ -9773,7 +9323,7 @@ class TransferSubscriptionsResult:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class TransferSubscriptionsResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.7/#5.14.7.2
@@ -9793,7 +9343,7 @@ class TransferSubscriptionsResponse:
     Parameters: 'ua.TransferSubscriptionsResult' = field(default_factory=lambda: TransferSubscriptionsResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteSubscriptionsParameters:
     """
     :ivar SubscriptionIds:
@@ -9803,7 +9353,7 @@ class DeleteSubscriptionsParameters:
     SubscriptionIds: 'list[ua.IntegerId]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteSubscriptionsRequest:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.8/#5.14.8.2
@@ -9823,7 +9373,7 @@ class DeleteSubscriptionsRequest:
     Parameters: 'ua.DeleteSubscriptionsParameters' = field(default_factory=lambda: DeleteSubscriptionsParameters())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DeleteSubscriptionsResponse:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part4/5.14.8/#5.14.8.2
@@ -9846,7 +9396,7 @@ class DeleteSubscriptionsResponse:
     DiagnosticInfos: 'list[ua.DiagnosticInfo]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class BuildInfo:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.4
@@ -9875,7 +9425,7 @@ class BuildInfo:
     BuildDate: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class RedundantServerDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.7
@@ -9895,7 +9445,7 @@ class RedundantServerDataType:
     ServerState: 'ua.ServerState' = field(default_factory=lambda:ServerState.Running)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EndpointUrlListDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.20
@@ -9909,7 +9459,7 @@ class EndpointUrlListDataType:
     EndpointUrlList: 'list[ua.String]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class NetworkGroupDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.19
@@ -9926,7 +9476,7 @@ class NetworkGroupDataType:
     NetworkPaths: 'list[ua.EndpointUrlListDataType]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SamplingIntervalDiagnosticsDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.8
@@ -9949,7 +9499,7 @@ class SamplingIntervalDiagnosticsDataType:
     DisabledMonitoredItemCount: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ServerDiagnosticsSummaryDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.9
@@ -9996,7 +9546,7 @@ class ServerDiagnosticsSummaryDataType:
     RejectedRequestsCount: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ServerStatusDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.10
@@ -10025,7 +9575,7 @@ class ServerStatusDataType:
     ShutdownReason: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SessionSecurityDiagnosticsDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.12
@@ -10063,7 +9613,7 @@ class SessionSecurityDiagnosticsDataType:
     ClientCertificate: 'ua.ByteString' = None
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ServiceCounterDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.13
@@ -10080,7 +9630,7 @@ class ServiceCounterDataType:
     ErrorCount: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SessionDiagnosticsDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.11
@@ -10220,7 +9770,7 @@ class SessionDiagnosticsDataType:
     UnregisterNodesCount: 'ua.ServiceCounterDataType' = field(default_factory=lambda: ServiceCounterDataType())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class StatusResult:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.14
@@ -10237,7 +9787,7 @@ class StatusResult:
     DiagnosticInfo: 'ua.DiagnosticInfo' = field(default_factory=lambda: DiagnosticInfo())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SubscriptionDiagnosticsDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.15
@@ -10341,7 +9891,7 @@ class SubscriptionDiagnosticsDataType:
     EventQueueOverflowCount: 'ua.UInt32' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ModelChangeStructureDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.16
@@ -10361,7 +9911,7 @@ class ModelChangeStructureDataType:
     Verb: 'ua.Byte' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class SemanticChangeStructureDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.17
@@ -10378,7 +9928,7 @@ class SemanticChangeStructureDataType:
     AffectedType: 'ua.NodeId' = field(default_factory=lambda: NodeId())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class Range:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.2
@@ -10395,7 +9945,7 @@ class Range:
     High: 'ua.Double' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class EUInformation:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.3/#5.6.3.3
@@ -10418,7 +9968,7 @@ class EUInformation:
     Description: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ComplexNumberType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.4
@@ -10435,7 +9985,7 @@ class ComplexNumberType:
     Imaginary: 'ua.Float' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class DoubleComplexNumberType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.5
@@ -10452,7 +10002,7 @@ class DoubleComplexNumberType:
     Imaginary: 'ua.Double' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class AxisInformation:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.6
@@ -10478,7 +10028,7 @@ class AxisInformation:
     AxisSteps: 'list[ua.Double]' = field(default_factory=list)
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class XVType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.8
@@ -10495,7 +10045,7 @@ class XVType:
     Value: 'ua.Float' = 0
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ProgramDiagnosticDataType:
     """
     :ivar CreateSessionId:
@@ -10534,7 +10084,7 @@ class ProgramDiagnosticDataType:
     LastMethodReturnStatus: 'ua.StatusResult' = field(default_factory=lambda: StatusResult())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class ProgramDiagnostic2DataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part10/5.2.8
@@ -10581,7 +10131,7 @@ class ProgramDiagnostic2DataType:
     LastMethodReturnStatus: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
 
 
-@dataclass(frozen=FROZEN)
+@dataclass(slots=True)
 class Annotation:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part11/6.6.6
@@ -10664,36 +10214,9 @@ extension_object_typeids['QuantityDimension'] = nid
 nid = FourByteNodeId(ObjectIds.TrustListDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = TrustListDataType
 extension_object_typeids['TrustListDataType'] = nid
-nid = FourByteNodeId(ObjectIds.BaseConfigurationDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = BaseConfigurationDataType
-extension_object_typeids['BaseConfigurationDataType'] = nid
-nid = FourByteNodeId(ObjectIds.BaseConfigurationRecordDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = BaseConfigurationRecordDataType
-extension_object_typeids['BaseConfigurationRecordDataType'] = nid
-nid = FourByteNodeId(ObjectIds.CertificateGroupDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = CertificateGroupDataType
-extension_object_typeids['CertificateGroupDataType'] = nid
-nid = FourByteNodeId(ObjectIds.ConfigurationUpdateTargetType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ConfigurationUpdateTargetType
-extension_object_typeids['ConfigurationUpdateTargetType'] = nid
 nid = FourByteNodeId(ObjectIds.TransactionErrorType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = TransactionErrorType
 extension_object_typeids['TransactionErrorType'] = nid
-nid = FourByteNodeId(ObjectIds.EndpointDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = EndpointDataType
-extension_object_typeids['EndpointDataType'] = nid
-nid = FourByteNodeId(ObjectIds.ServerEndpointDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ServerEndpointDataType
-extension_object_typeids['ServerEndpointDataType'] = nid
-nid = FourByteNodeId(ObjectIds.SecuritySettingsDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = SecuritySettingsDataType
-extension_object_typeids['SecuritySettingsDataType'] = nid
-nid = FourByteNodeId(ObjectIds.UserTokenSettingsDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = UserTokenSettingsDataType
-extension_object_typeids['UserTokenSettingsDataType'] = nid
-nid = FourByteNodeId(ObjectIds.AuthorizationServiceConfigurationDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = AuthorizationServiceConfigurationDataType
-extension_object_typeids['AuthorizationServiceConfigurationDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DecimalDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = DecimalDataType
 extension_object_typeids['DecimalDataType'] = nid
@@ -10874,21 +10397,6 @@ extension_object_typeids['ReferenceDescriptionDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ReferenceListEntryDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = ReferenceListEntryDataType
 extension_object_typeids['ReferenceListEntryDataType'] = nid
-nid = FourByteNodeId(ObjectIds.SpanContextDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = SpanContextDataType
-extension_object_typeids['SpanContextDataType'] = nid
-nid = FourByteNodeId(ObjectIds.TraceContextDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = TraceContextDataType
-extension_object_typeids['TraceContextDataType'] = nid
-nid = FourByteNodeId(ObjectIds.NameValuePair_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = NameValuePair
-extension_object_typeids['NameValuePair'] = nid
-nid = FourByteNodeId(ObjectIds.LogRecord_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = LogRecord
-extension_object_typeids['LogRecord'] = nid
-nid = FourByteNodeId(ObjectIds.LogRecordsDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = LogRecordsDataType
-extension_object_typeids['LogRecordsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.RolePermissionType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RolePermissionType
 extension_object_typeids['RolePermissionType'] = nid
@@ -10955,12 +10463,6 @@ extension_object_typeids['TimeZoneDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ApplicationDescription_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = ApplicationDescription
 extension_object_typeids['ApplicationDescription'] = nid
-nid = FourByteNodeId(ObjectIds.ApplicationIdentityDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ApplicationIdentityDataType
-extension_object_typeids['ApplicationIdentityDataType'] = nid
-nid = FourByteNodeId(ObjectIds.ApplicationConfigurationDataType_Encoding_DefaultBinary)
-extension_objects_by_typeid[nid] = ApplicationConfigurationDataType
-extension_object_typeids['ApplicationConfigurationDataType'] = nid
 nid = FourByteNodeId(ObjectIds.RequestHeader_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RequestHeader
 extension_object_typeids['RequestHeader'] = nid

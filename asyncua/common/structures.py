@@ -75,7 +75,7 @@ class Struct:
     def get_code(self):
         code = f"""
 
-@dataclass
+@dataclass(slots=True)
 class {self.name}:
 
     '''

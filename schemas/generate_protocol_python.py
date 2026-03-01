@@ -94,7 +94,6 @@ class CodeGenerator:
         self.write("from enum import IntEnum, IntFlag")
         self.write("from dataclasses import dataclass, field")
         self.write("")
-        self.write("from asyncua.ua.uatypes import FROZEN")
         self.write("from asyncua.ua.uatypes import SByte, Byte, Bytes, ByteString, Int16, Int32, Int64, UInt16, UInt32")
         self.write(
             "from asyncua.ua.uatypes import UInt64, Boolean, Float, Double, Null, String, CharArray, DateTime, Guid"
@@ -151,7 +150,7 @@ class CodeGenerator:
         self.write("")
         self.iidx = 0
         ignore = " # type: ignore" if obj.name in MyPyIgnoredStructs else ""
-        self.write("@dataclass(frozen=FROZEN)" + ignore)
+        self.write("@dataclass(slots=True)" + ignore)
         if obj.basetype:
             self.write(f"class {obj.name}({obj.basetype}):{ignore}")
         else:
