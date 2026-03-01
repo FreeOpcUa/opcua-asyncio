@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import keyword
 import logging
 import re
@@ -547,13 +548,10 @@ class RecursiveParser:
         if len(descs) != len(sdefs):
             _logger.warning("Descriptions and type definitions length mismatch, some data type nodes will be ignored")
 
-        for desc, sdef in zip(descs, sdefs):
-            await self._process_child(
-                desc,
-                sdef,
-                parent_sdef,
-                overwrite_existing,
-            )
+        await asyncio.gather(*[
+                self._process_child(desc, sdef, parent_sdef, overwrite_existing)
+                for desc, sdef in zip(descs, sdefs)
+            ])
 
     async def _process_child(self, desc, sdef, parent_sdef, overwrite_existing):
         next_parent = parent_sdef
