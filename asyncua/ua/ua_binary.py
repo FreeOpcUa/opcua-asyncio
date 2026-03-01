@@ -282,6 +282,7 @@ def _create_uatype_array_deserializer(vtype):
     return deserialize
 
 
+@functools.cache
 def resolve_uatype(ftype: Any) -> tuple[Any, bool]:
     if isinstance(ftype, str):
         # Resolve string hint
@@ -386,6 +387,7 @@ def struct_to_binary(obj):
     return serializer(obj)
 
 
+@functools.cache
 def create_enum_serializer(uatype):
     if issubclass(uatype, IntFlag):
         typename = "UInt32"
@@ -645,6 +647,7 @@ def extensionobject_to_binary(obj):
     return b"".join(packet)
 
 
+@functools.cache
 def _create_list_deserializer(uatype, recursive: bool = False):
     if recursive:
 
