@@ -4,6 +4,7 @@ Useful methods and classes not belonging anywhere and depending on asyncua libra
 
 import logging
 import uuid
+from dataclasses import fields
 from datetime import datetime, timezone
 from enum import Enum, IntEnum, IntFlag
 
@@ -323,6 +324,6 @@ def copy_dataclass_attr(dc_source, dc_dest) -> None:
     """
     Copy the common attributes of dc_source to dc_dest
     """
-    common_params = set(vars(dc_source)) & set(vars(dc_dest))
+    common_params = set(f.name for f in fields(dc_source)) & set(f.name for f in fields(dc_dest))
     for c in common_params:
         setattr(dc_dest, c, getattr(dc_source, c))

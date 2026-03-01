@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import fields
 from typing import Any
 
 import asyncua
@@ -93,10 +94,10 @@ async def _rdesc_from_node(parent: asyncua.Node, node: asyncua.Node) -> ua.Refer
 
 async def _read_and_copy_attrs(node_type: asyncua.Node, struct: Any, addnode: ua.AddNodesItem) -> None:
     names = [
-        name
-        for name in struct.__dict__.keys()
-        if not name.startswith("_")
-        and name
+        f.name
+        for f in fields(struct)
+        if not f.name.startswith("_")
+        and f.name
         not in (
             "BodyLength",
             "TypeId",

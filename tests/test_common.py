@@ -1097,6 +1097,7 @@ async def test_instantiate_1(opc):
     await v_none_t.set_modelling_rule(None)
     prop_t = await ctrl_t.add_property(0, "state", "Running")
     await prop_t.set_modelling_rule(True)
+    assert await prop_t.read_value() == "Running"
 
     # Create device sutype
     devd_t = await dev_t.add_object_type(0, "MyDeviceDerived")

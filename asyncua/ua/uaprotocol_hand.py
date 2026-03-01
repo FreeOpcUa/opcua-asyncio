@@ -8,7 +8,7 @@ from asyncua.ua import uatypes
 OPC_TCP_SCHEME = "opc.tcp"
 
 
-@dataclass
+@dataclass(slots=True)
 class Hello:
     ProtocolVersion: uatypes.UInt32 = 0
     # the following values could be set to 0 (meaning no limits)
@@ -22,7 +22,6 @@ class Hello:
     EndpointUrl: uatypes.String = ""
 
 
-@dataclass
 class MessageType:
     Invalid: bytes = b"INV"  # FIXME: check value
     Hello: bytes = b"HEL"
@@ -33,7 +32,6 @@ class MessageType:
     SecureMessage: bytes = b"MSG"
 
 
-@dataclass
 class ChunkType:
     Invalid: bytes = b"0"  # FIXME check
     Single: bytes = b"F"
@@ -41,7 +39,7 @@ class ChunkType:
     Abort: bytes = b"A"  # when an error occurred and the Message is aborted (body is ErrorMessage)
 
 
-@dataclass
+@dataclass(slots=False)
 class Header:
     MessageType: MessageType = None
     ChunkType: ChunkType = None
@@ -58,13 +56,13 @@ class Header:
         return struct.calcsize("<3scII")
 
 
-@dataclass
+@dataclass(slots=True)
 class ErrorMessage:
     Error: uatypes.StatusCode = field(default_factory=lambda: uatypes.StatusCode())
     Reason: uatypes.String = field(default_factory=lambda: uatypes.String())
 
 
-@dataclass
+@dataclass(slots=True)
 class Acknowledge:
     ProtocolVersion: uatypes.UInt32 = 0
     ReceiveBufferSize: uatypes.UInt32 = 65536
@@ -73,7 +71,7 @@ class Acknowledge:
     MaxChunkCount: uatypes.UInt32 = 0  # No limits
 
 
-@dataclass
+@dataclass(slots=True)
 class AsymmetricAlgorithmHeader:
     SecurityPolicyURI: uatypes.String = "http://opcfoundation.org/UA/SecurityPolicy#None"
     SenderCertificate: uatypes.ByteString = None
@@ -90,7 +88,7 @@ class AsymmetricAlgorithmHeader:
     __repr__ = __str__
 
 
-@dataclass
+@dataclass(slots=True)
 class SymmetricAlgorithmHeader:
     TokenId: uatypes.UInt32 = 0
 
@@ -99,7 +97,7 @@ class SymmetricAlgorithmHeader:
         return struct.calcsize("<I")
 
 
-@dataclass
+@dataclass(slots=True)
 class SequenceHeader:
     SequenceNumber: uatypes.UInt32 = None
     RequestId: uatypes.UInt32 = None
@@ -131,23 +129,27 @@ class Message:
 ana = auto.NodeAttributesMask
 
 
-@dataclass
+@dataclass(slots=True)
 class ObjectAttributes(auto.ObjectAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = (
-            ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.EventNotifier
+        object.__setattr__(
+            self,
+            "SpecifiedAttributes",
+            ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.EventNotifier,
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class ObjectTypeAttributes(auto.ObjectTypeAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = (
-            ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract
+        object.__setattr__(
+            self,
+            "SpecifiedAttributes",
+            ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract,
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class VariableAttributes(auto.VariableAttributes):
     ArrayDimensions: list[uatypes.UInt32] = None
     Historizing: uatypes.Boolean = False
@@ -169,59 +171,73 @@ class VariableAttributes(auto.VariableAttributes):
     )
 
 
-@dataclass
+@dataclass(slots=True)
 class VariableTypeAttributes(auto.VariableTypeAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = (
-            ana.DisplayName
-            | ana.Description
-            | ana.WriteMask
-            | ana.UserWriteMask
-            | ana.Value
-            | ana.DataType
-            | ana.ValueRank
-            | ana.ArrayDimensions
-            | ana.IsAbstract
+        object.__setattr__(
+            self,
+            "SpecifiedAttributes",
+            (
+                ana.DisplayName
+                | ana.Description
+                | ana.WriteMask
+                | ana.UserWriteMask
+                | ana.Value
+                | ana.DataType
+                | ana.ValueRank
+                | ana.ArrayDimensions
+                | ana.IsAbstract
+            ),
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class MethodAttributes(auto.MethodAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = (
-            ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Executable | ana.UserExecutable
+        object.__setattr__(
+            self,
+            "SpecifiedAttributes",
+            ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Executable | ana.UserExecutable,
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class ReferenceTypeAttributes(auto.ReferenceTypeAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = (
-            ana.DisplayName
-            | ana.Description
-            | ana.WriteMask
-            | ana.UserWriteMask
-            | ana.IsAbstract
-            | ana.Symmetric
-            | ana.InverseName
+        object.__setattr__(
+            self,
+            "SpecifiedAttributes",
+            (
+                ana.DisplayName
+                | ana.Description
+                | ana.WriteMask
+                | ana.UserWriteMask
+                | ana.IsAbstract
+                | ana.Symmetric
+                | ana.InverseName
+            ),
         )
 
 
 # FIXME: changes in that class donnot seem to be part of spec as of 1.04
 # not sure what the spec expect, maybe DataTypeDefinition must be set using an extra call...
 # maybe it will be part of spec in 1.05??? no ideas
-@dataclass
+@dataclass(slots=True)
 class DataTypeAttributes(auto.DataTypeAttributes):
     DataTypeDefinition: uatypes.ExtensionObject = field(default_factory=auto.ExtensionObject)
 
     def __post_init__(self):
-        self.SpecifiedAttributes = (
-            ana.DisplayName
-            | ana.Description
-            | ana.WriteMask
-            | ana.UserWriteMask
-            | ana.IsAbstract
-            | ana.DataTypeDefinition
+        object.__setattr__(
+            self,
+            "SpecifiedAttributes",
+            (
+                ana.DisplayName
+                | ana.Description
+                | ana.WriteMask
+                | ana.UserWriteMask
+                | ana.IsAbstract
+                | ana.DataTypeDefinition
+            ),
         )
 
 
@@ -231,25 +247,29 @@ uatypes.extension_objects_by_typeid[nid] = DataTypeAttributes
 uatypes.extension_object_typeids["DataTypeAttributes"] = nid
 
 
-@dataclass
+@dataclass(slots=True)
 class ViewAttributes(auto.ViewAttributes):
     def __post_init__(self):
-        self.SpecifiedAttributes = (
-            ana.DisplayName
-            | ana.Description
-            | ana.WriteMask
-            | ana.UserWriteMask
-            | ana.ContainsNoLoops
-            | ana.EventNotifier
+        object.__setattr__(
+            self,
+            "SpecifiedAttributes",
+            (
+                ana.DisplayName
+                | ana.Description
+                | ana.WriteMask
+                | ana.UserWriteMask
+                | ana.ContainsNoLoops
+                | ana.EventNotifier
+            ),
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class Argument(auto.Argument):
     ValueRank: auto.Int32 = -1
 
 
-@dataclass
+@dataclass(slots=True)
 class XmlElement:
     """
     An XML element encoded as a UTF-8 string.
@@ -261,6 +281,6 @@ class XmlElement:
 
 
 # Default is StatusValue -> https://reference.opcfoundation.org/Core/Part4/v105/docs/7.10#Table134
-@dataclass
+@dataclass(slots=True)
 class DataChangeFilter(auto.DataChangeFilter):
     Trigger = auto.DataChangeTrigger.StatusValue

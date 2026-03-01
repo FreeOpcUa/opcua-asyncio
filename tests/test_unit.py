@@ -91,7 +91,7 @@ def test_custom_structs(tmpdir):
 
     # set some values
     v = ns["ScalarValueDataType"]()
-    v.SbyteValue = 1
+    v.SByteValue = 1
     v.ByteValue = 2
     v.Int16Value = 3
     v.UInt16Value = 4
@@ -139,7 +139,7 @@ def test_custom_structs_array(tmpdir):
 
     # set some values
     v = ns["ArrayValueDataType"]()
-    v.SbyteValue = [1]
+    v.SByteValue = [1]
     v.ByteValue = [2]
     v.Int16Value = [3]
     v.UInt16Value = [4]
