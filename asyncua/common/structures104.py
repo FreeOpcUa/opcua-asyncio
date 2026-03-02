@@ -5,9 +5,12 @@ import keyword
 import logging
 import re
 import typing
+import uuid
+from collections import defaultdict, deque
 from dataclasses import dataclass, field, make_dataclass
+from datetime import datetime, timezone
 from enum import Enum, IntEnum, IntFlag
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any
 
 from asyncua import Node, ua
 from asyncua.common.manage_nodes import create_data_type, create_encoding
@@ -215,17 +218,7 @@ def make_structure(
     bases = (ua.UaUnion,) if is_union else ()
 
     # Safe namespace for evaluating default values
-    import uuid
-    from datetime import datetime, timezone
-
-    safe_eval_ns = {
-        "ua": ua,
-        "field": field,
-        "uuid": uuid,
-        "datetime": datetime,
-        "timezone": timezone,
-        "None": None,
-    }
+    safe_eval_ns = _SAFE_EVAL_NS
 
     fields = []
     union_field_names = []
@@ -372,40 +365,66 @@ def _generate_object(
     return env
 
 
-class DataTypeSorter:
-    dtype_index: ClassVar[dict[ua.NodeId, DataTypeSorter]] = {}
-    referenced_dtypes: ClassVar[set[ua.NodeId]] = set()
+# Module-level safe eval namespace, built once to avoid repeated imports and dict construction
+_SAFE_EVAL_NS: dict[str, Any] = {
+    "ua": ua,
+    "field": field,
+    "uuid": uuid,
+    "datetime": datetime,
+    "timezone": timezone,
+    "None": None,
+}
 
-    def __init__(self, data_type: ua.NodeId, name: str, desc: ua.ReferenceDescription, sdef: ua.StructureDefinition):
-        self.data_type = data_type
-        self.name = name
-        self.desc = desc
-        self.sdef = sdef
+
+@dataclass
+class DataTypeInfo:
+    """Holds parsed metadata for a single structure DataType node."""
+
+    data_type: ua.NodeId
+    name: str
+    desc: ua.ReferenceDescription
+    sdef: ua.StructureDefinition
+    encoding_id: ua.NodeId = field(init=False)
+    deps: list[ua.NodeId] = field(init=False)
+
+    def __post_init__(self):
         self.encoding_id = self.sdef.DefaultEncodingId
-        self.deps = [field.DataType for field in self.sdef.Fields]
+        self.deps = [f.DataType for f in self.sdef.Fields]
 
-        self.dtype_index[self.desc.NodeId] = self
-        self.referenced_dtypes.update(self.deps)
 
-    def depends_on(self, other: DataTypeSorter):
-        if other.desc.NodeId in self.deps:
-            return True
-        for dep_nodeid in self.deps:
-            if dep_nodeid not in self.dtype_index:
-                continue
-            dep = self.dtype_index[dep_nodeid]
-            if dep != self and dep.depends_on(other):
-                return True
-        return False
+def _topological_sort_dtypes(dtypes: list[DataTypeInfo]) -> list[DataTypeInfo]:
+    """Sort data types using Kahn's algorithm so dependencies come before dependents."""
+    node_map: dict[ua.NodeId, DataTypeInfo] = {dt.desc.NodeId: dt for dt in dtypes}
+    known_ids = node_map.keys()
 
-    def __lt__(self, other: DataTypeSorter):
-        return other.depends_on(self)
+    # Build adjacency list and in-degree counts (only for edges within our set)
+    in_degree: dict[ua.NodeId, int] = {nid: 0 for nid in known_ids}
+    dependents: dict[ua.NodeId, list[ua.NodeId]] = defaultdict(list)
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.desc.NodeId, self.deps, self.encoding_id})"
+    for dt in dtypes:
+        for dep_nid in dt.deps:
+            if dep_nid in known_ids and dep_nid != dt.desc.NodeId:
+                in_degree[dt.desc.NodeId] += 1
+                dependents[dep_nid].append(dt.desc.NodeId)
 
-    def __str__(self):
-        return f"<{self.__class__.__name__}: {self.name!r}>"
+    queue = deque(nid for nid, deg in in_degree.items() if deg == 0)
+    result: list[DataTypeInfo] = []
+
+    while queue:
+        nid = queue.popleft()
+        result.append(node_map[nid])
+        for dependent_nid in dependents[nid]:
+            in_degree[dependent_nid] -= 1
+            if in_degree[dependent_nid] == 0:
+                queue.append(dependent_nid)
+
+    # Anything remaining has circular dependencies - append at the end
+    if len(result) < len(dtypes):
+        seen = {dt.desc.NodeId for dt in result}
+        for dt in dtypes:
+            if dt.desc.NodeId not in seen:
+                result.append(dt)
+    return result
 
 
 async def get_children_descriptions_type_definitions(server, base_node, overwrite_existing=False):
@@ -477,7 +496,9 @@ async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAt
 
 
 async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new_alias) -> None:
-    for desc in await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype):
+    descs = await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype)
+    # Register all children at this level first (parent must exist before child)
+    for desc in descs:
         name = clean_name(desc.BrowseName.Name)
         if parent_datatype not in "Number":
             # Don't insert Number alias, they should be already insert because they have to be basetypes already
@@ -485,7 +506,16 @@ async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new
                 env = make_basetype(name, parent_datatype)
                 ua.register_basetype(name, desc.NodeId, env[name])
                 new_alias[name] = env[name]
-        await _recursive_parse_basedatatypes(server, server.get_node(desc.NodeId), name, new_alias)
+    # Recurse into siblings in parallel (all parents already registered above)
+    if descs:
+        await asyncio.gather(
+            *[
+                _recursive_parse_basedatatypes(
+                    server, server.get_node(desc.NodeId), clean_name(desc.BrowseName.Name), new_alias
+                )
+                for desc in descs
+            ]
+        )
 
 
 async def load_basetype_alias_xml_import(server, name, nodeid, parent_datatype_nid) -> Any:
@@ -548,10 +578,9 @@ class RecursiveParser:
         if len(descs) != len(sdefs):
             _logger.warning("Descriptions and type definitions length mismatch, some data type nodes will be ignored")
 
-        await asyncio.gather(*[
-                self._process_child(desc, sdef, parent_sdef, overwrite_existing)
-                for desc, sdef in zip(descs, sdefs)
-            ])
+        await asyncio.gather(
+            *[self._process_child(desc, sdef, parent_sdef, overwrite_existing) for desc, sdef in zip(descs, sdefs)]
+        )
 
     async def _process_child(self, desc, sdef, parent_sdef, overwrite_existing):
         next_parent = parent_sdef
@@ -565,7 +594,7 @@ class RecursiveParser:
                 if inherited:
                     sdef.Fields = inherited + list(sdef.Fields)
 
-            self._dtypes.append(DataTypeSorter(desc.NodeId, name, desc, sdef))
+            self._dtypes.append(DataTypeInfo(desc.NodeId, name, desc, sdef))
             next_parent = sdef
 
         child_node = self.server.get_node(desc.NodeId)
@@ -583,19 +612,27 @@ async def load_data_type_definitions(server: Server | Client, base_node: Node = 
     on server and generate Python objects in ua namespace to be used to talk with server
     """
     new_objects = await _load_base_datatypes(server)  # we need to load all basedatatypes alias first
-    new_objects.update(await load_enums(server))  # we need all enums to generate structure code
-    new_objects.update(await load_enums(server, server.nodes.option_set_type, True))  # also load all optionsets
+
+    # Load enums and option sets in parallel - they are independent of each other
+    enum_results, optionset_results = await asyncio.gather(
+        load_enums(server),
+        load_enums(server, server.nodes.option_set_type, True),
+    )
+    new_objects.update(enum_results)
+    new_objects.update(optionset_results)
+
     if base_node is None:
         base_node = server.nodes.base_structure_type
-    dtypes = []
 
     parser = RecursiveParser(server)
     dtypes = await parser.parse(base_node)
 
-    dtypes.sort()
-    retries = 10
+    # Topological sort: O(n+e) instead of comparison-based O(n^2 log n)
+    dtypes = _topological_sort_dtypes(dtypes)
+
+    retries = 3
     for cnt in range(retries):
-        # Retry to resolve datatypes
+        # Retry to resolve datatypes (only needed for circular deps / edge cases)
         failed_types = []
         log_ex = retries == cnt + 1
         for dts in dtypes:
