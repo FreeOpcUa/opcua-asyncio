@@ -528,7 +528,7 @@ class UaProcessor:
         _logger.info("Cleanup client connection: %s", self.name)
         self._closing = True
         try:
-            if self._session_watchdog_task:
+            if self._session_watchdog_task and self._session_watchdog_task is not asyncio.current_task():
                 await self._session_watchdog_task
         finally:
             if self.session:
