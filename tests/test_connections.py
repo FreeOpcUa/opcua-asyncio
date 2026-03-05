@@ -122,3 +122,19 @@ async def test_session_watchdog():
         server_time_node = client.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
         await server_time_node.read_value()
     await client.disconnect()
+
+async def test_session_id():
+    port = find_free_port()
+    srv = Server()
+    await srv.init()
+    srv.set_endpoint(f"opc.tcp://127.0.0.1:{port}")
+    await srv.start()
+    client = Client(f"opc.tcp://127.0.0.1:{port}")
+    assert client.session_id is None
+    await client.connect()
+    assert isinstance(client.session_id, int)
+    last_session_id = client.session_id
+    await client.disconnect()
+    assert client.session_id is None
+    await client.connect()
+    assert client.session_id != last_session_id

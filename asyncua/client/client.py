@@ -86,6 +86,7 @@ class Client:
         self.user_certificate_chain: list[x509.Certificate] = []
         self._server_nonce = None
         self._session_counter = 1
+        self.session_id: int | None = None
         self.nodes: Shortcuts = Shortcuts(self.uaclient)
         self.max_messagesize = 0  # No limits
         self.max_chunkcount = 0  # No limits
@@ -537,7 +538,7 @@ class Client:
         # Requested maximum number of milliseconds that a Session should remain open without activity
         params.RequestedSessionTimeout = self.session_timeout
         params.MaxResponseMessageSize = 0  # means no max size
-        response = await self.uaclient.create_session(params)
+        response: ua.CreateSessionResult = await self.uaclient.create_session(params)
         if self.security_policy.host_certificate is None:
             data = nonce
         else:
@@ -579,6 +580,7 @@ class Client:
             self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
         self._monitor_server_task = asyncio.create_task(self._monitor_server_loop())
+        self.session_id = getattr(response.SessionId, "Identifier", None)
         return response
 
     async def check_connection(self) -> None:
@@ -753,6 +755,7 @@ class Client:
                 pass
         # disable hook because we kill our monitor task, so we are going to get CancelledError at every request
         self.uaclient.pre_request_hook = None
+        self.session_id = None
         if self._renew_channel_task:
             self._renew_channel_task.cancel()
             try:
