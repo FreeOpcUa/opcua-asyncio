@@ -910,6 +910,27 @@ def test_struct_104() -> None:
     assert m == m2
 
 
+def test_session_security_diagnostics_roundtrip():
+    """Regression test: SessionSecurityDiagnosticsDataType has a bare
+    'Encoding: Byte' annotation (not quoted as 'ua.Byte'). With
+    from __future__ import annotations in uaprotocol_auto.py, this becomes
+    a forward reference that get_type_hints() must resolve using the
+    module globals. Previously, passing {"ua": ua} as globalns replaced
+    the module globals entirely, causing NameError: name 'Byte' is not defined.
+    """
+    obj = ua.SessionSecurityDiagnosticsDataType(
+        ClientUserIdOfSession="testuser",
+        ClientUserIdHistory=["user1", "user2"],
+        AuthenticationMechanism="Anonymous",
+        TransportProtocol="opc.tcp",
+        SecurityPolicyUri="http://opcfoundation.org/UA/SecurityPolicy#None",
+        ClientCertificate=b"\x00\x01\x02",
+    )
+    data = struct_to_binary(obj)
+    obj2 = struct_from_binary(ua.SessionSecurityDiagnosticsDataType, ua.utils.Buffer(data))
+    assert obj == obj2
+
+
 def test_builtin_type_variant():
     v = ua.Variant(ua.Int16(4))
     assert v.VariantType == ua.VariantType.Int16
