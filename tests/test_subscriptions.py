@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import sys
 from asyncio import Future, TimeoutError, sleep, wait_for
 from copy import copy
@@ -6,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from asyncua.common.subscription import Subscription
+from asyncua.common.subscription import Subscription, SubscriptionItemData
 
 try:
     from unittest.mock import AsyncMock
@@ -16,6 +17,71 @@ import asyncua
 from asyncua import Client, ua
 
 from .conftest import Opc
+
+
+class _DummyNode:
+    def __init__(self):
+        self.nodeid = ua.NodeId(ua.ObjectIds.Server)
+
+
+def _build_subscription_for_queue_sizing() -> Subscription:
+    params = ua.CreateSubscriptionParameters()
+    params.RequestedPublishingInterval = 100.0
+    return Subscription(object(), params, object())
+
+
+def test_warns_on_potential_queue_overflow(caplog):
+    sub = _build_subscription_for_queue_sizing()
+    node = _DummyNode()
+
+    with caplog.at_level(logging.WARNING):
+        sub._make_monitored_item_request(
+            node,
+            ua.AttributeIds.Value,
+            None,
+            queuesize=1,
+            monitoring=ua.MonitoringMode.Reporting,
+            sampling_interval=10.0,
+        )
+
+    assert "Potential monitored item queue overflow" in caplog.text
+
+
+def test_no_warning_when_queue_size_is_sufficient(caplog):
+    sub = _build_subscription_for_queue_sizing()
+    node = _DummyNode()
+
+    with caplog.at_level(logging.WARNING):
+        sub._make_monitored_item_request(
+            node,
+            ua.AttributeIds.Value,
+            None,
+            queuesize=10,
+            monitoring=ua.MonitoringMode.Reporting,
+            sampling_interval=10.0,
+        )
+
+    assert "Potential monitored item queue overflow" not in caplog.text
+
+
+async def test_modify_monitored_item_warns_on_potential_queue_overflow(caplog):
+    sub = _build_subscription_for_queue_sizing()
+    data = SubscriptionItemData()
+    data.server_handle = 1
+    data.client_handle = 1
+    data.monitoring_mode = ua.MonitoringMode.Reporting
+    data.mfilter = None
+    sub._monitored_items[data.client_handle] = data
+
+    result = ua.MonitoredItemModifyResult()
+    result.FilterResult = None
+    sub.server = AsyncMock()
+    sub.server.modify_monitored_items.return_value = [result]
+
+    with caplog.at_level(logging.WARNING):
+        await sub.modify_monitored_item(handle=1, new_samp_time=10.0, new_queuesize=1)
+
+    assert "Potential monitored item queue overflow" in caplog.text
 
 
 class MySubHandler:
