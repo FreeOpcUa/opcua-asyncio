@@ -1291,6 +1291,9 @@ class UaClient(AbstractSession):
                     ack = None
                     continue
                 ack = await self._handle_publish_response(response)
+                # Yield once per successful publish cycle so notification-dispatch
+                # workers can run even when publish() returns immediately.
+                await asyncio.sleep(0)
             except BadNoSubscription:
                 return
             except SubscriptionStaleError:
