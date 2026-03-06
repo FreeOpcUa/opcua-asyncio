@@ -99,6 +99,24 @@ def _compute_republish_window(
     return expected_sequence, replay_end_exclusive
 
 
+def _build_publish_ack(
+    subscription_id: int,
+    notification_message: ua.NotificationMessage,
+) -> SubscriptionAcknowledgement | None:
+    if not notification_message.NotificationData:
+        return None
+    ack = ua.SubscriptionAcknowledgement()
+    ack.SubscriptionId = subscription_id
+    ack.SequenceNumber = notification_message.SequenceNumber
+    return ack
+
+
+async def _invoke_subscription_callback(callback, publish_result: ua.PublishResult) -> None:
+    result = callback(publish_result)
+    if inspect.isawaitable(result):
+        await result
+
+
 class UASocketProtocol(asyncio.Protocol):
     """
     Handle socket connection and send ua messages.
@@ -807,7 +825,7 @@ class UaClient(AbstractSession):
         for subid, callback in self._subscription_callbacks.items():
             try:
                 parameters = ua.PublishResult(subid, NotificationMessage=notification_message)
-                await self._invoke_subscription_callback(callback, parameters)
+                await _invoke_subscription_callback(callback, parameters)
             except Exception:  # we call user code, catch everything!
                 self.logger.exception("Exception while calling user callback: %s")
 
@@ -909,16 +927,11 @@ class UaClient(AbstractSession):
                         self._subscription_callbacks.keys(),
                     )
                     continue
-                await self._invoke_subscription_callback(callback, publish_result)
+                await _invoke_subscription_callback(callback, publish_result)
             except Exception:
                 self.logger.exception("Exception while calling user callback: %s")
             finally:
                 queue.task_done()
-
-    async def _invoke_subscription_callback(self, callback, publish_result: ua.PublishResult) -> None:
-        result = callback(publish_result)
-        if inspect.isawaitable(result):
-            await result
 
     def _get_dispatch_queue(self, subscription_id: int) -> asyncio.Queue[ua.PublishResult | None] | None:
         self._ensure_subscription_dispatch_worker(subscription_id)
@@ -1245,18 +1258,6 @@ class UaClient(AbstractSession):
         if received_sequence > expected_sequence:
             await self._recover_sequence_gap(subscription_id, expected_sequence, received_sequence)
 
-    def _build_publish_ack(
-        self,
-        subscription_id: int,
-        notification_message: ua.NotificationMessage,
-    ) -> SubscriptionAcknowledgement | None:
-        if not notification_message.NotificationData:
-            return None
-        ack = ua.SubscriptionAcknowledgement()
-        ack.SubscriptionId = subscription_id
-        ack.SequenceNumber = notification_message.SequenceNumber
-        return ack
-
     async def _handle_publish_response(self, response: ua.PublishResponse) -> SubscriptionAcknowledgement | None:
         subscription_id = response.Parameters.SubscriptionId
         if not subscription_id:
@@ -1276,7 +1277,7 @@ class UaClient(AbstractSession):
             notification_message,
             source="publish",
         )
-        return self._build_publish_ack(subscription_id, notification_message)
+        return _build_publish_ack(subscription_id, notification_message)
 
     async def _publish_loop(self):
         """
