@@ -490,8 +490,8 @@ class Client:
             params = ua.RegisterServer2Parameters()
             params.Server = serv
             params.DiscoveryConfiguration = discovery_configuration
-            return await self.uaclient.unregister_server2(params)
-        return await self.uaclient.unregister_server(serv)
+            await self.uaclient.unregister_server2(params)
+        await self.uaclient.unregister_server(serv)
 
     async def find_servers(self, uris: Iterable[str] | None = None) -> list[ua.ApplicationDescription]:
         """
