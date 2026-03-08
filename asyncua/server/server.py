@@ -2,6 +2,8 @@
 High level interface to pure python OPC-UA server
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import math
@@ -9,11 +11,13 @@ import socket
 from collections.abc import Callable, Iterable
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from asyncua import ua
 
 from ..client import Client
+from ..common.callback import CallbackType
 from ..common.connection import TransportLimits
 from ..common.event_objects import BaseEvent
 from ..common.manage_nodes import delete_nodes
@@ -32,11 +36,15 @@ from .address_space import NodeData
 from .binary_server_asyncio import BinaryServer
 from .event_generator import EventGenerator
 from .internal_server import InternalServer
+from .user_managers import UserManager
+
+if TYPE_CHECKING:
+    from .internal_session import InternalSession
 
 _logger = logging.getLogger(__name__)
 
 
-def _get_node(isession, whatever):
+def _get_node(isession: InternalSession, whatever: Node | ua.NodeId | int) -> Node:
     if isinstance(whatever, Node):
         return whatever
     if isinstance(whatever, ua.NodeId):
@@ -85,7 +93,7 @@ class Server:
         server listens on some internal IP.
     """
 
-    def __init__(self, iserver: InternalServer = None, user_manager=None):
+    def __init__(self, iserver: InternalServer | None = None, user_manager: UserManager | None = None):
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
         self.product_uri = "urn:freeopcua.github.io:python:server"
@@ -124,9 +132,8 @@ class Server:
         )
         self._pubsub: PubSub | None = None
 
-    async def init(self, shelf_file: Path | None = None):
+    async def init(self, shelf_file: Path | None = None) -> None:
         await self.iserver.init(shelf_file)
-        # setup some expected values
         await self.set_application_uri(self._application_uri)
         sa_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerArray))
         await sa_node.write_value([self._application_uri])
@@ -136,7 +143,7 @@ class Server:
 
         await self.set_build_info(self.product_uri, self.manufacturer_name, self.name, "1.0pre", "0", datetime.now())
 
-    def set_match_discovery_endpoint_url(self, match_discovery_endpoint_url: bool):
+    def set_match_discovery_endpoint_url(self, match_discovery_endpoint_url: bool) -> None:
         """
         Enables or disables the matching of the EndpointUrl request parameter during discovery.
 
@@ -145,7 +152,7 @@ class Server:
         """
         self.iserver.match_discovery_endpoint_url = match_discovery_endpoint_url
 
-    def set_match_discovery_client_ip(self, match_discovery_client_ip: bool):
+    def set_match_discovery_client_ip(self, match_discovery_client_ip: bool) -> None:
         """
         Enables or disables the matching of an endpoint IP to a client IP during discovery.
 
@@ -156,15 +163,21 @@ class Server:
         """
         self.iserver.match_discovery_source_ip = match_discovery_client_ip
 
-    def set_force_server_timestamp(self, force_server_timestamp: bool):
+    def set_force_server_timestamp(self, force_server_timestamp: bool) -> None:
         """
         Enables or disables automatically setting ServerTimestamp on Value attributes
         """
         self.iserver.aspace.force_server_timestamp = force_server_timestamp
 
     async def set_build_info(
-        self, product_uri, manufacturer_name, product_name, software_version, build_number, build_date
-    ):
+        self,
+        product_uri: str,
+        manufacturer_name: str,
+        product_name: str,
+        software_version: str,
+        build_number: str,
+        build_date: datetime,
+    ) -> None:
         if not all(
             isinstance(arg, str)
             for arg in [product_uri, manufacturer_name, product_name, software_version, build_number]
@@ -218,24 +231,29 @@ class Server:
         await product_build_number_node.write_value(status.BuildInfo.BuildNumber)
         await product_build_date_node.write_value(status.BuildInfo.BuildDate)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Server:
         await self.start()
+        return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    async def __aexit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: Any
+    ) -> None:
         await self.stop()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"OPC UA Server({self.endpoint.geturl()})"
 
     __repr__ = __str__
 
-    async def load_certificate(self, path_or_content: str | bytes | Path, format: str | None = None):
+    async def load_certificate(self, path_or_content: str | bytes | Path, format: str | None = None) -> None:
         """
         load server certificate from file, either pem or der
         """
         self.iserver.certificate = await uacrypto.load_certificate(path_or_content, format)
 
-    async def load_private_key(self, path_or_content: str | Path | bytes, password=None, format=None):
+    async def load_private_key(
+        self, path_or_content: str | Path | bytes, password: str | bytes | None = None, format: str | None = None
+    ) -> None:
         self.iserver.private_key = await uacrypto.load_private_key(path_or_content, password, format)
 
     def disable_clock(self, val: bool = True):
@@ -245,10 +263,10 @@ class Server:
         """
         self.iserver.disabled_clock = val
 
-    def get_application_uri(self):
+    def get_application_uri(self) -> str:
         return self._application_uri
 
-    async def set_application_uri(self, uri: str):
+    async def set_application_uri(self, uri: str) -> None:
         """
         Set application/server URI.
         This uri is supposed to be unique. If you intend to register
@@ -265,7 +283,7 @@ class Server:
             uries.append(uri)
         await ns_node.write_value(uries)
 
-    async def find_servers(self, uris=None):
+    async def find_servers(self, uris: list[str] | None = None) -> list[ua.ApplicationDescription]:
         """
         find_servers. mainly implemented for symmetry with client
         """
@@ -277,8 +295,11 @@ class Server:
         return self.iserver.find_servers(params)
 
     async def register_to_discovery(
-        self, url: str = "opc.tcp://localhost:4840", period: int = 60, discovery_configuration=None
-    ):
+        self,
+        url: str = "opc.tcp://localhost:4840",
+        period: int = 60,
+        discovery_configuration: ua.DiscoveryConfiguration | None = None,
+    ) -> None:
         """
         Register to an OPC-UA Discovery server. Registering must be renewed at
         least every 10 minutes, so this method will use our asyncio thread to
@@ -296,7 +317,7 @@ class Server:
         if period:
             self._discovery_handle = asyncio.create_task(self._run_renewal_loop())
 
-    async def _run_renewal_loop(self):
+    async def _run_renewal_loop(self) -> None:
         while True:
             try:
                 await self._renew_registration()
@@ -304,7 +325,9 @@ class Server:
                 _logger.warning("Error during registration renewal: %s", e)
             await asyncio.sleep(self._discovery_period)
 
-    async def unregister_from_discovery(self, url: str = "opc.tcp://localhost:4840", discovery_configuration=None):
+    async def unregister_from_discovery(
+        self, url: str = "opc.tcp://localhost:4840", discovery_configuration: ua.DiscoveryConfiguration | None = None
+    ) -> None:
         """
         stop registration thread
         """
@@ -315,25 +338,29 @@ class Server:
         if not self._discovery_clients and self._discovery_handle:
             self._discovery_handle.cancel()
 
-    async def _renew_registration(self):
+    async def _renew_registration(self) -> None:
         for client in self._discovery_clients.values():
             await client.connect_sessionless()
             await client.register_server(self)  # FIXME discovery_configuration?
             await client.disconnect_sessionless()
 
-    def allow_remote_admin(self, allow):
+    def allow_remote_admin(self, allow: bool) -> None:
         """
         Enable or disable the builtin Admin user from network clients
         """
         self.iserver.allow_remote_admin = allow
 
-    def set_endpoint(self, url):
+    def set_endpoint(self, url: str) -> None:
         self.endpoint = urlparse(url)
 
-    async def get_endpoints(self):
+    async def get_endpoints(self) -> list[ua.EndpointDescription]:
         return await self.iserver.get_endpoints()
 
-    def set_security_policy(self, security_policy, permission_ruleset=None):
+    def set_security_policy(
+        self,
+        security_policy: list[ua.SecurityPolicyType],
+        permission_ruleset: SimpleRoleRuleset | None = None,
+    ) -> None:
         """
         Method setting up the security policies for connections
         to the server, where security_policy is a list of integers.
@@ -355,7 +382,7 @@ class Server:
         if permission_ruleset is not None:
             self._permission_ruleset = permission_ruleset
 
-    def set_security_IDs(self, policy_ids):
+    def set_security_IDs(self, policy_ids: list[str]) -> None:
         """
         DEPRECATED!
         Only available for backwards compatibility.
@@ -371,7 +398,7 @@ class Server:
             tokens.append(ua.UserNameIdentityToken)
         self.set_identity_tokens(tokens)
 
-    def set_identity_tokens(self, tokens):
+    def set_identity_tokens(self, tokens: list[type]) -> None:
         """
         Method setting up allowed identity token types for authentication.
 
@@ -381,7 +408,7 @@ class Server:
         """
         self.iserver.supported_tokens = tuple(tokens)
 
-    async def _setup_server_nodes(self):
+    async def _setup_server_nodes(self) -> None:
         # to be called just before starting server since it needs all parameters to be setup
         no_cert = False
         for policy_type in self._security_policy:
@@ -405,7 +432,9 @@ class Server:
         if no_cert:
             _logger.warning("Endpoints other than open requested but private key and certificate are not set.")
 
-    def _set_endpoints(self, policy, mode, level):
+    def _set_endpoints(
+        self, policy: type[security_policies.SecurityPolicy], mode: ua.MessageSecurityMode, level: int
+    ) -> None:
         idtokens = []
         tokens = self.iserver.supported_tokens
         if ua.AnonymousIdentityToken in tokens:
@@ -426,7 +455,7 @@ class Server:
                     token_policy, token_mode, _ = security_policies.SECURITY_POLICY_TYPE_MAP[token_policy_type]
                     if token_mode == ua.MessageSecurityMode.None_:
                         continue
-                    idtoken.SecurityPolicyUri = token_policy.URI
+                    idtoken.SecurityPolicyUri = token_policy.URI  # type: ignore[attr-defined]
                     idtokens.append(idtoken)
                     break
                 else:
@@ -480,10 +509,10 @@ class Server:
         edp.SecurityLevel = level
         self.iserver.add_endpoint(edp)
 
-    def set_server_name(self, name):
+    def set_server_name(self, name: str) -> None:
         self.name = name
 
-    async def start(self):
+    async def start(self) -> None:
         """
         Start to listen on network
         """
@@ -509,7 +538,7 @@ class Server:
             return self.socket_address
         return self.endpoint.hostname, self.endpoint.port
 
-    async def stop(self):
+    async def stop(self) -> None:
         """
         Stop server
         """
@@ -519,19 +548,20 @@ class Server:
 
         if self._discovery_clients:
             await asyncio.gather(*[client.disconnect() for client in self._discovery_clients.values()])
-        await self.bserver.stop()
+        if self.bserver is not None:
+            await self.bserver.stop()
         await self.iserver.stop()
         if self._pubsub is not None:
             await self._pubsub.stop()
         _logger.debug("%s Internal server stopped, everything closed", self)
 
-    def get_root_node(self):
+    def get_root_node(self) -> Node:
         """
         Get Root node of server. Returns a Node object.
         """
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.RootFolder))
 
-    def get_objects_node(self):
+    def get_objects_node(self) -> Node:
         """
         Get Objects node of server. Returns a Node object.
         """
@@ -543,7 +573,7 @@ class Server:
         """
         return Node(self.iserver.isession, nodeid)
 
-    async def create_subscription(self, period, handler):
+    async def create_subscription(self, period: float, handler: Any) -> Subscription:
         """
         Create a subscription.
         Returns a Subscription object which allow to subscribe to events or data changes on server
@@ -561,13 +591,13 @@ class Server:
         await subscription.init()
         return subscription
 
-    async def get_namespace_array(self):
+    async def get_namespace_array(self) -> list[str]:
         """
         get all namespace defined in server
         """
         return await self.nodes.namespace_array.read_value()
 
-    async def register_namespace(self, uri) -> int:
+    async def register_namespace(self, uri: str) -> int:
         """
         Register a new namespace. Nodes should in custom namespace, not 0.
         """
@@ -578,14 +608,18 @@ class Server:
         await self.nodes.namespace_array.write_value(uries)
         return len(uries) - 1
 
-    async def get_namespace_index(self, uri):
+    async def get_namespace_index(self, uri: str) -> int:
         """
         get index of a namespace using its uri
         """
         uries = await self.get_namespace_array()
         return uries.index(uri)
 
-    async def get_event_generator(self, etype=None, emitting_node=ua.ObjectIds.Server):
+    async def get_event_generator(
+        self,
+        etype: BaseEvent | Node | ua.NodeId | int | None = None,
+        emitting_node: ua.NodeId | int = ua.ObjectIds.Server,
+    ) -> EventGenerator:
         """
         Returns an event object using an event type from address space.
         Use this object to fire events
@@ -597,8 +631,13 @@ class Server:
         return ev_gen
 
     async def create_custom_data_type(
-        self, idx, name, basetype=ua.ObjectIds.BaseDataType, properties=None, description=None
-    ):
+        self,
+        idx: int | ua.NodeId,
+        name: str | ua.QualifiedName,
+        basetype: ua.NodeId | int = ua.ObjectIds.BaseDataType,
+        properties: list[tuple] | None = None,
+        description: str | None = None,
+    ) -> Node:
         if properties is None:
             properties = []
         base_t = _get_node(self.iserver.isession, basetype)
@@ -613,14 +652,26 @@ class Server:
             )
         return custom_t
 
-    async def create_custom_event_type(self, idx, name, basetype=ua.ObjectIds.BaseEventType, properties=None):
+    async def create_custom_event_type(
+        self,
+        idx: int | ua.NodeId,
+        name: str | ua.QualifiedName,
+        basetype: ua.NodeId | int = ua.ObjectIds.BaseEventType,
+        properties: list[tuple] | None = None,
+    ) -> Node:
         if properties is None:
             properties = []
         return await self._create_custom_type(idx, name, basetype, properties, [], [])
 
     async def create_custom_object_type(
-        self, idx, name, basetype=ua.ObjectIds.BaseObjectType, properties=None, variables=None, methods=None
-    ):
+        self,
+        idx: int | ua.NodeId,
+        name: str | ua.QualifiedName,
+        basetype: ua.NodeId | int = ua.ObjectIds.BaseObjectType,
+        properties: list[tuple] | None = None,
+        variables: list[tuple] | None = None,
+        methods: list[tuple] | None = None,
+    ) -> Node:
         if properties is None:
             properties = []
         if variables is None:
@@ -633,8 +684,14 @@ class Server:
     # return self._create_custom_type(idx, name, basetype, properties)
 
     async def create_custom_variable_type(
-        self, idx, name, basetype=ua.ObjectIds.BaseVariableType, properties=None, variables=None, methods=None
-    ):
+        self,
+        idx: int | ua.NodeId,
+        name: str | ua.QualifiedName,
+        basetype: ua.NodeId | int = ua.ObjectIds.BaseVariableType,
+        properties: list[tuple] | None = None,
+        variables: list[tuple] | None = None,
+        methods: list[tuple] | None = None,
+    ) -> Node:
         if properties is None:
             properties = []
         if variables is None:
@@ -643,7 +700,15 @@ class Server:
             methods = []
         return await self._create_custom_type(idx, name, basetype, properties, variables, methods)
 
-    async def _create_custom_type(self, idx, name, basetype, properties, variables, methods):
+    async def _create_custom_type(
+        self,
+        idx: int | ua.NodeId,
+        name: str | ua.QualifiedName,
+        basetype: ua.NodeId | int,
+        properties: list[tuple],
+        variables: list[tuple],
+        methods: list[tuple],
+    ) -> Node:
         base_t = _get_node(self.iserver.isession, basetype)
         custom_t = await base_t.add_object_type(idx, name)
         for prop in properties:
@@ -664,14 +729,20 @@ class Server:
             await custom_t.add_method(idx, method[0], method[1], method[2], method[3])
         return custom_t
 
-    async def import_xml(self, path=None, xmlstring=None, strict_mode=True, auto_load_definitions: bool = True):
+    async def import_xml(
+        self,
+        path: str | None = None,
+        xmlstring: str | None = None,
+        strict_mode: bool = True,
+        auto_load_definitions: bool = True,
+    ) -> list[ua.NodeId]:
         """
         Import nodes defined in xml
         """
         importer = XmlImporter(self, strict_mode, auto_load_definitions)
         return await importer.import_xml(path, xmlstring)
 
-    async def export_xml(self, nodes, path, export_values: bool = False):
+    async def export_xml(self, nodes: Iterable[Node], path: str, export_values: bool = False) -> None:
         """
         Export defined nodes to xml
         :param export_value: export values from variants
@@ -694,10 +765,14 @@ class Server:
         nodes = await get_nodes_of_namespace(self, namespaces)
         await self.export_xml(nodes, path, export_values=export_values)
 
-    async def delete_nodes(self, nodes, recursive=False):
+    async def delete_nodes(
+        self, nodes: Iterable[Node], recursive: bool = False
+    ) -> tuple[list[Node], list[ua.StatusCode]]:
         return await delete_nodes(self.iserver.isession, nodes, recursive)
 
-    async def historize_node_data_change(self, node, period=timedelta(days=7), count=0):
+    async def historize_node_data_change(
+        self, node: Node | list[Node] | tuple[Node, ...], period: timedelta = timedelta(days=7), count: int = 0
+    ) -> None:
         """
         Start historizing supplied nodes; see history module
         :param node: node or list of nodes that can be historized (variables/properties)
@@ -708,7 +783,7 @@ class Server:
         for n in nodes:
             await self.iserver.enable_history_data_change(n, period, count)
 
-    async def dehistorize_node_data_change(self, node):
+    async def dehistorize_node_data_change(self, node: Node | list[Node] | tuple[Node, ...]) -> None:
         """
         Stop historizing supplied nodes; see history module
         :param node: node or list of nodes that can be historized (UA variables/properties)
@@ -717,7 +792,9 @@ class Server:
         for n in nodes:
             await self.iserver.disable_history_data_change(n)
 
-    async def historize_node_event(self, node, period=timedelta(days=7), count: int = 0):
+    async def historize_node_event(
+        self, node: Node | list[Node] | tuple[Node, ...], period: timedelta = timedelta(days=7), count: int = 0
+    ) -> None:
         """
         Start historizing events from node (typically a UA object); see history module
         :param node: node or list of nodes that can be historized (UA objects)
@@ -728,7 +805,7 @@ class Server:
         for n in nodes:
             await self.iserver.enable_history_event(n, period, count)
 
-    async def dehistorize_node_event(self, node):
+    async def dehistorize_node_event(self, node: Node | list[Node] | tuple[Node, ...]) -> None:
         """
         Stop historizing events from node (typically a UA object); see history module
         :param node: node or list of nodes that can be historized (UA objects)
@@ -737,13 +814,13 @@ class Server:
         for n in nodes:
             await self.iserver.disable_history_event(n)
 
-    def subscribe_server_callback(self, event, handle):
+    def subscribe_server_callback(self, event: CallbackType, handle: Callable[..., Any]) -> None:
         self.iserver.subscribe_server_callback(event, handle)
 
-    def unsubscribe_server_callback(self, event, handle):
+    def unsubscribe_server_callback(self, event: CallbackType, handle: Callable[..., Any]) -> None:
         self.iserver.unsubscribe_server_callback(event, handle)
 
-    def link_method(self, node, callback):
+    def link_method(self, node: Node, callback: Callable[..., Any]) -> None:
         """
         Link a python function to a UA method in the address space; required when a UA method has been imported
         to the address space via XML; the python executable must be linked manually
@@ -752,7 +829,7 @@ class Server:
         """
         self.iserver.isession.add_method_callback(node.nodeid, callback)
 
-    async def load_type_definitions(self, nodes=None):
+    async def load_type_definitions(self, nodes: Iterable[Node] | None = None) -> dict[str, type]:
         """
         load custom structures from our server.
         Server side this can be used to create python objects from custom structures
@@ -761,7 +838,7 @@ class Server:
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_type_definitions(self, nodes)
 
-    async def load_data_type_definitions(self, node=None):
+    async def load_data_type_definitions(self, node: Node | None = None) -> dict[str, type]:
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server
@@ -769,14 +846,16 @@ class Server:
         """
         return await load_data_type_definitions(self, node)
 
-    async def load_enums(self):
+    async def load_enums(self) -> dict[str, type]:
         """
         load UA structures and generate python Enums in ua module for custom enums in server
         """
         _logger.warning("Deprecated since spec 1.04, call load_data_type_definitions")
         return await load_enums(self)
 
-    async def write_attribute_value(self, nodeid, datavalue, attr=ua.AttributeIds.Value):
+    async def write_attribute_value(
+        self, nodeid: ua.NodeId, datavalue: ua.DataValue, attr: ua.AttributeIds = ua.AttributeIds.Value
+    ) -> None:
         """
         directly write datavalue to the Attribute, bypassing some checks and structure creation,
         so it is a little faster
@@ -809,7 +888,7 @@ class Server:
         """
         self.iserver.set_attribute_value_setter(nodeid, setter, attr)
 
-    def read_attribute_value(self, nodeid, attr=ua.AttributeIds.Value):
+    def read_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds = ua.AttributeIds.Value) -> ua.DataValue:
         """
         directly read datavalue of the Attribute
         """
