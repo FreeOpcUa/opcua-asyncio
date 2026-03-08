@@ -39,3 +39,5 @@ my_cert.pem
 my_private_key.pem
 examples/sync/c.py
 .python-version
+combined.svg
+t.txt
