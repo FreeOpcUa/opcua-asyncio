@@ -194,9 +194,8 @@ class InternalSession(AbstractSession):
         self.logger.info("Node registration not implemented")
         return nodes
 
-    async def unregister_nodes(self, nodes: list[ua.NodeId]) -> list[ua.NodeId]:
+    async def unregister_nodes(self, nodes: list[ua.NodeId]) -> None:
         self.logger.info("Node registration not implemented")
-        return nodes
 
     async def translate_browsepaths_to_nodeids(self, params):
         return self.iserver.view_service.translate_browsepaths_to_nodeids(params)

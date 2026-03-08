@@ -170,6 +170,8 @@ class Subscription:
         """
         Delete subscription on server. This is automatically done by Client and Server classes on exit.
         """
+        if self.subscription_id is None:
+            return
         results = await self.server.delete_subscriptions([self.subscription_id])
         results[0].check()
 
