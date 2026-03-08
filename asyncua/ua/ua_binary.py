@@ -10,8 +10,8 @@ import logging
 import struct
 import typing
 import uuid
-from collections.abc import Callable, Sequence
-from dataclasses import fields, is_dataclass
+from collections.abc import Callable, Iterable, Sequence
+from dataclasses import Field, fields, is_dataclass
 from enum import Enum, IntFlag
 from io import BytesIO
 from types import UnionType
@@ -260,7 +260,7 @@ def create_uatype_array_serializer(vtype: ua.VariantType) -> Callable[[Any], byt
         return data_type.pack_array
     serializer = create_uatype_serializer(vtype)
 
-    def serialize(array):
+    def serialize(array: Sequence[Any] | None) -> bytes:
         if array is None:
             return b"\xff\xff\xff\xff"
         length = Primitives.Int32.pack(len(array))
@@ -284,10 +284,10 @@ def _create_uatype_array_deserializer(vtype: ua.VariantType) -> Callable[[Any], 
     else:  # Revert to slow serial unpacking.
         deserialize_element = _create_uatype_deserializer(vtype)
 
-        def unpack_array(data, length):
+        def unpack_array(data: Buffer | IO, length: int) -> Iterable[Any]:
             return (deserialize_element(data) for _ in range(length))
 
-    def deserialize(data):
+    def deserialize(data: Buffer | IO) -> list[Any] | None:
         length = Primitives.Int32.unpack(data)
         if length == -1:
             return None
@@ -358,7 +358,7 @@ def create_dataclass_serializer(dataclazz: type) -> Callable[[Any], bytes]:
         union_clazz: type[ua.UaUnion] = dataclazz  # type: ignore[assignment]
         encoding_funcs = [field_serializer(*resolve_uatype(t), dataclazz) for t in union_clazz._union_types]
 
-        def union_serialize(obj):
+        def union_serialize(obj: Any) -> bytes:
             bin = Primitives.UInt32.pack(obj.Encoding)
             # 0 => None
             # 1.. => union fields
@@ -373,7 +373,7 @@ def create_dataclass_serializer(dataclazz: type) -> Callable[[Any], bytes]:
         for enc_count, field in enumerate(filter(lambda f: type_is_optional(resolved_fieldtypes[f.name]), data_fields))
     ]
 
-    def enc_value(obj):
+    def enc_value(obj: Any) -> int:
         enc = 0
         for name, enc_val in option_fields_encodings:
             if getattr(obj, name) is not None:
@@ -384,8 +384,8 @@ def create_dataclass_serializer(dataclazz: type) -> Callable[[Any], bytes]:
         (f.name, field_serializer(*resolve_uatype(resolved_fieldtypes[f.name]), dataclazz)) for f in data_fields
     ]
 
-    def serialize(obj):
-        parts = []
+    def serialize(obj: Any) -> bytes:
+        parts: list[bytes] = []
         for name, serializer in encoding_functions:
             if name == "Encoding":
                 parts.append(serializer(enc_value(obj)))
@@ -451,7 +451,7 @@ def to_binary(uatype: type, val: Any) -> bytes:
 
 
 @functools.cache
-def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Sequence[Any] | None], bytes]:
+def create_list_serializer(uatype: type, recursive: bool = False) -> Callable[[Sequence[Any] | None], bytes]:
     """
     Given a type, return a function that takes a list of instances
     of that type and serializes it.
@@ -462,7 +462,7 @@ def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Sequenc
     none_val = Primitives.Int32.pack(-1)
     if recursive:
 
-        def recursive_serialize(val):
+        def recursive_serialize(val: Sequence[Any] | None) -> bytes:
             if val is None:
                 return none_val
             data_size = Primitives.Int32.pack(len(val))
@@ -472,7 +472,7 @@ def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Sequenc
 
     type_serializer = create_type_serializer(uatype)
 
-    def serialize(val):
+    def serialize(val: Sequence[Any] | None) -> bytes:
         if val is None:
             return none_val
         data_size = Primitives.Int32.pack(len(val))
@@ -600,7 +600,7 @@ def _reshape(flat: list[Any], dims: list[int]) -> list[Any]:
     return [_reshape(flat[i : i + subsize], subdims) for i in range(0, len(flat), subsize)]
 
 
-def extensionobject_from_binary(data: Buffer) -> ua.ExtensionObject:
+def extensionobject_from_binary(data: Buffer) -> Any:
     """
     Convert binary-coded ExtensionObject to a Python object.
     Returns an object, or None if TypeId is zero
@@ -662,17 +662,17 @@ def extensionobject_to_binary(obj: Any) -> bytes:
 
 
 @functools.cache
-def _create_list_deserializer(uatype: type, recursive: bool = False) -> Callable[[Any], list[Any]]:
+def _create_list_deserializer(uatype: type, recursive: bool = False) -> Callable[[Buffer | IO], list[Any]]:
     if recursive:
 
-        def _deserialize_recursive(data):
+        def _deserialize_recursive(data: Buffer | IO) -> list[Any]:
             size = Primitives.Int32.unpack(data)
             return [_create_type_deserializer(uatype, type(None))(data) for _ in range(size)]
 
         return _deserialize_recursive
     element_deserializer = _create_type_deserializer(uatype, type(None))
 
-    def _deserialize(data):
+    def _deserialize(data: Buffer | IO) -> list[Any]:
         size = Primitives.Int32.unpack(data)
         return [element_deserializer(data) for _ in range(size)]
 
@@ -680,7 +680,7 @@ def _create_list_deserializer(uatype: type, recursive: bool = False) -> Callable
 
 
 @functools.cache
-def _create_type_deserializer(uatype: Any, dataclazz: type) -> Callable[[Any], Any]:
+def _create_type_deserializer(uatype: Any, dataclazz: type) -> Callable[[Buffer | IO], Any]:
     uatype, is_optional = resolve_uatype(uatype)
 
     if not is_optional and type_is_union(uatype):
@@ -719,33 +719,34 @@ def from_binary(uatype: type[T] | str, data: Buffer | IO) -> T:
 
 
 @functools.cache
-def _create_dataclass_deserializer(objtype: type | str) -> Callable[[Any], Any]:
+def _create_dataclass_deserializer(objtype: type | str) -> Callable[[Buffer | IO], Any]:
     if isinstance(objtype, str):
         objtype = getattr(ua, objtype)
+    assert isinstance(objtype, type)
     if issubclass(objtype, Enum):
         return create_enum_deserializer(objtype)  # type: ignore[arg-type]
     if issubclass(objtype, ua.UaUnion):
         union_type: type[ua.UaUnion] = objtype  # type: ignore[assignment]
         typefields = fields(union_type)
-        field_deserializers = [_create_type_deserializer(t, union_type) for t in union_type._union_types]
+        union_field_deserializers = [_create_type_deserializer(t, union_type) for t in union_type._union_types]
         byte_decode = next(_create_type_deserializer(f.type, type(None)) for f in typefields if f.name == "Encoding")
 
-        def decode_union(data):
+        def decode_union(data: Buffer | IO) -> Any:
             enc = byte_decode(data)
-            obj = objtype()
+            obj: Any = objtype()
             obj.Encoding = enc
             # encoding value
             # 0 => empty union
             # 1..union_fiels => index of the
-            if enc > 0 and enc <= len(field_deserializers):
-                obj.Value = field_deserializers[enc - 1](data)
+            if enc > 0 and enc <= len(union_field_deserializers):
+                obj.Value = union_field_deserializers[enc - 1](data)
             else:
                 obj.Value = None
             return obj
 
         return decode_union
     enc_count = 0
-    field_deserializers = []
+    dc_field_deserializers: list[tuple[Field[Any], int, Callable[[Buffer | IO], Any]]] = []
     resolved_fieldtypes = get_type_hints(objtype, None, {"ua": ua})
     for field in fields(objtype):
         optional_enc_bit = 0
@@ -760,12 +761,12 @@ def _create_dataclass_deserializer(objtype: type | str) -> Callable[[Any], Any]:
             deserialize_field = extensionobject_from_binary
         else:
             deserialize_field = _create_type_deserializer(field_type, objtype)
-        field_deserializers.append((field, optional_enc_bit, deserialize_field))
+        dc_field_deserializers.append((field, optional_enc_bit, deserialize_field))
 
-    def decode(data):
-        kwargs = {}
-        enc = 0
-        for field, optional_enc_bit, deserialize_field in field_deserializers:
+    def decode(data: Buffer | IO) -> Any:
+        kwargs: dict[str, Any] = {}
+        enc: int = 0
+        for field, optional_enc_bit, deserialize_field in dc_field_deserializers:
             if field.name == "Encoding":
                 enc = deserialize_field(data)
             elif optional_enc_bit == 0 or enc & optional_enc_bit:
@@ -775,7 +776,7 @@ def _create_dataclass_deserializer(objtype: type | str) -> Callable[[Any], Any]:
     return decode
 
 
-def struct_from_binary(objtype: type[T] | str, data: Buffer | IO) -> T:
+def struct_from_binary(objtype: type[T] | str, data: IO | Buffer) -> T:
     """
     unpack an ua struct. Arguments are an objtype as Python dataclass or string
     """

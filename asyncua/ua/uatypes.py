@@ -14,7 +14,7 @@ from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import IntEnum
-from typing import TYPE_CHECKING, Any, Union, get_args, get_origin
+from typing import TYPE_CHECKING, Any, ClassVar, Union, get_args, get_origin
 
 from asyncua.ua.object_ids import ObjectIds
 
@@ -122,7 +122,7 @@ def type_string_from_type(uatype):
 
 @dataclass
 class UaUnion:
-    """class to identify unions"""
+    _union_types: ClassVar[list[Any]] = []
 
 
 class Number(float):
