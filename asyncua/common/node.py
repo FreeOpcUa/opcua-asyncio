@@ -33,7 +33,7 @@ from .ua_utils import data_type_to_variant_type, value_to_datavalue
 _logger = logging.getLogger(__name__)
 
 
-def _check_results(results, reqlen=1):
+def _check_results(results: list[ua.StatusCode], reqlen: int = 1) -> None:
     if not len(results) == reqlen:
         raise ValueError(results)
     for r in results:
@@ -62,8 +62,9 @@ class Node:
     """
 
     def __init__(self, session: AbstractSession, nodeid: Node | ua.NodeId | str | int):
-        self.session = session
+        self.session: AbstractSession = session
         self.nodeid: ua.NodeId
+        self.basenodeid: ua.NodeId | None = None
         if isinstance(nodeid, Node):
             self.nodeid = nodeid.nodeid
         elif isinstance(nodeid, ua.NodeId):
@@ -77,23 +78,22 @@ class Node:
                 f"argument to node must be a NodeId object or a string"
                 f" defining a nodeid found {nodeid} of type {type(nodeid)}"
             )
-        self.basenodeid = None
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Node) and self.nodeid == other.nodeid:
             return True
         return False
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.nodeid.to_string()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Node({self.nodeid})"
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self.nodeid.__hash__()
 
     async def read_browse_name(self) -> ua.QualifiedName:
@@ -162,7 +162,7 @@ class Node:
             raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         return ua.EventNotifier.parse_bitfield(result.Value.Value)
 
-    async def set_event_notifier(self, values) -> None:
+    async def set_event_notifier(self, values: Iterable[ua.EventNotifier]) -> None:
         """
         Set the event notifier attribute.
 
@@ -295,14 +295,14 @@ class Node:
             await self.unset_attr_bit(ua.AttributeIds.AccessLevel, ua.AccessLevel.CurrentWrite)
             await self.unset_attr_bit(ua.AttributeIds.UserAccessLevel, ua.AccessLevel.CurrentWrite)
 
-    async def set_attr_bit(self, attr: ua.AttributeIds, bit: int) -> None:
+    async def set_attr_bit(self, attr: ua.AttributeIds, bit: ua.AccessLevel | int) -> None:
         dv = await self.read_attribute(attr)
         if dv.Value is None:
             raise UaInvalidParameterError("Value must not be None if the result is in Good status")
         val = ua.ua_binary.set_bit(dv.Value.Value, bit)
         await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
-    async def unset_attr_bit(self, attr: ua.AttributeIds, bit: int) -> None:
+    async def unset_attr_bit(self, attr: ua.AttributeIds, bit: ua.AccessLevel | int) -> None:
         dv = await self.read_attribute(attr)
         if dv.Value is None:
             raise UaInvalidParameterError("Value must not be None if the result is in Good status")
@@ -766,7 +766,7 @@ class Node:
             event_res.append(Event.from_event_fields(evfilter.SelectClauses, res.EventFields))
         return event_res
 
-    async def history_read_events(self, details: Iterable[ua.ReadEventDetails]) -> ua.HistoryReadResult:
+    async def history_read_events(self, details: ua.ReadEventDetails) -> ua.HistoryReadResult:
         """
         Read event history of a node, low-level function
         result code from server is checked and an exception is raised in case of error
@@ -790,7 +790,9 @@ class Node:
             r.check()
         return nodes
 
-    def _fill_delete_reference_item(self, rdesc: ua.ReferenceDescription, bidirectional: bool = False):
+    def _fill_delete_reference_item(
+        self, rdesc: ua.ReferenceDescription, bidirectional: bool = False
+    ) -> ua.DeleteReferencesItem:
         ditem = ua.DeleteReferencesItem()
         ditem.SourceNodeId = self.nodeid
         ditem.TargetNodeId = rdesc.NodeId
@@ -842,7 +844,7 @@ class Node:
         results = await self.session.add_references(params)
         _check_results(results, len(params))
 
-    async def set_modelling_rule(self, mandatory: bool) -> None:
+    async def set_modelling_rule(self, mandatory: bool | None) -> None:
         """
         Add a modelling rule reference to Node.
         When creating a new object type, its variable and child nodes will not
@@ -902,7 +904,7 @@ class Node:
     ) -> Node:
         return await create_property(self, nodeid, bname, val, varianttype, datatype)
 
-    async def add_method(self, *args) -> Node:
+    async def add_method(self, *args: Any) -> Node:
         return await create_method(self, *args)
 
     async def add_reference_type(
@@ -935,7 +937,7 @@ class Node:
         self.basenodeid = None
 
     @staticmethod
-    def new_node(session, nodeid: ua.NodeId) -> Node:
+    def new_node(session: AbstractSession, nodeid: ua.NodeId) -> Node:
         """
         Helper function to init nodes with out importing Node
         """
