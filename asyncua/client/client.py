@@ -317,7 +317,7 @@ class Client:
             self.disconnect_socket()
         return servers
 
-    async def connect_and_find_servers_on_network(self) -> list[ua.FindServersOnNetworkResult]:
+    async def connect_and_find_servers_on_network(self) -> ua.FindServersOnNetworkResult:
         """
         Connect, ask server for a list of known servers on network, and disconnect
         """
@@ -469,8 +469,8 @@ class Client:
             params = ua.RegisterServer2Parameters()
             params.Server = serv
             params.DiscoveryConfiguration = discovery_configuration
-            return await self.uaclient.register_server2(params)
-        return await self.uaclient.register_server(serv)
+            await self.uaclient.register_server2(params)
+        await self.uaclient.register_server(serv)
 
     async def unregister_server(
         self, server: "asyncua.server.Server", discovery_configuration: ua.DiscoveryConfiguration | None = None
@@ -506,7 +506,7 @@ class Client:
         params.ServerUris = list(uris)
         return await self.uaclient.find_servers(params)
 
-    async def find_servers_on_network(self) -> list[ua.FindServersOnNetworkResult]:
+    async def find_servers_on_network(self) -> ua.FindServersOnNetworkResult:
         params = ua.FindServersOnNetworkParameters()
         return await self.uaclient.find_servers_on_network(params)
 
