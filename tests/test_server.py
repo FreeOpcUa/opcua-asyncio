@@ -722,10 +722,12 @@ async def check_custom_type(ntype, base_type, server: Server, node_class=None):
 async def test_server_read_write_attribute_value(server: Server):
     node = await server.get_objects_node().add_variable(0, "0:TestVar", 0, varianttype=ua.VariantType.Int64)
     dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value is not None
     assert dv.Value.Value == 0
     dv = ua.DataValue(Value=ua.Variant(Value=5, VariantType=ua.VariantType.Int64))
     await server.write_attribute_value(node.nodeid, dv, attr=ua.AttributeIds.Value)
     dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value is not None
     assert dv.Value.Value == 5
     await server.delete_nodes([node])
 
@@ -733,6 +735,7 @@ async def test_server_read_write_attribute_value(server: Server):
 async def test_server_read_set_attribute_value_callback(server: Server):
     node = await server.get_objects_node().add_variable(0, "0:TestVar", 0, varianttype=ua.VariantType.Int64)
     dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value is not None
     assert dv.Value.Value == 0
 
     def callback(nodeid, attr):
@@ -740,11 +743,13 @@ async def test_server_read_set_attribute_value_callback(server: Server):
 
     server.set_attribute_value_callback(node.nodeid, callback, attr=ua.AttributeIds.Value)
     dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value is not None
     assert dv.Value.Value == 5
 
     dv = ua.DataValue(Value=ua.Variant(Value=10, VariantType=ua.VariantType.Int64))
     await server.write_attribute_value(node.nodeid, dv, attr=ua.AttributeIds.Value)
     dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value is not None
     assert dv.Value.Value == 10
 
     await server.delete_nodes([node])
@@ -753,6 +758,7 @@ async def test_server_read_set_attribute_value_callback(server: Server):
 async def test_server_read_set_attribute_value_setter(server: Server):
     node = await server.get_objects_node().add_variable(0, "0:TestVar", 0, varianttype=ua.VariantType.Int64)
     dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value is not None
     assert dv.Value.Value == 0
 
     def setter(node_data, attr, value):
@@ -765,6 +771,7 @@ async def test_server_read_set_attribute_value_setter(server: Server):
     dv = ua.DataValue(Value=ua.Variant(Value=10, VariantType=ua.VariantType.Int64))
     await server.write_attribute_value(node.nodeid, dv, attr=ua.AttributeIds.Value)
     dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value is not None
     assert dv.Value.Value == 10
 
     dv = ua.DataValue(Value=ua.Variant(Value=101, VariantType=ua.VariantType.Int64))
@@ -773,6 +780,7 @@ async def test_server_read_set_attribute_value_setter(server: Server):
     except Exception as e:
         assert isinstance(e, ua.uaerrors.BadOutOfRange)
     dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)
+    assert dv.Value is not None
     assert dv.Value.Value == 10
 
     await server.delete_nodes([node])
