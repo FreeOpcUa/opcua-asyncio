@@ -12,6 +12,10 @@
 - Use `ruff` for formatting and linting: `uv run ruff check` and `uv run ruff format`.
 - Target Python 3.10+. Use modern syntax (`X | Y` unions, `list[...]`, `dict[...]`, etc.).
 
+## Communication
+
+- Do not summarize changes after editing files. The diff is visible directly.
+
 ## Testing
 
 - Tests use `pytest` with `pytest-asyncio` in auto mode.
