@@ -3,6 +3,8 @@
 ## Running
 
 - Use `uv` to run commands: `uv run pytest ...`
+- Use `uv` to run commands: `uv run mypy ...`
+- Use `uv` to run commands: `uv run ruff ...`
 
 ## Code Style
 
