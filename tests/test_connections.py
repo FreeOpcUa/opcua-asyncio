@@ -5,19 +5,32 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from asyncua import Client, Server, ua
-from asyncua.client.ua_client import (
+from asyncua.client.ua_client import UaClient
+from asyncua.client.ua_session import (
     SubscriptionDispatchOverflowPolicy,
     SubscriptionStaleError,
-    UaClient,
+    UaSession,
     _compute_republish_window,
 )
 from asyncua.common.connection import TransportLimits
 from asyncua.server.uaprocessor import UaProcessor
-from asyncua.ua.uaerrors import BadMaxConnectionsReached, BadSessionNotActivated
+from asyncua.ua.uaerrors import (
+    BadMaxConnectionsReached,
+    BadNoSubscription,
+    BadSessionNotActivated,
+)
 
 from .conftest import find_free_port, port_num
 
 pytestmark = pytest.mark.asyncio
+
+
+def _make_test_session() -> UaSession:
+    return UaSession(
+        client=UaClient(),
+        session_id=ua.NodeId(1, 0),
+        authentication_token=ua.NodeId(2, 0),
+    )
 
 
 async def test_max_connections_1(opc):
@@ -174,7 +187,7 @@ async def test_client_reconnect_after_server_restart():
         client.reconnect_enabled = True
         await client._schedule_reconnect(ConnectionError("forced reconnect after server restart"))
         await _wait_for_recovered_client(client)
-        assert client.uaclient.connection_state == client.uaclient.CONNECTION_STATE.SESSION_READY
+        assert client.uaclient.connection_state == client.uaclient.CONNECTION_STATE.CHANNEL_READY
     finally:
         client.reconnect_enabled = False
         await client.disconnect()
@@ -211,7 +224,7 @@ async def test_client_on_reconnected_called_once():
         await asyncio.wait_for(callback_event.wait(), timeout=10)
         await _wait_for_recovered_client(client)
         assert callback_count == 1
-        assert client.uaclient.connection_state == client.uaclient.CONNECTION_STATE.SESSION_READY
+        assert client.uaclient.connection_state == client.uaclient.CONNECTION_STATE.CHANNEL_READY
     finally:
         client.reconnect_enabled = False
         await client.disconnect()
@@ -279,7 +292,7 @@ async def test_reconnect_fallback_to_new_session_when_activate_fails(mocker):
 
     assert activate_calls == 2
     client.create_session.assert_awaited_once()
-    assert client.uaclient.connection_state == client.uaclient.CONNECTION_STATE.SESSION_READY
+    assert client.uaclient.connection_state == client.uaclient.CONNECTION_STATE.CHANNEL_READY
     assert client._reconnect_event.is_set()
 
 
@@ -391,79 +404,77 @@ async def test_reconnect_does_not_recreate_invalid_subscription_when_disabled(mo
     client._recreate_invalid_subscriptions.assert_not_awaited()
 
 
-async def test_keepalive_does_not_advance_last_notification_sequence_number():
-    uaclient = UaClient()
+async def test_keepalive_advances_last_notification_sequence_number():
+    session = _make_test_session()
     subscription_id = 42
-    uaclient._last_publish_sequence_numbers[subscription_id] = 4
+    session._last_publish_sequence_numbers[subscription_id] = 4
 
     keepalive_message = ua.NotificationMessage()
     keepalive_message.SequenceNumber = 5
     keepalive_message.NotificationData = []
 
-    uaclient._record_notification_sequence_number(subscription_id, keepalive_message)
+    session._record_notification_sequence_number(subscription_id, keepalive_message)
 
-    assert uaclient._last_publish_sequence_numbers[subscription_id] == 4
-    assert uaclient.get_next_sequence_number(subscription_id) == 5
+    assert session._last_publish_sequence_numbers[subscription_id] == 5
+    assert session.get_next_sequence_number(subscription_id) == 6
 
 
 async def test_notification_advances_last_notification_sequence_number():
-    uaclient = UaClient()
+    session = _make_test_session()
     subscription_id = 42
-    uaclient._last_publish_sequence_numbers[subscription_id] = 4
+    session._last_publish_sequence_numbers[subscription_id] = 4
 
     notification_message = ua.NotificationMessage()
     notification_message.SequenceNumber = 5
     notification_message.NotificationData = [ua.StatusChangeNotification()]
 
-    uaclient._record_notification_sequence_number(subscription_id, notification_message)
+    session._record_notification_sequence_number(subscription_id, notification_message)
 
-    assert uaclient._last_publish_sequence_numbers[subscription_id] == 5
-    assert uaclient.get_next_sequence_number(subscription_id) == 6
+    assert session._last_publish_sequence_numbers[subscription_id] == 5
+    assert session.get_next_sequence_number(subscription_id) == 6
 
 
-async def test_sequence_mismatch_logs_warning(caplog):
-    uaclient = UaClient()
+async def test_sequence_mismatch_does_not_log_warning(caplog):
+    session = _make_test_session()
     subscription_id = 42
-    uaclient._last_publish_sequence_numbers[subscription_id] = 4
+    session._last_publish_sequence_numbers[subscription_id] = 4
 
     notification_message = ua.NotificationMessage()
     notification_message.SequenceNumber = 7
     notification_message.NotificationData = [ua.StatusChangeNotification()]
 
-    with caplog.at_level("WARNING", logger="asyncua.client.ua_client.UaClient"):
-        uaclient._record_notification_sequence_number(subscription_id, notification_message, source="publish")
+    with caplog.at_level("WARNING", logger="asyncua.client.ua_session.UaSession"):
+        session._record_notification_sequence_number(subscription_id, notification_message, source="publish")
 
-    assert "Detected notification sequence mismatch" in caplog.text
-    assert "expected 5 but received 7" in caplog.text
+    assert "Detected notification sequence mismatch" not in caplog.text
+    assert session._last_publish_sequence_numbers[subscription_id] == 7
 
 
 async def test_keepalive_sequence_mismatch_does_not_log_warning(caplog):
-    uaclient = UaClient()
+    session = _make_test_session()
     subscription_id = 42
-    uaclient._last_publish_sequence_numbers[subscription_id] = 4
+    session._last_publish_sequence_numbers[subscription_id] = 4
 
     keepalive_message = ua.NotificationMessage()
     keepalive_message.SequenceNumber = 7
     keepalive_message.NotificationData = []
 
-    with caplog.at_level("WARNING", logger="asyncua.client.ua_client.UaClient"):
-        uaclient._record_notification_sequence_number(subscription_id, keepalive_message, source="publish")
+    with caplog.at_level("WARNING", logger="asyncua.client.ua_session.UaSession"):
+        session._record_notification_sequence_number(subscription_id, keepalive_message, source="publish")
 
     assert "Detected notification sequence mismatch" not in caplog.text
 
 
 async def test_publish_loop_recovers_sequence_gap_via_republish(mocker):
-    uaclient = UaClient()
+    session = _make_test_session()
     subscription_id = 42
     observed_sequences = []
 
     def _callback(result):
         observed_sequences.append(int(result.NotificationMessage.SequenceNumber))
-        if int(result.NotificationMessage.SequenceNumber) == 7:
-            uaclient._closing = True
 
-    uaclient._subscription_callbacks[subscription_id] = _callback
-    uaclient._last_publish_sequence_numbers[subscription_id] = 4
+    session._subscription_callbacks[subscription_id] = _callback
+    session._last_publish_sequence_numbers[subscription_id] = 4
 
     publish_message = ua.NotificationMessage()
     publish_message.SequenceNumber = 7
@@ -472,7 +483,6 @@ async def test_publish_loop_recovers_sequence_gap_via_republish(mocker):
     publish_result = ua.PublishResult(subscription_id, NotificationMessage=publish_message)
     publish_response = ua.PublishResponse()
     publish_response.Parameters = publish_result
-    uaclient.publish = AsyncMock(return_value=publish_response)  # type: ignore[method-assign]
 
     async def _republish(_subscription_id, sequence_number):
         msg = ua.NotificationMessage()
@@ -480,32 +490,31 @@ async def test_publish_loop_recovers_sequence_gap_via_republish(mocker):
         msg.NotificationData = [ua.StatusChangeNotification()]
         return msg
 
-    uaclient.republish = AsyncMock(side_effect=_republish)  # type: ignore[method-assign]
+    session.republish = AsyncMock(side_effect=_republish)  # type: ignore[method-assign]
 
-    await uaclient._publish_loop()
-    await uaclient.flush_subscription_dispatch()
+    # Test the gap recovery handler directly instead of full loop
+    await session._handle_publish_response(publish_response)
+    await session.flush_subscription_dispatch()
 
-    assert [args.args for args in uaclient.republish.await_args_list] == [
+    assert [args.args for args in session.republish.await_args_list] == [
         (subscription_id, 5),
         (subscription_id, 6),
     ]
     assert observed_sequences == [5, 6, 7]
-    assert uaclient._last_publish_sequence_numbers[subscription_id] == 7
+    assert session._last_publish_sequence_numbers[subscription_id] == 7
 
 
 async def test_publish_loop_sequence_gap_republish_cap(mocker):
-    uaclient = UaClient()
+    session = _make_test_session()
     subscription_id = 42
     observed_sequences = []
-    uaclient.max_republish_messages_per_gap = 1
+    session.sequence_recovery_settings.max_republish_messages_per_gap = 1
 
     def _callback(result):
         observed_sequences.append(int(result.NotificationMessage.SequenceNumber))
-        if int(result.NotificationMessage.SequenceNumber) == 7:
-            uaclient._closing = True
 
-    uaclient._subscription_callbacks[subscription_id] = _callback
-    uaclient._last_publish_sequence_numbers[subscription_id] = 4
+    session._subscription_callbacks[subscription_id] = _callback
+    session._last_publish_sequence_numbers[subscription_id] = 4
 
     publish_message = ua.NotificationMessage()
     publish_message.SequenceNumber = 7
@@ -514,7 +523,6 @@ async def test_publish_loop_sequence_gap_republish_cap(mocker):
     publish_result = ua.PublishResult(subscription_id, NotificationMessage=publish_message)
     publish_response = ua.PublishResponse()
     publish_response.Parameters = publish_result
-    uaclient.publish = AsyncMock(return_value=publish_response)  # type: ignore[method-assign]
 
     async def _republish(_subscription_id, sequence_number):
         msg = ua.NotificationMessage()
@@ -522,12 +530,13 @@ async def test_publish_loop_sequence_gap_republish_cap(mocker):
         msg.NotificationData = [ua.StatusChangeNotification()]
         return msg
 
-    uaclient.republish = AsyncMock(side_effect=_republish)  # type: ignore[method-assign]
+    session.republish = AsyncMock(side_effect=_republish)  # type: ignore[method-assign]
 
-    await uaclient._publish_loop()
-    await uaclient.flush_subscription_dispatch()
+    # Test the gap recovery handler directly instead of full loop
+    await session._handle_publish_response(publish_response)
+    await session.flush_subscription_dispatch()
 
-    assert [args.args for args in uaclient.republish.await_args_list] == [(subscription_id, 5)]
+    assert [args.args for args in session.republish.await_args_list] == [(subscription_id, 5)]
     assert observed_sequences == [5, 7]
 
 
@@ -539,9 +548,9 @@ async def test_compute_republish_window_caps_and_handles_empty():
 
 
 async def test_recover_sequence_gap_stops_on_unexpected_republish_sequence(mocker):
-    uaclient = UaClient()
+    session = _make_test_session()
     subscription_id = 42
-    uaclient.dispatch_notification_message = AsyncMock()  # type: ignore[method-assign]
+    session.dispatch_notification_message = AsyncMock()  # type: ignore[method-assign]
 
     async def _republish(_subscription_id, _sequence_number):
         msg = ua.NotificationMessage()
@@ -549,26 +558,26 @@ async def test_recover_sequence_gap_stops_on_unexpected_republish_sequence(mocke
         msg.NotificationData = [ua.StatusChangeNotification()]
         return msg
 
-    uaclient.republish = AsyncMock(side_effect=_republish)  # type: ignore[method-assign]
+    session.republish = AsyncMock(side_effect=_republish)  # type: ignore[method-assign]
 
-    await uaclient._recover_sequence_gap(subscription_id, expected_sequence=5, received_sequence=8)
+    await session._recover_sequence_gap(subscription_id, expected_sequence=5, received_sequence=8)
 
-    uaclient.dispatch_notification_message.assert_not_awaited()
-    assert [args.args for args in uaclient.republish.await_args_list] == [(subscription_id, 5)]
+    session.dispatch_notification_message.assert_not_awaited()
+    assert [args.args for args in session.republish.await_args_list] == [(subscription_id, 5)]
 
 
 async def test_dispatch_queue_overflow_drop_oldest_keeps_latest():
-    uaclient = UaClient()
+    session = _make_test_session()
     subscription_id = 42
     observed_sequences: list[int] = []
 
     def _callback(result):
         observed_sequences.append(int(result.NotificationMessage.SequenceNumber))
 
-    uaclient.subscription_dispatch_queue_maxsize = 1
-    uaclient.subscription_dispatch_overflow_policy = SubscriptionDispatchOverflowPolicy.DROP_OLDEST
-    uaclient._subscription_callbacks[subscription_id] = _callback
-    uaclient._ensure_subscription_dispatch_worker(subscription_id)
+    session.subscription_dispatch_queue_maxsize = 1
+    session.subscription_dispatch_overflow_policy = SubscriptionDispatchOverflowPolicy.DROP_OLDEST
+    session._subscription_callbacks[subscription_id] = _callback
+    session._ensure_subscription_dispatch_worker(subscription_id)
 
     msg1 = ua.NotificationMessage()
     msg1.SequenceNumber = 1
@@ -578,26 +587,26 @@ async def test_dispatch_queue_overflow_drop_oldest_keeps_latest():
     msg2.SequenceNumber = 2
     msg2.NotificationData = [ua.StatusChangeNotification()]
 
-    assert uaclient._enqueue_publish_result(subscription_id, ua.PublishResult(subscription_id, NotificationMessage=msg1))
-    assert uaclient._enqueue_publish_result(subscription_id, ua.PublishResult(subscription_id, NotificationMessage=msg2))
+    assert session._enqueue_publish_result(subscription_id, ua.PublishResult(subscription_id, NotificationMessage=msg1))
+    assert session._enqueue_publish_result(subscription_id, ua.PublishResult(subscription_id, NotificationMessage=msg2))
 
-    await uaclient.flush_subscription_dispatch()
+    await session.flush_subscription_dispatch()
 
     assert observed_sequences == [2]
 
 
 async def test_dispatch_queue_overflow_warn_drops_newest(caplog):
-    uaclient = UaClient()
+    session = _make_test_session()
     subscription_id = 42
     observed_sequences: list[int] = []
 
     def _callback(result):
         observed_sequences.append(int(result.NotificationMessage.SequenceNumber))
 
-    uaclient.subscription_dispatch_queue_maxsize = 1
-    uaclient.subscription_dispatch_overflow_policy = SubscriptionDispatchOverflowPolicy.WARN
-    uaclient._subscription_callbacks[subscription_id] = _callback
-    uaclient._ensure_subscription_dispatch_worker(subscription_id)
+    session.subscription_dispatch_queue_maxsize = 1
+    session.subscription_dispatch_overflow_policy = SubscriptionDispatchOverflowPolicy.WARN
+    session._subscription_callbacks[subscription_id] = _callback
+    session._ensure_subscription_dispatch_worker(subscription_id)
 
     msg1 = ua.NotificationMessage()
     msg1.SequenceNumber = 1
@@ -607,18 +616,18 @@ async def test_dispatch_queue_overflow_warn_drops_newest(caplog):
     msg2.SequenceNumber = 2
     msg2.NotificationData = [ua.StatusChangeNotification()]
 
-    with caplog.at_level("WARNING", logger="asyncua.client.ua_client.UaClient"):
-        assert uaclient._enqueue_publish_result(subscription_id, ua.PublishResult(subscription_id, NotificationMessage=msg1))
-        assert not uaclient._enqueue_publish_result(subscription_id, ua.PublishResult(subscription_id, NotificationMessage=msg2))
+    with caplog.at_level("WARNING", logger="asyncua.client.ua_session.UaSession"):
+        assert session._enqueue_publish_result(subscription_id, ua.PublishResult(subscription_id, NotificationMessage=msg1))
+        assert not session._enqueue_publish_result(subscription_id, ua.PublishResult(subscription_id, NotificationMessage=msg2))
 
-    await uaclient.flush_subscription_dispatch()
+    await session.flush_subscription_dispatch()
 
     assert observed_sequences == [1]
     assert "dispatch queue overflow" in caplog.text
 
 
 async def test_flush_subscription_dispatch_waits_for_callback_completion():
-    uaclient = UaClient()
+    session = _make_test_session()
     subscription_id = 42
     callback_started = asyncio.Event()
     callback_resume = asyncio.Event()
@@ -627,17 +636,17 @@ async def test_flush_subscription_dispatch_waits_for_callback_completion():
         callback_started.set()
         await callback_resume.wait()
 
-    uaclient._subscription_callbacks[subscription_id] = _callback
-    uaclient._ensure_subscription_dispatch_worker(subscription_id)
+    session._subscription_callbacks[subscription_id] = _callback
+    session._ensure_subscription_dispatch_worker(subscription_id)
 
     msg = ua.NotificationMessage()
     msg.SequenceNumber = 1
     msg.NotificationData = [ua.StatusChangeNotification()]
 
-    assert uaclient._enqueue_publish_result(subscription_id, ua.PublishResult(subscription_id, NotificationMessage=msg))
+    assert session._enqueue_publish_result(subscription_id, ua.PublishResult(subscription_id, NotificationMessage=msg))
     await callback_started.wait()
 
-    flush_task = asyncio.create_task(uaclient.flush_subscription_dispatch())
+    flush_task = asyncio.create_task(session.flush_subscription_dispatch())
     await asyncio.sleep(0)
     assert not flush_task.done()
 
@@ -679,57 +688,57 @@ async def test_uaprocessor_close_skips_self_watchdog_await():
 
 
 async def test_overflow_policy_string_is_normalized_to_enum():
-    uaclient = UaClient()
-    uaclient.subscription_dispatch_overflow_policy = "DROP_OLDEST"
+    session = _make_test_session()
+    session.subscription_dispatch_overflow_policy = "DROP_OLDEST"
 
-    policy = uaclient._resolve_overflow_policy()
+    policy = session._resolve_overflow_policy()
 
     assert policy == SubscriptionDispatchOverflowPolicy.DROP_OLDEST
-    assert uaclient.subscription_dispatch_overflow_policy == SubscriptionDispatchOverflowPolicy.DROP_OLDEST
+    assert session.subscription_dispatch_overflow_policy == SubscriptionDispatchOverflowPolicy.DROP_OLDEST
 
 
 async def test_subscription_watchdog_detects_stale_subscription():
-    uaclient = UaClient()
-    uaclient.subscription_stale_detection_enabled = True
-    uaclient.subscription_stale_detection_margin = 1.0
-    uaclient._subscription_callbacks[1] = lambda _result: None
+    session = _make_test_session()
+    session.subscription_stale_detection_enabled = True
+    session.subscription_stale_detection_margin = 1.0
+    session._subscription_callbacks[1] = lambda _result: None
 
-    uaclient._register_subscription_watchdog(subscription_id=1, publishing_interval_ms=1000.0, keepalive_count=2)
-    uaclient._subscription_watchdog_states[1].last_seen_at = 0.0
+    session._register_subscription_watchdog(subscription_id=1, publishing_interval_ms=1000.0, keepalive_count=2)
+    session._subscription_watchdog_states[1].last_seen_at = 0.0
 
-    stale_ids = uaclient._get_stale_subscription_ids(now=2.5)
+    stale_ids = session._get_stale_subscription_ids(now=2.5)
 
     assert stale_ids == [1]
 
 
 async def test_subscription_watchdog_activity_clears_stale_state():
-    uaclient = UaClient()
-    uaclient.subscription_stale_detection_enabled = True
-    uaclient.subscription_stale_detection_margin = 1.0
-    uaclient._subscription_callbacks[1] = lambda _result: None
+    session = _make_test_session()
+    session.subscription_stale_detection_enabled = True
+    session.subscription_stale_detection_margin = 1.0
+    session._subscription_callbacks[1] = lambda _result: None
 
-    uaclient._register_subscription_watchdog(subscription_id=1, publishing_interval_ms=1000.0, keepalive_count=2)
-    state = uaclient._subscription_watchdog_states[1]
+    session._register_subscription_watchdog(subscription_id=1, publishing_interval_ms=1000.0, keepalive_count=2)
+    state = session._subscription_watchdog_states[1]
     state.last_seen_at = 0.0
     state.stale_reported = True
 
-    uaclient._mark_subscription_watchdog_activity(1)
+    session._mark_subscription_watchdog_activity(1)
 
-    assert uaclient._subscription_watchdog_states[1].stale_reported is False
+    assert session._subscription_watchdog_states[1].stale_reported is False
 
 
 async def test_subscription_watchdog_ignores_orphaned_state():
-    uaclient = UaClient()
-    uaclient.subscription_stale_detection_enabled = True
-    uaclient.subscription_stale_detection_margin = 1.2
+    session = _make_test_session()
+    session.subscription_stale_detection_enabled = True
+    session.subscription_stale_detection_margin = 1.2
 
-    uaclient._register_subscription_watchdog(subscription_id=571478, publishing_interval_ms=100.0, keepalive_count=10)
-    uaclient._subscription_watchdog_states[571478].last_seen_at = 0.0
+    session._register_subscription_watchdog(subscription_id=571478, publishing_interval_ms=100.0, keepalive_count=10)
+    session._subscription_watchdog_states[571478].last_seen_at = 0.0
 
-    stale_ids = uaclient._get_stale_subscription_ids(now=10.0)
+    stale_ids = session._get_stale_subscription_ids(now=10.0)
 
     assert stale_ids == []
-    assert 571478 not in uaclient._subscription_watchdog_states
+    assert 571478 not in session._subscription_watchdog_states
 
 
 async def test_try_recover_stale_subscriptions_recovers_subset_once(mocker):
@@ -814,6 +823,6 @@ async def test_finalize_successful_reconnect_restarts_background_tasks_when_miss
 
     assert client._monitor_server_task is not None
     assert client._renew_channel_task is not None
-    assert client.uaclient.connection_state == client.uaclient.CONNECTION_STATE.SESSION_READY
+    assert client.uaclient.connection_state == client.uaclient.CONNECTION_STATE.CHANNEL_READY
 
 

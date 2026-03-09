@@ -2,6 +2,8 @@
 OPC-UA Session implementation handling session-specific services and subscriptions.
 """
 
+from __future__ import annotations
+
 import asyncio
 import inspect
 import logging
@@ -161,7 +163,7 @@ class UaSession(AbstractSession):
 
     def __init__(
         self,
-        client: UaClient,
+        client: "UaClient",
         session_id: ua.NodeId,
         authentication_token: ua.NodeId,
     ) -> None:
@@ -368,11 +370,15 @@ class UaSession(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def add_nodes(self, params: ua.AddNodesParameters) -> list[ua.AddNodesResult]:
+    async def add_nodes(self, params: ua.AddNodesParameters | list[ua.AddNodesItem]) -> list[ua.AddNodesResult]:
         """Add nodes to address space."""
         self.logger.debug("add_nodes")
         request = ua.AddNodesRequest()
-        request.Parameters = params
+        if isinstance(params, list):
+            request.Parameters = ua.AddNodesParameters()
+            request.Parameters.NodesToAdd = params
+        else:
+            request.Parameters = params
         data = await self._send_session_request(request)
         response = struct_from_binary(ua.AddNodesResponse, data)
         self.logger.debug(response)
@@ -416,7 +422,7 @@ class UaSession(AbstractSession):
         response = struct_from_binary(ua.DeleteReferencesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
-        return response.Results
+        return response.Parameters.Results
 
     async def call(
         self, methodstocall: list[ua.CallMethodRequest]

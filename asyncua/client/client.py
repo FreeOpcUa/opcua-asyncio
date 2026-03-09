@@ -640,11 +640,18 @@ class Client:
             self._monitor_server_task = asyncio.create_task(self._monitor_server_loop())
 
     async def try_restore_state(self) -> None:
-        subscription_ids = self.uaclient.get_subscription_ids()
-        expected_sequences = {
-            subscription_id: self.uaclient.get_next_sequence_number(subscription_id)
-            for subscription_id in subscription_ids
-        }
+        subscription_ids: list[int] = []
+        expected_sequences: dict[int, int] = {}
+        try:
+            subscription_ids = self.uaclient.get_subscription_ids()
+            expected_sequences = {
+                subscription_id: self.uaclient.get_next_sequence_number(subscription_id)
+                for subscription_id in subscription_ids
+            }
+        except ua.UaError:
+            # No active default session yet (e.g. initial connect).
+            # Continue by creating/activating a new session and restoring nothing.
+            pass
 
         reused_existing_session, invalid_transfer_subscription_ids = await self._create_or_recover_session(
             subscription_ids
