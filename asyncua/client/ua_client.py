@@ -1086,7 +1086,7 @@ class UaClient:
     async def history_read(self, parameters: ua.HistoryReadParameters) -> list[ua.HistoryReadResult]:
         return await self._require_default_session().history_read(parameters)
 
-    async def add_nodes(self, params: ua.AddNodesParameters) -> list[ua.AddNodesResult]:
+    async def add_nodes(self, params: ua.AddNodesParameters | list[ua.AddNodesItem]) -> list[ua.AddNodesResult]:
         return await self._require_default_session().add_nodes(params)
 
     async def add_references(self, refs: list[ua.AddReferencesItem]) -> list[ua.StatusCode]:
