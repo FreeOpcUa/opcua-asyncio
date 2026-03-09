@@ -13,7 +13,7 @@ import copy
 import logging
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from asyncua import ua
 from asyncua.ua.uaerrors._base import UaError
@@ -36,9 +36,6 @@ from .ua_session import (
     SubscriptionStaleError,
     UaSession,
 )
-
-if TYPE_CHECKING:
-    pass
 
 __all__ = [
     "UaClient",
@@ -996,8 +993,6 @@ class UaClient:
             >>> nodes = await session.browse(...)
             >>> await session.close()
         """
-        from asyncua.client.ua_session import UaSession
-
         self.logger.info("Creating session object")
 
         await self.create_session(parameters)
@@ -1008,7 +1003,6 @@ class UaClient:
             activate_params = ua.ActivateSessionParameters()
             await self.activate_session(activate_params)
 
-            self._default_session = session
             self.logger.info("Session %s activated", session.session_id)
             return session
 
@@ -1039,7 +1033,7 @@ class UaClient:
         sessions = list(self._sessions.values())
         for session in sessions:
             try:
-                await session.close()
+                await session.close_session(delete_subscriptions)
             except Exception:
                 self.logger.exception("Error closing session %s",
                                       session.session_id)
