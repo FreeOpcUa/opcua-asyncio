@@ -938,7 +938,12 @@ class UaSession(AbstractSession):
         response = struct_from_binary(ua.RepublishResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
-        return response.Parameters.NotificationMessage
+        # RepublishResponse can expose NotificationMessage directly (spec-compliant)
+        # or behind a Parameters object in older generated protocol code.
+        params = getattr(response, "Parameters", None)
+        if params is not None:
+            return params.NotificationMessage
+        return response.NotificationMessage
 
     async def publish(
         self, acks: list[ua.SubscriptionAcknowledgement]
