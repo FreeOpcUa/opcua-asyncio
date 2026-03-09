@@ -11,24 +11,21 @@ Covers:
 from __future__ import annotations
 
 import asyncio
-import struct
 import socket
+import struct
 from contextlib import closing
 
-import pytest
-
 from asyncua import ua
-from asyncua.ua.ua_binary import uatcp_to_binary, header_from_binary, struct_from_binary
+from asyncua.common.connection import TransportLimits
 from asyncua.common.utils import Buffer
+from asyncua.server.internal_server import InternalServer
 from asyncua.server.reverse_connect import (
+    OPCUAReverseProtocol,
     ReverseConnectClientEntry,
     ReverseConnectConfig,
     ReverseConnectManager,
-    OPCUAReverseProtocol,
 )
-from asyncua.common.connection import TransportLimits
-from asyncua.server.internal_server import InternalServer
-
+from asyncua.ua.ua_binary import header_from_binary, struct_from_binary, uatcp_to_binary
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -52,7 +49,7 @@ def make_limits() -> TransportLimits:
 
 
 # ---------------------------------------------------------------------------
-# Unit tests – UA type layer
+# Unit tests - UA type layer
 # ---------------------------------------------------------------------------
 
 
@@ -96,7 +93,7 @@ def test_reverse_hello_serialise_deserialise():
 
 
 # ---------------------------------------------------------------------------
-# Unit tests – config dataclasses
+# Unit tests - config dataclasses
 # ---------------------------------------------------------------------------
 
 
@@ -218,7 +215,7 @@ async def test_manager_dials_and_sends_reverse_hello():
             closing_tasks=[],
             limits=make_limits(),
             server_uri="urn:myserver",
-            server_endpoint_url=f"opc.tcp://127.0.0.1:4840",
+            server_endpoint_url="opc.tcp://127.0.0.1:4840",
             config=config,
         )
         await manager.start()
@@ -257,7 +254,7 @@ async def test_manager_retries_on_refused():
         closing_tasks=[],
         limits=make_limits(),
         server_uri="urn:retry:server",
-        server_endpoint_url=f"opc.tcp://127.0.0.1:4840",
+        server_endpoint_url="opc.tcp://127.0.0.1:4840",
         config=config,
     )
     await manager.start()
@@ -265,7 +262,7 @@ async def test_manager_retries_on_refused():
     # Give manager a moment to fail a couple of times (port not yet open)
     await asyncio.sleep(0.5)
 
-    # Now open the listener – manager should connect on its next retry
+    # Now open the listener - manager should connect on its next retry
     srv = await asyncio.start_server(handle_client, "127.0.0.1", port)
     async with srv:
         try:

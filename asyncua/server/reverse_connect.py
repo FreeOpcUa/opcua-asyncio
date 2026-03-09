@@ -322,7 +322,7 @@ class ReverseConnectManager:
                     loop.create_connection(protocol_factory, host, port),
                     timeout=connect_timeout_s,
                 )
-                _logger.info("ReverseConnect: connected to %s:%s – waiting for session to end", host, port)
+                _logger.info("ReverseConnect: connected to %s:%s - waiting for session to end", host, port)
                 # Wait until the protocol's connection_lost fires.
                 await closed_event.wait()
                 _logger.info("ReverseConnect: connection to %s:%s ended; will retry in %.1f s", host, port, interval_s)
