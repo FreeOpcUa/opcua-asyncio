@@ -19,6 +19,7 @@ from asyncua.ua.uaerrors import (
     BadNoSubscription,
     BadSessionNotActivated,
 )
+from asyncua.ua.ua_binary import struct_to_binary
 
 from .conftest import find_free_port, port_num
 
@@ -350,6 +351,30 @@ async def test_republish_handles_bad_subscription_id_invalid(mocker):
     assert dispatch.await_count == 0
     assert invalid_ids == {42}
     assert any("must be recreated" in str(call.args[0]) for call in log_warning.call_args_list)
+
+
+async def test_uasession_republish_reads_direct_notification_message_field():
+    session = _make_test_session()
+    expected_subscription_id = 42
+    expected_sequence = 7
+
+    notification_message = ua.NotificationMessage()
+    notification_message.SequenceNumber = 99
+    notification_message.NotificationData = []
+
+    response = ua.RepublishResponse()
+    response.NotificationMessage = notification_message
+
+    session._send_session_request = AsyncMock(  # type: ignore[method-assign]
+        return_value=struct_to_binary(response)
+    )
+
+    republished = await session.republish(expected_subscription_id, expected_sequence)
+
+    assert republished.SequenceNumber == 99
+    request = session._send_session_request.await_args.args[0]
+    assert request.Parameters.SubscriptionId == expected_subscription_id
+    assert request.Parameters.RetransmitSequenceNumber == expected_sequence
 
 
 async def test_reconnect_recreates_invalid_managed_subscription(mocker):
