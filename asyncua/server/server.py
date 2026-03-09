@@ -32,6 +32,7 @@ from .address_space import NodeData
 from .binary_server_asyncio import BinaryServer
 from .event_generator import EventGenerator
 from .internal_server import InternalServer
+from .reverse_connect import ReverseConnectConfig, ReverseConnectManager
 
 _logger = logging.getLogger(__name__)
 
@@ -96,6 +97,8 @@ class Server:
         self.iserver: InternalServer = iserver if iserver else InternalServer(user_manager=user_manager)
         self.bserver: BinaryServer | None = None
         self.socket_address: tuple[str, int] | None = None
+        self.reverse_connect: ReverseConnectConfig | None = None
+        self._reverse_connect_manager: ReverseConnectManager | None = None
         self._discovery_clients = {}
         self._discovery_period = 60
         self._discovery_handle = None
@@ -504,6 +507,18 @@ class Server:
         else:
             _logger.debug("%s server started", self)
 
+        if self.reverse_connect is not None:
+            self._reverse_connect_manager = ReverseConnectManager(
+                iserver=self.iserver,
+                policies=self._policies,
+                closing_tasks=self.bserver.closing_tasks,
+                limits=self.limits,
+                server_uri=self._application_uri,
+                server_endpoint_url=self.endpoint.geturl(),
+                config=self.reverse_connect,
+            )
+            await self._reverse_connect_manager.start()
+
     def _get_bind_socket_info(self) -> tuple[str | None, int | None]:
         if self.socket_address is not None:
             return self.socket_address
@@ -519,6 +534,8 @@ class Server:
 
         if self._discovery_clients:
             await asyncio.gather(*[client.disconnect() for client in self._discovery_clients.values()])
+        if self._reverse_connect_manager is not None:
+            await self._reverse_connect_manager.stop()
         await self.bserver.stop()
         await self.iserver.stop()
         if self._pubsub is not None:
