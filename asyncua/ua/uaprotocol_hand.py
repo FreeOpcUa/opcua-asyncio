@@ -22,11 +22,24 @@ class Hello:
     EndpointUrl: uatypes.String = ""
 
 
+@dataclass(slots=True)
+class ReverseHello:
+    """
+    OPC UA ReverseHello message (Part 6 §7.1.3).
+    Sent by the server immediately after establishing a reverse TCP connection to a client.
+    The client uses ServerUri / EndpointUrl to decide whether to accept and open a Secure Channel.
+    """
+
+    ServerUri: uatypes.String = ""
+    EndpointUrl: uatypes.String = ""
+
+
 class MessageType:
     Invalid: bytes = b"INV"  # FIXME: check value
     Hello: bytes = b"HEL"
     Acknowledge: bytes = b"ACK"
     Error: bytes = b"ERR"
+    ReverseHello: bytes = b"RHE"
     SecureOpen: bytes = b"OPN"
     SecureClose: bytes = b"CLO"
     SecureMessage: bytes = b"MSG"
