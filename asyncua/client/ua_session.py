@@ -141,10 +141,12 @@ class UaSession(AbstractSession):
     OPC-UA Session managing session-specific operations and subscriptions.
 
     Handles:
-    - Session creation, activation, closure
+    - Session-scoped services and session closure handling
     - Subscriptions and monitored items
     - Publish/subscription loop with gap recovery
     - Watchdog monitoring for subscription staleness
+
+    Session creation and activation are handled by UaClient.
     """
 
     def __init__(
