@@ -158,6 +158,8 @@ class OPCUAReverseProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc: Exception | None) -> None:
         _logger.info("Reverse connection to %s closed (%s)", self.peer_name, exc)
+        assert self.transport is not None
+        assert self.processor is not None
         self.transport.close()
         if self.transport in self.iserver.asyncio_transports:
             self.iserver.asyncio_transports.remove(self.transport)
@@ -171,6 +173,7 @@ class OPCUAReverseProtocol(asyncio.Protocol):
         self.closed_event.set()
 
     def data_received(self, data: bytes) -> None:
+        assert self.transport is not None
         self._buffer += data
         while self._buffer:
             try:
@@ -208,6 +211,8 @@ class OPCUAReverseProtocol(asyncio.Protocol):
                 _logger.exception("Exception while processing message from %s", self.peer_name)
 
     async def _process_one_msg(self, header, buf) -> None:
+        assert self.processor is not None
+        assert self.transport is not None
         _logger.debug("_process_received_message %s %s", header.body_size, len(buf))
         ret = await self.processor.process(header, buf)
         if not ret:
