@@ -115,7 +115,7 @@ class Client:
         if not self.uaclient.try_set_connection_state(state):
             self._reconnect_event.clear()
             return
-        if state == UaClient.CONNECTION_STATE.SESSION_READY:
+        if state == UaClient.CONNECTION_STATE.CHANNEL_READY:
             self._reconnect_event.set()
         else:
             self._reconnect_event.clear()
@@ -381,7 +381,7 @@ class Client:
         """
         _logger.info("connect")
         self.uaclient.pre_request_hook = None
-        self._set_state(UaClient.CONNECTION_STATE.SESSION_ESTABLISHING)
+        self._set_state(UaClient.CONNECTION_STATE.CONNECTING)
         await self.connect_socket()
         try:
             await self.send_hello()
@@ -400,7 +400,7 @@ class Client:
             self.uaclient.pre_request_hook = self.check_connection
             raise
         self.uaclient.pre_request_hook = self.check_connection
-        self._set_state(UaClient.CONNECTION_STATE.SESSION_READY)
+        self._set_state(UaClient.CONNECTION_STATE.CHANNEL_READY)
 
     async def connect_sessionless(self) -> None:
         """
@@ -746,7 +746,7 @@ class Client:
             else:
                 raise ConnectionError("Connection is closed")
         if (
-            self.uaclient.connection_state == UaClient.CONNECTION_STATE.SESSION_ESTABLISHING
+            self.uaclient.connection_state == UaClient.CONNECTION_STATE.CONNECTING
             and not self._is_disconnect_requested()
             and current_task is not self._reconnect_task
         ):
@@ -935,7 +935,7 @@ class Client:
             return
         if self._reconnect_task and not self._reconnect_task.done():
             return
-        self._set_state(UaClient.CONNECTION_STATE.SESSION_ESTABLISHING)
+        self._set_state(UaClient.CONNECTION_STATE.CONNECTING)
         self._reconnect_task = asyncio.create_task(self._reconnect_loop(cause))
 
     async def _prepare_reconnect_transport(self) -> None:
@@ -974,7 +974,7 @@ class Client:
 
     async def _finalize_successful_reconnect(self, attempt: int) -> None:
         self._ensure_background_tasks_running()
-        self._set_state(UaClient.CONNECTION_STATE.SESSION_READY)
+        self._set_state(UaClient.CONNECTION_STATE.CHANNEL_READY)
         self._stale_recovery_attempted_subscriptions.clear()
         _logger.warning("Reconnect successful on attempt %s", attempt)
         if self.on_reconnected is not None:
@@ -988,7 +988,7 @@ class Client:
             if self._is_disconnect_requested() or not self.reconnect_enabled:
                 return
 
-            self._set_state(UaClient.CONNECTION_STATE.SESSION_ESTABLISHING)
+            self._set_state(UaClient.CONNECTION_STATE.CONNECTING)
             attempt = 0
             delay = max(0.0, self.reconnect_initial_delay)
             _logger.warning("Starting reconnect loop after connection loss: %s", cause)

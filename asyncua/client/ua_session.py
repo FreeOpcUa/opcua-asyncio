@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, Any, Callable
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
 from asyncua.ua.ua_binary import struct_from_binary
-from asyncua.ua.uaerrors import BadSessionClosed
 from asyncua.ua.uaprotocol_auto import SubscriptionAcknowledgement
 
 if TYPE_CHECKING:
@@ -49,6 +48,17 @@ class SubscriptionDispatchOverflowPolicy(str, Enum):
     DROP_OLDEST = "drop_oldest"
     WARN = "warn"
     DISCONNECT = "disconnect"
+
+
+class SessionState(str, Enum):
+    IDLE = "idle"
+    ESTABLISHING = "establishing"
+    READY = "ready"
+    SUSPENDED = "suspended"
+    RECOVERING = "recovering"
+    CLOSING = "closing"
+    CLOSED = "closed"
+    FAILED = "failed"
 
 
 @dataclass
@@ -186,6 +196,52 @@ class UaSession(AbstractSession):
         self._publish_task: asyncio.Task[None] | None = None
         self._closing = False
         self._disconnect_event = asyncio.Event()
+        self._ready_event = asyncio.Event()
+        self._state: SessionState = SessionState.IDLE
+
+    @property
+    def state(self) -> SessionState:
+        return self._state
+
+    def _set_state(self, state: SessionState) -> None:
+        self._state = state
+        if state == SessionState.READY:
+            self._ready_event.set()
+            return
+        self._ready_event.clear()
+
+    async def await_ready(self, timeout: float | None = None) -> None:
+        if self._state == SessionState.READY:
+            return
+        wait_timeout = self.client._timeout if timeout is None else timeout
+        try:
+            await asyncio.wait_for(self._ready_event.wait(), wait_timeout)
+        except (TimeoutError, asyncio.TimeoutError) as ex:
+            raise ConnectionError("Session is not ready") from ex
+
+    def on_transport_lost(self) -> None:
+        if self._state in (SessionState.CLOSING, SessionState.CLOSED):
+            return
+        self._set_state(SessionState.SUSPENDED)
+
+    def on_transport_restored(self) -> None:
+        if self._state in (SessionState.CLOSING, SessionState.CLOSED):
+            return
+        self._set_state(SessionState.RECOVERING)
+
+    async def _send_session_request(
+        self,
+        request: ua.BaseRequest,
+        timeout: float | None = None,
+        bypass_ready_gate: bool = False,
+    ) -> bytes:
+        if not bypass_ready_gate:
+            await self.await_ready(timeout=timeout)
+        return await self.client._send_request(
+            request,
+            timeout=timeout,
+            bypass_ready_gate=bypass_ready_gate,
+        )
 
     @property
     def subscription_dispatch_queue_maxsize(self) -> int:
@@ -258,7 +314,7 @@ class UaSession(AbstractSession):
         self.logger.debug("browse")
         request = ua.BrowseRequest()
         request.Parameters = parameters
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.BrowseResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -271,7 +327,7 @@ class UaSession(AbstractSession):
         self.logger.debug("browse_next")
         request = ua.BrowseNextRequest()
         request.Parameters = parameters
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.BrowseNextResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -282,7 +338,7 @@ class UaSession(AbstractSession):
         self.logger.debug("read")
         request = ua.ReadRequest()
         request.Parameters = parameters
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.ReadResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -293,7 +349,7 @@ class UaSession(AbstractSession):
         self.logger.debug("write")
         request = ua.WriteRequest()
         request.Parameters = parameters
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.WriteResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -306,7 +362,7 @@ class UaSession(AbstractSession):
         self.logger.debug("history_read")
         request = ua.HistoryReadRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.HistoryReadResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -317,7 +373,7 @@ class UaSession(AbstractSession):
         self.logger.debug("add_nodes")
         request = ua.AddNodesRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.AddNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -330,7 +386,7 @@ class UaSession(AbstractSession):
         self.logger.debug("add_references")
         request = ua.AddReferencesRequest()
         request.Parameters.ReferencesToAdd = refs
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.AddReferencesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -343,7 +399,7 @@ class UaSession(AbstractSession):
         self.logger.debug("delete_nodes")
         request = ua.DeleteNodesRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.DeleteNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -356,7 +412,7 @@ class UaSession(AbstractSession):
         self.logger.debug("delete_references")
         request = ua.DeleteReferencesRequest()
         request.Parameters.ReferencesToDelete = refs
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.DeleteReferencesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -369,7 +425,7 @@ class UaSession(AbstractSession):
         self.logger.debug("call")
         request = ua.CallRequest()
         request.Parameters.MethodsToCall = methodstocall
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.CallResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -382,7 +438,7 @@ class UaSession(AbstractSession):
         self.logger.debug("translate_browsepath_to_nodeid")
         request = ua.TranslateBrowsePathsToNodeIdsRequest()
         request.Parameters.BrowsePaths = browse_paths
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.TranslateBrowsePathsToNodeIdsResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -393,7 +449,7 @@ class UaSession(AbstractSession):
         self.logger.debug("register_nodes")
         request = ua.RegisterNodesRequest()
         request.Parameters.NodesToRegister = nodes
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.RegisterNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -404,7 +460,7 @@ class UaSession(AbstractSession):
         self.logger.debug("unregister_nodes")
         request = ua.UnregisterNodesRequest()
         request.Parameters.NodesToUnregister = nodes
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.UnregisterNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -419,7 +475,7 @@ class UaSession(AbstractSession):
         self.logger.debug("create_subscription")
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.CreateSubscriptionResponse, data)
         response.ResponseHeader.ServiceResult.check()
         subscription_id = response.Parameters.SubscriptionId
@@ -459,7 +515,7 @@ class UaSession(AbstractSession):
         self.logger.debug("modify_subscription")
         request = ua.ModifySubscriptionRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.ModifySubscriptionResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -472,7 +528,7 @@ class UaSession(AbstractSession):
         self.logger.debug("delete_subscriptions")
         request = ua.DeleteSubscriptionsRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.DeleteSubscriptionsResponse, data)
         response.ResponseHeader.ServiceResult.check()
         for subscription_id in params.SubscriptionIds:
@@ -489,7 +545,7 @@ class UaSession(AbstractSession):
         self.logger.debug("create_monitored_items")
         request = ua.CreateMonitoredItemsRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.CreateMonitoredItemsResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -502,7 +558,7 @@ class UaSession(AbstractSession):
         self.logger.debug("modify_monitored_items")
         request = ua.ModifyMonitoredItemsRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.ModifyMonitoredItemsResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -515,7 +571,7 @@ class UaSession(AbstractSession):
         self.logger.debug("delete_monitored_items")
         request = ua.DeleteMonitoredItemsRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.DeleteMonitoredItemsResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -528,7 +584,7 @@ class UaSession(AbstractSession):
         self.logger.debug("transfer_subscriptions")
         request = ua.TransferSubscriptionsRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.TransferSubscriptionsResponse, data)
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
@@ -540,7 +596,7 @@ class UaSession(AbstractSession):
         self.logger.debug("set_monitoring_mode")
         request = ua.SetMonitoringModeRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.SetMonitoringModeResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -872,7 +928,7 @@ class UaSession(AbstractSession):
         request = ua.RepublishRequest()
         request.Parameters.SubscriptionId = subscription_id
         request.Parameters.RetransmitSequenceNumber = retransmit_sequence_number
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.RepublishResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -885,6 +941,7 @@ class UaSession(AbstractSession):
         self.logger.debug("publish %r", acks)
         request = ua.PublishRequest()
         request.Parameters.SubscriptionAcknowledgements = acks if acks else []
+        await self.await_ready()
         data = await self.client._send_request(request, timeout=0)
         protocol = self.client.protocol
         if protocol is None:
@@ -1007,10 +1064,12 @@ class UaSession(AbstractSession):
 
     async def close_session(self, delete_subscriptions: bool) -> None:
         """Close session and cleanup resources."""
+        self._set_state(SessionState.CLOSING)
         self._closing = True
         self._disconnect_event.set()
         if self._publish_task is not None and not self._publish_task.done():
             self._publish_task.cancel()
+        self._set_state(SessionState.CLOSED)
         # Cleanup would be implemented here
         pass
 
@@ -1032,7 +1091,7 @@ class UaSession(AbstractSession):
     @property
     def ready_event(self) -> asyncio.Event:
         """Event signaled when session is ready."""
-        return self._disconnect_event
+        return self._ready_event
 
     async def __aenter__(self) -> UaSession:
         """Async context manager entry."""

@@ -31,6 +31,7 @@ from ..ua.ua_binary import (
 from ..ua.uaerrors import BadSessionClosed, BadUserAccessDenied
 from ..ua.uaprotocol_auto import OpenSecureChannelResult
 from .ua_session import (
+    SessionState,
     SubscriptionDispatchOverflowError,
     SubscriptionDispatchOverflowPolicy,
     SubscriptionStaleError,
@@ -41,6 +42,7 @@ __all__ = [
     "UaClient",
     "UASocketProtocol",
     "UaSession",
+    "SessionState",
     "SubscriptionStaleError",
     "SubscriptionDispatchOverflowError",
     "SubscriptionDispatchOverflowPolicy",
@@ -388,9 +390,7 @@ class UaClient:
         DISCONNECTED = 1
         CONNECTING = 2
         CHANNEL_READY = 3
-        SESSION_READY = 4
-        SESSION_ESTABLISHING = 5
-        DISCONNECTING = 6
+        DISCONNECTING = 4
 
     def __init__(self, timeout: float = 1.0) -> None:
         """Initialize sessionless client.
@@ -477,11 +477,15 @@ class UaClient:
         if self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("Socket already closed")
             self.set_connection_state(UaClient.CONNECTION_STATE.DISCONNECTED)
+            for session in self._sessions.values():
+                session.on_transport_lost()
             return
 
         self.protocol.disconnect_socket()
         self.protocol = None
         self.set_connection_state(UaClient.CONNECTION_STATE.DISCONNECTED)
+        for session in self._sessions.values():
+            session.on_transport_lost()
 
     # ========== SECURE CHANNEL ==========
 
@@ -536,9 +540,12 @@ class UaClient:
 
         if (
             self._connection_state
-            != UaClient.CONNECTION_STATE.SESSION_READY
+            != UaClient.CONNECTION_STATE.CHANNEL_READY
         ):
             self.set_connection_state(UaClient.CONNECTION_STATE.CHANNEL_READY)
+        for session in self._sessions.values():
+            if session.state == SessionState.SUSPENDED:
+                session.on_transport_restored()
 
         return result
 
@@ -552,6 +559,8 @@ class UaClient:
             return
 
         self.set_connection_state(UaClient.CONNECTION_STATE.DISCONNECTING)
+        for session in self._sessions.values():
+            session.on_transport_lost()
         await self.protocol.close_secure_channel()
 
     # ========== SESSION LIFECYCLE ==========
@@ -597,12 +606,14 @@ class UaClient:
                 response.Parameters.SessionId,
                 response.Parameters.AuthenticationToken,
             )
+            self._default_session._set_state(SessionState.ESTABLISHING)
             self._register_session(self._default_session)
         else:
             self._default_session.session_id = response.Parameters.SessionId
             self._default_session.authentication_token = (
                 response.Parameters.AuthenticationToken
             )
+            self._default_session._set_state(SessionState.ESTABLISHING)
 
         return response.Parameters
 
@@ -610,8 +621,6 @@ class UaClient:
         self, parameters: ua.ActivateSessionParameters
     ) -> ua.ActivateSessionResult:
         """Activate (authenticate) existing session.
-
-        Transitions state to SESSION_READY.
 
         Args:
             parameters: ActivateSessionParameters with credentials, etc.
@@ -633,7 +642,11 @@ class UaClient:
         self.logger.debug("ActivateSessionResponse: %s", response)
         response.ResponseHeader.ServiceResult.check()
 
-        self.set_connection_state(UaClient.CONNECTION_STATE.SESSION_READY)
+        if self._default_session is not None:
+            self._default_session._set_state(SessionState.READY)
+        for session in self._sessions.values():
+            if session is not self._default_session and session.state == SessionState.RECOVERING:
+                session._set_state(SessionState.READY)
         return response.Parameters
 
     async def close_session(
@@ -833,21 +846,14 @@ class UaClient:
     def set_connection_state(self, state: int) -> None:
         """Update connection state and signal ready event."""
         self._connection_state = state
-        if state == UaClient.CONNECTION_STATE.SESSION_READY:
+        if state == UaClient.CONNECTION_STATE.CHANNEL_READY:
             self._ready_event.set()
         else:
             self._ready_event.clear()
 
     def try_set_connection_state(self, state: int) -> bool:
         """Attempt guarded state transition (prevents backward states)."""
-        if (
-            self._connection_state == UaClient.CONNECTION_STATE.DISCONNECTING
-            and state
-            in (
-                UaClient.CONNECTION_STATE.SESSION_ESTABLISHING,
-                UaClient.CONNECTION_STATE.SESSION_READY,
-            )
-        ):
+        if self._connection_state == UaClient.CONNECTION_STATE.DISCONNECTING and state == UaClient.CONNECTION_STATE.CHANNEL_READY:
             self.logger.warning(
                 "Ignoring state transition %s -> %s during disconnect",
                 self._connection_state,
@@ -858,7 +864,7 @@ class UaClient:
         return True
 
     async def await_ready(self, timeout: float | None = None) -> None:
-        """Block until SESSION_READY state.
+        """Block until CHANNEL_READY state.
 
         Args:
             timeout: Seconds to wait (default: client timeout)
@@ -868,7 +874,7 @@ class UaClient:
         """
         if (
             self._connection_state
-            == UaClient.CONNECTION_STATE.SESSION_READY
+            == UaClient.CONNECTION_STATE.CHANNEL_READY
         ):
             return
 
@@ -902,7 +908,7 @@ class UaClient:
             request: OPC-UA request structure
             timeout: Override default timeout
             message_type: Message type (SecureMessage, SecureOpen, etc.)
-            bypass_ready_gate: Skip SESSION_READY check if True
+            bypass_ready_gate: Skip CHANNEL_READY check if True
 
         Returns:
             Response body (usually parsed by caller)
@@ -1003,6 +1009,7 @@ class UaClient:
             activate_params = ua.ActivateSessionParameters()
             await self.activate_session(activate_params)
 
+            self.set_connection_state(UaClient.CONNECTION_STATE.CHANNEL_READY)
             self.logger.info("Session %s activated", session.session_id)
             return session
 
@@ -1057,6 +1064,12 @@ class UaClient:
                 "No active session. Call create_session/activate_session first."
             )
         return self._default_session
+
+    @property
+    def _publish_task(self) -> asyncio.Task[None] | None:
+        if self._default_session is None:
+            return None
+        return self._default_session._publish_task
 
     async def browse(self, parameters: ua.BrowseParameters) -> list[ua.BrowseResult]:
         return await self._require_default_session().browse(parameters)
