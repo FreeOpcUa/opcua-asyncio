@@ -37,6 +37,18 @@ from asyncua.ua.uatypes import _MaskEnum
 EXAMPLE_BSD_PATH = Path(__file__).parent.absolute() / "example.bsd"
 
 
+@dataclass
+class _MutualRecursiveChild:
+    Name: ua.String = ""
+    Parents: list["_MutualRecursiveParent"] = field(default_factory=list)
+
+
+@dataclass
+class _MutualRecursiveParent:
+    Name: ua.String = ""
+    Children: list[_MutualRecursiveChild] = field(default_factory=list)
+
+
 def test_variant_array_none():
     v = ua.Variant(None, VariantType=ua.VariantType.Int32, is_array=True)
     data = variant_to_binary(v)
@@ -908,6 +920,23 @@ def test_struct_104() -> None:
     data = struct_to_binary(m)
     m2 = struct_from_binary(MyStruct, ua.utils.Buffer(data))
     assert m == m2
+
+
+def test_struct_mutual_recursive_lists_roundtrip() -> None:
+    root = _MutualRecursiveParent(Name="root")
+    child = _MutualRecursiveChild(Name="leaf")
+    branch = _MutualRecursiveParent(Name="branch")
+    root.Children.append(child)
+    child.Parents.append(branch)
+
+    data = struct_to_binary(root)
+    decoded = struct_from_binary(_MutualRecursiveParent, ua.utils.Buffer(data))
+
+    assert decoded.Name == "root"
+    assert len(decoded.Children) == 1
+    assert decoded.Children[0].Name == "leaf"
+    assert len(decoded.Children[0].Parents) == 1
+    assert decoded.Children[0].Parents[0].Name == "branch"
 
 
 def test_session_security_diagnostics_roundtrip():

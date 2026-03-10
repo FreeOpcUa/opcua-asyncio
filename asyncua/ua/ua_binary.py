@@ -456,21 +456,14 @@ def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Sequenc
         data_type = getattr(Primitives1, uatype.__name__)
         return data_type.pack_array
     none_val = Primitives.Int32.pack(-1)
-    if recursive:
-
-        def recursive_serialize(val):
-            if val is None:
-                return none_val
-            data_size = Primitives.Int32.pack(len(val))
-            return data_size + b"".join(create_type_serializer(uatype)(el) for el in val)
-
-        return recursive_serialize
-
-    type_serializer = create_type_serializer(uatype)
+    type_serializer = None
 
     def serialize(val):
+        nonlocal type_serializer
         if val is None:
             return none_val
+        if type_serializer is None:
+            type_serializer = create_type_serializer(uatype)
         data_size = Primitives.Int32.pack(len(val))
         return data_size + b"".join(type_serializer(el) for el in val)
 
@@ -659,17 +652,15 @@ def extensionobject_to_binary(obj):
 
 @functools.cache
 def _create_list_deserializer(uatype, recursive: bool = False):
-    if recursive:
-
-        def _deserialize_recursive(data):
-            size = Primitives.Int32.unpack(data)
-            return [_create_type_deserializer(uatype, type(None))(data) for _ in range(size)]
-
-        return _deserialize_recursive
-    element_deserializer = _create_type_deserializer(uatype, type(None))
+    # Resolve the element decoder lazily so mutually-recursive dataclass lists
+    # do not recurse forever during deserializer construction.
+    element_deserializer = None
 
     def _deserialize(data):
+        nonlocal element_deserializer
         size = Primitives.Int32.unpack(data)
+        if element_deserializer is None:
+            element_deserializer = _create_type_deserializer(uatype, type(None))
         return [element_deserializer(data) for _ in range(size)]
 
     return _deserialize
