@@ -39,13 +39,13 @@ from .ua_session import (
 )
 
 __all__ = [
-    "UaClient",
-    "UASocketProtocol",
-    "UaSession",
     "SessionState",
-    "SubscriptionStaleError",
     "SubscriptionDispatchOverflowError",
     "SubscriptionDispatchOverflowPolicy",
+    "SubscriptionStaleError",
+    "UASocketProtocol",
+    "UaClient",
+    "UaSession",
 ]
 
 

@@ -14,12 +14,11 @@ from asyncua.client.ua_session import (
 )
 from asyncua.common.connection import TransportLimits
 from asyncua.server.uaprocessor import UaProcessor
+from asyncua.ua.ua_binary import struct_to_binary
 from asyncua.ua.uaerrors import (
     BadMaxConnectionsReached,
-    BadNoSubscription,
     BadSessionNotActivated,
 )
-from asyncua.ua.ua_binary import struct_to_binary
 
 from .conftest import find_free_port, port_num
 
