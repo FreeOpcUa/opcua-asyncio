@@ -615,7 +615,7 @@ class UaSession(AbstractSession):
         self.logger.debug("set_publishing_mode")
         request = ua.SetPublishingModeRequest()
         request.Parameters = params
-        data = await self.client._send_request(request)
+        data = await self._send_session_request(request)
         response = struct_from_binary(ua.SetPublishingModeResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
@@ -711,12 +711,6 @@ class UaSession(AbstractSession):
         self._last_publish_sequence_numbers[subscription_id] = (
             notification_message.SequenceNumber
         )
-
-    async def dispatch_notification_message(
-        self, subscription_id: int, notification_message: ua.NotificationMessage
-    ) -> None:
-        """Dispatch notification to registered callback (placeholder)."""
-        pass
 
     def get_subscription_ids(self) -> list[int]:
         """Get list of active subscription IDs."""
@@ -840,6 +834,7 @@ class UaSession(AbstractSession):
 
     def _fail_all_dispatch_workers(self, exc: Exception) -> None:
         """Signal all dispatch workers to stop with error."""
+        self.logger.error("Stopping all subscription dispatch workers: %s", exc)
         for runtime in self._subscription_dispatch_runtime.values():
             task = runtime.task
             if task is not None and not task.done():
@@ -980,6 +975,7 @@ class UaSession(AbstractSession):
             self.logger.info("BadNoSubscription in publish loop")
             raise
         except Exception:
+            self.logger.exception("Unexpected error while reading publish response")
             return None
 
     async def _maybe_recover_gap(
@@ -1073,16 +1069,32 @@ class UaSession(AbstractSession):
         self._publish_task = None
         await self.ensure_publish_loop_running()
 
-    async def close_session(self, delete_subscriptions: bool) -> None:
+    async def close(self) -> None:
         """Close session and cleanup resources."""
+        if self._state in (SessionState.CLOSING, SessionState.CLOSED):
+            return
+
         self._set_state(SessionState.CLOSING)
         self._closing = True
         self._disconnect_event.set()
+
         if self._publish_task is not None and not self._publish_task.done():
             self._publish_task.cancel()
+            try:
+                await self._publish_task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                self.logger.exception("Error while stopping publish loop")
+
+        for subscription_id in list(self._subscription_dispatch_runtime.keys()):
+            self._stop_subscription_dispatch_worker(subscription_id)
+
+        self._subscription_callbacks.clear()
+        self._last_publish_sequence_numbers.clear()
+        self._subscription_watchdog_states.clear()
+
         self._set_state(SessionState.CLOSED)
-        # Cleanup would be implemented here
-        pass
 
     async def inform_subscriptions(self, status: ua.StatusCode) -> None:
         """Inform all subscriptions of status change."""
@@ -1115,4 +1127,4 @@ class UaSession(AbstractSession):
         exc_tb: TracebackType | None,
     ) -> None:
         """Async context manager exit - cleanup."""
-        await self.close_session(delete_subscriptions=True)
+        await self.close()
