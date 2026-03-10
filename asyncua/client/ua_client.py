@@ -676,7 +676,7 @@ class UaClient:
 
         if self._default_session is not None:
             try:
-                await self._default_session.close_session(delete_subscriptions)
+                await self._default_session.close()
             finally:
                 self._unregister_session(self._default_session)
                 self._default_session = None
@@ -1040,7 +1040,7 @@ class UaClient:
         sessions = list(self._sessions.values())
         for session in sessions:
             try:
-                await session.close_session(delete_subscriptions)
+                await session.close()
             except Exception:
                 self.logger.exception("Error closing session %s",
                                       session.session_id)
