@@ -8,10 +8,11 @@ import asyncio
 import inspect
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
@@ -487,7 +488,7 @@ class UaSession(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         subscription_id = response.Parameters.SubscriptionId
         self._subscription_callbacks[subscription_id] = callback
-        
+
         publishing_interval_ms = float(
             getattr(
                 response.Parameters,
@@ -509,10 +510,10 @@ class UaSession(AbstractSession):
         )
         self.logger.info("Subscription created: %s", subscription_id)
         self._ensure_subscription_dispatch_worker(subscription_id)
-        
+
         if self._publish_task is None or self._publish_task.done():
             self._publish_task = asyncio.create_task(self._publish_loop())
-        
+
         return response.Parameters
 
     async def modify_subscription(
@@ -979,7 +980,7 @@ class UaSession(AbstractSession):
         ack: SubscriptionAcknowledgement | None,
     ) -> ua.PublishResponse | None:
         """Read publish response, handling timeouts and errors."""
-        from asyncua.ua.uaerrors import BadTimeout, BadNoSubscription
+        from asyncua.ua.uaerrors import BadNoSubscription, BadTimeout
         try:
             return await self.publish([ack] if ack else [])
         except BadTimeout:
