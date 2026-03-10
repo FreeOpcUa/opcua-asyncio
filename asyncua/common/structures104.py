@@ -442,7 +442,10 @@ async def get_children_descriptions_type_definitions(
         nodes.append(server.get_node(desc.NodeId))
 
     if nodes:
-        results = [dv.Value.Value for dv in await server.read_attributes(nodes, ua.AttributeIds.DataTypeDefinition)]
+        results = [
+            dv.Value.Value if dv.Value is not None else None
+            for dv in await server.read_attributes(nodes, ua.AttributeIds.DataTypeDefinition)
+        ]
     else:
         results = []
     sdefs = [None for _ in descs]
