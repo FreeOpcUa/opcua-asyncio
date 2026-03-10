@@ -199,7 +199,6 @@ ignore = [
 "asyncua/common/instantiate_util.py" = ["ANN"]
 "asyncua/common/manage_nodes.py" = ["ANN"]
 "asyncua/common/methods.py" = ["ANN"]
-"asyncua/common/node.py" = ["ANN"]
 "asyncua/common/node_factory.py" = ["ANN"]
 "asyncua/common/session_interface.py" = ["ANN"]
 "asyncua/common/shortcuts.py" = ["ANN"]
