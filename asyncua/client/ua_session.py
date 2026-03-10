@@ -201,6 +201,7 @@ class UaSession(AbstractSession):
         self._disconnect_event = asyncio.Event()
         self._ready_event = asyncio.Event()
         self._state: SessionState = SessionState.IDLE
+        self.registry_session_id: int | None = None
 
     @property
     def state(self) -> SessionState:
@@ -234,7 +235,7 @@ class UaSession(AbstractSession):
 
     async def _send_session_request(
         self,
-        request: ua.BaseRequest,
+        request: Any,
         timeout: float | None = None,
         bypass_ready_gate: bool = False,
     ) -> bytes:
@@ -335,7 +336,7 @@ class UaSession(AbstractSession):
         response = struct_from_binary(ua.BrowseNextResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
-        return response.Results
+        return response.Parameters.Results
 
     async def read(self, parameters: ua.ReadParameters) -> list[ua.DataValue]:
         """Read node attributes."""
@@ -472,12 +473,14 @@ class UaSession(AbstractSession):
         response = struct_from_binary(ua.UnregisterNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
-        return response.Parameters.UnregisteredNodeIds
+        return nodes
 
     # Subscription Service Set methods
 
     async def create_subscription(
-        self, params: ua.CreateSubscriptionParameters, callback: Callable
+        self,
+        params: ua.CreateSubscriptionParameters,
+        callback: Callable[[ua.PublishResult], Any] | None = None,
     ) -> ua.CreateSubscriptionResult:
         """Create a subscription."""
         self.logger.debug("create_subscription")
@@ -487,6 +490,11 @@ class UaSession(AbstractSession):
         response = struct_from_binary(ua.CreateSubscriptionResponse, data)
         response.ResponseHeader.ServiceResult.check()
         subscription_id = response.Parameters.SubscriptionId
+        if callback is None:
+            def _noop_callback(_publish_result: ua.PublishResult) -> None:
+                return
+
+            callback = _noop_callback
         self._subscription_callbacks[subscription_id] = callback
 
         publishing_interval_ms = float(
