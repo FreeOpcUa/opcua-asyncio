@@ -189,12 +189,12 @@ def get_default_value(
 
 
 def _make_union_property(name: str, idx: int) -> property:
-    def getter(self):
+    def getter(self: Any) -> Any:
         if getattr(self, "Encoding", 0) == idx:
             return getattr(self, "Value", None)
         return None
 
-    def setter(self, value):
+    def setter(self: Any, value: Any) -> None:
         self.Encoding = idx
         self.Value = value
 
@@ -389,7 +389,7 @@ class DataTypeInfo:
     encoding_id: ua.NodeId = field(init=False)
     deps: list[ua.NodeId] = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.encoding_id = self.sdef.DefaultEncodingId
         self.deps = [f.DataType for f in self.sdef.Fields]
 

@@ -44,7 +44,7 @@ class Client:
     _password: str | None = None
     strip_url_credentials: bool = True
 
-    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
+    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0) -> None:
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -617,7 +617,7 @@ class Client:
             await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
             raise
 
-    async def _lost_connection(self, ex: Exception):
+    async def _lost_connection(self, ex: Exception) -> None:
         if not self.connection_lost_callback:
             return
         try:

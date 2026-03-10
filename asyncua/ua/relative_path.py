@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from enum import IntEnum
 
@@ -24,7 +26,7 @@ class RelativePathElementFormatter:
     _target_name: QualifiedName | None = None
     _reference_type_name: QualifiedName | None = None
 
-    def __init__(self, element: RelativePathElement | None = None):
+    def __init__(self, element: RelativePathElement | None = None) -> None:
         if element is not None:
             self._include_subtypes = element.IncludeSubtypes
             self._target_name = element.TargetName
@@ -193,13 +195,13 @@ class RelativePathFormatter:
 
     _elements: list[RelativePathElementFormatter]
 
-    def __init__(self, relative_path: RelativePath | None = None):
+    def __init__(self, relative_path: RelativePath | None = None) -> None:
         self._elements = []
         if relative_path:
             self._elements = [RelativePathElementFormatter(el) for el in relative_path.Elements]
 
     @staticmethod
-    def parse(string: str):
+    def parse(string: str) -> RelativePathFormatter:
         formatter = RelativePathFormatter()
 
         if string:
