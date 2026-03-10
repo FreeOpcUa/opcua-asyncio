@@ -243,6 +243,7 @@ class UaSession(AbstractSession):
             request,
             timeout=timeout,
             bypass_ready_gate=bypass_ready_gate,
+            authentication_token=self.authentication_token,
         )
 
     @property
@@ -948,7 +949,11 @@ class UaSession(AbstractSession):
         request = ua.PublishRequest()
         request.Parameters.SubscriptionAcknowledgements = acks if acks else []
         await self.await_ready()
-        data = await self.client._send_request(request, timeout=0)
+        data = await self.client._send_request(
+            request,
+            timeout=0,
+            authentication_token=self.authentication_token,
+        )
         protocol = self.client.protocol
         if protocol is None:
             raise ConnectionError("Connection is closed")
@@ -1069,8 +1074,8 @@ class UaSession(AbstractSession):
         self._publish_task = None
         await self.ensure_publish_loop_running()
 
-    async def close(self) -> None:
-        """Close session and cleanup resources."""
+    async def _close_local(self) -> None:
+        """Close local session resources without sending CloseSessionRequest."""
         if self._state in (SessionState.CLOSING, SessionState.CLOSED):
             return
 
@@ -1095,6 +1100,13 @@ class UaSession(AbstractSession):
         self._subscription_watchdog_states.clear()
 
         self._set_state(SessionState.CLOSED)
+
+    async def close(self, delete_subscriptions: bool = True) -> None:
+        """Close session and release local and remote resources."""
+        await self.client.close_session(
+            delete_subscriptions=delete_subscriptions,
+            session=self,
+        )
 
     async def inform_subscriptions(self, status: ua.StatusCode) -> None:
         """Inform all subscriptions of status change."""

@@ -196,9 +196,14 @@ class UASocketProtocol(asyncio.Protocol):
         request: ua.BaseRequest,
         timeout: float = 1,
         message_type: ua.MessageType = ua.MessageType.SecureMessage,
+        authentication_token: ua.NodeId | None = None,
     ) -> asyncio.Future:
         """Send OPC-UA request, return future for response."""
-        self._setup_request_header(request.RequestHeader, timeout)
+        self._setup_request_header(
+            request.RequestHeader,
+            timeout,
+            authentication_token=authentication_token,
+        )
         self.logger.debug("Sending: %s", request)
 
         try:
@@ -226,6 +231,7 @@ class UASocketProtocol(asyncio.Protocol):
         request: ua.BaseRequest,
         timeout: float | None = None,
         message_type: ua.MessageType = ua.MessageType.SecureMessage,
+        authentication_token: ua.NodeId | None = None,
     ) -> bytes:
         """Send request and wait for response."""
         timeout = self.timeout if timeout is None else timeout
@@ -234,7 +240,12 @@ class UASocketProtocol(asyncio.Protocol):
 
         try:
             data = await wait_for(
-                self._send_request(request, timeout, message_type),
+                self._send_request(
+                    request,
+                    timeout,
+                    message_type,
+                    authentication_token=authentication_token,
+                ),
                 timeout if timeout else None,
             )
         except UaError as ex:
@@ -301,10 +312,17 @@ class UASocketProtocol(asyncio.Protocol):
         del self._callbackmap[request_id]
 
     def _setup_request_header(
-        self, hdr: ua.RequestHeader, timeout: float = 1
+        self,
+        hdr: ua.RequestHeader,
+        timeout: float = 1,
+        authentication_token: ua.NodeId | None = None,
     ) -> None:
         """Prepare request header with token and timeouts."""
-        hdr.AuthenticationToken = self.authentication_token
+        hdr.AuthenticationToken = (
+            self.authentication_token
+            if authentication_token is None
+            else authentication_token
+        )
         self._request_handle += 1
         hdr.RequestHandle = self._request_handle
         hdr.TimeoutHint = int(timeout * 1000)
@@ -595,11 +613,6 @@ class UaClient:
         self.logger.debug("CreateSessionResponse: %s", response)
         response.ResponseHeader.ServiceResult.check()
 
-        if self.protocol:
-            self.protocol.authentication_token = (
-                response.Parameters.AuthenticationToken
-            )
-
         if self._default_session is None:
             self._default_session = UaSession(
                 self,
@@ -618,7 +631,9 @@ class UaClient:
         return response.Parameters
 
     async def activate_session(
-        self, parameters: ua.ActivateSessionParameters
+        self,
+        parameters: ua.ActivateSessionParameters,
+        session: UaSession | None = None,
     ) -> ua.ActivateSessionResult:
         """Activate (authenticate) existing session.
 
@@ -637,20 +652,36 @@ class UaClient:
         request = ua.ActivateSessionRequest()
         request.Parameters = parameters
 
-        data = await self._send_request(request, bypass_ready_gate=True)
+        target_session = session if session is not None else self._default_session
+        if target_session is None:
+            raise UaError(
+                "No target session for activate_session. "
+                "Pass session=... or create a default session first."
+            )
+
+        data = await self._send_request(
+            request,
+            bypass_ready_gate=True,
+            authentication_token=target_session.authentication_token,
+        )
         response = struct_from_binary(ua.ActivateSessionResponse, data)
         self.logger.debug("ActivateSessionResponse: %s", response)
         response.ResponseHeader.ServiceResult.check()
 
-        if self._default_session is not None:
-            self._default_session._set_state(SessionState.READY)
-        for session in self._sessions.values():
-            if session is not self._default_session and session.state == SessionState.RECOVERING:
-                session._set_state(SessionState.READY)
+        if target_session is not None:
+            target_session._set_state(SessionState.READY)
+        for registered_session in self._sessions.values():
+            if (
+                registered_session is not target_session
+                and registered_session.state == SessionState.RECOVERING
+            ):
+                registered_session._set_state(SessionState.READY)
         return response.Parameters
 
     async def close_session(
-        self, delete_subscriptions: bool = True
+        self,
+        delete_subscriptions: bool = True,
+        session: UaSession | None = None,
     ) -> None:
         """Close session on server.
 
@@ -661,25 +692,46 @@ class UaClient:
             Ignores BadSessionClosed and BadUserAccessDenied (expected
             for some edge cases or older server versions)
         """
-        self.logger.info("Closing session")
-
-        if not self._prepare_close_session():
+        target_session = session if session is not None else self._default_session
+        if target_session is None:
+            self.logger.debug("close_session called with no active session")
             return
 
-        data = await self._send_close_session_request(delete_subscriptions)
-        response = struct_from_binary(ua.CloseSessionResponse, data)
+        self.logger.info("Closing session %s", target_session.session_id)
+
+        protocol = self.protocol
+        can_send_close = protocol is not None and protocol.state != UASocketProtocol.CLOSED
+        if can_send_close:
+            try:
+                data = await self._send_close_session_request(
+                    delete_subscriptions,
+                    authentication_token=target_session.authentication_token,
+                )
+                response = struct_from_binary(ua.CloseSessionResponse, data)
+
+                try:
+                    response.ResponseHeader.ServiceResult.check()
+                except (BadSessionClosed, BadUserAccessDenied):
+                    self.logger.debug("Ignored close_session error (expected)")
+            except ConnectionError:
+                self.logger.debug(
+                    "Skipping CloseSessionRequest for %s because connection is closed",
+                    target_session.session_id,
+                )
+        else:
+            self.logger.debug(
+                "Skipping CloseSessionRequest for %s because protocol is not open",
+                target_session.session_id,
+            )
 
         try:
-            response.ResponseHeader.ServiceResult.check()
-        except (BadSessionClosed, BadUserAccessDenied):
-            self.logger.debug("Ignored close_session error (expected)")
-
-        if self._default_session is not None:
-            try:
-                await self._default_session.close()
-            finally:
-                self._unregister_session(self._default_session)
+            await target_session._close_local()
+        finally:
+            self._unregister_session(target_session)
+            if self._default_session is target_session:
                 self._default_session = None
+            if self._default_session is None and self._sessions:
+                self._default_session = next(iter(self._sessions.values()))
 
     # ========== SESSIONLESS DISCOVERY SERVICES ==========
 
@@ -901,6 +953,7 @@ class UaClient:
         timeout: float | None = None,
         message_type: ua.MessageType = ua.MessageType.SecureMessage,
         bypass_ready_gate: bool = False,
+        authentication_token: ua.NodeId | None = None,
     ) -> bytes:
         """Send OPC-UA request and wait for response.
 
@@ -928,35 +981,25 @@ class UaClient:
             raise ConnectionError("Connection is closed")
 
         return await protocol.send_request(
-            request, timeout=timeout, message_type=message_type
+            request,
+            timeout=timeout,
+            message_type=message_type,
+            authentication_token=authentication_token,
         )
 
-    def _prepare_close_session(self) -> bool:
-        """Prepare for session closure."""
-        self.set_connection_state(UaClient.CONNECTION_STATE.DISCONNECTING)
-        self._closing = True
-
-        if not self.protocol:
-            self.logger.warning(
-                "close_session but connection not established"
-            )
-            return False
-
-        self.protocol.closed = True
-
-        if self.protocol.state == UASocketProtocol.CLOSED:
-            self.logger.warning("Connection already closed")
-            return False
-
-        return True
-
     async def _send_close_session_request(
-        self, delete_subscriptions: bool
+        self,
+        delete_subscriptions: bool,
+        authentication_token: ua.NodeId | None = None,
     ) -> bytes:
         """Send CloseSessionRequest to server."""
         request = ua.CloseSessionRequest()
         request.DeleteSubscriptions = delete_subscriptions
-        return await self._send_request(request, bypass_ready_gate=True)
+        return await self._send_request(
+            request,
+            bypass_ready_gate=True,
+            authentication_token=authentication_token,
+        )
 
     def set_security(
         self, policy: security_policies.SecurityPolicy
@@ -975,6 +1018,8 @@ class UaClient:
     async def create_session_object(
         self,
         parameters: ua.CreateSessionParameters,
+        make_default: bool = True,
+        activate_parameters: ua.ActivateSessionParameters | None = None,
     ) -> UaSession:
         """Create and activate a new UaSession object.
 
@@ -983,6 +1028,11 @@ class UaClient:
 
         Args:
             parameters: CreateSessionParameters (description, timeout, etc.)
+            make_default: If True, creates/reuses the default session slot.
+                If False, creates an additional non-default session.
+            activate_parameters: Optional ActivateSessionParameters used to
+                authenticate this specific session (for example per-session
+                user identity tokens). If omitted, anonymous activation is used.
 
         Returns:
             Ready-to-use UaSession object
@@ -1001,13 +1051,34 @@ class UaClient:
         """
         self.logger.info("Creating session object")
 
-        await self.create_session(parameters)
-        session = self._require_default_session()
+        if make_default:
+            await self.create_session(parameters)
+            session = self._require_default_session()
+        else:
+            request = ua.CreateSessionRequest()
+            request.Parameters = parameters
+
+            data = await self._send_request(request, bypass_ready_gate=True)
+            response = struct_from_binary(ua.CreateSessionResponse, data)
+            self.logger.debug("CreateSessionResponse (additional): %s", response)
+            response.ResponseHeader.ServiceResult.check()
+
+            session = UaSession(
+                self,
+                response.Parameters.SessionId,
+                response.Parameters.AuthenticationToken,
+            )
+            session._set_state(SessionState.ESTABLISHING)
+            self._register_session(session)
 
         try:
             # Activate the session
-            activate_params = ua.ActivateSessionParameters()
-            await self.activate_session(activate_params)
+            activate_params = (
+                activate_parameters
+                if activate_parameters is not None
+                else ua.ActivateSessionParameters()
+            )
+            await self.activate_session(activate_params, session=session)
 
             self.set_connection_state(UaClient.CONNECTION_STATE.CHANNEL_READY)
             self.logger.info("Session %s activated", session.session_id)
@@ -1016,7 +1087,10 @@ class UaClient:
         except Exception as ex:
             # Cleanup on failure
             try:
-                await self.close_session(delete_subscriptions=True)
+                await self.close_session(
+                    delete_subscriptions=True,
+                    session=session,
+                )
             except Exception:
                 pass
             raise ex
@@ -1040,7 +1114,7 @@ class UaClient:
         sessions = list(self._sessions.values())
         for session in sessions:
             try:
-                await session.close()
+                await session.close(delete_subscriptions=delete_subscriptions)
             except Exception:
                 self.logger.exception("Error closing session %s",
                                       session.session_id)
