@@ -523,8 +523,8 @@ class NodeId:
         if not self.Identifier:
             return True
         if self.NodeIdType is NodeIdType.Guid:
-            if not isinstance(self.Identifier, Guid):
-                raise UaError(f"Expected Guid, got {type(self.Identifier)}")
+            if not isinstance(self.Identifier, uuid.UUID):
+                raise ValueError(f"Expected Guid, got {type(self.Identifier)}")
             return self.Identifier.int == 0
         return False
 
