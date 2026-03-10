@@ -266,9 +266,13 @@ class UASocketProtocol(asyncio.Protocol):
         self.check_answer(data, f" in response to {request.__class__.__name__}")
         return data
 
-    def check_answer(self, data: bytes, context: str) -> bool:
+    def check_answer(self, data: Any, context: str) -> bool:
         """Verify response is valid OPC-UA message."""
-        data_buffer = ua.utils.Buffer(data)
+        if hasattr(data, "copy"):
+            data_buffer = data.copy()
+        else:
+            data_buffer = ua.utils.Buffer(bytes(data))
+
         typeid = nodeid_from_binary(data_buffer)
         if typeid == ua.FourByteNodeId(
             ua.ObjectIds.ServiceFault_Encoding_DefaultBinary
