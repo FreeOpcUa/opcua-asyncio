@@ -26,7 +26,7 @@ from ..common.xmlexporter import XmlExporter
 from ..common.xmlimporter import XmlImporter
 from ..crypto import security_policies, uacrypto
 from ..crypto.validator import CertificateValidatorMethod
-from .ua_client import SubscriptionStaleError, UaClient
+from .ua_client import SubscriptionStaleError, UaClient, UaSession
 
 _logger = logging.getLogger(__name__)
 
@@ -676,12 +676,23 @@ class Client:
         if self._session_authentication_token is None or self.uaclient.protocol is None:
             return False
 
-        self.uaclient.protocol.authentication_token = self._session_authentication_token
+        target_session = next(
+            (
+                session
+                for session in self.uaclient.get_sessions()
+                if session.authentication_token == self._session_authentication_token
+            ),
+            None,
+        )
+        if target_session is None:
+            return False
+
         try:
             await self.activate_session(
                 username=self._username,
                 password=self._password,
                 certificate=self.user_certificate,
+                session=target_session,
             )
             return True
         except Exception:
@@ -1095,6 +1106,7 @@ class Client:
         username: str | None = None,
         password: str | None = None,
         certificate: x509.Certificate | None = None,
+        session: UaSession | None = None,
     ) -> ua.ActivateSessionResult:
         """
         Activate session using either username and password or private_key
@@ -1118,7 +1130,7 @@ class Client:
             self._add_certificate_auth(params, user_certificate, challenge, self.user_certificate_chain)
         else:
             self._add_user_auth(params, username, password)
-        res = await self.uaclient.activate_session(params)
+        res = await self.uaclient.activate_session(params, session=session)
         self._server_nonce = res.ServerNonce
         return res
 
