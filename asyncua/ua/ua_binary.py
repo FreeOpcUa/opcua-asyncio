@@ -327,9 +327,35 @@ def resolve_uatype(ftype: Any) -> tuple[Any, bool]:
     return ftype, is_optional
 
 
+def _resolve_type_in_dataclass_context(ftype: Any, dataclazz: type) -> Any:
+    if not isinstance(ftype, str):
+        return ftype
+
+    module = sys.modules.get(getattr(dataclazz, "__module__", "")) if isinstance(dataclazz, type) else None
+    namespace = {
+        "ua": ua,
+        "typing": typing,
+        "list": list,
+        "List": list,
+        "Union": typing.Union,
+        "Optional": typing.Optional,
+        "Dict": dict,
+    }
+    if module is not None:
+        namespace.update(vars(module))
+    if isinstance(dataclazz, type):
+        namespace.update({k: v for k, v in dataclazz.__dict__.items() if not isinstance(v, property)})
+
+    try:
+        return eval(ftype, namespace)
+    except Exception:
+        return ftype
+
+
 def field_serializer(uatype: Any, is_optional: bool, dataclazz: type) -> Callable[[Any], bytes]:
     if type_is_list(uatype):
         ft = type_from_list(uatype)
+        ft = _resolve_type_in_dataclass_context(ft, dataclazz)
         if is_optional:
             return lambda val: b"" if val is None else create_list_serializer(ft, ft == dataclazz)(val)
         return create_list_serializer(ft, ft == dataclazz)
@@ -681,6 +707,7 @@ def _create_type_deserializer(uatype, dataclazz):
             return _create_type_deserializer(uatype, uatype)
     if type_is_list(uatype):
         utype = type_from_list(uatype)
+        utype = _resolve_type_in_dataclass_context(utype, dataclazz)
         if hasattr(ua.VariantType, utype.__name__):
             vtype = getattr(ua.VariantType, utype.__name__)
             return _create_uatype_array_deserializer(vtype)
