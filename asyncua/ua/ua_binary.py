@@ -8,6 +8,7 @@ import contextvars
 import functools
 import logging
 import struct
+import sys
 import typing
 import uuid
 from collections.abc import Callable, Sequence
@@ -44,15 +45,19 @@ def set_string_encoding(new_encoding: str):
     _string_encoding.set(new_encoding)
 
 def get_safe_type_hints(cls, extra_ns=None):
-    # Use globalns=None so that get_type_hints automatically resolves the
-    # module globals of cls (e.g. bare names like Byte).
-    # Pass extra_ns (e.g. {'ua': ua}) as localns so ua.Xxx annotations resolve too.
-    # Filter out properties from the class dict to avoid shadowing.
+    # Resolve annotations with explicit module globals for stable behavior
+    # across Python versions (notably 3.10 forward-reference handling).
+    module = sys.modules.get(cls.__module__)
+    globalns = vars(module).copy() if module is not None else {}
+    if extra_ns:
+        globalns.update(extra_ns)
+
+    # Keep class-local names available and avoid property shadowing.
     localns = {k: v for k, v in cls.__dict__.items() if not isinstance(v, property)}
     if extra_ns:
         localns.update(extra_ns)
 
-    return typing.get_type_hints(cls, globalns=None, localns=localns)
+    return typing.get_type_hints(cls, globalns=globalns, localns=localns)
 
 
 def test_bit(data: int, offset: int) -> int:
