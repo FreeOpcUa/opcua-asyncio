@@ -123,6 +123,7 @@ extend-exclude = [
 
 [tool.ruff.lint]
 select = [
+  "ANN",
   "E",
   "F",
   "G004",
@@ -151,11 +152,63 @@ ignore = [
   "ASYNC110",  # too many false positives
   "RET504",  # do not agree
   "RUF015",  # Not sure
+  "ANN401",  # typing.Any is legitimate in many places
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401", "F403", "I"]
-"examples/*" = ["F841", "E402"]
+"__init__.py" = ["ANN", "F401", "F403", "I"]
+"examples/*" = ["ANN", "F841", "E402"]
+"tests/**" = ["ANN"]
+"release.py" = ["ANN"]
+"test_external_server.py" = ["ANN"]
+
+# Directories with no typed files yet
+"asyncua/tools.py" = ["ANN"]
+"asyncua/crypto/**" = ["ANN"]
+"asyncua/ua/uaprotocol_hand.py" = ["ANN"]
+"asyncua/ua/uaprotocol_auto.py" = ["ANN"]
+"asyncua/ua/uaerrors/**" = ["ANN"]
 "asyncua/ua/status_codes.py" = [
+  "ANN",
   "RUF001"
 ]  # we get some crappy chars from spec
+"asyncua/ua/object_ids.py" = ["ANN"]
+"asyncua/ua/attribute_ids.py" = ["ANN"]
+"asyncua/pubsub/**" = ["ANN"]
+"asyncua/server/standard_address_space/**" = ["ANN"]
+# Non-typed files in otherwise typed directories
+"asyncua/client/ha/**" = ["ANN"]
+"asyncua/client/ua_file.py" = ["ANN"]
+"asyncua/client/ua_file_transfer.py" = ["ANN"]
+"asyncua/server/address_space.py" = ["ANN"]
+"asyncua/server/binary_server_asyncio.py" = ["ANN"]
+"asyncua/server/event_generator.py" = ["ANN"]
+"asyncua/server/history.py" = ["ANN"]
+"asyncua/server/history_sql.py" = ["ANN"]
+"asyncua/server/internal_server.py" = ["ANN"]
+"asyncua/server/internal_session.py" = ["ANN"]
+"asyncua/server/internal_subscription.py" = ["ANN"]
+"asyncua/server/monitored_item_service.py" = ["ANN"]
+"asyncua/server/subscription_service.py" = ["ANN"]
+"asyncua/server/uaprocessor.py" = ["ANN"]
+"asyncua/server/user_managers.py" = ["ANN"]
+"asyncua/common/callback.py" = ["ANN"]
+"asyncua/common/connection.py" = ["ANN"]
+"asyncua/common/copy_node_util.py" = ["ANN"]
+"asyncua/common/event_objects.py" = ["ANN"]
+"asyncua/common/instantiate_util.py" = ["ANN"]
+"asyncua/common/manage_nodes.py" = ["ANN"]
+"asyncua/common/methods.py" = ["ANN"]
+"asyncua/common/node.py" = ["ANN"]
+"asyncua/common/node_factory.py" = ["ANN"]
+"asyncua/common/session_interface.py" = ["ANN"]
+"asyncua/common/shortcuts.py" = ["ANN"]
+"asyncua/common/sql_injection.py" = ["ANN"]
+"asyncua/common/statemachine.py" = ["ANN"]
+"asyncua/common/structures.py" = ["ANN"]
+"asyncua/common/type_dictionary_builder.py" = ["ANN"]
+"asyncua/common/ua_utils.py" = ["ANN"]
+"asyncua/common/utils.py" = ["ANN"]
+"asyncua/common/xmlexporter.py" = ["ANN"]
+"asyncua/common/xmlimporter.py" = ["ANN"]
+"asyncua/common/xmlparser.py" = ["ANN"]
