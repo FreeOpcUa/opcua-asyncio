@@ -913,6 +913,14 @@ class UaSession(AbstractSession):
         for sequence_number in range(start_sequence, end_sequence):
             try:
                 notif_msg = await self.republish(subscription_id, sequence_number)
+                if int(notif_msg.SequenceNumber) != int(sequence_number):
+                    self.logger.warning(
+                        "Stopping gap recovery for subscription %s: expected republish sequence %s, got %s",
+                        subscription_id,
+                        sequence_number,
+                        notif_msg.SequenceNumber,
+                    )
+                    break
                 await self.dispatch_notification_message(subscription_id, notif_msg)
             except Exception:
                 self.logger.exception(
