@@ -28,7 +28,7 @@ class Event:
     add properties using the add_property method!!!
     """
 
-    def __init__(self, emitting_node: ua.NodeId | int = ua.ObjectIds.Server):
+    def __init__(self, emitting_node: ua.NodeId | int = ua.ObjectIds.Server) -> None:
         self.server_handle: int | None = None
         self.select_clauses: list[ua.SimpleAttributeOperand] | None = None
         self.event_fields: list[ua.Variant] | None = None
@@ -284,7 +284,7 @@ async def get_event_obj_from_type_node(node: "Node") -> Event:
     parent_nodeid, parent_eventtype = await _find_parent_eventtype(node)
 
     class CustomEvent(parent_eventtype):  # type: ignore[valid-type]
-        def __init__(self):
+        def __init__(self) -> None:
             parent_eventtype.__init__(self)
             self.EventType = node.nodeid
 

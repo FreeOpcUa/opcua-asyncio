@@ -126,7 +126,7 @@ class Subscription:
         server: InternalSession | UaClient,
         params: ua.CreateSubscriptionParameters,
         handler: SubscriptionHandler,
-    ):
+    ) -> None:
         self.logger = logging.getLogger(__name__)
         self.server: InternalSession | UaClient = server
         self._client_handle = 200

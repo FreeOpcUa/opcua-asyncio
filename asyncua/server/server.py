@@ -93,7 +93,7 @@ class Server:
         server listens on some internal IP.
     """
 
-    def __init__(self, iserver: InternalServer | None = None, user_manager: UserManager | None = None):
+    def __init__(self, iserver: InternalServer | None = None, user_manager: UserManager | None = None) -> None:
         self.endpoint: ParseResult = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri: str = "urn:freeopcua:python:server"
         self.product_uri: str = "urn:freeopcua.github.io:python:server"
