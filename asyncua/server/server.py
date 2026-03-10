@@ -12,7 +12,7 @@ from collections.abc import Callable, Iterable
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from urllib.parse import urlparse
+from urllib.parse import ParseResult, urlparse
 
 from asyncua import ua
 
@@ -94,23 +94,23 @@ class Server:
     """
 
     def __init__(self, iserver: InternalServer | None = None, user_manager: UserManager | None = None):
-        self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
-        self._application_uri = "urn:freeopcua:python:server"
-        self.product_uri = "urn:freeopcua.github.io:python:server"
+        self.endpoint: ParseResult = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
+        self._application_uri: str = "urn:freeopcua:python:server"
+        self.product_uri: str = "urn:freeopcua.github.io:python:server"
         self.name: str = "FreeOpcUa Python Server"
-        self.manufacturer_name = "FreeOpcUa"
-        self.application_type = ua.ApplicationType.ClientAndServer
+        self.manufacturer_name: str = "FreeOpcUa"
+        self.application_type: ua.ApplicationType = ua.ApplicationType.ClientAndServer
         self.default_timeout: int = 60 * 60 * 1000
         self.iserver: InternalServer = iserver if iserver else InternalServer(user_manager=user_manager)
         self.bserver: BinaryServer | None = None
         self.socket_address: tuple[str, int] | None = None
-        self._discovery_clients = {}
-        self._discovery_period = 60
-        self._discovery_handle = None
-        self._policies = []
+        self._discovery_clients: dict[str, Client] = {}
+        self._discovery_period: int = 60
+        self._discovery_handle: asyncio.Task[None] | None = None
+        self._policies: list[security_policies.SecurityPolicyFactory] = []
         self.nodes: Shortcuts = Shortcuts(self.iserver.isession)
         # enable all endpoints by default
-        self._security_policy = [
+        self._security_policy: list[ua.SecurityPolicyType] = [
             ua.SecurityPolicyType.NoSecurity,
             ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt,
             ua.SecurityPolicyType.Basic256Sha256_Sign,
@@ -120,7 +120,7 @@ class Server:
             ua.SecurityPolicyType.Aes256Sha256RsaPss_SignAndEncrypt,
         ]
         # allow all certificates by default
-        self._permission_ruleset = SimpleRoleRuleset()
+        self._permission_ruleset: SimpleRoleRuleset = SimpleRoleRuleset()
         # Use acceptable limits
         buffer_sz = 65535
         max_msg_sz = 100 * 1024 * 1024  # 100mb
@@ -256,7 +256,7 @@ class Server:
     ) -> None:
         self.iserver.private_key = await uacrypto.load_private_key(path_or_content, password, format)
 
-    def disable_clock(self, val: bool = True):
+    def disable_clock(self, val: bool = True) -> None:
         """
         for debugging you may want to disable clock that write every second
         to address space
@@ -751,7 +751,9 @@ class Server:
         await exp.build_etree(nodes)
         await exp.write_xml(path)
 
-    async def export_xml_by_ns(self, path: str, namespaces: list[str | int] | None = None, export_values: bool = False):
+    async def export_xml_by_ns(
+        self, path: str, namespaces: list[str | int] | None = None, export_values: bool = False
+    ) -> None:
         """
         Export nodes of one or more namespaces to an XML file.
         Namespaces used by nodes are always exported for consistency.
@@ -866,7 +868,7 @@ class Server:
         self,
         nodeid: ua.NodeId,
         callback: Callable[[ua.NodeId, ua.AttributeIds], ua.DataValue],
-        attr=ua.AttributeIds.Value,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
     ) -> None:
         """
         Set a callback function to the Attribute that returns a value for read_attribute_value() instead of the
@@ -878,7 +880,7 @@ class Server:
         self,
         nodeid: ua.NodeId,
         setter: Callable[[NodeData, ua.AttributeIds, ua.DataValue], None],
-        attr=ua.AttributeIds.Value,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
     ) -> None:
         """
         Set a setter function for the Attribute. This setter will be called when a new value is set using
@@ -904,7 +906,7 @@ class Server:
         nodeids = [node.nodeid for node in nodes]
         return [self.iserver.read_attribute_value(nodeid, attr) for nodeid in nodeids]
 
-    def set_certificate_validator(self, validator: validator.CertificateValidatorMethod):
+    def set_certificate_validator(self, validator: validator.CertificateValidatorMethod) -> None:
         """
         Assign a method to be called when certificate needs to be validated.
 
