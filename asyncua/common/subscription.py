@@ -391,6 +391,8 @@ class Subscription:
         """
         Delete subscription on server. This is automatically done by Client and Server classes on exit.
         """
+        if self.subscription_id is None:
+            raise ua.uaerrors.UaError("Cannot delete subscription without a valid subscription id")
         results = await self.server.delete_subscriptions([self.subscription_id])
         results[0].check()
         self.subscription_id = None
@@ -404,9 +406,10 @@ class Subscription:
 
         old_subscription_id = self.subscription_id
         monitored_items_snapshot = list(self._monitored_items.values())
-        self.server._subscription_callbacks.pop(old_subscription_id, None)
-        self.server._last_publish_sequence_numbers.pop(old_subscription_id, None)
-        self.server._subscription_watchdog_states.pop(old_subscription_id, None)
+        session = self.server._require_default_session()
+        session._subscription_callbacks.pop(old_subscription_id, None)
+        session._last_publish_sequence_numbers.pop(old_subscription_id, None)
+        session._subscription_watchdog_states.pop(old_subscription_id, None)
 
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
         self.subscription_id = response.SubscriptionId

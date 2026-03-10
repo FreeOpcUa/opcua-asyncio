@@ -193,7 +193,7 @@ class UASocketProtocol(asyncio.Protocol):
 
     def _send_request(
         self,
-        request: ua.BaseRequest,
+        request: Any,
         timeout: float = 1,
         message_type: ua.MessageType = ua.MessageType.SecureMessage,
         authentication_token: ua.NodeId | None = None,
@@ -228,7 +228,7 @@ class UASocketProtocol(asyncio.Protocol):
 
     async def send_request(
         self,
-        request: ua.BaseRequest,
+        request: Any,
         timeout: float | None = None,
         message_type: ua.MessageType = ua.MessageType.SecureMessage,
         authentication_token: ua.NodeId | None = None,
@@ -268,12 +268,12 @@ class UASocketProtocol(asyncio.Protocol):
 
     def check_answer(self, data: bytes, context: str) -> bool:
         """Verify response is valid OPC-UA message."""
-        data = data.copy()
-        typeid = nodeid_from_binary(data)
+        data_buffer = ua.utils.Buffer(data)
+        typeid = nodeid_from_binary(data_buffer)
         if typeid == ua.FourByteNodeId(
             ua.ObjectIds.ServiceFault_Encoding_DefaultBinary
         ):
-            hdr = struct_from_binary(ua.ResponseHeader, data)
+            hdr = struct_from_binary(ua.ResponseHeader, data_buffer)
             self.logger.warning(
                 "ServiceFault (%s, diagnostics: %s) %s",
                 hdr.ServiceResult.name,
@@ -297,7 +297,7 @@ class UASocketProtocol(asyncio.Protocol):
             self._callbackmap[request_id].set_result(body)
         except KeyError as ex:
             raise ua.UaError(
-                f"No request found for id {request_id}, body was {body}"
+                f"No request found for id {request_id}, body was {body!r}"
             ) from ex
         except asyncio.InvalidStateError:
             if not self.closed:
@@ -372,9 +372,11 @@ class UASocketProtocol(asyncio.Protocol):
             ),
             self.timeout,
         )
-        _return = self._open_secure_channel_exchange.Parameters  # type: ignore[union-attr]
+        exchange = self._open_secure_channel_exchange
         self._open_secure_channel_exchange = None
-        return _return
+        if isinstance(exchange, ua.OpenSecureChannelResponse):
+            return exchange.Parameters
+        raise UaError("Secure channel open failed: missing response")
 
     async def close_secure_channel(self) -> None:
         """Close secure channel.
@@ -761,7 +763,7 @@ class UaClient:
 
     async def find_servers(
         self, params: ua.FindServersParameters
-    ) -> list[ua.ServerOnNetwork]:
+    ) -> list[ua.ApplicationDescription]:
         """Find servers on discovery server (sessionless).
 
         Args:
@@ -949,7 +951,7 @@ class UaClient:
 
     async def _send_request(
         self,
-        request: ua.BaseRequest,
+        request: Any,
         timeout: float | None = None,
         message_type: ua.MessageType = ua.MessageType.SecureMessage,
         bypass_ready_gate: bool = False,
@@ -1122,12 +1124,13 @@ class UaClient:
     def _register_session(self, session: UaSession) -> None:
         """Track newly created session."""
         self._session_id_counter += 1
-        session._client_session_id = self._session_id_counter
+        session.registry_session_id = self._session_id_counter
         self._sessions[self._session_id_counter] = session
 
     def _unregister_session(self, session: UaSession) -> None:
         """Remove closed session from registry."""
-        self._sessions.pop(session._client_session_id, None)
+        if session.registry_session_id is not None:
+            self._sessions.pop(session.registry_session_id, None)
 
     # ========== BACKWARD-COMPAT SESSION DELEGATION ==========
 
