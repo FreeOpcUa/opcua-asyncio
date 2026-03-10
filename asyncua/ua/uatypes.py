@@ -14,7 +14,9 @@ from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import IntEnum
-from typing import TYPE_CHECKING, Any, ClassVar, Self, Union, get_args, get_origin
+from typing import TYPE_CHECKING, Any, ClassVar, Union, get_args, get_origin
+
+from typing_extensions import Self
 
 from asyncua.ua.object_ids import ObjectIds
 
