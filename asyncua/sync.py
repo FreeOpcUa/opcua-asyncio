@@ -1125,7 +1125,7 @@ def new_struct_field(
 def new_enum(
     server: Server | Client,
     idx: int | ua.NodeId,
-    name: int | ua.QualifiedName,
+    name: str | ua.QualifiedName,
     values: list[str],
     optional: bool = False,
 ) -> SyncNode: ...

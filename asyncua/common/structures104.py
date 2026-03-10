@@ -118,7 +118,7 @@ def new_enum_field(
 async def new_enum(
     server: Server | Client,
     idx: int | ua.NodeId,
-    name: int | ua.QualifiedName,
+    name: str | ua.QualifiedName,
     fields: list[str | ua.EnumField],
     option_set: bool = False,
 ) -> Node:
