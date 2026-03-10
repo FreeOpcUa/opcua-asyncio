@@ -34,6 +34,26 @@ def _make_test_session() -> UaSession:
     )
 
 
+async def _wait_until(predicate, timeout: float = 5.0, interval: float = 0.05) -> None:
+    deadline = asyncio.get_running_loop().time() + timeout
+    while asyncio.get_running_loop().time() < deadline:
+        if predicate():
+            return
+        await asyncio.sleep(interval)
+    raise TimeoutError("Condition not met before timeout")
+
+
+async def _wait_for_exception(operation, expected_exception, timeout: float = 3.0, interval: float = 0.05) -> None:
+    deadline = asyncio.get_running_loop().time() + timeout
+    while asyncio.get_running_loop().time() < deadline:
+        try:
+            await operation()
+        except expected_exception:
+            return
+        await asyncio.sleep(interval)
+    raise TimeoutError("Expected exception was not raised before timeout")
+
+
 async def test_max_connections_1(opc):
     opc.server.iserver.isession.__class__.max_connections = 1
     port = opc.server.endpoint.port
@@ -53,16 +73,13 @@ async def test_max_connections_1(opc):
 async def test_dos_server(opc):
     # See issue 1013 a crafted packet triggered dos
     port = opc.server.endpoint.port
-    async with Client(f"opc.tcp://127.0.0.1:{port}") as c:
+    async with Client(f"opc.tcp://127.0.0.1:{port}", timeout=0.5) as c:
         # craft invalid packet that trigger dos
         message_type, chunk_type, packet_size = [ua.MessageType.SecureOpen, b"E", 0]
         c.uaclient.protocol.transport.write(struct.pack("<3scI", message_type, chunk_type, packet_size))
-        # sleep to give the server time to handle the message because we bypass the asyncio
-        await asyncio.sleep(1.0)
-        with pytest.raises(ConnectionError):
-            # now try to read a value to see if server is still alive
-            server_time_node = c.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
-            await server_time_node.read_value()
+        # Poll for disconnect instead of sleeping a fixed amount.
+        server_time_node = c.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
+        await _wait_for_exception(server_time_node.read_value, ConnectionError, timeout=2.0)
 
 
 async def test_safe_disconnect():
@@ -90,7 +107,7 @@ async def test_client_connection_lost():
         myhandler = LostSubHandler()
         _ = await cl.create_subscription(1, myhandler)
         await srv.stop()
-        await asyncio.sleep(2)
+        await _wait_for_exception(cl.check_connection, ConnectionError, timeout=3.0)
         with pytest.raises(ConnectionError):
             # check if connection is alive
             await cl.check_connection()
@@ -125,7 +142,7 @@ async def test_client_connection_lost_callback():
     async with Client(f"opc.tcp://127.0.0.1:{port}", timeout=0.5, watchdog_intervall=1) as cl:
         cl.connection_lost_callback = clb.clb
         await srv.stop()
-        await asyncio.sleep(2)
+        await _wait_until(lambda: clb.called, timeout=3.0)
         assert clb.called
         assert isinstance(clb.ex, Exception)
 
@@ -283,6 +300,7 @@ async def test_reconnect_fallback_to_new_session_when_activate_fails(mocker):
     client.send_hello = AsyncMock()  # type: ignore[method-assign]
     client.open_secure_channel = AsyncMock()  # type: ignore[method-assign]
     client.create_session = AsyncMock()  # type: ignore[method-assign]
+    client.close_session = AsyncMock()  # type: ignore[method-assign]
 
     activate_calls = 0
 
@@ -313,6 +331,7 @@ async def test_reconnect_logs_transfer_subscriptions_failure(mocker):
     client.uaclient.get_subscription_ids = mocker.MagicMock(return_value=[1])
     client.uaclient.get_next_sequence_number = mocker.MagicMock(return_value=1)
     client.uaclient.ensure_publish_loop_running = mocker.MagicMock()
+    client.uaclient.restart_publish_loop = AsyncMock()
 
     transfer_result = ua.TransferResult()
     transfer_result.StatusCode = ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
@@ -325,6 +344,7 @@ async def test_reconnect_logs_transfer_subscriptions_failure(mocker):
     client.send_hello = AsyncMock()  # type: ignore[method-assign]
     client.open_secure_channel = AsyncMock()  # type: ignore[method-assign]
     client.create_session = AsyncMock()  # type: ignore[method-assign]
+    client.close_session = AsyncMock()  # type: ignore[method-assign]
 
     async def _activate_side_effect(*_args, **_kwargs):
         if client._session_authentication_token is not None:
@@ -372,7 +392,7 @@ async def test_uasession_republish_reads_direct_notification_message_field():
     response.NotificationMessage = notification_message
 
     session._send_session_request = AsyncMock(  # type: ignore[method-assign]
-        return_value=struct_to_binary(response)
+        return_value=ua.utils.Buffer(struct_to_binary(response))
     )
 
     republished = await session.republish(expected_subscription_id, expected_sequence)
@@ -410,6 +430,7 @@ async def test_reconnect_does_not_recreate_invalid_subscription_when_disabled(mo
     client.uaclient.get_subscription_ids = mocker.MagicMock(return_value=[42])
     client.uaclient.get_next_sequence_number = mocker.MagicMock(return_value=1)
     client.uaclient.ensure_publish_loop_running = mocker.MagicMock()
+    client.uaclient.restart_publish_loop = AsyncMock()
     client.uaclient.transfer_subscriptions = AsyncMock(return_value=[])
 
     client._cancel_background_tasks = AsyncMock()  # type: ignore[method-assign]
@@ -417,6 +438,7 @@ async def test_reconnect_does_not_recreate_invalid_subscription_when_disabled(mo
     client.connect_socket = AsyncMock()  # type: ignore[method-assign]
     client.send_hello = AsyncMock()  # type: ignore[method-assign]
     client.open_secure_channel = AsyncMock()  # type: ignore[method-assign]
+    client.close_session = AsyncMock()  # type: ignore[method-assign]
 
     async def _activate_side_effect(*_args, **_kwargs):
         if client._session_authentication_token is not None:
@@ -505,6 +527,7 @@ async def test_publish_loop_recovers_sequence_gap_via_republish(mocker):
         observed_sequences.append(int(result.NotificationMessage.SequenceNumber))
 
     session._subscription_callbacks[subscription_id] = _callback
+    session._ensure_subscription_dispatch_worker(subscription_id)
     session._last_publish_sequence_numbers[subscription_id] = 4
 
     publish_message = ua.NotificationMessage()
@@ -545,6 +568,7 @@ async def test_publish_loop_sequence_gap_republish_cap(mocker):
         observed_sequences.append(int(result.NotificationMessage.SequenceNumber))
 
     session._subscription_callbacks[subscription_id] = _callback
+    session._ensure_subscription_dispatch_worker(subscription_id)
     session._last_publish_sequence_numbers[subscription_id] = 4
 
     publish_message = ua.NotificationMessage()
@@ -834,7 +858,14 @@ async def test_check_connection_stale_publish_task_uses_targeted_recovery(mocker
 
     task = asyncio.get_running_loop().create_future()
     task.set_exception(SubscriptionStaleError([1]))
-    client.uaclient._publish_task = task
+    session = UaSession(
+        client=client.uaclient,
+        session_id=ua.NodeId(1, 0),
+        authentication_token=ua.NodeId(2, 0),
+    )
+    client.uaclient._register_session(session)
+    client.uaclient._default_session = session
+    session._publish_task = task
 
     await client.check_connection()
 
