@@ -267,7 +267,13 @@ async def test_reconnect_fallback_to_new_session_when_activate_fails(mocker):
     client._session_counter = 10
 
     client.uaclient.protocol = mocker.MagicMock()
-    client.uaclient.protocol.authentication_token = ua.NodeId()
+    old_session = UaSession(
+        client=client.uaclient,
+        session_id=ua.NodeId(ua.ObjectIds.RootFolder),
+        authentication_token=client._session_authentication_token,
+    )
+    client.uaclient._register_session(old_session)
+    client.uaclient._default_session = old_session
     client.uaclient.get_subscription_ids = mocker.MagicMock(return_value=[])
     client.uaclient.ensure_publish_loop_running = mocker.MagicMock()
 
@@ -283,7 +289,7 @@ async def test_reconnect_fallback_to_new_session_when_activate_fails(mocker):
     async def _activate_side_effect(*_args, **_kwargs):
         nonlocal activate_calls
         activate_calls += 1
-        if activate_calls == 1:
+        if _kwargs.get("session") is old_session:
             raise ua.UaError("activate failed on old session")
         return mocker.MagicMock(ServerNonce=b"ok")
 
@@ -681,19 +687,27 @@ async def test_flush_subscription_dispatch_waits_for_callback_completion():
 
 async def test_prepare_close_session_without_protocol_cancels_dispatch_worker():
     uaclient = UaClient()
-    subscription_id = 42
-    uaclient._subscription_callbacks[subscription_id] = lambda _result: None
-    uaclient._ensure_subscription_dispatch_worker(subscription_id)
+    session = UaSession(
+        client=uaclient,
+        session_id=ua.NodeId(1, 0),
+        authentication_token=ua.NodeId(2, 0),
+    )
+    uaclient._register_session(session)
+    uaclient._default_session = session
 
-    runtime = uaclient._subscription_dispatch_runtime[subscription_id]
+    subscription_id = 42
+    session._subscription_callbacks[subscription_id] = lambda _result: None
+    session._ensure_subscription_dispatch_worker(subscription_id)
+
+    runtime = session._subscription_dispatch_runtime[subscription_id]
     task = runtime.task
     assert task is not None
 
     uaclient.protocol = None
-    assert uaclient._prepare_close_session() is False
+    await uaclient.close_session(session=session)
 
     await asyncio.sleep(0)
-    assert subscription_id not in uaclient._subscription_dispatch_runtime
+    assert subscription_id not in session._subscription_dispatch_runtime
     assert task.done()
 
 
