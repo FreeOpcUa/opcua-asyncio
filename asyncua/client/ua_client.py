@@ -1194,6 +1194,10 @@ class UaClient:
     async def modify_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
         return await self._require_default_session().modify_subscription(params)
 
+    async def update_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
+        """Backward-compatible alias for modify_subscription."""
+        return await self.modify_subscription(params)
+
     async def delete_subscriptions(
         self, params: ua.DeleteSubscriptionsParameters | list[int]
     ) -> list[ua.StatusCode]:
