@@ -687,12 +687,12 @@ def extensionobject_to_binary(obj: Any) -> bytes:
 
 
 @functools.cache
-def _create_list_deserializer(uatype: Any, recursive: bool = False) -> Callable[[BytesIO | Buffer], list[Any]]:
+def _create_list_deserializer(uatype: Any, recursive: bool = False) -> Callable[[Buffer | IO[Any]], list[Any]]:
     # Resolve the element decoder lazily so mutually-recursive dataclass lists
     # do not recurse forever during deserializer construction.
     element_deserializer = None
 
-    def _deserialize(data: BytesIO | Buffer) -> list[Any]:
+    def _deserialize(data: Buffer | IO[Any]) -> list[Any]:
         nonlocal element_deserializer
         size = Primitives.Int32.unpack(data)
         if element_deserializer is None:
@@ -703,7 +703,7 @@ def _create_list_deserializer(uatype: Any, recursive: bool = False) -> Callable[
 
 
 @functools.cache
-def _create_type_deserializer(uatype: Any, dataclazz: type) -> Callable[[Buffer | IO], Any]:
+def _create_type_deserializer(uatype: Any, dataclazz: type) -> Callable[[Buffer | IO[Any]], Any]:
     uatype, is_optional = resolve_uatype(uatype)
 
     if not is_optional and type_is_union(uatype):
