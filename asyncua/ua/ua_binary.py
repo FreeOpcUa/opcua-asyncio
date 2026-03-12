@@ -11,7 +11,7 @@ import struct
 import sys
 import typing
 import uuid
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import Field, fields, is_dataclass
 from enum import Enum, IntFlag
 from io import BytesIO
@@ -47,7 +47,7 @@ def set_string_encoding(new_encoding: str) -> None:
     _string_encoding.set(new_encoding)
 
 
-def get_safe_type_hints(cls, extra_ns=None):
+def get_safe_type_hints(cls: type[Any], extra_ns: Mapping[str, Any] | None = None) -> dict[str, Any]:
     # Resolve annotations with explicit module globals for stable behavior
     # across Python versions (notably 3.10 forward-reference handling).
     module = sys.modules.get(cls.__module__)
@@ -494,7 +494,7 @@ def create_list_serializer(uatype: type, recursive: bool = False) -> Callable[[S
 
     type_serializer = None
 
-    def serialize(val):
+    def serialize(val: Sequence[Any] | None) -> bytes:
         nonlocal type_serializer
         if val is None:
             return none_val
@@ -687,12 +687,12 @@ def extensionobject_to_binary(obj: Any) -> bytes:
 
 
 @functools.cache
-def _create_list_deserializer(uatype, recursive: bool = False):
+def _create_list_deserializer(uatype: Any, recursive: bool = False) -> Callable[[BytesIO | Buffer], list[Any]]:
     # Resolve the element decoder lazily so mutually-recursive dataclass lists
     # do not recurse forever during deserializer construction.
     element_deserializer = None
 
-    def _deserialize(data):
+    def _deserialize(data: BytesIO | Buffer) -> list[Any]:
         nonlocal element_deserializer
         size = Primitives.Int32.unpack(data)
         if element_deserializer is None:
