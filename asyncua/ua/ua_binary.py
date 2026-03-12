@@ -11,8 +11,8 @@ import struct
 import sys
 import typing
 import uuid
-from collections.abc import Callable, Sequence
-from dataclasses import fields, is_dataclass
+from collections.abc import Callable, Iterable, Sequence
+from dataclasses import Field, fields, is_dataclass
 from enum import Enum, IntFlag
 from io import BytesIO
 from types import UnionType
@@ -38,11 +38,14 @@ T = TypeVar("T")
 
 _string_encoding = contextvars.ContextVar("ua_string_encoding", default="utf-8")
 
+
 def get_string_encoding() -> str:
     return _string_encoding.get()
 
-def set_string_encoding(new_encoding: str):
+
+def set_string_encoding(new_encoding: str) -> None:
     _string_encoding.set(new_encoding)
+
 
 def get_safe_type_hints(cls, extra_ns=None):
     # Resolve annotations with explicit module globals for stable behavior
@@ -77,26 +80,26 @@ def unset_bit(data: int, offset: int) -> int:
 
 class _DateTime:
     @staticmethod
-    def pack(dt):
+    def pack(dt: Any) -> bytes:
         epch = ua.datetime_to_win_epoch(dt)
         return Primitives.Int64.pack(epch)
 
     @staticmethod
-    def unpack(data):
+    def unpack(data: Buffer | IO) -> Any:
         epch = Primitives.Int64.unpack(data)
         return ua.win_epoch_to_datetime(epch)
 
 
 class _Bytes:
     @staticmethod
-    def pack(data):
+    def pack(data: bytes | None) -> bytes:
         if data is None:
             return Primitives.Int32.pack(-1)
         length = len(data)
         return Primitives.Int32.pack(length) + data
 
     @staticmethod
-    def unpack(data):
+    def unpack(data: Buffer | IO) -> bytes | None:
         length = Primitives.Int32.unpack(data)
         if length == -1:
             return None
@@ -105,32 +108,34 @@ class _Bytes:
 
 class _String:
     @staticmethod
-    def pack(string):
-        if string is not None:
+    def pack(string: str | bytes | None) -> bytes:
+        if isinstance(string, str):
             string = string.encode(get_string_encoding(), errors="surrogateescape")
         return _Bytes.pack(string)
 
     @staticmethod
-    def unpack(data):
+    def unpack(data: Buffer | IO) -> str | None:
         b = _Bytes.unpack(data)
         if b is None:
             return b
-        return b.decode(get_string_encoding(), errors="surrogateescape")  # not need to be strict here, this is user data
+        return b.decode(
+            get_string_encoding(), errors="surrogateescape"
+        )  # not need to be strict here, this is user data
 
 
 class _Null:
     @staticmethod
-    def pack(data):
+    def pack(data: Any) -> bytes:
         return b""
 
     @staticmethod
-    def unpack(data):
+    def unpack(data: Any) -> None:
         return None
 
 
 class _Guid:
     @staticmethod
-    def pack(guid):
+    def pack(guid: uuid.UUID) -> bytes:
         # convert python UUID 6 field format to OPC UA 4 field format
         f1 = Primitives.UInt32.pack(guid.time_low)
         f2 = Primitives.UInt16.pack(guid.time_mid)
@@ -145,7 +150,7 @@ class _Guid:
         return b
 
     @staticmethod
-    def unpack(data):
+    def unpack(data: Buffer | IO) -> uuid.UUID:
         # convert OPC UA 4 field format to python UUID bytes
         f1 = struct.pack(">I", Primitives.UInt32.unpack(data))
         f2 = struct.pack(">H", Primitives.UInt16.unpack(data))
@@ -158,19 +163,19 @@ class _Guid:
 
 
 class _Primitive1:
-    def __init__(self, fmt):
+    def __init__(self, fmt: str) -> None:
         self._fmt = fmt
         st = struct.Struct(fmt.format(1))
         self.size = st.size
         self.format = st.format
 
-    def pack(self, data):
+    def pack(self, data: Any) -> bytes:
         return struct.pack(self.format, data)
 
-    def unpack(self, data):
+    def unpack(self, data: Buffer | IO) -> Any:
         return struct.unpack(self.format, data.read(self.size))[0]
 
-    def pack_array(self, data):
+    def pack_array(self, data: Sequence[Any] | None) -> bytes:
         if data is None:
             return Primitives.Int32.pack(-1)
         if not isinstance(data, tuple | list):
@@ -179,7 +184,7 @@ class _Primitive1:
         size_data = Primitives.Int32.pack(len(data))
         return size_data + struct.pack(self._fmt.format(len(data)), *data)
 
-    def unpack_array(self, data, length):
+    def unpack_array(self, data: Buffer | IO, length: int) -> tuple[Any, ...] | None:
         if length == -1:
             return None
         if length == 0:
@@ -213,7 +218,7 @@ class Primitives(Primitives1):
 
 
 @functools.cache
-def create_uatype_serializer(vtype):
+def create_uatype_serializer(vtype: ua.VariantType) -> Callable[[Any], bytes]:
     if hasattr(Primitives, vtype.name):
         return getattr(Primitives, vtype.name).pack
     if vtype.value > 25:
@@ -227,12 +232,12 @@ def create_uatype_serializer(vtype):
     return struct_to_binary
 
 
-def pack_uatype(vtype, value):
+def pack_uatype(vtype: ua.VariantType, value: Any) -> bytes:
     return create_uatype_serializer(vtype)(value)
 
 
 @functools.cache
-def _create_uatype_deserializer(vtype):
+def _create_uatype_deserializer(vtype: ua.VariantType) -> Callable[[Any], Any]:
     if hasattr(Primitives, vtype.name):
         return getattr(Primitives, vtype.name).unpack
     if vtype.value > 25:
@@ -249,18 +254,18 @@ def _create_uatype_deserializer(vtype):
     raise UaError(f"Cannot unpack unknown variant type {vtype}")
 
 
-def unpack_uatype(vtype, data):
+def unpack_uatype(vtype: ua.VariantType, data: Buffer | IO) -> Any:
     return _create_uatype_deserializer(vtype)(data)
 
 
 @functools.cache
-def create_uatype_array_serializer(vtype):
+def create_uatype_array_serializer(vtype: ua.VariantType) -> Callable[[Any], bytes]:
     if hasattr(Primitives1, vtype.name):
         data_type = getattr(Primitives1, vtype.name)
         return data_type.pack_array
     serializer = create_uatype_serializer(vtype)
 
-    def serialize(array):
+    def serialize(array: Sequence[Any] | None) -> bytes:
         if array is None:
             return b"\xff\xff\xff\xff"
         length = Primitives.Int32.pack(len(array))
@@ -269,25 +274,25 @@ def create_uatype_array_serializer(vtype):
     return serialize
 
 
-def pack_uatype_array(vtype, array):
+def pack_uatype_array(vtype: ua.VariantType, array: Sequence[Any] | None) -> bytes:
     return create_uatype_array_serializer(vtype)(array)
 
 
-def unpack_uatype_array(vtype, data):
+def unpack_uatype_array(vtype: ua.VariantType, data: Buffer | IO) -> list[Any] | None:
     return _create_uatype_array_deserializer(vtype)(data)
 
 
 @functools.cache
-def _create_uatype_array_deserializer(vtype):
+def _create_uatype_array_deserializer(vtype: ua.VariantType) -> Callable[[Any], list[Any] | None]:
     if hasattr(Primitives1, vtype.name):  # Fast primitive array deserializer
         unpack_array = getattr(Primitives1, vtype.name).unpack_array
     else:  # Revert to slow serial unpacking.
         deserialize_element = _create_uatype_deserializer(vtype)
 
-        def unpack_array(data, length):
+        def unpack_array(data: Buffer | IO, length: int) -> Iterable[Any]:
             return (deserialize_element(data) for _ in range(length))
 
-    def deserialize(data):
+    def deserialize(data: Buffer | IO) -> list[Any] | None:
         length = Primitives.Int32.unpack(data)
         if length == -1:
             return None
@@ -370,7 +375,7 @@ def field_serializer(uatype: Any, is_optional: bool, dataclazz: type) -> Callabl
 
 
 @functools.cache
-def create_dataclass_serializer(dataclazz):
+def create_dataclass_serializer(dataclazz: type) -> Callable[[Any], bytes]:
     """Given a dataclass, return a function that serializes instances of this dataclass"""
     data_fields = fields(dataclazz)
     # The result is cached, so get_type_hints only runs once per class.
@@ -381,11 +386,10 @@ def create_dataclass_serializer(dataclazz):
         resolved_fieldtypes = {f.name: f.type for f in data_fields}
 
     if issubclass(dataclazz, ua.UaUnion):
-        # Union is a class with Encoding and Value field
-        # the value depends on encoding
-        encoding_funcs = [field_serializer(*resolve_uatype(t), dataclazz) for t in dataclazz._union_types]
+        union_clazz: type[ua.UaUnion] = dataclazz  # type: ignore[assignment]
+        encoding_funcs = [field_serializer(*resolve_uatype(t), dataclazz) for t in union_clazz._union_types]
 
-        def union_serialize(obj):
+        def union_serialize(obj: Any) -> bytes:
             bin = Primitives.UInt32.pack(obj.Encoding)
             # 0 => None
             # 1.. => union fields
@@ -400,7 +404,7 @@ def create_dataclass_serializer(dataclazz):
         for enc_count, field in enumerate(filter(lambda f: type_is_optional(resolved_fieldtypes[f.name]), data_fields))
     ]
 
-    def enc_value(obj):
+    def enc_value(obj: Any) -> int:
         enc = 0
         for name, enc_val in option_fields_encodings:
             if getattr(obj, name) is not None:
@@ -411,8 +415,8 @@ def create_dataclass_serializer(dataclazz):
         (f.name, field_serializer(*resolve_uatype(resolved_fieldtypes[f.name]), dataclazz)) for f in data_fields
     ]
 
-    def serialize(obj):
-        parts = []
+    def serialize(obj: Any) -> bytes:
+        parts: list[bytes] = []
         for name, serializer in encoding_functions:
             if name == "Encoding":
                 parts.append(serializer(enc_value(obj)))
@@ -423,13 +427,13 @@ def create_dataclass_serializer(dataclazz):
     return serialize
 
 
-def struct_to_binary(obj):
+def struct_to_binary(obj: Any) -> bytes:
     serializer = create_dataclass_serializer(obj.__class__)
     return serializer(obj)
 
 
 @functools.cache
-def create_enum_serializer(uatype):
+def create_enum_serializer(uatype: type) -> Callable[[Any], bytes]:
     if issubclass(uatype, IntFlag):
         typename = "UInt32"
         if hasattr(uatype, "datatype"):
@@ -440,7 +444,7 @@ def create_enum_serializer(uatype):
     return Primitives.Int32.pack
 
 
-def strip_optional(tp):
+def strip_optional(tp: Any) -> Any:
     """Return the type with NoneType stripped if tp is Optional."""
     if get_origin(tp) is UnionType:
         args = tuple(a for a in get_args(tp) if a is not type(None))
@@ -451,7 +455,7 @@ def strip_optional(tp):
 
 
 @functools.cache
-def create_type_serializer(uatype):
+def create_type_serializer(uatype: type) -> Callable[[Any], bytes]:
     """Create a binary serialization function for the given UA type"""
     if not type_is_optional(uatype) and type_allow_subclass(uatype):
         return extensionobject_to_binary
@@ -473,12 +477,12 @@ def create_type_serializer(uatype):
     raise UaError(f"No known way to pack value of type {uatype} to ua binary")
 
 
-def to_binary(uatype, val):
+def to_binary(uatype: type, val: Any) -> bytes:
     return create_type_serializer(uatype)(val)
 
 
 @functools.cache
-def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Sequence[Any] | None], bytes]:
+def create_list_serializer(uatype: type, recursive: bool = False) -> Callable[[Sequence[Any] | None], bytes]:
     """
     Given a type, return a function that takes a list of instances
     of that type and serializes it.
@@ -487,6 +491,7 @@ def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Sequenc
         data_type = getattr(Primitives1, uatype.__name__)
         return data_type.pack_array
     none_val = Primitives.Int32.pack(-1)
+
     type_serializer = None
 
     def serialize(val):
@@ -501,11 +506,11 @@ def create_list_serializer(uatype, recursive: bool = False) -> Callable[[Sequenc
     return serialize
 
 
-def list_to_binary(uatype, val):
+def list_to_binary(uatype: type, val: Sequence[Any] | None) -> bytes:
     return create_list_serializer(uatype)(val)
 
 
-def nodeid_to_binary(nodeid):
+def nodeid_to_binary(nodeid: ua.NodeId) -> bytes | bytearray:
     if nodeid.NodeIdType == ua.NodeIdType.TwoByte:
         data = struct.pack("<BB", nodeid.NodeIdType.value, nodeid.Identifier)
     elif nodeid.NodeIdType == ua.NodeIdType.FourByte:
@@ -574,7 +579,7 @@ def nodeid_from_binary(data: BytesIO | Buffer) -> ua.NodeId | ua.ExpandedNodeId:
     return ua.NodeId(identifier, nidx, nidtype)
 
 
-def variant_to_binary(var):
+def variant_to_binary(var: ua.Variant) -> bytes:
     encoding = var.VariantType.value & 0b0011_1111
     if var.is_array or isinstance(var.Value, list | tuple):
         body = pack_uatype_array(var.VariantType, ua.flatten(var.Value))
@@ -588,7 +593,7 @@ def variant_to_binary(var):
     return Primitives.Byte.pack(encoding) + body
 
 
-def variant_from_binary(data):
+def variant_from_binary(data: Buffer | IO) -> ua.Variant:
     dimensions = None
     array = False
     encoding = ord(data.read(1))
@@ -606,7 +611,7 @@ def variant_from_binary(data):
     return ua.Variant(value, vtype, dimensions, is_array=array)
 
 
-def _reshape(flat, dims):
+def _reshape(flat: list[Any], dims: list[int]) -> list[Any]:
     subdims = dims[1:]
     subsize = 1
     for i in subdims:
@@ -620,7 +625,7 @@ def _reshape(flat, dims):
     return [_reshape(flat[i : i + subsize], subdims) for i in range(0, len(flat), subsize)]
 
 
-def extensionobject_from_binary(data: Buffer) -> ua.ExtensionObject:
+def extensionobject_from_binary(data: Buffer) -> Any:
     """
     Convert binary-coded ExtensionObject to a Python object.
     Returns an object, or None if TypeId is zero
@@ -656,7 +661,7 @@ def extensionobject_from_binary(data: Buffer) -> ua.ExtensionObject:
     return e
 
 
-def extensionobject_to_binary(obj):
+def extensionobject_to_binary(obj: Any) -> bytes:
     """
     Convert Python object to binary-coded ExtensionObject.
     If obj is None, convert to empty ExtensionObject (TypeId=0, no Body).
@@ -698,7 +703,7 @@ def _create_list_deserializer(uatype, recursive: bool = False):
 
 
 @functools.cache
-def _create_type_deserializer(uatype, dataclazz):
+def _create_type_deserializer(uatype: Any, dataclazz: type) -> Callable[[Buffer | IO], Any]:
     uatype, is_optional = resolve_uatype(uatype)
 
     if not is_optional and type_is_union(uatype):
@@ -720,7 +725,7 @@ def _create_type_deserializer(uatype, dataclazz):
     return _create_dataclass_deserializer(uatype)
 
 
-def create_enum_deserializer(uatype):
+def create_enum_deserializer(uatype: type[IntFlag] | type[Enum]) -> Callable[[Any], Any]:
     if issubclass(uatype, IntFlag):
         typename = "UInt32"
         if hasattr(uatype, "datatype"):
@@ -730,7 +735,7 @@ def create_enum_deserializer(uatype):
     return lambda val: uatype(Primitives.Int32.unpack(val))
 
 
-def from_binary(uatype, data):
+def from_binary(uatype: type[T] | str, data: Buffer | IO) -> T:
     """
     unpack data given an uatype as a string or a python dataclass using ua types
     """
@@ -738,33 +743,34 @@ def from_binary(uatype, data):
 
 
 @functools.cache
-def _create_dataclass_deserializer(objtype):
+def _create_dataclass_deserializer(objtype: type | str) -> Callable[[Buffer | IO], Any]:
     if isinstance(objtype, str):
         objtype = getattr(ua, objtype)
+    assert isinstance(objtype, type)
     if issubclass(objtype, Enum):
-        return create_enum_deserializer(objtype)
+        return create_enum_deserializer(objtype)  # type: ignore[arg-type]
     if issubclass(objtype, ua.UaUnion):
-        # unions are just objects with encoding and value field
-        typefields = fields(objtype)
-        field_deserializers = [_create_type_deserializer(t, objtype) for t in objtype._union_types]
+        union_type: type[ua.UaUnion] = objtype  # type: ignore[assignment]
+        typefields = fields(union_type)
+        union_field_deserializers = [_create_type_deserializer(t, union_type) for t in union_type._union_types]
         byte_decode = next(_create_type_deserializer(f.type, type(None)) for f in typefields if f.name == "Encoding")
 
-        def decode_union(data):
+        def decode_union(data: Buffer | IO) -> Any:
             enc = byte_decode(data)
-            obj = objtype()
+            obj: Any = objtype()
             obj.Encoding = enc
             # encoding value
             # 0 => empty union
             # 1..union_fiels => index of the
-            if enc > 0 and enc <= len(field_deserializers):
-                obj.Value = field_deserializers[enc - 1](data)
+            if enc > 0 and enc <= len(union_field_deserializers):
+                obj.Value = union_field_deserializers[enc - 1](data)
             else:
                 obj.Value = None
             return obj
 
         return decode_union
     enc_count = 0
-    field_deserializers = []
+    dc_field_deserializers: list[tuple[Field[Any], int, Callable[[Buffer | IO], Any]]] = []
     resolved_fieldtypes = get_type_hints(objtype, None, {"ua": ua})
     for field in fields(objtype):
         optional_enc_bit = 0
@@ -779,12 +785,12 @@ def _create_dataclass_deserializer(objtype):
             deserialize_field = extensionobject_from_binary
         else:
             deserialize_field = _create_type_deserializer(field_type, objtype)
-        field_deserializers.append((field, optional_enc_bit, deserialize_field))
+        dc_field_deserializers.append((field, optional_enc_bit, deserialize_field))
 
-    def decode(data):
-        kwargs = {}
-        enc = 0
-        for field, optional_enc_bit, deserialize_field in field_deserializers:
+    def decode(data: Buffer | IO) -> Any:
+        kwargs: dict[str, Any] = {}
+        enc: int = 0
+        for field, optional_enc_bit, deserialize_field in dc_field_deserializers:
             if field.name == "Encoding":
                 enc = deserialize_field(data)
             elif optional_enc_bit == 0 or enc & optional_enc_bit:
@@ -794,14 +800,14 @@ def _create_dataclass_deserializer(objtype):
     return decode
 
 
-def struct_from_binary(objtype: type[T] | str, data: IO) -> T:
+def struct_from_binary(objtype: type[T] | str, data: IO | Buffer) -> T:
     """
     unpack an ua struct. Arguments are an objtype as Python dataclass or string
     """
     return _create_dataclass_deserializer(objtype)(data)
 
 
-def header_to_binary(hdr):
+def header_to_binary(hdr: ua.Header) -> bytes:
     b = [struct.pack("<3ss", hdr.MessageType, hdr.ChunkType)]
     size = hdr.body_size + 8
     if hdr.MessageType in (ua.MessageType.SecureOpen, ua.MessageType.SecureClose, ua.MessageType.SecureMessage):
@@ -812,7 +818,7 @@ def header_to_binary(hdr):
     return b"".join(b)
 
 
-def header_from_binary(data):
+def header_from_binary(data: Buffer | IO) -> ua.Header:
     hdr = ua.Header()
     hdr.MessageType, hdr.ChunkType, hdr.packet_size = struct.unpack("<3scI", data.read(8))
     hdr.body_size = hdr.packet_size - 8
@@ -823,7 +829,7 @@ def header_from_binary(data):
     return hdr
 
 
-def uatcp_to_binary(message_type, message):
+def uatcp_to_binary(message_type: ua.MessageType, message: Any) -> bytes:
     """
     Convert OPC UA TCP message (see OPC UA specs Part 6, 7.1) to binary.
     The only supported types are Hello, Acknowledge and ErrorMessage

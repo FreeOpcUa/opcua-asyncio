@@ -2,14 +2,18 @@
 Low level binary client
 """
 
+from __future__ import annotations
+
 import asyncio
 import copy
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
+from asyncua.common.utils import Buffer
 from asyncua.ua.uaerrors._base import UaError
 
 from ..common.connection import SecureConnection, TransportLimits
@@ -34,8 +38,8 @@ class UASocketProtocol(asyncio.Protocol):
         self,
         timeout: float = 1,
         security_policy: security_policies.SecurityPolicy = security_policies.SecurityPolicyNone(),
-        limits: TransportLimits = None,
-    ):
+        limits: TransportLimits | None = None,
+    ) -> None:
         """
         :param timeout: Timeout in seconds
         :param security_policy: Security policy (optional)
@@ -48,7 +52,7 @@ class UASocketProtocol(asyncio.Protocol):
         self.authentication_token = ua.NodeId()
         self._request_id = 0
         self._request_handle = 0
-        self._callbackmap: dict[int, asyncio.Future] = {}
+        self._callbackmap: dict[int, asyncio.Future[Any]] = {}
         if limits is None:
             limits = TransportLimits(65535, 65535, 0, 0)
         else:
@@ -63,11 +67,11 @@ class UASocketProtocol(asyncio.Protocol):
         # Hook for upper layer tasks before a request is sent (optional)
         self.pre_request_hook: Callable[[], Awaitable[None]] | None = None
 
-    def connection_made(self, transport: asyncio.Transport):  # type: ignore[override]
+    def connection_made(self, transport: asyncio.Transport) -> None:  # type: ignore[override]
         self.state = self.OPEN
         self.transport = transport
 
-    def connection_lost(self, exc: Exception | None):
+    def connection_lost(self, exc: Exception | None) -> None:
         self.logger.info("Socket has closed connection")
         self.state = self.CLOSED
         self.transport = None
@@ -123,7 +127,7 @@ class UASocketProtocol(asyncio.Protocol):
                 self.disconnect_socket()
                 return
 
-    def _process_received_message(self, msg: ua.Message | ua.Acknowledge | ua.ErrorMessage):
+    def _process_received_message(self, msg: ua.Message | ua.Acknowledge | ua.ErrorMessage | None) -> None:
         if msg is None:
             pass
         elif isinstance(msg, ua.Message):
@@ -139,7 +143,9 @@ class UASocketProtocol(asyncio.Protocol):
         else:
             raise ua.UaError(f"Unsupported message type: {msg}")
 
-    def _send_request(self, request, timeout: float = 1, message_type=ua.MessageType.SecureMessage) -> asyncio.Future:
+    def _send_request(
+        self, request: Any, timeout: float = 1, message_type: ua.MessageType = ua.MessageType.SecureMessage
+    ) -> asyncio.Future[Any]:
         """
         Send request to server, lower-level method.
         Timeout is the timeout written in ua header.
@@ -158,7 +164,7 @@ class UASocketProtocol(asyncio.Protocol):
             self._request_handle -= 1
             raise
         self._request_id += 1
-        future = asyncio.get_running_loop().create_future()
+        future: asyncio.Future[Any] = asyncio.get_running_loop().create_future()
         self._callbackmap[self._request_id] = future
 
         # Change to the new security token if the connection has been renewed.
@@ -170,7 +176,9 @@ class UASocketProtocol(asyncio.Protocol):
             self.transport.write(msg)
         return future
 
-    async def send_request(self, request, timeout: float | None = None, message_type=ua.MessageType.SecureMessage):
+    async def send_request(
+        self, request: Any, timeout: float | None = None, message_type: ua.MessageType = ua.MessageType.SecureMessage
+    ) -> Buffer:
         """
         Send a request to the server.
         Timeout is the timeout written in ua header.
@@ -193,7 +201,7 @@ class UASocketProtocol(asyncio.Protocol):
         self.check_answer(data, f" in response to {request.__class__.__name__}")
         return data
 
-    def check_answer(self, data, context):
+    def check_answer(self, data: Buffer, context: str) -> bool:
         data = data.copy()
         typeid = nodeid_from_binary(data)
         if typeid == ua.FourByteNodeId(ua.ObjectIds.ServiceFault_Encoding_DefaultBinary):
@@ -214,7 +222,7 @@ class UASocketProtocol(asyncio.Protocol):
                 fut.set_exception(exc)
         self._callbackmap.clear()
 
-    def _call_callback(self, request_id, body):
+    def _call_callback(self, request_id: int, body: Buffer | ua.Acknowledge) -> None:
         try:
             self._callbackmap[request_id].set_result(body)
         except KeyError as ex:
@@ -228,7 +236,7 @@ class UASocketProtocol(asyncio.Protocol):
             self.logger.debug("Future for request id %s not handled due to disconnect", request_id)
         del self._callbackmap[request_id]
 
-    def _setup_request_header(self, hdr: ua.RequestHeader, timeout=1) -> None:
+    def _setup_request_header(self, hdr: ua.RequestHeader, timeout: float = 1) -> None:
         """
         :param hdr: Request header
         :param timeout: Timeout in seconds
@@ -238,25 +246,25 @@ class UASocketProtocol(asyncio.Protocol):
         hdr.RequestHandle = self._request_handle
         hdr.TimeoutHint = int(timeout * 1000)
 
-    def disconnect_socket(self):
+    def disconnect_socket(self) -> None:
         self.logger.info("Request to close socket received")
         if self.transport:
             self.transport.close()
         else:
             self.logger.warning("disconnect_socket was called but transport is None")
 
-    async def send_hello(self, url, max_messagesize: int = 0, max_chunkcount: int = 0):
+    async def send_hello(self, url: str, max_messagesize: int = 0, max_chunkcount: int = 0) -> ua.Acknowledge:
         hello = ua.Hello()
         hello.EndpointUrl = url
         hello.MaxMessageSize = max_messagesize
         hello.MaxChunkCount = max_chunkcount
-        ack = asyncio.Future()
+        ack: asyncio.Future[ua.Acknowledge] = asyncio.Future()
         self._callbackmap[0] = ack
         if self.transport is not None:
             self.transport.write(uatcp_to_binary(ua.MessageType.Hello, hello))
         return await wait_for(ack, self.timeout)
 
-    async def open_secure_channel(self, params) -> OpenSecureChannelResult:
+    async def open_secure_channel(self, params: ua.OpenSecureChannelParameters) -> OpenSecureChannelResult:
         self.logger.info("open_secure_channel")
         request = ua.OpenSecureChannelRequest()
         request.Parameters = params
@@ -267,11 +275,13 @@ class UASocketProtocol(asyncio.Protocol):
             )
         self._open_secure_channel_exchange = params
         await wait_for(self._send_request(request, message_type=ua.MessageType.SecureOpen), self.timeout)
-        _return = self._open_secure_channel_exchange.Parameters  # type: ignore[union-attr]
+        assert isinstance(self._open_secure_channel_exchange, ua.OpenSecureChannelResponse)
+
+        _return = self._open_secure_channel_exchange.Parameters
         self._open_secure_channel_exchange = None
         return _return
 
-    async def close_secure_channel(self):
+    async def close_secure_channel(self) -> None:
         """
         Close secure channel.
         It seems to trigger a shutdown of socket in most servers, so be prepared to reconnect.
@@ -298,23 +308,23 @@ class UaClient(AbstractSession):
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
 
-    def __init__(self, timeout: float = 1.0):
+    def __init__(self, timeout: float = 1.0) -> None:
         """
         :param timeout: Timout in seconds
         """
         self.logger = logging.getLogger(f"{__name__}.UaClient")
-        self._subscription_callbacks = {}
+        self._subscription_callbacks: dict[int, Callable[..., Any]] = {}
         self._timeout = timeout
-        self.security_policy = security_policies.SecurityPolicyNone()
-        self.protocol: UASocketProtocol = None
-        self._publish_task = None
+        self.security_policy: security_policies.SecurityPolicy = security_policies.SecurityPolicyNone()
+        self.protocol: UASocketProtocol | None = None
+        self._publish_task: asyncio.Task[None] | None = None
         self._pre_request_hook: Callable[[], Awaitable[None]] | None = None
         self._closing: bool = False
 
-    def set_security(self, policy: security_policies.SecurityPolicy):
+    def set_security(self, policy: security_policies.SecurityPolicy) -> None:
         self.security_policy = policy
 
-    def _make_protocol(self):
+    def _make_protocol(self) -> UASocketProtocol:
         self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
         self.protocol.pre_request_hook = self._pre_request_hook
         return self.protocol
@@ -324,12 +334,12 @@ class UaClient(AbstractSession):
         return self._pre_request_hook
 
     @pre_request_hook.setter
-    def pre_request_hook(self, hook: Callable[[], Awaitable[None]] | None):
+    def pre_request_hook(self, hook: Callable[[], Awaitable[None]] | None) -> None:
         self._pre_request_hook = hook
         if self.protocol:
             self.protocol.pre_request_hook = self._pre_request_hook
 
-    async def connect_socket(self, host: str, port: int):
+    async def connect_socket(self, host: str, port: int) -> None:
         """Connect to server socket."""
         self.logger.info("opening connection")
         self._closing = False
@@ -338,7 +348,7 @@ class UaClient(AbstractSession):
             asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout
         )
 
-    def disconnect_socket(self):
+    def disconnect_socket(self) -> None:
         if not self.protocol:
             return
         if self.protocol and self.protocol.state == UASocketProtocol.CLOSED:
@@ -347,13 +357,17 @@ class UaClient(AbstractSession):
         self.protocol.disconnect_socket()
         self.protocol = None
 
-    async def send_hello(self, url, max_messagesize: int = 0, max_chunkcount: int = 0):
-        await self.protocol.send_hello(url, max_messagesize, max_chunkcount)
+    async def send_hello(self, url: str, max_messagesize: int = 0, max_chunkcount: int = 0) -> ua.Acknowledge:
+        if self.protocol is None:
+            raise ConnectionError("Connection is not open")
+        return await self.protocol.send_hello(url, max_messagesize, max_chunkcount)
 
-    async def open_secure_channel(self, params):
+    async def open_secure_channel(self, params: ua.OpenSecureChannelParameters) -> OpenSecureChannelResult:
+        if self.protocol is None:
+            raise ConnectionError("Connection is not open")
         return await self.protocol.open_secure_channel(params)
 
-    async def close_secure_channel(self):
+    async def close_secure_channel(self) -> None:
         """
         close secure channel. It seems to trigger a shutdown of socket
         in most servers, so be prepared to reconnect
@@ -363,7 +377,9 @@ class UaClient(AbstractSession):
             return None
         return await self.protocol.close_secure_channel()
 
-    async def create_session(self, parameters):
+    async def create_session(self, parameters: ua.CreateSessionParameters) -> ua.CreateSessionResult:
+        if self.protocol is None:
+            raise ConnectionError("Connection is not open")
         self.logger.info("create_session")
         self._closing = False
         # FIXME: setting a value on an object to set it its state is suspicious,
@@ -371,24 +387,24 @@ class UaClient(AbstractSession):
         self.protocol.closed = False
         request = ua.CreateSessionRequest()
         request.Parameters = parameters
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.CreateSessionResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         self.protocol.authentication_token = response.Parameters.AuthenticationToken
         return response.Parameters
 
-    async def activate_session(self, parameters):
+    async def activate_session(self, parameters: ua.ActivateSessionParameters) -> ua.ActivateSessionResult:
         self.logger.info("activate_session")
         request = ua.ActivateSessionRequest()
         request.Parameters = parameters
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.ActivateSessionResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters
 
-    async def close_session(self, delete_subscriptions):
+    async def close_session(self, delete_subscriptions: bool) -> None:
         self.logger.info("close_session")
         if not self.protocol:
             self.logger.warning("close_session but connection wasn't established")
@@ -402,7 +418,7 @@ class UaClient(AbstractSession):
             return
         request = ua.CloseSessionRequest()
         request.DeleteSubscriptions = delete_subscriptions
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.CloseSessionResponse, data)
         try:
             response.ResponseHeader.ServiceResult.check()
@@ -416,133 +432,140 @@ class UaClient(AbstractSession):
             # Problem: older versions of asyncua didn't allow closing non-activated sessions. just ignore it.
             pass
 
-    async def browse(self, parameters):
+    async def browse(self, parameters: ua.BrowseParameters) -> list[ua.BrowseResult]:
         self.logger.info("browse")
         request = ua.BrowseRequest()
         request.Parameters = parameters
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.BrowseResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def browse_next(self, parameters):
+    async def _send_request(
+        self, request: Any, timeout: float = 1, message_type: ua.MessageType = ua.MessageType.SecureMessage
+    ) -> Buffer:
+        if self.protocol is None:
+            raise ConnectionError("Connection is not open")
+        return await self.protocol.send_request(request, timeout, message_type)
+
+    async def browse_next(self, parameters: ua.BrowseNextParameters) -> list[ua.BrowseResult]:
         self.logger.debug("browse next")
         request = ua.BrowseNextRequest()
         request.Parameters = parameters
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.BrowseNextResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
 
-    async def read(self, parameters):
+    async def read(self, parameters: ua.ReadParameters) -> list[ua.DataValue]:
         self.logger.debug("read")
         request = ua.ReadRequest()
         request.Parameters = parameters
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.ReadResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def write(self, params):
+    async def write(self, params: ua.WriteParameters) -> list[ua.StatusCode]:
         self.logger.debug("write")
         request = ua.WriteRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.WriteResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def get_endpoints(self, params):
+    async def get_endpoints(self, params: ua.GetEndpointsParameters) -> list[ua.EndpointDescription]:
         self.logger.debug("get_endpoint")
         request = ua.GetEndpointsRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.GetEndpointsResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Endpoints
 
-    async def find_servers(self, params):
+    async def find_servers(self, params: ua.FindServersParameters) -> list[ua.ApplicationDescription]:
         self.logger.debug("find_servers")
         request = ua.FindServersRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.FindServersResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Servers
 
-    async def find_servers_on_network(self, params):
+    async def find_servers_on_network(self, params: ua.FindServersOnNetworkParameters) -> ua.FindServersOnNetworkResult:
         self.logger.debug("find_servers_on_network")
         request = ua.FindServersOnNetworkRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.FindServersOnNetworkResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters
 
-    async def register_server(self, registered_server):
+    async def register_server(self, registered_server: ua.RegisteredServer) -> None:
         self.logger.debug("register_server")
         request = ua.RegisterServerRequest()
         request.Server = registered_server
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.RegisterServerResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         # nothing to return for this service
 
-    async def unregister_server(self, registered_server):
+    async def unregister_server(self, registered_server: ua.RegisteredServer) -> None:
         self.logger.debug("unregister_server")
         request = ua.RegisterServerRequest()
         request.Server = registered_server
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.RegisterServerResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         # nothing to return for this service
 
-    async def register_server2(self, params):
+    async def register_server2(self, params: ua.RegisterServer2Parameters) -> list[ua.StatusCode]:
         self.logger.debug("register_server2")
         request = ua.RegisterServer2Request()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.RegisterServer2Response, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.ConfigurationResults
 
-    async def unregister_server2(self, params):
+    async def unregister_server2(self, params: ua.RegisterServer2Parameters) -> list[ua.StatusCode]:
         self.logger.debug("unregister_server2")
         request = ua.RegisterServer2Request()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.RegisterServer2Response, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.ConfigurationResults
 
-    async def translate_browsepaths_to_nodeids(self, browse_paths):
+    async def translate_browsepaths_to_nodeids(self, browse_paths: list[ua.BrowsePath]) -> list[ua.BrowsePathResult]:
         self.logger.debug("translate_browsepath_to_nodeid")
         request = ua.TranslateBrowsePathsToNodeIdsRequest()
         request.Parameters.BrowsePaths = browse_paths
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.TranslateBrowsePathsToNodeIdsResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
     async def create_subscription(  # type: ignore[override]
-        self, params: ua.CreateSubscriptionParameters, callback
+        self, params: ua.CreateSubscriptionParameters, callback: Callable[..., Any]
     ) -> ua.CreateSubscriptionResult:
         self.logger.debug("create_subscription")
         request = ua.CreateSubscriptionRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.CreateSubscriptionResponse, data)
         response.ResponseHeader.ServiceResult.check()
         self._subscription_callbacks[response.Parameters.SubscriptionId] = callback
@@ -555,7 +578,7 @@ class UaClient(AbstractSession):
             self._publish_task = asyncio.create_task(self._publish_loop())
         return response.Parameters
 
-    async def inform_subscriptions(self, status: ua.StatusCode):
+    async def inform_subscriptions(self, status: ua.StatusCode) -> None:
         """
         Inform all current subscriptions with a status code. This calls the handler's status_change_notification
         """
@@ -574,7 +597,7 @@ class UaClient(AbstractSession):
     async def update_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
         request = ua.ModifySubscriptionRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.ModifySubscriptionResponse, data)
         response.ResponseHeader.ServiceResult.check()
         self.logger.info("update_subscription success SubscriptionId %s", params.SubscriptionId)
@@ -582,11 +605,11 @@ class UaClient(AbstractSession):
 
     modify_subscription = update_subscription  # legacy support
 
-    async def delete_subscriptions(self, subscription_ids):
+    async def delete_subscriptions(self, subscription_ids: list[int]) -> list[ua.StatusCode]:  # type: ignore[override]
         self.logger.debug("delete_subscriptions %r", subscription_ids)
         request = ua.DeleteSubscriptionsRequest()
         request.Parameters.SubscriptionIds = subscription_ids
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.DeleteSubscriptionsResponse, data)
         response.ResponseHeader.ServiceResult.check()
         self.logger.info("remove subscription callbacks for %r", subscription_ids)
@@ -601,7 +624,8 @@ class UaClient(AbstractSession):
         self.logger.debug("publish %r", acks)
         request = ua.PublishRequest()
         request.Parameters.SubscriptionAcknowledgements = acks if acks else []
-        data = await self.protocol.send_request(request, timeout=0)
+        data = await self._send_request(request, timeout=0)
+        assert self.protocol is not None
         self.protocol.check_answer(data, "while waiting for publish response")
         try:
             response = struct_from_binary(ua.PublishResponse, data)
@@ -610,7 +634,7 @@ class UaClient(AbstractSession):
             raise UaStructParsingError from ex
         return response
 
-    async def _publish_loop(self):
+    async def _publish_loop(self) -> None:
         """
         Start a loop that sends a publish requests and waits for the publish responses.
         Forward the `PublishResult` to the matching `Subscription` by callback.
@@ -672,116 +696,120 @@ class UaClient(AbstractSession):
             else:
                 ack = None
 
-    async def create_monitored_items(self, params):
+    async def create_monitored_items(
+        self, params: ua.CreateMonitoredItemsParameters
+    ) -> list[ua.MonitoredItemCreateResult]:
         self.logger.info("create_monitored_items")
         request = ua.CreateMonitoredItemsRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.CreateMonitoredItemsResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def delete_monitored_items(self, params):
+    async def delete_monitored_items(self, params: ua.DeleteMonitoredItemsParameters) -> list[ua.StatusCode]:
         self.logger.info("delete_monitored_items")
         request = ua.DeleteMonitoredItemsRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.DeleteMonitoredItemsResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def add_nodes(self, nodestoadd):
+    async def add_nodes(self, nodestoadd: list[ua.AddNodesItem]) -> list[ua.AddNodesResult]:
         self.logger.info("add_nodes")
         request = ua.AddNodesRequest()
         request.Parameters.NodesToAdd = nodestoadd
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.AddNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def add_references(self, refs):
+    async def add_references(self, refs: list[ua.AddReferencesItem]) -> list[ua.StatusCode]:
         self.logger.info("add_references")
         request = ua.AddReferencesRequest()
         request.Parameters.ReferencesToAdd = refs
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.AddReferencesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def delete_references(self, refs):
+    async def delete_references(self, refs: list[ua.DeleteReferencesItem]) -> list[ua.StatusCode]:
         self.logger.info("delete")
         request = ua.DeleteReferencesRequest()
         request.Parameters.ReferencesToDelete = refs
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.DeleteReferencesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
 
-    async def delete_nodes(self, params):
+    async def delete_nodes(self, params: ua.DeleteNodesParameters) -> list[ua.StatusCode]:
         self.logger.info("delete_nodes")
         request = ua.DeleteNodesRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.DeleteNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def call(self, methodstocall):
+    async def call(self, methodstocall: list[ua.CallMethodRequest]) -> list[ua.CallMethodResult]:
         request = ua.CallRequest()
         request.Parameters.MethodsToCall = methodstocall
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.CallResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def history_read(self, params):
+    async def history_read(self, params: ua.HistoryReadParameters) -> list[ua.HistoryReadResult]:
         self.logger.info("history_read")
         request = ua.HistoryReadRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.HistoryReadResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def modify_monitored_items(self, params):
+    async def modify_monitored_items(
+        self, params: ua.ModifyMonitoredItemsParameters
+    ) -> list[ua.MonitoredItemModifyResult]:
         self.logger.info("modify_monitored_items")
         request = ua.ModifyMonitoredItemsRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.ModifyMonitoredItemsResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def register_nodes(self, nodes):
+    async def register_nodes(self, nodes: list[ua.NodeId]) -> list[ua.NodeId]:
         self.logger.info("register_nodes")
         request = ua.RegisterNodesRequest()
         request.Parameters.NodesToRegister = nodes
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.RegisterNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.RegisteredNodeIds
 
-    async def unregister_nodes(self, nodes):
+    async def unregister_nodes(self, nodes: list[ua.NodeId]) -> None:
         self.logger.info("unregister_nodes")
         request = ua.UnregisterNodesRequest()
         request.Parameters.NodesToUnregister = nodes
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.UnregisterNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         # nothing to return for this service
 
-    async def read_attributes(self, nodeids, attr):
+    async def read_attributes(self, nodeids: list[ua.NodeId], attr: ua.AttributeIds) -> list[ua.DataValue]:
         self.logger.info("read_attributes of several nodes")
         request = ua.ReadRequest()
         for nodeid in nodeids:
@@ -789,12 +817,17 @@ class UaClient(AbstractSession):
             rv.NodeId = nodeid
             rv.AttributeId = attr
             request.Parameters.NodesToRead.append(rv)
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.ReadResponse, data)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def write_attributes(self, nodeids, datavalues, attributeid=ua.AttributeIds.Value):
+    async def write_attributes(
+        self,
+        nodeids: list[ua.NodeId],
+        datavalues: list[ua.DataValue],
+        attributeid: ua.AttributeIds = ua.AttributeIds.Value,
+    ) -> list[ua.StatusCode]:
         """
         Set an attribute of multiple nodes
         datavalue is a ua.DataValue object
@@ -807,32 +840,32 @@ class UaClient(AbstractSession):
             attr.AttributeId = attributeid
             attr.Value = datavalues[idx]
             request.Parameters.NodesToWrite.append(attr)
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.WriteResponse, data)
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
-    async def set_monitoring_mode(self, params) -> list[ua.uatypes.StatusCode]:
+    async def set_monitoring_mode(self, params: ua.SetMonitoringModeParameters) -> list[ua.uatypes.StatusCode]:
         """
         Update the subscription monitoring mode
         """
         self.logger.info("set_monitoring_mode")
         request = ua.SetMonitoringModeRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.SetMonitoringModeResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.Results
 
-    async def set_publishing_mode(self, params) -> list[ua.uatypes.StatusCode]:
+    async def set_publishing_mode(self, params: ua.SetPublishingModeParameters) -> list[ua.uatypes.StatusCode]:
         """
         Update the subscription publishing mode
         """
         self.logger.info("set_publishing_mode")
         request = ua.SetPublishingModeRequest()
         request.Parameters = params
-        data = await self.protocol.send_request(request)
+        data = await self._send_request(request)
         response = struct_from_binary(ua.SetPublishingModeResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()

@@ -27,12 +27,12 @@ class SubscriptionItemData:
     To store useful data from a monitored item.
     """
 
-    def __init__(self):
-        self.node = None
-        self.client_handle = None
-        self.server_handle = None
-        self.attribute = None
-        self.mfilter = None
+    def __init__(self) -> None:
+        self.node: Node | None = None
+        self.client_handle: int | None = None
+        self.server_handle: int | None = None
+        self.attribute: ua.AttributeIds | None = None
+        self.mfilter: ua.MonitoringFilter | ua.EventFilter | None = None
 
 
 class DataChangeNotif:
@@ -40,11 +40,11 @@ class DataChangeNotif:
     To be send to clients for every datachange notification from server.
     """
 
-    def __init__(self, subscription_data: SubscriptionItemData, monitored_item: ua.MonitoredItemNotification):
+    def __init__(self, subscription_data: SubscriptionItemData, monitored_item: ua.MonitoredItemNotification) -> None:
         self.monitored_item = monitored_item
         self.subscription_data = subscription_data
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"DataChangeNotification({self.subscription_data}, {self.monitored_item})"
 
     __repr__ = __str__
@@ -126,7 +126,7 @@ class Subscription:
         server: InternalSession | UaClient,
         params: ua.CreateSubscriptionParameters,
         handler: SubscriptionHandler,
-    ):
+    ) -> None:
         self.logger = logging.getLogger(__name__)
         self.server: InternalSession | UaClient = server
         self._client_handle = 200
@@ -170,6 +170,8 @@ class Subscription:
         """
         Delete subscription on server. This is automatically done by Client and Server classes on exit.
         """
+        if self.subscription_id is None:
+            return
         results = await self.server.delete_subscriptions([self.subscription_id])
         results[0].check()
 
@@ -201,7 +203,12 @@ class Subscription:
                 self.logger.warning("Received a notification for unknown handle: %s", event.ClientHandle)
                 continue
             data = self._monitored_items[event.ClientHandle]
-            result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)
+            if data.mfilter is None or not hasattr(data.mfilter, "SelectClauses"):
+                self.logger.warning(
+                    "Received event notification but monitored item has no event filter: %s", event.ClientHandle
+                )
+                continue
+            result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)  # type: ignore[union-attr]
             result.server_handle = data.server_handle
             if hasattr(self._handler, "event_notification"):
                 try:
@@ -232,7 +239,7 @@ class Subscription:
         nodes: Node,
         attr: ua.AttributeIds = ua.AttributeIds.Value,
         queuesize: int = 0,
-        monitoring=ua.MonitoringMode.Reporting,
+        monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,
     ) -> int: ...
 
@@ -242,7 +249,7 @@ class Subscription:
         nodes: Node | Iterable[Node],
         attr: ua.AttributeIds = ua.AttributeIds.Value,
         queuesize: int = 0,
-        monitoring=ua.MonitoringMode.Reporting,
+        monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,
     ) -> list[int | ua.StatusCode]: ...
 
@@ -251,7 +258,7 @@ class Subscription:
         nodes: Node | Iterable[Node],
         attr: ua.AttributeIds = ua.AttributeIds.Value,
         queuesize: int = 0,
-        monitoring=ua.MonitoringMode.Reporting,
+        monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 50.0,
     ) -> int | list[int | ua.StatusCode]:
         """
@@ -347,7 +354,7 @@ class Subscription:
     async def _subscribe(
         self,
         nodes: Node,
-        attr=ua.AttributeIds.Value,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
         mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
@@ -358,7 +365,7 @@ class Subscription:
     async def _subscribe(
         self,
         nodes: Iterable[Node],
-        attr=ua.AttributeIds.Value,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
         mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
@@ -368,7 +375,7 @@ class Subscription:
     async def _subscribe(
         self,
         nodes: Node | Iterable[Node],
-        attr=ua.AttributeIds.Value,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
         mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
@@ -406,7 +413,13 @@ class Subscription:
         return mids[0]  # type: ignore
 
     def _make_monitored_item_request(
-        self, node: Node, attr, mfilter, queuesize, monitoring, sampling_interval
+        self,
+        node: Node,
+        attr: ua.AttributeIds,
+        mfilter: ua.MonitoringFilter | None,
+        queuesize: int,
+        monitoring: ua.MonitoringMode,
+        sampling_interval: ua.Duration,
     ) -> ua.MonitoredItemCreateRequest:
         rv = ua.ReadValueId()
         rv.NodeId = node.nodeid
@@ -523,7 +536,7 @@ class Subscription:
         self,
         new_queuesize: int,
         new_samp_time: ua.Duration,
-        mod_filter: ua.DataChangeFilter,
+        mod_filter: ua.DataChangeFilter | None,
         client_handle: ua.IntegerId,
     ) -> ua.MonitoringParameters:
         req_params = ua.MonitoringParameters()

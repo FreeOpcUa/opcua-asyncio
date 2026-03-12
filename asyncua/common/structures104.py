@@ -118,7 +118,7 @@ def new_enum_field(
 async def new_enum(
     server: Server | Client,
     idx: int | ua.NodeId,
-    name: int | ua.QualifiedName,
+    name: str | ua.QualifiedName,
     fields: list[str | ua.EnumField],
     option_set: bool = False,
 ) -> Node:
@@ -137,7 +137,7 @@ async def new_enum(
     return dtype
 
 
-def clean_name(name):
+def clean_name(name: str) -> str:
     """
     Remove characters that might be present in  OPC UA structures
     but cannot be part of Python class names
@@ -152,7 +152,9 @@ def clean_name(name):
     return newname
 
 
-def get_default_value(uatype, enums=None, hack=False, optional=False) -> str:
+def get_default_value(
+    uatype: str, enums: dict[str, Any] | None = None, hack: bool = False, optional: bool = False
+) -> str:
     if optional:
         return "None"
 
@@ -186,13 +188,13 @@ def get_default_value(uatype, enums=None, hack=False, optional=False) -> str:
     return f"field(default_factory=ua.{uatype})"
 
 
-def _make_union_property(name, idx):
-    def getter(self):
+def _make_union_property(name: str, idx: int) -> property:
+    def getter(self: Any) -> Any:
         if getattr(self, "Encoding", 0) == idx:
             return getattr(self, "Value", None)
         return None
 
-    def setter(self, value):
+    def setter(self: Any, value: Any) -> None:
         self.Encoding = idx
         self.Value = value
 
@@ -345,7 +347,7 @@ def make_structure(
 
 def _generate_object(
     name: str,
-    sdef: ua.StructureDefinition,
+    sdef: ua.StructureDefinition | ua.EnumDefinition,
     data_type: ua.NodeId | None = None,
     env: dict[str, Any] | None = None,
     enum: bool = False,
@@ -387,7 +389,7 @@ class DataTypeInfo:
     encoding_id: ua.NodeId = field(init=False)
     deps: list[ua.NodeId] = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.encoding_id = self.sdef.DefaultEncodingId
         self.deps = [f.DataType for f in self.sdef.Fields]
 
@@ -427,7 +429,9 @@ def _topological_sort_dtypes(dtypes: list[DataTypeInfo]) -> list[DataTypeInfo]:
     return result
 
 
-async def get_children_descriptions_type_definitions(server, base_node, overwrite_existing=False):
+async def get_children_descriptions_type_definitions(
+    server: Server | Client, base_node: Node, overwrite_existing: bool = False
+) -> tuple[list[ua.ReferenceDescription], list[Any]]:
     descs = await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype)
     nodes = []
     idxs = []
@@ -438,7 +442,10 @@ async def get_children_descriptions_type_definitions(server, base_node, overwrit
         nodes.append(server.get_node(desc.NodeId))
 
     if nodes:
-        results = [dv.Value.Value for dv in await server.read_attributes(nodes, ua.AttributeIds.DataTypeDefinition)]
+        results = [
+            dv.Value.Value if dv.Value is not None else None
+            for dv in await server.read_attributes(nodes, ua.AttributeIds.DataTypeDefinition)
+        ]
     else:
         results = []
     sdefs = [None for _ in descs]
@@ -495,7 +502,9 @@ async def load_custom_struct_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAt
     return struct
 
 
-async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new_alias) -> None:
+async def _recursive_parse_basedatatypes(
+    server: Server | Client, base_node: Node, parent_datatype: str, new_alias: dict[str, Any]
+) -> None:
     descs = await base_node.get_children_descriptions(refs=ua.ObjectIds.HasSubtype)
     # Register all children at this level first (parent must exist before child)
     for desc in descs:
@@ -518,7 +527,9 @@ async def _recursive_parse_basedatatypes(server, base_node, parent_datatype, new
         )
 
 
-async def load_basetype_alias_xml_import(server, name, nodeid, parent_datatype_nid) -> Any:
+async def load_basetype_alias_xml_import(
+    server: Server | Client, name: str, nodeid: ua.NodeId, parent_datatype_nid: ua.NodeId
+) -> Any:
     """
     Insert alias for a datatype used for xml import
     """
@@ -552,10 +563,10 @@ async def _load_base_datatypes(server: Server | Client) -> dict[str, Any]:
 class RecursiveParser:
     def __init__(self, server: Server | Client) -> None:
         self.server = server
-        self._visited = set()
-        self._dtypes = []
+        self._visited: set[ua.NodeId] = set()
+        self._dtypes: list[DataTypeInfo] = []
 
-    async def parse(self, base_node, overwrite_existing=False):
+    async def parse(self, base_node: Node, overwrite_existing: bool = False) -> list[DataTypeInfo]:
         await self._parse_node(
             node=base_node,
             parent_sdef=None,
@@ -563,7 +574,9 @@ class RecursiveParser:
         )
         return self._dtypes
 
-    async def _parse_node(self, node, parent_sdef, overwrite_existing):
+    async def _parse_node(
+        self, node: Node, parent_sdef: ua.StructureDefinition | None, overwrite_existing: bool
+    ) -> None:
         if node.nodeid in self._visited:
             return
 
@@ -582,7 +595,13 @@ class RecursiveParser:
             *[self._process_child(desc, sdef, parent_sdef, overwrite_existing) for desc, sdef in zip(descs, sdefs)]
         )
 
-    async def _process_child(self, desc, sdef, parent_sdef, overwrite_existing):
+    async def _process_child(
+        self,
+        desc: ua.ReferenceDescription,
+        sdef: ua.StructureDefinition | None,
+        parent_sdef: ua.StructureDefinition | None,
+        overwrite_existing: bool,
+    ) -> None:
         next_parent = parent_sdef
 
         if isinstance(sdef, ua.StructureDefinition):
@@ -606,7 +625,9 @@ class RecursiveParser:
         )
 
 
-async def load_data_type_definitions(server: Server | Client, base_node: Node = None, overwrite_existing=False) -> dict:
+async def load_data_type_definitions(
+    server: Server | Client, base_node: Node | None = None, overwrite_existing: bool = False
+) -> dict[str, type]:
     """
     Read DataTypeDefinition attribute on all Structure and Enumeration defined
     on server and generate Python objects in ua namespace to be used to talk with server
@@ -690,7 +711,7 @@ def make_enum(name: str, edef: ua.EnumDefinition, option_set: bool) -> dict[str,
 
 async def load_enums(
     server: Server | Client, base_node: Node | None = None, option_set: bool = False, overwrite_existing: bool = False
-) -> dict:
+) -> dict[str, type]:
     typename = "OptionSet" if option_set else "Enum"
     if base_node is None:
         base_node = server.nodes.enum_data_type
@@ -718,7 +739,7 @@ async def load_enums(
     return new_enums
 
 
-async def load_enum_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes, option_set: bool):
+async def load_enum_xml_import(node_id: ua.NodeId, attrs: ua.DataTypeAttributes, option_set: bool) -> Any:
     """
     This function is used to load enums from xmlimporter
     """

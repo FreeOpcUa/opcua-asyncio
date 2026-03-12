@@ -57,7 +57,7 @@ class AbstractSession(ABC):
         """
 
     @abstractmethod
-    async def unregister_nodes(self, nodes: list[ua.NodeId]) -> list[ua.NodeId]:
+    async def unregister_nodes(self, nodes: list[ua.NodeId]) -> None:
         """
         https://reference.opcfoundation.org/Core/Part4/v104/5.8.6/
 
@@ -104,7 +104,7 @@ class AbstractSession(ABC):
     # NodeManagement Service Set: https://reference.opcfoundation.org/Core/Part4/v104/5.7.1/
 
     @abstractmethod
-    async def add_nodes(self, params: ua.AddNodesParameters) -> list[ua.AddNodesResult]:
+    async def add_nodes(self, nodestoadd: list[ua.AddNodesItem]) -> list[ua.AddNodesResult]:
         """
         https://reference.opcfoundation.org/Core/Part4/v104/5.7.2/
 
