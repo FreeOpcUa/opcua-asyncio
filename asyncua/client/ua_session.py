@@ -473,7 +473,6 @@ class UaSession(AbstractSession):
         response = struct_from_binary(ua.UnregisterNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
-        return None
 
     # Subscription Service Set methods
 
