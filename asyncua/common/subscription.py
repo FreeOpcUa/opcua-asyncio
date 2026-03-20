@@ -28,7 +28,7 @@ class SubscriptionItemData:
     To store useful data from a monitored item.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.node = None
         self.client_handle = None
         self.server_handle = None
@@ -45,11 +45,11 @@ class DataChangeNotif:
     To be send to clients for every datachange notification from server.
     """
 
-    def __init__(self, subscription_data: SubscriptionItemData, monitored_item: ua.MonitoredItemNotification):
+    def __init__(self, subscription_data: SubscriptionItemData, monitored_item: ua.MonitoredItemNotification) -> None:
         self.monitored_item = monitored_item
         self.subscription_data = subscription_data
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"DataChangeNotification({self.subscription_data}, {self.monitored_item})"
 
     __repr__ = __str__
@@ -303,7 +303,7 @@ class Subscription:
         server: InternalSession | UaClient,
         params: ua.CreateSubscriptionParameters,
         handler: SubscriptionHandler,
-    ):
+    ) -> None:
         self.logger = logging.getLogger(__name__)
         self.server: InternalSession | UaClient = server
         self._client_handle = 200
@@ -468,7 +468,7 @@ class Subscription:
         nodes: Node,
         attr: ua.AttributeIds = ua.AttributeIds.Value,
         queuesize: int = 0,
-        monitoring=ua.MonitoringMode.Reporting,
+        monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,
     ) -> int: ...
 
@@ -478,7 +478,7 @@ class Subscription:
         nodes: Node | Iterable[Node],
         attr: ua.AttributeIds = ua.AttributeIds.Value,
         queuesize: int = 0,
-        monitoring=ua.MonitoringMode.Reporting,
+        monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 0.0,
     ) -> list[int | ua.StatusCode]: ...
 
@@ -487,7 +487,7 @@ class Subscription:
         nodes: Node | Iterable[Node],
         attr: ua.AttributeIds = ua.AttributeIds.Value,
         queuesize: int = 0,
-        monitoring=ua.MonitoringMode.Reporting,
+        monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
         sampling_interval: ua.Duration = 50.0,
     ) -> int | list[int | ua.StatusCode]:
         """
@@ -570,7 +570,7 @@ class Subscription:
     async def _subscribe(
         self,
         nodes: Node,
-        attr=ua.AttributeIds.Value,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
         mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
@@ -581,7 +581,7 @@ class Subscription:
     async def _subscribe(
         self,
         nodes: Iterable[Node],
-        attr=ua.AttributeIds.Value,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
         mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
@@ -591,7 +591,7 @@ class Subscription:
     async def _subscribe(
         self,
         nodes: Node | Iterable[Node],
-        attr=ua.AttributeIds.Value,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
         mfilter: ua.MonitoringFilter | None = None,
         queuesize: int = 0,
         monitoring: ua.MonitoringMode = ua.MonitoringMode.Reporting,
@@ -624,7 +624,13 @@ class Subscription:
         return mids[0]  # type: ignore
 
     def _make_monitored_item_request(
-        self, node: Node, attr, mfilter, queuesize, monitoring, sampling_interval
+        self,
+        node: Node,
+        attr: ua.AttributeIds,
+        mfilter: ua.MonitoringFilter | None,
+        queuesize: int,
+        monitoring: ua.MonitoringMode,
+        sampling_interval: ua.Duration,
     ) -> ua.MonitoredItemCreateRequest:
         self._warn_if_potential_queue_overflow(queuesize, monitoring, sampling_interval)
         rv = ua.ReadValueId()

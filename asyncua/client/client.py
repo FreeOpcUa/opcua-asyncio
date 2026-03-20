@@ -45,7 +45,7 @@ class Client:
     _password: str | None = None
     strip_url_credentials: bool = True
 
-    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
+    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0) -> None:
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -137,14 +137,16 @@ class Client:
             if subscription.subscription_id is not None
         }
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "Client":
         await self.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    async def __aexit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: Any
+    ) -> None:
         await self.disconnect()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Client({self.server_url.geturl()})"
 
     __repr__ = __str__
@@ -491,7 +493,7 @@ class Client:
             )
             self.secure_channel_timeout = result.SecurityToken.RevisedLifetime
 
-    async def close_secure_channel(self):
+    async def close_secure_channel(self) -> None:
         await self.uaclient.close_secure_channel()
 
     async def get_endpoints(self) -> list[ua.EndpointDescription]:
@@ -884,7 +886,7 @@ class Client:
         protocol = self.uaclient.protocol
         return protocol is not None and protocol.transport is not None and protocol.state == protocol.OPEN
 
-    async def _monitor_server_loop(self):
+    async def _monitor_server_loop(self) -> None:
         """
         Checks if the server is alive
         """
@@ -911,7 +913,7 @@ class Client:
                 return
             raise
 
-    async def _lost_connection(self, ex: Exception):
+    async def _lost_connection(self, ex: Exception) -> None:
         if not self.connection_lost_callback:
             return
         try:
@@ -921,7 +923,7 @@ class Client:
         except Exception as ex:
             _logger.exception("Error calling connection_lost_callback")
 
-    async def _renew_channel_loop(self):
+    async def _renew_channel_loop(self) -> None:
         """
         Renew the SecureChannel before the SecureChannelTimeout will happen.
         In theory, we could do that only if no session activity,
@@ -1136,11 +1138,17 @@ class Client:
         self._server_nonce = res.ServerNonce
         return res
 
-    def _add_anonymous_auth(self, params):
+    def _add_anonymous_auth(self, params: ua.ActivateSessionParameters) -> None:
         params.UserIdentityToken = ua.AnonymousIdentityToken()
         params.UserIdentityToken.PolicyId = self.server_policy(ua.UserTokenType.Anonymous).PolicyId
 
-    def _add_certificate_auth(self, params, certificate, challenge, certificate_chain=None):
+    def _add_certificate_auth(
+        self,
+        params: ua.ActivateSessionParameters,
+        certificate: x509.Certificate,
+        challenge: bytes,
+        certificate_chain: Sequence[x509.Certificate] | None = None,
+    ) -> None:
         params.UserIdentityToken = ua.X509IdentityToken()
         params.UserIdentityToken.CertificateData = uacrypto.der_from_x509(certificate)
         certificate_chain = certificate_chain or []
@@ -1154,7 +1162,9 @@ class Client:
         params.UserTokenSignature.Algorithm = alg
         params.UserTokenSignature.Signature = sig
 
-    def _add_user_auth(self, params, username: str, password: str):
+    def _add_user_auth(
+        self, params: ua.ActivateSessionParameters, username: str | None, password: str | None
+    ) -> None:
         params.UserIdentityToken = ua.UserNameIdentityToken()
         params.UserIdentityToken.UserName = username
         policy = self.server_policy(ua.UserTokenType.UserName)
@@ -1173,7 +1183,7 @@ class Client:
             params.UserIdentityToken.EncryptionAlgorithm = uri
         params.UserIdentityToken.PolicyId = policy.PolicyId
 
-    def _encrypt_password(self, password: str, policy_uri) -> tuple[bytes, str]:
+    def _encrypt_password(self, password: str, policy_uri: str) -> tuple[bytes, str]:
         pubkey = uacrypto.x509_from_der(self.security_policy.peer_certificate).public_key()
         # see specs part 4, 7.36.3: if the token is encrypted, password
         # shall be converted to UTF-8 and serialized with server nonce
@@ -1319,11 +1329,15 @@ class Client:
         _logger.info("get_namespace_index %s %r", type(uries), uries)
         return uries.index(uri)
 
-    async def delete_nodes(self, nodes: Iterable[Node], recursive=False) -> tuple[list[Node], list[ua.StatusCode]]:
+    async def delete_nodes(self, nodes: Iterable[Node], recursive: bool = False) -> tuple[list[Node], list[ua.StatusCode]]:
         return await delete_nodes(self.uaclient, nodes, recursive)
 
     async def import_xml(
-        self, path=None, xmlstring=None, strict_mode=True, auto_load_definitions: bool = True
+        self,
+        path: str | Path | None = None,
+        xmlstring: str | None = None,
+        strict_mode: bool = True,
+        auto_load_definitions: bool = True,
     ) -> list[ua.NodeId]:
         """
         Import nodes defined in xml
@@ -1331,7 +1345,7 @@ class Client:
         importer = XmlImporter(self, strict_mode=strict_mode, auto_load_definitions=auto_load_definitions)
         return await importer.import_xml(path, xmlstring)
 
-    async def export_xml(self, nodes, path, export_values: bool = False) -> None:
+    async def export_xml(self, nodes: Iterable[Node], path: str | Path, export_values: bool = False) -> None:
         """
         Export defined nodes to xml
         :param export_values: exports values from variants
@@ -1353,7 +1367,7 @@ class Client:
         await ns_node.write_value(uries)
         return len(uries) - 1
 
-    async def load_type_definitions(self, nodes=None):
+    async def load_type_definitions(self, nodes: Any = None) -> Any:
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server

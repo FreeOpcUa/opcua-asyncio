@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -945,7 +945,7 @@ class UaClient:
             raise ConnectionError("Client is not ready") from ex
 
     @asynccontextmanager
-    async def internal_service_calls(self):
+    async def internal_service_calls(self) -> AsyncIterator[None]:
         """Context manager for internal operations bypassing ready gate."""
         self._internal_service_call_depth += 1
         try:
