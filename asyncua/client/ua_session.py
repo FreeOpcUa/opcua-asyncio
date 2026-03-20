@@ -464,7 +464,7 @@ class UaSession(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Parameters.RegisteredNodeIds
 
-    async def unregister_nodes(self, nodes: list[ua.NodeId]) -> list[ua.NodeId]:
+    async def unregister_nodes(self, nodes: list[ua.NodeId]) -> None:
         """Unregister nodes."""
         self.logger.debug("unregister_nodes")
         request = ua.UnregisterNodesRequest()
@@ -473,7 +473,7 @@ class UaSession(AbstractSession):
         response = struct_from_binary(ua.UnregisterNodesResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
-        return nodes
+        return None
 
     # Subscription Service Set methods
 

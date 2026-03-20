@@ -115,6 +115,12 @@ SubscriptionHandler = (
 
 
 def _make_monitored_item_request_from_data(data: SubscriptionItemData) -> ua.MonitoredItemCreateRequest:
+    if data.node is None:
+        raise ua.UaError("Monitored item data is missing node")
+    if data.attribute is None:
+        raise ua.UaError("Monitored item data is missing attribute")
+    if data.client_handle is None:
+        raise ua.UaError("Monitored item data is missing client handle")
     rv = ua.ReadValueId()
     rv.NodeId = data.node.nodeid
     rv.AttributeId = data.attribute
@@ -284,6 +290,11 @@ def _build_event_from_notification(
         return None
 
     data = monitored_items[event_notification.ClientHandle]
+    if data.mfilter is None or not hasattr(data.mfilter, "SelectClauses"):
+        logger.warning(
+            "Received event notification but monitored item has no event filter: %s", event_notification.ClientHandle
+        )
+        return None
     result = Event.from_event_fields(data.mfilter.SelectClauses, event_notification.EventFields)
     result.server_handle = data.server_handle
     return result
@@ -417,7 +428,10 @@ class Subscription:
         if monitored_items_snapshot:
             requests = [
                 _make_monitored_item_request_from_data(data)
-                for data in sorted(monitored_items_snapshot, key=lambda item: item.client_handle)
+                for data in sorted(
+                    monitored_items_snapshot,
+                    key=lambda item: item.client_handle if item.client_handle is not None else -1,
+                )
             ]
             self._monitored_items.clear()
             await self.create_monitored_items(requests)
