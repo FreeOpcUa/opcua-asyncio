@@ -437,7 +437,12 @@ async def get_children_descriptions_type_definitions(
     idxs = []
     for idx, desc in enumerate(descs):
         if hasattr(ua, desc.BrowseName.Name) and not overwrite_existing:
-            continue
+            existing = getattr(ua, desc.BrowseName.Name)
+            existing_dtype = getattr(existing, "data_type", None)
+            # Skip only if the existing class is already bound to this exact
+            # DataType node. Name-only checks can collide across companion specs.
+            if isinstance(existing_dtype, ua.NodeId) and existing_dtype == desc.NodeId:
+                continue
         idxs.append(idx)
         nodes.append(server.get_node(desc.NodeId))
 
