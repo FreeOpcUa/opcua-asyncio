@@ -649,7 +649,10 @@ def extensionobject_from_binary(data: Buffer) -> Any:
         cls = ua.extension_objects_by_typeid[typeid]
         if body is None:
             raise UaError(f"parsing ExtensionObject {cls.__name__} without data")
-        return from_binary(cls, body)
+        try:
+            return from_binary(cls, body)
+        except Exception as exc:
+            raise UaError(f"Error decoding ExtensionObject {cls.__name__} with TypeId {typeid}") from exc
     if body is not None:
         body_data = body.read(len(body))
     else:
@@ -791,10 +794,17 @@ def _create_dataclass_deserializer(objtype: type | str) -> Callable[[Buffer | IO
         kwargs: dict[str, Any] = {}
         enc: int = 0
         for field, optional_enc_bit, deserialize_field in dc_field_deserializers:
-            if field.name == "Encoding":
-                enc = deserialize_field(data)
-            elif optional_enc_bit == 0 or enc & optional_enc_bit:
-                kwargs[field.name] = deserialize_field(data)
+            try:
+                if field.name == "Encoding":
+                    enc = deserialize_field(data)
+                elif optional_enc_bit == 0 or enc & optional_enc_bit:
+                    kwargs[field.name] = deserialize_field(data)
+            except Exception as exc:
+                remaining = len(data) if hasattr(data, "__len__") else "unknown"
+                raise UaError(
+                    f"Error decoding field {objtype.__name__}.{field.name} "
+                    f"(encoding={enc}, optional_bit={optional_enc_bit}, remaining={remaining})"
+                ) from exc
         return objtype(**kwargs)
 
     return decode
