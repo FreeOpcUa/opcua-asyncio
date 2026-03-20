@@ -1190,8 +1190,8 @@ class UaClient:
     async def register_nodes(self, nodes: list[ua.NodeId]) -> list[ua.NodeId]:
         return await self._require_default_session().register_nodes(nodes)
 
-    async def unregister_nodes(self, nodes: list[ua.NodeId]) -> list[ua.NodeId]:
-        return await self._require_default_session().unregister_nodes(nodes)
+    async def unregister_nodes(self, nodes: list[ua.NodeId]) -> None:
+        await self._require_default_session().unregister_nodes(nodes)
 
     async def create_subscription(
         self, params: ua.CreateSubscriptionParameters, callback: Callable[[ua.PublishResult], Any]
