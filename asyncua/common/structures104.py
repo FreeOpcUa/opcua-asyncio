@@ -439,10 +439,19 @@ async def get_children_descriptions_type_definitions(
         if hasattr(ua, desc.BrowseName.Name) and not overwrite_existing:
             existing = getattr(ua, desc.BrowseName.Name)
             existing_dtype = getattr(existing, "data_type", None)
-            # Skip only if the existing class is already bound to this exact
-            # DataType node. Name-only checks can collide across companion specs.
-            if isinstance(existing_dtype, ua.NodeId) and existing_dtype == desc.NodeId:
-                continue
+            if isinstance(existing_dtype, ua.NodeId) and existing_dtype != desc.NodeId:
+                _logger.warning(
+                    "DataType name collision for %s: existing=%s, discovered=%s. Skipping discovered type because overwrite_existing is False.",
+                    desc.BrowseName.Name,
+                    existing_dtype,
+                    desc.NodeId,
+                )
+            _logger.warning(
+                "Skipping DataType %s (%s) because class already exists and overwrite_existing is False.",
+                desc.BrowseName.Name,
+                desc.NodeId,
+            )
+            continue
         idxs.append(idx)
         nodes.append(server.get_node(desc.NodeId))
 
