@@ -20,6 +20,7 @@ from asyncua.pubsub.uadp import (
     UadpNetworkMessage,
 )
 from asyncua.pubsub.udp import UdpSettings
+from asyncua.pubsub.writer import DataSetWriter
 from asyncua.server.server import Server
 from asyncua.ua.object_ids import ObjectIds
 from asyncua.ua.status_codes import StatusCodes
@@ -308,6 +309,43 @@ async def test_datasource_and_subscribed_dataset(
             await asyncio.sleep(0.200)
             for dest, src in zip(pubsub_dest_nodes, pusbsub_src_nodes):
                 assert await dest.read_value() == await src.read_value()
+
+
+async def test_dataset_writer_seq_no_wraps_at_uint16_max():
+    """Test that DataSetWriter sequence number wraps around at UInt16 max (65535).
+
+    Regression test for https://github.com/FreeOpcUa/opcua-asyncio/issues/1953
+    The sequence number must stay in range [1, 65535] and wrap back to 1.
+    """
+    writer = DataSetWriter.new_uadp(
+        name=String("TestWriter"),
+        dataset_writer_id=UInt16(1),
+        dataset_name=String("Test"),
+        datavalue=True,
+    )
+    # Simulate reaching near the overflow boundary
+    writer._seq_no = 65534
+
+    # Generate two datasets to cross the boundary
+    dataset = DataSetMeta.Create(String("Test"))
+    dataset.add_field(pubsub.DataSetField.CreateScalar(String("Val"), VariantType.Int32))
+    pds = pubsub.PublishedDataSet.Create(String("Test"), dataset)
+    source = pds.get_source()
+    source.datasources["Test"] = {"Val": DataValue(Variant(Int32(42)))}
+
+    msg1 = await writer.generate_uadp_dataset(pds)
+    assert writer._seq_no == 65535
+    assert msg1.Header.SequenceNo == UInt16(65535)
+
+    # This should wrap around to 1, not overflow
+    msg2 = await writer.generate_uadp_dataset(pds)
+    assert writer._seq_no == 1
+    assert msg2.Header.SequenceNo == UInt16(1)
+
+    # Continue incrementing normally
+    msg3 = await writer.generate_uadp_dataset(pds)
+    assert writer._seq_no == 2
+    assert msg3.Header.SequenceNo == UInt16(2)
 
 
 async def test_load_save_ua_binary_publisher(server: Server, tmpdir_factory):
