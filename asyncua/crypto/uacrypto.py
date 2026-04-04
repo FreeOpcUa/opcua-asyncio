@@ -35,16 +35,24 @@ async def get_content(path_or_content: str | bytes | Path) -> bytes:
         return await f.read()
 
 
-async def load_certificate(path_or_content: bytes | str | Path, extension: str | None = None):
-    if isinstance(path_or_content, str):
-        ext = Path(path_or_content).suffix
-    elif isinstance(path_or_content, Path):
-        ext = path_or_content.suffix
-    else:
-        ext = ""
+def _is_pem_format(path_or_content: bytes | str | Path, extension: str | None) -> bool:
+    """Determine if the content should be loaded as PEM format.
 
+    If an explicit extension is provided, it takes precedence over
+    the file extension inferred from the path.
+    """
+    if extension is not None:
+        return extension.lower() == "pem"
+    if isinstance(path_or_content, str):
+        return Path(path_or_content).suffix.lower() == ".pem"
+    if isinstance(path_or_content, Path):
+        return path_or_content.suffix.lower() == ".pem"
+    return False
+
+
+async def load_certificate(path_or_content: bytes | str | Path, extension: str | None = None):
     content = await get_content(path_or_content)
-    if ext == ".pem" or extension == "pem" or extension == "PEM":
+    if _is_pem_format(path_or_content, extension):
         return x509.load_pem_x509_certificate(content, default_backend())
     return x509.load_der_x509_certificate(content, default_backend())
 
@@ -107,17 +115,11 @@ async def load_private_key(
     password: str | bytes | None = None,
     extension: str | None = None,
 ):
-    if isinstance(path_or_content, str):
-        ext = Path(path_or_content).suffix
-    elif isinstance(path_or_content, Path):
-        ext = path_or_content.suffix
-    else:
-        ext = ""
     if isinstance(password, str):
         password = password.encode("utf-8")
 
     content = await get_content(path_or_content)
-    if ext == ".pem" or extension == "pem" or extension == "PEM":
+    if _is_pem_format(path_or_content, extension):
         return serialization.load_pem_private_key(content, password=password, backend=default_backend())
     return serialization.load_der_private_key(content, password=password, backend=default_backend())
 
