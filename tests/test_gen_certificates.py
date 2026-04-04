@@ -4,6 +4,7 @@ import socket
 from datetime import datetime, timedelta, timezone
 
 from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.x509.extensions import _key_identifier_from_public_key as key_identifier_from_public_key
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
@@ -15,7 +16,7 @@ from asyncua.crypto.cert_gen import (
     generate_self_signed_app_certificate,
     sign_certificate_request,
 )
-from asyncua.crypto.uacrypto import load_private_key
+from asyncua.crypto.uacrypto import load_certificate, load_private_key
 
 
 async def test_create_self_signed_app_certificate() -> None:
@@ -248,3 +249,92 @@ async def test_generate_load_private_key_pem(tmp_path):
 
     key2 = await load_private_key(key_path)
     assert dump_private_key_as_pem(key) == dump_private_key_as_pem(key2)
+
+
+def _generate_self_signed_cert(key):
+    """Helper to generate a self-signed certificate for testing."""
+    subject = issuer = x509.Name([
+        x509.NameAttribute(NameOID.COMMON_NAME, "Test"),
+    ])
+    return (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.now(timezone.utc))
+        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=1))
+        .sign(key, hashes.SHA256())
+    )
+
+
+async def test_load_certificate_explicit_der_with_pem_extension(tmp_path):
+    """Test that explicit extension='der' is respected even when file has .pem extension.
+
+    Regression test for https://github.com/FreeOpcUa/opcua-asyncio/issues/1927
+    """
+    key = generate_private_key()
+    cert = _generate_self_signed_cert(key)
+    cert_der = cert.public_bytes(serialization.Encoding.DER)
+
+    # Save DER-encoded certificate with .pem extension
+    cert_path = tmp_path / "certificate.pem"
+    cert_path.write_bytes(cert_der)
+
+    # Should succeed: explicit extension="der" overrides .pem file extension
+    loaded = await load_certificate(str(cert_path), extension="der")
+    assert loaded.subject == cert.subject
+
+
+async def test_load_private_key_explicit_der_with_pem_extension(tmp_path):
+    """Test that explicit extension='der' is respected even when file has .pem extension.
+
+    Regression test for https://github.com/FreeOpcUa/opcua-asyncio/issues/1927
+    """
+    key = generate_private_key()
+    key_der = key.private_bytes(
+        serialization.Encoding.DER,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    )
+
+    # Save DER-encoded key with .pem extension
+    key_path = tmp_path / "private_key.pem"
+    key_path.write_bytes(key_der)
+
+    # Should succeed: explicit extension="der" overrides .pem file extension
+    loaded = await load_private_key(str(key_path), extension="der")
+    assert loaded.key_size == key.key_size
+
+
+async def test_load_certificate_explicit_pem_with_der_extension(tmp_path):
+    """Test that explicit extension='pem' is respected even when file has .der extension."""
+    key = generate_private_key()
+    cert = _generate_self_signed_cert(key)
+    cert_pem = cert.public_bytes(serialization.Encoding.PEM)
+
+    # Save PEM-encoded certificate with .der extension
+    cert_path = tmp_path / "certificate.der"
+    cert_path.write_bytes(cert_pem)
+
+    # Should succeed: explicit extension="pem" overrides .der file extension
+    loaded = await load_certificate(str(cert_path), extension="pem")
+    assert loaded.subject == cert.subject
+
+
+async def test_load_certificate_infers_from_file_extension(tmp_path):
+    """Test that format is inferred from file extension when no explicit extension given."""
+    key = generate_private_key()
+    cert = _generate_self_signed_cert(key)
+
+    # PEM file with .pem extension
+    pem_path = tmp_path / "certificate.pem"
+    pem_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    loaded_pem = await load_certificate(str(pem_path))
+    assert loaded_pem.subject == cert.subject
+
+    # DER file with .der extension
+    der_path = tmp_path / "certificate.der"
+    der_path.write_bytes(cert.public_bytes(serialization.Encoding.DER))
+    loaded_der = await load_certificate(str(der_path))
+    assert loaded_der.subject == cert.subject
