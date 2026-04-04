@@ -150,7 +150,7 @@ class DataSetWriter(PubSubInformationModel):
     async def generate_uadp_dataset(self, pds: PublishedDataSet) -> UadpDataSetMessage:
         msg_cfg: UadpDataSetWriterMessageDataType = self._cfg.MessageSettings
         header = UadpDataSetMessageHeader(Valid=True)
-        self._seq_no += 1
+        self._seq_no = (self._seq_no % 65535) + 1
         if UadpDataSetMessageContentMask.MajorVersion in msg_cfg.DataSetMessageContentMask:
             header.CfgMajorVersion = pds.dataset._meta.ConfigurationVersion.MajorVersion
         if UadpDataSetMessageContentMask.MinorVersion in msg_cfg.DataSetMessageContentMask:
