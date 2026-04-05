@@ -384,7 +384,7 @@ class Node:
 
     async def get_children(
         self,
-        refs: int = ua.ObjectIds.HierarchicalReferences,
+        refs: Node | ua.NodeId | str | int = ua.ObjectIds.HierarchicalReferences,
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
     ) -> list[Node]:
         """
@@ -449,7 +449,7 @@ class Node:
 
     async def get_references(
         self,
-        refs: int = ua.ObjectIds.References,
+        refs: Node | ua.NodeId | str | int = ua.ObjectIds.References,
         direction: ua.BrowseDirection = ua.BrowseDirection.Both,
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
         includesubtypes: bool = True,
@@ -495,7 +495,7 @@ class Node:
 
     async def get_referenced_nodes(
         self,
-        refs: int = ua.ObjectIds.References,
+        refs: Node | ua.NodeId | str | int = ua.ObjectIds.References,
         direction: ua.BrowseDirection = ua.BrowseDirection.Both,
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
         includesubtypes: bool = True,
@@ -802,7 +802,7 @@ class Node:
         return ditem
 
     async def delete_reference(
-        self, target: Node | ua.NodeId | str | int, reftype: int, forward: bool = True, bidirectional: bool = True
+        self, target: Node | ua.NodeId | str | int, reftype: Node | ua.NodeId | str | int, forward: bool = True, bidirectional: bool = True
     ) -> None:
         """
         Delete given node's references from address space
@@ -821,7 +821,7 @@ class Node:
     async def add_reference(
         self,
         target: Node | ua.NodeId | str | int,
-        reftype: int,
+        reftype: Node | ua.NodeId | str | int,
         forward: bool = True,
         bidirectional: bool = True,
     ) -> None:
