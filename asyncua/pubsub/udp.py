@@ -77,7 +77,7 @@ class UdpSettings:
             for kv in kvs:
                 key = kv.Key.Name
                 value = kv.Value
-                if key == "ttl" and value.VariantType == VariantType.Boolean:
+                if key == "ttl":
                     self.TTL = value.Value
                 if key == "loopback" and value.VariantType == VariantType.Boolean:
                     self.Loopback = value.Value
@@ -89,7 +89,7 @@ class UdpSettings:
         if self.TTL is not None:
             kvs.append(KeyValuePair(QualifiedName("ttl"), Variant(self.TTL)))
         kvs.append(KeyValuePair(QualifiedName("reuse"), Variant(self.Reuse)))
-        kvs.append(KeyValuePair(QualifiedName("Loopback"), Variant(self.Loopback)))
+        kvs.append(KeyValuePair(QualifiedName("loopback"), Variant(self.Loopback)))
         return kvs
 
     def create_socket(
