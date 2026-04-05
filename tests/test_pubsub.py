@@ -339,3 +339,31 @@ async def test_load_save_ua_binary_publisher(server: Server, tmpdir_factory):
     assert len(wgr._writer) == 1
     dsw = wgr.get_writer("Demo DataSetWriter")
     assert dsw is not None
+
+
+def test_udp_settings_key_value_roundtrip():
+    """Test that get_key_value/set_key_value round-trip preserves all settings.
+
+    Regression test for https://github.com/FreeOpcUa/opcua-asyncio/issues/1945
+    where 'Loopback' (capital L) in get_key_value did not match 'loopback'
+    (lowercase l) in set_key_value, causing the value to be silently lost.
+    """
+    original = UdpSettings(Addr=("239.0.0.1", 4840), Loopback=False, Reuse=False, TTL=5)
+    kvs = original.get_key_value()
+
+    restored = UdpSettings(Addr=("239.0.0.1", 4840))
+    restored.set_key_value(kvs)
+
+    assert restored.Loopback == original.Loopback
+    assert restored.Reuse == original.Reuse
+    assert restored.TTL == original.TTL
+
+
+def test_udp_settings_key_names_consistent():
+    """Test that key names in get_key_value match the keys expected by set_key_value."""
+    settings = UdpSettings(Addr=("239.0.0.1", 4840), TTL=10)
+    kvs = settings.get_key_value()
+    key_names = [kv.Key.Name for kv in kvs]
+    assert "loopback" in key_names
+    assert "reuse" in key_names
+    assert "ttl" in key_names
