@@ -297,7 +297,7 @@ def make_structure(
                 else:
                     default_val = None
 
-        fields.append((fname, uatype, default_val))
+        fields.append((fname, prop_uatype, default_val))
 
     namespace = {
         "ua": ua,
@@ -437,6 +437,20 @@ async def get_children_descriptions_type_definitions(
     idxs = []
     for idx, desc in enumerate(descs):
         if hasattr(ua, desc.BrowseName.Name) and not overwrite_existing:
+            existing = getattr(ua, desc.BrowseName.Name)
+            existing_dtype = getattr(existing, "data_type", None)
+            if isinstance(existing_dtype, ua.NodeId) and existing_dtype != desc.NodeId:
+                _logger.warning(
+                    "DataType name collision for %s: existing=%s, discovered=%s. Skipping discovered type because overwrite_existing is False.",
+                    desc.BrowseName.Name,
+                    existing_dtype,
+                    desc.NodeId,
+                )
+            _logger.warning(
+                "Skipping DataType %s (%s) because class already exists and overwrite_existing is False.",
+                desc.BrowseName.Name,
+                desc.NodeId,
+            )
             continue
         idxs.append(idx)
         nodes.append(server.get_node(desc.NodeId))
