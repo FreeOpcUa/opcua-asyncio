@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import Any
 
 from asyncua import ua
 
@@ -152,7 +154,11 @@ class AbstractSession(ABC):
     # Subscription Service Set: https://reference.opcfoundation.org/Core/Part4/v104/5.13.1/
 
     @abstractmethod
-    async def create_subscription(self, params: ua.CreateSubscriptionParameters) -> ua.CreateSubscriptionResult:
+    async def create_subscription(
+        self,
+        params: ua.CreateSubscriptionParameters,
+        callback: Callable[[ua.PublishResult], Any] | None = None,
+    ) -> ua.CreateSubscriptionResult:
         """
         https://reference.opcfoundation.org/Core/Part4/v104/5.13.2/
 
