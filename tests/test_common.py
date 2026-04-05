@@ -326,6 +326,34 @@ async def test_delete_references(opc):
     await opc.opc.delete_nodes([fold, newtype], recursive=True)
 
 
+async def test_reference_with_nodeid_reftype(opc):
+    """Test that add_reference/get_referenced_nodes/delete_reference accept ua.NodeId as reftype.
+
+    Regression test for https://github.com/FreeOpcUa/opcua-asyncio/issues/1896
+    where the type annotation enforced int, but _to_nodeid() already supports
+    Node, ua.NodeId, str, and int at runtime.
+    """
+    newtype = await opc.opc.get_node(ua.ObjectIds.HierarchicalReferences).add_reference_type(
+        0, "HasNodeIdRefType"
+    )
+    reftype_nodeid = newtype.nodeid  # ua.NodeId, not int
+
+    obj = opc.opc.nodes.objects
+    fold = await obj.add_folder(2, "FolderNodeIdRef")
+    var = await fold.add_variable(2, "VarNodeIdRef", 42)
+
+    # Use ua.NodeId as reftype (this is what issue #1896 requests)
+    await fold.add_reference(var, reftype_nodeid)
+    assert [var] == await fold.get_referenced_nodes(reftype_nodeid)
+    assert [fold] == await var.get_referenced_nodes(reftype_nodeid)
+
+    await fold.delete_reference(var, reftype_nodeid)
+    assert [] == await fold.get_referenced_nodes(reftype_nodeid)
+
+    # clean-up
+    await opc.opc.delete_nodes([fold, newtype], recursive=True)
+
+
 async def test_server_node(opc):
     node = opc.opc.nodes.server
     assert ua.QualifiedName("Server", 0) == await node.read_browse_name()

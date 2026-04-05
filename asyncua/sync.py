@@ -753,7 +753,7 @@ class SyncNode:
     @syncmethod
     def get_children(
         self,
-        refs: int = ua.ObjectIds.HierarchicalReferences,
+        refs: SyncNode | ua.NodeId | str | int = ua.ObjectIds.HierarchicalReferences,
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
     ) -> list[SyncNode]: ...
 
@@ -918,7 +918,7 @@ class SyncNode:
     @syncmethod
     def get_references(
         self,
-        refs: int = ua.ObjectIds.References,
+        refs: SyncNode | ua.NodeId | str | int = ua.ObjectIds.References,
         direction: ua.BrowseDirection = ua.BrowseDirection.Both,
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
         includesubtypes: bool = True,
@@ -929,7 +929,7 @@ class SyncNode:
     def add_reference(
         self,
         target: SyncNode | ua.NodeId | str | int,
-        reftype: int,
+        reftype: SyncNode | ua.NodeId | str | int,
         forward: bool = True,
         bidirectional: bool = True,
     ) -> None: ...
@@ -965,7 +965,7 @@ class SyncNode:
     def delete_reference(
         self,
         target: SyncNode | ua.NodeId | str | int,
-        reftype: int,
+        reftype: SyncNode | ua.NodeId | str | int,
         forward: bool = True,
         bidirectional: bool = True,
     ) -> None: ...
@@ -985,7 +985,7 @@ class SyncNode:
     @syncmethod
     def get_referenced_nodes(
         self,
-        refs: int = ua.ObjectIds.References,
+        refs: SyncNode | ua.NodeId | str | int = ua.ObjectIds.References,
         direction: ua.BrowseDirection = ua.BrowseDirection.Both,
         nodeclassmask: ua.NodeClass = ua.NodeClass.Unspecified,
         includesubtypes: bool = True,
