@@ -324,7 +324,7 @@ async def test_set_monitoring_mode(opc, mocker):
     o = opc.opc.nodes.objects
     monitoring_mode = ua.SetMonitoringModeParameters()
     _ = mocker.patch.object(ua, "SetMonitoringModeParameters", return_value=monitoring_mode)
-    _ = mocker.patch("asyncua.client.ua_client.UaClient.set_monitoring_mode", new=AsyncMock())
+    _ = mocker.patch("asyncua.client.ua_session.UaSession.set_monitoring_mode", new=AsyncMock())
     _ = await o.add_variable(3, "SubscriptionVariable2", 123)
     sub = await opc.opc.create_subscription(100, myhandler)
 
@@ -344,7 +344,7 @@ async def test_set_publishing_mode(opc, mocker):
     o = opc.opc.nodes.objects
     publishing_mode = ua.SetPublishingModeParameters()
     _ = mocker.patch.object(ua, "SetPublishingModeParameters", return_value=publishing_mode)
-    _ = mocker.patch("asyncua.client.ua_client.UaClient.set_publishing_mode", new=AsyncMock())
+    _ = mocker.patch("asyncua.client.ua_session.UaSession.set_publishing_mode", new=AsyncMock())
     _ = await o.add_variable(3, "SubscriptionVariable3", 123)
     sub = await opc.opc.create_subscription(100, myhandler)
 
@@ -1021,9 +1021,9 @@ async def test_maxkeepalive_count(opc, mocker):
         RevisedMaxKeepAliveCount=2700,
     )
     mock_create_subscription = mocker.patch.object(
-        client.uaclient, "create_subscription", new=AsyncMock(return_value=mock_response)
+        client.uaclient.session, "create_subscription", new=AsyncMock(return_value=mock_response)
     )
-    mock_update_subscription = mocker.patch.object(client.uaclient, "update_subscription", new=AsyncMock())
+    mock_update_subscription = mocker.patch.object(client.uaclient.session, "update_subscription", new=AsyncMock())
 
     sub = await client.create_subscription(period, sub_handler)
     assert sub.parameters.RequestedMaxKeepAliveCount == mock_max_keepalive_count
