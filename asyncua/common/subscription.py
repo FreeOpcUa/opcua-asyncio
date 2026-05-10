@@ -25,6 +25,9 @@ from .node import Node
 class SubscriptionItemData:
     """
     To store useful data from a monitored item.
+
+    The queuesize / monitoring_mode / sampling_interval fields are captured so the
+    Subscription can be re-created on the server after a reconnect.
     """
 
     def __init__(self) -> None:
@@ -33,6 +36,9 @@ class SubscriptionItemData:
         self.server_handle: int | None = None
         self.attribute: ua.AttributeIds | None = None
         self.mfilter: ua.MonitoringFilter | ua.EventFilter | None = None
+        self.queuesize: int = 0
+        self.monitoring_mode: ua.MonitoringMode = ua.MonitoringMode.Reporting
+        self.sampling_interval: ua.Duration = 0.0
 
 
 class DataChangeNotif:
@@ -134,6 +140,9 @@ class Subscription:
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items: dict[int, SubscriptionItemData] = {}
         self.subscription_id: int | None = None
+        # Tracks whether the user explicitly deleted this subscription, so the
+        # auto-reconnect supervisor can skip re-creating dead subscriptions.
+        self._deleted: bool = False
 
     async def init(self) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
@@ -171,9 +180,81 @@ class Subscription:
         Delete subscription on server. This is automatically done by Client and Server classes on exit.
         """
         if self.subscription_id is None:
+            self._deleted = True
             return
-        results = await self.server.delete_subscriptions([self.subscription_id])
-        results[0].check()
+        try:
+            results = await self.server.delete_subscriptions([self.subscription_id])
+            results[0].check()
+        finally:
+            self._deleted = True
+
+    async def recreate(self) -> None:
+        """
+        Re-create this subscription and its monitored items on the server.
+
+        Used by `Client`'s auto-reconnect supervisor after the connection has
+        been restored: the server side of the subscription is gone, so we make
+        a fresh subscription and re-add every monitored item. Client handles
+        are preserved so existing notification routing keeps working.
+        """
+        if self._deleted:
+            return
+        saved_items = list(self._monitored_items.values())
+        self._monitored_items.clear()
+        self.subscription_id = None
+
+        await self.init()
+
+        if not saved_items:
+            return
+
+        mirs: list[ua.MonitoredItemCreateRequest] = []
+        for item in saved_items:
+            if item.node is None or item.attribute is None or item.client_handle is None:
+                self.logger.warning("Skipping monitored item with missing fields during recreate")
+                continue
+            rv = ua.ReadValueId()
+            rv.NodeId = item.node.nodeid
+            rv.AttributeId = item.attribute
+            mparams = ua.MonitoringParameters()
+            mparams.ClientHandle = item.client_handle
+            mparams.SamplingInterval = item.sampling_interval
+            mparams.QueueSize = item.queuesize
+            mparams.DiscardOldest = True
+            if item.mfilter is not None:
+                mparams.Filter = item.mfilter
+            mir = ua.MonitoredItemCreateRequest()
+            mir.ItemToMonitor = rv
+            mir.MonitoringMode = item.monitoring_mode
+            mir.RequestedParameters = mparams
+            mirs.append(mir)
+            # Restore the entry into _monitored_items so that any notifications
+            # arriving between create_monitored_items and its server response are
+            # still routed correctly.
+            self._monitored_items[item.client_handle] = item
+
+        if not mirs:
+            return
+        params = ua.CreateMonitoredItemsParameters()
+        params.SubscriptionId = self.subscription_id
+        params.ItemsToCreate = mirs
+        params.TimestampsToReturn = ua.TimestampsToReturn.Both
+        results = await self.server.create_monitored_items(params)
+        for idx, result in enumerate(results):
+            mi = params.ItemsToCreate[idx]
+            assert mi.RequestedParameters.ClientHandle is not None
+            item = self._monitored_items.get(mi.RequestedParameters.ClientHandle)
+            if item is None:
+                continue
+            if not result.StatusCode.is_good():
+                self.logger.warning(
+                    "Failed to re-create monitored item (client_handle=%s): %s",
+                    mi.RequestedParameters.ClientHandle,
+                    result.StatusCode,
+                )
+                del self._monitored_items[mi.RequestedParameters.ClientHandle]
+                continue
+            item.server_handle = result.MonitoredItemId
 
     async def _call_datachange(self, datachange: ua.DataChangeNotification) -> None:
         if not hasattr(self._handler, "datachange_notification"):
@@ -460,6 +541,9 @@ class Subscription:
             # TODO: Either use the filter from request or from response.
             #  Here it uses from request, in modify it uses from response
             data.mfilter = mi.RequestedParameters.Filter
+            data.queuesize = mi.RequestedParameters.QueueSize
+            data.monitoring_mode = mi.MonitoringMode
+            data.sampling_interval = mi.RequestedParameters.SamplingInterval
             self._monitored_items[mi.RequestedParameters.ClientHandle] = data
         results = await self.server.create_monitored_items(params)
         mids = []
