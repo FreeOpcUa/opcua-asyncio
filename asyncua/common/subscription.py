@@ -12,7 +12,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Protocol, overload
 
 from asyncua import ua
-from asyncua.client.ua_client import UaClient
+from asyncua.client.ua_session import UaSession
 from asyncua.common.ua_utils import copy_dataclass_attr
 
 if TYPE_CHECKING:
@@ -118,17 +118,17 @@ class Subscription:
     The object represent a subscription to an opc-ua server.
     This is a high level class, especially `subscribe_data_change` and `subscribe_events methods`.
     If more control is necessary look at code and/or use `create_monitored_items method`.
-    :param server: `InternalSession` or `UaClient`
+    :param server: `InternalSession` or `UaSession`
     """
 
     def __init__(
         self,
-        server: InternalSession | UaClient,
+        server: InternalSession | UaSession,
         params: ua.CreateSubscriptionParameters,
         handler: SubscriptionHandler,
     ) -> None:
         self.logger = logging.getLogger(__name__)
-        self.server: InternalSession | UaClient = server
+        self.server: InternalSession | UaSession = server
         self._client_handle = 200
         self._handler: SubscriptionHandler = handler
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
@@ -142,7 +142,7 @@ class Subscription:
         return response
 
     async def update(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
-        if not isinstance(self.server, UaClient):
+        if not isinstance(self.server, UaSession):
             raise ua.uaerrors.UaError(f"update() is not supported in {self.server}.")
         response = await self.server.update_subscription(params)
         self.logger.info("Subscription updated %s", params.SubscriptionId)
@@ -601,7 +601,7 @@ class Subscription:
         :param monitoring: The monitoring mode to apply
         :return: Return a Set Monitoring Mode Result
         """
-        if not isinstance(self.server, UaClient):
+        if not isinstance(self.server, UaSession):
             raise ua.uaerrors.UaError(f"set_monitoring_mode() is not supported in {self.server}.")
         node_handles = []
         for mi in self._monitored_items.values():
@@ -623,7 +623,7 @@ class Subscription:
         :return: Return a Set Publishing Mode Result
         """
         self.logger.info("set_publishing_mode")
-        if not isinstance(self.server, UaClient):
+        if not isinstance(self.server, UaSession):
             raise ua.uaerrors.UaError(f"set_publishing_mode() is not supported in {self.server}.")
         params = ua.SetPublishingModeParameters()
         params.SubscriptionIds = [self.subscription_id]  # type: ignore

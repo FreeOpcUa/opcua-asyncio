@@ -86,7 +86,7 @@ class Client:
         self.user_certificate_chain: list[x509.Certificate] = []
         self._server_nonce = None
         self._session_counter = 1
-        self.nodes: Shortcuts = Shortcuts(self.uaclient)
+        self.nodes: Shortcuts = Shortcuts(self.uaclient.session)
         self.max_messagesize = 0  # No limits
         self.max_chunkcount = 0  # No limits
         self._renew_channel_task = None
@@ -783,7 +783,7 @@ class Client:
         """
         Get node using NodeId object or a string representing a NodeId.
         """
-        return Node(self.uaclient, nodeid)
+        return Node(self.uaclient.session, nodeid)
 
     async def create_subscription(
         self,
@@ -809,7 +809,7 @@ class Client:
             params.MaxNotificationsPerPublish = 10000
             params.PublishingEnabled = publishing
             params.Priority = 0
-        subscription = Subscription(self.uaclient, params, handler)
+        subscription = Subscription(self.uaclient.session, params, handler)
         results = await subscription.init()
         new_params = self.get_subscription_revised_params(params, results)
         if new_params:
@@ -883,7 +883,7 @@ class Client:
     async def delete_nodes(
         self, nodes: Iterable[Node], recursive: bool = False
     ) -> tuple[list[Node], list[ua.StatusCode]]:
-        return await delete_nodes(self.uaclient, nodes, recursive)
+        return await delete_nodes(self.uaclient.session, nodes, recursive)
 
     async def import_xml(
         self,

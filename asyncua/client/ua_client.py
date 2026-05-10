@@ -4,8 +4,8 @@ Low level binary client.
 `UaClient` provides:
 - transport: socket and secure channel via `UASocketProtocol`,
 - sessionless services (Discovery, Register/Unregister Server),
-- a default `UaSession` accessible via `_session`, and back-compat delegating methods
-  for code that used to call session services directly on `UaClient`.
+- a default `UaSession` accessible via `session`, plus back-compat delegating
+  methods so code that used to call session services on `UaClient` keeps working.
 """
 
 from __future__ import annotations
@@ -18,7 +18,6 @@ from enum import Enum
 from typing import Any
 
 from asyncua import ua
-from asyncua.common.session_interface import AbstractSession
 from asyncua.common.utils import Buffer
 from asyncua.ua.uaerrors._base import UaError
 
@@ -315,13 +314,14 @@ class UASocketProtocol(asyncio.Protocol):
         self._callbackmap.clear()
 
 
-class UaClient(AbstractSession):
+class UaClient:
     """
-    Low level OPC-UA client.
+    Low level OPC-UA client (transport).
 
     Owns the transport (`UASocketProtocol`) and a default `UaSession`.
     Sessionless services (Discovery, Register/Unregister Server) live here.
-    Session-scoped services delegate to `self._session` for back-compat.
+    Session-scoped service calls delegate to `self.session` for back-compat
+    with code that used to call them on `UaClient` directly.
     """
 
     def __init__(self, timeout: float = 1.0) -> None:
@@ -334,7 +334,7 @@ class UaClient(AbstractSession):
         self.protocol: UASocketProtocol | None = None
         self._pre_request_hook: Callable[[], Awaitable[None]] | None = None
         self._state: UaClientState = UaClientState.DISCONNECTED
-        self._session: UaSession = UaSession(self)
+        self.session: UaSession = UaSession(self)
 
     @property
     def state(self) -> UaClientState:
@@ -367,7 +367,7 @@ class UaClient(AbstractSession):
     async def connect_socket(self, host: str, port: int) -> None:
         """Connect to server socket."""
         self.logger.info("opening connection")
-        self._session._closing = False
+        self.session._closing = False
         self._set_state(UaClientState.CONNECTING)
         try:
             await asyncio.wait_for(
@@ -423,27 +423,27 @@ class UaClient(AbstractSession):
 
     @property
     def _subscription_callbacks(self) -> dict[int, Callable[..., Any]]:
-        return self._session._subscription_callbacks
+        return self.session._subscription_callbacks
 
     @property
     def _publish_task(self) -> asyncio.Task[None] | None:
-        return self._session._publish_task
+        return self.session._publish_task
 
     @property
     def _closing(self) -> bool:
-        return self._session._closing
+        return self.session._closing
 
     @_closing.setter
     def _closing(self, value: bool) -> None:
-        self._session._closing = value
+        self.session._closing = value
 
     # --- session lifecycle: delegate to default session ---
 
     async def create_session(self, parameters: ua.CreateSessionParameters) -> ua.CreateSessionResult:
-        return await self._session.create_session(parameters)
+        return await self.session.create_session(parameters)
 
     async def activate_session(self, parameters: ua.ActivateSessionParameters) -> ua.ActivateSessionResult:
-        result = await self._session.activate_session(parameters)
+        result = await self.session.activate_session(parameters)
         # Only transition on the first activation; re-activate of an already-ACTIVATED
         # session leaves UaClient in CONNECTED.
         if self._state is UaClientState.CHANNEL_OPEN:
@@ -451,7 +451,7 @@ class UaClient(AbstractSession):
         return result
 
     async def close_session(self, delete_subscriptions: bool) -> None:
-        await self._session.close_session(delete_subscriptions)
+        await self.session.close_session(delete_subscriptions)
         if self._state is UaClientState.CONNECTED:
             self._set_state(UaClientState.CHANNEL_OPEN)
 
@@ -528,31 +528,31 @@ class UaClient(AbstractSession):
     # --- AbstractSession: delegate to default session ---
 
     async def browse(self, parameters: ua.BrowseParameters) -> list[ua.BrowseResult]:
-        return await self._session.browse(parameters)
+        return await self.session.browse(parameters)
 
     async def browse_next(self, parameters: ua.BrowseNextParameters) -> list[ua.BrowseResult]:
-        return await self._session.browse_next(parameters)
+        return await self.session.browse_next(parameters)
 
     async def translate_browsepaths_to_nodeids(self, browse_paths: list[ua.BrowsePath]) -> list[ua.BrowsePathResult]:
-        return await self._session.translate_browsepaths_to_nodeids(browse_paths)
+        return await self.session.translate_browsepaths_to_nodeids(browse_paths)
 
     async def register_nodes(self, nodes: list[ua.NodeId]) -> list[ua.NodeId]:
-        return await self._session.register_nodes(nodes)
+        return await self.session.register_nodes(nodes)
 
     async def unregister_nodes(self, nodes: list[ua.NodeId]) -> None:
-        return await self._session.unregister_nodes(nodes)
+        return await self.session.unregister_nodes(nodes)
 
     async def read(self, parameters: ua.ReadParameters) -> list[ua.DataValue]:
-        return await self._session.read(parameters)
+        return await self.session.read(parameters)
 
     async def write(self, params: ua.WriteParameters) -> list[ua.StatusCode]:
-        return await self._session.write(params)
+        return await self.session.write(params)
 
     async def history_read(self, params: ua.HistoryReadParameters) -> list[ua.HistoryReadResult]:
-        return await self._session.history_read(params)
+        return await self.session.history_read(params)
 
     async def read_attributes(self, nodeids: list[ua.NodeId], attr: ua.AttributeIds) -> list[ua.DataValue]:
-        return await self._session.read_attributes(nodeids, attr)
+        return await self.session.read_attributes(nodeids, attr)
 
     async def write_attributes(
         self,
@@ -560,60 +560,60 @@ class UaClient(AbstractSession):
         datavalues: list[ua.DataValue],
         attributeid: ua.AttributeIds = ua.AttributeIds.Value,
     ) -> list[ua.StatusCode]:
-        return await self._session.write_attributes(nodeids, datavalues, attributeid)
+        return await self.session.write_attributes(nodeids, datavalues, attributeid)
 
     async def add_nodes(self, nodestoadd: list[ua.AddNodesItem]) -> list[ua.AddNodesResult]:
-        return await self._session.add_nodes(nodestoadd)
+        return await self.session.add_nodes(nodestoadd)
 
     async def add_references(self, refs: list[ua.AddReferencesItem]) -> list[ua.StatusCode]:
-        return await self._session.add_references(refs)
+        return await self.session.add_references(refs)
 
     async def delete_references(self, refs: list[ua.DeleteReferencesItem]) -> list[ua.StatusCode]:
-        return await self._session.delete_references(refs)
+        return await self.session.delete_references(refs)
 
     async def delete_nodes(self, params: ua.DeleteNodesParameters) -> list[ua.StatusCode]:
-        return await self._session.delete_nodes(params)
+        return await self.session.delete_nodes(params)
 
     async def call(self, methodstocall: list[ua.CallMethodRequest]) -> list[ua.CallMethodResult]:
-        return await self._session.call(methodstocall)
+        return await self.session.call(methodstocall)
 
     async def create_subscription(  # type: ignore[override]
         self, params: ua.CreateSubscriptionParameters, callback: Callable[..., Any]
     ) -> ua.CreateSubscriptionResult:
-        return await self._session.create_subscription(params, callback)
+        return await self.session.create_subscription(params, callback)
 
     async def update_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
-        return await self._session.update_subscription(params)
+        return await self.session.update_subscription(params)
 
     modify_subscription = update_subscription  # legacy support
 
     async def delete_subscriptions(self, subscription_ids: list[int]) -> list[ua.StatusCode]:  # type: ignore[override]
-        return await self._session.delete_subscriptions(subscription_ids)
+        return await self.session.delete_subscriptions(subscription_ids)
 
     async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> list[ua.TransferResult]:
-        return await self._session.transfer_subscriptions(params)
+        return await self.session.transfer_subscriptions(params)
 
     async def inform_subscriptions(self, status: ua.StatusCode) -> None:
-        return await self._session.inform_subscriptions(status)
+        return await self.session.inform_subscriptions(status)
 
     async def publish(self, acks: list[ua.SubscriptionAcknowledgement]) -> ua.PublishResponse:
-        return await self._session.publish(acks)
+        return await self.session.publish(acks)
 
     async def create_monitored_items(
         self, params: ua.CreateMonitoredItemsParameters
     ) -> list[ua.MonitoredItemCreateResult]:
-        return await self._session.create_monitored_items(params)
+        return await self.session.create_monitored_items(params)
 
     async def delete_monitored_items(self, params: ua.DeleteMonitoredItemsParameters) -> list[ua.StatusCode]:
-        return await self._session.delete_monitored_items(params)
+        return await self.session.delete_monitored_items(params)
 
     async def modify_monitored_items(
         self, params: ua.ModifyMonitoredItemsParameters
     ) -> list[ua.MonitoredItemModifyResult]:
-        return await self._session.modify_monitored_items(params)
+        return await self.session.modify_monitored_items(params)
 
     async def set_monitoring_mode(self, params: ua.SetMonitoringModeParameters) -> list[ua.uatypes.StatusCode]:
-        return await self._session.set_monitoring_mode(params)
+        return await self.session.set_monitoring_mode(params)
 
     async def set_publishing_mode(self, params: ua.SetPublishingModeParameters) -> list[ua.uatypes.StatusCode]:
-        return await self._session.set_publishing_mode(params)
+        return await self.session.set_publishing_mode(params)
