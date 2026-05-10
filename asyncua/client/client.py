@@ -25,7 +25,8 @@ from ..common.xmlexporter import XmlExporter
 from ..common.xmlimporter import XmlImporter
 from ..crypto import security_policies, uacrypto
 from ..crypto.validator import CertificateValidatorMethod
-from .ua_client import UaClient
+from .ua_client import UaClient, UaClientState
+from .ua_session import SessionState
 
 _logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ class Client:
         self.connection_lost_callback: Callable[[Exception], Coroutine[Any, Any, None]] | None = None
         self._policy_ids: list[ua.UserTokenPolicy] = []
         self.uaclient: UaClient = UaClient(timeout)
-        self.uaclient.pre_request_hook = self.check_connection
+        self.uaclient.pre_request_hook = self._wait_until_ready
         self.user_certificate: x509.Certificate | None = None
         self.user_private_key: PrivateKeyTypes | None = None
         self.user_certificate_chain: list[x509.Certificate] = []
@@ -89,11 +90,17 @@ class Client:
         self.nodes: Shortcuts = Shortcuts(self.uaclient.session)
         self.max_messagesize = 0  # No limits
         self.max_chunkcount = 0  # No limits
-        self._renew_channel_task = None
-        self._monitor_server_task = None
+        self._renew_channel_task: asyncio.Task[None] | None = None
+        self._supervisor_task: asyncio.Task[None] | None = None
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
-        self._closing: bool = False
+        # Active subscriptions, tracked so the auto-reconnect supervisor can re-create
+        # them after a reconnect. Subscriptions mark themselves _deleted on delete().
+        self._subscriptions: list[Subscription] = []
+        # Auto-reconnect configuration; populated by connect(auto_reconnect=True, ...).
+        self._auto_reconnect: bool = False
+        self._reconnect_max_delay: float = 30.0
+        self._reconnect_request_timeout: float = 60.0
         self.certificate_validator: CertificateValidatorMethod | None = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
 
@@ -333,12 +340,33 @@ class Client:
             self.disconnect_socket()
         return servers
 
-    async def connect(self) -> None:
+    async def connect(
+        self,
+        *,
+        auto_reconnect: bool = False,
+        reconnect_max_delay: float = 30.0,
+        reconnect_request_timeout: float = 60.0,
+    ) -> None:
         """
-        High level method
-        Connect, create and activate session
+        High level method: connect, create and activate session.
+
+        :param auto_reconnect: when True, a supervisor task is started that
+            monitors transport health and re-establishes the connection
+            (including re-creating all live subscriptions) on loss.
+        :param reconnect_max_delay: exponential backoff cap for reconnect attempts (seconds).
+        :param reconnect_request_timeout: how long requests block waiting for the
+            connection to become ready while the supervisor is reconnecting.
         """
-        _logger.info("connect")
+        _logger.info("connect (auto_reconnect=%s)", auto_reconnect)
+        self._auto_reconnect = auto_reconnect
+        self._reconnect_max_delay = reconnect_max_delay
+        self._reconnect_request_timeout = reconnect_request_timeout
+        self.uaclient._disconnect_requested = False
+        await self._connect_sequence()
+        self._supervisor_task = asyncio.create_task(self._connection_supervisor())
+
+    async def _connect_sequence(self) -> None:
+        """Run the full connect sequence: socket, hello, channel, session, activate."""
         await self.connect_socket()
         try:
             await self.send_hello()
@@ -350,15 +378,12 @@ class Client:
                         username=self._username, password=self._password, certificate=self.user_certificate
                     )
                 except Exception:
-                    # clean up session
-                    await self.close_session()
+                    await self._close_session_quiet()
                     raise
             except Exception:
-                # clean up secure channel
-                await self.close_secure_channel()
+                await self._close_secure_channel_quiet()
                 raise
         except Exception:
-            # clean up open socket
             self.disconnect_socket()
             raise
 
@@ -516,7 +541,6 @@ class Client:
         If you want to modify settings look at code of these methods
         and make your own
         """
-        self._closing = False
         desc = ua.ApplicationDescription()
         desc.ApplicationUri = self.application_uri
         desc.ProductUri = self.product_uri
@@ -580,50 +604,175 @@ class Client:
             )
             self.session_timeout = response.RevisedSessionTimeout
         self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
-        self._monitor_server_task = asyncio.create_task(self._monitor_server_loop())
         return response
 
-    async def check_connection(self) -> None:
-        # can be used to check if the client is still connected
-        # if not it throws the underlying exception
-        if self._renew_channel_task is not None:
-            if self._renew_channel_task.done():
-                await self._renew_channel_task
-        if self._monitor_server_task is not None:
-            if self._monitor_server_task.done():
-                await self._monitor_server_task
-        if self.uaclient._publish_task is not None:
-            if self.uaclient._publish_task.done():
-                await self.uaclient._publish_task
+    async def _wait_until_ready(self) -> None:
+        """Pre-request hook: block while the supervisor is reconnecting, fail fast otherwise.
 
-    async def _monitor_server_loop(self) -> None:
+        Only RECONNECTING is gated: during initial connect (CONNECTING / SOCKET_OPEN /
+        CHANNEL_OPEN) the session-establishment requests themselves must pass through.
+        DISCONNECTED / DISCONNECTING raise immediately so callers see ConnectionError
+        instead of silently sending to a dead transport.
         """
-        Checks if the server is alive
-        """
-        timeout = min(self.session_timeout / 1000 / 2, self._watchdog_intervall)
-        try:
-            while not self._closing:
-                await asyncio.sleep(timeout)
-                # @FIXME handle state change
-                _ = await self.nodes.server_state.read_value()
-        except ConnectionError as e:
-            _logger.info("connection error in watchdog loop %s", e, exc_info=True)
-            await self._lost_connection(e)
-            await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
-            raise
-        except Exception as e:
-            _logger.exception("Error in watchdog loop")
-            await self._lost_connection(e)
-            await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
-            raise
-
-    async def _lost_connection(self, ex: Exception) -> None:
-        if not self.connection_lost_callback:
+        if self.uaclient._disconnect_requested:
+            raise ConnectionError("client is disconnecting")
+        state = self.uaclient.state
+        if state is UaClientState.DISCONNECTED:
+            raise ConnectionError("client is disconnected")
+        if state is UaClientState.DISCONNECTING:
+            raise ConnectionError("client is disconnecting")
+        if state is not UaClientState.RECONNECTING:
             return
         try:
-            await self.connection_lost_callback(ex)
-        except Exception as ex:
+            await asyncio.wait_for(self.uaclient._state_ready.wait(), self._reconnect_request_timeout)
+        except asyncio.TimeoutError:
+            raise ConnectionError(
+                f"Timed out waiting for client to reconnect (state={self.uaclient.state.value})"
+            ) from None
+
+    # Kept as a back-compat alias for any external callers; the harness no longer registers it.
+    check_connection = _wait_until_ready
+
+    async def _connection_supervisor(self) -> None:
+        """
+        Single supervisor task driving health-check and reconnect.
+
+        Started by `connect()` after the initial connect succeeds. The loop:
+          1. waits for either a periodic health-tick or the `_transport_lost` event,
+          2. on each tick, probes server_state to detect dead-but-not-closed connections,
+          3. on any failure, fires `connection_lost_callback` and (if auto_reconnect)
+             transitions to RECONNECTING and runs `_reconnect_with_backoff`.
+
+        Exits when `_disconnect_requested` is set or `auto_reconnect=False` and a loss is detected.
+        """
+        try:
+            while not self.uaclient._disconnect_requested:
+                try:
+                    await self._wait_for_health_signal()
+                    if self.uaclient._transport_lost.is_set():
+                        raise ConnectionError("transport lost")
+                except asyncio.CancelledError:
+                    raise
+                except (ConnectionError, OSError, asyncio.TimeoutError, ua.UaStatusCodeError) as exc:
+                    if self.uaclient._disconnect_requested:
+                        return
+                    _logger.info("Supervisor detected connection issue: %r", exc)
+                    await self._fire_connection_lost_callback(exc)
+                    try:
+                        await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
+                    except Exception:
+                        _logger.debug("inform_subscriptions raised during loss handling", exc_info=True)
+                    if not self._auto_reconnect:
+                        # Tear current state down to DISCONNECTED so the next request fails fast.
+                        self._force_state_disconnected()
+                        return
+                    self.uaclient._set_state(UaClientState.RECONNECTING)
+                    if not await self._reconnect_with_backoff():
+                        return
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            _logger.exception("Connection supervisor crashed")
+
+    async def _wait_for_health_signal(self) -> None:
+        """Wait for either `_transport_lost` or the next health-check tick.
+
+        On a tick, runs a server_state read to verify the server is alive; raises on failure.
+        """
+        transport_lost = asyncio.create_task(self.uaclient._transport_lost.wait())
+        tick = asyncio.create_task(asyncio.sleep(self._watchdog_intervall))
+        try:
+            await asyncio.wait([transport_lost, tick], return_when=asyncio.FIRST_COMPLETED)
+        finally:
+            if not transport_lost.done():
+                transport_lost.cancel()
+            if not tick.done():
+                tick.cancel()
+        if self.uaclient._transport_lost.is_set():
+            return
+        probe_timeout = min(self.session_timeout / 1000 / 2, self._watchdog_intervall)
+        await asyncio.wait_for(self.nodes.server_state.read_value(), timeout=probe_timeout)
+
+    async def _fire_connection_lost_callback(self, exc: Exception) -> None:
+        if self.connection_lost_callback is None:
+            return
+        try:
+            await self.connection_lost_callback(exc)
+        except Exception:
             _logger.exception("Error calling connection_lost_callback")
+
+    async def _reconnect_with_backoff(self) -> bool:
+        """Retry the connect sequence with exponential backoff. Returns True on success."""
+        delay = 1.0
+        while not self.uaclient._disconnect_requested:
+            await self._teardown_for_reconnect()
+            try:
+                await self._connect_sequence()
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                _logger.warning("Reconnect attempt failed: %r; retrying in %.1fs", exc, delay)
+                if self.uaclient.state is UaClientState.DISCONNECTED:
+                    self.uaclient._set_state(UaClientState.RECONNECTING)
+                try:
+                    await asyncio.sleep(delay)
+                except asyncio.CancelledError:
+                    raise
+                delay = min(delay * 2, self._reconnect_max_delay)
+                continue
+            try:
+                await self._recreate_subscriptions()
+            except Exception:
+                _logger.exception("Subscription recreation failed; continuing")
+            _logger.info("Reconnected successfully")
+            return True
+        return False
+
+    async def _teardown_for_reconnect(self) -> None:
+        """Cancel renew loop, close stale session, and tear down the old transport."""
+        if self._renew_channel_task is not None and not self._renew_channel_task.done():
+            self._renew_channel_task.cancel()
+            try:
+                await self._renew_channel_task
+            except (asyncio.CancelledError, Exception):
+                pass
+        self._renew_channel_task = None
+        # Drive the (server-side dead) session to CLOSED so create_session can fire again.
+        session = self.uaclient.session
+        if session.state is not SessionState.CLOSED:
+            try:
+                await session.close_session(delete_subscriptions=False)
+            except Exception:
+                _logger.debug("close_session during reconnect teardown raised", exc_info=True)
+        if self.uaclient.protocol is not None:
+            self.uaclient.disconnect_socket()
+
+    async def _recreate_subscriptions(self) -> None:
+        live = [s for s in self._subscriptions if not s._deleted]
+        self._subscriptions = live
+        for sub in live:
+            try:
+                await sub.recreate()
+            except Exception:
+                _logger.exception("Failed to recreate subscription")
+
+    def _force_state_disconnected(self) -> None:
+        """Park the client in DISCONNECTED after a non-recoverable loss."""
+        self.uaclient._set_state(UaClientState.DISCONNECTED)
+
+    async def _close_session_quiet(self) -> None:
+        # Low-level close: does NOT touch the supervisor task; safe to call from
+        # inside the supervisor's reconnect retry loop.
+        try:
+            await self.uaclient.session.close_session(False)
+        except Exception:
+            _logger.debug("close_session during cleanup raised", exc_info=True)
+
+    async def _close_secure_channel_quiet(self) -> None:
+        try:
+            await self.uaclient.close_secure_channel()
+        except Exception:
+            _logger.debug("close_secure_channel during cleanup raised", exc_info=True)
 
     async def _renew_channel_loop(self) -> None:
         """
@@ -635,7 +784,7 @@ class Client:
             # Part4 5.5.2.1:
             # Clients should request a new SecurityToken after 75 % of its lifetime has elapsed
             duration = self.secure_channel_timeout * 0.75 / 1000
-            while not self._closing:
+            while not self.uaclient._disconnect_requested:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
@@ -752,21 +901,23 @@ class Client:
         """
         Close session
         """
-        self._closing = True
-        if self._monitor_server_task:
-            self._monitor_server_task.cancel()
+        self.uaclient._disconnect_requested = True
+        if self._supervisor_task is not None and not self._supervisor_task.done():
+            self._supervisor_task.cancel()
             try:
-                await self._monitor_server_task
+                await self._supervisor_task
             except (asyncio.CancelledError, Exception):
                 pass
-        # disable hook because we kill our monitor task, so we are going to get CancelledError at every request
+        self._supervisor_task = None
+        # Disable the pre-request hook for the close path so it doesn't block.
         self.uaclient.pre_request_hook = None
-        if self._renew_channel_task:
+        if self._renew_channel_task is not None and not self._renew_channel_task.done():
             self._renew_channel_task.cancel()
             try:
                 await self._renew_channel_task
             except (asyncio.CancelledError, Exception):
                 pass
+        self._renew_channel_task = None
         return await self.uaclient.close_session(True)
 
     def get_root_node(self) -> Node:
@@ -815,6 +966,7 @@ class Client:
         if new_params:
             results = await subscription.update(new_params)
             _logger.info("Result from subscription update: %s", results)
+        self._subscriptions.append(subscription)
         return subscription
 
     def get_subscription_revised_params(

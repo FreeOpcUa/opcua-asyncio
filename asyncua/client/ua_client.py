@@ -35,6 +35,7 @@ class UaClientState(str, Enum):
     SOCKET_OPEN = "socket_open"
     CHANNEL_OPEN = "channel_open"
     CONNECTED = "connected"
+    RECONNECTING = "reconnecting"
     DISCONNECTING = "disconnecting"
 
 
@@ -80,6 +81,8 @@ class UASocketProtocol(asyncio.Protocol):
         self._open_secure_channel_exchange: ua.OpenSecureChannelResponse | ua.OpenSecureChannelParameters | None = None
         # Hook for upper layer tasks before a request is sent (optional)
         self.pre_request_hook: Callable[[], Awaitable[None]] | None = None
+        # Synchronous callback fired from connection_lost — used by the supervisor to detect transport loss.
+        self.on_connection_lost: Callable[[Exception | None], None] | None = None
 
     def connection_made(self, transport: asyncio.Transport) -> None:  # type: ignore[override]
         self.state = self.OPEN
@@ -89,6 +92,11 @@ class UASocketProtocol(asyncio.Protocol):
         self.logger.info("Socket has closed connection")
         self.state = self.CLOSED
         self.transport = None
+        if self.on_connection_lost is not None:
+            try:
+                self.on_connection_lost(exc)
+            except Exception:
+                self.logger.exception("on_connection_lost callback raised")
 
     def data_received(self, data: bytes) -> None:
         if self.receive_buffer:
@@ -334,6 +342,15 @@ class UaClient:
         self.protocol: UASocketProtocol | None = None
         self._pre_request_hook: Callable[[], Awaitable[None]] | None = None
         self._state: UaClientState = UaClientState.DISCONNECTED
+        # _state_ready is set whenever state == CONNECTED. Awaiting it is the
+        # standard way for callers to block during reconnect.
+        self._state_ready: asyncio.Event = asyncio.Event()
+        # _transport_lost is set by UASocketProtocol.connection_lost. The supervisor
+        # observes it to decide whether to reconnect.
+        self._transport_lost: asyncio.Event = asyncio.Event()
+        # _disconnect_requested is set by the user via disconnect(); the supervisor
+        # observes it to know it should exit instead of retrying.
+        self._disconnect_requested: bool = False
         self.session: UaSession = UaSession(self)
 
     @property
@@ -341,8 +358,19 @@ class UaClient:
         return self._state
 
     def _set_state(self, target: UaClientState) -> None:
-        """Set state. Internal helper; callers know the right transition."""
+        """Set state and keep `_state_ready` in sync with CONNECTED.
+
+        Internal helper; callers know the right transition.
+        """
         self._state = target
+        if target is UaClientState.CONNECTED:
+            self._state_ready.set()
+        else:
+            self._state_ready.clear()
+
+    def _on_transport_lost(self, _exc: Exception | None) -> None:
+        """Called from UASocketProtocol.connection_lost."""
+        self._transport_lost.set()
 
     # --- transport helpers ---
 
@@ -352,6 +380,7 @@ class UaClient:
     def _make_protocol(self) -> UASocketProtocol:
         self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
         self.protocol.pre_request_hook = self._pre_request_hook
+        self.protocol.on_connection_lost = self._on_transport_lost
         return self.protocol
 
     @property
@@ -368,6 +397,7 @@ class UaClient:
         """Connect to server socket."""
         self.logger.info("opening connection")
         self.session._closing = False
+        self._transport_lost.clear()
         self._set_state(UaClientState.CONNECTING)
         try:
             await asyncio.wait_for(
