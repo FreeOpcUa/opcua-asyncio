@@ -14,6 +14,7 @@ import asyncio
 import copy
 import logging
 from collections.abc import Awaitable, Callable
+from enum import Enum
 from typing import Any
 
 from asyncua import ua
@@ -27,6 +28,15 @@ from ..crypto import security_policies
 from ..ua.ua_binary import header_from_binary, nodeid_from_binary, struct_from_binary, struct_to_binary, uatcp_to_binary
 from ..ua.uaprotocol_auto import OpenSecureChannelResult
 from .ua_session import UaSession
+
+
+class UaClientState(str, Enum):
+    DISCONNECTED = "disconnected"
+    CONNECTING = "connecting"
+    SOCKET_OPEN = "socket_open"
+    CHANNEL_OPEN = "channel_open"
+    CONNECTED = "connected"
+    DISCONNECTING = "disconnecting"
 
 
 class UASocketProtocol(asyncio.Protocol):
@@ -323,7 +333,16 @@ class UaClient(AbstractSession):
         self.security_policy: security_policies.SecurityPolicy = security_policies.SecurityPolicyNone()
         self.protocol: UASocketProtocol | None = None
         self._pre_request_hook: Callable[[], Awaitable[None]] | None = None
+        self._state: UaClientState = UaClientState.DISCONNECTED
         self._session: UaSession = UaSession(self)
+
+    @property
+    def state(self) -> UaClientState:
+        return self._state
+
+    def _set_state(self, target: UaClientState) -> None:
+        """Set state. Internal helper; callers know the right transition."""
+        self._state = target
 
     # --- transport helpers ---
 
@@ -349,19 +368,27 @@ class UaClient(AbstractSession):
         """Connect to server socket."""
         self.logger.info("opening connection")
         self._session._closing = False
-        # Timeout the connection when the server isn't available
-        await asyncio.wait_for(
-            asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout
-        )
+        self._set_state(UaClientState.CONNECTING)
+        try:
+            await asyncio.wait_for(
+                asyncio.get_running_loop().create_connection(self._make_protocol, host, port), self._timeout
+            )
+        except BaseException:
+            self._set_state(UaClientState.DISCONNECTED)
+            raise
+        self._set_state(UaClientState.SOCKET_OPEN)
 
     def disconnect_socket(self) -> None:
-        if not self.protocol:
+        if self._state is UaClientState.DISCONNECTED:
             return
-        if self.protocol.state == UASocketProtocol.CLOSED:
-            self.logger.warning("disconnect_socket was called but connection is closed")
+        if self._state is UaClientState.DISCONNECTING:
+            # already tearing down; let the in-flight call complete
             return
-        self.protocol.disconnect_socket()
+        self._set_state(UaClientState.DISCONNECTING)
+        if self.protocol is not None and self.protocol.state != UASocketProtocol.CLOSED:
+            self.protocol.disconnect_socket()
         self.protocol = None
+        self._set_state(UaClientState.DISCONNECTED)
 
     async def send_hello(self, url: str, max_messagesize: int = 0, max_chunkcount: int = 0) -> ua.Acknowledge:
         if self.protocol is None:
@@ -371,13 +398,19 @@ class UaClient(AbstractSession):
     async def open_secure_channel(self, params: ua.OpenSecureChannelParameters) -> OpenSecureChannelResult:
         if self.protocol is None:
             raise ConnectionError("Connection is not open")
-        return await self.protocol.open_secure_channel(params)
+        is_renew = params.RequestType == ua.SecurityTokenRequestType.Renew
+        result = await self.protocol.open_secure_channel(params)
+        if not is_renew:
+            self._set_state(UaClientState.CHANNEL_OPEN)
+        return result
 
     async def close_secure_channel(self) -> None:
         if not self.protocol or self.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("close_secure_channel was called but connection is closed")
-            return None
-        return await self.protocol.close_secure_channel()
+            return
+        await self.protocol.close_secure_channel()
+        if self._state is UaClientState.CHANNEL_OPEN:
+            self._set_state(UaClientState.SOCKET_OPEN)
 
     async def _send_request(
         self, request: Any, timeout: float = 1, message_type: ua.MessageType = ua.MessageType.SecureMessage
@@ -410,10 +443,17 @@ class UaClient(AbstractSession):
         return await self._session.create_session(parameters)
 
     async def activate_session(self, parameters: ua.ActivateSessionParameters) -> ua.ActivateSessionResult:
-        return await self._session.activate_session(parameters)
+        result = await self._session.activate_session(parameters)
+        # Only transition on the first activation; re-activate of an already-ACTIVATED
+        # session leaves UaClient in CONNECTED.
+        if self._state is UaClientState.CHANNEL_OPEN:
+            self._set_state(UaClientState.CONNECTED)
+        return result
 
     async def close_session(self, delete_subscriptions: bool) -> None:
-        return await self._session.close_session(delete_subscriptions)
+        await self._session.close_session(delete_subscriptions)
+        if self._state is UaClientState.CONNECTED:
+            self._set_state(UaClientState.CHANNEL_OPEN)
 
     # --- sessionless services ---
 
