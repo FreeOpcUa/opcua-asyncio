@@ -12,6 +12,7 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Callable
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from asyncua import ua
@@ -33,6 +34,16 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
+class SessionState(str, Enum):
+    NEW = "new"
+    CREATING = "creating"
+    CREATED = "created"
+    ACTIVATING = "activating"
+    ACTIVATED = "activated"
+    CLOSING = "closing"
+    CLOSED = "closed"
+
+
 class UaSession(AbstractSession):
     """
     Owns the OPC-UA session: authentication token, publish loop, subscription
@@ -44,9 +55,18 @@ class UaSession(AbstractSession):
         self.logger = logging.getLogger(f"{__name__}.UaSession")
         self._client = client
         self.authentication_token: ua.NodeId = ua.NodeId()
+        self._state: SessionState = SessionState.NEW
         self._subscription_callbacks: dict[int, Callable[..., Any]] = {}
         self._publish_task: asyncio.Task[None] | None = None
         self._closing: bool = False
+
+    @property
+    def state(self) -> SessionState:
+        return self._state
+
+    def _set_state(self, target: SessionState) -> None:
+        """Set state. Callers know the right transition; no validation here."""
+        self._state = target
 
     async def _send_request(
         self,
@@ -62,30 +82,51 @@ class UaSession(AbstractSession):
         self.logger.info("create_session")
         self._closing = False
         self._client.protocol.closed = False
-        request = ua.CreateSessionRequest()
-        request.Parameters = parameters
-        data = await self._send_request(request)
-        response = struct_from_binary(ua.CreateSessionResponse, data)
-        self.logger.debug(response)
-        response.ResponseHeader.ServiceResult.check()
+        self._set_state(SessionState.CREATING)
+        try:
+            request = ua.CreateSessionRequest()
+            request.Parameters = parameters
+            data = await self._send_request(request)
+            response = struct_from_binary(ua.CreateSessionResponse, data)
+            self.logger.debug(response)
+            response.ResponseHeader.ServiceResult.check()
+        except BaseException:
+            self._set_state(SessionState.NEW)
+            raise
         self.authentication_token = response.Parameters.AuthenticationToken
         self._client.protocol.authentication_token = self.authentication_token
+        self._set_state(SessionState.CREATED)
         return response.Parameters
 
     async def activate_session(self, parameters: ua.ActivateSessionParameters) -> ua.ActivateSessionResult:
         self.logger.info("activate_session")
-        request = ua.ActivateSessionRequest()
-        request.Parameters = parameters
-        data = await self._send_request(request)
-        response = struct_from_binary(ua.ActivateSessionResponse, data)
-        self.logger.debug(response)
-        response.ResponseHeader.ServiceResult.check()
+        previous_state = self._state
+        self._set_state(SessionState.ACTIVATING)
+        try:
+            request = ua.ActivateSessionRequest()
+            request.Parameters = parameters
+            data = await self._send_request(request)
+            response = struct_from_binary(ua.ActivateSessionResponse, data)
+            self.logger.debug(response)
+            response.ResponseHeader.ServiceResult.check()
+        except BaseException:
+            # Roll back to whichever state we were in (CREATED or ACTIVATED)
+            self._state = previous_state
+            raise
+        self._set_state(SessionState.ACTIVATED)
         return response.Parameters
 
     async def close_session(self, delete_subscriptions: bool) -> None:
         self.logger.info("close_session")
+        if self._state in (SessionState.CLOSED, SessionState.CLOSING):
+            return
+        if self._state is SessionState.NEW:
+            self._set_state(SessionState.CLOSED)
+            return
         if not self._client.protocol:
             self.logger.warning("close_session but connection wasn't established")
+            self._set_state(SessionState.CLOSING)
+            self._set_state(SessionState.CLOSED)
             return
         self._client.protocol.closed = True
         self._closing = True
@@ -93,22 +134,27 @@ class UaSession(AbstractSession):
             self._publish_task.cancel()
         from .ua_client import UASocketProtocol
 
+        self._set_state(SessionState.CLOSING)
         if self._client.protocol.state == UASocketProtocol.CLOSED:
             self.logger.warning("close_session was called but connection is closed")
+            self._set_state(SessionState.CLOSED)
             return
-        request = ua.CloseSessionRequest()
-        request.DeleteSubscriptions = delete_subscriptions
-        data = await self._send_request(request)
-        response = struct_from_binary(ua.CloseSessionResponse, data)
         try:
-            response.ResponseHeader.ServiceResult.check()
-        except BadSessionClosed:
-            # Closing the session with open publish requests leads to BadSessionClosed responses;
-            # ignore it.
-            pass
-        except BadUserAccessDenied:
-            # Older versions of asyncua didn't allow closing non-activated sessions; ignore it.
-            pass
+            request = ua.CloseSessionRequest()
+            request.DeleteSubscriptions = delete_subscriptions
+            data = await self._send_request(request)
+            response = struct_from_binary(ua.CloseSessionResponse, data)
+            try:
+                response.ResponseHeader.ServiceResult.check()
+            except BadSessionClosed:
+                # Closing the session with open publish requests leads to BadSessionClosed responses;
+                # ignore it.
+                pass
+            except BadUserAccessDenied:
+                # Older versions of asyncua didn't allow closing non-activated sessions; ignore it.
+                pass
+        finally:
+            self._set_state(SessionState.CLOSED)
 
     # --- View Service Set ---
 
