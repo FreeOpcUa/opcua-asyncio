@@ -152,6 +152,40 @@ def clean_name(name: str) -> str:
     return newname
 
 
+_NUMERIC_TYPES = frozenset(
+    ("Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Double", "Float", "Byte", "SByte")
+)
+
+
+def _default_value_for(uatype: str, optional: bool = False) -> Any:
+    """
+    Return the actual default object for a UA scalar field, without going through eval().
+    Used by make_structure when building dataclass field defaults.
+    """
+    if optional:
+        return None
+    cls = getattr(ua, uatype, None)
+    if isinstance(cls, type):
+        uatype = cls.__name__
+    if uatype == "String":
+        return ua.String()
+    if uatype == "Guid":
+        return uuid.uuid4()
+    if uatype in ("ByteString", "CharArray", "Char"):
+        return b""
+    if uatype == "Boolean":
+        return False
+    if uatype == "DateTime":
+        return datetime.now(timezone.utc)
+    if uatype in _NUMERIC_TYPES:
+        return getattr(ua, uatype)(0)
+    if isinstance(cls, type) and issubclass(cls, Enum):
+        return next(iter(cls.__members__.values()))
+    if cls is not None:
+        return field(default_factory=cls)
+    return field(default_factory=list)
+
+
 def get_default_value(
     uatype: str, enums: dict[str, Any] | None = None, hack: bool = False, optional: bool = False
 ) -> str:
@@ -219,9 +253,6 @@ def make_structure(
     is_union = sdef.StructureType == ua.StructureType.Union
     bases = (ua.UaUnion,) if is_union else ()
 
-    # Safe namespace for evaluating default values
-    safe_eval_ns = _SAFE_EVAL_NS
-
     fields = []
     union_field_names = []
     union_type_hints = []
@@ -281,21 +312,10 @@ def make_structure(
             union_type_hints.append(uatype)
             continue
 
-        default_val_str = get_default_value(uatype_name, optional=sfield.IsOptional)
         if sfield.ValueRank >= 0 and not sfield.IsOptional:
             default_val = field(default_factory=list)
         else:
-            try:
-                # Update namespace with already registered classes in ua
-                default_val = eval(default_val_str, safe_eval_ns)
-            except Exception:
-                # Fallback for complex defaults or if type not in namespace yet
-                if "field" in default_val_str:
-                    # It's already a field() call string, but we need the object
-                    # This is rare here as we handle lists above
-                    default_val = field(default_factory=list)
-                else:
-                    default_val = None
+            default_val = _default_value_for(uatype_name, optional=sfield.IsOptional)
 
         fields.append((fname, uatype, default_val))
 
@@ -365,17 +385,6 @@ def _generate_object(
     else:
         env.update(make_structure(data_type, name, sdef, log_error=log_fail))
     return env
-
-
-# Module-level safe eval namespace, built once to avoid repeated imports and dict construction
-_SAFE_EVAL_NS: dict[str, Any] = {
-    "ua": ua,
-    "field": field,
-    "uuid": uuid,
-    "datetime": datetime,
-    "timezone": timezone,
-    "None": None,
-}
 
 
 @dataclass
