@@ -8,6 +8,7 @@ import asyncio
 import collections.abc
 import inspect
 import logging
+import time
 from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Protocol, overload
 
@@ -143,6 +144,11 @@ class Subscription:
         # Tracks whether the user explicitly deleted this subscription, so the
         # auto-reconnect supervisor can skip re-creating dead subscriptions.
         self._deleted: bool = False
+        # Monotonic timestamp of the last publish response we received for this
+        # subscription. Used by the stale-subscription watchdog to detect a
+        # subscription that's gone dead on the server side without the transport
+        # going down. `None` means no notification has arrived yet.
+        self.last_publish_at: float | None = None
 
     async def init(self) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
@@ -164,6 +170,7 @@ class Subscription:
         Handle `PublishResult` callback.
         """
         self.logger.info("Publish callback called with result: %s", publish_result)
+        self.last_publish_at = time.monotonic()
         if publish_result.NotificationMessage.NotificationData is not None:
             for notif in publish_result.NotificationMessage.NotificationData:
                 if isinstance(notif, ua.DataChangeNotification):
@@ -192,16 +199,31 @@ class Subscription:
         """
         Re-create this subscription and its monitored items on the server.
 
-        Used by `Client`'s auto-reconnect supervisor after the connection has
-        been restored: the server side of the subscription is gone, so we make
-        a fresh subscription and re-add every monitored item. Client handles
-        are preserved so existing notification routing keeps working.
+        Used by the auto-reconnect supervisor (after the connection has been
+        restored — the server-side subscription is gone) and by the
+        stale-subscription watchdog (transport is still up but the server has
+        dropped this subscription). Client handles are preserved so existing
+        notification routing keeps working.
         """
         if self._deleted:
             return
         saved_items = list(self._monitored_items.values())
+        old_subscription_id = self.subscription_id
         self._monitored_items.clear()
         self.subscription_id = None
+        # Reset liveness clock so the watchdog doesn't immediately flag the
+        # newly-recreated subscription before the first publish arrives.
+        self.last_publish_at = time.monotonic()
+
+        if old_subscription_id is not None and isinstance(self.server, UaSession):
+            # Drop the dead callback registration. Server-side delete is best
+            # effort and may fail (BadNoSubscription / BadSessionClosed) — we
+            # don't care, the local cleanup is what matters here.
+            self.server._subscription_callbacks.pop(old_subscription_id, None)
+            try:
+                await self.server.delete_subscriptions([old_subscription_id])
+            except Exception:
+                self.logger.debug("best-effort delete of old sub %s failed", old_subscription_id, exc_info=True)
 
         await self.init()
 

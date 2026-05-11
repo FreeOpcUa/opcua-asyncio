@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 
 import pytest
 
@@ -236,4 +237,132 @@ async def test_disconnect_promptly_after_reconnect() -> None:
             await client.disconnect()
         except Exception:
             pass
+        await srv.stop()
+
+
+def _short_keepalive_params(period_ms: float = 50.0) -> ua.CreateSubscriptionParameters:
+    """Subscription params with a small keepalive_count so the stale threshold is short."""
+    params = ua.CreateSubscriptionParameters()
+    params.RequestedPublishingInterval = period_ms
+    params.RequestedLifetimeCount = 100
+    params.RequestedMaxKeepAliveCount = 2
+    params.MaxNotificationsPerPublish = 10000
+    params.PublishingEnabled = True
+    params.Priority = 0
+    return params
+
+
+async def test_stale_watchdog_recreates_subscription() -> None:
+    """If a subscription's last_publish_at is too old, the watchdog recreates it."""
+    port = find_free_port()
+    srv = await _start_server(port)
+    objects = srv.get_objects_node()
+    variable = await objects.add_variable(2, "StaleVar", 0)
+    await variable.set_writable()
+
+    client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
+    client._stale_check_interval = 0.1
+    await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
+    try:
+        sub = await client.create_subscription(_short_keepalive_params(), _DataChangeCollector())
+        await sub.subscribe_data_change(client.get_node(variable.nodeid))
+        # Wait for the first publish to arrive so last_publish_at is set.
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + 2.0
+        while sub.last_publish_at is None:
+            if loop.time() > deadline:
+                raise AssertionError("never got initial publish")
+            await asyncio.sleep(0.01)
+        old_sub_id = sub.subscription_id
+        assert old_sub_id is not None
+
+        # Freeze the staleness clock: swap the registered publish callback for
+        # a no-op so subsequent server keep-alives don't refresh last_publish_at
+        # back to "now".
+        client.uaclient.session._subscription_callbacks[old_sub_id] = lambda _r: None
+        sub.last_publish_at = time.monotonic() - 1000.0
+
+        # Watchdog should pick this up within an interval or two and recreate.
+        deadline = loop.time() + 3.0
+        while sub.subscription_id == old_sub_id:
+            if loop.time() > deadline:
+                raise AssertionError(f"watchdog did not recreate stale subscription (id={sub.subscription_id})")
+            await asyncio.sleep(0.05)
+        assert sub.subscription_id is not None
+        assert sub.subscription_id != old_sub_id
+    finally:
+        await client.disconnect()
+        await srv.stop()
+
+
+async def test_stale_watchdog_escalates_to_reconnect_on_recreate_failure() -> None:
+    """If recreate raises, the watchdog drives the supervisor through a full reconnect cycle."""
+    port = find_free_port()
+    srv = await _start_server(port)
+    objects = srv.get_objects_node()
+    variable = await objects.add_variable(2, "StaleVar2", 0)
+    await variable.set_writable()
+
+    client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
+    client._stale_check_interval = 0.1
+    await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
+    try:
+        sub = await client.create_subscription(_short_keepalive_params(), _DataChangeCollector())
+        await sub.subscribe_data_change(client.get_node(variable.nodeid))
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + 2.0
+        while sub.last_publish_at is None:
+            if loop.time() > deadline:
+                raise AssertionError("never got initial publish")
+            await asyncio.sleep(0.01)
+
+        sub_id = sub.subscription_id
+        assert sub_id is not None
+        # Freeze staleness clock (see other stale test for rationale).
+        client.uaclient.session._subscription_callbacks[sub_id] = lambda _r: None
+
+        async def boom() -> None:
+            raise RuntimeError("synthetic recreate failure")
+
+        sub.recreate = boom  # type: ignore[method-assign]
+
+        async with client.subscribe_state() as state_sub:
+            sub.last_publish_at = time.monotonic() - 1000.0
+            saw_leave = False
+
+            async def _wait_round_trip() -> None:
+                nonlocal saw_leave
+                while True:
+                    state = await state_sub.next_change()
+                    if state is not UaClientState.CONNECTED:
+                        saw_leave = True
+                    elif saw_leave:
+                        return
+
+            await asyncio.wait_for(_wait_round_trip(), timeout=5.0)
+    finally:
+        await client.disconnect()
+        await srv.stop()
+
+
+async def test_delete_subscriptions_keeps_local_state_on_server_failure() -> None:
+    """SF4: a failed delete on the server side must not drop the local callback."""
+    port = find_free_port()
+    srv = await _start_server(port)
+    client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
+    await client.connect()
+    try:
+        sub = await client.create_subscription(50, _DataChangeCollector())
+        sub_id = sub.subscription_id
+        assert sub_id is not None
+        assert sub_id in client.uaclient.session._subscription_callbacks
+
+        # Ask the server to delete an id it doesn't know about; it should
+        # respond Bad and our local state for the real subscription must stay.
+        bogus_id = 999999
+        results = await client.uaclient.session.delete_subscriptions([bogus_id])
+        assert not results[0].is_good()
+        assert sub_id in client.uaclient.session._subscription_callbacks
+    finally:
+        await client.disconnect()
         await srv.stop()
