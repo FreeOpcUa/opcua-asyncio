@@ -322,6 +322,57 @@ class UASocketProtocol(asyncio.Protocol):
         self._callbackmap.clear()
 
 
+class StateSubscription:
+    """Async context manager that buffers `UaClient` state transitions.
+
+    Created via `UaClient.subscribe_state()`. The buffer is filled by a sync
+    listener installed in `__aenter__`, so any transition that happens between
+    entering the block and calling `wait_for_state` / `next_change` is captured
+    rather than lost to a race.
+    """
+
+    def __init__(self, client: UaClient) -> None:
+        self._client = client
+        self._queue: asyncio.Queue[UaClientState] = asyncio.Queue()
+        self._unsubscribe: Callable[[], None] | None = None
+
+    async def __aenter__(self) -> StateSubscription:
+        self._unsubscribe = self._client._add_state_listener(self._queue.put_nowait)
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: object,
+    ) -> None:
+        if self._unsubscribe is not None:
+            self._unsubscribe()
+            self._unsubscribe = None
+
+    async def wait_for_state(self, target: UaClientState, timeout: float | None = None) -> None:
+        """Wait until state == `target`. Considers current state and any buffered changes."""
+        if self._client.state is target:
+            return
+
+        async def _consume() -> None:
+            while True:
+                state = await self._queue.get()
+                if state is target:
+                    return
+
+        if timeout is None:
+            await _consume()
+        else:
+            await asyncio.wait_for(_consume(), timeout)
+
+    async def next_change(self, timeout: float | None = None) -> UaClientState:
+        """Return the next buffered state change."""
+        if timeout is None:
+            return await self._queue.get()
+        return await asyncio.wait_for(self._queue.get(), timeout)
+
+
 class UaClient:
     """
     Low level OPC-UA client (transport).
@@ -342,12 +393,9 @@ class UaClient:
         self.protocol: UASocketProtocol | None = None
         self._pre_request_hook: Callable[[], Awaitable[None]] | None = None
         self._state: UaClientState = UaClientState.DISCONNECTED
-        # _state_ready is set whenever state == CONNECTED. Awaiting it is the
-        # standard way for callers to block during reconnect.
-        self._state_ready: asyncio.Event = asyncio.Event()
-        # _transport_lost is set by UASocketProtocol.connection_lost. The supervisor
-        # observes it to decide whether to reconnect.
-        self._transport_lost: asyncio.Event = asyncio.Event()
+        # Sync callbacks fired on every state change. Listeners get the new state.
+        # Replaces the older _state_ready / _transport_lost asyncio.Events.
+        self._state_listeners: list[Callable[[UaClientState], None]] = []
         # _disconnect_requested is set by the user via disconnect(); the supervisor
         # observes it to know it should exit instead of retrying.
         self._disconnect_requested: bool = False
@@ -358,19 +406,56 @@ class UaClient:
         return self._state
 
     def _set_state(self, target: UaClientState) -> None:
-        """Set state and keep `_state_ready` in sync with CONNECTED.
-
-        Internal helper; callers know the right transition.
-        """
+        """Set state and notify listeners. Same-state assignments are no-ops."""
+        if target is self._state:
+            return
         self._state = target
-        if target is UaClientState.CONNECTED:
-            self._state_ready.set()
-        else:
-            self._state_ready.clear()
+        # Iterate a copy so listeners can safely unsubscribe themselves.
+        for listener in list(self._state_listeners):
+            try:
+                listener(target)
+            except Exception:
+                self.logger.exception("state listener raised")
+
+    def _add_state_listener(self, callback: Callable[[UaClientState], None]) -> Callable[[], None]:
+        """Register a raw state-change callback; returns an unsubscribe callable.
+
+        Internal helper. External code should use the `subscribe_state()`
+        context manager, which buffers transitions in a queue and is race-free
+        between subscription and trigger.
+        """
+        self._state_listeners.append(callback)
+
+        def unsubscribe() -> None:
+            try:
+                self._state_listeners.remove(callback)
+            except ValueError:
+                pass
+
+        return unsubscribe
+
+    def subscribe_state(self) -> StateSubscription:
+        """Subscribe to state transitions; use as an async context manager.
+
+        Inside the `async with` block every transition is captured into a queue,
+        even ones that happen before `wait_for_state` is called. That makes the
+        common pattern race-free:
+
+            async with client.subscribe_state() as sub:
+                trigger_something_that_changes_state()
+                await sub.wait_for_state(UaClientState.CONNECTED)
+        """
+        return StateSubscription(self)
 
     def _on_transport_lost(self, _exc: Exception | None) -> None:
-        """Called from UASocketProtocol.connection_lost."""
-        self._transport_lost.set()
+        """Called from UASocketProtocol.connection_lost.
+
+        Surface the loss as a state change so that subscribers (the supervisor,
+        tests, user code) can react. Skip if we're already tearing down — the
+        user-initiated path drives state through DISCONNECTING/DISCONNECTED itself.
+        """
+        if self._state not in (UaClientState.DISCONNECTED, UaClientState.DISCONNECTING):
+            self._set_state(UaClientState.DISCONNECTED)
 
     # --- transport helpers ---
 
@@ -397,7 +482,6 @@ class UaClient:
         """Connect to server socket."""
         self.logger.info("opening connection")
         self.session._closing = False
-        self._transport_lost.clear()
         self._set_state(UaClientState.CONNECTING)
         try:
             await asyncio.wait_for(

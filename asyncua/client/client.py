@@ -25,7 +25,7 @@ from ..common.xmlexporter import XmlExporter
 from ..common.xmlimporter import XmlImporter
 from ..crypto import security_policies, uacrypto
 from ..crypto.validator import CertificateValidatorMethod
-from .ua_client import UaClient, UaClientState
+from .ua_client import StateSubscription, UaClient, UaClientState
 from .ua_session import SessionState
 
 _logger = logging.getLogger(__name__)
@@ -117,6 +117,15 @@ class Client:
         return f"Client({self.server_url.geturl()})"
 
     __repr__ = __str__
+
+    @property
+    def state(self) -> UaClientState:
+        """Current connection state. Mirrors `self.uaclient.state`."""
+        return self.uaclient.state
+
+    def subscribe_state(self) -> StateSubscription:
+        """Subscribe to state transitions; see `UaClient.subscribe_state`."""
+        return self.uaclient.subscribe_state()
 
     @property
     def server_url(self) -> ParseResult:
@@ -623,12 +632,13 @@ class Client:
             raise ConnectionError("client is disconnecting")
         if state is not UaClientState.RECONNECTING:
             return
-        try:
-            await asyncio.wait_for(self.uaclient._state_ready.wait(), self._reconnect_request_timeout)
-        except asyncio.TimeoutError:
-            raise ConnectionError(
-                f"Timed out waiting for client to reconnect (state={self.uaclient.state.value})"
-            ) from None
+        async with self.uaclient.subscribe_state() as sub:
+            try:
+                await sub.wait_for_state(UaClientState.CONNECTED, timeout=self._reconnect_request_timeout)
+            except asyncio.TimeoutError:
+                raise ConnectionError(
+                    f"Timed out waiting for client to reconnect (state={self.uaclient.state.value})"
+                ) from None
 
     # Kept as a back-compat alias for any external callers; the harness no longer registers it.
     check_connection = _wait_until_ready
@@ -638,7 +648,7 @@ class Client:
         Single supervisor task driving health-check and reconnect.
 
         Started by `connect()` after the initial connect succeeds. The loop:
-          1. waits for either a periodic health-tick or the `_transport_lost` event,
+          1. waits for either a periodic health-tick or a state change away from CONNECTED,
           2. on each tick, probes server_state to detect dead-but-not-closed connections,
           3. on any failure, fires `connection_lost_callback` and (if auto_reconnect)
              transitions to RECONNECTING and runs `_reconnect_with_backoff`.
@@ -649,7 +659,7 @@ class Client:
             while not self.uaclient._disconnect_requested:
                 try:
                     await self._wait_for_health_signal()
-                    if self.uaclient._transport_lost.is_set():
+                    if self.uaclient.state is not UaClientState.CONNECTED:
                         raise ConnectionError("transport lost")
                 except asyncio.CancelledError:
                     raise
@@ -675,20 +685,22 @@ class Client:
             _logger.exception("Connection supervisor crashed")
 
     async def _wait_for_health_signal(self) -> None:
-        """Wait for either `_transport_lost` or the next health-check tick.
+        """Wait for either a state change (transport loss / supervisor work) or the next tick.
 
-        On a tick, runs a server_state read to verify the server is alive; raises on failure.
+        On a tick with state still CONNECTED, probe server_state to detect a
+        dead-but-not-closed connection. Raises on probe failure.
         """
-        transport_lost = asyncio.create_task(self.uaclient._transport_lost.wait())
-        tick = asyncio.create_task(asyncio.sleep(self._watchdog_intervall))
-        try:
-            await asyncio.wait([transport_lost, tick], return_when=asyncio.FIRST_COMPLETED)
-        finally:
-            if not transport_lost.done():
-                transport_lost.cancel()
-            if not tick.done():
-                tick.cancel()
-        if self.uaclient._transport_lost.is_set():
+        async with self.uaclient.subscribe_state() as sub:
+            state_change = asyncio.create_task(sub.next_change())
+            tick = asyncio.create_task(asyncio.sleep(self._watchdog_intervall))
+            try:
+                await asyncio.wait([state_change, tick], return_when=asyncio.FIRST_COMPLETED)
+            finally:
+                if not state_change.done():
+                    state_change.cancel()
+                if not tick.done():
+                    tick.cancel()
+        if self.uaclient.state is not UaClientState.CONNECTED:
             return
         probe_timeout = min(self.session_timeout / 1000 / 2, self._watchdog_intervall)
         await asyncio.wait_for(self.nodes.server_state.read_value(), timeout=probe_timeout)
