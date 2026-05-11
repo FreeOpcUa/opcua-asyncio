@@ -20,7 +20,7 @@ from ..common.node import Node
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_enums, load_type_definitions
 from ..common.structures104 import load_data_type_definitions
-from ..common.subscription import Subscription, SubscriptionHandler
+from ..common.subscription import OverflowPolicy, Subscription, SubscriptionHandler
 from ..common.ua_utils import copy_dataclass_attr, value_to_datavalue
 from ..common.utils import ServiceError, create_nonce
 from ..common.xmlexporter import XmlExporter
@@ -1042,16 +1042,36 @@ class Client:
     async def create_subscription(
         self,
         period: ua.CreateSubscriptionParameters | float,
-        handler: SubscriptionHandler,
+        handler: SubscriptionHandler | None = None,
         publishing: bool = True,
+        *,
+        queue_maxsize: int = 1000,
+        overflow: OverflowPolicy = OverflowPolicy.DROP_OLDEST,
     ) -> Subscription:
         """
         Create a subscription.
-        Returns a Subscription object which allows to subscribe to events or data changes on server.
-        :param period: Either a publishing interval in milliseconds or a `CreateSubscriptionParameters` instance.
-            The second option should be used, if the asyncua-server has problems with the default options.
-        :param handler: Class instance with data_change and/or event methods (see `SubHandler`
-            base class for details). Remember not to block the main event loop inside the handler methods.
+
+        Returns a Subscription object which can be used either:
+        - **Callback mode** (legacy): pass a `handler` and implement
+          `datachange_notification` / `event_notification` /
+          `status_change_notification`. The handler is invoked from a task
+          so the publish loop never awaits user code.
+        - **Iterator mode**: pass `handler=None` and use the subscription as
+          an async context manager + async iterator:
+
+              async with sub:
+                  await sub.subscribe_data_change(node)
+                  async for ev in sub:
+                      ...
+
+          `queue_maxsize` bounds the internal buffer; `overflow` selects what
+          happens when the consumer falls behind.
+
+        :param period: Either a publishing interval in milliseconds or a
+            `CreateSubscriptionParameters` instance.
+        :param handler: Optional callback handler. If None, iterator mode.
+        :param queue_maxsize: Iterator-mode queue bound (default 1000).
+        :param overflow: Iterator-mode overflow policy (default DROP_OLDEST).
         """
         if isinstance(period, ua.CreateSubscriptionParameters):
             params = period
@@ -1063,7 +1083,15 @@ class Client:
             params.MaxNotificationsPerPublish = 10000
             params.PublishingEnabled = publishing
             params.Priority = 0
-        subscription = Subscription(self.uaclient.session, params, handler)
+        subscription = Subscription(
+            self.uaclient.session,
+            params,
+            handler,
+            queue_maxsize=queue_maxsize,
+            overflow=overflow,
+        )
+        # Wire the DISCONNECT overflow policy to the supervisor's reconnect path.
+        subscription._on_overflow_disconnect = lambda: self.uaclient._on_transport_lost(None)
         results = await subscription.init()
         new_params = self.get_subscription_revised_params(params, results)
         if new_params:
