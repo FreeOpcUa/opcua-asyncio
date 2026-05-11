@@ -485,38 +485,39 @@ def list_to_binary(uatype: type, val: Sequence[Any] | None) -> bytes:
     return create_list_serializer(uatype)(val)
 
 
-def nodeid_to_binary(nodeid: ua.NodeId) -> bytes | bytearray:
+def nodeid_to_binary(nodeid: ua.NodeId) -> bytes:
     if nodeid.NodeIdType == ua.NodeIdType.TwoByte:
-        data = struct.pack("<BB", nodeid.NodeIdType.value, nodeid.Identifier)
+        packed = struct.pack("<BB", nodeid.NodeIdType.value, nodeid.Identifier)
     elif nodeid.NodeIdType == ua.NodeIdType.FourByte:
-        data = struct.pack("<BBH", nodeid.NodeIdType.value, nodeid.NamespaceIndex, nodeid.Identifier)
+        packed = struct.pack("<BBH", nodeid.NodeIdType.value, nodeid.NamespaceIndex, nodeid.Identifier)
     elif nodeid.NodeIdType == ua.NodeIdType.Numeric:
-        data = struct.pack("<BHI", nodeid.NodeIdType.value, nodeid.NamespaceIndex, nodeid.Identifier)
+        packed = struct.pack("<BHI", nodeid.NodeIdType.value, nodeid.NamespaceIndex, nodeid.Identifier)
     elif nodeid.NodeIdType == ua.NodeIdType.String:
-        data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.String.pack(
+        packed = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.String.pack(
             nodeid.Identifier
         )
     elif nodeid.NodeIdType == ua.NodeIdType.ByteString:
-        data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.Bytes.pack(
+        packed = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.Bytes.pack(
             nodeid.Identifier
         )
     elif nodeid.NodeIdType == ua.NodeIdType.Guid:
-        data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.Guid.pack(
+        packed = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.Guid.pack(
             nodeid.Identifier
         )
     else:
         raise UaError(f"Unknown NodeIdType: {nodeid.NodeIdType} for NodeId: {nodeid}")
-    # Add NamespaceUri and ServerIndex in case we have an ExpandedNodeId
-    if hasattr(nodeid, "NamespaceUri") and nodeid.NamespaceUri:
-        data = bytearray(data)
+    if not isinstance(nodeid, ua.ExpandedNodeId):
+        return packed
+    if not nodeid.NamespaceUri and not nodeid.ServerIndex:
+        return packed
+    data = bytearray(packed)
+    if nodeid.NamespaceUri:
         data[0] = set_bit(data[0], 7)
         data.extend(Primitives.String.pack(nodeid.NamespaceUri))
-    if hasattr(nodeid, "ServerIndex") and nodeid.ServerIndex:
-        if not isinstance(data, bytearray):
-            data = bytearray(data)
+    if nodeid.ServerIndex:
         data[0] = set_bit(data[0], 6)
         data.extend(Primitives.UInt32.pack(nodeid.ServerIndex))
-    return data
+    return bytes(data)
 
 
 def nodeid_from_binary(data: BytesIO | Buffer) -> ua.NodeId | ua.ExpandedNodeId:
