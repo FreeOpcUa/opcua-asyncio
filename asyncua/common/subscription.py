@@ -10,6 +10,8 @@ import inspect
 import logging
 import time
 from collections.abc import Iterable
+from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Protocol, overload
 
 from asyncua import ua
@@ -119,6 +121,41 @@ Protocol class representing subscription handlers to receive events from server.
 """
 
 
+@dataclass(frozen=True)
+class DataChangeEvent:
+    """A single monitored-item data change, yielded by Subscription's async iterator."""
+
+    node: Node
+    value: Any
+    data: DataChangeNotif
+
+
+@dataclass(frozen=True)
+class OpcEvent:
+    """An OPC UA event firing, yielded by Subscription's async iterator."""
+
+    event: Event
+
+
+@dataclass(frozen=True)
+class StatusChangeEvent:
+    """A server-side subscription status change, yielded by Subscription's async iterator."""
+
+    status: ua.StatusChangeNotification
+
+
+SubEvent = DataChangeEvent | OpcEvent | StatusChangeEvent
+
+
+class OverflowPolicy(str, Enum):
+    """Behavior when the iterator-mode Subscription queue is full."""
+
+    DROP_OLDEST = "drop_oldest"  # pop front, push new — keeps most recent state
+    DROP_NEWEST = "drop_newest"  # discard incoming notification
+    WARN = "warn"  # log a warning AND drop the newest
+    DISCONNECT = "disconnect"  # force a reconnect via the supervisor
+
+
 class Subscription:
     """
     Subscription object returned by Server or Client objects.
@@ -132,12 +169,26 @@ class Subscription:
         self,
         server: InternalSession | UaSession,
         params: ua.CreateSubscriptionParameters,
-        handler: SubscriptionHandler,
+        handler: SubscriptionHandler | None = None,
+        *,
+        queue_maxsize: int = 1000,
+        overflow: OverflowPolicy = OverflowPolicy.DROP_OLDEST,
     ) -> None:
         self.logger = logging.getLogger(__name__)
         self.server: InternalSession | UaSession = server
         self._client_handle = 200
-        self._handler: SubscriptionHandler = handler
+        # Legacy callback path: events are dispatched to handler methods.
+        # New iterator path: events are pushed into _event_queue and consumed
+        # via `async for ev in sub`. Exactly one path is active at a time —
+        # picking the handler arg vs leaving it None at construction.
+        self._handler: SubscriptionHandler | None = handler
+        # Queue is created eagerly in iterator mode so publish_callback can
+        # start filling it before the consumer iterates.
+        self._event_queue: asyncio.Queue[SubEvent | None] | None = (
+            None if handler is not None else asyncio.Queue(maxsize=queue_maxsize)
+        )
+        self._queue_maxsize = queue_maxsize
+        self._overflow = overflow
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items: dict[int, SubscriptionItemData] = {}
         self.subscription_id: int | None = None
@@ -149,6 +200,12 @@ class Subscription:
         # subscription that's gone dead on the server side without the transport
         # going down. `None` means no notification has arrived yet.
         self.last_publish_at: float | None = None
+        # Hook the watchdog (set by Client.create_subscription) uses to force
+        # a full reconnect cycle when overflow=DISCONNECT fires.
+        self._on_overflow_disconnect: Any = None
+        # Keep strong refs to in-flight dispatch tasks so the GC can't cancel
+        # them while they're still running user-handler code.
+        self._dispatch_tasks: set[asyncio.Task[None]] = set()
 
     async def init(self) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
@@ -167,20 +224,186 @@ class Subscription:
 
     async def publish_callback(self, publish_result: ua.PublishResult) -> None:
         """
-        Handle `PublishResult` callback.
+        Handle a `PublishResult` from the publish loop.
+
+        This stays cheap and synchronous-feeling: notifications are exploded
+        into typed `SubEvent` instances, and each is delivered without
+        awaiting user code. The publish loop never blocks on a slow consumer.
         """
         self.logger.info("Publish callback called with result: %s", publish_result)
         self.last_publish_at = time.monotonic()
-        if publish_result.NotificationMessage.NotificationData is not None:
-            for notif in publish_result.NotificationMessage.NotificationData:
-                if isinstance(notif, ua.DataChangeNotification):
-                    await self._call_datachange(notif)
-                elif isinstance(notif, ua.EventNotificationList):
-                    await self._call_event(notif)
-                elif isinstance(notif, ua.StatusChangeNotification):
-                    await self._call_status(notif)
+        if publish_result.NotificationMessage.NotificationData is None:
+            return
+        for event in self._explode_notifications(publish_result.NotificationMessage.NotificationData):
+            self._deliver(event)
+
+    def _explode_notifications(self, notification_data: Iterable[Any]) -> Iterable[SubEvent]:
+        """Translate server `NotificationData` items into typed `SubEvent`s."""
+        for notif in notification_data:
+            if isinstance(notif, ua.DataChangeNotification):
+                yield from self._explode_datachange(notif)
+            elif isinstance(notif, ua.EventNotificationList):
+                yield from self._explode_events(notif)
+            elif isinstance(notif, ua.StatusChangeNotification):
+                yield StatusChangeEvent(status=notif)
+            else:
+                self.logger.warning("Notification type not supported yet for notification %s", notif)
+
+    def _explode_datachange(self, datachange: ua.DataChangeNotification) -> Iterable[DataChangeEvent]:
+        for item in datachange.MonitoredItems:
+            data = self._monitored_items.get(item.ClientHandle)
+            if data is None or data.node is None:
+                self.logger.warning("Received a notification for unknown handle: %s", item.ClientHandle)
+                continue
+            event_data = DataChangeNotif(data, item)
+            # Value can be None on some server responses; preserve the raw
+            # behavior of master here.
+            value = item.Value.Value.Value if item.Value and item.Value.Value else None  # type: ignore[union-attr]
+            yield DataChangeEvent(node=data.node, value=value, data=event_data)
+
+    def _explode_events(self, eventlist: ua.EventNotificationList) -> Iterable[OpcEvent]:
+        for event in eventlist.Events:
+            data = self._monitored_items.get(event.ClientHandle)
+            if data is None:
+                self.logger.warning("Received event for unknown handle: %s", event.ClientHandle)
+                continue
+            if data.mfilter is None or not hasattr(data.mfilter, "SelectClauses"):
+                self.logger.warning(
+                    "Received event notification but monitored item has no event filter: %s", event.ClientHandle
+                )
+                continue
+            result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)  # type: ignore[union-attr]
+            result.server_handle = data.server_handle
+            yield OpcEvent(event=result)
+
+    def _deliver(self, event: SubEvent) -> None:
+        """Deliver one event to either the iterator queue or the legacy handler.
+
+        Either path is non-blocking: the iterator path uses `put_nowait` (with
+        the configured overflow policy), and the handler path schedules a task
+        so the publish loop doesn't await user code.
+        """
+        if self._event_queue is not None:
+            try:
+                self._event_queue.put_nowait(event)
+                return
+            except asyncio.QueueFull:
+                self._handle_overflow(event)
+                return
+        if self._handler is not None:
+            task = asyncio.create_task(self._dispatch_to_handler(event))
+            self._dispatch_tasks.add(task)
+            task.add_done_callback(self._dispatch_tasks.discard)
+
+    def _handle_overflow(self, event: SubEvent) -> None:
+        """Apply the configured overflow policy when the iterator queue is full."""
+        assert self._event_queue is not None
+        if self._overflow is OverflowPolicy.DROP_OLDEST:
+            try:
+                self._event_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                pass
+            else:
+                try:
+                    self._event_queue.put_nowait(event)
+                except asyncio.QueueFull:
+                    pass
+        elif self._overflow is OverflowPolicy.WARN:
+            self.logger.warning("Subscription %s event queue full; dropping event", self.subscription_id)
+        elif self._overflow is OverflowPolicy.DISCONNECT:
+            self.logger.error("Subscription %s event queue full; forcing reconnect", self.subscription_id)
+            if callable(self._on_overflow_disconnect):
+                try:
+                    self._on_overflow_disconnect()
+                except Exception:
+                    self.logger.exception("overflow-disconnect hook raised")
+        # DROP_NEWEST: do nothing — the new event is discarded.
+
+    async def _dispatch_to_handler(self, event: SubEvent) -> None:
+        """Call the right legacy handler method for `event`, in its own task."""
+        if self._handler is None:
+            return
+        try:
+            if isinstance(event, DataChangeEvent):
+                method = getattr(self._handler, "datachange_notification", None)
+                if method is None:
+                    self.logger.error(
+                        "DataChange subscription created but handler has no datachange_notification method"
+                    )
+                    return
+                if inspect.iscoroutinefunction(method):
+                    await method(event.node, event.value, event.data)
                 else:
-                    self.logger.warning("Notification type not supported yet for notification %s", notif)
+                    method(event.node, event.value, event.data)
+            elif isinstance(event, OpcEvent):
+                method = getattr(self._handler, "event_notification", None)
+                if method is None:
+                    self.logger.error("Event subscription created but handler has no event_notification method")
+                    return
+                if inspect.iscoroutinefunction(method):
+                    await method(event.event)
+                else:
+                    method(event.event)
+            elif isinstance(event, StatusChangeEvent):
+                method = getattr(self._handler, "status_change_notification", None)
+                if method is None:
+                    self.logger.error("DataChange subscription has no status_change_notification method")
+                    return
+                if inspect.iscoroutinefunction(method):
+                    await method(event.status)
+                else:
+                    method(event.status)
+        except Exception:
+            self.logger.exception("Exception calling subscription handler")
+
+    # --- async iterator / context-manager API ------------------------------
+
+    async def __aenter__(self) -> Subscription:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: object,
+    ) -> None:
+        await self.delete()
+
+    def __aiter__(self) -> Subscription:
+        if self._handler is not None:
+            raise RuntimeError(
+                "Subscription is in handler mode; create it without a handler to use the async iterator API"
+            )
+        if self._event_queue is None:
+            self._event_queue = asyncio.Queue(maxsize=self._queue_maxsize)
+        return self
+
+    async def __anext__(self) -> SubEvent:
+        if self._event_queue is None:
+            self._event_queue = asyncio.Queue(maxsize=self._queue_maxsize)
+        item = await self._event_queue.get()
+        if item is None:
+            raise StopAsyncIteration
+        return item
+
+    async def next_event(self, timeout: float | None = None) -> SubEvent | None:
+        """Return the next event, or None on timeout. Counterpart to `__anext__`.
+
+        Returns None if `timeout` elapses; raises `StopAsyncIteration` if the
+        subscription has been closed and the queue is drained.
+        """
+        if self._event_queue is None:
+            self._event_queue = asyncio.Queue(maxsize=self._queue_maxsize)
+        try:
+            if timeout is None:
+                item = await self._event_queue.get()
+            else:
+                item = await asyncio.wait_for(self._event_queue.get(), timeout)
+        except asyncio.TimeoutError:
+            return None
+        if item is None:
+            raise StopAsyncIteration
+        return item
 
     async def delete(self) -> None:
         """
@@ -188,12 +411,32 @@ class Subscription:
         """
         if self.subscription_id is None:
             self._deleted = True
+            self._close_iterator()
             return
         try:
             results = await self.server.delete_subscriptions([self.subscription_id])
             results[0].check()
         finally:
             self._deleted = True
+            self._close_iterator()
+
+    def _close_iterator(self) -> None:
+        """Push the sentinel so any active `async for ev in sub` loop ends."""
+        if self._event_queue is None:
+            return
+        try:
+            self._event_queue.put_nowait(None)
+        except asyncio.QueueFull:
+            # Drop the front so the sentinel definitely lands. Any in-flight
+            # events already in the queue are dropped — we're shutting down.
+            try:
+                self._event_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                pass
+            try:
+                self._event_queue.put_nowait(None)
+            except asyncio.QueueFull:
+                pass
 
     async def recreate(self) -> None:
         """
@@ -277,64 +520,6 @@ class Subscription:
                 del self._monitored_items[mi.RequestedParameters.ClientHandle]
                 continue
             item.server_handle = result.MonitoredItemId
-
-    async def _call_datachange(self, datachange: ua.DataChangeNotification) -> None:
-        if not hasattr(self._handler, "datachange_notification"):
-            self.logger.error("DataChange subscription created but handler has no datachange_notification method")
-            return
-
-        known_handles_args: list[tuple] = []
-        for item in datachange.MonitoredItems:
-            if item.ClientHandle not in self._monitored_items:
-                self.logger.warning("Received a notification for unknown handle: %s", item.ClientHandle)
-                continue
-            data = self._monitored_items[item.ClientHandle]
-            event_data = DataChangeNotif(data, item)
-            # FIXME: Value can be None
-            known_handles_args.append((data.node, item.Value.Value.Value, event_data))  # type: ignore[union-attr]
-
-        try:
-            tasks = [self._handler.datachange_notification(*args) for args in known_handles_args]
-            if inspect.iscoroutinefunction(self._handler.datachange_notification):
-                await asyncio.gather(*tasks)
-        except Exception as ex:
-            self.logger.exception("Exception calling data change handler. Error: %s", ex)
-
-    async def _call_event(self, eventlist: ua.EventNotificationList) -> None:
-        for event in eventlist.Events:
-            if event.ClientHandle not in self._monitored_items:
-                self.logger.warning("Received a notification for unknown handle: %s", event.ClientHandle)
-                continue
-            data = self._monitored_items[event.ClientHandle]
-            if data.mfilter is None or not hasattr(data.mfilter, "SelectClauses"):
-                self.logger.warning(
-                    "Received event notification but monitored item has no event filter: %s", event.ClientHandle
-                )
-                continue
-            result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)  # type: ignore[union-attr]
-            result.server_handle = data.server_handle
-            if hasattr(self._handler, "event_notification"):
-                try:
-                    if inspect.iscoroutinefunction(self._handler.event_notification):
-                        await self._handler.event_notification(result)
-                    else:
-                        self._handler.event_notification(result)
-                except Exception:
-                    self.logger.exception("Exception calling event handler")
-            else:
-                self.logger.error("Event subscription created but handler has no event_notification method")
-
-    async def _call_status(self, status: ua.StatusChangeNotification) -> None:
-        if not hasattr(self._handler, "status_change_notification"):
-            self.logger.error("DataChange subscription has no status_change_notification method")
-            return
-        try:
-            if inspect.iscoroutinefunction(self._handler.status_change_notification):
-                await self._handler.status_change_notification(status)
-            else:
-                self._handler.status_change_notification(status)
-        except Exception:
-            self.logger.exception("Exception calling status change handler")
 
     @overload
     async def subscribe_data_change(
