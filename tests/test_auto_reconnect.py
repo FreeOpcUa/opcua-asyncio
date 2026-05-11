@@ -41,40 +41,42 @@ async def _start_server(port: int) -> Server:
 async def _force_transport_close_and_wait(client: Client, *, expect_reconnect: bool = True) -> None:
     """Force a transport-level disconnect and wait until the supervisor has reacted.
 
-    With `expect_reconnect=True` (auto_reconnect on), wait for the supervisor to swap
-    in a new `protocol`. With `expect_reconnect=False`, wait for state to leave
-    CONNECTED — typically settling at DISCONNECTED.
+    With `expect_reconnect=True` (auto_reconnect on), waits for state to leave
+    CONNECTED and then return to CONNECTED after the reconnect cycle.
+    With `expect_reconnect=False`, waits for state to settle at DISCONNECTED.
 
-    State transitions during a successful reconnect can be too fast to catch by
-    polling — a full reconnect on localhost runs in single-digit milliseconds —
-    which is why the reconnect case watches for the protocol object identity to
-    change, a signal that survives the transient state cycle.
+    Entering the `subscribe_state()` block before `transport.close()` is the
+    point of using a context-manager subscription: any transition that fires
+    between the close and our `wait_for_state` call is buffered, not lost.
     """
-    old_protocol = client.uaclient.protocol
-    assert old_protocol is not None
-    assert old_protocol.transport is not None
-    old_protocol.transport.close()
-    loop = asyncio.get_event_loop()
-    deadline = loop.time() + 5.0
-    if expect_reconnect:
-        while client.uaclient.protocol is old_protocol or client.uaclient.protocol is None:
-            if loop.time() > deadline:
-                raise AssertionError(f"Supervisor did not swap in a new protocol (state={client.uaclient.state.value})")
-            await asyncio.sleep(0.01)
-    else:
-        while client.uaclient.state is UaClientState.CONNECTED:
-            if loop.time() > deadline:
-                raise AssertionError(f"Supervisor did not exit CONNECTED (state={client.uaclient.state.value})")
-            await asyncio.sleep(0.01)
+    async with client.subscribe_state() as sub:
+        proto = client.uaclient.protocol
+        assert proto is not None
+        assert proto.transport is not None
+        proto.transport.close()
+        if expect_reconnect:
+
+            async def _wait_round_trip() -> None:
+                saw_leave = False
+                while True:
+                    state = await sub.next_change()
+                    if state is not UaClientState.CONNECTED:
+                        saw_leave = True
+                    elif saw_leave:
+                        return
+
+            await asyncio.wait_for(_wait_round_trip(), timeout=5.0)
+        else:
+            await sub.wait_for_state(UaClientState.DISCONNECTED, timeout=5.0)
 
 
 async def _wait_until_state(client: Client, target: UaClientState, timeout: float = 5.0) -> None:
     """Poll for the client to reach `target` state."""
     loop = asyncio.get_event_loop()
     deadline = loop.time() + timeout
-    while client.uaclient.state is not target:
+    while client.state is not target:
         if loop.time() > deadline:
-            raise AssertionError(f"Timed out waiting for state {target.value} (current={client.uaclient.state.value})")
+            raise AssertionError(f"Timed out waiting for state {target.value} (current={client.state.value})")
         await asyncio.sleep(0.05)
 
 
@@ -85,7 +87,7 @@ async def test_auto_reconnect_recovers_from_transport_drop() -> None:
     client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
     await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
     try:
-        assert client.uaclient.state is UaClientState.CONNECTED
+        assert client.state is UaClientState.CONNECTED
         await _force_transport_close_and_wait(client)
         await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)
         # Verify the recovered connection is usable.
@@ -166,6 +168,14 @@ async def test_subscription_recreated_after_reconnect() -> None:
 
         await _force_transport_close_and_wait(client)
         await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)
+        # _recreate_subscriptions runs after state goes back to CONNECTED, so wait
+        # until the subscription has its new server-side id assigned.
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + 3.0
+        while sub.subscription_id is None or sub.subscription_id == old_sub_id:
+            if loop.time() > deadline:
+                raise AssertionError(f"Subscription was not re-created (id={sub.subscription_id})")
+            await asyncio.sleep(0.01)
 
         # Subscription should have been re-created with a new server-side id but the
         # same client-handle map.
