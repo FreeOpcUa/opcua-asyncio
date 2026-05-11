@@ -2,21 +2,10 @@ import asyncio
 import logging
 
 from asyncua import Client
+from asyncua.common.subscription import OpcEvent
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
-
-
-class SubHandler:
-    """
-    Subscription Handler. To receive events from server for a subscription
-    data_change and event methods are called directly from receiving thread.
-    Do not do expensive, slow or network operation there. Create another
-    thread if you need to do such a thing
-    """
-
-    def event_notification(self, event):
-        _logger.info("New event received: %r", event)
 
 
 async def main():
@@ -33,12 +22,18 @@ async def main():
         myevent = await client.nodes.root.get_child(["0:Types", "0:EventTypes", "0:BaseEventType", "2:MyFirstEvent"])
         _logger.info("MyFirstEventType is: %r", myevent)
 
-        msclt = SubHandler()
-        sub = await client.create_subscription(100, msclt)
-        handle = await sub.subscribe_events(obj, myevent)
-        await asyncio.sleep(10)
-        await sub.unsubscribe(handle)
-        await sub.delete()
+        # Iterator-mode subscription (no handler).
+        async with await client.create_subscription(100) as sub:
+            await sub.subscribe_events(obj, myevent)
+
+            async def consume():
+                async for event in sub:
+                    if isinstance(event, OpcEvent):
+                        _logger.info("New event received: %r", event.event)
+
+            consumer = asyncio.create_task(consume())
+            await asyncio.sleep(10)
+            consumer.cancel()
 
 
 if __name__ == "__main__":

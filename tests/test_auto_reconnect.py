@@ -15,22 +15,6 @@ from .conftest import find_free_port
 pytestmark = pytest.mark.asyncio
 
 
-class _DataChangeCollector:
-    """Subscription handler that records every data change with an Event for awaiting."""
-
-    def __init__(self) -> None:
-        self.values: list[object] = []
-        self._event = asyncio.Event()
-
-    def datachange_notification(self, _node, val, _data) -> None:
-        self.values.append(val)
-        self._event.set()
-
-    async def wait_for_value(self, timeout: float = 3.0) -> None:
-        await asyncio.wait_for(self._event.wait(), timeout)
-        self._event.clear()
-
-
 async def _start_server(port: int) -> Server:
     srv = Server()
     await srv.init()
@@ -150,6 +134,8 @@ async def test_connection_lost_callback_fires_on_loss() -> None:
 
 async def test_subscription_recreated_after_reconnect() -> None:
     """A data-change subscription is re-created server-side after a transport drop."""
+    from asyncua.common.subscription import DataChangeEvent
+
     port = find_free_port()
     srv = await _start_server(port)
     objects = srv.get_objects_node()
@@ -158,12 +144,13 @@ async def test_subscription_recreated_after_reconnect() -> None:
 
     client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
     await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
-    handler = _DataChangeCollector()
     try:
-        sub = await client.create_subscription(50, handler)
+        sub = await client.create_subscription(50)
         client_var = client.get_node(variable.nodeid)
         await sub.subscribe_data_change(client_var)
-        await handler.wait_for_value(timeout=3.0)
+        # Drain the initial value.
+        first = await sub.next_event(timeout=3.0)
+        assert isinstance(first, DataChangeEvent)
         old_sub_id = sub.subscription_id
         old_handles = set(sub._monitored_items.keys())
 
@@ -184,14 +171,18 @@ async def test_subscription_recreated_after_reconnect() -> None:
         assert sub.subscription_id != old_sub_id
         assert set(sub._monitored_items.keys()) == old_handles
 
-        # Notifications should resume on the new subscription. Clear any
-        # straggler events from the recreate (e.g. initial-value broadcast)
-        # so we deterministically wait for the new write.
-        handler.values.clear()
-        handler._event.clear()
+        # Notifications should resume on the new subscription.
         await variable.write_value(42)
-        await handler.wait_for_value(timeout=3.0)
-        assert 42 in handler.values
+        deadline = loop.time() + 3.0
+        seen = []
+        while 42 not in seen:
+            if loop.time() > deadline:
+                raise AssertionError(f"Never saw the post-reconnect write (saw {seen})")
+            ev = await sub.next_event(timeout=1.0)
+            if isinstance(ev, DataChangeEvent):
+                seen.append(ev.value)
+        assert 42 in seen
+        await sub.delete()
     finally:
         await client.disconnect()
         await srv.stop()
@@ -203,9 +194,8 @@ async def test_deleted_subscription_not_recreated_after_reconnect() -> None:
     srv = await _start_server(port)
     client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
     await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
-    handler = _DataChangeCollector()
     try:
-        sub = await client.create_subscription(50, handler)
+        sub = await client.create_subscription(50)
         await sub.delete()
         assert sub._deleted is True
 
@@ -264,7 +254,7 @@ async def test_stale_watchdog_recreates_subscription() -> None:
     client._stale_check_interval = 0.1
     await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
     try:
-        sub = await client.create_subscription(_short_keepalive_params(), _DataChangeCollector())
+        sub = await client.create_subscription(_short_keepalive_params())
         await sub.subscribe_data_change(client.get_node(variable.nodeid))
         # Wait for the first publish to arrive so last_publish_at is set.
         loop = asyncio.get_event_loop()
@@ -307,7 +297,7 @@ async def test_stale_watchdog_escalates_to_reconnect_on_recreate_failure() -> No
     client._stale_check_interval = 0.1
     await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
     try:
-        sub = await client.create_subscription(_short_keepalive_params(), _DataChangeCollector())
+        sub = await client.create_subscription(_short_keepalive_params())
         await sub.subscribe_data_change(client.get_node(variable.nodeid))
         loop = asyncio.get_event_loop()
         deadline = loop.time() + 2.0
@@ -352,7 +342,7 @@ async def test_delete_subscriptions_keeps_local_state_on_server_failure() -> Non
     client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
     await client.connect()
     try:
-        sub = await client.create_subscription(50, _DataChangeCollector())
+        sub = await client.create_subscription(50)
         sub_id = sub.subscription_id
         assert sub_id is not None
         assert sub_id in client.uaclient.session._subscription_callbacks
@@ -363,6 +353,55 @@ async def test_delete_subscriptions_keeps_local_state_on_server_failure() -> Non
         results = await client.uaclient.session.delete_subscriptions([bogus_id])
         assert not results[0].is_good()
         assert sub_id in client.uaclient.session._subscription_callbacks
+    finally:
+        await client.disconnect()
+        await srv.stop()
+
+
+async def test_legacy_handler_api_still_works_through_reconnect() -> None:
+    """Legacy callback API back-compat: the subscription handler still receives
+    data changes after the supervisor reconnects.
+
+    Most tests in this file (and downstream code) use the new iterator API.
+    This one explicitly exercises the legacy handler path to make sure the
+    publish_callback's task-based dispatch still delivers notifications
+    through a reconnect cycle.
+    """
+    port = find_free_port()
+    srv = await _start_server(port)
+    objects = srv.get_objects_node()
+    variable = await objects.add_variable(2, "LegacyVar", 0)
+    await variable.set_writable()
+
+    class Collector:
+        def __init__(self) -> None:
+            self.values: list[object] = []
+            self._event = asyncio.Event()
+
+        def datachange_notification(self, _node, val, _data) -> None:
+            self.values.append(val)
+            self._event.set()
+
+        async def wait(self, timeout: float = 3.0) -> None:
+            await asyncio.wait_for(self._event.wait(), timeout)
+            self._event.clear()
+
+    handler = Collector()
+    client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
+    await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
+    try:
+        sub = await client.create_subscription(50, handler)
+        await sub.subscribe_data_change(client.get_node(variable.nodeid))
+        await handler.wait(timeout=3.0)  # initial value
+
+        await _force_transport_close_and_wait(client)
+        await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)
+
+        handler.values.clear()
+        handler._event.clear()
+        await variable.write_value(99)
+        await handler.wait(timeout=5.0)
+        assert 99 in handler.values
     finally:
         await client.disconnect()
         await srv.stop()
