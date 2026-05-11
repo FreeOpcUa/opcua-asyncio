@@ -344,10 +344,11 @@ class Client:
     def create_subscription(
         self,
         period: ua.CreateSubscriptionParameters | float,
-        handler: Any,
+        handler: Any = None,
         publishing: bool = True,
     ) -> Subscription:
-        coro = self.aio_obj.create_subscription(period, _SubHandler(self.tloop, handler), publishing)
+        wrapped = _SubHandler(self.tloop, handler) if handler is not None else None
+        coro = self.aio_obj.create_subscription(period, wrapped, publishing)
         aio_sub = self.tloop.post(coro)
         return Subscription(self.tloop, aio_sub)
 
@@ -653,8 +654,13 @@ class Server:
     ) -> None:
         self.aio_obj.set_attribute_value_callback(nodeid, callback, attr)
 
-    def create_subscription(self, period: ua.CreateSubscriptionParameters | float, handler: Any) -> Subscription:
-        coro = self.aio_obj.create_subscription(period, _SubHandler(self.tloop, handler))
+    def create_subscription(
+        self,
+        period: ua.CreateSubscriptionParameters | float,
+        handler: Any = None,
+    ) -> Subscription:
+        wrapped = _SubHandler(self.tloop, handler) if handler is not None else None
+        coro = self.aio_obj.create_subscription(period, wrapped)
         aio_sub = self.tloop.post(coro)
         return Subscription(self.tloop, aio_sub)
 
@@ -1026,6 +1032,34 @@ class Subscription:
     def __init__(self, tloop: ThreadLoop, sub: subscription.Subscription) -> None:
         self.tloop: ThreadLoop = tloop
         self.aio_obj: subscription.Subscription = sub
+
+    def __enter__(self) -> Subscription:
+        return self
+
+    def __exit__(self, exc_type: Any, exc_value: Any, tb: Any) -> None:
+        self.delete()
+
+    def __iter__(self) -> Subscription:
+        return self
+
+    def __next__(self) -> subscription.SubEvent:
+        try:
+            return self._wrap_event(self.tloop.post(self.aio_obj.__anext__()))
+        except StopAsyncIteration:
+            raise StopIteration from None
+
+    def next_event(self, timeout: float | None = None) -> subscription.SubEvent | None:
+        event = self.tloop.post(self.aio_obj.next_event(timeout=timeout))
+        return self._wrap_event(event) if event is not None else None
+
+    def _wrap_event(self, event: subscription.SubEvent) -> subscription.SubEvent:
+        if isinstance(event, subscription.DataChangeEvent):
+            return subscription.DataChangeEvent(
+                node=SyncNode(self.tloop, event.node),  # type: ignore[arg-type]
+                value=event.value,
+                data=event.data,
+            )
+        return event
 
     @syncmethod
     def subscribe_data_change(

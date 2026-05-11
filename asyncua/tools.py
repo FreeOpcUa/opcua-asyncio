@@ -465,14 +465,6 @@ async def _lsprint_long(pnode, depth, indent=""):
             await _lsprint_long(node, depth - 1, indent + "  ")
 
 
-class SubHandler:
-    def datachange_notification(self, node, val, data):
-        print("New data change event", node, val, data)
-
-    def event_notification(self, event):
-        print("New event", event)
-
-
 def uasubscribe():
     asyncio.run(_uasubscribe())
 
@@ -502,15 +494,14 @@ async def _uasubscribe():
     await client.connect()
     try:
         node = await get_node(client, args)
-        handler = SubHandler()
-        sub = await client.create_subscription(500, handler)
-        if args.eventtype == "datachange":
-            await sub.subscribe_data_change(node)
-        else:
-            await sub.subscribe_events(node)
-        print("Type Ctr-C to exit")
-        while True:
-            await asyncio.sleep(1)
+        async with await client.create_subscription(500) as sub:
+            if args.eventtype == "datachange":
+                await sub.subscribe_data_change(node)
+            else:
+                await sub.subscribe_events(node)
+            print("Type Ctr-C to exit")
+            async for event in sub:
+                print(event)
     finally:
         await client.disconnect()
 
