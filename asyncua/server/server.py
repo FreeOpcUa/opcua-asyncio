@@ -25,7 +25,7 @@ from ..common.node import Node
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_enums, load_type_definitions
 from ..common.structures104 import load_data_type_definitions
-from ..common.subscription import Subscription
+from ..common.subscription import OverflowPolicy, Subscription
 from ..common.ua_utils import get_nodes_of_namespace
 from ..common.xmlexporter import XmlExporter
 from ..common.xmlimporter import XmlImporter
@@ -573,13 +573,14 @@ class Server:
         """
         return Node(self.iserver.isession, nodeid)
 
-    async def create_subscription(self, period: float, handler: Any) -> Subscription:
-        """
-        Create a subscription.
-        Returns a Subscription object which allow to subscribe to events or data changes on server
-        :param period: Period in milliseconds
-        :param handler: A class instance - see `SubHandler` base class for details
-        """
+    async def create_subscription(
+        self,
+        period: float,
+        handler: Any = None,
+        *,
+        queue_maxsize: int = 1000,
+        overflow: OverflowPolicy = OverflowPolicy.DROP_OLDEST,
+    ) -> Subscription:
         params = ua.CreateSubscriptionParameters()
         params.RequestedPublishingInterval = period
         params.RequestedLifetimeCount = 3000
@@ -587,7 +588,13 @@ class Server:
         params.MaxNotificationsPerPublish = 0
         params.PublishingEnabled = True
         params.Priority = 0
-        subscription = Subscription(self.iserver.isession, params, handler)
+        subscription = Subscription(
+            self.iserver.isession,
+            params,
+            handler,
+            queue_maxsize=queue_maxsize,
+            overflow=overflow,
+        )
         await subscription.init()
         return subscription
 
