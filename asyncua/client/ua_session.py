@@ -354,15 +354,20 @@ class UaSession(AbstractSession):
 
     async def delete_subscriptions(self, subscription_ids: list[int]) -> list[ua.StatusCode]:  # type: ignore[override]
         self.logger.debug("delete_subscriptions %r", subscription_ids)
+        ids = [int(sid) for sid in subscription_ids]
         request = ua.DeleteSubscriptionsRequest()
-        request.Parameters.SubscriptionIds = list(subscription_ids)
+        request.Parameters.SubscriptionIds = ids
         data = await self._send_request(request)
         response = struct_from_binary(ua.DeleteSubscriptionsResponse, data)
         response.ResponseHeader.ServiceResult.check()
-        self.logger.info("remove subscription callbacks for %r", subscription_ids)
-        ids_to_remove = {int(sid) for sid in subscription_ids}
-        for sid in ids_to_remove:
-            self._subscription_callbacks.pop(sid, None)
+        # Only drop the local callback for ids the server confirmed deleted.
+        # If the server reported a Bad status for an id, leave the registration
+        # in place so the caller can decide what to do.
+        for sid, status in zip(ids, response.Results):
+            if status.is_good():
+                self._subscription_callbacks.pop(sid, None)
+            else:
+                self.logger.warning("delete_subscriptions failed for %s: %s", sid, status)
         return response.Results
 
     async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> list[ua.TransferResult]:

@@ -1,7 +1,9 @@
 import asyncio
+import contextvars
 import dataclasses
 import logging
 import socket
+import time
 from collections.abc import Callable, Coroutine, Iterable, Sequence
 from pathlib import Path
 from typing import Any, cast
@@ -29,6 +31,15 @@ from .ua_client import StateSubscription, UaClient, UaClientState
 from .ua_session import SessionState
 
 _logger = logging.getLogger(__name__)
+
+# Task-scoped flag: when True, the pre-request hook bypasses its RECONNECTING
+# gate. The supervisor sets this around its own teardown/connect-sequence work
+# so requests it issues itself don't block waiting for the reconnect we're
+# currently performing. Because contextvars are scoped to the running task,
+# this does NOT leak into concurrent user requests on other tasks.
+_supervisor_owns_requests: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "asyncua.supervisor_owns_requests", default=False
+)
 
 
 class Client:
@@ -92,6 +103,7 @@ class Client:
         self.max_chunkcount = 0  # No limits
         self._renew_channel_task: asyncio.Task[None] | None = None
         self._supervisor_task: asyncio.Task[None] | None = None
+        self._stale_watchdog_task: asyncio.Task[None] | None = None
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
         # Active subscriptions, tracked so the auto-reconnect supervisor can re-create
@@ -101,6 +113,12 @@ class Client:
         self._auto_reconnect: bool = False
         self._reconnect_max_delay: float = 30.0
         self._reconnect_request_timeout: float = 60.0
+        # Stale-subscription watchdog: a subscription is "stale" if no publish
+        # response has arrived for `publishing_interval * keepalive_count *
+        # stale_margin` seconds. The watchdog tries `subscription.recreate()`;
+        # if that fails, the failure escalates to a full reconnect.
+        self._stale_check_margin: float = 1.5
+        self._stale_check_interval: float = 0.5
         self.certificate_validator: CertificateValidatorMethod | None = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
 
@@ -373,6 +391,7 @@ class Client:
         self.uaclient._disconnect_requested = False
         await self._connect_sequence()
         self._supervisor_task = asyncio.create_task(self._connection_supervisor())
+        self._stale_watchdog_task = asyncio.create_task(self._stale_watchdog_loop())
 
     async def _connect_sequence(self) -> None:
         """Run the full connect sequence: socket, hello, channel, session, activate."""
@@ -622,9 +641,19 @@ class Client:
         CHANNEL_OPEN) the session-establishment requests themselves must pass through.
         DISCONNECTED / DISCONNECTING raise immediately so callers see ConnectionError
         instead of silently sending to a dead transport.
+
+        We deliberately do NOT raise on `_disconnect_requested` alone: in-flight
+        requests started before the user called `disconnect()` should be allowed
+        to either complete or fail at the transport layer, not get short-circuited
+        here mid-teardown.
+
+        Requests originating from the supervisor's own reconnect work
+        (CloseSession during teardown, recreate-subscription, etc.) bypass the
+        gate via the `_supervisor_owns_requests` contextvar so they don't
+        deadlock waiting for the very transition they're performing.
         """
-        if self.uaclient._disconnect_requested:
-            raise ConnectionError("client is disconnecting")
+        if _supervisor_owns_requests.get():
+            return
         state = self.uaclient.state
         if state is UaClientState.DISCONNECTED:
             raise ConnectionError("client is disconnected")
@@ -684,6 +713,57 @@ class Client:
         except Exception:
             _logger.exception("Connection supervisor crashed")
 
+    async def _stale_watchdog_loop(self) -> None:
+        """
+        Per-subscription liveness check: detect subscriptions whose server-side
+        state has gone dead while the transport is still up.
+
+        For each live subscription we compute
+            stale_after = publishing_interval * keepalive_count * stale_margin
+        (in seconds) and compare against time-since-last-publish. If a
+        subscription is stale, call `subscription.recreate()` — that's the
+        lightweight path. If recreate raises, fall back to the supervisor's
+        full reconnect via `_on_transport_lost`.
+
+        Only runs while state is CONNECTED so the supervisor's reconnect cycle
+        isn't fighting with us.
+        """
+        try:
+            while not self.uaclient._disconnect_requested:
+                await asyncio.sleep(self._stale_check_interval)
+                if self.uaclient.state is not UaClientState.CONNECTED:
+                    continue
+                now = time.monotonic()
+                for sub in list(self._subscriptions):
+                    if sub._deleted or sub.subscription_id is None or sub.last_publish_at is None:
+                        continue
+                    interval_s = sub.parameters.RequestedPublishingInterval / 1000.0
+                    keepalive = max(int(sub.parameters.RequestedMaxKeepAliveCount or 1), 1)
+                    stale_after = max(interval_s * keepalive * self._stale_check_margin, 1.0)
+                    idle = now - sub.last_publish_at
+                    if idle < stale_after:
+                        continue
+                    _logger.warning(
+                        "Subscription %s idle for %.2fs (limit %.2fs); recreating",
+                        sub.subscription_id,
+                        idle,
+                        stale_after,
+                    )
+                    try:
+                        await sub.recreate()
+                    except Exception:
+                        _logger.exception(
+                            "Subscription %s recreate failed; escalating to reconnect", sub.subscription_id
+                        )
+                        # Drive the supervisor's loss path; it will run a full reconnect
+                        # cycle that also re-creates every live subscription.
+                        self.uaclient._on_transport_lost(None)
+                        return
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            _logger.exception("Stale subscription watchdog crashed")
+
     async def _wait_for_health_signal(self) -> None:
         """Wait for either a state change (transport loss / supervisor work) or the next tick.
 
@@ -715,30 +795,34 @@ class Client:
 
     async def _reconnect_with_backoff(self) -> bool:
         """Retry the connect sequence with exponential backoff. Returns True on success."""
-        delay = 1.0
-        while not self.uaclient._disconnect_requested:
-            await self._teardown_for_reconnect()
-            try:
-                await self._connect_sequence()
-            except asyncio.CancelledError:
-                raise
-            except Exception as exc:
-                _logger.warning("Reconnect attempt failed: %r; retrying in %.1fs", exc, delay)
-                if self.uaclient.state is UaClientState.DISCONNECTED:
-                    self.uaclient._set_state(UaClientState.RECONNECTING)
+        token = _supervisor_owns_requests.set(True)
+        try:
+            delay = 1.0
+            while not self.uaclient._disconnect_requested:
+                await self._teardown_for_reconnect()
                 try:
-                    await asyncio.sleep(delay)
+                    await self._connect_sequence()
                 except asyncio.CancelledError:
                     raise
-                delay = min(delay * 2, self._reconnect_max_delay)
-                continue
-            try:
-                await self._recreate_subscriptions()
-            except Exception:
-                _logger.exception("Subscription recreation failed; continuing")
-            _logger.info("Reconnected successfully")
-            return True
-        return False
+                except Exception as exc:
+                    _logger.warning("Reconnect attempt failed: %r; retrying in %.1fs", exc, delay)
+                    if self.uaclient.state is UaClientState.DISCONNECTED:
+                        self.uaclient._set_state(UaClientState.RECONNECTING)
+                    try:
+                        await asyncio.sleep(delay)
+                    except asyncio.CancelledError:
+                        raise
+                    delay = min(delay * 2, self._reconnect_max_delay)
+                    continue
+                try:
+                    await self._recreate_subscriptions()
+                except Exception:
+                    _logger.exception("Subscription recreation failed; continuing")
+                _logger.info("Reconnected successfully")
+                return True
+            return False
+        finally:
+            _supervisor_owns_requests.reset(token)
 
     async def _teardown_for_reconnect(self) -> None:
         """Cancel renew loop, close stale session, and tear down the old transport."""
@@ -914,6 +998,13 @@ class Client:
         Close session
         """
         self.uaclient._disconnect_requested = True
+        if self._stale_watchdog_task is not None and not self._stale_watchdog_task.done():
+            self._stale_watchdog_task.cancel()
+            try:
+                await self._stale_watchdog_task
+            except (asyncio.CancelledError, Exception):
+                pass
+        self._stale_watchdog_task = None
         if self._supervisor_task is not None and not self._supervisor_task.done():
             self._supervisor_task.cancel()
             try:
