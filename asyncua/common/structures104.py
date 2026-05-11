@@ -509,7 +509,7 @@ async def _recursive_parse_basedatatypes(
     # Register all children at this level first (parent must exist before child)
     for desc in descs:
         name = clean_name(desc.BrowseName.Name)
-        if parent_datatype not in "Number":
+        if parent_datatype != "Number":
             # Don't insert Number alias, they should be already insert because they have to be basetypes already
             if not hasattr(ua, name):
                 env = make_basetype(name, parent_datatype)
