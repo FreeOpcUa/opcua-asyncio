@@ -3,7 +3,6 @@ import contextvars
 import dataclasses
 import logging
 import socket
-import time
 from collections.abc import Callable, Coroutine, Iterable, Sequence
 from pathlib import Path
 from typing import Any, cast
@@ -714,49 +713,21 @@ class Client:
             _logger.exception("Connection supervisor crashed")
 
     async def _stale_watchdog_loop(self) -> None:
-        """
-        Per-subscription liveness check: detect subscriptions whose server-side
-        state has gone dead while the transport is still up.
-
-        For each live subscription we compute
-            stale_after = publishing_interval * keepalive_count * stale_margin
-        (in seconds) and compare against time-since-last-publish. If a
-        subscription is stale, call `subscription.recreate()` — that's the
-        lightweight path. If recreate raises, fall back to the supervisor's
-        full reconnect via `_on_transport_lost`.
-
-        Only runs while state is CONNECTED so the supervisor's reconnect cycle
-        isn't fighting with us.
-        """
         try:
             while not self.uaclient._disconnect_requested:
                 await asyncio.sleep(self._stale_check_interval)
                 if self.uaclient.state is not UaClientState.CONNECTED:
                     continue
-                now = time.monotonic()
                 for sub in list(self._subscriptions):
-                    if sub._deleted or sub.subscription_id is None or sub.last_publish_at is None:
+                    if not sub.is_stale(self._stale_check_margin):
                         continue
-                    interval_s = sub.parameters.RequestedPublishingInterval / 1000.0
-                    keepalive = max(int(sub.parameters.RequestedMaxKeepAliveCount or 1), 1)
-                    stale_after = max(interval_s * keepalive * self._stale_check_margin, 1.0)
-                    idle = now - sub.last_publish_at
-                    if idle < stale_after:
-                        continue
-                    _logger.warning(
-                        "Subscription %s idle for %.2fs (limit %.2fs); recreating",
-                        sub.subscription_id,
-                        idle,
-                        stale_after,
-                    )
+                    _logger.warning("Subscription %s is stale; recreating", sub.subscription_id)
                     try:
                         await sub.recreate()
                     except Exception:
                         _logger.exception(
                             "Subscription %s recreate failed; escalating to reconnect", sub.subscription_id
                         )
-                        # Drive the supervisor's loss path; it will run a full reconnect
-                        # cycle that also re-creates every live subscription.
                         self.uaclient._on_transport_lost(None)
                         return
         except asyncio.CancelledError:

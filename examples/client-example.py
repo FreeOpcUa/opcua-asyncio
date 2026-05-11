@@ -25,30 +25,20 @@ async def main():
         obj = await client.nodes.root.get_child("Objects/2:MyObject")
         _logger.info("myvar is: %r", myvar)
 
-        # Subscribe with the async-iterator API: notifications arrive in a
-        # buffered queue that we consume here without blocking the publish loop.
         async with await client.create_subscription(10) as sub:
             await sub.subscribe_data_change(myvar)
             await sub.subscribe_events()
 
-            async def consume():
-                async for event in sub:
-                    match event:
-                        case DataChangeEvent(node=node, value=value):
-                            print("New data change event", node, value)
-                        case OpcEvent(event=evt):
-                            print("New event", evt)
-
-            consumer = asyncio.create_task(consume())
-
-            # calling a method on server
             res = await obj.call_method("2:multiply", 3, "klk")
             _logger.info("method result is: %r", res)
-            try:
-                while True:
-                    await asyncio.sleep(1)
-            finally:
-                consumer.cancel()
+
+            for _ in range(5):
+                event = await sub.next_event(timeout=5)
+                match event:
+                    case DataChangeEvent(node=node, value=value):
+                        print("New data change event", node, value)
+                    case OpcEvent(event=evt):
+                        print("New event", evt)
 
 
 if __name__ == "__main__":

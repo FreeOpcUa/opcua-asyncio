@@ -438,6 +438,14 @@ class Subscription:
             except asyncio.QueueFull:
                 pass
 
+    def is_stale(self, margin: float) -> bool:
+        if self._deleted or self.subscription_id is None or self.last_publish_at is None:
+            return False
+        interval_s = self.parameters.RequestedPublishingInterval / 1000.0
+        keepalive = max(int(self.parameters.RequestedMaxKeepAliveCount or 1), 1)
+        stale_after = max(interval_s * keepalive * margin, 1.0)
+        return (time.monotonic() - self.last_publish_at) >= stale_after
+
     async def recreate(self) -> None:
         """
         Re-create this subscription and its monitored items on the server.

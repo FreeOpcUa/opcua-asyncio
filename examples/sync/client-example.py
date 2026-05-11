@@ -1,20 +1,7 @@
+import logging
 import sys
 
 sys.path.insert(0, "..")
-import logging
-import threading
-import time
-
-try:
-    from IPython import embed
-except ImportError:
-    import code
-
-    def embed():
-        vars = globals()
-        vars.update(locals())
-        shell = code.InteractiveConsole(vars)
-        shell.interact()
 
 
 from asyncua.common.subscription import DataChangeEvent, OpcEvent
@@ -39,19 +26,13 @@ if __name__ == "__main__":
                 sub.subscribe_data_change(myvar)
                 sub.subscribe_events()
 
-                def consume() -> None:
-                    for event in sub:
-                        match event:
-                            case DataChangeEvent(node=node, value=value):
-                                print("Python: New data change event", node, value)
-                            case OpcEvent(event=evt):
-                                print("Python: New event", evt)
-
-                consumer = threading.Thread(target=consume, daemon=True)
-                consumer.start()
-
-                time.sleep(0.1)
                 res = obj.call_method(f"{idx}:multiply", 3, "klk")
                 print("method result is: ", res)
 
-                embed()
+                for _ in range(5):
+                    event = sub.next_event(timeout=5)
+                    match event:
+                        case DataChangeEvent(node=node, value=value):
+                            print("Python: New data change event", node, value)
+                        case OpcEvent(event=evt):
+                            print("Python: New event", evt)
