@@ -371,8 +371,23 @@ class UaSession(AbstractSession):
         return response.Results
 
     async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> list[ua.TransferResult]:
-        # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
-        raise NotImplementedError
+        self.logger.info("transfer_subscriptions %s", list(params.SubscriptionIds))
+        request = ua.TransferSubscriptionsRequest()
+        request.Parameters = params
+        data = await self._send_request(request)
+        response = struct_from_binary(ua.TransferSubscriptionsResponse, data)
+        response.ResponseHeader.ServiceResult.check()
+        return response.Parameters.Results
+
+    async def republish(self, subscription_id: int, retransmit_sequence_number: int) -> ua.NotificationMessage:
+        self.logger.debug("republish sub=%s seq=%s", subscription_id, retransmit_sequence_number)
+        request = ua.RepublishRequest()
+        request.Parameters.SubscriptionId = subscription_id
+        request.Parameters.RetransmitSequenceNumber = retransmit_sequence_number
+        data = await self._send_request(request)
+        response = struct_from_binary(ua.RepublishResponse, data)
+        response.ResponseHeader.ServiceResult.check()
+        return response.NotificationMessage
 
     async def inform_subscriptions(self, status: ua.StatusCode) -> None:
         """Inform all current subscriptions with a status code."""

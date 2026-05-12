@@ -200,6 +200,7 @@ class Subscription:
         # subscription that's gone dead on the server side without the transport
         # going down. `None` means no notification has arrived yet.
         self.last_publish_at: float | None = None
+        self.last_sequence_number: int | None = None
         # Hook the watchdog (set by Client.create_subscription) uses to force
         # a full reconnect cycle when overflow=DISCONNECT fires.
         self._on_overflow_disconnect: Any = None
@@ -234,6 +235,7 @@ class Subscription:
         self.last_publish_at = time.monotonic()
         if publish_result.NotificationMessage.NotificationData is None:
             return
+        self.last_sequence_number = int(publish_result.NotificationMessage.SequenceNumber)
         for event in self._explode_notifications(publish_result.NotificationMessage.NotificationData):
             self._deliver(event)
 
@@ -445,6 +447,44 @@ class Subscription:
         keepalive = max(int(self.parameters.RequestedMaxKeepAliveCount or 1), 1)
         stale_after = max(interval_s * keepalive * margin, 1.0)
         return (time.monotonic() - self.last_publish_at) >= stale_after
+
+    async def restore(self) -> None:
+        if self._deleted or self.subscription_id is None or not isinstance(self.server, UaSession):
+            await self.recreate()
+            return
+        params = ua.TransferSubscriptionsParameters()
+        params.SubscriptionIds = [self.subscription_id]
+        params.SendInitialValues = False
+        try:
+            results = await self.server.transfer_subscriptions(params)
+        except Exception:
+            self.logger.info("transfer_subscriptions failed; falling back to recreate", exc_info=True)
+            await self.recreate()
+            return
+        result = results[0] if results else None
+        if result is None or not result.StatusCode.is_good():
+            self.logger.info(
+                "transfer_subscriptions returned %s; falling back to recreate",
+                result.StatusCode if result else "no result",
+            )
+            await self.recreate()
+            return
+        self.server._subscription_callbacks[self.subscription_id] = self.publish_callback
+        await self._republish_gaps(result.AvailableSequenceNumbers)
+        self.last_publish_at = time.monotonic()
+
+    async def _republish_gaps(self, available: list[int]) -> None:
+        if not isinstance(self.server, UaSession) or self.subscription_id is None:
+            return
+        baseline = self.last_sequence_number or 0
+        missing = sorted(seq for seq in available if seq > baseline)
+        for seq in missing:
+            try:
+                msg = await self.server.republish(self.subscription_id, seq)
+            except Exception:
+                self.logger.warning("republish failed for sub %s seq %s", self.subscription_id, seq, exc_info=True)
+                return
+            await self.publish_callback(ua.PublishResult(self.subscription_id, NotificationMessage=msg))
 
     async def recreate(self) -> None:
         """

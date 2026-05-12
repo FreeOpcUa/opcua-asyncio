@@ -262,7 +262,7 @@ class InternalSession(AbstractSession):
     def modify_subscription(self, params):
         return self.subscription_service.modify_subscription(params)
 
-    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> list[ua.TransferResult]:
-        # Subscriptions aren't bound to a Session and can be transfered!
-        # https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
-        raise NotImplementedError
+    async def transfer_subscriptions(
+        self, params: ua.TransferSubscriptionsParameters, callback
+    ) -> list[ua.TransferResult]:
+        return await self.subscription_service.transfer_subscriptions(params, self.session_id, callback)

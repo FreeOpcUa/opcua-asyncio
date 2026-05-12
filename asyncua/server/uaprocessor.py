@@ -478,6 +478,14 @@ class UaProcessor:
                 response.NotificationMessage = msg
                 self.send_response(requesthdr.RequestHandle, seqhdr, response)
 
+            elif typeid == ua.NodeId(ua.ObjectIds.TransferSubscriptionsRequest_Encoding_DefaultBinary):
+                _logger.info("transfer subscriptions request (%s)", user)
+                params = struct_from_binary(ua.TransferSubscriptionsParameters, body)
+                results = await self.session.transfer_subscriptions(params, self.forward_publish_response)
+                response = ua.TransferSubscriptionsResponse()
+                response.Parameters.Results = results
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
             elif typeid == ua.NodeId(ua.ObjectIds.CallRequest_Encoding_DefaultBinary):
                 _logger.info("call request (%s)", user)
                 params = struct_from_binary(ua.CallParameters, body)
