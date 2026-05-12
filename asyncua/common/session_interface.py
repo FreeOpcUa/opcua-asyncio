@@ -214,3 +214,11 @@ class AbstractSession(ABC):
         This Service is used to remove one or more MonitoredItems of a Subscription.
         When a MonitoredItem is deleted, its triggered item links are also deleted.
         """
+
+    @abstractmethod
+    async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> list[ua.TransferResult]:
+        """
+        https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
+
+        This Service is used to transfer a Subscription and its MonitoredItems from one Session to another.
+        """
