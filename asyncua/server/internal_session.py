@@ -262,7 +262,12 @@ class InternalSession(AbstractSession):
     def modify_subscription(self, params):
         return self.subscription_service.modify_subscription(params)
 
-    async def transfer_subscriptions(
+    # The server-side override takes an extra `callback` (the per-connection
+    # publish-response callback owned by the UaProcessor handling the transfer
+    # request) so the rebound InternalSubscription delivers future publishes
+    # to the new connection's socket. The client-side override has no such
+    # need, hence the signature divergence.
+    async def transfer_subscriptions(  # type: ignore[override]
         self, params: ua.TransferSubscriptionsParameters, callback
     ) -> list[ua.TransferResult]:
         return await self.subscription_service.transfer_subscriptions(params, self.session_id, callback)
