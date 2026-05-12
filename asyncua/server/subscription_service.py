@@ -122,6 +122,24 @@ class SubscriptionService:
             return ua.NotificationMessage()
         return self.subscriptions[params.SubscriptionId].republish(params.RetransmitSequenceNumber)
 
+    async def transfer_subscriptions(
+        self, params: ua.TransferSubscriptionsParameters, session_id, callback
+    ) -> list[ua.TransferResult]:
+        self.logger.info("transfer_subscriptions: %s", params.SubscriptionIds)
+        results: list[ua.TransferResult] = []
+        for sub_id in params.SubscriptionIds:
+            sub = self.subscriptions.get(int(sub_id))
+            result = ua.TransferResult()
+            if sub is None:
+                result.StatusCode = ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
+                results.append(result)
+                continue
+            sub.session_id = session_id
+            sub.pub_result_callback = callback
+            result.AvailableSequenceNumbers = sorted(sub._not_acknowledged_results.keys())
+            results.append(result)
+        return results
+
     async def trigger_event(self, event, subscription_id=None):
         if hasattr(event, "Retain") and hasattr(event, "NodeId"):
             if event.Retain:

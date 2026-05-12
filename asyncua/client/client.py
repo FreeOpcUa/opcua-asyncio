@@ -819,9 +819,9 @@ class Client:
         self._subscriptions = live
         for sub in live:
             try:
-                await sub.recreate()
+                await sub.restore()
             except Exception:
-                _logger.exception("Failed to recreate subscription")
+                _logger.exception("Failed to restore subscription")
 
     def _force_state_disconnected(self) -> None:
         """Park the client in DISCONNECTED after a non-recoverable loss."""

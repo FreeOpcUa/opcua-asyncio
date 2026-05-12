@@ -132,8 +132,8 @@ async def test_connection_lost_callback_fires_on_loss() -> None:
         await srv.stop()
 
 
-async def test_subscription_recreated_after_reconnect() -> None:
-    """A data-change subscription is re-created server-side after a transport drop."""
+async def test_subscription_transferred_after_reconnect() -> None:
+    """After reconnect, the supervisor transfers the existing subscription (id preserved)."""
     from asyncua.common.subscription import DataChangeEvent
 
     port = find_free_port()
@@ -148,7 +148,6 @@ async def test_subscription_recreated_after_reconnect() -> None:
         sub = await client.create_subscription(50)
         client_var = client.get_node(variable.nodeid)
         await sub.subscribe_data_change(client_var)
-        # Drain the initial value.
         first = await sub.next_event(timeout=3.0)
         assert isinstance(first, DataChangeEvent)
         old_sub_id = sub.subscription_id
@@ -156,23 +155,12 @@ async def test_subscription_recreated_after_reconnect() -> None:
 
         await _force_transport_close_and_wait(client)
         await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)
-        # _recreate_subscriptions runs after state goes back to CONNECTED, so wait
-        # until the subscription has its new server-side id assigned.
-        loop = asyncio.get_event_loop()
-        deadline = loop.time() + 3.0
-        while sub.subscription_id is None or sub.subscription_id == old_sub_id:
-            if loop.time() > deadline:
-                raise AssertionError(f"Subscription was not re-created (id={sub.subscription_id})")
-            await asyncio.sleep(0.01)
 
-        # Subscription should have been re-created with a new server-side id but the
-        # same client-handle map.
-        assert sub.subscription_id is not None
-        assert sub.subscription_id != old_sub_id
+        assert sub.subscription_id == old_sub_id
         assert set(sub._monitored_items.keys()) == old_handles
 
-        # Notifications should resume on the new subscription.
         await variable.write_value(42)
+        loop = asyncio.get_event_loop()
         deadline = loop.time() + 3.0
         seen = []
         while 42 not in seen:
@@ -181,7 +169,85 @@ async def test_subscription_recreated_after_reconnect() -> None:
             ev = await sub.next_event(timeout=1.0)
             if isinstance(ev, DataChangeEvent):
                 seen.append(ev.value)
-        assert 42 in seen
+        await sub.delete()
+    finally:
+        await client.disconnect()
+        await srv.stop()
+
+
+async def test_subscription_recreated_when_transfer_fails() -> None:
+    """If transfer returns Bad (server dropped the subscription), recreate falls back."""
+    from asyncua.common.subscription import DataChangeEvent
+
+    port = find_free_port()
+    srv = await _start_server(port)
+    objects = srv.get_objects_node()
+    variable = await objects.add_variable(2, "RecreateVar", 0)
+    await variable.set_writable()
+
+    client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
+    await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
+    try:
+        sub = await client.create_subscription(50)
+        client_var = client.get_node(variable.nodeid)
+        await sub.subscribe_data_change(client_var)
+        await sub.next_event(timeout=3.0)
+        old_sub_id = sub.subscription_id
+        old_handles = set(sub._monitored_items.keys())
+
+        srv.iserver.isession.subscription_service.subscriptions.pop(old_sub_id, None)
+
+        await _force_transport_close_and_wait(client)
+        await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + 3.0
+        while sub.subscription_id is None or sub.subscription_id == old_sub_id:
+            if loop.time() > deadline:
+                raise AssertionError(f"Subscription was not re-created (id={sub.subscription_id})")
+            await asyncio.sleep(0.01)
+        assert sub.subscription_id != old_sub_id
+        assert set(sub._monitored_items.keys()) == old_handles
+
+        await variable.write_value(7)
+        deadline = loop.time() + 3.0
+        seen = []
+        while 7 not in seen:
+            if loop.time() > deadline:
+                raise AssertionError(f"Never saw the post-recreate write (saw {seen})")
+            ev = await sub.next_event(timeout=1.0)
+            if isinstance(ev, DataChangeEvent):
+                seen.append(ev.value)
+        await sub.delete()
+    finally:
+        await client.disconnect()
+        await srv.stop()
+
+
+async def test_republish_returns_buffered_notification() -> None:
+    """Republish RPC retrieves an unacked notification kept on the server."""
+    port = find_free_port()
+    srv = await _start_server(port)
+    objects = srv.get_objects_node()
+    variable = await objects.add_variable(2, "GapVar", 0)
+
+    client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0)
+    await client.connect()
+    try:
+        sub = await client.create_subscription(50)
+        await sub.subscribe_data_change(client.get_node(variable.nodeid))
+        await sub.next_event(timeout=3.0)
+
+        srv_sub = next(iter(srv.iserver.isession.subscription_service.subscriptions.values()))
+        fake_seq = 9999
+        fake_msg = ua.NotificationMessage()
+        fake_msg.SequenceNumber = fake_seq
+        srv_sub._not_acknowledged_results[fake_seq] = ua.PublishResult(
+            sub.subscription_id, NotificationMessage=fake_msg
+        )
+
+        msg = await client.uaclient.session.republish(sub.subscription_id, fake_seq)
+        assert int(msg.SequenceNumber) == fake_seq
+
         await sub.delete()
     finally:
         await client.disconnect()
