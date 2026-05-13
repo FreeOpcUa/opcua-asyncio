@@ -92,6 +92,7 @@ class UASocketProtocol(asyncio.Protocol):
         self.logger.info("Socket has closed connection")
         self.state = self.CLOSED
         self.transport = None
+        self._fail_all_pending(exc or ConnectionError("connection lost"))
         if self.on_connection_lost is not None:
             try:
                 self.on_connection_lost(exc)

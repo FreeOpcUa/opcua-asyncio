@@ -839,6 +839,7 @@ class Client:
                     await self.activate_session(
                         username=self._username, password=self._password, certificate=self.user_certificate
                     )
+                    self.uaclient.session.ensure_publish_loop()
                     return True
                 except BadSessionIdInvalid:
                     _logger.info("Server forgot session; falling back to create+activate")
