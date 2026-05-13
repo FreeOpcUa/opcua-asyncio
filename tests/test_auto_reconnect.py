@@ -132,8 +132,8 @@ async def test_connection_lost_callback_fires_on_loss() -> None:
         await srv.stop()
 
 
-async def test_subscription_transferred_after_reconnect() -> None:
-    """After reconnect, the supervisor transfers the existing subscription (id preserved)."""
+async def test_session_reactivated_after_reconnect() -> None:
+    """Spec Part 4 §6.7: reconnect re-activates the existing session (auth_token preserved)."""
     from asyncua.common.subscription import DataChangeEvent
 
     port = find_free_port()
@@ -150,12 +150,14 @@ async def test_subscription_transferred_after_reconnect() -> None:
         await sub.subscribe_data_change(client_var)
         first = await sub.next_event(timeout=3.0)
         assert isinstance(first, DataChangeEvent)
+        old_auth_token = client.uaclient.session.authentication_token
         old_sub_id = sub.subscription_id
         old_handles = set(sub._monitored_items.keys())
 
         await _force_transport_close_and_wait(client)
         await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)
 
+        assert client.uaclient.session.authentication_token == old_auth_token
         assert sub.subscription_id == old_sub_id
         assert set(sub._monitored_items.keys()) == old_handles
 
@@ -170,6 +172,24 @@ async def test_subscription_transferred_after_reconnect() -> None:
             if isinstance(ev, DataChangeEvent):
                 seen.append(ev.value)
         await sub.delete()
+    finally:
+        await client.disconnect()
+        await srv.stop()
+
+
+async def test_new_session_created_when_server_forgot() -> None:
+    """If the server has dropped the session, reconnect creates a fresh session."""
+    port = find_free_port()
+    srv = await _start_server(port)
+
+    client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
+    await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
+    try:
+        old_auth_token = client.uaclient.session.authentication_token
+        srv.iserver._external_sessions.pop(old_auth_token, None)
+        await _force_transport_close_and_wait(client)
+        await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)
+        assert client.uaclient.session.authentication_token != old_auth_token
     finally:
         await client.disconnect()
         await srv.stop()

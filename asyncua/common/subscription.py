@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Protocol, overload
 from asyncua import ua
 from asyncua.client.ua_session import UaSession
 from asyncua.common.ua_utils import copy_dataclass_attr
+from asyncua.ua.uaerrors import BadMessageNotAvailable
 
 if TYPE_CHECKING:
     from asyncua.server.internal_session import InternalSession
@@ -470,21 +471,28 @@ class Subscription:
             await self.recreate()
             return
         self.server._subscription_callbacks[self.subscription_id] = self.publish_callback
-        await self._republish_gaps(result.AvailableSequenceNumbers)
+        if not await self._republish_gaps(result.AvailableSequenceNumbers):
+            self.logger.info("republish could not fill gap for sub %s; recreating", self.subscription_id)
+            await self.recreate()
+            return
         self.last_publish_at = time.monotonic()
 
-    async def _republish_gaps(self, available: list[int]) -> None:
+    async def _republish_gaps(self, available: list[int]) -> bool:
         if not isinstance(self.server, UaSession) or self.subscription_id is None:
-            return
-        baseline = self.last_sequence_number or 0
-        missing = sorted(seq for seq in available if seq > baseline)
-        for seq in missing:
+            return True
+        target = max(available) if available else (self.last_sequence_number or 0)
+        seq = (self.last_sequence_number or 0) + 1
+        while True:
             try:
                 msg = await self.server.republish(self.subscription_id, seq)
+            except BadMessageNotAvailable:
+                break
             except Exception:
                 self.logger.warning("republish failed for sub %s seq %s", self.subscription_id, seq, exc_info=True)
-                return
+                return False
             await self.publish_callback(ua.PublishResult(self.subscription_id, NotificationMessage=msg))
+            seq += 1
+        return (self.last_sequence_number or 0) >= target
 
     async def recreate(self) -> None:
         """

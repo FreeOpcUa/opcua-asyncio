@@ -231,8 +231,20 @@ class UaProcessor:
             _logger.info("Activate session request (%s)", user)
             params = struct_from_binary(ua.ActivateSessionParameters, body)
             if not self.session:
-                _logger.info("request to activate non-existing session (%s)", user)
-                raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
+                # Spec Part 4 §6.7 reconnect: a fresh SecureChannel may carry an
+                # ActivateSession for a still-live session. Look it up by auth_token
+                # and rebind any existing subscriptions' publish callbacks here.
+                existing = self.iserver.lookup_external_session(requesthdr.AuthenticationToken)
+                if existing is None:
+                    _logger.info("request to activate non-existing session (%s)", user)
+                    raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
+                self.session = existing
+                self._closing = False
+                if self._session_watchdog_task is None or self._session_watchdog_task.done():
+                    self._session_watchdog_task = asyncio.create_task(self._session_watchdog_loop())
+                for sub in self.iserver.subscription_service.subscriptions.values():
+                    if sub.session_id == existing.session_id:
+                        sub.pub_result_callback = self.forward_publish_response
             if self._connection.security_policy.host_certificate is None:
                 data = self.session.nonce
             else:
