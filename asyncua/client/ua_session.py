@@ -337,9 +337,12 @@ class UaSession(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         self._subscription_callbacks[response.Parameters.SubscriptionId] = callback
         self.logger.info("create_subscription success SubscriptionId %s", response.Parameters.SubscriptionId)
-        if not self._publish_task or self._publish_task.done():
-            self._publish_task = asyncio.create_task(self._publish_loop())
+        self.ensure_publish_loop()
         return response.Parameters
+
+    def ensure_publish_loop(self) -> None:
+        if self._subscription_callbacks and (self._publish_task is None or self._publish_task.done()):
+            self._publish_task = asyncio.create_task(self._publish_loop())
 
     async def update_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
         request = ua.ModifySubscriptionRequest()

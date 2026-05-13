@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 from collections.abc import Iterable
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -57,7 +59,9 @@ class InternalSession(AbstractSession):
         self.auth_token = ua.NodeId(self._auth_counter)
         InternalSession._auth_counter += 1
         self.logger.info("Created internal session %s", self.name)
-        self.session_timeout = None
+        self.session_timeout: float | None = None
+        self._last_activity: float = time.monotonic()
+        self._timeout_task: asyncio.Task[None] | None = None
         if self.external:
             self.iserver.register_external_session(self)
 
@@ -96,17 +100,47 @@ class InternalSession(AbstractSession):
 
     async def close_session(self, delete_subs=True):
         self.logger.info("close session %s", self.name)
+        if self.state == SessionState.Closed:
+            return
         if self.state == SessionState.Activated:
             InternalSession._current_connections -= 1
         if InternalSession._current_connections < 0:
             InternalSession._current_connections = 0
         self.state = SessionState.Closed
+        if self._timeout_task is not None and self._timeout_task is not asyncio.current_task():
+            self._timeout_task.cancel()
         if self.external:
             self.iserver.unregister_external_session(self)
         if delete_subs:
             await self.delete_subscriptions(
                 [id for id, sub in self.subscription_service.subscriptions.items() if sub.session_id == self.session_id]
             )
+
+    def touch(self) -> None:
+        self._last_activity = time.monotonic()
+
+    def _start_timeout_watchdog(self) -> None:
+        if self.session_timeout is None or self.session_timeout <= 0:
+            return
+        if self._timeout_task is not None and not self._timeout_task.done():
+            return
+        self._timeout_task = asyncio.create_task(self._timeout_loop())
+
+    async def _timeout_loop(self) -> None:
+        try:
+            while self.state is not SessionState.Closed:
+                timeout = self.session_timeout or 0
+                idle = time.monotonic() - self._last_activity
+                remaining = timeout - idle
+                if remaining <= 0:
+                    self.logger.info("Session %s idle past %ss; closing", self.name, timeout)
+                    await self.close_session(True)
+                    return
+                await asyncio.sleep(min(remaining, max(timeout / 4, 0.1)))
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            self.logger.exception("Session timeout watchdog crashed")
 
     def activate_session(self, params, peer_certificate):
         self.logger.info("activate session")
@@ -152,6 +186,8 @@ class InternalSession(AbstractSession):
         self.state = SessionState.Activated
         if first_activation:
             InternalSession._current_connections += 1
+        self.touch()
+        self._start_timeout_watchdog()
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)
         return result
 

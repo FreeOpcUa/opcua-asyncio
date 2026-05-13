@@ -195,6 +195,35 @@ async def test_new_session_created_when_server_forgot() -> None:
         await srv.stop()
 
 
+async def test_server_expires_session_after_timeout() -> None:
+    """Server keeps a disconnected session alive only until session_timeout elapses."""
+    port = find_free_port()
+    srv = await _start_server(port)
+
+    client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
+    client.session_timeout = 500
+    await client.connect(auto_reconnect=False)
+    try:
+        old_auth_token = client.uaclient.session.authentication_token
+        assert old_auth_token in srv.iserver._external_sessions
+        proto = client.uaclient.protocol
+        assert proto is not None
+        assert proto.transport is not None
+        proto.transport.close()
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + 3.0
+        while old_auth_token in srv.iserver._external_sessions:
+            if loop.time() > deadline:
+                raise AssertionError("Session was not expired after session_timeout")
+            await asyncio.sleep(0.05)
+    finally:
+        try:
+            await client.disconnect()
+        except Exception:
+            pass
+        await srv.stop()
+
+
 async def test_subscription_recreated_when_transfer_fails() -> None:
     """If transfer returns Bad (server dropped the subscription), recreate falls back."""
     from asyncua.common.subscription import DataChangeEvent
@@ -216,6 +245,7 @@ async def test_subscription_recreated_when_transfer_fails() -> None:
         old_handles = set(sub._monitored_items.keys())
 
         srv.iserver.isession.subscription_service.subscriptions.pop(old_sub_id, None)
+        srv.iserver._external_sessions.pop(client.uaclient.session.authentication_token, None)
 
         await _force_transport_close_and_wait(client)
         await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)
