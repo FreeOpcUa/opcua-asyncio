@@ -50,6 +50,9 @@ class InternalServer:
         self.bind_condition_methods = False
         self.disabled_clock = False  # for debugging, we may want to disable clock that writes too much in log
         self._known_servers = {}  # used if we are a discovery server
+        # auth_token -> InternalSession: lets a fresh UaProcessor reattach to an existing
+        # session on ActivateSession (spec Part 4 §6.7 reconnect path).
+        self._external_sessions: dict[ua.NodeId, "InternalSession"] = {}
         self.certificate = None
         self.private_key = None
         self.aspace = AddressSpace()
@@ -284,6 +287,15 @@ class InternalServer:
 
     def create_session(self, name, user=User(role=UserRole.Anonymous), external=False):
         return InternalSession(self, self.aspace, self.subscription_service, name, user=user, external=external)
+
+    def lookup_external_session(self, auth_token: ua.NodeId) -> "InternalSession | None":
+        return self._external_sessions.get(auth_token)
+
+    def register_external_session(self, session: "InternalSession") -> None:
+        self._external_sessions[session.auth_token] = session
+
+    def unregister_external_session(self, session: "InternalSession") -> None:
+        self._external_sessions.pop(session.auth_token, None)
 
     async def enable_history_data_change(self, node, period=timedelta(days=7), count=0):
         """

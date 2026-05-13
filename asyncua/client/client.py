@@ -26,6 +26,13 @@ from ..common.xmlexporter import XmlExporter
 from ..common.xmlimporter import XmlImporter
 from ..crypto import security_policies, uacrypto
 from ..crypto.validator import CertificateValidatorMethod
+from ..ua.uaerrors import (
+    BadCertificateInvalid,
+    BadCertificateUntrusted,
+    BadSecurityChecksFailed,
+    BadSecurityPolicyRejected,
+    BadSessionIdInvalid,
+)
 from .ua_client import StateSubscription, UaClient, UaClientState
 from .ua_session import SessionState
 
@@ -770,11 +777,27 @@ class Client:
         try:
             delay = 1.0
             while not self.uaclient._disconnect_requested:
-                await self._teardown_for_reconnect()
+                await self._teardown_transport_only()
                 try:
-                    await self._connect_sequence()
+                    reused = await self._try_reactivate_existing_session()
                 except asyncio.CancelledError:
                     raise
+                except (
+                    BadCertificateInvalid,
+                    BadCertificateUntrusted,
+                    BadSecurityChecksFailed,
+                    BadSecurityPolicyRejected,
+                ) as exc:
+                    _logger.warning("Reconnect failed with security error %r; refreshing endpoints", exc)
+                    await self._refresh_endpoints_quiet()
+                    if self.uaclient.state is UaClientState.DISCONNECTED:
+                        self.uaclient._set_state(UaClientState.RECONNECTING)
+                    try:
+                        await asyncio.sleep(delay)
+                    except asyncio.CancelledError:
+                        raise
+                    delay = min(delay * 2, self._reconnect_max_delay)
+                    continue
                 except Exception as exc:
                     _logger.warning("Reconnect attempt failed: %r; retrying in %.1fs", exc, delay)
                     if self.uaclient.state is UaClientState.DISCONNECTED:
@@ -785,18 +808,74 @@ class Client:
                         raise
                     delay = min(delay * 2, self._reconnect_max_delay)
                     continue
-                try:
-                    await self._recreate_subscriptions()
-                except Exception:
-                    _logger.exception("Subscription recreation failed; continuing")
-                _logger.info("Reconnected successfully")
+                self._subscriptions = [s for s in self._subscriptions if not s._deleted]
+                if not reused:
+                    try:
+                        await self._recreate_subscriptions()
+                    except Exception:
+                        _logger.exception("Subscription recreation failed; continuing")
+                _logger.info("Reconnected successfully (session %s)", "reused" if reused else "recreated")
                 return True
             return False
         finally:
             _supervisor_owns_requests.reset(token)
 
-    async def _teardown_for_reconnect(self) -> None:
-        """Cancel renew loop, close stale session, and tear down the old transport."""
+    async def _try_reactivate_existing_session(self) -> bool:
+        """Open new socket+channel; try to re-activate the existing session.
+
+        Returns True if the existing session was reactivated (subscriptions still
+        alive on the server). Returns False if a fresh session had to be created.
+        Raises on transport/channel-level failures so the outer loop can retry.
+        """
+        session = self.uaclient.session
+        had_session = session.state is not SessionState.CLOSED and not session.authentication_token.is_null()
+        await self.connect_socket()
+        try:
+            await self.send_hello()
+            await self.open_secure_channel()
+            if had_session and self.uaclient.protocol is not None:
+                self.uaclient.protocol.authentication_token = session.authentication_token
+                try:
+                    await self.activate_session(
+                        username=self._username, password=self._password, certificate=self.user_certificate
+                    )
+                    return True
+                except BadSessionIdInvalid:
+                    _logger.info("Server forgot session; falling back to create+activate")
+                except Exception:
+                    _logger.info("Re-activate failed; falling back to create+activate", exc_info=True)
+                await self._close_session_quiet()
+            try:
+                await self.create_session()
+                try:
+                    await self.activate_session(
+                        username=self._username, password=self._password, certificate=self.user_certificate
+                    )
+                except Exception:
+                    await self._close_session_quiet()
+                    raise
+            except Exception:
+                await self._close_secure_channel_quiet()
+                raise
+        except Exception:
+            self.disconnect_socket()
+            raise
+        return False
+
+    async def _refresh_endpoints_quiet(self) -> None:
+        try:
+            await self.connect_and_get_server_endpoints()
+        except Exception:
+            _logger.debug("GetEndpoints refresh during reconnect failed", exc_info=True)
+
+    async def _teardown_transport_only(self) -> None:
+        """Cancel the channel-renew loop and drop the socket; leave the session intact.
+
+        We deliberately do NOT call close_session here: spec Part 4 §6.7 reconnect
+        keeps the session alive server-side so ActivateSession on a new channel can
+        reuse it. close_session only runs in the fallback path when the server
+        rejects the reactivate.
+        """
         if self._renew_channel_task is not None and not self._renew_channel_task.done():
             self._renew_channel_task.cancel()
             try:
@@ -804,13 +883,6 @@ class Client:
             except (asyncio.CancelledError, Exception):
                 pass
         self._renew_channel_task = None
-        # Drive the (server-side dead) session to CLOSED so create_session can fire again.
-        session = self.uaclient.session
-        if session.state is not SessionState.CLOSED:
-            try:
-                await session.close_session(delete_subscriptions=False)
-            except Exception:
-                _logger.debug("close_session during reconnect teardown raised", exc_info=True)
         if self.uaclient.protocol is not None:
             self.uaclient.disconnect_socket()
 

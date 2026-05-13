@@ -58,6 +58,8 @@ class InternalSession(AbstractSession):
         InternalSession._auth_counter += 1
         self.logger.info("Created internal session %s", self.name)
         self.session_timeout = None
+        if self.external:
+            self.iserver.register_external_session(self)
 
     def __str__(self):
         return (
@@ -99,6 +101,8 @@ class InternalSession(AbstractSession):
         if InternalSession._current_connections < 0:
             InternalSession._current_connections = 0
         self.state = SessionState.Closed
+        if self.external:
+            self.iserver.unregister_external_session(self)
         if delete_subs:
             await self.delete_subscriptions(
                 [id for id, sub in self.subscription_service.subscriptions.items() if sub.session_id == self.session_id]
@@ -107,9 +111,10 @@ class InternalSession(AbstractSession):
     def activate_session(self, params, peer_certificate):
         self.logger.info("activate session")
         result = ua.ActivateSessionResult()
-        if self.state != SessionState.Created:
+        if self.state == SessionState.Closed:
             raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
-        if InternalSession._current_connections >= InternalSession.max_connections:
+        first_activation = self.state == SessionState.Created
+        if first_activation and InternalSession._current_connections >= InternalSession.max_connections:
             raise ServiceError(ua.StatusCodes.BadMaxConnectionsReached)
         for _ in params.ClientSoftwareCertificates:
             result.Results.append(ua.StatusCode())
@@ -145,7 +150,8 @@ class InternalSession(AbstractSession):
         self.nonce = create_nonce(32)
         result.ServerNonce = self.nonce
         self.state = SessionState.Activated
-        InternalSession._current_connections += 1
+        if first_activation:
+            InternalSession._current_connections += 1
         self.logger.info("Activated internal session %s for user %s", self.name, self.user)
         return result
 
