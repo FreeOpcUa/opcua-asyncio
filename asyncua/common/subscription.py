@@ -140,9 +140,13 @@ class OpcEvent:
 
 @dataclass(frozen=True)
 class StatusChangeEvent:
-    """A server-side subscription status change, yielded by Subscription's async iterator."""
+    """A server-side subscription status change, yielded by Subscription's async iterator.
 
-    status: ua.StatusChangeNotification
+    `notification.Status` is the `StatusCode`; `notification.DiagnosticInfo` carries the
+    server's diagnostic data when available.
+    """
+
+    notification: ua.StatusChangeNotification
 
 
 SubEvent = DataChangeEvent | OpcEvent | StatusChangeEvent
@@ -248,7 +252,7 @@ class Subscription:
             elif isinstance(notif, ua.EventNotificationList):
                 yield from self._explode_events(notif)
             elif isinstance(notif, ua.StatusChangeNotification):
-                yield StatusChangeEvent(status=notif)
+                yield StatusChangeEvent(notification=notif)
             else:
                 self.logger.warning("Notification type not supported yet for notification %s", notif)
 
@@ -353,9 +357,9 @@ class Subscription:
                     self.logger.error("DataChange subscription has no status_change_notification method")
                     return
                 if inspect.iscoroutinefunction(method):
-                    await method(event.status)
+                    await method(event.notification)
                 else:
-                    method(event.status)
+                    method(event.notification)
         except Exception:
             self.logger.exception("Exception calling subscription handler")
 
@@ -419,6 +423,8 @@ class Subscription:
         try:
             results = await self.server.delete_subscriptions([self.subscription_id])
             results[0].check()
+        except (ConnectionError, OSError, asyncio.TimeoutError):
+            self.logger.info("delete_subscriptions: transport unavailable; local cleanup only")
         finally:
             self._deleted = True
             self._close_iterator()

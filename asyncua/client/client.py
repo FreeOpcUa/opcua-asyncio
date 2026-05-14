@@ -703,12 +703,12 @@ class Client:
                         return
                     _logger.info("Supervisor detected connection issue: %r", exc)
                     await self._fire_connection_lost_callback(exc)
-                    try:
-                        await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
-                    except Exception:
-                        _logger.debug("inform_subscriptions raised during loss handling", exc_info=True)
                     if not self._auto_reconnect:
-                        # Tear current state down to DISCONNECTED so the next request fails fast.
+                        # Tell subscriptions the connection is gone; user code is on its own.
+                        try:
+                            await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
+                        except Exception:
+                            _logger.debug("inform_subscriptions raised during loss handling", exc_info=True)
                         self._force_state_disconnected()
                         return
                     self.uaclient._set_state(UaClientState.RECONNECTING)

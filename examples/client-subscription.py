@@ -36,8 +36,8 @@ async def main():
                     match event:
                         case DataChangeEvent(node=node, value=value):
                             _logger.info("data change %r %s", node, value)
-                        case StatusChangeEvent(status=status):
-                            _logger.info("status change %s", status)
+                        case StatusChangeEvent(notification=notif):
+                            _logger.info("status change %s", notif.Status)
 
             consumer = asyncio.create_task(consume())
             await asyncio.sleep(10)
