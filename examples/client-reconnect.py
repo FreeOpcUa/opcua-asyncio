@@ -23,9 +23,9 @@ async def main():
                 match event:
                     case DataChangeEvent(node=n, value=v):
                         _logger.info("data change %r %s", n, v)
-                    case StatusChangeEvent(status=s):
-                        _logger.info("status change %s", s)
-                        if s.is_bad():
+                    case StatusChangeEvent(notification=n):
+                        _logger.info("status change %s", n.Status)
+                        if n.Status.is_bad():
                             break
     finally:
         await client.disconnect()
