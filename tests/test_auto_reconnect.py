@@ -304,6 +304,68 @@ async def test_republish_returns_buffered_notification() -> None:
         await srv.stop()
 
 
+async def test_reconnect_replays_unacked_notifications_via_republish() -> None:
+    """End-to-end: unacked notifications buffered server-side survive a transport drop.
+
+    After the client reactivates the session via ActivateSession, restore()
+    calls TransferSubscriptions, walks AvailableSequenceNumbers, and pulls each
+    unacked NotificationMessage back via Republish. The dispatched payload
+    reaches the async-iterator queue as if it had arrived during normal flow.
+    """
+    from asyncua.common.subscription import DataChangeEvent
+
+    port = find_free_port()
+    srv = await _start_server(port)
+    objects = srv.get_objects_node()
+    variable = await objects.add_variable(2, "ReplayVar", 0)
+    await variable.set_writable()
+
+    client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
+    await client.connect(auto_reconnect=True, reconnect_max_delay=0.5, reconnect_request_timeout=5.0)
+    try:
+        sub = await client.create_subscription(50)
+        client_var = client.get_node(variable.nodeid)
+        await sub.subscribe_data_change(client_var)
+        first = await sub.next_event(timeout=3.0)
+        assert isinstance(first, DataChangeEvent)
+
+        client_handle = next(iter(sub._monitored_items.keys()))
+        srv_sub = srv.iserver.isession.subscription_service.subscriptions[sub.subscription_id]
+        baseline_seq = sub.last_sequence_number or 0
+        replayed_values = [101, 202, 303]
+        for offset, value in enumerate(replayed_values, start=1):
+            notif = ua.MonitoredItemNotification()
+            notif.ClientHandle = client_handle
+            notif.Value = ua.DataValue(ua.Variant(value, ua.VariantType.Int64))
+            data_change = ua.DataChangeNotification(MonitoredItems=[notif])
+            seq = baseline_seq + offset
+            msg = ua.NotificationMessage()
+            msg.SequenceNumber = seq
+            msg.NotificationData = [data_change]
+            srv_sub._not_acknowledged_results[seq] = ua.PublishResult(
+                sub.subscription_id, NotificationMessage=msg
+            )
+
+        await _force_transport_close_and_wait(client)
+        await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)
+
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + 3.0
+        seen: list[int] = []
+        while set(replayed_values) - set(seen):
+            if loop.time() > deadline:
+                raise AssertionError(f"Republish did not deliver expected values: saw {seen}")
+            remaining = deadline - loop.time()
+            ev = await sub.next_event(timeout=max(remaining, 0.05))
+            if isinstance(ev, DataChangeEvent) and ev.value in replayed_values:
+                seen.append(ev.value)
+        assert seen[: len(replayed_values)] == replayed_values
+        await sub.delete()
+    finally:
+        await client.disconnect()
+        await srv.stop()
+
+
 async def test_deleted_subscription_not_recreated_after_reconnect() -> None:
     """A subscription the user deleted before the drop must not be re-created."""
     port = find_free_port()
