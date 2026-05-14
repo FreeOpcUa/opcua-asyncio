@@ -81,7 +81,16 @@ class InternalSession(AbstractSession):
         result = ua.CreateSessionResult()
         result.SessionId = self.session_id
         result.AuthenticationToken = self.auth_token
-        result.RevisedSessionTimeout = params.RequestedSessionTimeout
+        requested_timeout_ms = float(params.RequestedSessionTimeout or 0)
+        revised_ms = min(
+            max(requested_timeout_ms, self.iserver.min_session_timeout_ms),
+            self.iserver.max_session_timeout_ms,
+        )
+        if revised_ms != requested_timeout_ms:
+            self.logger.info(
+                "Clamping RequestedSessionTimeout %.0fms to %.0fms", requested_timeout_ms, revised_ms
+            )
+        result.RevisedSessionTimeout = revised_ms
         result.MaxRequestMessageSize = 65536
         self.session_timeout = result.RevisedSessionTimeout / 1000
 

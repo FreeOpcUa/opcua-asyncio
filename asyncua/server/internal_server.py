@@ -53,6 +53,12 @@ class InternalServer:
         # auth_token -> InternalSession: lets a fresh UaProcessor reattach to an existing
         # session on ActivateSession (spec Part 4 §6.7 reconnect path).
         self._external_sessions: dict[ua.NodeId, "InternalSession"] = {}
+        # Server-side limits — clamp client-requested values to avoid resource exhaustion
+        # when clients abandon long-lived sessions. Tighten on a per-deployment basis.
+        self.max_session_timeout_ms: float = 600_000
+        self.min_session_timeout_ms: float = 5_000
+        self.max_unacked_messages_per_subscription: int = 5_000
+        self.max_monitored_item_queue_size: int = 10_000
         self.certificate = None
         self.private_key = None
         self.aspace = AddressSpace()
@@ -61,7 +67,7 @@ class InternalServer:
         self.method_service = MethodService(self.aspace)
         self.node_mgt_service = NodeManagementService(self.aspace)
         self.asyncio_transports = []
-        self.subscription_service: SubscriptionService = SubscriptionService(self.aspace)
+        self.subscription_service: SubscriptionService = SubscriptionService(self.aspace, iserver=self)
         self.history_manager = HistoryManager(self)
         if user_manager is None:
             _logger.info("No user manager specified. Using default permissive manager instead.")

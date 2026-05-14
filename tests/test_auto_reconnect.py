@@ -199,6 +199,7 @@ async def test_server_expires_session_after_timeout() -> None:
     """Server keeps a disconnected session alive only until session_timeout elapses."""
     port = find_free_port()
     srv = await _start_server(port)
+    srv.iserver.min_session_timeout_ms = 100
 
     client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0, watchdog_intervall=0.3)
     client.session_timeout = 500

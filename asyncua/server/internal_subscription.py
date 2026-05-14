@@ -27,6 +27,8 @@ class InternalSubscription:
         session_id,
         request_callback=None,
         delete_callback=None,
+        no_acks_limit: int = 500,
+        max_queue_size: int = 10_000,
     ):
         """
         :param loop: Event loop instance
@@ -52,7 +54,8 @@ class InternalSubscription:
         self._triggered_events: dict[int, list[ua.EventFieldList]] = {}
         self._triggered_statuschanges: list = []
         self._notification_seq = 1
-        self._no_acks_limit = 500
+        self._no_acks_limit = no_acks_limit
+        self.max_queue_size = max_queue_size
         self._not_acknowledged_results: dict[int, ua.PublishResult] = {}
         self._startup = True
         self._keep_alive_count = 0
@@ -185,8 +188,9 @@ class InternalSubscription:
             # Acknowledgement is only expected when the Subscription is for a client.
             self._notification_seq += 1
             self._not_acknowledged_results[result.NotificationMessage.SequenceNumber] = result
-            if len(self._not_acknowledged_results) > self._no_acks_limit:
-                self._not_acknowledged_results.popitem()
+            while len(self._not_acknowledged_results) > self._no_acks_limit:
+                oldest = next(iter(self._not_acknowledged_results))
+                self._not_acknowledged_results.pop(oldest)
         result.MoreNotifications = False
         result.AvailableSequenceNumbers = list(self._not_acknowledged_results.keys())
         return result

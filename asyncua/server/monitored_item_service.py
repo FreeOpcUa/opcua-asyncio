@@ -101,7 +101,7 @@ class MonitoredItemService:
     def _make_monitored_item_common(self, params):
         result = ua.MonitoredItemCreateResult()
         result.RevisedSamplingInterval = self.isub.data.RevisedPublishingInterval
-        result.RevisedQueueSize = params.RequestedParameters.QueueSize
+        result.RevisedQueueSize = self._revise_queue_size(params.RequestedParameters.QueueSize)
         self._monitored_item_counter += 1
         result.MonitoredItemId = self._monitored_item_counter
         self.logger.debug("Creating MonitoredItem with id %s", result.MonitoredItemId)
@@ -109,9 +109,15 @@ class MonitoredItemService:
         mdata.mode = params.MonitoringMode
         mdata.client_handle = params.RequestedParameters.ClientHandle
         mdata.monitored_item_id = result.MonitoredItemId
-        mdata.queue_size = params.RequestedParameters.QueueSize
+        mdata.queue_size = result.RevisedQueueSize
         mdata.filter = params.RequestedParameters.Filter
         return result, mdata
+
+    def _revise_queue_size(self, requested: int) -> int:
+        cap = self.isub.max_queue_size
+        if requested == 0:
+            return cap
+        return min(int(requested), cap)
 
     def _create_events_monitored_item(self, params: ua.MonitoredItemCreateRequest):
         self.logger.info(
