@@ -809,11 +809,10 @@ class Client:
                     delay = min(delay * 2, self._reconnect_max_delay)
                     continue
                 self._subscriptions = [s for s in self._subscriptions if not s._deleted]
-                if not reused:
-                    try:
-                        await self._recreate_subscriptions()
-                    except Exception:
-                        _logger.exception("Subscription recreation failed; continuing")
+                try:
+                    await self._recreate_subscriptions()
+                except Exception:
+                    _logger.exception("Subscription recreation failed; continuing")
                 _logger.info("Reconnected successfully (session %s)", "reused" if reused else "recreated")
                 return True
             return False
