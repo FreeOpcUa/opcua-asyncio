@@ -19,9 +19,10 @@ class SubscriptionService:
     There is one `SubscriptionService` instance for every `Server`/`InternalServer`.
     """
 
-    def __init__(self, aspace: AddressSpace):
+    def __init__(self, aspace: AddressSpace, iserver=None):
         self.logger = logging.getLogger(__name__)
         self.aspace: AddressSpace = aspace
+        self.iserver = iserver
         self.subscriptions: dict[int, InternalSubscription] = {}
         self._sub_id_counter = 77
         self.standard_events = {}
@@ -35,6 +36,8 @@ class SubscriptionService:
         result.RevisedMaxKeepAliveCount = params.RequestedMaxKeepAliveCount
         self._sub_id_counter += 1
         result.SubscriptionId = self._sub_id_counter
+        no_acks_limit = self.iserver.max_unacked_messages_per_subscription if self.iserver else 5000
+        max_queue_size = self.iserver.max_monitored_item_queue_size if self.iserver else 10_000
         internal_sub = InternalSubscription(
             result,
             self.aspace,
@@ -42,6 +45,8 @@ class SubscriptionService:
             session_id,
             request_callback=request_callback,
             delete_callback=lambda: self.subscriptions.pop(result.SubscriptionId, None),
+            no_acks_limit=no_acks_limit,
+            max_queue_size=max_queue_size,
         )
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub

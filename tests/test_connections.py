@@ -111,6 +111,7 @@ async def test_session_watchdog():
     port = find_free_port()
     srv = Server()
     await srv.init()
+    srv.iserver.min_session_timeout_ms = 100
     srv.set_endpoint(f"opc.tcp://127.0.0.1:{port}")
     await srv.start()
     client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=0.5, watchdog_intervall=1)
