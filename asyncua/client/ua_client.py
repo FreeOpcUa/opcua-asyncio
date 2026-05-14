@@ -482,7 +482,6 @@ class UaClient:
     async def connect_socket(self, host: str, port: int) -> None:
         """Connect to server socket."""
         self.logger.info("opening connection")
-        self.session._closing = False
         self._set_state(UaClientState.CONNECTING)
         try:
             await asyncio.wait_for(
@@ -543,14 +542,6 @@ class UaClient:
     @property
     def _publish_task(self) -> asyncio.Task[None] | None:
         return self.session._publish_task
-
-    @property
-    def _closing(self) -> bool:
-        return self.session._closing
-
-    @_closing.setter
-    def _closing(self, value: bool) -> None:
-        self.session._closing = value
 
     # --- session lifecycle: delegate to default session ---
 

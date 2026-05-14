@@ -58,7 +58,6 @@ class UaSession(AbstractSession):
         self._state: SessionState = SessionState.NEW
         self._subscription_callbacks: dict[int, Callable[..., Any]] = {}
         self._publish_task: asyncio.Task[None] | None = None
-        self._closing: bool = False
 
     @property
     def state(self) -> SessionState:
@@ -80,7 +79,6 @@ class UaSession(AbstractSession):
         if self._client.protocol is None:
             raise ConnectionError("Connection is not open")
         self.logger.info("create_session")
-        self._closing = False
         self._client.protocol.closed = False
         self._set_state(SessionState.CREATING)
         try:
@@ -129,7 +127,6 @@ class UaSession(AbstractSession):
             self._set_state(SessionState.CLOSED)
             return
         self._client.protocol.closed = True
-        self._closing = True
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
         from .ua_client import UASocketProtocol
@@ -424,7 +421,7 @@ class UaSession(AbstractSession):
         Send PublishRequests in a loop and forward `PublishResult` to the matching subscription callback.
         """
         ack: ua.SubscriptionAcknowledgement | None = None
-        while not self._closing:
+        while self._state not in (SessionState.CLOSING, SessionState.CLOSED):
             try:
                 response = await self.publish([ack] if ack else [])
             except BadTimeout:
