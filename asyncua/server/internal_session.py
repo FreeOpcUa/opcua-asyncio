@@ -278,7 +278,7 @@ class InternalSession(AbstractSession):
         """COROUTINE"""
         return await self.iserver.method_service.call(params)
 
-    async def create_subscription(  # type: ignore[override]
+    async def create_subscription(
         self,
         params: ua.CreateSubscriptionParameters,
         callback: Callable[..., Any],
@@ -311,8 +311,7 @@ class InternalSession(AbstractSession):
     def republish(self, params: ua.RepublishParameters) -> ua.NotificationMessage:
         return self.subscription_service.republish(params)
 
-    async def delete_subscriptions(self, ids: list[int]) -> list[ua.StatusCode]:  # type: ignore[override]
-        # Server takes a list of ids; client-side AbstractSession takes DeleteSubscriptionsParameters.
+    async def delete_subscriptions(self, ids: list[int]) -> list[ua.StatusCode]:
         return await self.subscription_service.delete_subscriptions(ids)
 
     async def delete_monitored_items(
@@ -329,10 +328,11 @@ class InternalSession(AbstractSession):
     def publish(self, acks: Iterable[ua.SubscriptionAcknowledgement] | None = None) -> None:
         return self.subscription_service.publish(acks or [])
 
-    def modify_subscription(  # type: ignore[override]
+    def modify_subscription(
         self, params: ua.ModifySubscriptionParameters
     ) -> ua.ModifySubscriptionResult:
-        # Server-side is sync; client-side AbstractSession is async.
+        # Sync because the underlying service is sync; the client-side UaSession
+        # is async (RPC). Not part of AbstractSession because the shapes diverge.
         return self.subscription_service.modify_subscription(params)
 
     # The server-side override takes an extra `callback` (the per-connection

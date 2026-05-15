@@ -683,7 +683,7 @@ class UaClient:
     async def call(self, methodstocall: list[ua.CallMethodRequest]) -> list[ua.CallMethodResult]:
         return await self.session.call(methodstocall)
 
-    async def create_subscription(  # type: ignore[override]
+    async def create_subscription(
         self, params: ua.CreateSubscriptionParameters, callback: Callable[..., Any]
     ) -> ua.CreateSubscriptionResult:
         return await self.session.create_subscription(params, callback)
@@ -693,7 +693,7 @@ class UaClient:
 
     modify_subscription = update_subscription  # legacy support
 
-    async def delete_subscriptions(self, subscription_ids: list[int]) -> list[ua.StatusCode]:  # type: ignore[override]
+    async def delete_subscriptions(self, subscription_ids: list[int]) -> list[ua.StatusCode]:
         return await self.session.delete_subscriptions(subscription_ids)
 
     async def transfer_subscriptions(self, params: ua.TransferSubscriptionsParameters) -> list[ua.TransferResult]:
