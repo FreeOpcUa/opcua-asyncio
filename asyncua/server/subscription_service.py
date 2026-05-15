@@ -91,7 +91,7 @@ class SubscriptionService:
                 res.append(ua.StatusCode())
         stop_results = await asyncio.gather(*[sub.stop() for sub in existing_subs], return_exceptions=True)
         for stop_result in stop_results:
-            if isinstance(res, Exception):
+            if isinstance(stop_result, Exception):
                 self.logger.warning("Exception while stopping subscription", exc_info=stop_result)
         return res
 
