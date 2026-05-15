@@ -140,10 +140,12 @@ class MonitoredItemService:
         )
 
         result, mdata = self._make_monitored_item_common(params)
-        ev_notify_byte = self.aspace.read_attribute_value(
-            params.ItemToMonitor.NodeId,  # type: ignore[union-attr]
-            ua.AttributeIds.EventNotifier,
-        ).Value.Value
+        node_id = params.ItemToMonitor.NodeId
+        if node_id is None:
+            result.StatusCode = ua.StatusCode(ua.StatusCodes.BadNodeIdInvalid)
+            return result
+        dv = self.aspace.read_attribute_value(node_id, ua.AttributeIds.EventNotifier)
+        ev_notify_byte = dv.Value.Value if dv.Value is not None else None
 
         if ev_notify_byte is None or not ua.ua_binary.test_bit(ev_notify_byte, ua.EventNotifier.SubscribeToEvents):
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadServiceUnsupported)
@@ -255,9 +257,13 @@ class MonitoredItemService:
                 await self.isub.enqueue_datachange_event(mid, event, mdata.queue_size)
 
     def _is_deadband_exceeded(self, values: MonitoredItemValues, flt: ua.DataChangeFilter) -> bool:
-        if flt.DeadbandType == ua.DeadbandType.None_ or values.get_old_datavalue() is None:
+        cur = values.get_current_datavalue()
+        old = values.get_old_datavalue()
+        if flt.DeadbandType == ua.DeadbandType.None_ or old is None:
             return True
-        delta = values.get_current_datavalue().Value.Value - values.get_old_datavalue().Value.Value  # type: ignore[union-attr]
+        if cur is None or cur.Value is None or old.Value is None:
+            return True
+        delta = cur.Value.Value - old.Value.Value
         if flt.DeadbandType == ua.DeadbandType.Absolute and ((abs(delta)) > flt.DeadbandValue):
             return True
         if flt.DeadbandType == ua.DeadbandType.Percent:
@@ -340,7 +346,6 @@ class WhereClauseEvaluator:
         if el.FilterOperator == ua.FilterOperator.InList:
             return self._eval_op(ops[0], event) in [self._eval_op(op, event) for op in ops[1:]]
         if el.FilterOperator == ua.FilterOperator.And:
-            self.elements(ops[0].Index)  # type: ignore[operator]  # pre-existing bug: list called as function
             return self._eval_op(ops[0], event) and self._eval_op(ops[1], event)
         if el.FilterOperator == ua.FilterOperator.Or:
             return self._eval_op(ops[0], event) or self._eval_op(ops[1], event)
@@ -361,12 +366,18 @@ class WhereClauseEvaluator:
         if isinstance(op, ua.AttributeOperand):
             if op.BrowsePath:
                 return getattr(event, op.BrowsePath.Elements[0].TargetName.Name)
-            return self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value  # type: ignore[union-attr]
+            return self._read_attribute_value(event.EventType, op.AttributeId)
         if isinstance(op, ua.SimpleAttributeOperand):
             if op.BrowsePath:
                 return getattr(event, op.BrowsePath[0].Name)
-            return self._aspace.read_attribute_value(event.EventType, op.AttributeId).Value.Value  # type: ignore[union-attr]
+            return self._read_attribute_value(event.EventType, op.AttributeId)
         if isinstance(op, ua.LiteralOperand):
-            return op.Value.Value
+            return op.Value.Value if op.Value is not None else None
         self.logger.warning("Where clause element % is not of a known type", op)
         raise NotImplementedError
+
+    def _read_attribute_value(self, node_id: ua.NodeId, attr_id: ua.AttributeIds) -> Any:
+        dv = self._aspace.read_attribute_value(node_id, attr_id)
+        if dv.Value is None:
+            return None
+        return dv.Value.Value

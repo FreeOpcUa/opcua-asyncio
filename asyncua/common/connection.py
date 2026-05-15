@@ -203,13 +203,14 @@ class MessageChunk:
         if message_type == ua.MessageType.SecureOpen:
             # SecureOpen message must be in a single chunk (specs, Part 6, 6.7.2)
             chunk = MessageChunk(security_policy.asymmetric_cryptography, body, message_type, ua.ChunkType.Single)
-            chunk.SecurityHeader.SecurityPolicyURI = security_policy.URI  # type: ignore[union-attr]
+            assert isinstance(chunk.SecurityHeader, ua.AsymmetricAlgorithmHeader)
+            chunk.SecurityHeader.SecurityPolicyURI = security_policy.URI
             if security_policy.host_certificate and security_policy.Mode != ua.MessageSecurityMode.None_:
-                chunk.SecurityHeader.SenderCertificate = security_policy.host_certificate  # type: ignore[union-attr]
+                chunk.SecurityHeader.SenderCertificate = security_policy.host_certificate
                 for cert in security_policy.host_certificate_chain:
-                    chunk.SecurityHeader.SenderCertificate += cert  # type: ignore[union-attr]
+                    chunk.SecurityHeader.SenderCertificate += cert
             if security_policy.peer_certificate:
-                chunk.SecurityHeader.ReceiverCertificateThumbPrint = hashlib.sha1(  # type: ignore[union-attr]
+                chunk.SecurityHeader.ReceiverCertificateThumbPrint = hashlib.sha1(
                     security_policy.peer_certificate
                 ).digest()
             chunk.MessageHeader.ChannelId = channel_id
@@ -227,7 +228,8 @@ class MessageChunk:
             else:
                 chunk_type = ua.ChunkType.Intermediate
             chunk = MessageChunk(crypto, part, message_type, chunk_type)
-            chunk.SecurityHeader.TokenId = token_id  # type: ignore[union-attr]
+            assert isinstance(chunk.SecurityHeader, ua.SymmetricAlgorithmHeader)
+            chunk.SecurityHeader.TokenId = token_id
             chunk.MessageHeader.ChannelId = channel_id
             chunk.SequenceHeader.RequestId = request_id
             chunks.append(chunk)
