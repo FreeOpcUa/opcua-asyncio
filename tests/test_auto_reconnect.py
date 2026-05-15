@@ -353,6 +353,7 @@ async def test_reconnect_replays_unacked_notifications_via_republish() -> None:
         loop = asyncio.get_event_loop()
         deadline = loop.time() + 3.0
         seen: list[int] = []
+        replayed_seen: list[bool] = []
         while set(replayed_values) - set(seen):
             if loop.time() > deadline:
                 raise AssertionError(f"Republish did not deliver expected values: saw {seen}")
@@ -360,7 +361,9 @@ async def test_reconnect_replays_unacked_notifications_via_republish() -> None:
             ev = await sub.next_event(timeout=max(remaining, 0.05))
             if isinstance(ev, DataChangeEvent) and ev.value in replayed_values:
                 seen.append(ev.value)
+                replayed_seen.append(ev.replayed)
         assert seen[: len(replayed_values)] == replayed_values
+        assert all(replayed_seen), f"replayed flag not set on Republish events: {replayed_seen}"
         await sub.delete()
     finally:
         await client.disconnect()
