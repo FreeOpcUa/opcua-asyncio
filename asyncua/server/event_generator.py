@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import logging
 import time
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 
 from asyncua import ua
 from asyncua.server.internal_session import InternalSession
@@ -21,12 +24,17 @@ class EventGenerator:
         etype: The event type, either an objectId, a NodeId or a Node object
     """
 
-    def __init__(self, isession: InternalSession):
+    def __init__(self, isession: InternalSession) -> None:
         self.logger = logging.getLogger(__name__)
         self.isession = isession
-        self.event: event_objects.BaseEvent = None
+        self.event: Any = None
 
-    async def init(self, etype=None, emitting_node=ua.ObjectIds.Server, add_generates_event=True):
+    async def init(
+        self,
+        etype: Any = None,
+        emitting_node: Any = ua.ObjectIds.Server,
+        add_generates_event: bool = True,
+    ) -> None:
         node = None
 
         if isinstance(etype, event_objects.BaseEvent):
@@ -72,7 +80,7 @@ class EventGenerator:
             for result in results:
                 result.check()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"EventGenerator(Type:{self.event.EventType}, Emitting Node:{self.event.emitting_node.to_string()}, "
             f"Time:{self.event.Time}, Message: {self.event.Message})"
@@ -80,7 +88,12 @@ class EventGenerator:
 
     __repr__ = __str__
 
-    async def trigger(self, time_attr=None, message=None, subscription_id=None):
+    async def trigger(
+        self,
+        time_attr: datetime | None = None,
+        message: str | None = None,
+        subscription_id: int | None = None,
+    ) -> None:
         """
         Trigger the event. This will send a notification to all subscribed clients
         """

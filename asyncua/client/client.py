@@ -1246,7 +1246,7 @@ class Client:
         await ns_node.write_value(uries)
         return len(uries) - 1
 
-    async def load_type_definitions(self, nodes: Iterable[Node] | None = None) -> dict[str, type]:
+    async def load_type_definitions(self, nodes: Iterable[Node] | None = None) -> Any:
         """
         Load custom types (custom structures/extension objects) definition from server
         Generate Python classes for custom structures/extension objects defined in server

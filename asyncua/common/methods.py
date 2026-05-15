@@ -5,15 +5,15 @@ High level method related functions
 from __future__ import annotations
 
 import inspect
-from collections.abc import Iterable
 from functools import wraps
 from typing import Any
 
 import asyncua
 from asyncua import ua
+from asyncua.common.session_interface import AbstractSession
 
 
-async def call_method(parent: asyncua.Node, methodid: ua.NodeId | ua.QualifiedName | str, *args) -> Any:
+async def call_method(parent: asyncua.Node, methodid: ua.NodeId | ua.QualifiedName | str, *args: Any) -> Any:
     """
     Call an OPC-UA method. methodid is browse name of child method or the
     nodeid of method as a NodeId object
@@ -32,7 +32,7 @@ async def call_method(parent: asyncua.Node, methodid: ua.NodeId | ua.QualifiedNa
 
 
 async def call_method_full(
-    parent: asyncua.Node, methodid: ua.NodeId | ua.QualifiedName | str, *args
+    parent: asyncua.Node, methodid: ua.NodeId | ua.QualifiedName | str, *args: Any
 ) -> ua.CallMethodResult:
     """
     Call an OPC-UA method. methodid is browse name of child method or the
@@ -54,7 +54,12 @@ async def call_method_full(
     return result
 
 
-async def _call_method(session, parentnodeid, methodid, arguments):
+async def _call_method(
+    session: AbstractSession,
+    parentnodeid: ua.NodeId,
+    methodid: ua.NodeId,
+    arguments: list[ua.Variant],
+) -> ua.CallMethodResult:
     """
     :param server: `UaClient` or `InternalSession`
     :param parentnodeid:
@@ -73,7 +78,7 @@ async def _call_method(session, parentnodeid, methodid, arguments):
     return res
 
 
-def uamethod(func):
+def uamethod(func: Any) -> Any:
     """
     Method decorator to automatically convert
     arguments and output to and from variants
@@ -82,7 +87,7 @@ def uamethod(func):
     if inspect.iscoroutinefunction(func):
 
         @wraps(func)
-        async def wrapper(parent, *args):
+        async def wrapper(parent: Any, *args: Any) -> Any:
             func_args = _format_call_inputs(parent, *args)
             result = await func(*func_args)
             return _format_call_outputs(result)
@@ -90,7 +95,7 @@ def uamethod(func):
     else:
 
         @wraps(func)
-        def wrapper(parent, *args):
+        def wrapper(parent: Any, *args: Any) -> Any:
             func_args = _format_call_inputs(parent, *args)
             result = func(*func_args)
             return _format_call_outputs(result)
@@ -98,7 +103,7 @@ def uamethod(func):
     return wrapper
 
 
-def _format_call_inputs(parent, *args):
+def _format_call_inputs(parent: Any, *args: Any) -> tuple[Any, ...]:
     if isinstance(parent, ua.NodeId):
         return (parent, *[arg.Value for arg in args])
     self = parent
@@ -107,7 +112,7 @@ def _format_call_inputs(parent, *args):
     return (self, parent, *[arg.Value for arg in args])
 
 
-def _format_call_outputs(result):
+def _format_call_outputs(result: Any) -> Any:
     if result is None:
         return []
     if isinstance(result, ua.CallMethodResult):
@@ -120,7 +125,7 @@ def _format_call_outputs(result):
     return to_variant(result)
 
 
-def to_variant(*args: Iterable) -> list[ua.Variant]:
+def to_variant(*args: Any) -> list[ua.Variant]:
     """Create a list of ua.Variants from a given iterable of arguments."""
     uaargs: list[ua.Variant] = []
     for arg in args:

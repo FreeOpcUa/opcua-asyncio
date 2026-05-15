@@ -331,6 +331,7 @@ async def test_reconnect_replays_unacked_notifications_via_republish() -> None:
         assert isinstance(first, DataChangeEvent)
 
         client_handle = next(iter(sub._monitored_items.keys()))
+        assert sub.subscription_id is not None
         srv_sub = srv.iserver.isession.subscription_service.subscriptions[sub.subscription_id]
         baseline_seq = sub.last_sequence_number or 0
         replayed_values = [101, 202, 303]

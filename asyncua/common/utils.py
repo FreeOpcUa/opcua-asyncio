@@ -17,7 +17,7 @@ _logger = logging.getLogger(__name__)
 
 
 class ServiceError(UaError):
-    def __init__(self, code):
+    def __init__(self, code: int) -> None:
         super().__init__("UA Service Error")
         self.code = code
 
@@ -36,29 +36,29 @@ class Buffer:
     and added a few convenience methods.
     """
 
-    def __init__(self, data, start_pos=0, size=-1):
+    def __init__(self, data: bytes, start_pos: int = 0, size: int = -1) -> None:
         self._data = data
         self._cur_pos = start_pos
         if size == -1:
             size = len(data) - start_pos
         self._size = size
 
-    def __str__(self):
-        return f"Buffer(size:{self._size}, data:{self._data[self._cur_pos : self._cur_pos + self._size]})"
+    def __str__(self) -> str:
+        return f"Buffer(size:{self._size}, data:{self._data[self._cur_pos : self._cur_pos + self._size]!r})"
 
     __repr__ = __str__
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._size
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return self._size > 0
 
-    def __bytes__(self):
+    def __bytes__(self) -> bytes:
         """Return remains of buffer as bytes."""
         return bytes(self._data[self._cur_pos :])
 
-    def read(self, size):
+    def read(self, size: int) -> bytes:
         """
         read and pop number of bytes for buffer
         """
@@ -69,7 +69,7 @@ class Buffer:
         self._cur_pos += size
         return self._data[pos : self._cur_pos]
 
-    def copy(self, size=-1):
+    def copy(self, size: int = -1) -> "Buffer":
         """
         return a shadow copy, optionally only copy 'size' bytes
         """
@@ -77,7 +77,7 @@ class Buffer:
             size = self._size
         return Buffer(self._data, self._cur_pos, size)
 
-    def skip(self, size):
+    def skip(self, size: int) -> None:
         """
         skip size bytes in buffer
         """
@@ -87,10 +87,10 @@ class Buffer:
         self._cur_pos += size
 
     @property
-    def cur_pos(self):
+    def cur_pos(self) -> int:
         return self._cur_pos
 
-    def rewind(self, cur_pos=0):
+    def rewind(self, cur_pos: int = 0) -> None:
         """
         rewind the buffer
         """
@@ -98,7 +98,7 @@ class Buffer:
         self._size = len(self._data) - cur_pos
 
 
-def create_nonce(size=32):
+def create_nonce(size: int = 32) -> bytes:
     return os.urandom(size)
 
 
