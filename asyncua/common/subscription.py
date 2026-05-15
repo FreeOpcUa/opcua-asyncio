@@ -124,11 +124,18 @@ Protocol class representing subscription handlers to receive events from server.
 
 @dataclass(frozen=True)
 class DataChangeEvent:
-    """A single monitored-item data change, yielded by Subscription's async iterator."""
+    """A single monitored-item data change, yielded by Subscription's async iterator.
+
+    `replayed` is True when the event was retrieved via `Republish` after a reconnect:
+    its `SourceTimestamp` may predate values the application learned through other
+    channels during the disconnect window. Apps that cache values should compare
+    timestamps before overwriting.
+    """
 
     node: Node
     value: Any
     data: DataChangeNotif
+    replayed: bool = False
 
 
 @dataclass(frozen=True)
@@ -136,6 +143,7 @@ class OpcEvent:
     """An OPC UA event firing, yielded by Subscription's async iterator."""
 
     event: Event
+    replayed: bool = False
 
 
 @dataclass(frozen=True)
@@ -147,6 +155,7 @@ class StatusChangeEvent:
     """
 
     notification: ua.StatusChangeNotification
+    replayed: bool = False
 
 
 SubEvent = DataChangeEvent | OpcEvent | StatusChangeEvent
@@ -212,6 +221,9 @@ class Subscription:
         # Keep strong refs to in-flight dispatch tasks so the GC can't cancel
         # them while they're still running user-handler code.
         self._dispatch_tasks: set[asyncio.Task[None]] = set()
+        # Set while publish_callback is dispatching notifications retrieved via
+        # Republish; consumed by _explode_* to tag events with replayed=True.
+        self._replaying: bool = False
 
     async def init(self) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
@@ -252,7 +264,7 @@ class Subscription:
             elif isinstance(notif, ua.EventNotificationList):
                 yield from self._explode_events(notif)
             elif isinstance(notif, ua.StatusChangeNotification):
-                yield StatusChangeEvent(notification=notif)
+                yield StatusChangeEvent(notification=notif, replayed=self._replaying)
             else:
                 self.logger.warning("Notification type not supported yet for notification %s", notif)
 
@@ -266,7 +278,7 @@ class Subscription:
             # Value can be None on some server responses; preserve the raw
             # behavior of master here.
             value = item.Value.Value.Value if item.Value and item.Value.Value else None  # type: ignore[union-attr]
-            yield DataChangeEvent(node=data.node, value=value, data=event_data)
+            yield DataChangeEvent(node=data.node, value=value, data=event_data, replayed=self._replaying)
 
     def _explode_events(self, eventlist: ua.EventNotificationList) -> Iterable[OpcEvent]:
         for event in eventlist.Events:
@@ -281,7 +293,7 @@ class Subscription:
                 continue
             result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)  # type: ignore[union-attr]
             result.server_handle = data.server_handle
-            yield OpcEvent(event=result)
+            yield OpcEvent(event=result, replayed=self._replaying)
 
     def _deliver(self, event: SubEvent) -> None:
         """Deliver one event to either the iterator queue or the legacy handler.
@@ -488,16 +500,22 @@ class Subscription:
             return True
         target = max(available) if available else (self.last_sequence_number or 0)
         seq = (self.last_sequence_number or 0) + 1
-        while True:
-            try:
-                msg = await self.server.republish(self.subscription_id, seq)
-            except BadMessageNotAvailable:
-                break
-            except Exception:
-                self.logger.warning("republish failed for sub %s seq %s", self.subscription_id, seq, exc_info=True)
-                return False
-            await self.publish_callback(ua.PublishResult(self.subscription_id, NotificationMessage=msg))
-            seq += 1
+        self._replaying = True
+        try:
+            while True:
+                try:
+                    msg = await self.server.republish(self.subscription_id, seq)
+                except BadMessageNotAvailable:
+                    break
+                except Exception:
+                    self.logger.warning(
+                        "republish failed for sub %s seq %s", self.subscription_id, seq, exc_info=True
+                    )
+                    return False
+                await self.publish_callback(ua.PublishResult(self.subscription_id, NotificationMessage=msg))
+                seq += 1
+        finally:
+            self._replaying = False
         return (self.last_sequence_number or 0) >= target
 
     async def recreate(self) -> None:
