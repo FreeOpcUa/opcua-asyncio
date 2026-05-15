@@ -323,7 +323,7 @@ class UaSession(AbstractSession):
 
     # --- Subscription Service Set ---
 
-    async def create_subscription(  # type: ignore[override]
+    async def create_subscription(
         self, params: ua.CreateSubscriptionParameters, callback: Callable[..., Any]
     ) -> ua.CreateSubscriptionResult:
         self.logger.debug("create_subscription")
@@ -352,7 +352,7 @@ class UaSession(AbstractSession):
 
     modify_subscription = update_subscription  # legacy support
 
-    async def delete_subscriptions(self, subscription_ids: list[int]) -> list[ua.StatusCode]:  # type: ignore[override]
+    async def delete_subscriptions(self, subscription_ids: list[int]) -> list[ua.StatusCode]:
         self.logger.debug("delete_subscriptions %r", subscription_ids)
         ids = [int(sid) for sid in subscription_ids]
         request = ua.DeleteSubscriptionsRequest()

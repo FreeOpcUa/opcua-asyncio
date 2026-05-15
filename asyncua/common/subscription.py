@@ -275,9 +275,10 @@ class Subscription:
                 self.logger.warning("Received a notification for unknown handle: %s", item.ClientHandle)
                 continue
             event_data = DataChangeNotif(data, item)
-            # Value can be None on some server responses; preserve the raw
-            # behavior of master here.
-            value = item.Value.Value.Value if item.Value and item.Value.Value else None  # type: ignore[union-attr]
+            # Value can be None on some server responses; preserve the raw behavior of master.
+            value: Any = None
+            if item.Value is not None and item.Value.Value is not None:
+                value = item.Value.Value.Value
             yield DataChangeEvent(node=data.node, value=value, data=event_data, replayed=self._replaying)
 
     def _explode_events(self, eventlist: ua.EventNotificationList) -> Iterable[OpcEvent]:
@@ -286,12 +287,12 @@ class Subscription:
             if data is None:
                 self.logger.warning("Received event for unknown handle: %s", event.ClientHandle)
                 continue
-            if data.mfilter is None or not hasattr(data.mfilter, "SelectClauses"):
+            if not isinstance(data.mfilter, ua.EventFilter):
                 self.logger.warning(
                     "Received event notification but monitored item has no event filter: %s", event.ClientHandle
                 )
                 continue
-            result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)  # type: ignore[union-attr]
+            result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)
             result.server_handle = data.server_handle
             yield OpcEvent(event=result, replayed=self._replaying)
 
@@ -655,11 +656,13 @@ class Subscription:
         evtypes: Node | ua.NodeId | str | int | Iterable[Node | ua.NodeId | str | int],
         where_clause_generation: bool = True,
     ) -> ua.EventFilter:
+        raw_types: Iterable[Node | ua.NodeId | str | int]
         if isinstance(evtypes, int | str | ua.NodeId | Node):
-            evtypes = [evtypes]
-        evtypes = [Node(self.server, evtype) for evtype in evtypes]  # type: ignore[union-attr]
-        evfilter = await get_filter_from_event_type(evtypes, where_clause_generation)  # type: ignore[union-attr]
-        return evfilter
+            raw_types = [evtypes]
+        else:
+            raw_types = evtypes
+        nodes = [Node(self.server, t) for t in raw_types]
+        return await get_filter_from_event_type(nodes, where_clause_generation)
 
     async def subscribe_events(
         self,
@@ -693,7 +696,7 @@ class Subscription:
                 # Also because BaseEventType wants every event we can ommit it. Issue: #1205
                 where_clause_generation = False
             evfilter = await self._create_eventfilter(evtypes, where_clause_generation)
-        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)  # type: ignore
+        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 
     async def subscribe_alarms_and_conditions(
         self,
@@ -776,9 +779,13 @@ class Subscription:
             # Return results for multiple nodes
             return mids
         # Check and return result for single node (raise `UaStatusCodeError` if subscription failed)
-        if isinstance(mids[0], ua.StatusCode):
-            mids[0].check()
-        return mids[0]  # type: ignore
+        first = mids[0]
+        if isinstance(first, ua.StatusCode):
+            first.check()
+            # check() raises for Bad codes; create_monitored_items only stores Bad codes
+            # here, so this fallthrough is unreachable. Guard for type-narrowing only.
+            raise ua.uaerrors.UaError(f"Unexpected Good StatusCode in monitored-item failure path: {first}")
+        return first
 
     def _make_monitored_item_request(
         self,
@@ -996,8 +1003,10 @@ class Subscription:
         self.logger.info("set_publishing_mode")
         if not isinstance(self.server, UaSession):
             raise ua.uaerrors.UaError(f"set_publishing_mode() is not supported in {self.server}.")
+        if self.subscription_id is None:
+            raise ua.uaerrors.UaError("set_publishing_mode() called before subscription was created on the server.")
         params = ua.SetPublishingModeParameters()
-        params.SubscriptionIds = [self.subscription_id]  # type: ignore
+        params.SubscriptionIds = [self.subscription_id]
         params.PublishingEnabled = publishing
         result = await self.server.set_publishing_mode(params)
         if result[0].is_good():
