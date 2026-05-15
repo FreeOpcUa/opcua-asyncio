@@ -189,6 +189,8 @@ class UaProcessor:
                     raise ua.uaerrors.BadUserAccessDenied
 
         self.session_last_activity = datetime.now(timezone.utc)
+        if self.session is not None:
+            self.session.touch()
 
         if typeid == ua.NodeId(ua.ObjectIds.CreateSessionRequest_Encoding_DefaultBinary):
             _logger.info("Create session request (%s)", user)
@@ -231,8 +233,21 @@ class UaProcessor:
             _logger.info("Activate session request (%s)", user)
             params = struct_from_binary(ua.ActivateSessionParameters, body)
             if not self.session:
-                _logger.info("request to activate non-existing session (%s)", user)
-                raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
+                # Spec Part 4 §6.7 reconnect: a fresh SecureChannel may carry an
+                # ActivateSession for a still-live session. Look it up by auth_token
+                # and rebind any existing subscriptions' publish callbacks here.
+                existing = self.iserver.lookup_external_session(requesthdr.AuthenticationToken)
+                if existing is None:
+                    _logger.info("request to activate non-existing session (%s)", user)
+                    raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
+                self.session = existing
+                self._closing = False
+                if self._session_watchdog_task is None or self._session_watchdog_task.done():
+                    self._session_watchdog_task = asyncio.create_task(self._session_watchdog_loop())
+                for sub in self.iserver.subscription_service.subscriptions.values():
+                    if sub.session_id == existing.session_id:
+                        sub.pub_result_callback = self.forward_publish_response
+                        sub.pub_request_callback = self.get_publish_request
             if self._connection.security_policy.host_certificate is None:
                 data = self.session.nonce
             else:
@@ -478,6 +493,14 @@ class UaProcessor:
                 response.NotificationMessage = msg
                 self.send_response(requesthdr.RequestHandle, seqhdr, response)
 
+            elif typeid == ua.NodeId(ua.ObjectIds.TransferSubscriptionsRequest_Encoding_DefaultBinary):
+                _logger.info("transfer subscriptions request (%s)", user)
+                params = struct_from_binary(ua.TransferSubscriptionsParameters, body)
+                results = await self.session.transfer_subscriptions(params, self.forward_publish_response)
+                response = ua.TransferSubscriptionsResponse()
+                response.Parameters.Results = results
+                self.send_response(requesthdr.RequestHandle, seqhdr, response)
+
             elif typeid == ua.NodeId(ua.ObjectIds.CallRequest_Encoding_DefaultBinary):
                 _logger.info("call request (%s)", user)
                 params = struct_from_binary(ua.CallParameters, body)
@@ -522,17 +545,40 @@ class UaProcessor:
 
     async def close(self):
         """
-        to be called when client has disconnected to ensure we really close
-        everything we should
+        Drop the per-processor watchdog when the client connection is lost.
+
+        Spec Part 4 §6.7: an activated external session with live Subscriptions
+        must outlive its TCP connection so the client can transfer/reactivate
+        them on a new SecureChannel. The session is reachable via the iserver
+        registry by AuthenticationToken; its own InternalSession._timeout_loop
+        will close it after session_timeout of inactivity.
+
+        Sessions with no Subscriptions, internal sessions, and not-yet-activated
+        sessions still close immediately on transport loss.
         """
         _logger.info("Cleanup client connection: %s", self.name)
         self._closing = True
         try:
             if self._session_watchdog_task and self._session_watchdog_task is not asyncio.current_task():
-                await self._session_watchdog_task
+                self._session_watchdog_task.cancel()
+                try:
+                    await self._session_watchdog_task
+                except (asyncio.CancelledError, Exception):
+                    pass
         finally:
-            if self.session:
+            if self.session and self._should_close_session_on_transport_loss():
                 await self.session.close_session(True)
+
+    def _should_close_session_on_transport_loss(self) -> bool:
+        if self.session is None:
+            return False
+        if not self.session.external or not self.session.is_activated():
+            return True
+        has_subs = any(
+            sub.session_id == self.session.session_id
+            for sub in self.iserver.subscription_service.subscriptions.values()
+        )
+        return not has_subs
 
     async def _session_watchdog_loop(self):
         """

@@ -8,12 +8,16 @@ import asyncio
 import collections.abc
 import inspect
 import logging
+import time
 from collections.abc import Iterable
+from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Protocol, overload
 
 from asyncua import ua
-from asyncua.client.ua_client import UaClient
+from asyncua.client.ua_session import UaSession
 from asyncua.common.ua_utils import copy_dataclass_attr
+from asyncua.ua.uaerrors import BadMessageNotAvailable
 
 if TYPE_CHECKING:
     from asyncua.server.internal_session import InternalSession
@@ -25,6 +29,9 @@ from .node import Node
 class SubscriptionItemData:
     """
     To store useful data from a monitored item.
+
+    The queuesize / monitoring_mode / sampling_interval fields are captured so the
+    Subscription can be re-created on the server after a reconnect.
     """
 
     def __init__(self) -> None:
@@ -33,6 +40,9 @@ class SubscriptionItemData:
         self.server_handle: int | None = None
         self.attribute: ua.AttributeIds | None = None
         self.mfilter: ua.MonitoringFilter | ua.EventFilter | None = None
+        self.queuesize: int = 0
+        self.monitoring_mode: ua.MonitoringMode = ua.MonitoringMode.Reporting
+        self.sampling_interval: ua.Duration = 0.0
 
 
 class DataChangeNotif:
@@ -112,28 +122,108 @@ Protocol class representing subscription handlers to receive events from server.
 """
 
 
+@dataclass(frozen=True)
+class DataChangeEvent:
+    """A single monitored-item data change, yielded by Subscription's async iterator.
+
+    `replayed` is True when the event was retrieved via `Republish` after a reconnect:
+    its `SourceTimestamp` may predate values the application learned through other
+    channels during the disconnect window. Apps that cache values should compare
+    timestamps before overwriting.
+    """
+
+    node: Node
+    value: Any
+    data: DataChangeNotif
+    replayed: bool = False
+
+
+@dataclass(frozen=True)
+class OpcEvent:
+    """An OPC UA event firing, yielded by Subscription's async iterator."""
+
+    event: Event
+    replayed: bool = False
+
+
+@dataclass(frozen=True)
+class StatusChangeEvent:
+    """A server-side subscription status change, yielded by Subscription's async iterator.
+
+    `notification.Status` is the `StatusCode`; `notification.DiagnosticInfo` carries the
+    server's diagnostic data when available.
+    """
+
+    notification: ua.StatusChangeNotification
+    replayed: bool = False
+
+
+SubEvent = DataChangeEvent | OpcEvent | StatusChangeEvent
+
+
+class OverflowPolicy(str, Enum):
+    """Behavior when the iterator-mode Subscription queue is full."""
+
+    DROP_OLDEST = "drop_oldest"  # pop front, push new — keeps most recent state
+    DROP_NEWEST = "drop_newest"  # discard incoming notification
+    WARN = "warn"  # log a warning AND drop the newest
+    DISCONNECT = "disconnect"  # force a reconnect via the supervisor
+
+
 class Subscription:
     """
     Subscription object returned by Server or Client objects.
     The object represent a subscription to an opc-ua server.
     This is a high level class, especially `subscribe_data_change` and `subscribe_events methods`.
     If more control is necessary look at code and/or use `create_monitored_items method`.
-    :param server: `InternalSession` or `UaClient`
+    :param server: `InternalSession` or `UaSession`
     """
 
     def __init__(
         self,
-        server: InternalSession | UaClient,
+        server: InternalSession | UaSession,
         params: ua.CreateSubscriptionParameters,
-        handler: SubscriptionHandler,
+        handler: SubscriptionHandler | None = None,
+        *,
+        queue_maxsize: int = 1000,
+        overflow: OverflowPolicy = OverflowPolicy.DROP_OLDEST,
     ) -> None:
         self.logger = logging.getLogger(__name__)
-        self.server: InternalSession | UaClient = server
+        self.server: InternalSession | UaSession = server
         self._client_handle = 200
-        self._handler: SubscriptionHandler = handler
+        # Legacy callback path: events are dispatched to handler methods.
+        # New iterator path: events are pushed into _event_queue and consumed
+        # via `async for ev in sub`. Exactly one path is active at a time —
+        # picking the handler arg vs leaving it None at construction.
+        self._handler: SubscriptionHandler | None = handler
+        # Queue is created eagerly in iterator mode so publish_callback can
+        # start filling it before the consumer iterates.
+        self._event_queue: asyncio.Queue[SubEvent | None] | None = (
+            None if handler is not None else asyncio.Queue(maxsize=queue_maxsize)
+        )
+        self._queue_maxsize = queue_maxsize
+        self._overflow = overflow
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items: dict[int, SubscriptionItemData] = {}
         self.subscription_id: int | None = None
+        # Tracks whether the user explicitly deleted this subscription, so the
+        # auto-reconnect supervisor can skip re-creating dead subscriptions.
+        self._deleted: bool = False
+        # Monotonic timestamp of the last publish response we received for this
+        # subscription. Used by the stale-subscription watchdog to detect a
+        # subscription that's gone dead on the server side without the transport
+        # going down. `None` means no notification has arrived yet.
+        self.last_publish_at: float | None = None
+        self.last_sequence_number: int | None = None
+        # Hook the watchdog (set by Client.create_subscription) uses to force
+        # a full reconnect cycle when overflow=DISCONNECT fires.
+        self._on_overflow_disconnect: Any = None
+        # Keep strong refs to in-flight dispatch tasks so the GC can't cancel
+        # them while they're still running user-handler code.
+        self._dispatch_tasks: set[asyncio.Task[None]] = set()
+        # Set while publish_callback is dispatching notifications retrieved via
+        # Republish; consumed by _explode_* to tag events with replayed=True.
+        self._replaying: bool = False
 
     async def init(self) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
@@ -142,7 +232,7 @@ class Subscription:
         return response
 
     async def update(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
-        if not isinstance(self.server, UaClient):
+        if not isinstance(self.server, UaSession):
             raise ua.uaerrors.UaError(f"update() is not supported in {self.server}.")
         response = await self.server.update_subscription(params)
         self.logger.info("Subscription updated %s", params.SubscriptionId)
@@ -152,86 +242,365 @@ class Subscription:
 
     async def publish_callback(self, publish_result: ua.PublishResult) -> None:
         """
-        Handle `PublishResult` callback.
+        Handle a `PublishResult` from the publish loop.
+
+        This stays cheap and synchronous-feeling: notifications are exploded
+        into typed `SubEvent` instances, and each is delivered without
+        awaiting user code. The publish loop never blocks on a slow consumer.
         """
         self.logger.info("Publish callback called with result: %s", publish_result)
-        if publish_result.NotificationMessage.NotificationData is not None:
-            for notif in publish_result.NotificationMessage.NotificationData:
-                if isinstance(notif, ua.DataChangeNotification):
-                    await self._call_datachange(notif)
-                elif isinstance(notif, ua.EventNotificationList):
-                    await self._call_event(notif)
-                elif isinstance(notif, ua.StatusChangeNotification):
-                    await self._call_status(notif)
+        self.last_publish_at = time.monotonic()
+        if publish_result.NotificationMessage.NotificationData is None:
+            return
+        self.last_sequence_number = int(publish_result.NotificationMessage.SequenceNumber)
+        for event in self._explode_notifications(publish_result.NotificationMessage.NotificationData):
+            self._deliver(event)
+
+    def _explode_notifications(self, notification_data: Iterable[Any]) -> Iterable[SubEvent]:
+        """Translate server `NotificationData` items into typed `SubEvent`s."""
+        for notif in notification_data:
+            if isinstance(notif, ua.DataChangeNotification):
+                yield from self._explode_datachange(notif)
+            elif isinstance(notif, ua.EventNotificationList):
+                yield from self._explode_events(notif)
+            elif isinstance(notif, ua.StatusChangeNotification):
+                yield StatusChangeEvent(notification=notif, replayed=self._replaying)
+            else:
+                self.logger.warning("Notification type not supported yet for notification %s", notif)
+
+    def _explode_datachange(self, datachange: ua.DataChangeNotification) -> Iterable[DataChangeEvent]:
+        for item in datachange.MonitoredItems:
+            data = self._monitored_items.get(item.ClientHandle)
+            if data is None or data.node is None:
+                self.logger.warning("Received a notification for unknown handle: %s", item.ClientHandle)
+                continue
+            event_data = DataChangeNotif(data, item)
+            # Value can be None on some server responses; preserve the raw behavior of master.
+            value: Any = None
+            if item.Value is not None and item.Value.Value is not None:
+                value = item.Value.Value.Value
+            yield DataChangeEvent(node=data.node, value=value, data=event_data, replayed=self._replaying)
+
+    def _explode_events(self, eventlist: ua.EventNotificationList) -> Iterable[OpcEvent]:
+        for event in eventlist.Events:
+            data = self._monitored_items.get(event.ClientHandle)
+            if data is None:
+                self.logger.warning("Received event for unknown handle: %s", event.ClientHandle)
+                continue
+            if not isinstance(data.mfilter, ua.EventFilter):
+                self.logger.warning(
+                    "Received event notification but monitored item has no event filter: %s", event.ClientHandle
+                )
+                continue
+            result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)
+            result.server_handle = data.server_handle
+            yield OpcEvent(event=result, replayed=self._replaying)
+
+    def _deliver(self, event: SubEvent) -> None:
+        """Deliver one event to either the iterator queue or the legacy handler.
+
+        Either path is non-blocking: the iterator path uses `put_nowait` (with
+        the configured overflow policy), and the handler path schedules a task
+        so the publish loop doesn't await user code.
+        """
+        if self._event_queue is not None:
+            try:
+                self._event_queue.put_nowait(event)
+                return
+            except asyncio.QueueFull:
+                self._handle_overflow(event)
+                return
+        if self._handler is not None:
+            task = asyncio.create_task(self._dispatch_to_handler(event))
+            self._dispatch_tasks.add(task)
+            task.add_done_callback(self._dispatch_tasks.discard)
+
+    def _handle_overflow(self, event: SubEvent) -> None:
+        """Apply the configured overflow policy when the iterator queue is full."""
+        assert self._event_queue is not None
+        if self._overflow is OverflowPolicy.DROP_OLDEST:
+            try:
+                self._event_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                pass
+            else:
+                try:
+                    self._event_queue.put_nowait(event)
+                except asyncio.QueueFull:
+                    pass
+        elif self._overflow is OverflowPolicy.WARN:
+            self.logger.warning("Subscription %s event queue full; dropping event", self.subscription_id)
+        elif self._overflow is OverflowPolicy.DISCONNECT:
+            self.logger.error("Subscription %s event queue full; forcing reconnect", self.subscription_id)
+            if callable(self._on_overflow_disconnect):
+                try:
+                    self._on_overflow_disconnect()
+                except Exception:
+                    self.logger.exception("overflow-disconnect hook raised")
+        # DROP_NEWEST: do nothing — the new event is discarded.
+
+    async def _dispatch_to_handler(self, event: SubEvent) -> None:
+        """Call the right legacy handler method for `event`, in its own task."""
+        if self._handler is None:
+            return
+        try:
+            if isinstance(event, DataChangeEvent):
+                method = getattr(self._handler, "datachange_notification", None)
+                if method is None:
+                    self.logger.error(
+                        "DataChange subscription created but handler has no datachange_notification method"
+                    )
+                    return
+                if inspect.iscoroutinefunction(method):
+                    await method(event.node, event.value, event.data)
                 else:
-                    self.logger.warning("Notification type not supported yet for notification %s", notif)
+                    method(event.node, event.value, event.data)
+            elif isinstance(event, OpcEvent):
+                method = getattr(self._handler, "event_notification", None)
+                if method is None:
+                    self.logger.error("Event subscription created but handler has no event_notification method")
+                    return
+                if inspect.iscoroutinefunction(method):
+                    await method(event.event)
+                else:
+                    method(event.event)
+            elif isinstance(event, StatusChangeEvent):
+                method = getattr(self._handler, "status_change_notification", None)
+                if method is None:
+                    self.logger.error("DataChange subscription has no status_change_notification method")
+                    return
+                if inspect.iscoroutinefunction(method):
+                    await method(event.notification)
+                else:
+                    method(event.notification)
+        except Exception:
+            self.logger.exception("Exception calling subscription handler")
+
+    # --- async iterator / context-manager API ------------------------------
+
+    async def __aenter__(self) -> Subscription:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: object,
+    ) -> None:
+        await self.delete()
+
+    def __aiter__(self) -> Subscription:
+        if self._handler is not None:
+            raise RuntimeError(
+                "Subscription is in handler mode; create it without a handler to use the async iterator API"
+            )
+        if self._event_queue is None:
+            self._event_queue = asyncio.Queue(maxsize=self._queue_maxsize)
+        return self
+
+    async def __anext__(self) -> SubEvent:
+        if self._event_queue is None:
+            self._event_queue = asyncio.Queue(maxsize=self._queue_maxsize)
+        item = await self._event_queue.get()
+        if item is None:
+            raise StopAsyncIteration
+        return item
+
+    async def next_event(self, timeout: float | None = None) -> SubEvent | None:
+        """Return the next event, or None on timeout. Counterpart to `__anext__`.
+
+        Returns None if `timeout` elapses; raises `StopAsyncIteration` if the
+        subscription has been closed and the queue is drained.
+        """
+        if self._event_queue is None:
+            self._event_queue = asyncio.Queue(maxsize=self._queue_maxsize)
+        try:
+            if timeout is None:
+                item = await self._event_queue.get()
+            else:
+                item = await asyncio.wait_for(self._event_queue.get(), timeout)
+        except asyncio.TimeoutError:
+            return None
+        if item is None:
+            raise StopAsyncIteration
+        return item
 
     async def delete(self) -> None:
         """
         Delete subscription on server. This is automatically done by Client and Server classes on exit.
         """
         if self.subscription_id is None:
-            return
-        results = await self.server.delete_subscriptions([self.subscription_id])
-        results[0].check()
-
-    async def _call_datachange(self, datachange: ua.DataChangeNotification) -> None:
-        if not hasattr(self._handler, "datachange_notification"):
-            self.logger.error("DataChange subscription created but handler has no datachange_notification method")
-            return
-
-        known_handles_args: list[tuple] = []
-        for item in datachange.MonitoredItems:
-            if item.ClientHandle not in self._monitored_items:
-                self.logger.warning("Received a notification for unknown handle: %s", item.ClientHandle)
-                continue
-            data = self._monitored_items[item.ClientHandle]
-            event_data = DataChangeNotif(data, item)
-            # FIXME: Value can be None
-            known_handles_args.append((data.node, item.Value.Value.Value, event_data))  # type: ignore[union-attr]
-
-        try:
-            tasks = [self._handler.datachange_notification(*args) for args in known_handles_args]
-            if inspect.iscoroutinefunction(self._handler.datachange_notification):
-                await asyncio.gather(*tasks)
-        except Exception as ex:
-            self.logger.exception("Exception calling data change handler. Error: %s", ex)
-
-    async def _call_event(self, eventlist: ua.EventNotificationList) -> None:
-        for event in eventlist.Events:
-            if event.ClientHandle not in self._monitored_items:
-                self.logger.warning("Received a notification for unknown handle: %s", event.ClientHandle)
-                continue
-            data = self._monitored_items[event.ClientHandle]
-            if data.mfilter is None or not hasattr(data.mfilter, "SelectClauses"):
-                self.logger.warning(
-                    "Received event notification but monitored item has no event filter: %s", event.ClientHandle
-                )
-                continue
-            result = Event.from_event_fields(data.mfilter.SelectClauses, event.EventFields)  # type: ignore[union-attr]
-            result.server_handle = data.server_handle
-            if hasattr(self._handler, "event_notification"):
-                try:
-                    if inspect.iscoroutinefunction(self._handler.event_notification):
-                        await self._handler.event_notification(result)
-                    else:
-                        self._handler.event_notification(result)
-                except Exception:
-                    self.logger.exception("Exception calling event handler")
-            else:
-                self.logger.error("Event subscription created but handler has no event_notification method")
-
-    async def _call_status(self, status: ua.StatusChangeNotification) -> None:
-        if not hasattr(self._handler, "status_change_notification"):
-            self.logger.error("DataChange subscription has no status_change_notification method")
+            self._deleted = True
+            self._close_iterator()
             return
         try:
-            if inspect.iscoroutinefunction(self._handler.status_change_notification):
-                await self._handler.status_change_notification(status)
-            else:
-                self._handler.status_change_notification(status)
+            results = await self.server.delete_subscriptions([self.subscription_id])
+            results[0].check()
+        except (ConnectionError, OSError, asyncio.TimeoutError):
+            self.logger.info("delete_subscriptions: transport unavailable; local cleanup only")
+        finally:
+            self._deleted = True
+            self._close_iterator()
+
+    def _close_iterator(self) -> None:
+        """Push the sentinel so any active `async for ev in sub` loop ends."""
+        if self._event_queue is None:
+            return
+        try:
+            self._event_queue.put_nowait(None)
+        except asyncio.QueueFull:
+            # Drop the front so the sentinel definitely lands. Any in-flight
+            # events already in the queue are dropped — we're shutting down.
+            try:
+                self._event_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                pass
+            try:
+                self._event_queue.put_nowait(None)
+            except asyncio.QueueFull:
+                pass
+
+    def is_stale(self, margin: float) -> bool:
+        if self._deleted or self.subscription_id is None or self.last_publish_at is None:
+            return False
+        interval_s = self.parameters.RequestedPublishingInterval / 1000.0
+        keepalive = max(int(self.parameters.RequestedMaxKeepAliveCount or 1), 1)
+        stale_after = max(interval_s * keepalive * margin, 1.0)
+        return (time.monotonic() - self.last_publish_at) >= stale_after
+
+    async def restore(self) -> None:
+        if self._deleted or self.subscription_id is None or not isinstance(self.server, UaSession):
+            await self.recreate()
+            return
+        params = ua.TransferSubscriptionsParameters()
+        params.SubscriptionIds = [self.subscription_id]
+        params.SendInitialValues = False
+        try:
+            results = await self.server.transfer_subscriptions(params)
         except Exception:
-            self.logger.exception("Exception calling status change handler")
+            self.logger.info("transfer_subscriptions failed; falling back to recreate", exc_info=True)
+            await self.recreate()
+            return
+        result = results[0] if results else None
+        if result is None or not result.StatusCode.is_good():
+            self.logger.info(
+                "transfer_subscriptions returned %s; falling back to recreate",
+                result.StatusCode if result else "no result",
+            )
+            await self.recreate()
+            return
+        self.server._subscription_callbacks[self.subscription_id] = self.publish_callback
+        if not await self._republish_gaps(result.AvailableSequenceNumbers):
+            self.logger.info("republish could not fill gap for sub %s; recreating", self.subscription_id)
+            await self.recreate()
+            return
+        self.last_publish_at = time.monotonic()
+
+    async def _republish_gaps(self, available: list[int]) -> bool:
+        if not isinstance(self.server, UaSession) or self.subscription_id is None:
+            return True
+        target = max(available) if available else (self.last_sequence_number or 0)
+        seq = (self.last_sequence_number or 0) + 1
+        self._replaying = True
+        try:
+            while True:
+                try:
+                    msg = await self.server.republish(self.subscription_id, seq)
+                except BadMessageNotAvailable:
+                    break
+                except Exception:
+                    self.logger.warning(
+                        "republish failed for sub %s seq %s", self.subscription_id, seq, exc_info=True
+                    )
+                    return False
+                await self.publish_callback(ua.PublishResult(self.subscription_id, NotificationMessage=msg))
+                seq += 1
+        finally:
+            self._replaying = False
+        return (self.last_sequence_number or 0) >= target
+
+    async def recreate(self) -> None:
+        """
+        Re-create this subscription and its monitored items on the server.
+
+        Used by the auto-reconnect supervisor (after the connection has been
+        restored — the server-side subscription is gone) and by the
+        stale-subscription watchdog (transport is still up but the server has
+        dropped this subscription). Client handles are preserved so existing
+        notification routing keeps working.
+        """
+        if self._deleted:
+            return
+        saved_items = list(self._monitored_items.values())
+        old_subscription_id = self.subscription_id
+        self._monitored_items.clear()
+        self.subscription_id = None
+        # Reset liveness clock so the watchdog doesn't immediately flag the
+        # newly-recreated subscription before the first publish arrives.
+        self.last_publish_at = time.monotonic()
+
+        if old_subscription_id is not None and isinstance(self.server, UaSession):
+            # Drop the dead callback registration. Server-side delete is best
+            # effort and may fail (BadNoSubscription / BadSessionClosed) — we
+            # don't care, the local cleanup is what matters here.
+            self.server._subscription_callbacks.pop(old_subscription_id, None)
+            try:
+                await self.server.delete_subscriptions([old_subscription_id])
+            except Exception:
+                self.logger.debug("best-effort delete of old sub %s failed", old_subscription_id, exc_info=True)
+
+        await self.init()
+
+        if not saved_items:
+            return
+
+        mirs: list[ua.MonitoredItemCreateRequest] = []
+        for item in saved_items:
+            if item.node is None or item.attribute is None or item.client_handle is None:
+                self.logger.warning("Skipping monitored item with missing fields during recreate")
+                continue
+            rv = ua.ReadValueId()
+            rv.NodeId = item.node.nodeid
+            rv.AttributeId = item.attribute
+            mparams = ua.MonitoringParameters()
+            mparams.ClientHandle = item.client_handle
+            mparams.SamplingInterval = item.sampling_interval
+            mparams.QueueSize = item.queuesize
+            mparams.DiscardOldest = True
+            if item.mfilter is not None:
+                mparams.Filter = item.mfilter
+            mir = ua.MonitoredItemCreateRequest()
+            mir.ItemToMonitor = rv
+            mir.MonitoringMode = item.monitoring_mode
+            mir.RequestedParameters = mparams
+            mirs.append(mir)
+            # Restore the entry into _monitored_items so that any notifications
+            # arriving between create_monitored_items and its server response are
+            # still routed correctly.
+            self._monitored_items[item.client_handle] = item
+
+        if not mirs:
+            return
+        params = ua.CreateMonitoredItemsParameters()
+        params.SubscriptionId = self.subscription_id
+        params.ItemsToCreate = mirs
+        params.TimestampsToReturn = ua.TimestampsToReturn.Both
+        results = await self.server.create_monitored_items(params)
+        for idx, result in enumerate(results):
+            mi = params.ItemsToCreate[idx]
+            assert mi.RequestedParameters.ClientHandle is not None
+            item = self._monitored_items.get(mi.RequestedParameters.ClientHandle)
+            if item is None:
+                continue
+            if not result.StatusCode.is_good():
+                self.logger.warning(
+                    "Failed to re-create monitored item (client_handle=%s): %s",
+                    mi.RequestedParameters.ClientHandle,
+                    result.StatusCode,
+                )
+                del self._monitored_items[mi.RequestedParameters.ClientHandle]
+                continue
+            item.server_handle = result.MonitoredItemId
 
     @overload
     async def subscribe_data_change(
@@ -287,11 +656,13 @@ class Subscription:
         evtypes: Node | ua.NodeId | str | int | Iterable[Node | ua.NodeId | str | int],
         where_clause_generation: bool = True,
     ) -> ua.EventFilter:
+        raw_types: Iterable[Node | ua.NodeId | str | int]
         if isinstance(evtypes, int | str | ua.NodeId | Node):
-            evtypes = [evtypes]
-        evtypes = [Node(self.server, evtype) for evtype in evtypes]  # type: ignore[union-attr]
-        evfilter = await get_filter_from_event_type(evtypes, where_clause_generation)  # type: ignore[union-attr]
-        return evfilter
+            raw_types = [evtypes]
+        else:
+            raw_types = evtypes
+        nodes = [Node(self.server, t) for t in raw_types]
+        return await get_filter_from_event_type(nodes, where_clause_generation)
 
     async def subscribe_events(
         self,
@@ -325,7 +696,7 @@ class Subscription:
                 # Also because BaseEventType wants every event we can ommit it. Issue: #1205
                 where_clause_generation = False
             evfilter = await self._create_eventfilter(evtypes, where_clause_generation)
-        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)  # type: ignore
+        return await self._subscribe(sourcenode, ua.AttributeIds.EventNotifier, evfilter, queuesize=queuesize)
 
     async def subscribe_alarms_and_conditions(
         self,
@@ -408,9 +779,13 @@ class Subscription:
             # Return results for multiple nodes
             return mids
         # Check and return result for single node (raise `UaStatusCodeError` if subscription failed)
-        if isinstance(mids[0], ua.StatusCode):
-            mids[0].check()
-        return mids[0]  # type: ignore
+        first = mids[0]
+        if isinstance(first, ua.StatusCode):
+            first.check()
+            # check() raises for Bad codes; create_monitored_items only stores Bad codes
+            # here, so this fallthrough is unreachable. Guard for type-narrowing only.
+            raise ua.uaerrors.UaError(f"Unexpected Good StatusCode in monitored-item failure path: {first}")
+        return first
 
     def _make_monitored_item_request(
         self,
@@ -460,6 +835,9 @@ class Subscription:
             # TODO: Either use the filter from request or from response.
             #  Here it uses from request, in modify it uses from response
             data.mfilter = mi.RequestedParameters.Filter
+            data.queuesize = mi.RequestedParameters.QueueSize
+            data.monitoring_mode = mi.MonitoringMode
+            data.sampling_interval = mi.RequestedParameters.SamplingInterval
             self._monitored_items[mi.RequestedParameters.ClientHandle] = data
         results = await self.server.create_monitored_items(params)
         mids = []
@@ -601,7 +979,7 @@ class Subscription:
         :param monitoring: The monitoring mode to apply
         :return: Return a Set Monitoring Mode Result
         """
-        if not isinstance(self.server, UaClient):
+        if not isinstance(self.server, UaSession):
             raise ua.uaerrors.UaError(f"set_monitoring_mode() is not supported in {self.server}.")
         node_handles = []
         for mi in self._monitored_items.values():
@@ -623,10 +1001,12 @@ class Subscription:
         :return: Return a Set Publishing Mode Result
         """
         self.logger.info("set_publishing_mode")
-        if not isinstance(self.server, UaClient):
+        if not isinstance(self.server, UaSession):
             raise ua.uaerrors.UaError(f"set_publishing_mode() is not supported in {self.server}.")
+        if self.subscription_id is None:
+            raise ua.uaerrors.UaError("set_publishing_mode() called before subscription was created on the server.")
         params = ua.SetPublishingModeParameters()
-        params.SubscriptionIds = [self.subscription_id]  # type: ignore
+        params.SubscriptionIds = [self.subscription_id]
         params.PublishingEnabled = publishing
         result = await self.server.set_publishing_mode(params)
         if result[0].is_good():

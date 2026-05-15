@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import Any
 
 from asyncua import ua
 
@@ -152,29 +154,27 @@ class AbstractSession(ABC):
     # Subscription Service Set: https://reference.opcfoundation.org/Core/Part4/v104/5.13.1/
 
     @abstractmethod
-    async def create_subscription(self, params: ua.CreateSubscriptionParameters) -> ua.CreateSubscriptionResult:
+    async def create_subscription(
+        self,
+        params: ua.CreateSubscriptionParameters,
+        callback: Callable[..., Any],
+    ) -> ua.CreateSubscriptionResult:
         """
         https://reference.opcfoundation.org/Core/Part4/v104/5.13.2/
 
-        This Service is used to create a Subscription.
-
-        Subscriptions monitor a set of MonitoredItems for Notifications and return them to the Client in response to Publish requests.
+        Create a Subscription and register `callback` for `PublishResult`s on it.
+        Server-side implementations may accept additional optional parameters (e.g.
+        a per-connection request callback).
         """
 
     @abstractmethod
-    async def modify_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
-        """
-        https://reference.opcfoundation.org/Core/Part4/v104/5.13.3/
-
-        This Service is used to modify a Subscription.
-        """
-
-    @abstractmethod
-    async def delete_subscriptions(self, params: ua.DeleteSubscriptionsParameters) -> list[ua.StatusCode]:
+    async def delete_subscriptions(self, subscription_ids: list[int]) -> list[ua.StatusCode]:
         """
         https://reference.opcfoundation.org/Core/Part4/v104/5.13.8/
 
-        This Service is invoked to delete one or more Subscriptions that belong to the Client's Session.
+        Delete one or more subscriptions identified by SubscriptionId. The list shape
+        matches the high-level API used by both client and server internally; the wire
+        format is built/parsed by the protocol layer.
         """
 
     # MonitoredItem Service Set: https://reference.opcfoundation.org/Core/Part4/v104/5.12.1/
@@ -221,6 +221,4 @@ class AbstractSession(ABC):
         https://reference.opcfoundation.org/Core/Part4/v104/5.13.7/
 
         This Service is used to transfer a Subscription and its MonitoredItems from one Session to another.
-        For example, a Client may need to reopen a Session and then transfer its Subscriptions to that Session.
-        It may also be used by one Client to take over a Subscription from another Client by transferring the Subscription to its Session.
         """

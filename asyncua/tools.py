@@ -4,14 +4,16 @@ import concurrent.futures
 import logging
 import math
 import sys
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 try:
     from IPython import embed  # type: ignore
 except ImportError:
     import code
 
-    def embed():
+    def embed() -> None:
         code.interact(local=dict(globals(), **locals()))
 
 
@@ -19,7 +21,7 @@ from asyncua import Client, Node, Server, ua, uamethod
 from asyncua.ua.uaerrors import UaError, UaStatusCodeError
 
 
-def add_minimum_args(parser):
+def add_minimum_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "-u",
         "--url",
@@ -44,7 +46,7 @@ def add_minimum_args(parser):
     )
 
 
-def add_common_args(parser, default_node="i=84", require_node=False):
+def add_common_args(parser: argparse.ArgumentParser, default_node: str = "i=84", require_node: bool = False) -> None:
     add_minimum_args(parser)
     parser.add_argument(
         "-n",
@@ -75,7 +77,7 @@ def add_common_args(parser, default_node="i=84", require_node=False):
     )
 
 
-def _require_nodeid(parser, args):
+def _require_nodeid(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     # check that a nodeid has been given explicitly, a bit hackish...
     if args.nodeid == "i=84" and args.path == "":
         parser.print_usage()
@@ -83,7 +85,7 @@ def _require_nodeid(parser, args):
         sys.exit(1)
 
 
-def parse_args(parser, requirenodeid=False):
+def parse_args(parser: argparse.ArgumentParser, requirenodeid: bool = False) -> argparse.Namespace:
     args = parser.parse_args()
     # logging.basicConfig(format="%(levelname)s: %(message)s", level=getattr(logging, args.loglevel))
     logging.basicConfig(level=getattr(logging, args.loglevel))
@@ -95,7 +97,7 @@ def parse_args(parser, requirenodeid=False):
     return args
 
 
-async def get_node(client, args):
+async def get_node(client: Client, args: argparse.Namespace) -> Node:
     node = client.get_node(args.nodeid)
     if args.path:
         path = args.path.split(",")
@@ -106,11 +108,11 @@ async def get_node(client, args):
     return node
 
 
-def uaread():
+def uaread() -> None:
     asyncio.run(_uaread())
 
 
-async def _uaread():
+async def _uaread() -> None:
     parser = argparse.ArgumentParser(description="Read attribute of a node, per default reads value of a node")
     add_common_args(parser)
     parser.add_argument(
@@ -140,7 +142,7 @@ async def _uaread():
         node = await get_node(client, args)
         attr = await node.read_attribute(args.attribute)
         if args.datatype == "python":
-            print(attr.Value.Value)
+            print(attr.Value.Value)  # type: ignore[union-attr]
         elif args.datatype == "variant":
             print(attr.Value)
         else:
@@ -153,7 +155,7 @@ async def _uaread():
     sys.exit(0)
 
 
-def _args_to_array(val, array):
+def _args_to_array(val: Any, array: str) -> Any:
     if array == "guess":
         if "," in val:
             array = "true"
@@ -162,11 +164,16 @@ def _args_to_array(val, array):
     return val
 
 
-def _arg_to_bool(val):
+def _arg_to_bool(val: str) -> bool:
     return val in ("true", "True")
 
 
-def _arg_to_variant(val, array, ptype, varianttype=None):
+def _arg_to_variant(
+    val: Any,
+    array: str,
+    ptype: Callable[[Any], Any],
+    varianttype: ua.VariantType | None = None,
+) -> ua.Variant:
     val = _args_to_array(val, array)
     if isinstance(val, list):
         val = [ptype(i) for i in val]
@@ -177,7 +184,7 @@ def _arg_to_variant(val, array, ptype, varianttype=None):
     return ua.Variant(val)
 
 
-def _val_to_variant(val, args):
+def _val_to_variant(val: str, args: argparse.Namespace) -> ua.Variant:
     array = args.array
     if args.datatype == "guess":
         if val in ("true", "True", "false", "False"):
@@ -240,7 +247,7 @@ def _val_to_variant(val, args):
     raise ValueError(f"Invalid datatype: {args.datatype}")
 
 
-async def _configure_client_with_args(client, args):
+async def _configure_client_with_args(client: Client, args: argparse.Namespace) -> None:
     if args.user:
         client.set_user(args.user)
     if args.password:
@@ -248,11 +255,11 @@ async def _configure_client_with_args(client, args):
     await client.set_security_string(args.security)
 
 
-def uawrite():
+def uawrite() -> None:
     asyncio.run(_uawrite())
 
 
-async def _uawrite():
+async def _uawrite() -> None:
     parser = argparse.ArgumentParser(description="Write attribute of a node, per default write value of node")
     add_common_args(parser)
     parser.add_argument(
@@ -322,11 +329,11 @@ async def _uawrite():
     sys.exit(0)
 
 
-def uals():
+def uals() -> None:
     asyncio.run(_uals())
 
 
-async def _uals():
+async def _uals() -> None:
     parser = argparse.ArgumentParser(description="Browse OPC-UA node and print result")
     add_common_args(parser)
     parser.add_argument("-l", dest="long_format", const=3, nargs="?", type=int, help="use a long listing format")
@@ -354,7 +361,7 @@ async def _uals():
     sys.exit(0)
 
 
-async def _lsprint_0(node, depth, indent=""):
+async def _lsprint_0(node: Node, depth: int, indent: str = "") -> None:
     if not indent:
         print("{0:30} {1:25}".format("DisplayName", "NodeId"))
         print("")
@@ -364,7 +371,7 @@ async def _lsprint_0(node, depth, indent=""):
             await _lsprint_0(Node(node.session, desc.NodeId), depth - 1, indent + "  ")
 
 
-async def _lsprint_1(node, depth, indent=""):
+async def _lsprint_1(node: Node, depth: int, indent: str = "") -> None:
     if not indent:
         print("{0:30} {1:25} {2:25} {3:25}".format("DisplayName", "NodeId", "BrowseName", "Value"))
         print("")
@@ -405,7 +412,7 @@ async def _lsprint_1(node, depth, indent=""):
             await _lsprint_1(Node(node.session, desc.NodeId), depth - 1, indent + "  ")
 
 
-async def _lsprint_long(pnode, depth, indent=""):
+async def _lsprint_long(pnode: Node, depth: int, indent: str = "") -> None:
     if not indent:
         print(
             "{0:30} {1:25} {2:25} {3:10} {4:30} {5:25}".format(
@@ -443,7 +450,7 @@ async def _lsprint_long(pnode, depth, indent=""):
             except UaError as err:
                 print(f"{indent}{node.nodeid.to_string():25} Error reading attributes: {err}")
                 continue
-        name, bname, nclass, _mask, _umask, dtype, val = (attr.Value.Value for attr in attrs)
+        name, bname, nclass, _mask, _umask, dtype, val = (attr.Value.Value for attr in attrs)  # type: ignore[union-attr]
         update = attrs[-1].ServerTimestamp
         if nclass == ua.NodeClass.Variable:
             print(
@@ -465,19 +472,11 @@ async def _lsprint_long(pnode, depth, indent=""):
             await _lsprint_long(node, depth - 1, indent + "  ")
 
 
-class SubHandler:
-    def datachange_notification(self, node, val, data):
-        print("New data change event", node, val, data)
-
-    def event_notification(self, event):
-        print("New event", event)
-
-
-def uasubscribe():
+def uasubscribe() -> None:
     asyncio.run(_uasubscribe())
 
 
-async def _uasubscribe():
+async def _uasubscribe() -> None:
     parser = argparse.ArgumentParser(description="Subscribe to a node and print results")
     add_common_args(parser)
     parser.add_argument(
@@ -502,20 +501,19 @@ async def _uasubscribe():
     await client.connect()
     try:
         node = await get_node(client, args)
-        handler = SubHandler()
-        sub = await client.create_subscription(500, handler)
-        if args.eventtype == "datachange":
-            await sub.subscribe_data_change(node)
-        else:
-            await sub.subscribe_events(node)
-        print("Type Ctr-C to exit")
-        while True:
-            await asyncio.sleep(1)
+        async with await client.create_subscription(500) as sub:
+            if args.eventtype == "datachange":
+                await sub.subscribe_data_change(node)
+            else:
+                await sub.subscribe_events(node)
+            print("Type Ctr-C to exit")
+            async for event in sub:
+                print(event)
     finally:
         await client.disconnect()
 
 
-def application_to_strings(app):
+def application_to_strings(app: Any) -> list[tuple[str, Any]]:
     result = [("Application URI", app.ApplicationUri)]
     optionals = [
         ("Product URI", app.ProductUri),
@@ -533,7 +531,7 @@ def application_to_strings(app):
     return result  # ['{}: {}'.format(n, v) for (n, v) in result]
 
 
-def cert_to_string(der):
+def cert_to_string(der: bytes | None) -> str:
     if not der:
         return "[no certificate]"
     from .crypto import uacrypto
@@ -542,7 +540,7 @@ def cert_to_string(der):
     return uacrypto.x509_to_string(cert)
 
 
-def endpoint_to_strings(ep):
+def endpoint_to_strings(ep: Any) -> list[tuple[str, Any]]:
     result = [("Endpoint URL", ep.EndpointUrl)]
     result += application_to_strings(ep.Server)
     result += [
@@ -566,11 +564,11 @@ def endpoint_to_strings(ep):
     return result
 
 
-def uaclient():
+def uaclient() -> None:
     asyncio.run(_uaclient())
 
 
-async def _uaclient():
+async def _uaclient() -> None:
     parser = argparse.ArgumentParser(
         description="Connect to server and start python shell. root and objects nodes are available."
         "Node specificed in command line is available as mynode variable"
@@ -597,7 +595,7 @@ async def _uaclient():
     sys.exit(0)
 
 
-async def _uaserver():
+async def _uaserver() -> None:
     parser = argparse.ArgumentParser(
         description="Run an example OPC-UA server. By importing xml definition and using uawrite "
         " command line, it is even possible to expose real data using this server"
@@ -656,7 +654,7 @@ async def _uaserver():
     if args.populate:
 
         @uamethod
-        def multiply(parent, x, y):
+        def multiply(parent: Any, x: float, y: float) -> float:
             print("multiply method call with parameters: ", x, y)
             return x * y
 
@@ -699,15 +697,15 @@ async def _uaserver():
     sys.exit(0)
 
 
-def uaserver():
+def uaserver() -> None:
     asyncio.run(_uaserver())
 
 
-def uadiscover():
+def uadiscover() -> None:
     asyncio.run(_uadiscover())
 
 
-async def _uadiscover():
+async def _uadiscover() -> None:
     parser = argparse.ArgumentParser(
         description="Performs OPC UA discovery and prints information on servers and endpoints."
     )
@@ -758,13 +756,13 @@ async def _uadiscover():
     sys.exit(0)
 
 
-def print_history(o):
+def print_history(o: list[ua.DataValue]) -> None:
     print("{0:30} {1:10} {2}".format("Source timestamp", "Status", "Value"))
     for d in o:
-        print("{0:30} {1:10} {2}".format(str(d.SourceTimestamp), d.StatusCode.name, d.Value.Value))
+        print("{0:30} {1:10} {2}".format(str(d.SourceTimestamp), d.StatusCode.name, d.Value.Value))  # type: ignore[union-attr]
 
 
-def str_to_datetime(s, default=None) -> datetime:
+def str_to_datetime(s: str | None, default: datetime | None = None) -> datetime:
     if not s:
         if default is not None:
             return default
@@ -778,11 +776,11 @@ def str_to_datetime(s, default=None) -> datetime:
     raise ValueError(f"Invalid datetime format: {s}")
 
 
-def uahistoryread():
+def uahistoryread() -> None:
     asyncio.run(_uahistoryread())
 
 
-async def _uahistoryread():
+async def _uahistoryread() -> None:
     parser = argparse.ArgumentParser(description="Read history of a node")
     add_common_args(parser)
     parser.add_argument(
@@ -827,11 +825,11 @@ async def _uahistoryread():
     sys.exit(0)
 
 
-def uacall():
+def uacall() -> None:
     asyncio.run(_uacall())
 
 
-async def _uacall():
+async def _uacall() -> None:
     parser = argparse.ArgumentParser(description="Call method of a node")
     add_common_args(parser)
     parser.add_argument(
@@ -922,11 +920,11 @@ async def _uacall():
     sys.exit(0)
 
 
-def uageneratestructs():
+def uageneratestructs() -> None:
     asyncio.run(_uageneratestructs())
 
 
-async def _uageneratestructs():
+async def _uageneratestructs() -> None:
     parser = argparse.ArgumentParser(
         description="Generate a Python module from the xml structure definition (.bsd),"
         " the node argument is typically a children of i=93"
@@ -949,6 +947,6 @@ async def _uageneratestructs():
     try:
         node = await get_node(client, args)
         generators, _ = await client.load_type_definitions([node])
-        generators[0].save_to_file(args.output_path, True)
+        generators[0].save_to_file(args.output_path, True)  # type: ignore[attr-defined]
     finally:
         await client.disconnect()

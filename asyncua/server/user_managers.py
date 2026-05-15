@@ -1,17 +1,35 @@
+from __future__ import annotations
+
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from asyncua.crypto import uacrypto
 from asyncua.crypto.permission_rules import User, UserRole
 
+if TYPE_CHECKING:
+    from .internal_server import InternalServer
+
 
 class UserManager:
-    def get_user(self, iserver, username=None, password=None, certificate=None):
+    def get_user(
+        self,
+        iserver: "InternalServer",
+        username: str | None = None,
+        password: str | None = None,
+        certificate: Any = None,
+    ) -> User | None:
         raise NotImplementedError
 
 
 class PermissiveUserManager:
-    def get_user(self, iserver, username=None, password=None, certificate=None):
+    def get_user(
+        self,
+        iserver: "InternalServer",
+        username: str | None = None,
+        password: str | None = None,
+        certificate: Any = None,
+    ) -> User | None:
         """
         Default user_manager, does nothing much but check for admin
         """
@@ -25,10 +43,16 @@ class CertificateUserManager:
     Certificate user manager, takes a certificate handler with its associated users and provides those users.
     """
 
-    def __init__(self):
-        self._trusted_certificates = {}
+    def __init__(self) -> None:
+        self._trusted_certificates: dict[str, dict[str, Any]] = {}
 
-    async def add_role(self, certificate_path: Path, user_role: UserRole, name: str, format: str | None = None):
+    async def add_role(
+        self,
+        certificate_path: Path,
+        user_role: UserRole,
+        name: str,
+        format: str | None = None,
+    ) -> None:
         certificate = await uacrypto.load_certificate(certificate_path, format)
         if name is None:
             raise KeyError
@@ -42,7 +66,13 @@ class CertificateUserManager:
             )
         self._trusted_certificates[name] = {"certificate": uacrypto.der_from_x509(certificate), "user": user}
 
-    def get_user(self, iserver, username=None, password=None, certificate=None):
+    def get_user(
+        self,
+        iserver: "InternalServer",
+        username: str | None = None,
+        password: str | None = None,
+        certificate: Any = None,
+    ) -> User | None:
         if certificate is None:
             return None
         correct_users = [
@@ -54,8 +84,8 @@ class CertificateUserManager:
             return None
         return correct_users[0]
 
-    async def add_user(self, certificate_path: Path, name: str, format: str | None = None):
+    async def add_user(self, certificate_path: Path, name: str, format: str | None = None) -> None:
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.User, name=name, format=format)
 
-    async def add_admin(self, certificate_path: Path, name: str, format: str | None = None):
+    async def add_admin(self, certificate_path: Path, name: str, format: str | None = None) -> None:
         await self.add_role(certificate_path=certificate_path, user_role=UserRole.Admin, name=name, format=format)

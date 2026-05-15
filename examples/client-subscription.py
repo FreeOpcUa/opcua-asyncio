@@ -1,55 +1,44 @@
-import sys
-
-sys.path.insert(0, "..")
-# os.environ['PYOPCUA_NO_TYPO_CHECK'] = 'True'
-
 import asyncio
 import logging
 
-from asyncua import Client, Node, ua
+from asyncua import Client, ua
+from asyncua.common.subscription import DataChangeEvent, StatusChangeEvent
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger("asyncua")
 
 
-class SubscriptionHandler:
+async def main() -> None:
     """
-    The SubscriptionHandler is used to handle the data that is received for the subscription.
-    """
+    Client-Subscription example with auto-reconnect.
 
-    def datachange_notification(self, node: Node, val, data):
-        """
-        Callback for asyncua Subscription.
-        This method will be called when the Client received a data change message from the Server.
-        """
-        _logger.info("datachange_notification %r %s", node, val)
-
-
-async def main():
-    """
-    Main task of this Client-Subscription example.
+    Run against examples/server-example.py. Kill and restart the server while
+    this script is running: the supervisor reconnects transparently and the
+    subscription resumes producing notifications without user intervention.
     """
     client = Client(url="opc.tcp://localhost:4840/freeopcua/server/")
-    async with client:
+    await client.connect(auto_reconnect=True, reconnect_max_delay=2.0)
+    try:
         idx = await client.get_namespace_index(uri="http://examples.freeopcua.github.io")
         var = await client.nodes.objects.get_child(f"{idx}:MyObject/{idx}:MyVariable")
-        handler = SubscriptionHandler()
-        # We create a Client Subscription.
-        subscription = await client.create_subscription(500, handler)
-        nodes = [
-            var,
-            client.get_node(ua.ObjectIds.Server_ServerStatus_CurrentTime),
-        ]
-        # We subscribe to data changes for two nodes (variables).
-        await subscription.subscribe_data_change(nodes)
-        # We let the subscription run for ten seconds
-        await asyncio.sleep(10)
-        # We delete the subscription (this un-subscribes from the data changes of the two variables).
-        # This is optional since closing the connection will also delete all subscriptions.
-        await subscription.delete()
-        # After one second we exit the Client context manager - this will close the connection.
-        await asyncio.sleep(1)
+        async with await client.create_subscription(500) as subscription:
+            nodes = [
+                var,
+                client.get_node(ua.ObjectIds.Server_ServerStatus_CurrentTime),
+            ]
+            await subscription.subscribe_data_change(nodes)
+            async for event in subscription:
+                match event:
+                    case DataChangeEvent(node=node, value=value):
+                        _logger.info("data change %r %s", node, value)
+                    case StatusChangeEvent(notification=notif):
+                        _logger.info("status change %s", notif.Status)
+    finally:
+        await client.disconnect()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass

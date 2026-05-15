@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import logging
 import sqlite3
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Any
 
 import aiosqlite
 
@@ -13,6 +16,9 @@ from ..common.utils import Buffer
 from ..ua.ua_binary import variant_from_binary, variant_to_binary
 from .history import HistoryStorageInterface
 
+if TYPE_CHECKING:
+    from asyncua.common.node import Node
+
 
 class HistorySQLite(HistoryStorageInterface):
     """
@@ -22,22 +28,24 @@ class HistorySQLite(HistoryStorageInterface):
     note that PARSE_DECLTYPES is active so certain data types (such as datetime) will not be BLOBs
     """
 
-    def __init__(self, path="history.db", max_history_data_response_size=10000) -> None:
+    def __init__(self, path: str = "history.db", max_history_data_response_size: int = 10000) -> None:
         self.max_history_data_response_size = max_history_data_response_size
         self.logger = logging.getLogger(__name__)
-        self._datachanges_period = {}
+        self._datachanges_period: dict[ua.NodeId, Any] = {}
         self._db_file = path
-        self._event_fields = {}
-        self._db: aiosqlite.Connection = None
+        self._event_fields: dict[ua.NodeId, list[str]] = {}
+        self._db: aiosqlite.Connection = None  # type: ignore[assignment]
 
-    async def init(self):
+    async def init(self) -> None:
         self._db = await aiosqlite.connect(self._db_file, detect_types=sqlite3.PARSE_DECLTYPES)
 
-    async def stop(self):
+    async def stop(self) -> None:
         await self._db.close()
         self.logger.info("Historizing SQL connection closed")
 
-    async def new_historized_node(self, node_id, period, count=0):
+    async def new_historized_node(
+        self, node_id: ua.NodeId, period: timedelta | None, count: int = 0
+    ) -> None:
         table = self._get_table_name(node_id)
         self._datachanges_period[node_id] = period, count
         # create a table for the node which will store attributes of the DataValue object
@@ -58,7 +66,9 @@ class HistorySQLite(HistoryStorageInterface):
         except aiosqlite.Error as e:
             self.logger.info("Historizing SQL Table Creation Error for %s: %s", node_id, e)
 
-    async def execute_sql_delete(self, condition: str, args: Iterable, table: str, node_id):
+    async def execute_sql_delete(
+        self, condition: str, args: Iterable[Any], table: str, node_id: ua.NodeId
+    ) -> None:
         try:
             validate_table_name(table)
             await self._db.execute(f'DELETE FROM "{table}" WHERE {condition}', args)
@@ -66,7 +76,7 @@ class HistorySQLite(HistoryStorageInterface):
         except aiosqlite.Error as e:
             self.logger.error("Historizing SQL Delete Old Data Error for %s: %s", node_id, e)
 
-    async def save_node_value(self, node_id, datavalue):
+    async def save_node_value(self, node_id: ua.NodeId, datavalue: ua.DataValue) -> None:
         table = self._get_table_name(node_id)
         # insert the data change into the database
         try:
@@ -76,9 +86,9 @@ class HistorySQLite(HistoryStorageInterface):
                 (
                     datavalue.ServerTimestamp,
                     datavalue.SourceTimestamp,
-                    datavalue.StatusCode.value,
-                    str(datavalue.Value.Value),
-                    datavalue.Value.VariantType.name,
+                    datavalue.StatusCode.value,  # type: ignore[union-attr]
+                    str(datavalue.Value.Value),  # type: ignore[union-attr]
+                    datavalue.Value.VariantType.name,  # type: ignore[union-attr]
                     sqlite3.Binary(variant_to_binary(datavalue.Value)),
                 ),
             )
@@ -103,7 +113,9 @@ class HistorySQLite(HistoryStorageInterface):
                 node_id,
             )
 
-    async def read_node_history(self, node_id, start, end, nb_values):
+    async def read_node_history(
+        self, node_id: ua.NodeId, start: datetime | None, end: datetime | None, nb_values: int
+    ) -> tuple[list[ua.DataValue], datetime | None]:
         table = self._get_table_name(node_id)
         start_time, end_time, order, limit = self._get_bounds(start, end, nb_values)
         cont = None
@@ -135,7 +147,9 @@ class HistorySQLite(HistoryStorageInterface):
         results = results[: self.max_history_data_response_size]
         return results, cont
 
-    async def new_historized_event(self, source_id, evtypes, period, count=0):
+    async def new_historized_event(  # type: ignore[override]
+        self, source_id: ua.NodeId, evtypes: list[Node], period: timedelta | None, count: int = 0
+    ) -> None:
         # get all fields for the event type nodes
         ev_fields = await self._get_event_fields(evtypes)
         self._datachanges_period[source_id] = period
@@ -156,34 +170,40 @@ class HistorySQLite(HistoryStorageInterface):
         except aiosqlite.Error as e:
             self.logger.info("Historizing SQL Table Creation Error for events from %s: %s", source_id, e)
 
-    async def save_event(self, event):
-        table = self._get_table_name(event.SourceNode)
+    async def save_event(self, event: Event) -> None:
+        # Event has dynamic attributes (SourceNode, EventType, Time) set at runtime by
+        # event_objects' generated subclasses; mypy can't see them on the base Event.
+        table = self._get_table_name(event.SourceNode)  # type: ignore[attr-defined]
         columns, placeholders, evtup = self._format_event(event)
-        event_type = event.EventType  # useful for troubleshooting database
-        # insert the event into the database
+        event_type = event.EventType  # type: ignore[attr-defined]
         try:
             validate_table_name(table)
             await self._db.execute(
                 f'INSERT INTO "{table}" ("_Id", "_Timestamp", "_EventTypeName", {columns}) '
-                f'VALUES (NULL, "{event.Time}", "{event_type}", {placeholders})',
+                f'VALUES (NULL, "{event.Time}", "{event_type}", {placeholders})',  # type: ignore[attr-defined]
                 evtup,
             )
             await self._db.commit()
         except aiosqlite.Error as e:
-            self.logger.error("Historizing SQL Insert Error for events from %s: %s", event.SourceNode, e)
-        # get this node's period from the period dict and calculate the limit
+            self.logger.error("Historizing SQL Insert Error for events from %s: %s", event.SourceNode, e)  # type: ignore[attr-defined]
         period = self._datachanges_period[event.emitting_node]
         if period:
-            # after the insert, if a period was specified delete all records older than period
             date_limit = datetime.now(timezone.utc) - period
             try:
                 validate_table_name(table)
                 await self._db.execute(f'DELETE FROM "{table}" WHERE Time < ?', (date_limit.isoformat(" "),))
                 await self._db.commit()
             except aiosqlite.Error as e:
-                self.logger.error("Historizing SQL Delete Old Data Error for events from %s: %s", event.SourceNode, e)
+                self.logger.error("Historizing SQL Delete Old Data Error for events from %s: %s", event.SourceNode, e)  # type: ignore[attr-defined]
 
-    async def read_event_history(self, source_id, start, end, nb_values, evfilter):
+    async def read_event_history(
+        self,
+        source_id: ua.NodeId,
+        start: datetime | None,
+        end: datetime | None,
+        nb_values: int,
+        evfilter: Any,
+    ) -> tuple[list[Event], Any]:
         table = self._get_table_name(source_id)
         start_time, end_time, order, limit = self._get_bounds(start, end, nb_values)
         clauses, clauses_str = self._get_select_clauses(source_id, evfilter)
@@ -214,10 +234,10 @@ class HistorySQLite(HistoryStorageInterface):
         results = results[: self.max_history_data_response_size]
         return results, cont
 
-    def _get_table_name(self, node_id):
-        return f"{node_id.NamespaceIndex}_{node_id.Identifier}"
+    def _get_table_name(self, node_id: ua.NodeId) -> str:
+        return f"{node_id.NamespaceIndex}_{node_id.Identifier!r}"
 
-    async def _get_event_fields(self, evtypes):
+    async def _get_event_fields(self, evtypes: list[Node]) -> list[str]:
         """
         Get all fields from the event types that are to be historized
         Args:
@@ -235,7 +255,9 @@ class HistorySQLite(HistoryStorageInterface):
         return ev_fields
 
     @staticmethod
-    def _get_bounds(start, end, nb_values):
+    def _get_bounds(
+        start: datetime | None, end: datetime | None, nb_values: int
+    ) -> tuple[str, str, str, int]:
         order = "ASC"
         if start is None or start == ua.get_win_epoch():
             order = "DESC"
@@ -255,7 +277,7 @@ class HistorySQLite(HistoryStorageInterface):
             limit = -1  # in SQLite a LIMIT of -1 returns all results
         return start_time, end_time, order, limit
 
-    def _format_event(self, event):
+    def _format_event(self, event: Event) -> tuple[str, str, tuple[Any, ...]]:
         """
         Convert an event object triggered by the subscription into ordered lists for the SQL insert string
 
@@ -277,13 +299,13 @@ class HistorySQLite(HistoryStorageInterface):
             ev_variant_binaries.append(sqlite3.Binary(variant_to_binary(variant)))
         return self._list_to_sql_str(names), self._list_to_sql_str(placeholders, False), tuple(ev_variant_binaries)
 
-    def _get_event_columns(self, ev_fields):
+    def _get_event_columns(self, ev_fields: list[str]) -> str:
         fields = []
         for field in ev_fields:
             fields.append(field + " BLOB")
         return self._list_to_sql_str(fields, False)
 
-    def _get_select_clauses(self, source_id, evfilter):
+    def _get_select_clauses(self, source_id: ua.NodeId, evfilter: Any) -> tuple[list[str], str]:
         s_clauses = []
         for select_clause in evfilter.SelectClauses:
             try:
@@ -301,6 +323,6 @@ class HistorySQLite(HistoryStorageInterface):
         return clauses, self._list_to_sql_str(clauses)
 
     @staticmethod
-    def _list_to_sql_str(ls, quotes=True):
+    def _list_to_sql_str(ls: list[str], quotes: bool = True) -> str:
         items = [f'"{item}"' if quotes else str(item) for item in ls]
         return ", ".join(items)

@@ -111,12 +111,17 @@ async def test_session_watchdog():
     port = find_free_port()
     srv = Server()
     await srv.init()
+    srv.iserver.min_session_timeout_ms = 100
     srv.set_endpoint(f"opc.tcp://127.0.0.1:{port}")
     await srv.start()
     client = Client(f"opc.tcp://127.0.0.1:{port}", timeout=0.5, watchdog_intervall=1)
     client.session_timeout = 1000  # 1 second
     await client.connect()
-    client._closing = True  # Kill the keepalive tasks
+    # Kill the keepalive tasks so the server-side session times out from inactivity.
+    if client._renew_channel_task is not None:
+        client._renew_channel_task.cancel()
+    if client._supervisor_task is not None:
+        client._supervisor_task.cancel()
     await asyncio.sleep(3)  # Wait for the watchdog to terminate the session due to inactivity
     with pytest.raises(BadSessionNotActivated):
         server_time_node = client.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))

@@ -2,15 +2,21 @@
 server side implementation of subscription service
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING, Any
 
 from asyncua import ua
 from asyncua.common import uamethod, utils
 
 from .address_space import AddressSpace
 from .internal_subscription import InternalSubscription
+
+if TYPE_CHECKING:
+    from .internal_server import InternalServer
 
 
 class SubscriptionService:
@@ -19,15 +25,22 @@ class SubscriptionService:
     There is one `SubscriptionService` instance for every `Server`/`InternalServer`.
     """
 
-    def __init__(self, aspace: AddressSpace):
+    def __init__(self, aspace: AddressSpace, iserver: "InternalServer | None" = None) -> None:
         self.logger = logging.getLogger(__name__)
         self.aspace: AddressSpace = aspace
+        self.iserver: "InternalServer | None" = iserver
         self.subscriptions: dict[int, InternalSubscription] = {}
         self._sub_id_counter = 77
-        self.standard_events = {}
-        self._conditions = {}
+        self.standard_events: dict[int, Any] = {}
+        self._conditions: dict[ua.NodeId, Any] = {}
 
-    async def create_subscription(self, params, callback, session_id, request_callback=None):
+    async def create_subscription(
+        self,
+        params: ua.CreateSubscriptionParameters,
+        callback: Callable[..., Any],
+        session_id: ua.NodeId,
+        request_callback: Callable[..., Any] | None = None,
+    ) -> ua.CreateSubscriptionResult:
         self.logger.info("create subscription")
         result = ua.CreateSubscriptionResult()
         result.RevisedPublishingInterval = params.RequestedPublishingInterval
@@ -35,6 +48,8 @@ class SubscriptionService:
         result.RevisedMaxKeepAliveCount = params.RequestedMaxKeepAliveCount
         self._sub_id_counter += 1
         result.SubscriptionId = self._sub_id_counter
+        no_acks_limit = self.iserver.max_unacked_messages_per_subscription if self.iserver else 5000
+        max_queue_size = self.iserver.max_monitored_item_queue_size if self.iserver else 10_000
         internal_sub = InternalSubscription(
             result,
             self.aspace,
@@ -42,12 +57,14 @@ class SubscriptionService:
             session_id,
             request_callback=request_callback,
             delete_callback=lambda: self.subscriptions.pop(result.SubscriptionId, None),
+            no_acks_limit=no_acks_limit,
+            max_queue_size=max_queue_size,
         )
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub
         return result
 
-    def modify_subscription(self, params):
+    def modify_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
         # Requested params are ignored, result = params set during create_subscription.
         self.logger.info("modify subscription")
         result = ua.ModifySubscriptionResult()
@@ -61,10 +78,10 @@ class SubscriptionService:
         except KeyError:
             raise utils.ServiceError(ua.StatusCodes.BadSubscriptionIdInvalid)
 
-    async def delete_subscriptions(self, ids):
+    async def delete_subscriptions(self, ids: list[int]) -> list[ua.StatusCode]:
         self.logger.info("delete subscriptions: %s", ids)
-        res = []
-        existing_subs = []
+        res: list[ua.StatusCode] = []
+        existing_subs: list[InternalSubscription] = []
         for i in ids:
             sub = self.subscriptions.pop(i, None)
             if sub is None:
@@ -78,15 +95,17 @@ class SubscriptionService:
                 self.logger.warning("Exception while stopping subscription", exc_info=stop_result)
         return res
 
-    def publish(self, acks: Iterable[ua.SubscriptionAcknowledgement]):
+    def publish(self, acks: Iterable[ua.SubscriptionAcknowledgement]) -> None:
         self.logger.info("publish request with acks %s", acks)
         for subid, sub in self.subscriptions.items():
             sub.publish([ack.SequenceNumber for ack in acks if ack.SubscriptionId == subid])
 
-    async def create_monitored_items(self, params: ua.CreateMonitoredItemsParameters):
+    async def create_monitored_items(
+        self, params: ua.CreateMonitoredItemsParameters
+    ) -> list[ua.MonitoredItemCreateResult]:
         self.logger.info("create monitored items")
         if params.SubscriptionId not in self.subscriptions:
-            res = []
+            res: list[ua.MonitoredItemCreateResult] = []
             for _ in params.ItemsToCreate:
                 response = ua.MonitoredItemCreateResult()
                 response.StatusCode = ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
@@ -94,10 +113,12 @@ class SubscriptionService:
             return res
         return await self.subscriptions[params.SubscriptionId].monitored_item_srv.create_monitored_items(params)
 
-    def modify_monitored_items(self, params):
+    def modify_monitored_items(
+        self, params: ua.ModifyMonitoredItemsParameters
+    ) -> list[ua.MonitoredItemModifyResult]:
         self.logger.info("modify monitored items")
         if params.SubscriptionId not in self.subscriptions:
-            res = []
+            res: list[ua.MonitoredItemModifyResult] = []
             for _ in params.ItemsToModify:
                 result = ua.MonitoredItemModifyResult()
                 result.StatusCode = ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
@@ -105,10 +126,10 @@ class SubscriptionService:
             return res
         return self.subscriptions[params.SubscriptionId].monitored_item_srv.modify_monitored_items(params)
 
-    def delete_monitored_items(self, params):
+    def delete_monitored_items(self, params: ua.DeleteMonitoredItemsParameters) -> list[ua.StatusCode]:
         self.logger.info("delete monitored items")
         if params.SubscriptionId not in self.subscriptions:
-            res = []
+            res: list[ua.StatusCode] = []
             for _ in params.MonitoredItemIds:
                 res.append(ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid))
             return res
@@ -116,13 +137,34 @@ class SubscriptionService:
             params.MonitoredItemIds
         )
 
-    def republish(self, params):
+    def republish(self, params: ua.RepublishParameters) -> ua.NotificationMessage:
         if params.SubscriptionId not in self.subscriptions:
             # TODO: what should I do?
             return ua.NotificationMessage()
         return self.subscriptions[params.SubscriptionId].republish(params.RetransmitSequenceNumber)
 
-    async def trigger_event(self, event, subscription_id=None):
+    async def transfer_subscriptions(
+        self,
+        params: ua.TransferSubscriptionsParameters,
+        session_id: ua.NodeId,
+        callback: Callable[..., Any],
+    ) -> list[ua.TransferResult]:
+        self.logger.info("transfer_subscriptions: %s", params.SubscriptionIds)
+        results: list[ua.TransferResult] = []
+        for sub_id in params.SubscriptionIds:
+            sub = self.subscriptions.get(int(sub_id))
+            result = ua.TransferResult()
+            if sub is None:
+                result.StatusCode = ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
+                results.append(result)
+                continue
+            sub.session_id = session_id
+            sub.pub_result_callback = callback
+            result.AvailableSequenceNumbers = sorted(sub._not_acknowledged_results.keys())
+            results.append(result)
+        return results
+
+    async def trigger_event(self, event: Any, subscription_id: int | None = None) -> None:
         if hasattr(event, "Retain") and hasattr(event, "NodeId"):
             if event.Retain:
                 self._conditions[event.NodeId] = event
@@ -136,7 +178,9 @@ class SubscriptionService:
                 await sub.monitored_item_srv.trigger_event(event)
 
     @uamethod
-    async def condition_refresh(self, parent, subscription_id, mid=None) -> ua.StatusCode | None:
+    async def condition_refresh(
+        self, parent: Any, subscription_id: int, mid: int | None = None
+    ) -> ua.StatusCode | None:
         if subscription_id not in self.subscriptions:
             return ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
         sub = self.subscriptions[subscription_id]
