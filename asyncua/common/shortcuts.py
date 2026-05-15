@@ -1,5 +1,6 @@
 from ..ua import ObjectIds
 from .node import Node
+from .session_interface import AbstractSession
 
 
 class Shortcuts:
@@ -35,7 +36,7 @@ class Shortcuts:
     Organizes: Node
     HasEncoding: Node
 
-    def __init__(self, server):
+    def __init__(self, server: AbstractSession) -> None:
         self.root = Node(server, ObjectIds.RootFolder)
         self.objects = Node(server, ObjectIds.ObjectsFolder)
         self.server = Node(server, ObjectIds.Server)

@@ -480,7 +480,7 @@ class Server:
                     token_policy, token_mode, _ = security_policies.SECURITY_POLICY_TYPE_MAP[token_policy_type]
                     if token_mode != ua.MessageSecurityMode.SignAndEncrypt:
                         continue
-                    idtoken.SecurityPolicyUri = token_policy.URI
+                    idtoken.SecurityPolicyUri = token_policy.URI  # type: ignore[attr-defined]
                     break
                 else:
                     _logger.warning("No encrypting policy available, password may get transferred in plaintext")
@@ -838,7 +838,7 @@ class Server:
         """
         self.iserver.isession.add_method_callback(node.nodeid, callback)
 
-    async def load_type_definitions(self, nodes: Iterable[Node] | None = None) -> dict[str, type]:
+    async def load_type_definitions(self, nodes: Iterable[Node] | None = None) -> Any:
         """
         load custom structures from our server.
         Server side this can be used to create python objects from custom structures

@@ -33,7 +33,7 @@ async def _copy_node(
     rdesc: ua.ReferenceDescription,
     nodeid: ua.NodeId,
     recursive: bool,
-):
+) -> list[ua.NodeId]:
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = rdesc.BrowseName

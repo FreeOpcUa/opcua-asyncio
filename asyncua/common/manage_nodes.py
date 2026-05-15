@@ -20,7 +20,7 @@ from .node_factory import make_node
 _logger = logging.getLogger(__name__)
 
 
-def _parse_nodeid_qname(*args):
+def _parse_nodeid_qname(*args: Any) -> tuple[ua.NodeId, ua.QualifiedName]:
     try:
         if isinstance(args[0], int):
             nodeid = ua.NodeId(0, int(args[0]))
@@ -180,7 +180,9 @@ async def create_reference_type(
     )
 
 
-async def create_object_type(parent: asyncua.Node, nodeid: ua.NodeId | str | int, bname: ua.QualifiedName | str):
+async def create_object_type(
+    parent: asyncua.Node, nodeid: ua.NodeId | str | int, bname: ua.QualifiedName | str
+) -> asyncua.Node:
     """
     Create a new object type to be instantiated in address space.
     arguments are nodeid, browsename
@@ -190,7 +192,7 @@ async def create_object_type(parent: asyncua.Node, nodeid: ua.NodeId | str | int
     return make_node(parent.session, await _create_object_type(parent.session, parent.nodeid, nodeid, qname))
 
 
-async def create_method(parent: asyncua.Node, *args) -> asyncua.Node:
+async def create_method(parent: asyncua.Node, *args: Any) -> asyncua.Node:
     """
     create a child method object
     This is only possible on server side!!
@@ -214,7 +216,13 @@ async def create_method(parent: asyncua.Node, *args) -> asyncua.Node:
     return make_node(parent.session, await _create_method(parent, nodeid, qname, callback, inputs, outputs))
 
 
-async def _create_object(session, parentnodeid, nodeid, qname, objecttype):
+async def _create_object(
+    session: AbstractSession,
+    parentnodeid: ua.NodeId,
+    nodeid: ua.NodeId,
+    qname: ua.QualifiedName,
+    objecttype: ua.NodeId | int,
+) -> ua.NodeId:
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
@@ -240,7 +248,14 @@ async def _create_object(session, parentnodeid, nodeid, qname, objecttype):
     return results[0].AddedNodeId
 
 
-async def _create_reference_type(session, parentnodeid, nodeid, qname, symmetric, inversename):
+async def _create_reference_type(
+    session: AbstractSession,
+    parentnodeid: ua.NodeId,
+    nodeid: ua.NodeId,
+    qname: ua.QualifiedName,
+    symmetric: bool,
+    inversename: str | None,
+) -> ua.NodeId:
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
@@ -261,7 +276,12 @@ async def _create_reference_type(session, parentnodeid, nodeid, qname, symmetric
     return results[0].AddedNodeId
 
 
-async def _create_object_type(session, parentnodeid, nodeid, qname):
+async def _create_object_type(
+    session: AbstractSession,
+    parentnodeid: ua.NodeId,
+    nodeid: ua.NodeId,
+    qname: ua.QualifiedName,
+) -> ua.NodeId:
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
@@ -280,7 +300,15 @@ async def _create_object_type(session, parentnodeid, nodeid, qname):
     return results[0].AddedNodeId
 
 
-async def _create_variable(session, parentnodeid, nodeid, qname, var, datatype=None, isproperty=False):
+async def _create_variable(
+    session: AbstractSession,
+    parentnodeid: ua.NodeId,
+    nodeid: ua.NodeId,
+    qname: ua.QualifiedName,
+    var: ua.Variant,
+    datatype: ua.NodeId | None = None,
+    isproperty: bool = False,
+) -> ua.NodeId:
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
@@ -319,7 +347,14 @@ async def _create_variable(session, parentnodeid, nodeid, qname, var, datatype=N
     return results[0].AddedNodeId
 
 
-async def _create_variable_type(session, parentnodeid, nodeid, qname, datatype, value=None):
+async def _create_variable_type(
+    session: AbstractSession,
+    parentnodeid: ua.NodeId,
+    nodeid: ua.NodeId,
+    qname: ua.QualifiedName,
+    datatype: ua.NodeId,
+    value: Any = None,
+) -> ua.NodeId:
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
@@ -393,7 +428,9 @@ async def create_data_type(
     return make_node(parent.session, new_node_id)
 
 
-async def create_encoding(parent, nodeid: ua.NodeId | str | int, bname: ua.QualifiedName | str) -> asyncua.Node:
+async def create_encoding(
+    parent: asyncua.Node, nodeid: ua.NodeId | str | int, bname: ua.QualifiedName | str
+) -> asyncua.Node:
     """
     Create a new encoding object to be instantiated in address space.
     arguments are nodeid, browsename
@@ -405,7 +442,12 @@ async def create_encoding(parent, nodeid: ua.NodeId | str | int, bname: ua.Quali
     return make_node(parent.session, await _create_encoding(parent.session, parent.nodeid, nodeid, qname))
 
 
-async def _create_encoding(session, parentnodeid, nodeid, qname):
+async def _create_encoding(
+    session: AbstractSession,
+    parentnodeid: ua.NodeId,
+    nodeid: ua.NodeId,
+    qname: ua.QualifiedName,
+) -> ua.NodeId:
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
@@ -424,7 +466,14 @@ async def _create_encoding(session, parentnodeid, nodeid, qname):
     return results[0].AddedNodeId
 
 
-async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
+async def _create_method(
+    parent: asyncua.Node,
+    nodeid: ua.NodeId,
+    qname: ua.QualifiedName,
+    callback: Any,
+    inputs: list[Any],
+    outputs: list[Any],
+) -> ua.NodeId:
     addnode = ua.AddNodesItem()
     addnode.RequestedNewNodeId = nodeid
     addnode.BrowseName = qname
@@ -468,7 +517,7 @@ async def _create_method(parent, nodeid, qname, callback, inputs, outputs):
     return results[0].AddedNodeId
 
 
-def _vtype_to_argument(vtype):
+def _vtype_to_argument(vtype: Any) -> ua.Argument:
     if isinstance(vtype, ua.Argument):
         return vtype
     arg = ua.Argument()
@@ -491,7 +540,7 @@ def _vtype_to_argument(vtype):
     return arg
 
 
-def _guess_datatype(variant: ua.Variant):
+def _guess_datatype(variant: ua.Variant) -> ua.NodeId:
     if variant.VariantType == ua.VariantType.ExtensionObject:
         if variant.Value is None:
             raise ua.UaError("Cannot guess DataType from Null ExtensionObject")
@@ -534,8 +583,8 @@ async def delete_nodes(
     return list(nodes), await session.delete_nodes(params)
 
 
-async def _add_childs(nodes: Iterable[asyncua.Node]) -> Iterable[asyncua.Node]:
-    results = []
+async def _add_childs(nodes: Iterable[asyncua.Node]) -> list[asyncua.Node]:
+    results: list[asyncua.Node] = []
     for mynode in nodes:
         results += await _add_childs(await mynode.get_children())
         results += [mynode]

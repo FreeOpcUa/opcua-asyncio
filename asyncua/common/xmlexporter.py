@@ -506,10 +506,10 @@ class XmlExporter:
 
             if dtype_base == ua.NodeId(ua.ObjectIds.Enumeration):
                 dtype_base = ua.NodeId(ua.ObjectIds.Int32)
-                type_name = ua.ObjectIdNames[int(dtype_base.Identifier)]
+                type_name = ua.ObjectIdNames[int(dtype_base.Identifier)]  # type: ignore[attr-defined,arg-type]
 
-            if dtype_base.NamespaceIndex == 0 and dtype_base.Identifier <= 21:
-                type_name = ua.ObjectIdNames[dtype_base.Identifier]
+            if dtype_base.NamespaceIndex == 0 and dtype_base.Identifier <= 21:  # type: ignore[attr-defined,operator]
+                type_name = ua.ObjectIdNames[dtype_base.Identifier]  # type: ignore[attr-defined,index]
                 val_el = Et.SubElement(el, "uax:" + type_name)
                 await self._val_to_etree(val_el, dtype_base, val)
             else:

@@ -5,6 +5,7 @@ Instantiate a new node and its child nodes from a node type.
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import asyncua
 from asyncua import ua
@@ -16,9 +17,9 @@ from .ua_utils import get_node_supertypes, is_child_present
 _logger = logging.getLogger(__name__)
 
 
-async def is_abstract(node_type) -> bool:
+async def is_abstract(node_type: asyncua.Node) -> bool:
     result = await node_type.read_attribute(ua.AttributeIds.IsAbstract)
-    return result.Value.Value
+    return result.Value.Value  # type: ignore[union-attr]
 
 
 async def instantiate(
@@ -69,8 +70,16 @@ async def instantiate(
 
 
 async def _instantiate_node(
-    session, node_type, parentid, rdesc, nodeid, bname, dname=None, recursive=True, instantiate_optional=True
-):
+    session: Any,
+    node_type: asyncua.Node,
+    parentid: ua.NodeId,
+    rdesc: Any,
+    nodeid: ua.NodeId,
+    bname: ua.QualifiedName,
+    dname: ua.LocalizedText | None = None,
+    recursive: bool = True,
+    instantiate_optional: bool = True,
+) -> list[ua.NodeId]:
     """
     instantiate a node type under parent
     """

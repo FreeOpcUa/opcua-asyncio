@@ -2,11 +2,14 @@
 Useful methods and classes not belonging anywhere and depending on asyncua library
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
 from dataclasses import fields
 from datetime import datetime, timezone
 from enum import Enum, IntEnum, IntFlag
+from typing import TYPE_CHECKING, Any
 
 from dateutil import parser  # type: ignore[attr-defined]
 
@@ -14,10 +17,13 @@ from asyncua import ua
 
 from ..ua.ua_binary import get_string_encoding
 
+if TYPE_CHECKING:
+    from asyncua.common.node import Node
+
 _logger = logging.getLogger(__name__)
 
 
-def value_to_datavalue(val, varianttype=None):
+def value_to_datavalue(val: Any, varianttype: ua.VariantType | None = None) -> ua.DataValue:
     """
     convert anything to a DataValue using varianttype
     """
@@ -28,7 +34,7 @@ def value_to_datavalue(val, varianttype=None):
     return ua.DataValue(ua.Variant(val, varianttype), SourceTimestamp=datetime.now(timezone.utc))
 
 
-def val_to_string(val, truncate=False):
+def val_to_string(val: Any, truncate: bool = False) -> str:
     """
     convert a python object or python-asyncua object to a string
     which should be easy to understand for human
@@ -71,7 +77,7 @@ def val_to_string(val, truncate=False):
     return val
 
 
-def variant_to_string(var):
+def variant_to_string(var: ua.Variant) -> str:
     """
     convert a variant to a string which should be easy to understand for human
     easy to modify, and not too hard to parse back ....not easy
@@ -80,7 +86,7 @@ def variant_to_string(var):
     return val_to_string(var.Value)
 
 
-def string_to_val(string, vtype):
+def string_to_val(string: str, vtype: Any) -> Any:
     """
     Convert back a string to a python or python-asyncua object
     Note: no error checking is done here, supplying null strings could raise exceptions (datetime and guid)
@@ -147,14 +153,14 @@ def string_to_val(string, vtype):
     return val
 
 
-def string_to_variant(string, vtype):
+def string_to_variant(string: str, vtype: Any) -> ua.Variant:
     """
     convert back a string to an ua.Variant
     """
     return ua.Variant(string_to_val(string, vtype), vtype)
 
 
-async def get_node_children(node, nodes=None):
+async def get_node_children(node: Node, nodes: list[Node] | None = None) -> list[Node]:
     """
     Get recursively all children of a node
     """
@@ -166,7 +172,7 @@ async def get_node_children(node, nodes=None):
     return nodes
 
 
-async def get_node_subtypes(node, nodes=None):
+async def get_node_subtypes(node: Node, nodes: list[Node] | None = None) -> list[Node]:
     if nodes is None:
         nodes = [node]
     for child in await node.get_children(refs=ua.ObjectIds.HasSubtype):
@@ -175,7 +181,7 @@ async def get_node_subtypes(node, nodes=None):
     return nodes
 
 
-async def get_node_supertypes(node, includeitself=False, skipbase=True):
+async def get_node_supertypes(node: Node, includeitself: bool = False, skipbase: bool = True) -> list[Node]:
     """
     return get all subtype parents of node recursive
     :param node: can be an ua.Node or ua.NodeId
@@ -192,7 +198,7 @@ async def get_node_supertypes(node, includeitself=False, skipbase=True):
     return parents
 
 
-async def _get_node_supertypes(node):
+async def _get_node_supertypes(node: Node) -> list[Node]:
     """
     recursive implementation of get_node_derived_from_types
     """
@@ -205,7 +211,7 @@ async def _get_node_supertypes(node):
     return basetypes
 
 
-async def get_node_supertype(node):
+async def get_node_supertype(node: Node) -> Node | None:
     """
     return node supertype or None
     """
@@ -215,7 +221,7 @@ async def get_node_supertype(node):
     return None
 
 
-async def is_subtype(node, supertype):
+async def is_subtype(node: Node, supertype: ua.NodeId) -> bool:
     """
     return if a node is a subtype of a specified nodeid
     """
@@ -226,7 +232,7 @@ async def is_subtype(node, supertype):
     return False
 
 
-async def is_child_present(node, browsename):
+async def is_child_present(node: Node, browsename: ua.QualifiedName) -> bool:
     """
     return if a browsename is present a child from the provide node
     :param node: node wherein to find the browsename
@@ -240,7 +246,7 @@ async def is_child_present(node, browsename):
     return False
 
 
-async def data_type_to_variant_type(dtype_node):
+async def data_type_to_variant_type(dtype_node: Node) -> ua.VariantType:
     """
     Given a Node datatype, find out the variant type to encode
     data. This is not exactly straightforward...
@@ -255,7 +261,7 @@ async def data_type_to_variant_type(dtype_node):
     return ua.VariantType(base.nodeid.Identifier)
 
 
-async def get_base_data_type(datatype):
+async def get_base_data_type(datatype: Node) -> Node:
     """
     Looks up the base datatype of the provided datatype Node
     The base datatype is either:
@@ -274,7 +280,7 @@ async def get_base_data_type(datatype):
     raise ua.UaError(f"Datatype must be a subtype of builtin types {datatype!s}")
 
 
-async def get_nodes_of_namespace(server, namespaces: list[str | int] | None = None):
+async def get_nodes_of_namespace(server: Any, namespaces: list[str | int] | None = None) -> list[Node]:
     """
     Get the nodes of one or more namespaces .
     Args:
@@ -305,7 +311,7 @@ async def get_nodes_of_namespace(server, namespaces: list[str | int] | None = No
     return nodes
 
 
-def get_default_value(uatype):
+def get_default_value(uatype: Any) -> Any:
     if isinstance(uatype, ua.VariantType):
         return ua.get_default_value(uatype)
     if hasattr(ua.VariantType, uatype):
@@ -313,16 +319,16 @@ def get_default_value(uatype):
     return getattr(ua, uatype)()
 
 
-def data_type_to_string(dtype):
+def data_type_to_string(dtype: ua.NodeId) -> str:
     # we could just display browse name of node, but it requires a query
     if dtype.NamespaceIndex == 0 and dtype.Identifier in ua.ObjectIdNames:
-        string = ua.ObjectIdNames[dtype.Identifier]
+        string = ua.ObjectIdNames[dtype.Identifier]  # type: ignore[index]
     else:
         string = dtype.to_string()
     return string
 
 
-def copy_dataclass_attr(dc_source, dc_dest) -> None:
+def copy_dataclass_attr(dc_source: Any, dc_dest: Any) -> None:
     """
     Copy the common attributes of dc_source to dc_dest
     """

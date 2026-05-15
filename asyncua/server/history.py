@@ -3,11 +3,18 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Any
 
 from asyncua import ua
 from asyncua.common.subscription import Subscription, SubscriptionHandler
 
 from ..common.utils import Buffer
+
+if TYPE_CHECKING:
+    from asyncua.common.events import Event
+    from asyncua.common.node import Node
+
+    from .internal_server import InternalServer
 
 _logger = logging.getLogger(__name__)
 
@@ -22,31 +29,37 @@ class HistoryStorageInterface:
     Must be implemented by backends
     """
 
-    def __init__(self, max_history_data_response_size=10000):
+    def __init__(self, max_history_data_response_size: int = 10000) -> None:
         self.max_history_data_response_size = max_history_data_response_size
 
-    async def init(self):
+    async def init(self) -> None:
         """
         Async. initialization.
         Has to be called once after creation.
         """
         raise NotImplementedError
 
-    async def new_historized_node(self, node_id, period, count=0):
+    async def new_historized_node(self, node_id: ua.NodeId, period: timedelta | None, count: int = 0) -> None:
         """
         Called when a new node is to be historized
         Returns None
         """
         raise NotImplementedError
 
-    async def save_node_value(self, node_id, datavalue):
+    async def save_node_value(self, node_id: ua.NodeId, datavalue: ua.DataValue) -> None:
         """
         Called when the value of a historized node has changed and should be saved in history
         Returns None
         """
         raise NotImplementedError
 
-    async def read_node_history(self, node_id, start, end, nb_values):
+    async def read_node_history(
+        self,
+        node_id: ua.NodeId,
+        start: datetime | None,
+        end: datetime | None,
+        nb_values: int,
+    ) -> tuple[list[ua.DataValue], datetime | None]:
         """
         Called when a client make a history read request for a node
         if start or end is missing then nb_values is used to limit query
@@ -57,21 +70,34 @@ class HistoryStorageInterface:
         """
         raise NotImplementedError
 
-    async def new_historized_event(self, source_id, evtypes, period, count=0):
+    async def new_historized_event(
+        self,
+        source_id: ua.NodeId,
+        evtypes: list[Node],
+        period: timedelta | None,
+        count: int = 0,
+    ) -> None:
         """
         Called when historization of events is enabled on server side
         Returns None
         """
         raise NotImplementedError
 
-    async def save_event(self, event):
+    async def save_event(self, event: Event) -> None:
         """
         Called when a new event has been generated ans should be saved in history
         Returns None
         """
         raise NotImplementedError
 
-    async def read_event_history(self, source_id, start, end, nb_values, evfilter):
+    async def read_event_history(
+        self,
+        source_id: ua.NodeId,
+        start: datetime | None,
+        end: datetime | None,
+        nb_values: int,
+        evfilter: ua.EventFilter,
+    ) -> tuple[list[Event], datetime | None]:
         """
         Called when a client make a history read request for events
         Start time and end time are inclusive
@@ -80,7 +106,7 @@ class HistoryStorageInterface:
         """
         raise NotImplementedError
 
-    async def stop(self):
+    async def stop(self) -> None:
         """
         Called when the server shuts down
         Can be used to close database connections etc.
@@ -93,34 +119,40 @@ class HistoryDict(HistoryStorageInterface):
     Very minimal history backend storing data in memory using a Python dictionary
     """
 
-    def __init__(self, max_history_data_response_size=10000):
+    def __init__(self, max_history_data_response_size: int = 10000) -> None:
         self.max_history_data_response_size = max_history_data_response_size
-        self._datachanges = {}
-        self._datachanges_period = {}
-        self._events = {}
-        self._events_periods = {}
+        self._datachanges: dict[ua.NodeId, list[ua.DataValue]] = {}
+        self._datachanges_period: dict[ua.NodeId, tuple[timedelta | None, int]] = {}
+        self._events: dict[ua.NodeId, list[Event]] = {}
+        self._events_periods: dict[ua.NodeId, tuple[timedelta | None, int]] = {}
 
-    async def init(self):
+    async def init(self) -> None:
         pass
 
-    async def new_historized_node(self, node_id, period, count=0):
+    async def new_historized_node(self, node_id: ua.NodeId, period: timedelta | None, count: int = 0) -> None:
         if node_id in self._datachanges:
             raise UaNodeAlreadyHistorizedError(node_id)
         self._datachanges[node_id] = []
         self._datachanges_period[node_id] = period, count
 
-    async def save_node_value(self, node_id, datavalue):
+    async def save_node_value(self, node_id: ua.NodeId, datavalue: ua.DataValue) -> None:
         data = self._datachanges[node_id]
         period, count = self._datachanges_period[node_id]
         data.append(datavalue)
         now = datetime.now(timezone.utc)
         if period:
-            while len(data) and now - data[0].SourceTimestamp > period:
+            while len(data) and now - data[0].SourceTimestamp > period:  # type: ignore[operator]
                 data.pop(0)
         if count and len(data) > count:
             data.pop(0)
 
-    async def read_node_history(self, node_id, start, end, nb_values):
+    async def read_node_history(
+        self,
+        node_id: ua.NodeId,
+        start: datetime | None,
+        end: datetime | None,
+        nb_values: int,
+    ) -> tuple[list[ua.DataValue], datetime | None]:
         cont = None
         if node_id not in self._datachanges:
             _logger.warning("Error attempt to read history for a node which is not historized")
@@ -130,14 +162,14 @@ class HistoryDict(HistoryStorageInterface):
         if end is None:
             end = ua.get_win_epoch()
         if start == ua.get_win_epoch():
-            results = [dv for dv in reversed(self._datachanges[node_id]) if start <= dv.SourceTimestamp]
+            results = [dv for dv in reversed(self._datachanges[node_id]) if start <= dv.SourceTimestamp]  # type: ignore[operator]
         elif end == ua.get_win_epoch():
-            results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp]
+            results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp]  # type: ignore[operator]
         elif start > end:
-            results = [dv for dv in reversed(self._datachanges[node_id]) if end <= dv.SourceTimestamp <= start]
+            results = [dv for dv in reversed(self._datachanges[node_id]) if end <= dv.SourceTimestamp <= start]  # type: ignore[operator]
 
         else:
-            results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp <= end]
+            results = [dv for dv in self._datachanges[node_id] if start <= dv.SourceTimestamp <= end]  # type: ignore[operator]
 
         if nb_values and len(results) > nb_values:
             results = results[:nb_values]
@@ -147,13 +179,15 @@ class HistoryDict(HistoryStorageInterface):
             results = results[: self.max_history_data_response_size]
         return results, cont
 
-    async def new_historized_event(self, source_id, evtypes, period, count=0):
+    async def new_historized_event(  # type: ignore[override]
+        self, source_id: ua.NodeId, evtypes: list[ua.NodeId], period: timedelta | None, count: int = 0
+    ) -> None:
         if source_id in self._events:
             raise UaNodeAlreadyHistorizedError(source_id)
         self._events[source_id] = []
         self._events_periods[source_id] = period, count
 
-    async def save_event(self, event):
+    async def save_event(self, event: Event) -> None:
         if event.emitting_node not in self._events:
             self._events[event.emitting_node] = []
         evts = self._events[event.emitting_node]
@@ -162,12 +196,19 @@ class HistoryDict(HistoryStorageInterface):
         period, count = self._events_periods[event.emitting_node]
         now = datetime.now(timezone.utc)
         if period:
-            while len(evts) and now - evts[0].Time > period:
+            while len(evts) and now - evts[0].Time > period:  # type: ignore[attr-defined,operator]
                 evts.pop(0)
         if count and len(evts) > count:
             evts.pop(0)
 
-    async def read_event_history(self, source_id, start, end, nb_values, evfilter):
+    async def read_event_history(
+        self,
+        source_id: ua.NodeId,
+        start: datetime | None,
+        end: datetime | None,
+        nb_values: int,
+        evfilter: Any,
+    ) -> Any:
         cont = None
         if source_id not in self._events:
             _logger.warning(
@@ -180,57 +221,57 @@ class HistoryDict(HistoryStorageInterface):
         if end is None:
             end = ua.get_win_epoch()
         if start == ua.get_win_epoch():
-            results = [ev for ev in reversed(self._events[source_id]) if start <= ev.Time]
+            results = [ev for ev in reversed(self._events[source_id]) if start <= ev.Time]  # type: ignore[attr-defined,operator]
         elif end == ua.get_win_epoch():
-            results = [ev for ev in self._events[source_id] if start <= ev.Time]
+            results = [ev for ev in self._events[source_id] if start <= ev.Time]  # type: ignore[attr-defined,operator]
         elif start > end:
-            results = [ev for ev in reversed(self._events[source_id]) if end <= ev.Time <= start]
+            results = [ev for ev in reversed(self._events[source_id]) if end <= ev.Time <= start]  # type: ignore[attr-defined,operator]
 
         else:
-            results = [ev for ev in self._events[source_id] if start <= ev.Time <= end]
+            results = [ev for ev in self._events[source_id] if start <= ev.Time <= end]  # type: ignore[attr-defined,operator]
 
         if nb_values and len(results) > nb_values:
             results = results[:nb_values]
 
         if len(results) > self.max_history_data_response_size:
-            cont = results[self.max_history_data_response_size].Time
+            cont = results[self.max_history_data_response_size].Time  # type: ignore[attr-defined]
             results = results[: self.max_history_data_response_size]
         return results, cont
 
-    async def stop(self):
+    async def stop(self) -> None:
         pass
 
 
 class SubHandler:
-    def __init__(self, storage: HistoryStorageInterface):
+    def __init__(self, storage: HistoryStorageInterface) -> None:
         self.storage = storage
-        self.datachange_task = None
-        self.event_task = None
+        self.datachange_task: asyncio.Task[None] | None = None
+        self.event_task: asyncio.Task[None] | None = None
 
-    def datachange_notification(self, node, val, data):
+    def datachange_notification(self, node: Node, val: Any, data: Any) -> None:
         self.datachange_task = asyncio.create_task(self.storage.save_node_value(node.nodeid, data.monitored_item.Value))
 
-    def event_notification(self, event):
+    def event_notification(self, event: Event) -> None:
         self.event_task = asyncio.create_task(self.storage.save_event(event))
 
 
 class HistoryManager:
-    def __init__(self, iserver):
+    def __init__(self, iserver: InternalServer) -> None:
         self.iserver = iserver
-        self.storage = HistoryDict()
-        self._sub = None
-        self._handlers = {}
+        self.storage: HistoryStorageInterface = HistoryDict()
+        self._sub: Subscription | None = None
+        self._handlers: dict[Node, Any] = {}
 
-    async def init(self):
+    async def init(self) -> None:
         await self.storage.init()
 
-    def set_storage(self, storage):
+    def set_storage(self, storage: HistoryStorageInterface) -> None:
         """
         set the desired HistoryStorageInterface which History Manager will use for historizing
         """
         self.storage = storage
 
-    async def _create_subscription(self, handler: SubscriptionHandler):
+    async def _create_subscription(self, handler: SubscriptionHandler) -> Subscription:
         params = ua.CreateSubscriptionParameters()
         params.RequestedPublishingInterval = 10
         params.RequestedLifetimeCount = 3000
@@ -242,7 +283,9 @@ class HistoryManager:
         await subscription.init()
         return subscription
 
-    async def historize_data_change(self, node, period=timedelta(days=7), count=0):
+    async def historize_data_change(
+        self, node: Node, period: timedelta | None = timedelta(days=7), count: int = 0
+    ) -> None:
         """
         Subscribe to the nodes' data changes and store the data in the active storage.
         """
@@ -254,7 +297,9 @@ class HistoryManager:
         handler = await self._sub.subscribe_data_change(node)
         self._handlers[node] = handler
 
-    async def historize_event(self, source, period=timedelta(days=7), count=0):
+    async def historize_event(
+        self, source: Node, period: timedelta | None = timedelta(days=7), count: int = 0
+    ) -> None:
         """
         Subscribe to the source nodes' events and store the data in the active storage.
 
@@ -283,20 +328,20 @@ class HistoryManager:
         handler = await self._sub.subscribe_events(source, event_types)
         self._handlers[source] = handler
 
-    async def dehistorize(self, node):
+    async def dehistorize(self, node: Node) -> None:
         """
         Remove subscription to the node/source which is being historized
 
         SQL Implementation
         Only the subscriptions is removed. The historical data remains.
         """
-        if node in self._handlers:
+        if node in self._handlers and self._sub is not None:
             await self._sub.unsubscribe(self._handlers[node])
             del self._handlers[node]
         else:
             _logger.error("History Manager isn't subscribed to %s", node)
 
-    async def read_history(self, params):
+    async def read_history(self, params: ua.HistoryReadParameters) -> list[ua.HistoryReadResult]:
         """
         Read history for a node
         This is the part AttributeService, but implemented as its own service
@@ -309,7 +354,7 @@ class HistoryManager:
             results.append(res)
         return results
 
-    async def _read_history(self, details, rv):
+    async def _read_history(self, details: Any, rv: ua.HistoryReadValueId) -> ua.HistoryReadResult:
         """
         determine if the history read is for a data changes or events;
         then read the history for that node
@@ -338,7 +383,9 @@ class HistoryManager:
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadNotImplemented)
         return result
 
-    async def _read_datavalue_history(self, rv, details):
+    async def _read_datavalue_history(
+        self, rv: ua.HistoryReadValueId, details: ua.ReadRawModifiedDetails
+    ) -> tuple[list[ua.DataValue], Any]:
         starttime = details.StartTime
         if rv.ContinuationPoint:
             # Spec says we should ignore details if cont point is present
@@ -354,7 +401,9 @@ class HistoryManager:
         # rv.DataEncoding # xml or binary, seems spec say we can ignore that one
         return dv, cont
 
-    async def _read_event_history(self, rv, details):
+    async def _read_event_history(
+        self, rv: ua.HistoryReadValueId, details: ua.ReadEventDetails
+    ) -> tuple[list[ua.HistoryEventFieldList], Any]:
         starttime = details.StartTime
         if rv.ContinuationPoint:
             # Spec says we should ignore details if cont point is present
@@ -375,21 +424,21 @@ class HistoryManager:
             cont = ua.ua_binary.Primitives.DateTime.pack(cont)
         return results, cont
 
-    def update_history(self, params):
+    def update_history(self, params: ua.HistoryUpdateParameters) -> list[ua.HistoryUpdateResult]:
         """
         Update history for a node
         This is the part AttributeService, but implemented as its own service
         since it requires more logic than other attribute service methods
         """
-        results = []
+        results: list[ua.HistoryUpdateResult] = []
         for _ in params.HistoryUpdateDetails:
             result = ua.HistoryUpdateResult()
             # we do not accept to rewrite history
             result.StatusCode = ua.StatusCode(ua.StatusCodes.BadNotWritable)
-            results.append(results)
+            results.append(result)
         return results
 
-    async def stop(self):
+    async def stop(self) -> None:
         """
         call stop methods of active storage interface whenever the server is stopped
         """
