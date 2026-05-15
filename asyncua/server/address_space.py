@@ -394,7 +394,10 @@ class NodeManagementService:
         addref.ReferenceTypeId = item.ReferenceTypeId
         addref.SourceNodeId = nodedata.nodeid
         addref.TargetNodeId = item.ParentNodeId
-        addref.TargetNodeClass = parentdata.attributes[ua.AttributeIds.NodeClass].value.Value.Value  # type: ignore[union-attr]
+        nodeclass_attr = parentdata.attributes[ua.AttributeIds.NodeClass].value
+        if nodeclass_attr is None or nodeclass_attr.Value is None:
+            return
+        addref.TargetNodeClass = nodeclass_attr.Value.Value
         addref.IsForward = False  # FIXME in uaprotocol_auto.py
         self._add_reference_no_check(nodedata, addref)  # FIXME return StatusCode is not evaluated
 
@@ -475,16 +478,17 @@ class NodeManagementService:
         rdesc.IsForward = addref.IsForward
         rdesc.NodeId = addref.TargetNodeId
         if addref.TargetNodeClass == ua.NodeClass.Unspecified:
-            rdesc.NodeClass = self._aspace.read_attribute_value(  # type: ignore[union-attr]
-                addref.TargetNodeId, ua.AttributeIds.NodeClass
-            ).Value.Value
+            nodeclass_dv = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.NodeClass)
+            if nodeclass_dv.Value is not None:
+                rdesc.NodeClass = nodeclass_dv.Value.Value
         else:
             rdesc.NodeClass = addref.TargetNodeClass
-        bname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName).Value.Value  # type: ignore[union-attr]
-
+        bname_dv = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.BrowseName)
+        bname = bname_dv.Value.Value if bname_dv.Value is not None else None
         if bname:
             rdesc.BrowseName = bname
-        dname = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName).Value.Value  # type: ignore[union-attr]
+        dname_dv = self._aspace.read_attribute_value(addref.TargetNodeId, ua.AttributeIds.DisplayName)
+        dname = dname_dv.Value.Value if dname_dv.Value is not None else None
         if dname:
             rdesc.DisplayName = dname
         return self._add_unique_reference(sourcedata, rdesc)
@@ -791,7 +795,9 @@ class AddressSpace:
         # TODO: async support by using inspect.iscoroutinefunction()
         if attval.value_callback:
             return attval.value_callback(nodeid, attr)
-        return attval.value  # type: ignore[return-value] # .value must be filled
+        if attval.value is None:
+            return ua.DataValue(StatusCode=ua.StatusCode(ua.StatusCodes.BadAttributeIdInvalid))
+        return attval.value
 
     async def write_attribute_value(
         self, nodeid: ua.NodeId, attr: ua.AttributeIds, value: ua.DataValue
@@ -826,28 +832,35 @@ class AddressSpace:
         return ua.StatusCode()
 
     def _is_expected_variant_type(self, value: ua.DataValue, attval: AttributeValue, node: NodeData) -> bool:
-        if attval.value is None:
+        if attval.value is None or attval.value.Value is None:
             return True  # None data value can be overwritten anytime.
 
-        # FIXME Type hinting reveals that it is possible that Value (Optional) is None which would raise an exception
-        vtype = attval.value.Value.VariantType  # type: ignore[union-attr]
+        vtype = attval.value.Value.VariantType
         if vtype == ua.VariantType.Null:
             # Node had a null value, many nodes are initialized with that value
             # we should check what the real type is
-            dtype = node.attributes[ua.AttributeIds.DataType].value.Value.Value  # type: ignore[union-attr]
-            if dtype.NamespaceIndex == 0 and dtype.Identifier <= 25:
+            dtype_attr = node.attributes[ua.AttributeIds.DataType].value
+            if dtype_attr is None or dtype_attr.Value is None:
+                return True
+            dtype = dtype_attr.Value.Value
+            if (
+                isinstance(dtype, ua.NodeId)
+                and dtype.NamespaceIndex == 0
+                and isinstance(dtype.Identifier, int)
+                and dtype.Identifier <= 25
+            ):
                 vtype = ua.VariantType(dtype.Identifier)
             else:
                 # FIXME: should find the correct variant type given data type but
-                # this is a bit complicaed so trusting the first write
+                # this is a bit complicated so trusting the first write
                 return True
-        if value.Value.VariantType == vtype:  # type: ignore[union-attr]
+        if value.Value is None or value.Value.VariantType == vtype:
             return True
         _logger.warning(
             "Write refused: Variant: %s with type %s does not have expected type: %s",
             value.Value,
-            value.Value.VariantType if value.Value else None,
-            attval.value.Value.VariantType if attval.value.Value else None,
+            value.Value.VariantType,
+            vtype,
         )
         return False
 

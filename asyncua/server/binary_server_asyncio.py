@@ -59,14 +59,17 @@ class OPCUAProtocol(asyncio.Protocol):
 
     def connection_lost(self, ex: BaseException | None) -> None:
         _logger.info("Lost connection from %s, %s", self.peer_name, ex)
-        self.transport.close()  # type: ignore[union-attr]
-        self.iserver.asyncio_transports.remove(self.transport)
-        closing_task = asyncio.create_task(self.processor.close())  # type: ignore[union-attr]
-        self.closing_tasks.append(closing_task)
+        if self.transport is not None:
+            self.transport.close()
+            self.iserver.asyncio_transports.remove(self.transport)
+        if self.processor is not None:
+            closing_task = asyncio.create_task(self.processor.close())
+            self.closing_tasks.append(closing_task)
         if self in self.clients:
             self.clients.remove(self)
         self.messages.put_nowait((None, None))
-        self._task.cancel()  # type: ignore[union-attr]
+        if self._task is not None:
+            self._task.cancel()
 
     def data_received(self, data: bytes) -> None:
         self._buffer += data
@@ -83,7 +86,8 @@ class OPCUAProtocol(asyncio.Protocol):
                 if header.header_size + header.body_size <= header.header_size:
                     # malformed header prevent invalid access of your buffer
                     _logger.error("Got malformed header %s", header)
-                    self.transport.close()  # type: ignore[union-attr]
+                    if self.transport is not None:
+                        self.transport.close()
                     return
                 if len(buf) < header.body_size:
                     _logger.debug(
@@ -113,10 +117,13 @@ class OPCUAProtocol(asyncio.Protocol):
 
     async def _process_one_msg(self, header: Any, buf: Buffer) -> None:
         _logger.debug("_process_received_message %s %s", header.body_size, len(buf))
-        ret = await self.processor.process(header, buf)  # type: ignore[union-attr]
+        if self.processor is None:
+            return
+        ret = await self.processor.process(header, buf)
         if not ret:
             _logger.info("processor returned False, we close connection from %s", self.peer_name)
-            self.transport.close()  # type: ignore[union-attr]
+            if self.transport is not None:
+                self.transport.close()
             return
 
 
