@@ -95,10 +95,15 @@ class SubscriptionService:
                 self.logger.warning("Exception while stopping subscription", exc_info=stop_result)
         return res
 
-    def publish(self, acks: Iterable[ua.SubscriptionAcknowledgement]) -> None:
+    def publish(self, acks: Iterable[ua.SubscriptionAcknowledgement]) -> int:
         self.logger.info("publish request with acks %s", acks)
-        for subid, sub in self.subscriptions.items():
-            sub.publish([ack.SequenceNumber for ack in acks if ack.SubscriptionId == subid])
+        if not self.subscriptions:
+            raise utils.ServiceError(ua.StatusCodes.BadNoSubscription)
+        for ack in acks:
+            sub = self.subscriptions.get(ack.SubscriptionId)
+            if sub is not None:
+                sub.publish([ack.SequenceNumber])
+        return len(self.subscriptions)
 
     async def create_monitored_items(
         self, params: ua.CreateMonitoredItemsParameters

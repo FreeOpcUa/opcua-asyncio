@@ -3,6 +3,7 @@ import copy
 import logging
 import time
 from collections import deque
+from typing import Literal
 
 from asyncua import ua
 
@@ -21,6 +22,12 @@ class PublishRequestData:
         self.seqhdr = seqhdr
         self.timestamp = time.monotonic()
 
+    def has_timed_out(self, now: float) -> bool:
+        return (
+            self.requesthdr.TimeoutHint != 0
+            and self.requesthdr.TimeoutHint / 1000 < now - self.timestamp
+        )
+
 
 class UaProcessor:
     """
@@ -38,7 +45,7 @@ class UaProcessor:
         self._publish_requests: deque[PublishRequestData] = deque()
         # queue for publish results callbacks (using SubscriptionId)
         # rely on dict insertion order (therefore can't use set())
-        self._publish_results_subs: dict[ua.IntegerId, bool] = {}
+        self._publish_results_subs: dict[ua.IntegerId, Literal[True]] = {}
         self._limits = copy.deepcopy(limits)  # Copy limits because they get overriden
         self._connection = SecureConnection(SecurityPolicyNone(), self._limits)
         self._closing: bool = False
@@ -72,6 +79,7 @@ class UaProcessor:
         self.send_response(request.RequestHeader.RequestHandle, seqhdr, response, ua.MessageType.SecureOpen)
 
     def get_publish_request(self, subscription_id: ua.IntegerId):
+        now = time.monotonic()
         while True:
             if not self._publish_requests:
                 # only store one callback per subscription
@@ -84,13 +92,30 @@ class UaProcessor:
                 return None
             # We pop left from the Publish Request deque (FIFO)
             requestdata = self._publish_requests.popleft()
-            if requestdata.requesthdr.TimeoutHint == 0 or (
-                requestdata.requesthdr.TimeoutHint != 0
-                and time.monotonic() - requestdata.timestamp < requestdata.requesthdr.TimeoutHint / 1000
-            ):
+            if not requestdata.has_timed_out(now):
                 # Continue and use `requestdata` only if there was no timeout
                 break
+            self._send_publish_request_timeout(requestdata)
         return requestdata
+
+    def get_oldest_request_to_discard(self):
+        if self._publish_requests:
+            now = time.monotonic()
+            for i, requestdata in enumerate(self._publish_requests):
+                if requestdata.has_timed_out(now):
+                    del self._publish_requests[i]
+                    self._send_publish_request_timeout(requestdata)
+                    break
+            else:
+                return self._publish_requests.popleft()
+        return None
+
+    def _send_publish_request_timeout(self, requestdata: PublishRequestData):
+        # "If the request timed out, a Bad_Timeout Service result is
+        # sent and another Publish request is used."
+        response = ua.ServiceFault()
+        response.ResponseHeader.ServiceResult = ua.StatusCode(ua.StatusCodes.BadTimeout)
+        self.send_response(requestdata.requesthdr.RequestHandle, requestdata.seqhdr, response)
 
     async def forward_publish_response(self, result: ua.PublishResult, requestdata: PublishRequestData):
         """
@@ -467,7 +492,7 @@ class UaProcessor:
                 if not self.session:
                     return False
                 params = struct_from_binary(ua.PublishParameters, body)
-                self.session.publish(params.SubscriptionAcknowledgements)
+                subscriptions = self.session.publish(params.SubscriptionAcknowledgements)
                 data = PublishRequestData(requesthdr=requesthdr, seqhdr=seqhdr)
                 # If there is an enqueued publish results callback, try to call it immediately
                 while self._publish_results_subs:
@@ -481,6 +506,16 @@ class UaProcessor:
                         # publish request has been consumed
                         break
                 else:
+                    if len(self._publish_requests) >= self.publish_request_limit(subscriptions):
+                        # "When a Server receives a new Publish request that
+                        # exceeds its limit it shall de-queue the oldest
+                        # Publish request and return a response with the
+                        # result set to Bad_TooManyPublishRequests."
+                        oldest = self.get_oldest_request_to_discard()
+                        if oldest is not None:
+                            response = ua.ServiceFault()
+                            response.ResponseHeader.ServiceResult = ua.StatusCode(ua.StatusCodes.BadTooManyPublishRequests)
+                            self.send_response(oldest.requesthdr.RequestHandle, oldest.seqhdr, response)
                     # Store the Publish Request (will be used to send publish answers from server)
                     self._publish_requests.append(data)
 
@@ -541,6 +576,15 @@ class UaProcessor:
                 raise ServiceError(ua.StatusCodes.BadServiceUnsupported)
 
         return True
+
+    def publish_request_limit(self, subscription_count: int) -> int:
+        # "A Server should limit the number of active Publish
+        # requests to avoid an infinite number since it is
+        # expected that the Publish requests are queued in the
+        # Server. But a Server shall accept more queued Publish
+        # requests than created Subscriptions."
+        # TODO Make the limit configurable
+        return subscription_count + 10
 
     async def close(self):
         """
