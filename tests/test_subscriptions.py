@@ -14,6 +14,7 @@ except ImportError:
     from asynctest import CoroutineMock as AsyncMock  # type: ignore[no-redef]
 import asyncua
 from asyncua import Client, ua
+from asyncua.ua.ua_binary import nodeid_from_binary, struct_from_binary
 
 from .conftest import Opc
 
@@ -311,8 +312,10 @@ async def test_create_subscription_publishing(opc):
     # publishing default to True
     sub = await opc.opc.create_subscription(100, myhandler)
     assert sub.parameters.PublishingEnabled
+    await sub.delete()
     sub = await opc.opc.create_subscription(100, myhandler, publishing=False)
     assert not sub.parameters.PublishingEnabled
+    await sub.delete()
 
 
 @pytest.mark.parametrize("opc", ["client"], indirect=True)
@@ -334,6 +337,8 @@ async def test_set_monitoring_mode(opc, mocker):
     await sub.set_monitoring_mode(ua.MonitoringMode.Reporting)
     assert monitoring_mode.MonitoringMode == ua.MonitoringMode.Reporting
 
+    await sub.delete()
+
 
 @pytest.mark.parametrize("opc", ["client"], indirect=True)
 async def test_set_publishing_mode(opc, mocker):
@@ -353,6 +358,8 @@ async def test_set_publishing_mode(opc, mocker):
 
     await sub.set_publishing_mode(True)
     assert publishing_mode.PublishingEnabled
+
+    await sub.delete()
 
 
 async def test_subscription_data_change_bool(opc):
@@ -1002,6 +1009,7 @@ async def test_internal_server_subscription(opc):
     # Check that the results are not left un-acknowledged on internal Server Subscriptions.
     assert len(internal_sub._not_acknowledged_results) == 0
     await opc.opc.delete_nodes([sub_obj])
+    await sub.delete()
 
 
 @pytest.mark.parametrize("opc", ["client"], indirect=True)
@@ -1056,3 +1064,75 @@ async def test_maxkeepalive_count(opc, mocker):
     mock_create_subscription.reset_mock()
     sub = await client.create_subscription(mock_period, sub_handler)
     mock_update_subscription.assert_not_called()
+
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_publish_without_subscription(opc):
+    assert opc.server.iserver.subscription_service.subscriptions == {}, "Some prior test has left subscriptions on the server"
+    with pytest.raises(ua.UaStatusCodeError) as excinfo:
+        _ = await opc.opc.uaclient.session.publish([])
+    assert excinfo.value.code == ua.StatusCodes.BadNoSubscription
+
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_too_many_publish(opc, mocker):
+    assert opc.server.iserver.subscription_service.subscriptions == {}, "Some prior test has left subscriptions on the server"
+    mocker.patch.object(opc.opc.uaclient.session, "ensure_publish_loop", lambda: None)
+    sub_handler = MySubHandler()
+    sub = await opc.opc.create_subscription(500, sub_handler)
+    try:
+        requests = [asyncio.create_task(opc.opc.uaclient.session.publish([])) for _ in range(12)]
+        while True:
+            done, pending = await asyncio.wait(requests, timeout=5, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                exception = task.exception()
+                if exception is None:
+                    requests.remove(task)
+                    requests.append(asyncio.create_task(opc.opc.uaclient.session.publish([])))
+                else:
+                    assert isinstance(exception, ua.UaStatusCodeError)
+                    assert exception.code == ua.StatusCodes.BadTooManyPublishRequests
+                    assert task is requests[0]
+                    break
+            else:
+                continue
+            for task in pending:
+                task.cancel()
+            break
+    finally:
+        await sub.delete()
+
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True, scope="function")
+async def test_timeout_publish(opc, mocker):
+    mocker.patch.object(opc.opc.uaclient.session, "ensure_publish_loop", lambda: None)
+
+    sub_handler = MySubHandler()
+    sub = await opc.opc.create_subscription(1000, sub_handler)
+
+    o = opc.opc.nodes.objects
+    var = await o.add_variable(3, "SubVarPublishTimeout", -1)
+    try:
+        await sub.subscribe_data_change(var)
+
+        protocol = opc.opc.uaclient.protocol
+        assert protocol is not None
+
+        for value in range(2):
+            request = ua.PublishRequest()
+            fut = protocol._send_request(request, 0.001, ua.MessageType.SecureMessage)
+
+            done, _ = await asyncio.wait([fut], return_when=asyncio.FIRST_COMPLETED, timeout=1)
+            if done:
+                data = fut.result()
+            else:
+                await var.write_value(value)
+                data = await asyncio.wait_for(fut, timeout=5)
+            typeid = nodeid_from_binary(data)
+            if typeid.Identifier != ua.ObjectIds.PublishResponse_Encoding_DefaultBinary:
+                break
+        header = struct_from_binary(ua.ResponseHeader, data)
+        assert header.ServiceResult.value == ua.StatusCodes.BadTimeout
+    finally:
+        await sub.delete()
+        await opc.opc.delete_nodes([var])
