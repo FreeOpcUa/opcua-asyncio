@@ -91,29 +91,32 @@ class Field:
     allow_subtypes: bool = False
     is_nullable: bool = False
 
-    def is_array(self):
-        return self.value_rank != -1 or self.array_dimensions
+    def is_array(self) -> bool:
+        return self.value_rank != -1 or bool(self.array_dimensions)
 
 
 @dataclass
 class Struct:
-    name: str = None
+    name: str = None  # type: ignore[assignment]
     basetype: Optional[str] = None
-    node_id: str = None
+    node_id: str = None  # type: ignore[assignment]
     doc: str = ""
     fields: list[Field] = field(default_factory=list)
     has_optional: bool = False
-    needoverride = False
+    needoverride: bool = False
     children: list[Any] = field(default_factory=list)
     parents: list[Any] = field(default_factory=list)
     # we splt some structs, they must not be registered as extension objects
     do_not_register: bool = False
     is_data_type: bool = False
+    # Set dynamically during model post-processing in reorder_structs/split_requests.
+    waitingfor: list[str] = field(default_factory=list)
+    needconstructor: bool = False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)
 
-    def get_field(self, name):
+    def get_field(self, name: str) -> Field:
         for f in self.fields:
             if f.name == name:
                 return f
@@ -145,7 +148,7 @@ class Model:
     known_structs: list[str]
     aliases: dict[str, Alias]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.structs = []
         self.enums = []
         self.struct_list = []
@@ -178,7 +181,12 @@ class Model:
         return None
 
 
-def _add_struct(struct: Struct, newstructs: list[Struct], waiting_structs, known_structs: list[str]):
+def _add_struct(
+    struct: Struct,
+    newstructs: list[Struct],
+    waiting_structs: dict[str, list[Struct]],
+    known_structs: list[str],
+) -> None:
     newstructs.append(struct)
     known_structs.append(struct.name)
     # now seeing if some struct where waiting for this one
@@ -190,7 +198,7 @@ def _add_struct(struct: Struct, newstructs: list[Struct], waiting_structs, known
                 _add_struct(s, newstructs, waiting_structs, known_structs)
 
 
-def reorder_structs(model: Model):
+def reorder_structs(model: Model) -> None:
     types: list[str] = (
         IgnoredStructs
         + IgnoredEnums
@@ -243,7 +251,7 @@ def reorder_structs(model: Model):
     model.structs = newstructs
 
 
-def nodeid_to_names(model: Model):
+def nodeid_to_names(model: Model) -> None:
     ids = {}
     with open(Path.cwd() / "UA-Nodeset-master" / "Schema" / "NodeIds.csv") as f:
         for line in f:
@@ -267,7 +275,7 @@ def nodeid_to_names(model: Model):
             enum.base_type = ids[enum.base_type[2:]]
 
 
-def split_requests(model: Model):
+def split_requests(model: Model) -> None:
     structs = []
     for struct in model.structs:
         structtype = None
@@ -301,9 +309,14 @@ def split_requests(model: Model):
 
 def get_basetypes(el: ElementTree.Element) -> list[str]:
     # return all basetypes
-    basetypes = []
+    basetypes: list[str] = []
     for ref in el.findall("./{*}References/{*}Reference"):
-        if ref.get("ReferenceType") == "HasSubtype" and ref.get("IsForward", "true") == "false" and ref.text != "i=22":
+        if (
+            ref.get("ReferenceType") == "HasSubtype"
+            and ref.get("IsForward", "true") == "false"
+            and ref.text is not None
+            and ref.text != "i=22"
+        ):
             basetypes.append(ref.text)
     return basetypes
 
@@ -311,7 +324,7 @@ def get_basetypes(el: ElementTree.Element) -> list[str]:
 class Parser:
     model: Optional[Model]
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path) -> None:
         self.path = path
         self.model = None
         self._tag_re = re.compile(r"\{.*\}(.*)")
@@ -326,7 +339,7 @@ class Parser:
 
         return self.model
 
-    def _add_data_type(self, el: ElementTree.Element):
+    def _add_data_type(self, el: ElementTree.Element) -> None:
         if self.model is None:
             raise RuntimeError("Model not initialized")
 
@@ -336,6 +349,8 @@ class Parser:
 
         for ref in el.findall("./{*}References/{*}Reference"):
             if ref.get("ReferenceType") == "HasSubtype" and ref.get("IsForward", "true") == "false":
+                if ref.text is None:
+                    continue
                 if ref.text == "i=29":
                     enum = self.parse_enum(name, el, "Int32")  # Enumeration Values are always Int32 type
                     self.model.enums.append(enum)
@@ -438,7 +453,7 @@ class Parser:
         return enum
 
 
-def fix_names(model: Model):
+def fix_names(model: Model) -> None:
     for s in model.enums:
         for f in s.fields:
             if f.name == "None":

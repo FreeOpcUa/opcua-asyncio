@@ -1,4 +1,12 @@
-def extensionobject_from_binary(data):
+# mypy: ignore-errors
+# This file is a template appended to the generated uaprotocol_auto.py.
+# Names like NodeId, Buffer, uabin, ExtensionObject, ExtensionClasses, UaError,
+# FourByteNodeId, ObjectIds are resolved through the generated module's scope.
+# Standalone mypy can't see them; this file isn't imported as-is.
+from typing import Any
+
+
+def extensionobject_from_binary(data: Any) -> Any:
     """
     Convert binary-coded ExtensionObject to a Python object.
     Returns an object, or None if TypeId is zero
@@ -28,7 +36,7 @@ def extensionobject_from_binary(data):
     return klass.from_binary(body)
 
 
-def extensionobject_to_binary(obj):
+def extensionobject_to_binary(obj: Any) -> bytes:
     """
     Convert Python object to binary-coded ExtensionObject.
     If obj is None, convert to empty ExtensionObject (TypeId = 0, no Body).

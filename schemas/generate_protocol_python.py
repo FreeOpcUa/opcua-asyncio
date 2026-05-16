@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import IO, Optional, TYPE_CHECKING
 import datetime
 
 if TYPE_CHECKING:
@@ -27,10 +27,10 @@ MyPyIgnoredStructs = ["Union"]
 class CodeGenerator:
     """Generate uaprotocol from UA nodeset."""
 
-    def __init__(self, model: Model, output: Path):
+    def __init__(self, model: Model, output: Path) -> None:
         self.model = model
         self.output_path = output
-        self.output_file = None
+        self.output_file: IO[str] | None = None
         self.indent = "    "
         self.iidx = 0  # indent index
 
@@ -79,6 +79,8 @@ class CodeGenerator:
 
     def write(self, line: str) -> None:
         """Write a properly indented line with newline."""
+        if self.output_file is None:
+            raise RuntimeError("Output file not opened. Call run() first.")
         if line:
             line = f"{self.indent * self.iidx}{line}"
         self.output_file.write(f"{line}\n")
