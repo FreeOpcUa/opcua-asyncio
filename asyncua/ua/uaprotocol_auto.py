@@ -1,7 +1,7 @@
 from __future__ import annotations
 """
 Autogenerate code from xml spec
-Date:2026-03-01 09:01:28.394301+00:00
+Date:2026-05-16 06:47:19.383822+00:00
 """
 
 from datetime import datetime, timezone
@@ -224,7 +224,7 @@ class AlarmMask(IntFlag):
 
 class TrustListValidationOptions(IntFlag):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.8
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.10
 
     :ivar SuppressCertificateExpired:
     :vartype SuppressCertificateExpired: Bit: 0
@@ -256,7 +256,7 @@ class TrustListValidationOptions(IntFlag):
 
 class TrustListMasks(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.7
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.9
 
     :ivar None_:
     :vartype None_: 0
@@ -277,6 +277,25 @@ class TrustListMasks(IntEnum):
     IssuerCertificates = 4
     IssuerCrls = 8
     All = 15
+
+
+class ConfigurationUpdateType(IntEnum):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.7
+
+    :ivar Insert:
+    :vartype Insert: 1
+    :ivar Replace:
+    :vartype Replace: 2
+    :ivar InsertOrReplace:
+    :vartype InsertOrReplace: 3
+    :ivar Delete:
+    :vartype Delete: 4
+    """
+    Insert = 1
+    Replace = 2
+    InsertOrReplace = 3
+    Delete = 4
 
 
 class PubSubState(IntEnum):
@@ -1055,9 +1074,35 @@ class LldpSystemCapabilitiesMap(IntFlag):
         return "UInt32"
 
 
+class LogRecordMask(IntFlag):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.8
+
+    :ivar EventType:
+    :vartype EventType: Bit: 0
+    :ivar SourceNode:
+    :vartype SourceNode: Bit: 1
+    :ivar SourceName:
+    :vartype SourceName: Bit: 2
+    :ivar TraceContext:
+    :vartype TraceContext: Bit: 3
+    :ivar AdditionalData:
+    :vartype AdditionalData: Bit: 4
+    """
+    EventType = 1<<0
+    SourceNode = 1<<1
+    SourceName = 1<<2
+    TraceContext = 1<<3
+    AdditionalData = 1<<4
+
+    @staticmethod
+    def datatype() -> str:
+        return "UInt32"
+
+
 class IdType(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.5/#12.2.5.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.2.3
 
     :ivar Numeric:
     :vartype Numeric: 0
@@ -1076,7 +1121,7 @@ class IdType(IntEnum):
 
 class NodeClass(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.5/#12.2.5.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.29
 
     :ivar Unspecified:
     :vartype Unspecified: 0
@@ -1274,7 +1319,7 @@ class EventNotifierType(IntFlag):
 
 class AccessRestrictionType(IntFlag):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.9/#12.2.9.13
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.56
 
     :ivar SigningRequired:
     :vartype SigningRequired: Bit: 0
@@ -1297,7 +1342,7 @@ class AccessRestrictionType(IntFlag):
 
 class StructureType(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.5/#12.2.5.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.49
 
     :ivar Structure:
     :vartype Structure: 0
@@ -1338,7 +1383,7 @@ class ApplicationType(IntEnum):
 
 class MessageSecurityMode(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.10
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.20
 
     :ivar Invalid:
     :vartype Invalid: 0
@@ -1357,7 +1402,7 @@ class MessageSecurityMode(IntEnum):
 
 class UserTokenType(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.43
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.42
 
     :ivar Anonymous:
     :vartype Anonymous: 0
@@ -1703,7 +1748,7 @@ class FilterOperator(IntEnum):
 
 class TimestampsToReturn(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.40
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.39
 
     :ivar Source:
     :vartype Source: 0
@@ -1898,7 +1943,7 @@ class ModelChangeStructureVerbMask(IntEnum):
 
 class AxisScaleEnumeration(IntEnum):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.7
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.8
 
     :ivar Linear:
     :vartype Linear: 0
@@ -1937,7 +1982,7 @@ class ExceptionDeviationFormat(IntEnum):
 @dataclass(slots=True) # type: ignore
 class Union: # type: ignore
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.12
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.41
 
     """
 
@@ -2195,7 +2240,7 @@ class IdentityMappingRuleType:
 @dataclass(slots=True)
 class CurrencyUnitType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.61
 
     :ivar NumericCode:
     :vartype NumericCode: Int16
@@ -2296,7 +2341,7 @@ class QuantityDimension:
 @dataclass(slots=True)
 class TrustListDataType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.6
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.2/#7.8.2.8
 
     :ivar SpecifiedLists:
     :vartype SpecifiedLists: UInt32
@@ -2320,9 +2365,89 @@ class TrustListDataType:
 
 
 @dataclass(slots=True)
+class BaseConfigurationDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.4
+
+    :ivar ConfigurationVersion:
+    :vartype ConfigurationVersion: VersionTime
+    :ivar ConfigurationProperties:
+    :vartype ConfigurationProperties: KeyValuePair
+    """
+
+    data_type = NodeId(ObjectIds.BaseConfigurationDataType)
+
+    ConfigurationVersion: 'ua.VersionTime' = 0
+    ConfigurationProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class BaseConfigurationRecordDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.5
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    """
+
+    data_type = NodeId(ObjectIds.BaseConfigurationRecordDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class CertificateGroupDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.3/#7.8.3.4
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar Purpose:
+    :vartype Purpose: NodeId
+    :ivar CertificateTypes:
+    :vartype CertificateTypes: NodeId
+    :ivar IsCertificateAssigned:
+    :vartype IsCertificateAssigned: Boolean
+    :ivar ValidationOptions:
+    :vartype ValidationOptions: TrustListValidationOptions
+    """
+
+    data_type = NodeId(ObjectIds.CertificateGroupDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    Purpose: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+    CertificateTypes: 'list[ua.NodeId]' = field(default_factory=list)
+    IsCertificateAssigned: 'list[ua.Boolean]' = field(default_factory=list)
+    ValidationOptions: 'ua.TrustListValidationOptions' = field(default_factory=lambda:TrustListValidationOptions(0))
+
+
+@dataclass(slots=True)
+class ConfigurationUpdateTargetType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.8.5/#7.8.5.6
+
+    :ivar Path:
+    :vartype Path: String
+    :ivar UpdateType:
+    :vartype UpdateType: ConfigurationUpdateType
+    """
+
+    data_type = NodeId(ObjectIds.ConfigurationUpdateTargetType)
+
+    Path: 'ua.String' = None
+    UpdateType: 'ua.ConfigurationUpdateType' = field(default_factory=lambda:ConfigurationUpdateType.Insert)
+
+
+@dataclass(slots=True)
 class TransactionErrorType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.16
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.18
 
     :ivar TargetId:
     :vartype TargetId: NodeId
@@ -2337,6 +2462,183 @@ class TransactionErrorType:
     TargetId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
     Error: 'ua.StatusCode' = field(default_factory=lambda: StatusCode())
     Message: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+
+
+@dataclass(slots=True)
+class EndpointDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.22
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar DiscoveryUrls:
+    :vartype DiscoveryUrls: UriString
+    :ivar NetworkName:
+    :vartype NetworkName: String
+    :ivar Port:
+    :vartype Port: UInt16
+    """
+
+    data_type = NodeId(ObjectIds.EndpointDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    DiscoveryUrls: 'list[ua.UriString]' = field(default_factory=list)
+    NetworkName: 'ua.String' = None
+    Port: 'ua.UInt16' = 0
+
+
+@dataclass(slots=True)
+class ServerEndpointDataType(EndpointDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.23
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar DiscoveryUrls:
+    :vartype DiscoveryUrls: UriString
+    :ivar NetworkName:
+    :vartype NetworkName: String
+    :ivar Port:
+    :vartype Port: UInt16
+    :ivar EndpointUrls:
+    :vartype EndpointUrls: UriString
+    :ivar SecuritySettingNames:
+    :vartype SecuritySettingNames: String
+    :ivar TransportProfileUri:
+    :vartype TransportProfileUri: UriString
+    :ivar UserTokenSettingNames:
+    :vartype UserTokenSettingNames: String
+    :ivar ReverseConnectUrls:
+    :vartype ReverseConnectUrls: String
+    """
+
+    data_type = NodeId(ObjectIds.ServerEndpointDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    DiscoveryUrls: 'list[ua.UriString]' = field(default_factory=list)
+    NetworkName: 'ua.String' = None
+    Port: 'ua.UInt16' = 0
+    EndpointUrls: 'list[ua.UriString]' = field(default_factory=list)
+    SecuritySettingNames: 'list[ua.String]' = field(default_factory=list)
+    TransportProfileUri: 'ua.UriString' = None
+    UserTokenSettingNames: 'list[ua.String]' = field(default_factory=list)
+    ReverseConnectUrls: 'list[ua.String]' = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class SecuritySettingsDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.24
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar SecurityModes:
+    :vartype SecurityModes: MessageSecurityMode
+    :ivar SecurityPolicyUris:
+    :vartype SecurityPolicyUris: String
+    :ivar CertificateGroupName:
+    :vartype CertificateGroupName: String
+    """
+
+    data_type = NodeId(ObjectIds.SecuritySettingsDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    SecurityModes: 'list[ua.MessageSecurityMode]' = field(default_factory=list)
+    SecurityPolicyUris: 'list[ua.String]' = field(default_factory=list)
+    CertificateGroupName: 'ua.String' = None
+
+
+@dataclass(slots=True)
+class UserTokenSettingsDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.25
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar TokenType:
+    :vartype TokenType: UserTokenType
+    :ivar IssuedTokenType:
+    :vartype IssuedTokenType: String
+    :ivar IssuerEndpointUrl:
+    :vartype IssuerEndpointUrl: String
+    :ivar SecurityPolicyUri:
+    :vartype SecurityPolicyUri: String
+    :ivar CertificateGroupName:
+    :vartype CertificateGroupName: String
+    :ivar AuthorizationServiceName:
+    :vartype AuthorizationServiceName: String
+    """
+
+    data_type = NodeId(ObjectIds.UserTokenSettingsDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    TokenType: 'ua.UserTokenType' = field(default_factory=lambda:UserTokenType.Anonymous)
+    IssuedTokenType: 'ua.String' = None
+    IssuerEndpointUrl: 'ua.String' = None
+    SecurityPolicyUri: 'ua.String' = None
+    CertificateGroupName: 'ua.String' = None
+    AuthorizationServiceName: 'ua.String' = None
+
+
+@dataclass(slots=True)
+class ServiceCertificateDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/9.7.5
+
+    :ivar Certificate:
+    :vartype Certificate: ByteString
+    :ivar Issuers:
+    :vartype Issuers: ByteString
+    :ivar ValidFrom:
+    :vartype ValidFrom: UtcTime
+    :ivar ValidTo:
+    :vartype ValidTo: UtcTime
+    """
+
+    data_type = NodeId(ObjectIds.ServiceCertificateDataType)
+
+    Certificate: 'ua.ByteString' = None
+    Issuers: 'list[ua.ByteString]' = field(default_factory=list)
+    ValidFrom: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    ValidTo: 'ua.UtcTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(slots=True)
+class AuthorizationServiceConfigurationDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/9.7.5
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar ServiceUri:
+    :vartype ServiceUri: UriString
+    :ivar ServiceCertificates:
+    :vartype ServiceCertificates: ServiceCertificateDataType
+    :ivar IssuerEndpointSettings:
+    :vartype IssuerEndpointSettings: String
+    """
+
+    data_type = NodeId(ObjectIds.AuthorizationServiceConfigurationDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    ServiceUri: 'ua.UriString' = None
+    ServiceCertificates: 'list[ua.ServiceCertificateDataType]' = field(default_factory=list)
+    IssuerEndpointSettings: 'ua.String' = None
 
 
 @dataclass(slots=True)
@@ -3531,6 +3833,63 @@ class AliasNameDataType:
 
 
 @dataclass(slots=True)
+class AliasNameVerboseDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part17/7.3
+
+    :ivar AliasName:
+    :vartype AliasName: QualifiedName
+    :ivar ReferencedNodes:
+    :vartype ReferencedNodes: ExpandedNodeId
+    :ivar ServerUris:
+    :vartype ServerUris: String
+    :ivar AliasNameCategoryId:
+    :vartype AliasNameCategoryId: NodeId
+    """
+
+    data_type = NodeId(ObjectIds.AliasNameVerboseDataType)
+
+    AliasName: 'ua.QualifiedName' = field(default_factory=lambda: QualifiedName())
+    ReferencedNodes: 'list[ua.ExpandedNodeId]' = field(default_factory=list)
+    ServerUris: 'list[ua.String]' = field(default_factory=list)
+    AliasNameCategoryId: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+
+
+@dataclass(slots=True)
+class AliasCategoryUpdateDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part17/D.2.1
+
+    :ivar Category:
+    :vartype Category: PortableNodeId
+    :ivar LastChange:
+    :vartype LastChange: VersionTime
+    """
+
+    data_type = NodeId(ObjectIds.AliasCategoryUpdateDataType)
+
+    Category: 'ua.PortableNodeId' = field(default_factory=lambda: PortableNodeId())
+    LastChange: 'ua.VersionTime' = 0
+
+
+@dataclass(slots=True)
+class AliasUpdateDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part17/D.2.2
+
+    :ivar ApplicationUri:
+    :vartype ApplicationUri: String
+    :ivar Categories:
+    :vartype Categories: AliasCategoryUpdateDataType
+    """
+
+    data_type = NodeId(ObjectIds.AliasUpdateDataType)
+
+    ApplicationUri: 'ua.String' = None
+    Categories: 'list[ua.AliasCategoryUpdateDataType]' = field(default_factory=list)
+
+
+@dataclass(slots=True)
 class UserManagementDataType:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part18/5.2.4
@@ -3682,9 +4041,115 @@ class ReferenceListEntryDataType:
 
 
 @dataclass(slots=True)
+class SpanContextDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.6.2
+
+    :ivar TraceId:
+    :vartype TraceId: Guid
+    :ivar SpanId:
+    :vartype SpanId: UInt64
+    """
+
+    data_type = NodeId(ObjectIds.SpanContextDataType)
+
+    TraceId: 'ua.Guid' = Guid(int=0)
+    SpanId: 'ua.UInt64' = 0
+
+
+@dataclass(slots=True)
+class TraceContextDataType(SpanContextDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.6.3
+
+    :ivar TraceId:
+    :vartype TraceId: Guid
+    :ivar SpanId:
+    :vartype SpanId: UInt64
+    :ivar ParentSpanId:
+    :vartype ParentSpanId: UInt64
+    :ivar ParentIdentifier:
+    :vartype ParentIdentifier: String
+    """
+
+    data_type = NodeId(ObjectIds.TraceContextDataType)
+
+    TraceId: 'ua.Guid' = Guid(int=0)
+    SpanId: 'ua.UInt64' = 0
+    ParentSpanId: 'ua.UInt64' = 0
+    ParentIdentifier: 'ua.String' = None
+
+
+@dataclass(slots=True)
+class NameValuePair:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.7
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar Value:
+    :vartype Value: Variant
+    """
+
+    data_type = NodeId(ObjectIds.NameValuePair)
+
+    Name: 'ua.String' = None
+    Value: 'ua.Variant' = field(default_factory=lambda: Variant())
+
+
+@dataclass(slots=True)
+class LogRecord:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.5
+
+    :ivar Time:
+    :vartype Time: DateTime
+    :ivar Severity:
+    :vartype Severity: UInt16
+    :ivar EventType:
+    :vartype EventType: NodeId
+    :ivar SourceNode:
+    :vartype SourceNode: NodeId
+    :ivar SourceName:
+    :vartype SourceName: String
+    :ivar Message:
+    :vartype Message: LocalizedText
+    :ivar TraceContext:
+    :vartype TraceContext: TraceContextDataType
+    :ivar AdditionalData:
+    :vartype AdditionalData: NameValuePair
+    """
+
+    data_type = NodeId(ObjectIds.LogRecord)
+
+    Time: 'ua.DateTime' = field(default_factory=lambda: datetime.now(timezone.utc))
+    Severity: 'ua.UInt16' = 0
+    EventType: 'ua.NodeId | None' = None
+    SourceNode: 'ua.NodeId | None' = None
+    SourceName: 'ua.String | None' = None
+    Message: 'ua.LocalizedText' = field(default_factory=lambda: LocalizedText())
+    TraceContext: 'ua.TraceContextDataType | None' = None
+    AdditionalData: 'list[ua.NameValuePair] | None' = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class LogRecordsDataType:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part26/5.10
+
+    :ivar LogRecordArray:
+    :vartype LogRecordArray: LogRecord
+    """
+
+    data_type = NodeId(ObjectIds.LogRecordsDataType)
+
+    LogRecordArray: 'list[ua.LogRecord]' = field(default_factory=list)
+
+
+@dataclass(slots=True)
 class RolePermissionType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.9
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/5.2.9
 
     :ivar RoleId:
     :vartype RoleId: NodeId
@@ -3756,7 +4221,7 @@ class SecurityGroupDataType:
 @dataclass(slots=True)
 class DataTypeDefinition:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.47
 
     """
 
@@ -3766,7 +4231,7 @@ class DataTypeDefinition:
 @dataclass(slots=True)
 class StructureField:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.10
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.51
 
     :ivar Name:
     :vartype Name: String
@@ -3798,7 +4263,7 @@ class StructureField:
 @dataclass(slots=True)
 class StructureDefinition(DataTypeDefinition):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.5
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.48
 
     :ivar DefaultEncodingId:
     :vartype DefaultEncodingId: NodeId
@@ -3841,7 +4306,7 @@ class StructureDescription(DataTypeDescription):
 @dataclass(slots=True)
 class Argument:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.6
 
     :ivar Name:
     :vartype Name: String
@@ -3867,7 +4332,7 @@ class Argument:
 @dataclass(slots=True)
 class EnumValueType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.6
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.39
 
     :ivar Value:
     :vartype Value: Int64
@@ -3887,7 +4352,7 @@ class EnumValueType:
 @dataclass(slots=True)
 class EnumField(EnumValueType):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.7
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.52
 
     :ivar Value:
     :vartype Value: Int64
@@ -3910,7 +4375,7 @@ class EnumField(EnumValueType):
 @dataclass(slots=True)
 class EnumDefinition(DataTypeDefinition):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.4
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.50
 
     :ivar Fields:
     :vartype Fields: EnumField
@@ -3947,7 +4412,7 @@ class EnumDescription(DataTypeDescription):
 @dataclass(slots=True)
 class DataTypeSchemaHeader:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part14/6.2.3/#6.2.3.2.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.31
 
     :ivar Namespaces:
     :vartype Namespaces: String
@@ -4198,7 +4663,7 @@ class JsonActionMetaDataMessage:
 @dataclass(slots=True)
 class OptionSet:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.8
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.40
 
     :ivar Value:
     :vartype Value: ByteString
@@ -4215,7 +4680,7 @@ class OptionSet:
 @dataclass(slots=True)
 class TimeZoneDataType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.2.12/#12.2.12.11
+    https://reference.opcfoundation.org/v105/Core/docs/Part3/8.28
 
     :ivar Offset:
     :vartype Offset: Int16
@@ -4232,7 +4697,7 @@ class TimeZoneDataType:
 @dataclass(slots=True)
 class ApplicationDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part14/7.2.4/#7.2.4.6.5
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.2
 
     :ivar ApplicationUri:
     :vartype ApplicationUri: String
@@ -4259,6 +4724,70 @@ class ApplicationDescription:
     GatewayServerUri: 'ua.String' = None
     DiscoveryProfileUri: 'ua.String' = None
     DiscoveryUrls: 'list[ua.String]' = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class ApplicationIdentityDataType(BaseConfigurationRecordDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.21
+
+    :ivar Name:
+    :vartype Name: String
+    :ivar RecordProperties:
+    :vartype RecordProperties: KeyValuePair
+    :ivar ApplicationUri:
+    :vartype ApplicationUri: UriString
+    :ivar ApplicationNames:
+    :vartype ApplicationNames: LocalizedText
+    :ivar AdditionalServers:
+    :vartype AdditionalServers: ApplicationDescription
+    """
+
+    data_type = NodeId(ObjectIds.ApplicationIdentityDataType)
+
+    Name: 'ua.String' = None
+    RecordProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    ApplicationUri: 'ua.UriString' = None
+    ApplicationNames: 'list[ua.LocalizedText]' = field(default_factory=list)
+    AdditionalServers: 'list[ua.ApplicationDescription]' = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class ApplicationConfigurationDataType(BaseConfigurationDataType):
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part12/7.10.19
+
+    :ivar ConfigurationVersion:
+    :vartype ConfigurationVersion: VersionTime
+    :ivar ConfigurationProperties:
+    :vartype ConfigurationProperties: KeyValuePair
+    :ivar ApplicationIdentity:
+    :vartype ApplicationIdentity: ApplicationIdentityDataType
+    :ivar CertificateGroups:
+    :vartype CertificateGroups: CertificateGroupDataType
+    :ivar ServerEndpoints:
+    :vartype ServerEndpoints: ServerEndpointDataType
+    :ivar ClientEndpoints:
+    :vartype ClientEndpoints: EndpointDataType
+    :ivar SecuritySettings:
+    :vartype SecuritySettings: SecuritySettingsDataType
+    :ivar UserTokenSettings:
+    :vartype UserTokenSettings: UserTokenSettingsDataType
+    :ivar AuthorizationServices:
+    :vartype AuthorizationServices: AuthorizationServiceConfigurationDataType
+    """
+
+    data_type = NodeId(ObjectIds.ApplicationConfigurationDataType)
+
+    ConfigurationVersion: 'ua.VersionTime' = 0
+    ConfigurationProperties: 'list[ua.KeyValuePair]' = field(default_factory=list)
+    ApplicationIdentity: 'ua.ApplicationIdentityDataType' = field(default_factory=lambda: ApplicationIdentityDataType())
+    CertificateGroups: 'list[ua.CertificateGroupDataType]' = field(default_factory=list)
+    ServerEndpoints: 'list[ua.ServerEndpointDataType]' = field(default_factory=list)
+    ClientEndpoints: 'list[ua.EndpointDataType]' = field(default_factory=list)
+    SecuritySettings: 'list[ua.SecuritySettingsDataType]' = field(default_factory=list)
+    UserTokenSettings: 'list[ua.UserTokenSettingsDataType]' = field(default_factory=list)
+    AuthorizationServices: 'list[ua.AuthorizationServiceConfigurationDataType]' = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -4291,7 +4820,7 @@ class JsonApplicationDescriptionMessage:
 @dataclass(slots=True)
 class RequestHeader:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.33
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.32
 
     :ivar AuthenticationToken:
     :vartype AuthenticationToken: SessionAuthenticationToken
@@ -4323,7 +4852,7 @@ class RequestHeader:
 @dataclass(slots=True)
 class ResponseHeader:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.34
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.33
 
     :ivar Timestamp:
     :vartype Timestamp: UtcTime
@@ -4352,7 +4881,7 @@ class ResponseHeader:
 @dataclass(slots=True)
 class ServiceFault:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.35
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.34
 
     :ivar TypeId:
     :vartype TypeId: NodeId
@@ -4559,7 +5088,7 @@ class FindServersOnNetworkResponse:
 @dataclass(slots=True)
 class UserTokenPolicy:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.42
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.41
 
     :ivar PolicyId:
     :vartype PolicyId: String
@@ -5082,7 +5611,7 @@ class GetEndpointsResponse:
 @dataclass(slots=True)
 class RegisteredServer:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.32
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.31
 
     :ivar ServerUri:
     :vartype ServerUri: String
@@ -5362,7 +5891,7 @@ class CloseSecureChannelResponse:
 @dataclass(slots=True)
 class SignedSoftwareCertificate:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.13
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.37
 
     :ivar CertificateData:
     :vartype CertificateData: ByteString
@@ -5379,7 +5908,7 @@ class SignedSoftwareCertificate:
 @dataclass(slots=True)
 class SignatureData:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.37
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.36
 
     :ivar Algorithm:
     :vartype Algorithm: String
@@ -5501,7 +6030,7 @@ class CreateSessionResponse:
 @dataclass(slots=True)
 class UserIdentityToken:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.15
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.40.1
 
     :ivar PolicyId:
     :vartype PolicyId: String
@@ -5515,7 +6044,7 @@ class UserIdentityToken:
 @dataclass(slots=True)
 class AnonymousIdentityToken(UserIdentityToken):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.15/#12.3.15.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.40.3
 
     :ivar PolicyId:
     :vartype PolicyId: String
@@ -5529,7 +6058,7 @@ class AnonymousIdentityToken(UserIdentityToken):
 @dataclass(slots=True)
 class UserNameIdentityToken(UserIdentityToken):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.15/#12.3.15.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.40.4
 
     :ivar PolicyId:
     :vartype PolicyId: String
@@ -5552,7 +6081,7 @@ class UserNameIdentityToken(UserIdentityToken):
 @dataclass(slots=True)
 class X509IdentityToken(UserIdentityToken):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.15/#12.3.15.4
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.40.5
 
     :ivar PolicyId:
     :vartype PolicyId: String
@@ -5569,7 +6098,7 @@ class X509IdentityToken(UserIdentityToken):
 @dataclass(slots=True)
 class IssuedIdentityToken(UserIdentityToken):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.15/#12.3.15.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.40.6
 
     :ivar PolicyId:
     :vartype PolicyId: String
@@ -6113,7 +6642,7 @@ class GenericAttributes(NodeAttributes):
 @dataclass(slots=True)
 class AddNodesItem:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.2/#5.8.2.2
 
     :ivar ParentNodeId:
     :vartype ParentNodeId: ExpandedNodeId
@@ -6215,7 +6744,7 @@ class AddNodesResponse:
 @dataclass(slots=True)
 class AddReferencesItem:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.2
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.3/#5.8.3.2
 
     :ivar SourceNodeId:
     :vartype SourceNodeId: NodeId
@@ -6297,7 +6826,7 @@ class AddReferencesResponse:
 @dataclass(slots=True)
 class DeleteNodesItem:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.6
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.4/#5.8.4.2
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -6367,7 +6896,7 @@ class DeleteNodesResponse:
 @dataclass(slots=True)
 class DeleteReferencesItem:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.7
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/5.8.5/#5.8.5.1
 
     :ivar SourceNodeId:
     :vartype SourceNodeId: NodeId
@@ -6456,7 +6985,7 @@ class DeleteReferencesResponse:
 @dataclass(slots=True)
 class ViewDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.45
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.44
 
     :ivar ViewId:
     :vartype ViewId: NodeId
@@ -6505,7 +7034,7 @@ class BrowseDescription:
 @dataclass(slots=True)
 class ReferenceDescription:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.30
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.29
 
     :ivar ReferenceTypeId:
     :vartype ReferenceTypeId: NodeId
@@ -6969,7 +7498,7 @@ class NodeTypeDescription:
 @dataclass(slots=True)
 class QueryDataSet:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.28
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/B.2.5
 
     :ivar NodeId:
     :vartype NodeId: ExpandedNodeId
@@ -7027,7 +7556,7 @@ class ContentFilterElement:
 @dataclass(slots=True)
 class ContentFilter:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.3.4
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.7.1
 
     :ivar Elements:
     :vartype Elements: ContentFilterElement
@@ -7355,7 +7884,7 @@ class QueryNextResponse:
 @dataclass(slots=True)
 class ReadValueId:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.29
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.28
 
     :ivar NodeId:
     :vartype NodeId: NodeId
@@ -8151,7 +8680,7 @@ class ReadEventDetailsSorted(ReadEventDetails):
 @dataclass(slots=True)
 class AggregateConfiguration:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.4/#6.5.4.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part4/7.22.4
 
     :ivar UseServerCapabilitiesDefaults:
     :vartype UseServerCapabilitiesDefaults: Boolean
@@ -8177,7 +8706,7 @@ class AggregateConfiguration:
 @dataclass(slots=True)
 class ReadProcessedDetails(HistoryReadDetails):
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part11/6.5.4/#6.5.4.1
+    https://reference.opcfoundation.org/v105/Core/docs/Part13/5.2.2
 
     :ivar StartTime:
     :vartype StartTime: UtcTime
@@ -9948,7 +10477,7 @@ class Range:
 @dataclass(slots=True)
 class EUInformation:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.3/#5.6.3.3
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.4/#5.6.4.3
 
     :ivar NamespaceUri:
     :vartype NamespaceUri: String
@@ -9971,7 +10500,7 @@ class EUInformation:
 @dataclass(slots=True)
 class ComplexNumberType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.4
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.5
 
     :ivar Real:
     :vartype Real: Float
@@ -9988,7 +10517,7 @@ class ComplexNumberType:
 @dataclass(slots=True)
 class DoubleComplexNumberType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.5
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.6
 
     :ivar Real:
     :vartype Real: Double
@@ -10005,7 +10534,7 @@ class DoubleComplexNumberType:
 @dataclass(slots=True)
 class AxisInformation:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.6
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.7
 
     :ivar EngineeringUnits:
     :vartype EngineeringUnits: EUInformation
@@ -10031,7 +10560,7 @@ class AxisInformation:
 @dataclass(slots=True)
 class XVType:
     """
-    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.8
+    https://reference.opcfoundation.org/v105/Core/docs/Part8/5.6.9
 
     :ivar X:
     :vartype X: Double
@@ -10214,9 +10743,39 @@ extension_object_typeids['QuantityDimension'] = nid
 nid = FourByteNodeId(ObjectIds.TrustListDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = TrustListDataType
 extension_object_typeids['TrustListDataType'] = nid
+nid = FourByteNodeId(ObjectIds.BaseConfigurationDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = BaseConfigurationDataType
+extension_object_typeids['BaseConfigurationDataType'] = nid
+nid = FourByteNodeId(ObjectIds.BaseConfigurationRecordDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = BaseConfigurationRecordDataType
+extension_object_typeids['BaseConfigurationRecordDataType'] = nid
+nid = FourByteNodeId(ObjectIds.CertificateGroupDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = CertificateGroupDataType
+extension_object_typeids['CertificateGroupDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ConfigurationUpdateTargetType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ConfigurationUpdateTargetType
+extension_object_typeids['ConfigurationUpdateTargetType'] = nid
 nid = FourByteNodeId(ObjectIds.TransactionErrorType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = TransactionErrorType
 extension_object_typeids['TransactionErrorType'] = nid
+nid = FourByteNodeId(ObjectIds.EndpointDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = EndpointDataType
+extension_object_typeids['EndpointDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ServerEndpointDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ServerEndpointDataType
+extension_object_typeids['ServerEndpointDataType'] = nid
+nid = FourByteNodeId(ObjectIds.SecuritySettingsDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = SecuritySettingsDataType
+extension_object_typeids['SecuritySettingsDataType'] = nid
+nid = FourByteNodeId(ObjectIds.UserTokenSettingsDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = UserTokenSettingsDataType
+extension_object_typeids['UserTokenSettingsDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ServiceCertificateDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ServiceCertificateDataType
+extension_object_typeids['ServiceCertificateDataType'] = nid
+nid = FourByteNodeId(ObjectIds.AuthorizationServiceConfigurationDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = AuthorizationServiceConfigurationDataType
+extension_object_typeids['AuthorizationServiceConfigurationDataType'] = nid
 nid = FourByteNodeId(ObjectIds.DecimalDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = DecimalDataType
 extension_object_typeids['DecimalDataType'] = nid
@@ -10376,6 +10935,15 @@ extension_object_typeids['PubSubConfigurationValueDataType'] = nid
 nid = FourByteNodeId(ObjectIds.AliasNameDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = AliasNameDataType
 extension_object_typeids['AliasNameDataType'] = nid
+nid = FourByteNodeId(ObjectIds.AliasNameVerboseDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = AliasNameVerboseDataType
+extension_object_typeids['AliasNameVerboseDataType'] = nid
+nid = FourByteNodeId(ObjectIds.AliasCategoryUpdateDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = AliasCategoryUpdateDataType
+extension_object_typeids['AliasCategoryUpdateDataType'] = nid
+nid = FourByteNodeId(ObjectIds.AliasUpdateDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = AliasUpdateDataType
+extension_object_typeids['AliasUpdateDataType'] = nid
 nid = FourByteNodeId(ObjectIds.UserManagementDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = UserManagementDataType
 extension_object_typeids['UserManagementDataType'] = nid
@@ -10397,6 +10965,21 @@ extension_object_typeids['ReferenceDescriptionDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ReferenceListEntryDataType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = ReferenceListEntryDataType
 extension_object_typeids['ReferenceListEntryDataType'] = nid
+nid = FourByteNodeId(ObjectIds.SpanContextDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = SpanContextDataType
+extension_object_typeids['SpanContextDataType'] = nid
+nid = FourByteNodeId(ObjectIds.TraceContextDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = TraceContextDataType
+extension_object_typeids['TraceContextDataType'] = nid
+nid = FourByteNodeId(ObjectIds.NameValuePair_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = NameValuePair
+extension_object_typeids['NameValuePair'] = nid
+nid = FourByteNodeId(ObjectIds.LogRecord_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = LogRecord
+extension_object_typeids['LogRecord'] = nid
+nid = FourByteNodeId(ObjectIds.LogRecordsDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = LogRecordsDataType
+extension_object_typeids['LogRecordsDataType'] = nid
 nid = FourByteNodeId(ObjectIds.RolePermissionType_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RolePermissionType
 extension_object_typeids['RolePermissionType'] = nid
@@ -10463,6 +11046,12 @@ extension_object_typeids['TimeZoneDataType'] = nid
 nid = FourByteNodeId(ObjectIds.ApplicationDescription_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = ApplicationDescription
 extension_object_typeids['ApplicationDescription'] = nid
+nid = FourByteNodeId(ObjectIds.ApplicationIdentityDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ApplicationIdentityDataType
+extension_object_typeids['ApplicationIdentityDataType'] = nid
+nid = FourByteNodeId(ObjectIds.ApplicationConfigurationDataType_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = ApplicationConfigurationDataType
+extension_object_typeids['ApplicationConfigurationDataType'] = nid
 nid = FourByteNodeId(ObjectIds.RequestHeader_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = RequestHeader
 extension_object_typeids['RequestHeader'] = nid
