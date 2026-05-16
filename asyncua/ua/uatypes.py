@@ -111,6 +111,18 @@ def type_from_allow_subtype(uatype: Any) -> Any:
 
 
 def type_string_from_type(uatype: Any) -> str:
+    if isinstance(uatype, str):
+        # PEP 563 / Python 3.14: type annotations may surface as strings from
+        # dataclasses.fields(). Strip optional/list wrappers, quotes, and module
+        # prefixes so callers get the bare class name (e.g. "QualifiedName").
+        s = uatype.strip("'\" ")
+        for prefix in ("Optional[", "list[", "List["):
+            if s.startswith(prefix):
+                s = s[len(prefix) : -1]
+        s = s.strip("'\" ")
+        # Strip "| None" (PEP 604 unions used for Optional fields).
+        s = s.split("|", 1)[0].strip()
+        return s.rsplit(".", 1)[-1]
     if type_is_optional(uatype):
         uatype = type_from_optional(uatype)
     if type_is_union(uatype):
