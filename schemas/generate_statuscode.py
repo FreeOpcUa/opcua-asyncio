@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 BASE_DIR = Path.cwd().parent
 
 
-def status_codes():
+def status_codes() -> list[tuple[str, str, str]]:
     """
     Load values from StatusCode.csv and then
     add values from StatusCodes_add.csv, but only

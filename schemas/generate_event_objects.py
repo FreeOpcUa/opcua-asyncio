@@ -1,41 +1,47 @@
 # code to generate eEventTypes
+from __future__ import annotations
+
+import datetime
 import xml.etree.ElementTree as ET
+from pathlib import Path
+from typing import IO, Any
+
 import asyncua.ua.object_ids as ob_ids
 import generate_model_event as gme
-from pathlib import Path
-import datetime
 
 BASE_DIR = Path.cwd().parent
 
 
 class EventsCodeGenerator:
-    def __init__(self, event_model, output_file, input_path=None):
+    def __init__(self, event_model: Any, output_file: IO[str], input_path: Path | str | None = None) -> None:
         self.output_file = output_file
         self.input_path = input_path
         self.event_model = event_model
         self.indent = "    "
         self.iidx = 0  # indent index
 
-    def event_list(self):
+    def event_list(self) -> None:
         tree = ET.parse(self.event_model)
         root = tree.getroot()
         for child in root:
             if child.tag.endswith("UAObjectType"):
                 print(child.attrib)
 
-    def write(self, line):
+    def write(self, line: str) -> None:
         if line:
             line = self.indent * self.iidx + line
         self.output_file.write(line + "\n")
 
-    def make_header(self, events: list):
+    def make_header(self, events: list[Any]) -> None:
         tree = ET.parse(self.input_path)
-        model_ = ""
+        model_: ET.Element | None = None
         for child in tree.iter():
             if child.tag.endswith("Model"):
                 # check if ModelUri X, in Version Y from time Z was already imported
                 model_ = child
                 break
+        if model_ is None:
+            raise RuntimeError(f"No <Model> element found in {self.input_path}")
 
         self.write(f'''
 """
@@ -54,7 +60,7 @@ from .events import Event
         names = ", ".join(f'"{event.browseName}"' for event in events)
         self.write(f"__all__ = [{names}]\n")
 
-    def add_properties_and_variables(self, event):
+    def add_properties_and_variables(self, event: Any) -> None:
         for ref in event.references:
             if ref.referenceType == "HasProperty":
                 self.write(
@@ -70,7 +76,7 @@ from .events import Event
                 )
 
     @staticmethod
-    def get_value(reference):
+    def get_value(reference: Any) -> str:
         if reference.refBrowseName == "SourceNode":
             return "sourcenode"
         elif reference.refBrowseName == "Severity":
@@ -89,7 +95,7 @@ from .events import Event
             return "None"
 
     @staticmethod
-    def get_data_type(reference):
+    def get_data_type(reference: Any) -> str:
         if str(reference.refBrowseName) in ("Time", "ReceiveTime"):
             return "ua.VariantType.DateTime"
         elif str(reference.refBrowseName) == "LocalTime":
@@ -101,7 +107,7 @@ from .events import Event
         else:
             return "ua.VariantType.{0}".format(reference.refDataType)
 
-    def generate_event_class(self, event, *parent_event_browse_name):
+    def generate_event_class(self, event: Any, *parent_event_browse_name: str) -> None:
         self.write("")
         if event.browseName == "BaseEvent":
             self.write(f"""
@@ -134,7 +140,7 @@ class {event.browseName}({parent_event_browse_name[0]}):""")
             self.add_properties_and_variables(event)
         self.iidx -= 2
 
-    def generate_events_code(self, model_):
+    def generate_events_code(self, model_: dict[Any, Any]) -> None:
         self.make_header(model_.values())
         for event in model_.values():
             if event.browseName == "BaseEvent":
