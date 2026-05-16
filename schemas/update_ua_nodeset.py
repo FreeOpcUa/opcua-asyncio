@@ -12,7 +12,7 @@ class UpdateError(Exception):
     pass
 
 
-def rm_tree(path: Path):
+def rm_tree(path: Path) -> None:
     for child in path.iterdir():
         if child.is_file():
             child.unlink()
@@ -21,7 +21,7 @@ def rm_tree(path: Path):
     path.rmdir()
 
 
-def get_new_nodeset(timeout: float = 120, tag: Optional[str] = None, branch: Optional[str] = None):
+def get_new_nodeset(timeout: float = 120, tag: Optional[str] = None, branch: Optional[str] = None) -> None:
     cwd = Path(".")
     target_v1 = cwd / "UA-Nodeset"
     backup_v1 = target_v1.parent / (target_v1.name + "_backup")
@@ -61,7 +61,7 @@ def get_new_nodeset(timeout: float = 120, tag: Optional[str] = None, branch: Opt
     # (target_v2 / "PublishNodeSets.bat").unlink()
 
 
-def generate_standard_nodesets():
+def generate_standard_nodesets() -> None:
     run_module("generate_address_space", run_name="__main__")
     run_module("generate_event_objects", run_name="__main__")
     run_module("generate_ids", run_name="__main__")

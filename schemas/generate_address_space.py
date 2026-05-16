@@ -4,14 +4,17 @@ xmlparser.py is a requirement.
 It is in asyncua folder, but to avoid importing all code, developer can link xmlparser.py in current directory
 """
 
+from __future__ import annotations
+
 import asyncio
+import datetime
 import glob
+import logging
 import os
 import sys
-import datetime
-import logging
 from dataclasses import fields
 from pathlib import Path
+from typing import IO, Any
 
 from asyncua.common import xmlparser
 from asyncua.ua.uatypes import type_string_from_type
@@ -19,7 +22,7 @@ from asyncua.ua.uatypes import type_string_from_type
 BASE_DIR = Path.cwd().parent
 
 
-def _to_val(objs, attr, val):
+def _to_val(objs: list[str], attr: str, val: str) -> str:
     from asyncua import ua
 
     cls = getattr(ua, objs[0])
@@ -30,14 +33,14 @@ def _to_val(objs, attr, val):
     return ua_type_to_python(val, _get_uatype_name(cls, attr))
 
 
-def _get_uatype_name(cls, attname):
+def _get_uatype_name(cls: type, attname: str) -> str:
     for field in fields(cls):
         if field.name == attname:
             return type_string_from_type(field.type)
     raise Exception(f"Could not find attribute {attname} in obj {cls}")
 
 
-def ua_type_to_python(val, uatype):
+def ua_type_to_python(val: str, uatype: str) -> str:
     if uatype == "String":
         return f"'{val}'"
     elif uatype in ("Bytes", "Bytes", "ByteString", "ByteArray"):
@@ -46,16 +49,17 @@ def ua_type_to_python(val, uatype):
         return val
 
 
-def bname_code(string):
+def bname_code(string: str) -> str:
     if ":" in string:
-        idx, name = string.split(":", 1)
+        idx_s, name = string.split(":", 1)
+        idx = int(idx_s)
     else:
         idx = 0
         name = string
     return f'QualifiedName("{name}", {idx})'
 
 
-def nodeid_code(string):
+def nodeid_code(string: str) -> str:
     line = string.split(";")
     identifier = None
     namespace = 0
@@ -95,20 +99,20 @@ def nodeid_code(string):
 
 
 class CodeGenerator:
-    def __init__(self, input_path, output_path):
+    def __init__(self, input_path: Path, output_path: Path) -> None:
         self.input_path = input_path
         self.output_path = output_path
-        self.output_file = None
+        self.output_file: IO[str] | None = None
         self.part = self.input_path.parts[-1].split(".")[-2]
-        self.parser = None
-        self.nodes = {}
+        self.parser: xmlparser.XMLParser | None = None
+        self.nodes: dict[str, Any] = {}
 
-    async def run(self):
+    async def run(self) -> None:
         sys.stderr.write(f"Generating Python code {self.output_path} for XML file {self.input_path}\n")
         file_count = 1
         file_item_count = 0
 
-        def check_chunk_split():
+        def check_chunk_split() -> None:
             nonlocal file_item_count, file_count
             file_item_count += 1
             if file_item_count > 500:
@@ -155,9 +159,10 @@ class CodeGenerator:
         self.make_header("", '\n'.join(imports))
         for i in range(1, file_count + 1):
             self.writecode(indent, f'create_standard_address_space_Services_{i}(server)')
-        self.output_file.close()
+        if self.output_file is not None:
+            self.output_file.close()
 
-    def remove_outputs(self):
+    def remove_outputs(self) -> None:
         dir = os.path.dirname(self.output_path)
         basename = os.path.basename(self.output_path)
         basename, ext = os.path.splitext(basename)
@@ -165,7 +170,7 @@ class CodeGenerator:
         for file in existing_files:
             os.remove(file)
 
-    def create_output(self, chunk_index):
+    def create_output(self, chunk_index: int | None) -> None:
         if self.output_file is not None:
             self.output_file.close()
         root, ext = os.path.splitext(self.output_path)
@@ -178,17 +183,21 @@ class CodeGenerator:
         if suffix != "":
             self.make_header(suffix)
 
-    def writecode(self, *args):
+    def writecode(self, *args: str) -> None:
+        if self.output_file is None:
+            raise RuntimeError("Output file not open. Call create_output() first.")
         self.output_file.write(f"{' '.join(args)}\n")
 
-    def make_header(self, suffix, imports=""):
+    def make_header(self, suffix: str, imports: str = "") -> None:
         tree = xmlparser.ET.parse(self.input_path)
-        model = ""
+        model: Any = None
         for child in tree.iter():
             if child.tag.endswith("Model"):
                 # check if ModelUri X, in Version Y from time Z was already imported
                 model = child
                 break
+        if model is None:
+            raise RuntimeError(f"No <Model> element found in {self.input_path}")
 
         self.writecode(
             f"""# -*- coding: utf-8 -*-\n"""
@@ -214,7 +223,7 @@ class CodeGenerator:
             f'''\n'''
             f'''def create_standard_address_space_{self.part!s}{suffix}(server):''')
 
-    def make_node_code(self, obj, indent):
+    def make_node_code(self, obj: Any, indent: str) -> None:
         self.nodes[obj.nodeid] = obj
         self.writecode(
             f"""    node = ua.AddNodesItem(\n"""
@@ -232,7 +241,7 @@ class CodeGenerator:
         self.writecode(f"        NodeAttributes=attrs,\n    )\n    server.add_nodes([node])")
 
     @staticmethod
-    def to_data_type(nodeid):
+    def to_data_type(nodeid: str | None) -> str:
         if not nodeid:
             return "ua.NodeId(ua.ObjectIds.String)"
         if "=" in nodeid:
@@ -240,12 +249,13 @@ class CodeGenerator:
         else:
             return f"ua.NodeId(ua.ObjectIds.{nodeid})"
 
-    def to_ref_type(self, nodeid):
+    def to_ref_type(self, nodeid: str) -> str:
         if "=" not in nodeid:
+            assert self.parser is not None
             nodeid = self.parser.get_aliases()[nodeid]
         return nodeid_code(nodeid)
 
-    def make_object_code(self, obj):
+    def make_object_code(self, obj: Any) -> None:
         indent = "   "
         self.writecode()
         self.writecode(indent, "attrs = ua.ObjectAttributes(")
@@ -258,7 +268,7 @@ class CodeGenerator:
         )
         self.make_node_code(obj, indent)
 
-    def make_object_type_code(self, obj):
+    def make_object_type_code(self, obj: Any) -> None:
         indent = "   "
         self.writecode()
         self.writecode(indent, "attrs = ua.ObjectTypeAttributes(")
@@ -271,7 +281,7 @@ class CodeGenerator:
         )
         self.make_node_code(obj, indent)
 
-    def make_common_variable_code(self, indent, obj):
+    def make_common_variable_code(self, indent: str, obj: Any) -> None:
         if obj.desc:
             self.writecode(indent, '    Description=LocalizedText("{0}"),'.format(obj.desc))
         self.writecode(indent, '    DisplayName=LocalizedText("{0}"),'.format(obj.displayname))
@@ -309,7 +319,7 @@ class CodeGenerator:
             self.writecode(indent, f"    ArrayDimensions={obj.dimensions},")
         self.writecode(indent, "    )")
 
-    def make_ext_obj_code(self, indent, extobj, prefix=""):
+    def make_ext_obj_code(self, indent: str, extobj: Any, prefix: str = "") -> None:
         self.writecode(indent, f"{prefix}ua.{extobj.objname}(")
         for name, val in extobj.body:
             for k, v in val:
@@ -330,7 +340,7 @@ class CodeGenerator:
                     self.writecode(indent, f"    {k}=LocalizedText(Text={text}, Locale={locale}),")
         self.writecode(indent, "    ),")
 
-    def make_variable_code(self, obj):
+    def make_variable_code(self, obj: Any) -> None:
         indent = "   "
         self.writecode()
         self.writecode(indent, "attrs = ua.VariableAttributes(")
@@ -339,7 +349,7 @@ class CodeGenerator:
         self.make_common_variable_code(indent, obj)
         self.make_node_code(obj, indent)
 
-    def make_variable_type_code(self, obj):
+    def make_variable_type_code(self, obj: Any) -> None:
         indent = "   "
         self.writecode()
         self.writecode(indent, "attrs = ua.VariableTypeAttributes(")
@@ -350,7 +360,7 @@ class CodeGenerator:
         self.make_common_variable_code(indent, obj)
         self.make_node_code(obj, indent)
 
-    def make_method_code(self, obj):
+    def make_method_code(self, obj: Any) -> None:
         indent = "   "
         self.writecode()
         self.writecode(indent, "attrs = ua.MethodAttributes(")
@@ -359,7 +369,7 @@ class CodeGenerator:
         self.writecode(f'        DisplayName=LocalizedText("{obj.displayname}"),\n    )')
         self.make_node_code(obj, indent)
 
-    def make_reference_code(self, obj):
+    def make_reference_code(self, obj: Any) -> None:
         indent = "   "
         self.writecode()
         self.writecode(indent, "attrs = ua.ReferenceTypeAttributes(")
@@ -375,7 +385,7 @@ class CodeGenerator:
         self.writecode(indent, "    )")
         self.make_node_code(obj, indent)
 
-    def make_datatype_code(self, obj):
+    def make_datatype_code(self, obj: Any) -> None:
         indent = "   "
         self.writecode()
         self.writecode(indent, "attrs = ua.DataTypeAttributes(")
@@ -386,7 +396,7 @@ class CodeGenerator:
         self.writecode(indent, "    )")
         self.make_node_code(obj, indent)
 
-    def make_refs_code(self, obj, indent):
+    def make_refs_code(self, obj: Any, indent: str) -> None:
         if not obj.refs:
             return
         self.writecode()
@@ -406,7 +416,7 @@ class CodeGenerator:
         self.writecode(indent, "server.add_references(refs)")
 
 
-def save_aspace_to_disk():
+def save_aspace_to_disk() -> None:
     path = BASE_DIR / "asyncua" / "binary_address_space.pickle"
     print("Saving standard address space to:", path)
 
@@ -428,7 +438,7 @@ def save_aspace_to_disk():
     a_space.dump(path)
 
 
-async def main():
+async def main() -> None:
     logging.basicConfig(level=logging.WARN)
     xml_path = BASE_DIR / "schemas" / "UA-Nodeset-master" / "Schema" / f"Opc.Ua.NodeSet2.Services.xml"
     py_path = BASE_DIR / "asyncua" / "server" / "standard_address_space" / "standard_address_space_services.py"
