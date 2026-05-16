@@ -1,4 +1,6 @@
 tmp_test_*
+*.proff
+*.prof
 build*
 MANIFEST
 .idea*
