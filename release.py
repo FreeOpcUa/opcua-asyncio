@@ -26,8 +26,17 @@ def _working_tree_clean() -> bool:
     return unstaged == 0 and staged == 0
 
 
-def _local_up_to_date() -> bool:
+def _local_up_to_date() -> bool | None:
+    """Return True if local matches its upstream, False if behind/ahead, None if no upstream configured."""
     subprocess.run(["git", "fetch"], check=True)
+    has_upstream = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if has_upstream.returncode != 0:
+        return None
     local = _run("git", "rev-parse", "HEAD")
     upstream = _run("git", "rev-parse", "@{u}")
     return local == upstream
@@ -61,7 +70,15 @@ def release(bump: str) -> None:
     if not _working_tree_clean():
         print("Working tree unclean, will not release")
         return
-    if not _local_up_to_date():
+    upstream_state = _local_up_to_date()
+    if upstream_state is None:
+        print(
+            f"Branch {branch!r} has no upstream tracking branch configured.\n"
+            f"Run `git push -u origin {branch}` (or `git branch --set-upstream-to=origin/{branch}`)\n"
+            f"to set one, or check out the canonical release branch (e.g. master/main) first."
+        )
+        return
+    if not upstream_state:
         print("Local branch is not up-to-date with origin, will not release")
         return
 
