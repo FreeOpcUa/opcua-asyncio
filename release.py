@@ -1,3 +1,4 @@
+import re
 import shutil
 import subprocess
 import sys
@@ -6,6 +7,9 @@ from pathlib import Path
 PYPROJECT = Path("pyproject.toml")
 ALLOWED_BRANCHES = ("main", "master", "v2")
 BUMP_KINDS = ("major", "minor", "patch")
+# PEP 440 version-like (major.minor[.patch][prerelease tag]) — used to decide
+# whether a CLI argument is a bump kind or an explicit version string.
+_VERSION_RE = re.compile(r"^\d+(\.\d+)*([abc]|rc|alpha|beta|dev|post|\.dev|\.post)?\d*$")
 
 
 def _run(*cmd: str) -> str:
@@ -47,7 +51,12 @@ def _tag_exists(tag: str) -> bool:
 
 
 def _bump_version(bump: str) -> str:
-    subprocess.run(["uv", "version", "--bump", bump], check=True)
+    if bump in BUMP_KINDS:
+        subprocess.run(["uv", "version", "--bump", bump], check=True)
+    else:
+        # Explicit version string (e.g. "2.0a1", "2.0.0rc1"). uv version <X>
+        # writes it verbatim to pyproject.toml after validating PEP 440.
+        subprocess.run(["uv", "version", bump], check=True)
     return _run("uv", "version", "--short")
 
 
@@ -108,8 +117,12 @@ def main() -> None:
     if len(sys.argv) == 1:
         bump = "patch"
     else:
-        if (bump := sys.argv[1]) not in BUMP_KINDS:
-            raise ValueError(f"Argument needs to be one of {BUMP_KINDS}, not {bump}")
+        bump = sys.argv[1]
+        if bump not in BUMP_KINDS and not _VERSION_RE.match(bump):
+            raise ValueError(
+                f"Argument must be one of {BUMP_KINDS} or a PEP 440 version string "
+                f"(e.g. '2.0a1', '2.0.0rc1'), not {bump!r}"
+            )
     release(bump)
 
 
