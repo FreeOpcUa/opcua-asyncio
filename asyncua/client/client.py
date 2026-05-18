@@ -1,8 +1,11 @@
 import asyncio
 import contextvars
 import dataclasses
+import json
 import logging
+import os
 import socket
+import time
 from collections.abc import Callable, Coroutine, Iterable, Sequence
 from pathlib import Path
 from typing import Any, cast
@@ -127,6 +130,13 @@ class Client:
         self._stale_check_interval: float = 0.5
         self.certificate_validator: CertificateValidatorMethod | None = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
+        # Persist the session's authentication_token + server_nonce so a fresh
+        # client process can reuse the existing server-side session via
+        # ActivateSession (spec Part 4 §6.7). Set before connect(); the file is
+        # written with mode 0o600 after each successful activate and removed on
+        # graceful disconnect(). Useful when the client crashes between
+        # connects and the server hasn't yet expired the orphaned session.
+        self.session_state_path: Path | None = None
 
     async def __aenter__(self) -> "Client":
         await self.connect()
@@ -400,22 +410,50 @@ class Client:
         self._stale_watchdog_task = asyncio.create_task(self._stale_watchdog_loop())
 
     async def _connect_sequence(self) -> None:
-        """Run the full connect sequence: socket, hello, channel, session, activate."""
+        """Run the full connect sequence: socket, hello, channel, session, activate.
+
+        If `session_state_path` is set and a persisted session is found, attempt
+        ActivateSession on the existing authentication_token first (spec Part 4
+        §6.7). Fall back to CreateSession + ActivateSession when no state is
+        persisted or the server has expired the session.
+        """
         await self.connect_socket()
         try:
             await self.send_hello()
             await self.open_secure_channel()
             try:
-                await self.create_session()
+                if self._try_load_persisted_session():
+                    try:
+                        await self.activate_session(
+                            username=self._username, password=self._password, certificate=self.user_certificate
+                        )
+                        _logger.info("Resumed persisted session %s", self.uaclient.session.authentication_token)
+                        self._save_session_state()
+                        return
+                    except BadSessionIdInvalid:
+                        _logger.info("Persisted session expired on server; creating fresh one")
+                        self._clear_persisted_session()
+                        self.uaclient.session.authentication_token = ua.NodeId()
+                        self._server_nonce = None
+                    except Exception:
+                        _logger.warning("Failed to resume persisted session; creating fresh one", exc_info=True)
+                        self._clear_persisted_session()
+                        self.uaclient.session.authentication_token = ua.NodeId()
+                        self._server_nonce = None
                 try:
-                    await self.activate_session(
-                        username=self._username, password=self._password, certificate=self.user_certificate
-                    )
+                    await self.create_session()
+                    try:
+                        await self.activate_session(
+                            username=self._username, password=self._password, certificate=self.user_certificate
+                        )
+                        self._save_session_state()
+                    except Exception:
+                        await self._close_session_quiet()
+                        raise
                 except Exception:
-                    await self._close_session_quiet()
+                    await self._close_secure_channel_quiet()
                     raise
             except Exception:
-                await self._close_secure_channel_quiet()
                 raise
         except Exception:
             self.disconnect_socket()
@@ -447,6 +485,85 @@ class Client:
             await self.close_secure_channel()
         finally:
             self.disconnect_socket()
+            self._clear_persisted_session()
+
+    def _try_load_persisted_session(self) -> bool:
+        """Load `authentication_token` + `server_nonce` from disk into the live session.
+
+        Returns True when a session is loaded and worth attempting ActivateSession on.
+        Returns False (and silently) when no state path is set, the file is missing,
+        or the recorded session is older than `session_timeout` (server would have
+        expired it already).
+        """
+        if self.session_state_path is None:
+            return False
+        try:
+            raw = self.session_state_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            return False
+        except OSError as exc:
+            _logger.warning("Could not read session state at %s: %s", self.session_state_path, exc)
+            return False
+        try:
+            state = json.loads(raw)
+            token = ua.NodeId.from_string(state["authentication_token"])
+            nonce = bytes.fromhex(state["server_nonce"]) if state.get("server_nonce") else None
+            saved_at = float(state.get("saved_at", 0))
+        except (KeyError, ValueError, TypeError) as exc:
+            _logger.warning("Persisted session state at %s is malformed: %s", self.session_state_path, exc)
+            self._clear_persisted_session()
+            return False
+        age = time.time() - saved_at
+        if age > self.session_timeout / 1000:
+            _logger.info(
+                "Persisted session at %s is %.0fs old (>%.0fms timeout); skipping",
+                self.session_state_path,
+                age,
+                self.session_timeout,
+            )
+            self._clear_persisted_session()
+            return False
+        self.uaclient.session.authentication_token = token
+        if self.uaclient.protocol is not None:
+            self.uaclient.protocol.authentication_token = token
+        self._server_nonce = nonce
+        return True
+
+    def _save_session_state(self) -> None:
+        """Persist the current session's auth_token + server_nonce atomically with 0o600."""
+        if self.session_state_path is None:
+            return
+        token = self.uaclient.session.authentication_token
+        if token.is_null():
+            return
+        state = {
+            "authentication_token": token.to_string(),
+            "server_nonce": self._server_nonce.hex() if self._server_nonce else None,
+            "saved_at": time.time(),
+        }
+        path = self.session_state_path
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_suffix(path.suffix + ".tmp")
+            data = json.dumps(state)
+            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            try:
+                os.write(fd, data.encode("utf-8"))
+            finally:
+                os.close(fd)
+            os.replace(tmp, path)
+        except OSError as exc:
+            _logger.warning("Could not save session state to %s: %s", path, exc)
+
+    def _clear_persisted_session(self) -> None:
+        if self.session_state_path is None:
+            return
+        try:
+            self.session_state_path.unlink()
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            _logger.warning("Could not delete session state at %s: %s", self.session_state_path, exc)
 
     async def disconnect_sessionless(self) -> None:
         """

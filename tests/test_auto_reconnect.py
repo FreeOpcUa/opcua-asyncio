@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from typing import Any
 
 import pytest
 
@@ -192,6 +193,78 @@ async def test_new_session_created_when_server_forgot() -> None:
         assert client.uaclient.session.authentication_token != old_auth_token
     finally:
         await client.disconnect()
+        await srv.stop()
+
+
+async def test_session_state_persistence_resumes_session_across_processes(tmp_path: Any) -> None:
+    """A fresh Client pointed at the same session_state_path resumes the server-side session."""
+    port = find_free_port()
+    srv = await _start_server(port)
+    state_path = tmp_path / "session.json"
+
+    first = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0)
+    first.session_state_path = state_path
+    await first.connect(auto_reconnect=False)
+    # Create a subscription so the server retains the session across transport loss
+    # (matches the real-world case where session persistence actually matters).
+    sub = await first.create_subscription(50)
+    first_auth_token = first.uaclient.session.authentication_token
+    assert first_auth_token in srv.iserver._external_sessions
+    assert state_path.exists()
+    assert state_path.stat().st_mode & 0o777 == 0o600
+
+    # Simulate a process crash: drop the transport without closing the session, then
+    # build a brand-new Client (no in-memory token) pointed at the same state file.
+    proto = first.uaclient.protocol
+    assert proto is not None
+    assert proto.transport is not None
+    proto.transport.close()
+    if first._supervisor_task is not None:
+        first._supervisor_task.cancel()
+    if first._stale_watchdog_task is not None:
+        first._stale_watchdog_task.cancel()
+    # Give the server a moment to process the lost-connection cleanup
+    await asyncio.sleep(0.2)
+
+    second = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0)
+    second.session_state_path = state_path
+    try:
+        await second.connect(auto_reconnect=False)
+        assert second.uaclient.session.authentication_token == first_auth_token, (
+            "second client should have reactivated the persisted session"
+        )
+    finally:
+        await second.disconnect()
+        await srv.stop()
+        _ = sub
+    # disconnect() removes the file
+    assert not state_path.exists()
+
+
+async def test_session_state_persistence_falls_back_when_server_forgot(tmp_path: Any) -> None:
+    """If the persisted session was expired/dropped on the server, fall back to a new session."""
+    port = find_free_port()
+    srv = await _start_server(port)
+    state_path = tmp_path / "session.json"
+
+    first = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0)
+    first.session_state_path = state_path
+    await first.connect(auto_reconnect=False)
+    first_auth_token = first.uaclient.session.authentication_token
+    assert state_path.exists()
+
+    # Force the server to forget the session before the new client comes up.
+    srv.iserver._external_sessions.pop(first_auth_token, None)
+
+    second = Client(f"opc.tcp://127.0.0.1:{port}", timeout=1.0)
+    second.session_state_path = state_path
+    try:
+        await second.connect(auto_reconnect=False)
+        assert second.uaclient.session.authentication_token != first_auth_token
+        # New session, new state on disk
+        assert state_path.exists()
+    finally:
+        await second.disconnect()
         await srv.stop()
 
 
