@@ -3,7 +3,6 @@ import copy
 import logging
 import time
 from collections import deque
-from datetime import datetime, timedelta, timezone
 
 from asyncua import ua
 
@@ -33,7 +32,7 @@ class UaProcessor:
         self.name = transport.get_extra_info("peername")
         self.sockname = transport.get_extra_info("sockname")
         self.session: InternalSession | None = None
-        self.session_last_activity: datetime | None = None
+        self.session_last_activity: float | None = None
         self._transport = transport
         # deque for Publish Requests
         self._publish_requests: deque[PublishRequestData] = deque()
@@ -188,7 +187,7 @@ class UaProcessor:
                 if self._connection.security_policy.permissions.check_validity(user, typeid, body) is False:
                     raise ua.uaerrors.BadUserAccessDenied
 
-        self.session_last_activity = datetime.now(timezone.utc)
+        self.session_last_activity = time.monotonic()
         if self.session is not None:
             self.session.touch()
 
@@ -585,9 +584,11 @@ class UaProcessor:
         Checks if the session is alive
         """
         timeout = min(self.session.session_timeout / 2, self._watchdog_interval)
-        timeout_timedelta = timedelta(seconds=self.session.session_timeout)
+        session_timeout = self.session.session_timeout
         while not self._closing:
             await asyncio.sleep(timeout)
-            if (datetime.now(timezone.utc) - timeout_timedelta) > self.session_last_activity:
-                _logger.warning("Session timed out after %ss of inactivity", timeout_timedelta.total_seconds())
+            if self.session_last_activity is None:
+                continue
+            if time.monotonic() - self.session_last_activity > session_timeout:
+                _logger.warning("Session timed out after %ss of inactivity", session_timeout)
                 await self.close()
