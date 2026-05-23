@@ -1220,6 +1220,28 @@ basetype_by_datatype = {}
 basetype_datatypes = {}
 
 
+def _set_ua_attribute(name: str, class_type: type, data_type: NodeId | None) -> None:
+    import asyncua.ua as _ua
+
+    existing = getattr(_ua, name, None)
+    if existing is None:
+        setattr(_ua, name, class_type)
+        return
+    if existing is class_type:
+        return
+    existing_dt = getattr(existing, "data_type", None)
+    if existing_dt is not None and data_type is not None and existing_dt == data_type:
+        return
+    _logger.warning(
+        "Browsename collision: ua.%s is already bound (data_type=%s); new class with data_type=%s "
+        "is registered only in the NodeId-keyed lookup dicts. Use ua.get_type(node_id) or "
+        "ua.extension_objects_by_datatype[node_id] to access it.",
+        name,
+        existing_dt,
+        data_type,
+    )
+
+
 # register of alias of basetypes
 def register_basetype(name: str, nodeid: NodeId, class_type: type) -> None:
     """
@@ -1228,9 +1250,7 @@ def register_basetype(name: str, nodeid: NodeId, class_type: type) -> None:
     _logger.info("registering new basetype alias: %s %s %s", name, nodeid, class_type)
     basetype_by_datatype[nodeid] = name
     basetype_datatypes[class_type] = nodeid
-    import asyncua.ua
-
-    setattr(asyncua.ua, name, class_type)
+    _set_ua_attribute(name, class_type, None)
 
 
 # register of custom enums (Those loaded with load_enums())
@@ -1245,17 +1265,17 @@ def register_enum(name: str, nodeid: NodeId, class_type: type) -> None:
     _logger.info("registering new enum: %s %s %s", name, nodeid, class_type)
     enums_by_datatype[nodeid] = class_type
     enums_datatypes[class_type] = nodeid
-    import asyncua.ua
-
-    setattr(asyncua.ua, name, class_type)
+    class_type.data_type = nodeid  # type: ignore[attr-defined]
+    _set_ua_attribute(name, class_type, nodeid)
 
 
 # These dictionaries are used to register extensions classes for automatic
 # decoding and encoding
 extension_objects_by_datatype = {}  # dict[Datatype, type]
 extension_objects_by_typeid = {}  # dict[EncodingId, type]
-extension_object_typeids = {}
+extension_object_typeids = {}  # dict[name, EncodingId] -- kept for backward compat; encoder uses typeid_by_extension_objects
 datatype_by_extension_object = {}
+typeid_by_extension_objects = {}  # dict[type, EncodingId] -- collision-safe encoder lookup
 
 
 def register_extension_object(
@@ -1276,11 +1296,26 @@ def register_extension_object(
         datatype_by_extension_object[class_type] = datatype_nodeid
     extension_objects_by_typeid[encoding_nodeid] = class_type
     extension_object_typeids[name] = encoding_nodeid
-    # FIXME: Next line is not exactly a Python best practices, so feel free to propose something else
-    # add new extensions objects to ua modules to automate decoding
-    import asyncua.ua
+    typeid_by_extension_objects[class_type] = encoding_nodeid
+    _set_ua_attribute(name, class_type, datatype_nodeid)
 
-    setattr(asyncua.ua, name, class_type)
+
+def get_type(node_id: NodeId) -> type:
+    """
+    Resolve a DataType NodeId to its registered Python class.
+
+    Checks struct, enum, and basetype registries. This is the authoritative lookup
+    when browsenames collide across namespaces.
+    """
+    if node_id in extension_objects_by_datatype:
+        return extension_objects_by_datatype[node_id]
+    if node_id in enums_by_datatype:
+        return enums_by_datatype[node_id]
+    if node_id in basetype_by_datatype:
+        import asyncua.ua as _ua
+
+        return getattr(_ua, basetype_by_datatype[node_id])
+    raise KeyError(f"No registered type for DataType {node_id}")
 
 
 def get_extensionobject_class_type(typeid: NodeId) -> type | None:
