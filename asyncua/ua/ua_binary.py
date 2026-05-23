@@ -15,7 +15,7 @@ from dataclasses import Field, fields, is_dataclass
 from enum import Enum, IntFlag
 from io import BytesIO
 from types import UnionType
-from typing import IO, Any, TypeVar, get_args, get_origin, get_type_hints
+from typing import IO, Any, TypeVar, get_args, get_origin
 
 from asyncua import ua
 
@@ -637,6 +637,18 @@ def extensionobject_from_binary(data: Buffer) -> Any:
     return e
 
 
+def _encoding_for_class(cls: type) -> Any:
+    type_id = ua.typeid_by_extension_objects.get(cls)
+    if type_id is not None:
+        return type_id
+    for base in cls.__mro__[1:]:
+        type_id = ua.typeid_by_extension_objects.get(base)
+        if type_id is not None:
+            ua.typeid_by_extension_objects[cls] = type_id
+            return type_id
+    raise KeyError(f"No registered encoding for class {cls}")
+
+
 def extensionobject_to_binary(obj: Any) -> bytes:
     """
     Convert Python object to binary-coded ExtensionObject.
@@ -650,7 +662,7 @@ def extensionobject_to_binary(obj: Any) -> bytes:
         encoding = 0
         body = None
     else:
-        type_id = ua.extension_object_typeids[obj.__class__.__name__]
+        type_id = _encoding_for_class(obj.__class__)
         encoding = 0x01
         body = struct_to_binary(obj)
     packet = [
@@ -699,6 +711,8 @@ def _create_type_deserializer(uatype: Any, dataclazz: type) -> Callable[[Buffer 
         return _create_uatype_deserializer(vtype)
     if hasattr(Primitives, uatype.__name__):
         return getattr(Primitives, uatype.__name__).unpack
+    if uatype is dataclazz:
+        return lambda data: _create_dataclass_deserializer(uatype)(data)
     return _create_dataclass_deserializer(uatype)
 
 
@@ -748,7 +762,7 @@ def _create_dataclass_deserializer(objtype: type | str) -> Callable[[Buffer | IO
         return decode_union
     enc_count = 0
     dc_field_deserializers: list[tuple[Field[Any], int, Callable[[Buffer | IO], Any]]] = []
-    resolved_fieldtypes = get_type_hints(objtype, None, {"ua": ua})
+    resolved_fieldtypes = get_safe_type_hints(objtype, {"ua": ua})
     for field in fields(objtype):
         optional_enc_bit = 0
         field_type = resolved_fieldtypes[field.name]

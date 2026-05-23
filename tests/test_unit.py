@@ -932,6 +932,169 @@ def test_struct104_optional_field_respects_encoding_mask() -> None:
     assert decoded.Description is None
 
 
+def test_typeid_by_extension_objects_distinguishes_same_named_classes(restore_ua_registry) -> None:
+    @dataclass
+    class CollideA:
+        pass
+
+    @dataclass
+    class CollideB:
+        pass
+
+    CollideA.__name__ = CollideB.__name__ = "Collide"
+
+    enc_a = ua.NodeId(70001, 5)
+    enc_b = ua.NodeId(70002, 5)
+    dt_a = ua.NodeId(70011, 5)
+    dt_b = ua.NodeId(70012, 5)
+
+    ua.register_extension_object("Collide", enc_a, CollideA, dt_a)
+    ua.register_extension_object("Collide", enc_b, CollideB, dt_b)
+
+    assert ua.typeid_by_extension_objects[CollideA] == enc_a
+    assert ua.typeid_by_extension_objects[CollideB] == enc_b
+    assert ua.extension_objects_by_datatype[dt_a] is CollideA
+    assert ua.extension_objects_by_datatype[dt_b] is CollideB
+
+
+def test_get_type_resolves_by_nodeid(restore_ua_registry) -> None:
+    @dataclass
+    class MyStruct:
+        pass
+
+    enc = ua.NodeId(70021, 5)
+    dt = ua.NodeId(70022, 5)
+    ua.register_extension_object("MyStruct", enc, MyStruct, dt)
+    assert ua.get_type(dt) is MyStruct
+
+    with pytest.raises(KeyError):
+        ua.get_type(ua.NodeId(99999, 99))
+
+
+def _make_struct_field(name: str, dt: ua.NodeId, *, optional: bool = False) -> ua.StructureField:
+    f = ua.StructureField()
+    f.Name = name
+    f.DataType = dt
+    f.IsOptional = optional
+    return f
+
+
+def test_browsename_collision_both_registered_in_dicts(restore_ua_registry) -> None:
+    sdef_a = ua.StructureDefinition()
+    sdef_a.StructureType = ua.StructureType.Structure
+    sdef_a.Fields = [_make_struct_field("Value", ua.NodeId(ua.ObjectIds.Int32))]
+    sdef_a.DefaultEncodingId = ua.NodeId(70101, 6)
+
+    sdef_b = ua.StructureDefinition()
+    sdef_b.StructureType = ua.StructureType.Structure
+    sdef_b.Fields = [_make_struct_field("Label", ua.NodeId(ua.ObjectIds.String))]
+    sdef_b.DefaultEncodingId = ua.NodeId(70102, 6)
+
+    dt_a = ua.NodeId(70111, 6)
+    dt_b = ua.NodeId(70112, 6)
+
+    cls_a = make_structure(dt_a, "Collide", sdef_a)["Collide"]
+    ua.register_extension_object("Collide", sdef_a.DefaultEncodingId, cls_a, dt_a)
+    cls_b = make_structure(dt_b, "Collide", sdef_b)["Collide"]
+    ua.register_extension_object("Collide", sdef_b.DefaultEncodingId, cls_b, dt_b)
+
+    assert ua.Collide is cls_a
+    assert ua.extension_objects_by_datatype[dt_a] is cls_a
+    assert ua.extension_objects_by_datatype[dt_b] is cls_b
+    assert ua.typeid_by_extension_objects[cls_a] == sdef_a.DefaultEncodingId
+    assert ua.typeid_by_extension_objects[cls_b] == sdef_b.DefaultEncodingId
+    assert ua.get_type(dt_a) is cls_a
+    assert ua.get_type(dt_b) is cls_b
+
+
+def test_struct_field_resolves_to_correct_collision_variant(restore_ua_registry) -> None:
+    dt_inner_a = ua.NodeId(70201, 6)
+    dt_inner_b = ua.NodeId(70202, 6)
+    dt_outer = ua.NodeId(70203, 6)
+
+    inner_sdef_a = ua.StructureDefinition()
+    inner_sdef_a.StructureType = ua.StructureType.Structure
+    inner_sdef_a.Fields = [_make_struct_field("LabelA", ua.NodeId(ua.ObjectIds.String), optional=False)]
+    inner_sdef_a.DefaultEncodingId = ua.NodeId(70211, 6)
+    cls_inner_a = make_structure(dt_inner_a, "Inner", inner_sdef_a)["Inner"]
+    ua.register_extension_object("Inner", inner_sdef_a.DefaultEncodingId, cls_inner_a, dt_inner_a)
+
+    inner_sdef_b = ua.StructureDefinition()
+    inner_sdef_b.StructureType = ua.StructureType.Structure
+    inner_sdef_b.Fields = [_make_struct_field("LabelB", ua.NodeId(ua.ObjectIds.String), optional=False)]
+    inner_sdef_b.DefaultEncodingId = ua.NodeId(70212, 6)
+    cls_inner_b = make_structure(dt_inner_b, "Inner", inner_sdef_b)["Inner"]
+    ua.register_extension_object("Inner", inner_sdef_b.DefaultEncodingId, cls_inner_b, dt_inner_b)
+
+    assert ua.Inner is cls_inner_a
+
+    outer_sdef = ua.StructureDefinition()
+    outer_sdef.StructureType = ua.StructureType.Structure
+    outer_sdef.Fields = [_make_struct_field("Child", dt_inner_b, optional=False)]
+    outer_sdef.DefaultEncodingId = ua.NodeId(70213, 6)
+    cls_outer = make_structure(dt_outer, "Outer", outer_sdef)["Outer"]
+    ua.register_extension_object("Outer", outer_sdef.DefaultEncodingId, cls_outer, dt_outer)
+
+    outer = cls_outer(Child=cls_inner_b(LabelB="hello"))
+    data = struct_to_binary(outer)
+    decoded = struct_from_binary(cls_outer, ua.utils.Buffer(data))
+
+    assert type(decoded.Child) is cls_inner_b
+    assert decoded.Child.LabelB == "hello"
+
+
+def test_self_recursive_struct_resolves_via_self_sentinel(restore_ua_registry) -> None:
+    dt = ua.NodeId(70301, 6)
+    sdef = ua.StructureDefinition()
+    sdef.StructureType = ua.StructureType.StructureWithOptionalFields
+    label = _make_struct_field("Label", ua.NodeId(ua.ObjectIds.String))
+    child = _make_struct_field("Child", dt)
+    child.IsOptional = True
+    sdef.Fields = [label, child]
+    sdef.DefaultEncodingId = ua.NodeId(70302, 6)
+
+    cls = make_structure(dt, "SelfRef", sdef)["SelfRef"]
+    ua.register_extension_object("SelfRef", sdef.DefaultEncodingId, cls, dt)
+
+    root = cls(Label="root", Child=cls(Label="leaf"))
+    root.Encoding = 0x02
+    root.Child.Encoding = 0x00
+    data = struct_to_binary(root)
+    decoded = struct_from_binary(cls, ua.utils.Buffer(data))
+
+    assert type(decoded) is cls
+    assert decoded.Label == "root"
+    assert type(decoded.Child) is cls
+    assert decoded.Child.Label == "leaf"
+    assert decoded.Child.Child is None
+
+
+def test_set_ua_attribute_collision_keeps_first_and_warns(restore_ua_registry, caplog) -> None:
+    from asyncua.ua.uatypes import _set_ua_attribute
+
+    @dataclass
+    class FirstFoo:
+        data_type = ua.NodeId(70031, 5)
+
+    @dataclass
+    class SecondFoo:
+        data_type = ua.NodeId(70032, 5)
+
+    _set_ua_attribute("CollideFoo", FirstFoo, FirstFoo.data_type)
+    assert ua.CollideFoo is FirstFoo
+
+    with caplog.at_level("WARNING", logger="asyncua.ua.uatypes"):
+        _set_ua_attribute("CollideFoo", SecondFoo, SecondFoo.data_type)
+    assert ua.CollideFoo is FirstFoo
+    assert any("Browsename collision" in r.message for r in caplog.records)
+
+    caplog.clear()
+    with caplog.at_level("WARNING", logger="asyncua.ua.uatypes"):
+        _set_ua_attribute("CollideFoo", FirstFoo, FirstFoo.data_type)
+    assert ua.CollideFoo is FirstFoo
+    assert not any("Browsename collision" in r.message for r in caplog.records)
+
+
 def test_session_security_diagnostics_roundtrip():
     """Regression test: SessionSecurityDiagnosticsDataType has a bare
     'Encoding: Byte' annotation (not quoted as 'ua.Byte'). With

@@ -99,6 +99,35 @@ class ServerProcess(Process):
         loop.run_until_complete(self.run_server(self.url))
 
 
+@pytest.fixture
+def restore_ua_registry():
+    """Snapshot and restore ua module attributes and registration dicts around a test."""
+    from asyncua import ua
+
+    attrs_before = set(vars(ua).keys())
+    dicts = {
+        name: dict(getattr(ua, name))
+        for name in (
+            "extension_objects_by_datatype",
+            "extension_objects_by_typeid",
+            "extension_object_typeids",
+            "datatype_by_extension_object",
+            "typeid_by_extension_objects",
+            "enums_by_datatype",
+            "enums_datatypes",
+            "basetype_by_datatype",
+            "basetype_datatypes",
+        )
+    }
+    yield
+    for added in set(vars(ua).keys()) - attrs_before:
+        delattr(ua, added)
+    for name, snapshot in dicts.items():
+        current = getattr(ua, name)
+        current.clear()
+        current.update(snapshot)
+
+
 @pytest.fixture(scope="module")
 async def running_server(request):
     """
