@@ -244,7 +244,6 @@ class DataTypeAttributes(auto.DataTypeAttributes):
 # we now need to register DataTypeAttributes since we added a new attribute
 nid = uatypes.FourByteNodeId(auto.ObjectIds.DataTypeAttributes_Encoding_DefaultBinary)
 uatypes.extension_objects_by_typeid[nid] = DataTypeAttributes
-uatypes.extension_object_typeids["DataTypeAttributes"] = nid
 uatypes.typeid_by_extension_objects[DataTypeAttributes] = nid
 
 

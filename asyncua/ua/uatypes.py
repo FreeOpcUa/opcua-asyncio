@@ -1273,7 +1273,6 @@ def register_enum(name: str, nodeid: NodeId, class_type: type) -> None:
 # decoding and encoding
 extension_objects_by_datatype = {}  # dict[Datatype, type]
 extension_objects_by_typeid = {}  # dict[EncodingId, type]
-extension_object_typeids = {}  # dict[name, EncodingId] -- kept for backward compat; encoder uses typeid_by_extension_objects
 datatype_by_extension_object = {}
 typeid_by_extension_objects = {}  # dict[type, EncodingId] -- collision-safe encoder lookup
 
@@ -1295,7 +1294,6 @@ def register_extension_object(
         extension_objects_by_datatype[datatype_nodeid] = class_type
         datatype_by_extension_object[class_type] = datatype_nodeid
     extension_objects_by_typeid[encoding_nodeid] = class_type
-    extension_object_typeids[name] = encoding_nodeid
     typeid_by_extension_objects[class_type] = encoding_nodeid
     _set_ua_attribute(name, class_type, datatype_nodeid)
 
