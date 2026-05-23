@@ -9,7 +9,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import pytest
 
@@ -1010,7 +1010,7 @@ def test_browsename_collision_both_registered_in_dicts(restore_ua_registry) -> N
     cls_b = make_structure(dt_b, "Collide", sdef_b)["Collide"]
     ua.register_extension_object("Collide", sdef_b.DefaultEncodingId, cls_b, dt_b)
 
-    assert ua.Collide is cls_a
+    assert getattr(ua, "Collide") is cls_a
     assert ua.extension_objects_by_datatype[dt_a] is cls_a
     assert ua.extension_objects_by_datatype[dt_b] is cls_b
     assert ua.typeid_by_extension_objects[cls_a] == sdef_a.DefaultEncodingId
@@ -1038,7 +1038,7 @@ def test_struct_field_resolves_to_correct_collision_variant(restore_ua_registry)
     cls_inner_b = make_structure(dt_inner_b, "Inner", inner_sdef_b)["Inner"]
     ua.register_extension_object("Inner", inner_sdef_b.DefaultEncodingId, cls_inner_b, dt_inner_b)
 
-    assert ua.Inner is cls_inner_a
+    assert getattr(ua, "Inner") is cls_inner_a
 
     outer_sdef = ua.StructureDefinition()
     outer_sdef.StructureType = ua.StructureType.Structure
@@ -1049,10 +1049,10 @@ def test_struct_field_resolves_to_correct_collision_variant(restore_ua_registry)
 
     outer = cls_outer(Child=cls_inner_b(LabelB="hello"))
     data = struct_to_binary(outer)
-    decoded = struct_from_binary(cls_outer, ua.utils.Buffer(data))
+    decoded = cast(Any, struct_from_binary(cls_outer, ua.utils.Buffer(data)))
 
     assert type(decoded.Child) is cls_inner_b
-    assert decoded.Child.LabelB == "hello"
+    assert decoded.Child.LabelB == "hello"  # type: ignore[attr-defined]
 
 
 def test_self_recursive_struct_resolves_via_self_sentinel(restore_ua_registry) -> None:
@@ -1068,17 +1068,17 @@ def test_self_recursive_struct_resolves_via_self_sentinel(restore_ua_registry) -
     cls = make_structure(dt, "SelfRef", sdef)["SelfRef"]
     ua.register_extension_object("SelfRef", sdef.DefaultEncodingId, cls, dt)
 
-    root = cls(Label="root", Child=cls(Label="leaf"))
+    root = cast(Any, cls(Label="root", Child=cls(Label="leaf")))
     root.Encoding = 0x02
     root.Child.Encoding = 0x00
     data = struct_to_binary(root)
-    decoded = struct_from_binary(cls, ua.utils.Buffer(data))
+    decoded = cast(Any, struct_from_binary(cls, ua.utils.Buffer(data)))
 
     assert type(decoded) is cls
-    assert decoded.Label == "root"
-    assert type(decoded.Child) is cls
-    assert decoded.Child.Label == "leaf"
-    assert decoded.Child.Child is None
+    assert decoded.Label == "root"  # type: ignore[attr-defined]
+    assert type(decoded.Child) is cls  # type: ignore[attr-defined]
+    assert decoded.Child.Label == "leaf"  # type: ignore[attr-defined]
+    assert decoded.Child.Child is None  # type: ignore[attr-defined]
 
 
 def test_struct_mutual_recursive_lists_roundtrip() -> None:
@@ -1098,26 +1098,28 @@ def test_struct_mutual_recursive_lists_roundtrip() -> None:
     assert decoded.Children[0].Parents[0].Name == "branch"
 
 
-def test_self_recursive_scalar_dataclass_deserializer_builds(restore_ua_registry) -> None:
-    @dataclass
-    class TreeNode:
-        Encoding: ua.Byte = field(default=0, repr=False, init=False)
-        Label: ua.String = ""
-        Child: "ua.TreeNode | None" = None
+@dataclass
+class _ScalarSelfRefNode:
+    Encoding: ua.Byte = field(default=0, repr=False, init=False)
+    Label: ua.String = ""
+    Child: "_ScalarSelfRefNode | None" = None
 
+
+def test_self_recursive_scalar_dataclass_deserializer_builds(restore_ua_registry) -> None:
     enc = ua.NodeId(70401, 6)
     dt = ua.NodeId(70402, 6)
-    ua.register_extension_object("TreeNode", enc, TreeNode, dt)
+    ua.register_extension_object("_ScalarSelfRefNode", enc, _ScalarSelfRefNode, dt)
 
-    root = TreeNode(Label="root", Child=TreeNode(Label="leaf"))
+    root = _ScalarSelfRefNode(Label="root", Child=_ScalarSelfRefNode(Label="leaf"))
     root.Encoding = 0x01
+    assert root.Child is not None
     root.Child.Encoding = 0x00
     data = struct_to_binary(root)
-    decoded = struct_from_binary(TreeNode, ua.utils.Buffer(data))
+    decoded: Any = struct_from_binary(_ScalarSelfRefNode, ua.utils.Buffer(data))
 
-    assert type(decoded) is TreeNode
+    assert type(decoded) is _ScalarSelfRefNode
     assert decoded.Label == "root"
-    assert type(decoded.Child) is TreeNode
+    assert type(decoded.Child) is _ScalarSelfRefNode
     assert decoded.Child.Label == "leaf"
     assert decoded.Child.Child is None
 
@@ -1134,17 +1136,17 @@ def test_set_ua_attribute_collision_keeps_first_and_warns(restore_ua_registry, c
         data_type = ua.NodeId(70032, 5)
 
     _set_ua_attribute("CollideFoo", FirstFoo, FirstFoo.data_type)
-    assert ua.CollideFoo is FirstFoo
+    assert getattr(ua, "CollideFoo") is FirstFoo
 
     with caplog.at_level("WARNING", logger="asyncua.ua.uatypes"):
         _set_ua_attribute("CollideFoo", SecondFoo, SecondFoo.data_type)
-    assert ua.CollideFoo is FirstFoo
+    assert getattr(ua, "CollideFoo") is FirstFoo
     assert any("Browsename collision" in r.message for r in caplog.records)
 
     caplog.clear()
     with caplog.at_level("WARNING", logger="asyncua.ua.uatypes"):
         _set_ua_attribute("CollideFoo", FirstFoo, FirstFoo.data_type)
-    assert ua.CollideFoo is FirstFoo
+    assert getattr(ua, "CollideFoo") is FirstFoo
     assert not any("Browsename collision" in r.message for r in caplog.records)
 
 
