@@ -76,6 +76,7 @@ class CodeGenerator:
                 self.write(f"nid = FourByteNodeId(ObjectIds.{struct.name}_Encoding_DefaultBinary)")
                 self.write(f"extension_objects_by_typeid[nid] = {struct.name}")
                 self.write(f"extension_object_typeids['{struct.name}'] = nid")
+                self.write(f"typeid_by_extension_objects[{struct.name}] = nid")
 
     def write(self, line: str) -> None:
         """Write a properly indented line with newline."""
@@ -106,7 +107,9 @@ class CodeGenerator:
         self.write(
             "from asyncua.ua.uatypes import NodeId, FourByteNodeId, ExpandedNodeId, ExtensionObject, DiagnosticInfo"
         )
-        self.write("from asyncua.ua.uatypes import extension_object_typeids, extension_objects_by_typeid")
+        self.write(
+            "from asyncua.ua.uatypes import typeid_by_extension_objects, extension_object_typeids, extension_objects_by_typeid"
+        )
         self.write("from asyncua.ua.object_ids import ObjectIds")
 
     def generate_enum_code(self, enum: Enum) -> None:

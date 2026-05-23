@@ -245,6 +245,7 @@ class DataTypeAttributes(auto.DataTypeAttributes):
 nid = uatypes.FourByteNodeId(auto.ObjectIds.DataTypeAttributes_Encoding_DefaultBinary)
 uatypes.extension_objects_by_typeid[nid] = DataTypeAttributes
 uatypes.extension_object_typeids["DataTypeAttributes"] = nid
+uatypes.typeid_by_extension_objects[DataTypeAttributes] = nid
 
 
 @dataclass(slots=True)
