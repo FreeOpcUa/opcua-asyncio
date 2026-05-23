@@ -317,7 +317,7 @@ def make_structure(
         else:
             default_val = _default_value_for(uatype_name, optional=sfield.IsOptional)
 
-        fields.append((fname, uatype, default_val))
+        fields.append((fname, prop_uatype, default_val))
 
     namespace = {
         "ua": ua,
