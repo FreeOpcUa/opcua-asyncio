@@ -8,6 +8,7 @@ import contextvars
 import functools
 import logging
 import struct
+import sys
 import typing
 import uuid
 from collections.abc import Callable, Iterable, Sequence
@@ -327,9 +328,37 @@ def resolve_uatype(ftype: Any) -> tuple[Any, bool]:
     return ftype, is_optional
 
 
+def _resolve_type_in_dataclass_context(ftype: Any, dataclazz: type) -> Any:
+    # Forward references stored as raw strings (e.g. "OtherDataclass") need to be
+    # eval'd against the dataclass's module globals so list element types can be
+    # resolved without the eager class lookup breaking on mutually-recursive
+    # dataclasses (A has list[B], B has list[A]).
+    if not isinstance(ftype, str):
+        return ftype
+    module = sys.modules.get(getattr(dataclazz, "__module__", "")) if isinstance(dataclazz, type) else None
+    namespace: dict[str, Any] = {
+        "ua": ua,
+        "typing": typing,
+        "list": list,
+        "List": list,
+        "Union": typing.Union,
+        "Optional": typing.Optional,
+        "Dict": dict,
+    }
+    if module is not None:
+        namespace.update(vars(module))
+    if isinstance(dataclazz, type):
+        namespace.update({k: v for k, v in dataclazz.__dict__.items() if not isinstance(v, property)})
+    try:
+        return eval(ftype, namespace)
+    except Exception:
+        return ftype
+
+
 def field_serializer(uatype: Any, is_optional: bool, dataclazz: type) -> Callable[[Any], bytes]:
     if type_is_list(uatype):
         ft = type_from_list(uatype)
+        ft = _resolve_type_in_dataclass_context(ft, dataclazz)
         if is_optional:
             return lambda val: b"" if val is None else create_list_serializer(ft, ft == dataclazz)(val)
         return create_list_serializer(ft, ft == dataclazz)
@@ -451,30 +480,27 @@ def to_binary(uatype: type, val: Any) -> bytes:
 
 
 @functools.cache
-def create_list_serializer(uatype: type, recursive: bool = False) -> Callable[[Sequence[Any] | None], bytes]:
+def create_list_serializer(uatype: Any, recursive: bool = False) -> Callable[[Sequence[Any] | None], bytes]:
     """
     Given a type, return a function that takes a list of instances
     of that type and serializes it.
+
+    The element serializer is resolved on first call, not at construction time,
+    so mutually-recursive dataclass lists (A has list[B], B has list[A]) do not
+    infinitely re-enter when their codecs are first built.
     """
-    if hasattr(Primitives1, uatype.__name__):
+    if isinstance(uatype, type) and hasattr(Primitives1, uatype.__name__):
         data_type = getattr(Primitives1, uatype.__name__)
         return data_type.pack_array
     none_val = Primitives.Int32.pack(-1)
-    if recursive:
-
-        def recursive_serialize(val: Sequence[Any] | None) -> bytes:
-            if val is None:
-                return none_val
-            data_size = Primitives.Int32.pack(len(val))
-            return data_size + b"".join(create_type_serializer(uatype)(el) for el in val)
-
-        return recursive_serialize
-
-    type_serializer = create_type_serializer(uatype)
+    type_serializer: Callable[[Any], bytes] | None = None
 
     def serialize(val: Sequence[Any] | None) -> bytes:
+        nonlocal type_serializer
         if val is None:
             return none_val
+        if type_serializer is None:
+            type_serializer = create_type_serializer(uatype)
         data_size = Primitives.Int32.pack(len(val))
         return data_size + b"".join(type_serializer(el) for el in val)
 
@@ -677,18 +703,16 @@ def extensionobject_to_binary(obj: Any) -> bytes:
 
 
 @functools.cache
-def _create_list_deserializer(uatype: type, recursive: bool = False) -> Callable[[Buffer | IO], list[Any]]:
-    if recursive:
-
-        def _deserialize_recursive(data: Buffer | IO) -> list[Any]:
-            size = Primitives.Int32.unpack(data)
-            return [_create_type_deserializer(uatype, type(None))(data) for _ in range(size)]
-
-        return _deserialize_recursive
-    element_deserializer = _create_type_deserializer(uatype, type(None))
+def _create_list_deserializer(uatype: Any, recursive: bool = False) -> Callable[[Buffer | IO], list[Any]]:
+    # Resolve the element deserializer lazily so mutually-recursive dataclass
+    # lists don't infinitely re-enter during codec construction.
+    element_deserializer: Callable[[Any], Any] | None = None
 
     def _deserialize(data: Buffer | IO) -> list[Any]:
+        nonlocal element_deserializer
         size = Primitives.Int32.unpack(data)
+        if element_deserializer is None:
+            element_deserializer = _create_type_deserializer(uatype, type(None))
         return [element_deserializer(data) for _ in range(size)]
 
     return _deserialize
@@ -704,7 +728,8 @@ def _create_type_deserializer(uatype: Any, dataclazz: type) -> Callable[[Buffer 
             return _create_type_deserializer(uatype, uatype)
     if type_is_list(uatype):
         utype = type_from_list(uatype)
-        if hasattr(ua.VariantType, utype.__name__):
+        utype = _resolve_type_in_dataclass_context(utype, dataclazz)
+        if isinstance(utype, type) and hasattr(ua.VariantType, utype.__name__):
             vtype = getattr(ua.VariantType, utype.__name__)
             return _create_uatype_array_deserializer(vtype)
         return _create_list_deserializer(utype, utype == dataclazz)
