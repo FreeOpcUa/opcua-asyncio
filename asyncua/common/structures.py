@@ -295,9 +295,11 @@ async def load_type_definitions(
                 # save the typeid if user want to create static file for type definition
                 generator.set_typeid(name, nodeid.to_string())
 
+        from asyncua.ua.uatypes import _set_ua_attribute
+
         for key, val in structs_dict.items():
             if isinstance(val, EnumMeta) and key != "IntEnum":
-                setattr(ua, key, val)
+                _set_ua_attribute(key, val, getattr(val, "data_type", None))
 
     return generators, structs_dict
 
