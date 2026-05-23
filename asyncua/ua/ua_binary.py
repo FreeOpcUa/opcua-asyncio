@@ -663,12 +663,11 @@ def extensionobject_from_binary(data: Buffer) -> Any:
     return e
 
 
-def _encoding_for_class(cls: type) -> Any:
-    # Walk the MRO so hand-written subclasses in uaprotocol_hand (e.g. ObjectAttributes)
-    # resolve to their autogen ancestor's encoding NodeId. Cache the hit on the subclass.
-    type_id = ua.typeid_by_extension_objects.get(cls)
-    if type_id is not None:
-        return type_id
+def _encoding_for_class_via_mro(cls: type) -> Any:
+    # Slow path for the first encode of a hand-written subclass in uaprotocol_hand
+    # (e.g. ObjectAttributes): walk the MRO to find an ancestor registered in
+    # typeid_by_extension_objects, then cache the hit on the subclass so subsequent
+    # encodes go through the dict-get fast path.
     for base in cls.__mro__[1:]:
         type_id = ua.typeid_by_extension_objects.get(base)
         if type_id is not None:
@@ -690,7 +689,9 @@ def extensionobject_to_binary(obj: Any) -> bytes:
         encoding = 0
         body = None
     else:
-        type_id = _encoding_for_class(obj.__class__)
+        type_id = ua.typeid_by_extension_objects.get(obj.__class__)
+        if type_id is None:
+            type_id = _encoding_for_class_via_mro(obj.__class__)
         encoding = 0x01
         body = struct_to_binary(obj)
     packet = [
