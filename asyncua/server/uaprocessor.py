@@ -23,10 +23,7 @@ class PublishRequestData:
         self.timestamp = time.monotonic()
 
     def has_timed_out(self, now: float) -> bool:
-        return (
-            self.requesthdr.TimeoutHint != 0
-            and self.requesthdr.TimeoutHint / 1000 < now - self.timestamp
-        )
+        return self.requesthdr.TimeoutHint != 0 and self.requesthdr.TimeoutHint / 1000 < now - self.timestamp
 
 
 class UaProcessor:
@@ -98,17 +95,24 @@ class UaProcessor:
             self._send_publish_request_timeout(requestdata)
         return requestdata
 
-    def get_oldest_request_to_discard(self):
-        if self._publish_requests:
-            now = time.monotonic()
-            for i, requestdata in enumerate(self._publish_requests):
-                if requestdata.has_timed_out(now):
-                    del self._publish_requests[i]
-                    self._send_publish_request_timeout(requestdata)
-                    break
-            else:
-                return self._publish_requests.popleft()
-        return None
+    def _evict_publish_request(self) -> None:
+        # "When a Server receives a new Publish request that exceeds its
+        # limit it shall de-queue the oldest Publish request and return a
+        # response with the result set to Bad_TooManyPublishRequests."
+        # A timed-out request gets BadTimeout instead and substitutes for
+        # the oldest eviction, since reaping it also frees a slot.
+        now = time.monotonic()
+        for i, requestdata in enumerate(self._publish_requests):
+            if requestdata.has_timed_out(now):
+                del self._publish_requests[i]
+                self._send_publish_request_timeout(requestdata)
+                return
+        if not self._publish_requests:
+            return
+        oldest = self._publish_requests.popleft()
+        response = ua.ServiceFault()
+        response.ResponseHeader.ServiceResult = ua.StatusCode(ua.StatusCodes.BadTooManyPublishRequests)
+        self.send_response(oldest.requesthdr.RequestHandle, oldest.seqhdr, response)
 
     def _send_publish_request_timeout(self, requestdata: PublishRequestData):
         # "If the request timed out, a Bad_Timeout Service result is
@@ -507,15 +511,7 @@ class UaProcessor:
                         break
                 else:
                     if len(self._publish_requests) >= self.publish_request_limit(subscriptions):
-                        # "When a Server receives a new Publish request that
-                        # exceeds its limit it shall de-queue the oldest
-                        # Publish request and return a response with the
-                        # result set to Bad_TooManyPublishRequests."
-                        oldest = self.get_oldest_request_to_discard()
-                        if oldest is not None:
-                            response = ua.ServiceFault()
-                            response.ResponseHeader.ServiceResult = ua.StatusCode(ua.StatusCodes.BadTooManyPublishRequests)
-                            self.send_response(oldest.requesthdr.RequestHandle, oldest.seqhdr, response)
+                        self._evict_publish_request()
                     # Store the Publish Request (will be used to send publish answers from server)
                     self._publish_requests.append(data)
 
