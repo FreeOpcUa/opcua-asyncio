@@ -360,8 +360,8 @@ def field_serializer(uatype: Any, is_optional: bool, dataclazz: type) -> Callabl
         ft = type_from_list(uatype)
         ft = _resolve_type_in_dataclass_context(ft, dataclazz)
         if is_optional:
-            return lambda val: b"" if val is None else create_list_serializer(ft, ft == dataclazz)(val)
-        return create_list_serializer(ft, ft == dataclazz)
+            return lambda val: b"" if val is None else create_list_serializer(ft)(val)
+        return create_list_serializer(ft)
     if uatype == dataclazz:
         if is_optional:
             return lambda val: b"" if val is None else create_type_serializer(uatype)(val)
@@ -458,7 +458,7 @@ def create_type_serializer(uatype: type) -> Callable[[Any], bytes]:
     if not type_is_optional(uatype) and type_allow_subclass(uatype):
         return extensionobject_to_binary
     if type_is_list(uatype):
-        return create_list_serializer(type_from_list(uatype), type(None))
+        return create_list_serializer(type_from_list(uatype))
     if issubclass(uatype, Enum):
         return create_enum_serializer(uatype)
     if hasattr(Primitives, uatype.__name__):
@@ -480,7 +480,7 @@ def to_binary(uatype: type, val: Any) -> bytes:
 
 
 @functools.cache
-def create_list_serializer(uatype: Any, recursive: bool = False) -> Callable[[Sequence[Any] | None], bytes]:
+def create_list_serializer(uatype: Any) -> Callable[[Sequence[Any] | None], bytes]:
     """
     Given a type, return a function that takes a list of instances
     of that type and serializes it.
@@ -704,7 +704,7 @@ def extensionobject_to_binary(obj: Any) -> bytes:
 
 
 @functools.cache
-def _create_list_deserializer(uatype: Any, recursive: bool = False) -> Callable[[Buffer | IO], list[Any]]:
+def _create_list_deserializer(uatype: Any) -> Callable[[Buffer | IO], list[Any]]:
     # Resolve the element deserializer lazily so mutually-recursive dataclass
     # lists don't infinitely re-enter during codec construction.
     element_deserializer: Callable[[Any], Any] | None = None
@@ -733,7 +733,7 @@ def _create_type_deserializer(uatype: Any, dataclazz: type) -> Callable[[Buffer 
         if isinstance(utype, type) and hasattr(ua.VariantType, utype.__name__):
             vtype = getattr(ua.VariantType, utype.__name__)
             return _create_uatype_array_deserializer(vtype)
-        return _create_list_deserializer(utype, utype == dataclazz)
+        return _create_list_deserializer(utype)
     if hasattr(ua.VariantType, uatype.__name__):
         vtype = getattr(ua.VariantType, uatype.__name__)
         return _create_uatype_deserializer(vtype)
