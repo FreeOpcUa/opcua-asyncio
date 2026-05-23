@@ -110,7 +110,6 @@ def restore_ua_registry():
         for name in (
             "extension_objects_by_datatype",
             "extension_objects_by_typeid",
-            "extension_object_typeids",
             "datatype_by_extension_object",
             "typeid_by_extension_objects",
             "enums_by_datatype",

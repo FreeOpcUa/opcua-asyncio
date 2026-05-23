@@ -549,12 +549,13 @@ class XmlExporter:
                 dtype = ua.NodeId(getattr(ua.ObjectIds, type_name))
             except AttributeError:
                 try:
-                    enc_node: Node = self.server.get_node(ua.extension_object_typeids[type_name])
+                    cls = getattr(ua, type_name)
+                    enc_node: Node = self.server.get_node(ua.typeid_by_extension_objects[cls])
                     dtype_node = (
                         await enc_node.get_referenced_nodes(ua.ObjectIds.HasEncoding, ua.BrowseDirection.Inverse)
                     )[0]
                     dtype = dtype_node.nodeid
-                except KeyError:
+                except (AttributeError, KeyError):
                     for cls in ua.enums_datatypes:
                         if cls.__class__ == field.type.__class__:
                             dtype = ua.enums_datatypes[cls]
