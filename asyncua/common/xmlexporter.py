@@ -556,9 +556,9 @@ class XmlExporter:
                     )[0]
                     dtype = dtype_node.nodeid
                 except (AttributeError, KeyError):
-                    for cls in ua.enums_datatypes:
-                        if cls.__class__ == field.type.__class__:
-                            dtype = ua.enums_datatypes[cls]
+                    for enum_cls in ua.enums_datatypes:
+                        if enum_cls.__class__ == field.type.__class__:
+                            dtype = ua.enums_datatypes[enum_cls]
                             break
                     self.logger.debug("could not find field type %s in registered types", field.type)
                     return
