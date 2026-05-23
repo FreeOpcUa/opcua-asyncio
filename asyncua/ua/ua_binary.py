@@ -638,6 +638,8 @@ def extensionobject_from_binary(data: Buffer) -> Any:
 
 
 def _encoding_for_class(cls: type) -> Any:
+    # Walk the MRO so hand-written subclasses in uaprotocol_hand (e.g. ObjectAttributes)
+    # resolve to their autogen ancestor's encoding NodeId. Cache the hit on the subclass.
     type_id = ua.typeid_by_extension_objects.get(cls)
     if type_id is not None:
         return type_id
@@ -712,6 +714,8 @@ def _create_type_deserializer(uatype: Any, dataclazz: type) -> Callable[[Buffer 
     if hasattr(Primitives, uatype.__name__):
         return getattr(Primitives, uatype.__name__).unpack
     if uatype is dataclazz:
+        # Self-recursive scalar field: defer the inner deserializer lookup until decode
+        # time so building the outer deserializer doesn't infinitely re-enter.
         return lambda data: _create_dataclass_deserializer(uatype)(data)
     return _create_dataclass_deserializer(uatype)
 

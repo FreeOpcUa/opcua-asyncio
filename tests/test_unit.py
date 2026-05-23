@@ -1069,6 +1069,30 @@ def test_self_recursive_struct_resolves_via_self_sentinel(restore_ua_registry) -
     assert decoded.Child.Child is None
 
 
+def test_self_recursive_scalar_dataclass_deserializer_builds(restore_ua_registry) -> None:
+    @dataclass
+    class TreeNode:
+        Encoding: ua.Byte = field(default=0, repr=False, init=False)
+        Label: ua.String = ""
+        Child: "ua.TreeNode | None" = None
+
+    enc = ua.NodeId(70401, 6)
+    dt = ua.NodeId(70402, 6)
+    ua.register_extension_object("TreeNode", enc, TreeNode, dt)
+
+    root = TreeNode(Label="root", Child=TreeNode(Label="leaf"))
+    root.Encoding = 0x01
+    root.Child.Encoding = 0x00
+    data = struct_to_binary(root)
+    decoded = struct_from_binary(TreeNode, ua.utils.Buffer(data))
+
+    assert type(decoded) is TreeNode
+    assert decoded.Label == "root"
+    assert type(decoded.Child) is TreeNode
+    assert decoded.Child.Label == "leaf"
+    assert decoded.Child.Child is None
+
+
 def test_set_ua_attribute_collision_keeps_first_and_warns(restore_ua_registry, caplog) -> None:
     from asyncua.ua.uatypes import _set_ua_attribute
 
