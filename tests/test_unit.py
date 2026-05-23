@@ -17,6 +17,7 @@ from asyncua import ua
 from asyncua.common.connection import MessageChunk
 from asyncua.common.event_objects import BaseEvent
 from asyncua.common.structures import StructGenerator
+from asyncua.common.structures104 import make_structure
 from asyncua.common.ua_utils import string_to_val, val_to_string
 from asyncua.crypto.security_policies import SecurityPolicyNone
 from asyncua.server.monitored_item_service import WhereClauseEvaluator
@@ -908,6 +909,27 @@ def test_struct_104() -> None:
     data = struct_to_binary(m)
     m2 = struct_from_binary(MyStruct, ua.utils.Buffer(data))
     assert m == m2
+
+
+def test_struct104_optional_field_respects_encoding_mask() -> None:
+    sdef = ua.StructureDefinition()
+    sdef.StructureType = ua.StructureType.StructureWithOptionalFields
+
+    desc = ua.StructureField()
+    desc.Name = "Description"
+    desc.DataType = ua.NodeId(ua.ObjectIds.LocalizedText)
+    desc.IsOptional = True
+    desc.ValueRank = ua.ValueRank.OneDimension
+    desc.ArrayDimensions = [0]
+    sdef.Fields = [desc]
+
+    cls = make_structure(ua.NodeId(65001, 2), "_OptionalFieldMaskStruct", sdef)["_OptionalFieldMaskStruct"]
+
+    # Encoding mask 0: no optional bits set, so the field payload must be absent.
+    data = ua_binary.Primitives.UInt32.pack(0)
+    decoded = struct_from_binary(cls, ua.utils.Buffer(data))
+
+    assert decoded.Description is None
 
 
 def test_session_security_diagnostics_roundtrip():
