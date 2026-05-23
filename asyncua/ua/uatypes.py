@@ -1216,8 +1216,8 @@ def get_default_value(vtype: VariantType) -> Any:
     raise RuntimeError(f"function take a uatype as argument, got: {vtype}")
 
 
-basetype_by_datatype = {}
-basetype_datatypes = {}
+basetype_by_datatype: dict[NodeId, str] = {}
+basetype_datatypes: dict[type, NodeId] = {}
 
 
 def _set_ua_attribute(name: str, class_type: type, data_type: NodeId | None) -> None:
@@ -1254,8 +1254,8 @@ def register_basetype(name: str, nodeid: NodeId, class_type: type) -> None:
 
 
 # register of custom enums (Those loaded with load_enums())
-enums_by_datatype = {}
-enums_datatypes = {}
+enums_by_datatype: dict[NodeId, type] = {}
+enums_datatypes: dict[type, NodeId] = {}
 
 
 def register_enum(name: str, nodeid: NodeId, class_type: type) -> None:
@@ -1271,10 +1271,10 @@ def register_enum(name: str, nodeid: NodeId, class_type: type) -> None:
 
 # These dictionaries are used to register extensions classes for automatic
 # decoding and encoding
-extension_objects_by_datatype = {}  # dict[Datatype, type]
-extension_objects_by_typeid = {}  # dict[EncodingId, type]
-datatype_by_extension_object = {}
-typeid_by_extension_objects = {}  # dict[type, EncodingId] -- collision-safe encoder lookup
+extension_objects_by_datatype: dict[NodeId, type] = {}
+extension_objects_by_typeid: dict[NodeId, type] = {}
+datatype_by_extension_object: dict[type, NodeId] = {}
+typeid_by_extension_objects: dict[type, NodeId] = {}
 
 
 def register_extension_object(
