@@ -930,6 +930,8 @@ loaded = [
 assert not loaded, loaded
 """
 
+    # Subprocess required to avoid interference from other tests that
+    # may already have imported server modules.
     subprocess.run(
         [sys.executable, "-c", code],
         check=True,
