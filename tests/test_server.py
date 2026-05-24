@@ -6,6 +6,8 @@ Tests that can only be run on server side must be defined here
 import asyncio
 import logging
 import shelve
+import subprocess
+import sys
 from datetime import timedelta
 from enum import EnumMeta
 from pathlib import Path
@@ -905,3 +907,30 @@ async def test_start_server_when_port_is_in_use(server: Server):
         await server2.start()
     # now it should still be possible to stop the server with exceptions
     await server2.stop()
+
+
+def test_import_asyncua_does_not_import_generated_standard_address_space_services():
+    """
+    Regression test verifying that importing top-level asyncua does not
+    import the server standard address-space.
+
+    See https://github.com/FreeOpcUa/opcua-asyncio/issues/1977
+    """
+    code = """
+import sys
+import asyncua
+
+loaded = [
+    name for name in sys.modules
+    if (
+        name.startswith("asyncua.server.standard_address_space.standard_address_space_services")
+        or name == "asyncua.server.standard_address_space.standard_address_space"
+    )
+]
+assert not loaded, loaded
+"""
+
+    subprocess.run(
+        [sys.executable, "-c", code],
+        check=True,
+    )
