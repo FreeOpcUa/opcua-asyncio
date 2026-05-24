@@ -26,7 +26,6 @@ from .address_space import AddressSpace, AttributeService, MethodService, NodeDa
 from .event_generator import EventGenerator
 from .history import HistoryManager
 from .internal_session import InternalSession
-from .standard_address_space import standard_address_space
 from .subscription_service import SubscriptionService
 from .user_managers import PermissiveUserManager, UserManager
 
@@ -155,6 +154,8 @@ class InternalServer:
                 self.aspace.load_aspace_shelf(shelf_file)
                 return
         # import address space from code generated from xml
+        from .standard_address_space import standard_address_space
+
         await asyncio.to_thread(standard_address_space.fill_address_space, self.node_mgt_service)
         # import address space directly from xml, this has performance impact so disabled
         # importer = xmlimporter.XmlImporter(self.node_mgt_service)
