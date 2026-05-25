@@ -866,19 +866,13 @@ class Client:
         dead-but-not-closed connection. Raises on probe failure.
         """
         async with self.uaclient.subscribe_state() as sub:
-            state_change = asyncio.create_task(sub.next_change())
-            tick = asyncio.create_task(asyncio.sleep(self._watchdog_intervall))
             try:
-                await asyncio.wait([state_change, tick], return_when=asyncio.FIRST_COMPLETED)
-            finally:
-                if not state_change.done():
-                    state_change.cancel()
-                if not tick.done():
-                    tick.cancel()
-        if self.uaclient.state is not UaClientState.CONNECTED:
-            return
-        probe_timeout = min(self.session_timeout / 1000 / 2, self._watchdog_intervall)
-        await asyncio.wait_for(self.nodes.server_state.read_value(), timeout=probe_timeout)
+                await sub.next_change(self._watchdog_intervall)
+            except asyncio.TimeoutError:
+                pass
+        if self.uaclient.state is UaClientState.CONNECTED:
+            probe_timeout = min(self.session_timeout / 1000 / 2, self._watchdog_intervall)
+            await asyncio.wait_for(self.nodes.server_state.read_value(), timeout=probe_timeout)
 
     async def _fire_connection_lost_callback(self, exc: Exception) -> None:
         if self.connection_lost_callback is None:
