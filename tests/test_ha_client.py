@@ -1,3 +1,4 @@
+import asyncio
 from itertools import chain
 
 import pytest
@@ -10,7 +11,7 @@ from asyncua.client.ha import (
     HaSecurityConfig,
 )
 from asyncua.client.ha.common import ClientNotFound
-from asyncua.client.ua_client import UASocketState
+from asyncua.client.ua_client import UaClientState, UASocketState
 from asyncua.common.subscription import Subscription
 from asyncua.crypto import security_policies
 from asyncua.crypto.uacrypto import CertProperties
@@ -474,3 +475,53 @@ class TestReconciliator:
             assert node_str in ha_client.ideal_map[url][sub].nodes
             assert node_fake not in reconciliator.real_map[url][sub].nodes
             assert node_fake not in ha_client.ideal_map[url][sub].nodes
+
+    @pytest.mark.asyncio
+    async def test_transport_drop_recovered_by_auto_reconnect(self, ha_client, srv_variables, mocker):
+        """
+        A transient transport drop on one HA child Client must be recovered
+        by Client's own auto-reconnect supervisor (sub-second), without
+        HaClient.reconnect being called by HaManager. After recovery,
+        Reconciliator.node_to_handle is refreshed from the live Subscription.
+        """
+        await ha_client.start()
+        for c in ha_client.get_clients():
+            await wait_for_status_change(ha_client, c, 255)
+
+        node, _values = [(n, v) for n, v in srv_variables.items()][0]
+        node_str = node.nodeid.to_string()
+        myhandler = MySubHandler()
+        sub = await ha_client.create_subscription(100, myhandler)
+        await ha_client.subscribe_data_change(sub, [node])
+        await wait_node_in_real_map(ha_client, sub, node_str)
+
+        target = next(iter(ha_client.get_clients()))
+        target_url = target.server_url.geturl()
+        # Sanity: gate must keep HaClient.reconnect untouched while auto-reconnect runs.
+        reconnect_spy = mocker.spy(ha_client, "reconnect")
+
+        # Force a socket-level drop -- mimics the test_auto_reconnect helper.
+        target.uaclient.protocol.transport.close()
+
+        # The supervisor goes RECONNECTING then back to CONNECTED.
+        for _ in range(60):
+            if target.uaclient.state is UaClientState.CONNECTED:
+                break
+            await asyncio.sleep(0.1)
+        assert target.uaclient.state is UaClientState.CONNECTED
+
+        # Subscriptions are still in place on the recovered client.
+        assert sub in ha_client.reconciliator.name_to_subscription[target_url]
+        # node_to_handle was refreshed by the state listener -- the handle is the
+        # one currently held by the live Subscription's monitored item.
+        real_sub = ha_client.reconciliator.name_to_subscription[target_url][sub]
+        live_handles = {
+            mi.node.nodeid.to_string(): mi.server_handle
+            for mi in real_sub._monitored_items.values()
+            if mi.node is not None and mi.server_handle is not None
+        }
+        for node_id, handle in live_handles.items():
+            assert ha_client.reconciliator.node_to_handle[target_url][node_id] == handle
+
+        # HaManager / HaClient.reconnect was NOT called during the recovery window.
+        assert reconnect_spy.call_count == 0

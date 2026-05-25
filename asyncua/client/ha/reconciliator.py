@@ -104,6 +104,24 @@ class Reconciliator:
     async def stop(self) -> None:
         self.stop_event.set()
 
+    def refresh_handles(self, url: str) -> None:
+        """Rebuild node_to_handle[url] from the current Subscription objects.
+
+        Called after the underlying Client's auto-reconnect finishes restoring a
+        session. TransferSubscriptions preserves server handles, but the recreate()
+        fallback assigns new ones; we just refresh unconditionally so later
+        unsubscribe calls use whatever the server now expects.
+        """
+        subs_for_url = self.name_to_subscription.get(url)
+        if not subs_for_url:
+            return
+        handles = self.node_to_handle.setdefault(url, {})
+        for sub in subs_for_url.values():
+            for mi in sub._monitored_items.values():
+                if mi.node is None or mi.server_handle is None:
+                    continue
+                handles[mi.node.nodeid.to_string()] = mi.server_handle
+
     async def resubscribe(self) -> None:
         """
         Remove all the subscriptions from the real_map.

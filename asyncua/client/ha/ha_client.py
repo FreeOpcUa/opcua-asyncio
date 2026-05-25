@@ -10,6 +10,7 @@ from itertools import chain
 from sortedcontainers import SortedDict  # type: ignore
 
 from asyncua import Client, Node, ua
+from asyncua.client.ua_client import UaClientState
 from asyncua.ua.uaerrors import BadSessionClosed, BadSessionNotActivated
 
 from ...crypto.security_policies import SecurityPolicy
@@ -152,6 +153,7 @@ class HaClient:
             keepalive = KeepAlive(client, server, self._config.keepalive_timer)
             task = asyncio.create_task(keepalive.run())
             self._keepalive_task[keepalive] = task
+            self._watch_client_state(client)
 
         task = asyncio.create_task(self.manager.run())
         self._manager_task[self.manager] = task
@@ -160,6 +162,22 @@ class HaClient:
         self._reconciliator_task[self.reconciliator] = task
 
         self.is_running = True
+
+    def _watch_client_state(self, client: Client) -> None:
+        # Auto-reconnect on the underlying Client preserves the session and
+        # restores subscriptions, but the recreate() fallback assigns new
+        # server-side handles. After every RECONNECTING -> CONNECTED transition,
+        # refresh Reconciliator.node_to_handle so later unsubscribe calls use the
+        # current handles.
+        url = client.server_url.geturl()
+        prev: list[UaClientState | None] = [None]
+
+        def on_state_change(state: UaClientState) -> None:
+            was, prev[0] = prev[0], state
+            if was is UaClientState.RECONNECTING and state is UaClientState.CONNECTED:
+                self.reconciliator.refresh_handles(url)
+
+        client.uaclient._add_state_listener(on_state_change)
 
     async def stop(self):
         to_stop: Sequence[KeepAlive | HaManager | Reconciliator] = chain(
@@ -252,8 +270,13 @@ class HaClient:
 
     async def reconnect(self, client: Client) -> None:
         """
-        Reconnect a client of the HA set and
-        add its URL to the reset list.
+        Reconnect a client of the HA set and add its URL to the reset list.
+
+        Only call this when the client's auto-reconnect supervisor is not actively
+        recovering (`client.uaclient.state` is DISCONNECTED). Calling it while the
+        supervisor is mid-recovery would tear down its in-progress reconnect.
+        Single-server transport drops are handled by auto-reconnect itself; this
+        method is only used for the initial bring-up and as a manual full-reset.
         """
         async with self._url_to_reset_lock:
             url = client.server_url.geturl()
@@ -265,7 +288,11 @@ class HaClient:
         await self.hook_on_reconnect(client=client)
         if self.security_config.policy:
             await client.set_security(**self.security_config.__dict__)
-        await client.connect()
+        await client.connect(
+            auto_reconnect=True,
+            reconnect_max_delay=self._config.manager_timer,
+            reconnect_request_timeout=self._config.request_timeout,
+        )
 
     async def unsubscribe(self, nodes: Iterable[Node] | Iterable[str]) -> None:
         async with self._ideal_map_lock:
@@ -517,6 +544,18 @@ class HaManager:
         healthy, unhealthy = await self.ha_client.group_clients_by_health()
 
         async def reco_resub(client: Client, force: bool):
+            # The Client's own auto-reconnect supervisor handles transport drops;
+            # don't disturb it while it's in the middle of recovery.
+            if client.uaclient.state in (
+                UaClientState.CONNECTING,
+                UaClientState.SOCKET_OPEN,
+                UaClientState.CHANNEL_OPEN,
+                UaClientState.RECONNECTING,
+                UaClientState.DISCONNECTING,
+            ):
+                return
+            if client.uaclient.state is UaClientState.CONNECTED and not force:
+                return
             if (
                 force
                 or not client.uaclient.protocol
