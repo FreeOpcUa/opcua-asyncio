@@ -1,3 +1,10 @@
+"""Release helper run from a developer machine.
+
+Bumps the version, commits, tags, pushes and publishes the package to PyPI.
+Pushing the `v<version>` tag triggers `.github/workflows/release.yml`, which
+creates the matching GitHub release automatically.
+"""
+
 import re
 import shutil
 import subprocess
@@ -106,7 +113,7 @@ def release(bump: str) -> None:
     subprocess.run(["git", "commit", "-m", f"new release: {new_version}"], check=True)
     subprocess.run(["git", "tag", "-a", tag, "-m", f"Release {new_version}"], check=True)
 
-    if _confirm("change committed, push to server?(Y/n)"):
+    if _confirm("change committed, push to server (creates the GitHub release)?(Y/n)"):
         subprocess.run(["git", "push", "--follow-tags"], check=True)
 
     if _confirm("upload to pip?(Y/n)"):
