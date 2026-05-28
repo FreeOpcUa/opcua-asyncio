@@ -302,7 +302,7 @@ class Client:
         cert = await uacrypto.load_certificate(certificate.path_or_content, certificate.extension)
         certificate_chain = certificate_chain or []
         chain = await asyncio.gather(
-            *(uacrypto.load_certificate(cert.path_or_content, cert.extension) for cert in certificate_chain)
+            *(uacrypto.load_certificate(c.path_or_content, c.extension) for c in certificate_chain)
         )
         pk = await uacrypto.load_private_key(
             private_key.path_or_content,
