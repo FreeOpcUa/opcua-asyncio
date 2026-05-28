@@ -9,7 +9,7 @@ import collections.abc
 import inspect
 import logging
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Protocol, overload
@@ -216,9 +216,10 @@ class Subscription:
         # going down. `None` means no notification has arrived yet.
         self.last_publish_at: float | None = None
         self.last_sequence_number: int | None = None
-        # Hook the watchdog (set by Client.create_subscription) uses to force
-        # a full reconnect cycle when overflow=DISCONNECT fires.
-        self._on_overflow_disconnect: Any = None
+        # Hook used to force a full reconnect cycle when overflow=DISCONNECT
+        # fires. Wired via set_overflow_disconnect_handler() by the owner
+        # (typically Client.create_subscription).
+        self._on_overflow_disconnect: Callable[[], None] | None = None
         # Keep strong refs to in-flight dispatch tasks so the GC can't cancel
         # them while they're still running user-handler code.
         self._dispatch_tasks: set[asyncio.Task[None]] = set()
@@ -230,6 +231,10 @@ class Subscription:
     def is_deleted(self) -> bool:
         """True once the user has called delete() (or it failed past a recoverable point)."""
         return self._deleted
+
+    def set_overflow_disconnect_handler(self, handler: Callable[[], None] | None) -> None:
+        """Hook fired when overflow=DISCONNECT triggers; use to force a full reconnect."""
+        self._on_overflow_disconnect = handler
 
     async def init(self) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)

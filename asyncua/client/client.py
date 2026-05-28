@@ -1224,7 +1224,7 @@ class Client:
             overflow=overflow,
         )
         # Wire the DISCONNECT overflow policy to the supervisor's reconnect path.
-        subscription._on_overflow_disconnect = lambda: self.uaclient._on_transport_lost(None)
+        subscription.set_overflow_disconnect_handler(lambda: self.uaclient._on_transport_lost(None))
         results = await subscription.init()
         new_params = self.get_subscription_revised_params(params, results)
         if new_params:
