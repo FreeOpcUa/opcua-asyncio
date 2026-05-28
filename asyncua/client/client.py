@@ -1080,7 +1080,7 @@ class Client:
         if self.security_policy.AsymmetricSignatureURI:
             params.ClientSignature.Algorithm = self.security_policy.AsymmetricSignatureURI
         else:
-            params.ClientSignature.Algorithm = security_policies.SecurityPolicyBasic256.AsymmetricSignatureURI
+            params.ClientSignature.Algorithm = security_policies.SecurityPolicyBasic256Sha256.AsymmetricSignatureURI
         params.ClientSignature.Signature = self.security_policy.asymmetric_cryptography.signature(challenge)
         params.LocaleIds = self._locale
         if not username and not (user_certificate and self.user_private_key):
