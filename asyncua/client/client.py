@@ -6,9 +6,9 @@ import logging
 import os
 import socket
 import time
-from collections.abc import Callable, Coroutine, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Coroutine, Iterable, Sequence
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypeVar, cast
 from urllib.parse import ParseResult, unquote, urlparse
 
 from cryptography import x509
@@ -40,6 +40,8 @@ from .ua_client import StateSubscription, UaClient, UaClientState
 from .ua_session import SessionState
 
 _logger = logging.getLogger(__name__)
+
+_T = TypeVar("_T")
 
 # Task-scoped flag: when True, the pre-request hook bypasses its RECONNECTING
 # gate. The supervisor sets this around its own teardown/connect-sequence work
@@ -341,53 +343,36 @@ class Client:
         """
         self.user_private_key = await uacrypto.load_private_key(path, password, extension)
 
-    async def connect_and_get_server_endpoints(self) -> list[ua.EndpointDescription]:
-        """
-        Connect, ask server for endpoints, and disconnect
-        """
+    async def _with_temp_channel(self, op: Callable[[], Awaitable[_T]]) -> _T:
+        """Open a transient socket + SecureChannel, run op, tear it down on exit."""
         await self.connect_socket()
         try:
             await self.send_hello()
             await self.open_secure_channel()
             try:
-                endpoints = await self.get_endpoints()
+                return await op()
             finally:
                 await self.close_secure_channel()
         finally:
             self.disconnect_socket()
-        return endpoints
+
+    async def connect_and_get_server_endpoints(self) -> list[ua.EndpointDescription]:
+        """
+        Connect, ask server for endpoints, and disconnect
+        """
+        return await self._with_temp_channel(self.get_endpoints)
 
     async def connect_and_find_servers(self) -> list[ua.ApplicationDescription]:
         """
         Connect, ask server for a list of known servers, and disconnect
         """
-        await self.connect_socket()
-        try:
-            await self.send_hello()
-            await self.open_secure_channel()  # spec says it should not be necessary to open channel
-            try:
-                servers = await self.find_servers()
-            finally:
-                await self.close_secure_channel()
-        finally:
-            self.disconnect_socket()
-        return servers
+        return await self._with_temp_channel(self.find_servers)
 
     async def connect_and_find_servers_on_network(self) -> ua.FindServersOnNetworkResult:
         """
         Connect, ask server for a list of known servers on network, and disconnect
         """
-        await self.connect_socket()
-        try:
-            await self.send_hello()
-            await self.open_secure_channel()
-            try:
-                servers = await self.find_servers_on_network()
-            finally:
-                await self.close_secure_channel()
-        finally:
-            self.disconnect_socket()
-        return servers
+        return await self._with_temp_channel(self.find_servers_on_network)
 
     async def connect(
         self,
