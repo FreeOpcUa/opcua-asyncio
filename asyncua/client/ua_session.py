@@ -78,7 +78,7 @@ class UaSession(AbstractSession):
         if self._client.protocol is None:
             raise ConnectionError("Connection is not open")
         self.logger.info("create_session")
-        self._client.protocol.closed = False
+        self._client.protocol.mark_session_closed(False)
         self._set_state(SessionState.CREATING)
         try:
             request = ua.CreateSessionRequest()
@@ -125,7 +125,7 @@ class UaSession(AbstractSession):
             self._set_state(SessionState.CLOSING)
             self._set_state(SessionState.CLOSED)
             return
-        self._client.protocol.closed = True
+        self._client.protocol.mark_session_closed(True)
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
         self._set_state(SessionState.CLOSING)

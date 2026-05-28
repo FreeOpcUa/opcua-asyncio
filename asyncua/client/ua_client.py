@@ -75,7 +75,10 @@ class UASocketProtocol(asyncio.Protocol):
         self._connection = SecureConnection(security_policy, limits)
 
         self.state = self.INITIALIZED
-        self.closed: bool = False
+        # _session_closed reflects whether the owning session has been torn down;
+        # _call_callback uses it to pick log level for late responses. Set via
+        # mark_session_closed() rather than reassigned externally.
+        self._session_closed: bool = False
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
         # passing back the processed response to the request so that it can return it.
         self._open_secure_channel_exchange: ua.OpenSecureChannelResponse | ua.OpenSecureChannelParameters | None = None
@@ -254,10 +257,18 @@ class UASocketProtocol(asyncio.Protocol):
         try:
             future.set_result(body)
         except asyncio.InvalidStateError:
-            if not self.closed:
+            if not self._session_closed:
                 self.logger.warning("Future for request id %s is already done", request_id)
             else:
                 self.logger.debug("Future for request id %s not handled due to disconnect", request_id)
+
+    def mark_session_closed(self, closed: bool) -> None:
+        """Notify the protocol that the owning session is being torn down (or reopened).
+
+        Used so late-arriving responses are logged at debug rather than warning
+        once the caller no longer expects them.
+        """
+        self._session_closed = closed
 
     def _setup_request_header(self, hdr: ua.RequestHeader, timeout: float = 1) -> None:
         """
