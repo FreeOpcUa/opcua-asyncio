@@ -421,39 +421,36 @@ class Client:
         try:
             await self.send_hello()
             await self.open_secure_channel()
-            try:
-                if self._try_load_persisted_session():
-                    try:
-                        await self.activate_session(
-                            username=self._username, password=self._password, certificate=self.user_certificate
-                        )
-                        _logger.info("Resumed persisted session %s", self.uaclient.session.authentication_token)
-                        self._save_session_state()
-                        return
-                    except BadSessionIdInvalid:
-                        _logger.info("Persisted session expired on server; creating fresh one")
-                        self._clear_persisted_session()
-                        self.uaclient.session.authentication_token = ua.NodeId()
-                        self._server_nonce = None
-                    except Exception:
-                        _logger.warning("Failed to resume persisted session; creating fresh one", exc_info=True)
-                        self._clear_persisted_session()
-                        self.uaclient.session.authentication_token = ua.NodeId()
-                        self._server_nonce = None
+            if self._try_load_persisted_session():
                 try:
-                    await self.create_session()
-                    try:
-                        await self.activate_session(
-                            username=self._username, password=self._password, certificate=self.user_certificate
-                        )
-                        self._save_session_state()
-                    except Exception:
-                        await self._close_session_quiet()
-                        raise
+                    await self.activate_session(
+                        username=self._username, password=self._password, certificate=self.user_certificate
+                    )
+                    _logger.info("Resumed persisted session %s", self.uaclient.session.authentication_token)
+                    self._save_session_state()
+                    return
+                except BadSessionIdInvalid:
+                    _logger.info("Persisted session expired on server; creating fresh one")
+                    self._clear_persisted_session()
+                    self.uaclient.session.authentication_token = ua.NodeId()
+                    self._server_nonce = None
                 except Exception:
-                    await self._close_secure_channel_quiet()
+                    _logger.warning("Failed to resume persisted session; creating fresh one", exc_info=True)
+                    self._clear_persisted_session()
+                    self.uaclient.session.authentication_token = ua.NodeId()
+                    self._server_nonce = None
+            try:
+                await self.create_session()
+                try:
+                    await self.activate_session(
+                        username=self._username, password=self._password, certificate=self.user_certificate
+                    )
+                    self._save_session_state()
+                except Exception:
+                    await self._close_session_quiet()
                     raise
             except Exception:
+                await self._close_secure_channel_quiet()
                 raise
         except Exception:
             self.disconnect_socket()
