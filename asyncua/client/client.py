@@ -51,6 +51,17 @@ _supervisor_owns_requests: contextvars.ContextVar[bool] = contextvars.ContextVar
 )
 
 
+def _first_cert_from_chain(der: bytes) -> bytes:
+    """Return only the leading certificate's bytes from a (possibly chained) DER blob.
+
+    Servers sometimes hand back the server certificate concatenated with its
+    chain; our crypto layer trips on the chained form, so peel off the first
+    cert by reading the outer SEQUENCE length (bytes 2:4) and slicing.
+    """
+    cert_len = int.from_bytes(der[2:4], byteorder="big", signed=False) + 4
+    return der[:cert_len]
+
+
 class Client:
     """
     High level client to connect to an OPC-UA server.
@@ -269,13 +280,7 @@ class Client:
             # load certificate from server's list of endpoints
             endpoints = await self.connect_and_get_server_endpoints()
             endpoint = Client.find_endpoint(endpoints, mode, policy.URI)
-            # If a server has certificate chain, the certificates are chained
-            # this generates a error in our crypto part, so we strip everything after
-            # the server cert. To do this we read byte 2:4 and get the length - 4
-            cert_len_idx = 2
-            len_bytestr = endpoint.ServerCertificate[cert_len_idx : cert_len_idx + 2]
-            cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
-            server_certificate = uacrypto.x509_from_der(endpoint.ServerCertificate[:cert_len])
+            server_certificate = uacrypto.x509_from_der(_first_cert_from_chain(endpoint.ServerCertificate))
         elif not isinstance(server_certificate, uacrypto.CertProperties):
             server_certificate = uacrypto.CertProperties(server_certificate)
         if not isinstance(certificate, uacrypto.CertProperties):
@@ -725,13 +730,7 @@ class Client:
         self._server_nonce = response.ServerNonce
         server_certificate = None
         if response.ServerCertificate is not None:
-            # If a server has certificate chain, the certificates are chained
-            # this generates a error in our crypto part, so we strip everything after
-            # the server cert. To do this we read byte 2:4 and get the length - 4
-            cert_len_idx = 2
-            len_bytestr = response.ServerCertificate[cert_len_idx : cert_len_idx + 2]
-            cert_len = int.from_bytes(len_bytestr, byteorder="big", signed=False) + 4
-            server_certificate = response.ServerCertificate[:cert_len]
+            server_certificate = _first_cert_from_chain(response.ServerCertificate)
         if not self.security_policy.peer_certificate:
             self.security_policy.peer_certificate = server_certificate
         elif self.security_policy.peer_certificate != server_certificate:
