@@ -416,24 +416,25 @@ class UaSession(AbstractSession):
         """
         Send PublishRequests in a loop and forward `PublishResult` to the matching subscription callback.
         """
-        ack: ua.SubscriptionAcknowledgement | None = None
+        pending_acks: list[ua.SubscriptionAcknowledgement] = []
         while self._state not in (SessionState.CLOSING, SessionState.CLOSED):
             try:
-                response = await self.publish([ack] if ack else [])
+                response = await self.publish(pending_acks)
+                pending_acks = []
             except BadTimeout:
-                ack = None
+                pending_acks = []
                 continue
             except BadNoSubscription:
                 self.logger.info("BadNoSubscription received, ignoring because it's probably valid.")
                 return
             except UaStructParsingError:
-                ack = None
+                pending_acks = []
                 continue
             except asyncio.CancelledError:
                 raise
             except Exception:
                 self.logger.exception("Publish iteration crashed; retrying in 1s")
-                ack = None
+                pending_acks = []
                 await asyncio.sleep(1.0)
                 continue
             subscription_id = response.Parameters.SubscriptionId
@@ -455,11 +456,12 @@ class UaSession(AbstractSession):
                 except Exception:
                     self.logger.exception("Exception while calling user callback")
             if response.Parameters.NotificationMessage.NotificationData:
-                ack = ua.SubscriptionAcknowledgement()
-                ack.SubscriptionId = subscription_id
-                ack.SequenceNumber = response.Parameters.NotificationMessage.SequenceNumber
-            else:
-                ack = None
+                pending_acks.append(
+                    ua.SubscriptionAcknowledgement(
+                        SubscriptionId=subscription_id,
+                        SequenceNumber=response.Parameters.NotificationMessage.SequenceNumber,
+                    )
+                )
 
     # --- MonitoredItem Service Set ---
 
