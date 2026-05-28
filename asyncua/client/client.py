@@ -981,12 +981,7 @@ class Client:
         reuse it. close_session only runs in the fallback path when the server
         rejects the reactivate.
         """
-        if self._renew_channel_task is not None and not self._renew_channel_task.done():
-            self._renew_channel_task.cancel()
-            try:
-                await self._renew_channel_task
-            except (asyncio.CancelledError, Exception):
-                pass
+        await self._cancel_task(self._renew_channel_task)
         self._renew_channel_task = None
         if self.uaclient.protocol is not None:
             self.uaclient.disconnect_socket()
@@ -1140,30 +1135,26 @@ class Client:
         Close session
         """
         self.uaclient._disconnect_requested = True
-        if self._stale_watchdog_task is not None and not self._stale_watchdog_task.done():
-            self._stale_watchdog_task.cancel()
-            try:
-                await self._stale_watchdog_task
-            except (asyncio.CancelledError, Exception):
-                pass
+        await self._cancel_task(self._stale_watchdog_task)
         self._stale_watchdog_task = None
-        if self._supervisor_task is not None and not self._supervisor_task.done():
-            self._supervisor_task.cancel()
-            try:
-                await self._supervisor_task
-            except (asyncio.CancelledError, Exception):
-                pass
+        await self._cancel_task(self._supervisor_task)
         self._supervisor_task = None
         # Disable the pre-request hook for the close path so it doesn't block.
         self.uaclient.pre_request_hook = None
-        if self._renew_channel_task is not None and not self._renew_channel_task.done():
-            self._renew_channel_task.cancel()
-            try:
-                await self._renew_channel_task
-            except (asyncio.CancelledError, Exception):
-                pass
+        await self._cancel_task(self._renew_channel_task)
         self._renew_channel_task = None
         return await self.uaclient.close_session(True)
+
+    @staticmethod
+    async def _cancel_task(task: asyncio.Task[Any] | None) -> None:
+        """Cancel a task, await its exit, and swallow CancelledError / shutdown noise."""
+        if task is None or task.done():
+            return
+        task.cancel()
+        try:
+            await task
+        except (asyncio.CancelledError, Exception):
+            pass
 
     def get_root_node(self) -> Node:
         return self.get_node(ua.TwoByteNodeId(ua.ObjectIds.RootFolder))
