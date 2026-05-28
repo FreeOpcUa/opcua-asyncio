@@ -177,6 +177,8 @@ class UASocketProtocol(asyncio.Protocol):
         :param message_type: UA Message Type (optional)
         :return: Future that resolves with the Response
         """
+        if self.transport is None:
+            raise ConnectionError("Connection is not open")
         self._setup_request_header(request.RequestHeader, timeout)
         self.logger.debug("Sending: %s", request)
         try:
@@ -195,8 +197,7 @@ class UASocketProtocol(asyncio.Protocol):
             self._connection.revolve_tokens()
 
         msg = self._connection.message_to_binary(binreq, message_type=message_type, request_id=self._request_id)
-        if self.transport is not None:
-            self.transport.write(msg)
+        self.transport.write(msg)
         return future
 
     async def send_request(
