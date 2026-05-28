@@ -99,10 +99,10 @@ async def test_iterator_context_manager_deletes_on_exit() -> None:
     await client.connect()
     try:
         sub = await client.create_subscription(50)
-        assert sub._deleted is False
+        assert sub.is_deleted is False
         async with sub:
             assert sub.subscription_id is not None
-        assert sub._deleted is True
+        assert sub.is_deleted is True
     finally:
         await client.disconnect()
         await srv.stop()
