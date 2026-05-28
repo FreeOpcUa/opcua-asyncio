@@ -395,7 +395,7 @@ class Client:
         self._auto_reconnect = auto_reconnect
         self._reconnect_max_delay = reconnect_max_delay
         self._reconnect_request_timeout = reconnect_request_timeout
-        self.uaclient._disconnect_requested = False
+        self.uaclient.clear_disconnect_request()
         await self._connect_sequence()
         self._supervisor_task = asyncio.create_task(self._connection_supervisor())
         self._stale_watchdog_task = asyncio.create_task(self._stale_watchdog_loop())
@@ -755,7 +755,7 @@ class Client:
         DISCONNECTED / DISCONNECTING raise immediately so callers see ConnectionError
         instead of silently sending to a dead transport.
 
-        We deliberately do NOT raise on `_disconnect_requested` alone: in-flight
+        We deliberately do NOT raise on `is_disconnect_requested` alone: in-flight
         requests started before the user called `disconnect()` should be allowed
         to either complete or fail at the transport layer, not get short-circuited
         here mid-teardown.
@@ -795,17 +795,17 @@ class Client:
           3. on any failure, fires `connection_lost_callback` and (if auto_reconnect)
              transitions to RECONNECTING and runs `_reconnect_with_backoff`.
 
-        Exits when `_disconnect_requested` is set or `auto_reconnect=False` and a loss is detected.
+        Exits when `is_disconnect_requested` is set or `auto_reconnect=False` and a loss is detected.
         """
         try:
-            while not self.uaclient._disconnect_requested:
+            while not self.uaclient.is_disconnect_requested:
                 try:
                     try:
                         await self._wait_for_health_signal()
                         if self.uaclient.state is not UaClientState.CONNECTED:
                             raise ConnectionError("transport lost")
                     except (ConnectionError, OSError, asyncio.TimeoutError, ua.UaStatusCodeError) as exc:
-                        if self.uaclient._disconnect_requested:
+                        if self.uaclient.is_disconnect_requested:
                             return
                         _logger.info("Supervisor detected connection issue: %r", exc)
                         await self._fire_connection_lost_callback(exc)
@@ -830,7 +830,7 @@ class Client:
 
     async def _stale_watchdog_loop(self) -> None:
         try:
-            while not self.uaclient._disconnect_requested:
+            while not self.uaclient.is_disconnect_requested:
                 await asyncio.sleep(self._stale_check_interval)
                 if self.uaclient.state is not UaClientState.CONNECTED:
                     continue
@@ -879,7 +879,7 @@ class Client:
         token = _supervisor_owns_requests.set(True)
         try:
             delay = 1.0
-            while not self.uaclient._disconnect_requested:
+            while not self.uaclient.is_disconnect_requested:
                 await self._teardown_transport_only()
                 try:
                     reused = await self._try_reactivate_existing_session()
@@ -1019,7 +1019,7 @@ class Client:
             # Part4 5.5.2.1:
             # Clients should request a new SecurityToken after 75 % of its lifetime has elapsed
             duration = self.secure_channel_timeout * 0.75 / 1000
-            while not self.uaclient._disconnect_requested:
+            while not self.uaclient.is_disconnect_requested:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
@@ -1134,7 +1134,7 @@ class Client:
         """
         Close session
         """
-        self.uaclient._disconnect_requested = True
+        self.uaclient.request_disconnect()
         await self._cancel_task(self._stale_watchdog_task)
         self._stale_watchdog_task = None
         await self._cancel_task(self._supervisor_task)
