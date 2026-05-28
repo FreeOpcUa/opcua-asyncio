@@ -406,6 +406,19 @@ class UaClient:
     def state(self) -> UaClientState:
         return self._state
 
+    @property
+    def is_disconnect_requested(self) -> bool:
+        """Has the owner requested an orderly shutdown? Set via request_disconnect()."""
+        return self._disconnect_requested
+
+    def request_disconnect(self) -> None:
+        """Mark this client as shutting down; observed by the supervisor loops."""
+        self._disconnect_requested = True
+
+    def clear_disconnect_request(self) -> None:
+        """Clear the shutdown flag ahead of a fresh connect()."""
+        self._disconnect_requested = False
+
     def _set_state(self, target: UaClientState) -> None:
         """Set state and notify listeners. Same-state assignments are no-ops."""
         if target is self._state:
