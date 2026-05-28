@@ -817,31 +817,33 @@ class Client:
         try:
             while not self.uaclient._disconnect_requested:
                 try:
-                    await self._wait_for_health_signal()
-                    if self.uaclient.state is not UaClientState.CONNECTED:
-                        raise ConnectionError("transport lost")
+                    try:
+                        await self._wait_for_health_signal()
+                        if self.uaclient.state is not UaClientState.CONNECTED:
+                            raise ConnectionError("transport lost")
+                    except (ConnectionError, OSError, asyncio.TimeoutError, ua.UaStatusCodeError) as exc:
+                        if self.uaclient._disconnect_requested:
+                            return
+                        _logger.info("Supervisor detected connection issue: %r", exc)
+                        await self._fire_connection_lost_callback(exc)
+                        if not self._auto_reconnect:
+                            # Tell subscriptions the connection is gone; user code is on its own.
+                            try:
+                                await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
+                            except Exception:
+                                _logger.debug("inform_subscriptions raised during loss handling", exc_info=True)
+                            self.uaclient._set_state(UaClientState.DISCONNECTED)
+                            return
+                        self.uaclient._set_state(UaClientState.RECONNECTING)
+                        if not await self._reconnect_with_backoff():
+                            return
                 except asyncio.CancelledError:
                     raise
-                except (ConnectionError, OSError, asyncio.TimeoutError, ua.UaStatusCodeError) as exc:
-                    if self.uaclient._disconnect_requested:
-                        return
-                    _logger.info("Supervisor detected connection issue: %r", exc)
-                    await self._fire_connection_lost_callback(exc)
-                    if not self._auto_reconnect:
-                        # Tell subscriptions the connection is gone; user code is on its own.
-                        try:
-                            await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
-                        except Exception:
-                            _logger.debug("inform_subscriptions raised during loss handling", exc_info=True)
-                        self.uaclient._set_state(UaClientState.DISCONNECTED)
-                        return
-                    self.uaclient._set_state(UaClientState.RECONNECTING)
-                    if not await self._reconnect_with_backoff():
-                        return
+                except Exception:
+                    _logger.exception("Connection supervisor iteration crashed; retrying in 1s")
+                    await asyncio.sleep(1.0)
         except asyncio.CancelledError:
             pass
-        except Exception:
-            _logger.exception("Connection supervisor crashed")
 
     async def _stale_watchdog_loop(self) -> None:
         try:

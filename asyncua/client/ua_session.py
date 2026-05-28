@@ -433,6 +433,13 @@ class UaSession(AbstractSession):
             except UaStructParsingError:
                 ack = None
                 continue
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                self.logger.exception("Publish iteration crashed; retrying in 1s")
+                ack = None
+                await asyncio.sleep(1.0)
+                continue
             subscription_id = response.Parameters.SubscriptionId
             if not subscription_id:
                 # Spec Part 4 - Section 5.13.5 "Publish": value 0 means no Subscriptions
