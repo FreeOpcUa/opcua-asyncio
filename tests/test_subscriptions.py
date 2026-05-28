@@ -474,10 +474,10 @@ def test_get_keepalive_count(mocker):
     c.session_timeout = 30000
     keepalive_count = c.get_keepalive_count(publish_interval)
     assert keepalive_count == 0
-    # RequestedPublishingInterval == 0
+    # RequestedPublishingInterval == 0: defer to server (spec Part 4 §5.13.2)
     publish_interval = 0
     keepalive_count = c.get_keepalive_count(publish_interval)
-    assert keepalive_count == 22
+    assert keepalive_count == 0
 
 
 async def test_subscribe_server_time(opc):
