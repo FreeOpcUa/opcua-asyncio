@@ -1043,8 +1043,6 @@ class Client:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
-                val = await self.nodes.server_state.read_value()
-                _logger.debug("server state is: %s ", val)
         except ConnectionError as e:
             _logger.info("connection error  in watchdog loop %s", e, exc_info=True)
             raise
