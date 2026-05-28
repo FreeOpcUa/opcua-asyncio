@@ -371,6 +371,24 @@ async def test_eventgenerator_multi_inherited_event(server):
     assert ev.RequestedLifetime is None
 
 
+@pytest.mark.parametrize(
+    "node_id",
+    [
+        ua.ObjectIds.GetEndpointsResponse,
+        ua.ObjectIds.FilterOperand,
+        ua.ObjectIds.RegisterServer2Response,
+        ua.ObjectIds.BaseDataType,
+    ],
+)
+async def test_data_type_definition_null_for_non_struct_enum(server, node_id):
+    node = server.get_node(ua.NodeId(node_id, 0))
+    dv = await node.read_attribute(ua.AttributeIds.DataTypeDefinition, raise_on_bad_status=False)
+    assert dv.StatusCode is None or dv.StatusCode.is_good()
+    assert dv.Value is not None
+    assert dv.Value.VariantType == ua.VariantType.Null
+    assert dv.Value.Value is None
+
+
 async def test_create_custom_data_type_object_id(server):
     """
     For the custom events all posibilites are tested.

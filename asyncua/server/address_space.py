@@ -537,8 +537,13 @@ class NodeManagementService:
         is_array: bool = False,
     ) -> None:
         if attributes.SpecifiedAttributes & getattr(ua.NodeAttributesMask, name):
+            value = getattr(attributes, name)
+            if name == "DataTypeDefinition" and not isinstance(value, ua.DataTypeDefinition):
+                variant = ua.Variant(None, ua.VariantType.Null)
+            else:
+                variant = ua.Variant(value, vtype, is_array=is_array)
             dv = ua.DataValue(
-                ua.Variant(getattr(attributes, name), vtype, is_array=is_array),
+                variant,
                 SourceTimestamp=datetime.now(timezone.utc) if add_timestamps else None,
                 ServerTimestamp=datetime.now(timezone.utc)
                 if add_timestamps and self._aspace.force_server_timestamp
@@ -839,7 +844,10 @@ class AddressSpace:
         if vtype == ua.VariantType.Null:
             # Node had a null value, many nodes are initialized with that value
             # we should check what the real type is
-            dtype_attr = node.attributes[ua.AttributeIds.DataType].value
+            dtype_av = node.attributes.get(ua.AttributeIds.DataType)
+            if dtype_av is None:
+                return True
+            dtype_attr = dtype_av.value
             if dtype_attr is None or dtype_attr.Value is None:
                 return True
             dtype = dtype_attr.Value.Value
