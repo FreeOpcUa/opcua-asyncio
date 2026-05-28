@@ -591,9 +591,7 @@ class Client:
         """
         Send OPC-UA hello to server
         """
-        ack = await self.uaclient.send_hello(self.server_url.geturl(), self.max_messagesize, self.max_chunkcount)
-        if isinstance(ack, ua.UaStatusCodeError):
-            raise ack
+        await self.uaclient.send_hello(self.server_url.geturl(), self.max_messagesize, self.max_chunkcount)
 
     async def open_secure_channel(self, renew: bool = False) -> None:
         """
