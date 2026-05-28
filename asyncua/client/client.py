@@ -61,10 +61,6 @@ class Client:
     which offers the raw OPC-UA services interface.
     """
 
-    _username: str | None = None
-    _password: str | None = None
-    strip_url_credentials: bool = True
-
     def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0) -> None:
         """
         :param url: url of the server.
@@ -80,6 +76,9 @@ class Client:
         attributes on the constructed object:
         See the source code for the exhaustive list.
         """
+        self._username: str | None = None
+        self._password: str | None = None
+        self.strip_url_credentials: bool = True
         self._server_url = urlparse(url)
         # take initial username and password from the url
         userinfo, have_info, _ = self._server_url.netloc.rpartition("@")
