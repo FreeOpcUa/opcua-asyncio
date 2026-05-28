@@ -821,7 +821,7 @@ class Client:
                             await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
                         except Exception:
                             _logger.debug("inform_subscriptions raised during loss handling", exc_info=True)
-                        self._force_state_disconnected()
+                        self.uaclient._set_state(UaClientState.DISCONNECTED)
                         return
                     self.uaclient._set_state(UaClientState.RECONNECTING)
                     if not await self._reconnect_with_backoff():
@@ -1000,10 +1000,6 @@ class Client:
                 await sub.restore()
             except Exception:
                 _logger.exception("Failed to restore subscription")
-
-    def _force_state_disconnected(self) -> None:
-        """Park the client in DISCONNECTED after a non-recoverable loss."""
-        self.uaclient._set_state(UaClientState.DISCONNECTED)
 
     async def _close_session_quiet(self) -> None:
         # Low-level close: does NOT touch the supervisor task; safe to call from
