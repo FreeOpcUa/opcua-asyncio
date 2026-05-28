@@ -479,10 +479,14 @@ class Client:
         _logger.info("disconnect")
         try:
             await self.close_session()
+        except Exception:
+            _logger.exception("close_session raised during disconnect; continuing teardown")
+        try:
             await self.close_secure_channel()
-        finally:
-            self.disconnect_socket()
-            self._clear_persisted_session()
+        except Exception:
+            _logger.exception("close_secure_channel raised during disconnect; continuing teardown")
+        self.disconnect_socket()
+        self._clear_persisted_session()
 
     def _try_load_persisted_session(self) -> bool:
         """Load `authentication_token` + `server_nonce` from disk into the live session.
