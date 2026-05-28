@@ -181,22 +181,21 @@ class UASocketProtocol(asyncio.Protocol):
             raise ConnectionError("Connection is not open")
         self._setup_request_header(request.RequestHeader, timeout)
         self.logger.debug("Sending: %s", request)
+        next_request_id = self._request_id + 1
         try:
             binreq = struct_to_binary(request)
+            # Change to the new security token if the connection has been renewed.
+            if self._connection.next_security_token.TokenId != 0:
+                self._connection.revolve_tokens()
+            msg = self._connection.message_to_binary(binreq, message_type=message_type, request_id=next_request_id)
         except Exception:
             # reset request handle if any error
             # see self._setup_request_header
             self._request_handle -= 1
             raise
-        self._request_id += 1
+        self._request_id = next_request_id
         future: asyncio.Future[Any] = asyncio.get_running_loop().create_future()
         self._callbackmap[self._request_id] = future
-
-        # Change to the new security token if the connection has been renewed.
-        if self._connection.next_security_token.TokenId != 0:
-            self._connection.revolve_tokens()
-
-        msg = self._connection.message_to_binary(binreq, message_type=message_type, request_id=self._request_id)
         self.transport.write(msg)
         return future
 
