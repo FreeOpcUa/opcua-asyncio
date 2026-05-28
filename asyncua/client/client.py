@@ -428,6 +428,7 @@ class Client:
                     )
                     _logger.info("Resumed persisted session %s", self.uaclient.session.authentication_token)
                     self._save_session_state()
+                    self._start_renew_loop()
                     return
                 except BadSessionIdInvalid:
                     _logger.info("Persisted session expired on server; creating fresh one")
@@ -452,6 +453,7 @@ class Client:
             except Exception:
                 await self._close_secure_channel_quiet()
                 raise
+            self._start_renew_loop()
         except Exception:
             self.disconnect_socket()
             raise
@@ -753,8 +755,12 @@ class Client:
                 response.RevisedSessionTimeout,
             )
             self.session_timeout = response.RevisedSessionTimeout
-        self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
         return response
+
+    def _start_renew_loop(self) -> None:
+        if self._renew_channel_task is not None and not self._renew_channel_task.done():
+            return
+        self._renew_channel_task = asyncio.create_task(self._renew_channel_loop())
 
     async def _wait_until_ready(self) -> None:
         """Pre-request hook: block while the supervisor is reconnecting, fail fast otherwise.
@@ -949,6 +955,7 @@ class Client:
                         username=self._username, password=self._password, certificate=self.user_certificate
                     )
                     self.uaclient.session.ensure_publish_loop()
+                    self._start_renew_loop()
                     return True
                 except BadSessionIdInvalid:
                     _logger.info("Server forgot session; falling back to create+activate")
@@ -967,6 +974,7 @@ class Client:
             except Exception:
                 await self._close_secure_channel_quiet()
                 raise
+            self._start_renew_loop()
         except Exception:
             self.disconnect_socket()
             raise
