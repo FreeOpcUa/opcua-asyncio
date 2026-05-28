@@ -208,6 +208,7 @@ class Subscription:
         self.subscription_id: int | None = None
         # Tracks whether the user explicitly deleted this subscription, so the
         # auto-reconnect supervisor can skip re-creating dead subscriptions.
+        # Read externally via the is_deleted property.
         self._deleted: bool = False
         # Monotonic timestamp of the last publish response we received for this
         # subscription. Used by the stale-subscription watchdog to detect a
@@ -224,6 +225,11 @@ class Subscription:
         # Set while publish_callback is dispatching notifications retrieved via
         # Republish; consumed by _explode_* to tag events with replayed=True.
         self._replaying: bool = False
+
+    @property
+    def is_deleted(self) -> bool:
+        """True once the user has called delete() (or it failed past a recoverable point)."""
+        return self._deleted
 
     async def init(self) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)

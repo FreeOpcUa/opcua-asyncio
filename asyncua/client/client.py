@@ -128,7 +128,7 @@ class Client:
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
         # Active subscriptions, tracked so the auto-reconnect supervisor can re-create
-        # them after a reconnect. Subscriptions mark themselves _deleted on delete().
+        # them after a reconnect. delete() flips Subscription.is_deleted; we skip those.
         self._subscriptions: list[Subscription] = []
         # Auto-reconnect configuration; populated by connect(auto_reconnect=True, ...).
         self._auto_reconnect: bool = False
@@ -911,7 +911,7 @@ class Client:
                         raise
                     delay = min(delay * 2, self._reconnect_max_delay)
                     continue
-                self._subscriptions = [s for s in self._subscriptions if not s._deleted]
+                self._subscriptions = [s for s in self._subscriptions if not s.is_deleted]
                 try:
                     await self._recreate_subscriptions()
                 except Exception:
@@ -987,7 +987,7 @@ class Client:
             self.uaclient.disconnect_socket()
 
     async def _recreate_subscriptions(self) -> None:
-        live = [s for s in self._subscriptions if not s._deleted]
+        live = [s for s in self._subscriptions if not s.is_deleted]
         self._subscriptions = live
         for sub in live:
             try:

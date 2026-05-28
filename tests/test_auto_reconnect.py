@@ -453,14 +453,14 @@ async def test_deleted_subscription_not_recreated_after_reconnect() -> None:
     try:
         sub = await client.create_subscription(50)
         await sub.delete()
-        assert sub._deleted is True
+        assert sub.is_deleted is True
 
         await _force_transport_close_and_wait(client)
         await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)
 
         # The deleted subscription should still be marked deleted, and no
         # new subscription_id assigned.
-        assert sub._deleted is True
+        assert sub.is_deleted is True
         # Client's registry should no longer carry it after the supervisor sweeps.
         assert sub not in client._subscriptions
     finally:
