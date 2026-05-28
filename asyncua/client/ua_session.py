@@ -9,7 +9,6 @@ defined in `AbstractSession`. It uses a `UaClient` only as a transport.
 from __future__ import annotations
 
 import asyncio
-import inspect
 import logging
 from collections.abc import Callable
 from enum import Enum
@@ -396,10 +395,9 @@ class UaSession(AbstractSession):
         for subid, callback in self._subscription_callbacks.items():
             try:
                 parameters = ua.PublishResult(subid, NotificationMessage=notification_message)
-                if inspect.iscoroutinefunction(callback):
-                    await callback(parameters)
-                else:
-                    callback(parameters)
+                result = callback(parameters)
+                if asyncio.iscoroutine(result):
+                    await result
             except Exception:
                 self.logger.exception("Exception while calling user callback")
 
@@ -453,10 +451,9 @@ class UaSession(AbstractSession):
                 )
             else:
                 try:
-                    if inspect.iscoroutinefunction(callback):
-                        await callback(response.Parameters)
-                    else:
-                        callback(response.Parameters)
+                    result = callback(response.Parameters)
+                    if asyncio.iscoroutine(result):
+                        await result
                 except Exception:
                     self.logger.exception("Exception while calling user callback")
             if response.Parameters.NotificationMessage.NotificationData:
