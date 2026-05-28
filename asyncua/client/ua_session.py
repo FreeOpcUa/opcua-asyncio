@@ -128,10 +128,8 @@ class UaSession(AbstractSession):
         self._client.protocol.closed = True
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
-        from .ua_client import UASocketProtocol
-
         self._set_state(SessionState.CLOSING)
-        if self._client.protocol.state == UASocketProtocol.CLOSED:
+        if self._client.protocol.state == "closed":
             self.logger.warning("close_session was called but connection is closed")
             self._set_state(SessionState.CLOSED)
             return
