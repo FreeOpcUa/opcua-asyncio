@@ -247,17 +247,18 @@ class UASocketProtocol(asyncio.Protocol):
 
     def _call_callback(self, request_id: int, body: Buffer | ua.Acknowledge) -> None:
         try:
-            self._callbackmap[request_id].set_result(body)
+            future = self._callbackmap.pop(request_id)
         except KeyError as ex:
             raise ua.UaError(
                 f"No request found for request id: {request_id}, pending are {self._callbackmap.keys()}, body was {body}"
             ) from ex
+        try:
+            future.set_result(body)
         except asyncio.InvalidStateError:
             if not self.closed:
                 self.logger.warning("Future for request id %s is already done", request_id)
-                return
-            self.logger.debug("Future for request id %s not handled due to disconnect", request_id)
-        del self._callbackmap[request_id]
+            else:
+                self.logger.debug("Future for request id %s not handled due to disconnect", request_id)
 
     def _setup_request_header(self, hdr: ua.RequestHeader, timeout: float = 1) -> None:
         """
