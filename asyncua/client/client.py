@@ -236,7 +236,7 @@ class Client:
             raise ua.UaError(f"Wrong format: `{string}`, expected at least 4 comma-separated values")
 
         if "::" in parts[3]:  # if the filename contains a colon, assume it's a conjunction and parse it
-            parts[3], client_key_password = parts[3].split("::")
+            parts[3], client_key_password = parts[3].split("::", 1)
         else:
             client_key_password = None
 
