@@ -198,6 +198,8 @@ class Client:
         Set user name for the connection.
         initial user from the URL will be overwritten
         """
+        if not isinstance(username, str):
+            raise TypeError(f"Username must be a string, got {username} of type {type(username)}")
         self._username = username
 
     def set_password(self, pwd: str) -> None:
