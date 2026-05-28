@@ -112,19 +112,22 @@ class UASocketProtocol(asyncio.Protocol):
         Reassembly is done by filling up a buffer until it verifies as a valid message (or a MessageChunk).
         """
         buf = ua.utils.Buffer(data)
-        while True:
+        while buf:
+            # Shadow copy of the position at iteration start; lets us stash the
+            # original unparsed bytes on partial-receive without an eager copy.
+            unparsed = buf.copy()
             try:
                 try:
                     header = header_from_binary(buf)
                 except ua.utils.NotEnoughData:
                     self.logger.debug("Not enough data while parsing header from server, waiting for more")
-                    self.receive_buffer = data
+                    self.receive_buffer = bytes(unparsed)
                     return
                 if len(buf) < header.body_size:
                     self.logger.debug(
                         "We did not receive enough data from server. Need %s got %s", header.body_size, len(buf)
                     )
-                    self.receive_buffer = data
+                    self.receive_buffer = bytes(unparsed)
                     return
                 msg = self._connection.receive_from_header_and_body(header, buf)
                 self._process_received_message(msg)
@@ -136,10 +139,6 @@ class UASocketProtocol(asyncio.Protocol):
                     response.ResponseHeader.ServiceResult.check()
                     self._open_secure_channel_exchange = response
                     self._connection.set_channel(response.Parameters, params.RequestType, params.ClientNonce)
-                if not buf:
-                    return
-                # Buffer still has bytes left, try to process again
-                data = bytes(buf)
             except ua.UaStatusCodeError as e:
                 self.logger.error("Got error status from server: %s", e)
                 self._fail_all_pending(e)
