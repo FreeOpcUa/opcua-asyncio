@@ -1136,3 +1136,40 @@ async def test_timeout_publish(opc, mocker):
     finally:
         await sub.delete()
         await opc.opc.delete_nodes([var])
+
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_subscription_lifetime_count_is_clamped(opc):
+    """Server must cap RequestedLifetimeCount so an orphaned subscription cannot live forever."""
+    cap = opc.server.iserver.max_lifetime_count
+    sub = await opc.opc.create_subscription(
+        ua.CreateSubscriptionParameters(
+            RequestedPublishingInterval=100,
+            RequestedLifetimeCount=cap * 100,
+            RequestedMaxKeepAliveCount=10,
+            MaxNotificationsPerPublish=10,
+            PublishingEnabled=True,
+            Priority=0,
+        )
+    )
+    try:
+        internal = opc.server.iserver.subscription_service.subscriptions[sub.subscription_id]
+        assert internal.data.RevisedLifetimeCount == cap
+    finally:
+        await sub.delete()
+
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_create_subscription_rejected_past_cap(opc):
+    """CreateSubscription must return BadTooManySubscriptions past iserver.max_subscriptions."""
+    iserver = opc.server.iserver
+    original_cap = iserver.max_subscriptions
+    iserver.max_subscriptions = 1
+    sub = await opc.opc.create_subscription(50)
+    try:
+        with pytest.raises(ua.UaStatusCodeError) as exc:
+            await opc.opc.create_subscription(50)
+        assert exc.value.code == ua.StatusCodes.BadTooManySubscriptions
+    finally:
+        iserver.max_subscriptions = original_cap
+        await sub.delete()

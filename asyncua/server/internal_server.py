@@ -72,6 +72,16 @@ class InternalServer:
         # Connections that haven't activated a session this many seconds after
         # connecting are closed by the binary server. 0 disables the watchdog.
         self.max_pending_activation_seconds: float = 30.0
+        # Subscription parameter clamps — protect against clients that ask for
+        # near-infinite RevisedLifetimeCount and then close the session without
+        # deleting subscriptions (CVE-2022-24298 family). Orphaned-subscription
+        # lifetime is RevisedLifetimeCount * RevisedPublishingInterval, so the
+        # count cap is what matters; PublishingInterval is left to the client.
+        self.max_lifetime_count: int = 15_000
+        self.max_keep_alive_count: int = 5_000
+        # Total subscription count cap across the whole server. Past this,
+        # CreateSubscription returns BadTooManySubscriptions.
+        self.max_subscriptions: int = 1_000
         self.certificate: Any = None
         self.private_key: Any = None
         self.aspace = AddressSpace()
