@@ -61,6 +61,10 @@ class InternalServer:
         self.min_session_timeout_ms: float = 5_000
         self.max_unacked_messages_per_subscription: int = 5_000
         self.max_monitored_item_queue_size: int = 10_000
+        # Per-connection inbound message queue depth. data_received() refuses
+        # further frames and closes the transport once this many parsed
+        # messages are queued behind the processor coroutine.
+        self.max_pending_messages_per_connection: int = 500
         self.certificate: Any = None
         self.private_key: Any = None
         self.aspace = AddressSpace()
