@@ -43,6 +43,7 @@ class OPCUAProtocol(asyncio.Protocol):
         )
         self.limits = limits
         self._task: asyncio.Task[Any] | None = None
+        self._activation_watchdog_task: asyncio.Task[Any] | None = None
 
     def __str__(self) -> str:
         return f"OPCUAProtocol({self.peer_name}, {self.processor.session})"  # type: ignore[union-attr]
@@ -51,6 +52,14 @@ class OPCUAProtocol(asyncio.Protocol):
 
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
         self.peer_name = transport.get_extra_info("peername")
+        if len(self.clients) >= self.iserver.max_connections:
+            _logger.warning(
+                "Refusing connection from %s: at max_connections=%s",
+                self.peer_name,
+                self.iserver.max_connections,
+            )
+            transport.close()
+            return
         _logger.info("New connection from %s", self.peer_name)
         self.transport = transport  # type: ignore[assignment]
         self.processor = UaProcessor(self.iserver, self.transport, self.limits)
@@ -58,6 +67,8 @@ class OPCUAProtocol(asyncio.Protocol):
         self.iserver.asyncio_transports.append(transport)
         self.clients.append(self)
         self._task = asyncio.create_task(self._process_received_message_loop())
+        if self.iserver.max_pending_activation_seconds > 0:
+            self._activation_watchdog_task = asyncio.create_task(self._activation_watchdog())
 
     def connection_lost(self, ex: BaseException | None) -> None:
         _logger.info("Lost connection from %s, %s", self.peer_name, ex)
@@ -76,6 +87,25 @@ class OPCUAProtocol(asyncio.Protocol):
             pass
         if self._task is not None:
             self._task.cancel()
+        if self._activation_watchdog_task is not None:
+            self._activation_watchdog_task.cancel()
+
+    async def _activation_watchdog(self) -> None:
+        """Close the transport if the client never activates a session within the grace window."""
+        try:
+            await asyncio.sleep(self.iserver.max_pending_activation_seconds)
+            if self.processor is not None and (self.processor.session is None or not self.processor.session.is_activated()):
+                _logger.warning(
+                    "Closing idle connection from %s: no ActivateSession within %.1fs",
+                    self.peer_name,
+                    self.iserver.max_pending_activation_seconds,
+                )
+                if self.transport is not None:
+                    self.transport.close()
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            _logger.exception("activation watchdog crashed")
 
     def data_received(self, data: bytes) -> None:
         self._buffer += data
