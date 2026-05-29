@@ -65,6 +65,13 @@ class InternalServer:
         # further frames and closes the transport once this many parsed
         # messages are queued behind the processor coroutine.
         self.max_pending_messages_per_connection: int = 500
+        # Maximum number of accepted TCP connections (pre-activation included).
+        # Refused at connection_made() to prevent FD exhaustion via parked sockets
+        # that never call ActivateSession.
+        self.max_connections: int = 1_000
+        # Connections that haven't activated a session this many seconds after
+        # connecting are closed by the binary server. 0 disables the watchdog.
+        self.max_pending_activation_seconds: float = 30.0
         self.certificate: Any = None
         self.private_key: Any = None
         self.aspace = AddressSpace()
