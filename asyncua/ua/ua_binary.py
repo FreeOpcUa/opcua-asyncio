@@ -613,6 +613,15 @@ def variant_from_binary(data: Buffer | IO) -> ua.Variant:
     return ua.Variant(value, vtype, dimensions, is_array=array)
 
 
+MAX_RESHAPE_ELEMENTS: int = 1_000_000
+"""Upper bound on the declared total size of a Variant Dimensions array.
+
+Guards _reshape() against attacker-controlled Dimensions that would otherwise
+allocate hundreds of MB of empty lists. Override at import time on a
+per-deployment basis if you legitimately exchange larger dense arrays.
+"""
+
+
 def _reshape(flat: list[Any], dims: list[int]) -> list[Any]:
     subdims = dims[1:]
     subsize = 1
@@ -620,7 +629,12 @@ def _reshape(flat: list[Any], dims: list[int]) -> list[Any]:
         if i == 0:
             i = 1
         subsize *= i
-    while dims[0] * subsize > len(flat):
+    declared = dims[0] * subsize
+    if declared > MAX_RESHAPE_ELEMENTS:
+        raise UaError(
+            f"Variant Dimensions declare {declared} elements, exceeds MAX_RESHAPE_ELEMENTS={MAX_RESHAPE_ELEMENTS}"
+        )
+    while declared > len(flat):
         flat.append([])
     if not subdims or subdims == [0]:
         return flat

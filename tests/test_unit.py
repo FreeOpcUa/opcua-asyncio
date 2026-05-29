@@ -384,6 +384,11 @@ def test_flatten():
     assert arry == l2
 
 
+def test_reshape_rejects_oversized_dimensions():
+    with pytest.raises(ua.UaError, match="exceeds MAX_RESHAPE_ELEMENTS"):
+        _reshape([1, 2, 3], [50_000_000])
+
+
 def test_custom_variant():
     with pytest.raises(ua.UaError):
         v = ua.Variant(b"ljsdfljds", ua.VariantTypeCustom(89))
