@@ -1023,6 +1023,13 @@ class Client:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
+                # The receive-side path normally revolves symmetric tokens lazily,
+                # on the next outgoing request. Trigger it eagerly here so the
+                # new keys are in effect immediately — otherwise an idle channel
+                # keeps signing with stale keys until the user's next call.
+                protocol = self.uaclient.protocol
+                if protocol is not None and protocol._connection.next_security_token.TokenId != 0:
+                    protocol._connection.revolve_tokens()
         except ConnectionError as e:
             _logger.info("connection error  in watchdog loop %s", e, exc_info=True)
             raise
