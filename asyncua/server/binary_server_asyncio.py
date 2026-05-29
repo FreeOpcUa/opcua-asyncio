@@ -38,7 +38,9 @@ class OPCUAProtocol(asyncio.Protocol):
         self.policies = policies
         self.clients = clients
         self.closing_tasks = closing_tasks
-        self.messages: asyncio.Queue[tuple[Any, Any]] = asyncio.Queue()
+        self.messages: asyncio.Queue[tuple[Any, Any]] = asyncio.Queue(
+            maxsize=iserver.max_pending_messages_per_connection
+        )
         self.limits = limits
         self._task: asyncio.Task[Any] | None = None
 
@@ -67,7 +69,11 @@ class OPCUAProtocol(asyncio.Protocol):
             self.closing_tasks.append(closing_task)
         if self in self.clients:
             self.clients.remove(self)
-        self.messages.put_nowait((None, None))
+        try:
+            self.messages.put_nowait((None, None))
+        except asyncio.QueueFull:
+            # Queue is already saturated; the cancel below will tear the loop down.
+            pass
         if self._task is not None:
             self._task.cancel()
 
@@ -95,7 +101,17 @@ class OPCUAProtocol(asyncio.Protocol):
                     )
                     return
                 # we have a complete message
-                self.messages.put_nowait((header, buf))
+                try:
+                    self.messages.put_nowait((header, buf))
+                except asyncio.QueueFull:
+                    _logger.warning(
+                        "Inbound queue full for %s (max=%s); closing connection",
+                        self.peer_name,
+                        self.messages.maxsize,
+                    )
+                    if self.transport is not None:
+                        self.transport.close()
+                    return
                 self._buffer = self._buffer[(header.header_size + header.body_size) :]
             except Exception:
                 _logger.exception("Exception raised while parsing message from client")
