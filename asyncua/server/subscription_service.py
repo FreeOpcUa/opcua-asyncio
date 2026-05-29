@@ -42,10 +42,14 @@ class SubscriptionService:
         request_callback: Callable[..., Any] | None = None,
     ) -> ua.CreateSubscriptionResult:
         self.logger.info("create subscription")
+        max_subs = self.iserver.max_subscriptions if self.iserver else 1_000
+        if len(self.subscriptions) >= max_subs:
+            self.logger.warning("Refusing subscription: at max_subscriptions=%s", max_subs)
+            raise utils.ServiceError(ua.StatusCodes.BadTooManySubscriptions)
         result = ua.CreateSubscriptionResult()
         result.RevisedPublishingInterval = params.RequestedPublishingInterval
-        result.RevisedLifetimeCount = params.RequestedLifetimeCount
-        result.RevisedMaxKeepAliveCount = params.RequestedMaxKeepAliveCount
+        result.RevisedLifetimeCount = self._clamp_lifetime_count(params.RequestedLifetimeCount)
+        result.RevisedMaxKeepAliveCount = self._clamp_keep_alive_count(params.RequestedMaxKeepAliveCount)
         self._sub_id_counter += 1
         result.SubscriptionId = self._sub_id_counter
         no_acks_limit = self.iserver.max_unacked_messages_per_subscription if self.iserver else 5000
@@ -63,6 +67,18 @@ class SubscriptionService:
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub
         return result
+
+    def _clamp_lifetime_count(self, requested: int) -> int:
+        if self.iserver is None:
+            return requested
+        cap = self.iserver.max_lifetime_count
+        return min(requested, cap) if requested > 0 else cap
+
+    def _clamp_keep_alive_count(self, requested: int) -> int:
+        if self.iserver is None:
+            return requested
+        cap = self.iserver.max_keep_alive_count
+        return min(requested, cap) if requested > 0 else cap
 
     def modify_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
         # Requested params are ignored, result = params set during create_subscription.
