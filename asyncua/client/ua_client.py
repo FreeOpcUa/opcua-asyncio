@@ -75,9 +75,6 @@ class UASocketProtocol(asyncio.Protocol):
         self._connection = SecureConnection(security_policy, limits)
 
         self.state = self.INITIALIZED
-        # _session_closed reflects whether the owning session has been torn down;
-        # _call_callback uses it to pick log level for late responses. Set via
-        # mark_session_closed() rather than reassigned externally.
         self._session_closed: bool = False
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
         # passing back the processed response to the request so that it can return it.
@@ -405,11 +402,7 @@ class UaClient:
         self.protocol: UASocketProtocol | None = None
         self._pre_request_hook: Callable[[], Awaitable[None]] | None = None
         self._state: UaClientState = UaClientState.DISCONNECTED
-        # Sync callbacks fired on every state change. Listeners get the new state.
-        # Replaces the older _state_ready / _transport_lost asyncio.Events.
         self._state_listeners: list[Callable[[UaClientState], None]] = []
-        # _disconnect_requested is set by the user via disconnect(); the supervisor
-        # observes it to know it should exit instead of retrying.
         self._disconnect_requested: bool = False
         self.session: UaSession = UaSession(self)
 

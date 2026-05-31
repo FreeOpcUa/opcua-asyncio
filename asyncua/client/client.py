@@ -448,7 +448,6 @@ class Client:
             await self.send_hello()
             await self.open_secure_channel()
         except Exception:
-            # clean up open socket
             self.disconnect_socket()
             raise
 
@@ -705,7 +704,6 @@ class Client:
             self.security_policy.peer_certificate = server_certificate
         elif self.security_policy.peer_certificate != server_certificate:
             raise ua.UaError("Server certificate mismatch")
-        # remember PolicyId's: we will use them in activate_session()
         ep = Client.find_endpoint(response.ServerEndpoints, self.security_policy.Mode, self.security_policy.URI)
 
         if self.certificate_validator and server_certificate:
@@ -1228,7 +1226,6 @@ class Client:
             return None
         _logger.warning("Revised values returned differ from subscription values: %s", results)
         revised_interval = results.RevisedPublishingInterval
-        # Adjust the MaxKeepAliveCount based on the RevisedPublishInterval when necessary
         new_keepalive_count = self.get_keepalive_count(revised_interval)
         if (
             revised_interval != params.RequestedPublishingInterval
