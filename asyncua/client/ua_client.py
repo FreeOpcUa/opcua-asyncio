@@ -184,9 +184,7 @@ class UASocketProtocol(asyncio.Protocol):
         next_request_id = self._request_id + 1
         try:
             binreq = struct_to_binary(request)
-            # Change to the new security token if the connection has been renewed.
-            if self._connection.next_security_token.TokenId != 0:
-                self._connection.revolve_tokens()
+            self.revolve_security_token()
             msg = self._connection.message_to_binary(binreq, message_type=message_type, request_id=next_request_id)
         except Exception:
             # reset request handle if any error
@@ -276,6 +274,11 @@ class UASocketProtocol(asyncio.Protocol):
         self._request_handle += 1
         hdr.RequestHandle = self._request_handle
         hdr.TimeoutHint = int(timeout * 1000)
+
+    def revolve_security_token(self) -> None:
+        """Switch to the renewed symmetric security token once one is pending."""
+        if self._connection.next_security_token.TokenId != 0:
+            self._connection.revolve_tokens()
 
     def disconnect_socket(self) -> None:
         self.logger.info("Request to close socket received")
@@ -478,6 +481,41 @@ class UaClient:
         """
         if self._state not in (UaClientState.DISCONNECTED, UaClientState.DISCONNECTING):
             self._set_state(UaClientState.DISCONNECTED)
+
+    def notify_transport_lost(self) -> None:
+        """Surface a transport loss detected by a higher-level watchdog, driving the
+        same state change as a dropped socket so the supervisor reacts."""
+        self._on_transport_lost(None)
+
+    def enter_reconnecting(self) -> None:
+        """Mark the client as reconnecting; the supervisor calls this before an attempt."""
+        self._set_state(UaClientState.RECONNECTING)
+
+    def mark_disconnected(self) -> None:
+        """Mark the client as disconnected; the supervisor calls this when it gives up."""
+        self._set_state(UaClientState.DISCONNECTED)
+
+    def revolve_security_token(self) -> None:
+        """Apply a renewed secure-channel token immediately instead of lazily.
+
+        The transport otherwise revolves on the next request; an idle channel that
+        was just renewed uses this so the new keys take effect at once.
+        """
+        if self.protocol is not None:
+            self.protocol.revolve_security_token()
+
+    @property
+    def has_transport(self) -> bool:
+        """True while a socket/secure-channel transport is attached."""
+        return self.protocol is not None
+
+    @property
+    def has_session(self) -> bool:
+        """True when a server-side session exists that ActivateSession could reuse."""
+        return self.session.has_session
+
+    def ensure_publish_loop(self) -> None:
+        self.session.ensure_publish_loop()
 
     # --- transport helpers ---
 

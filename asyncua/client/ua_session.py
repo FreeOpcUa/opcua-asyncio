@@ -66,6 +66,26 @@ class UaSession(AbstractSession):
         """Set state. Callers know the right transition; no validation here."""
         self._state = target
 
+    @property
+    def has_session(self) -> bool:
+        """True when a server-side session exists that ActivateSession could reuse."""
+        return self._state is not SessionState.CLOSED and not self.authentication_token.is_null()
+
+    def restore_authentication_token(self, token: ua.NodeId) -> None:
+        """Adopt `token` and bind it to the transport so the next ActivateSession
+        resumes the matching server-side session instead of creating a new one."""
+        self.authentication_token = token
+        if self._client.protocol is not None:
+            self._client.protocol.authentication_token = token
+
+    def rebind_authentication_token(self) -> None:
+        """Re-apply the current token to a freshly opened transport during reconnect."""
+        self.restore_authentication_token(self.authentication_token)
+
+    def reset_authentication_token(self) -> None:
+        """Forget the current token so a fresh CreateSession is required."""
+        self.restore_authentication_token(ua.NodeId())
+
     async def _send_request(
         self,
         request: Any,
@@ -90,8 +110,7 @@ class UaSession(AbstractSession):
         except BaseException:
             self._set_state(SessionState.NEW)
             raise
-        self.authentication_token = response.Parameters.AuthenticationToken
-        self._client.protocol.authentication_token = self.authentication_token
+        self.restore_authentication_token(response.Parameters.AuthenticationToken)
         self._set_state(SessionState.CREATED)
         return response.Parameters
 
