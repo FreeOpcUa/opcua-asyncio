@@ -26,10 +26,10 @@ from ..common.utils import wait_for
 from ..crypto import security_policies
 from ..ua.ua_binary import header_from_binary, nodeid_from_binary, struct_from_binary, struct_to_binary, uatcp_to_binary
 from ..ua.uaprotocol_auto import OpenSecureChannelResult
-from .ua_session import UaSession
+from .ua_session import SessionState, UaSession
 
 
-class UaClientState(str, Enum):
+class UaClientState(Enum):
     DISCONNECTED = "disconnected"
     CONNECTING = "connecting"
     SOCKET_OPEN = "socket_open"
@@ -39,15 +39,17 @@ class UaClientState(str, Enum):
     DISCONNECTING = "disconnecting"
 
 
+class UASocketState(Enum):
+    INITIALIZED = "initialized"
+    OPEN = "open"
+    CLOSED = "closed"
+
+
 class UASocketProtocol(asyncio.Protocol):
     """
     Handle socket connection and send ua messages.
     Timeout is the timeout used while waiting for an ua answer from server.
     """
-
-    INITIALIZED = "initialized"
-    OPEN = "open"
-    CLOSED = "closed"
 
     def __init__(
         self,
@@ -74,22 +76,24 @@ class UASocketProtocol(asyncio.Protocol):
             limits = copy.deepcopy(limits)  # Make a copy because the limits can change in the session
         self._connection = SecureConnection(security_policy, limits)
 
-        self.state = self.INITIALIZED
-        self._session_closed: bool = False
+        self.state: UASocketState = UASocketState.INITIALIZED
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
         # passing back the processed response to the request so that it can return it.
         self._open_secure_channel_exchange: ua.OpenSecureChannelResponse | ua.OpenSecureChannelParameters | None = None
         self.pre_request_hook: Callable[[], Awaitable[None]] | None = None
         # Synchronous callback fired from connection_lost — used by the supervisor to detect transport loss.
         self.on_connection_lost: Callable[[Exception | None], None] | None = None
+        # Predicate telling whether the owning session is closing, so late responses
+        # to cancelled requests are logged as expected teardown rather than warnings.
+        self.is_session_closing: Callable[[], bool] | None = None
 
     def connection_made(self, transport: asyncio.Transport) -> None:  # type: ignore[override]
-        self.state = self.OPEN
+        self.state = UASocketState.OPEN
         self.transport = transport
 
     def connection_lost(self, exc: Exception | None) -> None:
         self.logger.info("Socket has closed connection")
-        self.state = self.CLOSED
+        self.state = UASocketState.CLOSED
         self.transport = None
         self._fail_all_pending(exc or ConnectionError("connection lost"))
         if self.on_connection_lost is not None:
@@ -212,7 +216,7 @@ class UASocketProtocol(asyncio.Protocol):
         except UaError as ex:
             raise ex
         except Exception as ex:
-            if self.state != self.OPEN:
+            if self.state is not UASocketState.OPEN:
                 raise ConnectionError("Connection is closed") from None
             raise Exception("Unhandled exception while sending request to OPC UA server") from ex
         self.check_answer(data, f" in response to {request.__class__.__name__}")
@@ -249,18 +253,10 @@ class UASocketProtocol(asyncio.Protocol):
         try:
             future.set_result(body)
         except asyncio.InvalidStateError:
-            if not self._session_closed:
-                self.logger.warning("Future for request id %s is already done", request_id)
-            else:
+            if self.is_session_closing is not None and self.is_session_closing():
                 self.logger.debug("Future for request id %s not handled due to disconnect", request_id)
-
-    def mark_session_closed(self, closed: bool) -> None:
-        """Notify the protocol that the owning session is being torn down (or reopened).
-
-        Used so late-arriving responses are logged at debug rather than warning
-        once the caller no longer expects them.
-        """
-        self._session_closed = closed
+            else:
+                self.logger.warning("Future for request id %s is already done", request_id)
 
     def _setup_request_header(self, hdr: ua.RequestHeader, timeout: float = 1) -> None:
         """
@@ -276,6 +272,10 @@ class UASocketProtocol(asyncio.Protocol):
         """Switch to the renewed symmetric security token once one is pending."""
         if self._connection.next_security_token.TokenId != 0:
             self._connection.revolve_tokens()
+
+    @property
+    def is_closed(self) -> bool:
+        return self.state is UASocketState.CLOSED
 
     def disconnect_socket(self) -> None:
         self.logger.info("Request to close socket received")
@@ -519,7 +519,11 @@ class UaClient:
         self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
         self.protocol.pre_request_hook = self._pre_request_hook
         self.protocol.on_connection_lost = self._on_transport_lost
+        self.protocol.is_session_closing = self._is_session_closing
         return self.protocol
+
+    def _is_session_closing(self) -> bool:
+        return self.session.state in (SessionState.CLOSING, SessionState.CLOSED)
 
     @property
     def pre_request_hook(self) -> Callable[[], Awaitable[None]] | None:
@@ -551,7 +555,7 @@ class UaClient:
             # already tearing down; let the in-flight call complete
             return
         self._set_state(UaClientState.DISCONNECTING)
-        if self.protocol is not None and self.protocol.state != UASocketProtocol.CLOSED:
+        if self.protocol is not None and self.protocol.state is not UASocketState.CLOSED:
             self.protocol.disconnect_socket()
         self.protocol = None
         self._set_state(UaClientState.DISCONNECTED)
@@ -571,7 +575,7 @@ class UaClient:
         return result
 
     async def close_secure_channel(self) -> None:
-        if not self.protocol or self.protocol.state == UASocketProtocol.CLOSED:
+        if not self.protocol or self.protocol.state is UASocketState.CLOSED:
             self.logger.warning("close_secure_channel was called but connection is closed")
             return
         await self.protocol.close_secure_channel()

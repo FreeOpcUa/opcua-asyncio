@@ -10,7 +10,6 @@ from itertools import chain
 from sortedcontainers import SortedDict  # type: ignore
 
 from asyncua import Client, Node, ua
-from asyncua.client.ua_client import UASocketProtocol
 from asyncua.ua.uaerrors import BadSessionClosed, BadSessionNotActivated
 
 from ...crypto.security_policies import SecurityPolicy
@@ -521,7 +520,7 @@ class HaManager:
             if (
                 force
                 or not client.uaclient.protocol
-                or (client.uaclient.protocol and client.uaclient.protocol.state == UASocketProtocol.CLOSED)
+                or (client.uaclient.protocol and client.uaclient.protocol.is_closed)
             ):
                 _logger.info("Virtually reconnecting and resubscribing %s", client)
                 await self.ha_client.reconnect(client=client)
