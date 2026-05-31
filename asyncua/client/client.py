@@ -93,7 +93,6 @@ class Client:
         self._password: str | None = None
         self.strip_url_credentials: bool = True
         self._server_url = urlparse(url)
-        # take initial username and password from the url
         userinfo, have_info, _ = self._server_url.netloc.rpartition("@")
         if have_info:
             username, have_password, password = userinfo.partition(":")
@@ -127,27 +126,19 @@ class Client:
         self._stale_watchdog_task: asyncio.Task[None] | None = None
         self._locale = ["en"]
         self._watchdog_intervall = watchdog_intervall
-        # Active subscriptions, tracked so the auto-reconnect supervisor can re-create
-        # them after a reconnect. delete() flips Subscription.is_deleted; we skip those.
+        # Tracked so the auto-reconnect supervisor can re-create them; delete()
+        # flips Subscription.is_deleted and the supervisor skips those.
         self._subscriptions: list[Subscription] = []
-        # Auto-reconnect configuration; populated by connect(auto_reconnect=True, ...).
         self._auto_reconnect: bool = False
         self._reconnect_max_delay: float = 30.0
         self._reconnect_request_timeout: float = 60.0
-        # Stale-subscription watchdog: a subscription is "stale" if no publish
-        # response has arrived for `publishing_interval * keepalive_count *
-        # stale_margin` seconds. The watchdog tries `subscription.recreate()`;
-        # if that fails, the failure escalates to a full reconnect.
         self._stale_check_margin: float = 1.5
         self._stale_check_interval: float = 0.5
         self.certificate_validator: CertificateValidatorMethod | None = None
         """hook to validate a certificate, raises a ServiceError when not valid"""
-        # Persist the session's authentication_token + server_nonce so a fresh
-        # client process can reuse the existing server-side session via
-        # ActivateSession (spec Part 4 §6.7). Set before connect(); the file is
-        # written with mode 0o600 after each successful activate and removed on
-        # graceful disconnect(). Useful when the client crashes between
-        # connects and the server hasn't yet expired the orphaned session.
+        # Set before connect() to let a fresh client process resume the existing
+        # server-side session via ActivateSession instead of creating a new one
+        # (spec Part 4 §6.7) — useful after a client crash.
         self.session_state_path: Path | None = None
 
     async def __aenter__(self) -> "Client":
@@ -183,7 +174,6 @@ class Client:
         url = self._server_url
         _userinfo, have_info, hostinfo = url.netloc.rpartition("@")
         if have_info:
-            # remove credentials from url, preventing them to be sent unencrypted in e.g. send_hello
             if self.strip_url_credentials:
                 url = url.__class__(url[0], hostinfo, *url[2:])
         return url
@@ -249,7 +239,7 @@ class Client:
         if len(parts) < 4:
             raise ua.UaError(f"Wrong format: `{string}`, expected at least 4 comma-separated values")
 
-        if "::" in parts[3]:  # if the filename contains a colon, assume it's a conjunction and parse it
+        if "::" in parts[3]:
             parts[3], client_key_password = parts[3].split("::", 1)
         else:
             client_key_password = None
@@ -279,7 +269,6 @@ class Client:
             new_policy = security_policies.SecurityPolicyNone()
             self.security_policy = new_policy
             self.uaclient.security_policy = new_policy
-            # load certificate from server's list of endpoints
             endpoints = await self.connect_and_get_server_endpoints()
             endpoint = Client.find_endpoint(endpoints, mode, policy.URI)
             server_certificate = uacrypto.x509_from_der(_first_cert_from_chain(endpoint.ServerCertificate))
@@ -703,7 +692,6 @@ class Client:
         params.ClientDescription = desc
         params.EndpointUrl = self.server_url.geturl()
         params.SessionName = f"{self.description} Session{self._session_counter}"
-        # Requested maximum number of milliseconds that a Session should remain open without activity
         params.RequestedSessionTimeout = self.session_timeout
         params.MaxResponseMessageSize = 0  # means no max size
         response = await self.uaclient.create_session(params)
@@ -732,7 +720,6 @@ class Client:
                 raise ua.UaStatusCodeError(exp.code) from exp
 
         self._policy_ids = ep.UserIdentityTokens
-        #  Actual maximum number of milliseconds that a Session shall remain open without activity
         if self.session_timeout != response.RevisedSessionTimeout:
             _logger.warning(
                 "Requested session timeout to be %dms, got %dms instead",
@@ -1264,13 +1251,10 @@ class Client:
                 new_keepalive_count,
             )
             modified_params = ua.ModifySubscriptionParameters()
-            # copy the existing subscription parameters
             copy_dataclass_attr(params, modified_params)
-            # then override with the revised values
             modified_params.RequestedMaxKeepAliveCount = new_keepalive_count
             modified_params.SubscriptionId = results.SubscriptionId
             modified_params.RequestedPublishingInterval = results.RevisedPublishingInterval
-            # update LifetimeCount but chances are it will be re-revised again
             modified_params.RequestedLifetimeCount = results.RevisedLifetimeCount
             return modified_params
         return None

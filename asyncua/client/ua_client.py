@@ -82,7 +82,6 @@ class UASocketProtocol(asyncio.Protocol):
         # needed to pass params from asynchronous request to synchronous data receive callback, as well as
         # passing back the processed response to the request so that it can return it.
         self._open_secure_channel_exchange: ua.OpenSecureChannelResponse | ua.OpenSecureChannelParameters | None = None
-        # Hook for upper layer tasks before a request is sent (optional)
         self.pre_request_hook: Callable[[], Awaitable[None]] | None = None
         # Synchronous callback fired from connection_lost — used by the supervisor to detect transport loss.
         self.on_connection_lost: Callable[[Exception | None], None] | None = None
@@ -163,7 +162,6 @@ class UASocketProtocol(asyncio.Protocol):
             self.logger.fatal("Received an error: %r", msg)
             self.disconnect_socket()
             if msg.Error is not None:
-                # Automatically print human-readable error text.
                 msg.Error.check()
         else:
             raise ua.UaError(f"Unsupported message type: {msg}")
@@ -217,7 +215,6 @@ class UASocketProtocol(asyncio.Protocol):
         try:
             data = await wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
         except UaError as ex:
-            # Recieved UA error, re-raise it to the caller
             raise ex
         except Exception as ex:
             if self.state != self.OPEN:
