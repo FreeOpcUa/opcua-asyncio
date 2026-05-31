@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 import logging
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Callable, Generator, Iterable, Sequence
 from dataclasses import dataclass, field
 from enum import IntEnum
 from functools import partial
@@ -125,6 +125,7 @@ class HaClient:
         self.ideal_map: dict[str, SortedDict] = {}
         self.sub_names: set[str] = set()
         self.url_to_reset: set[str] = set()
+        self._state_listener_unsubs: list[Callable[[], None]] = []
         self.is_running = False
 
         if config.ha_mode != HaMode.WARM:
@@ -170,16 +171,25 @@ class HaClient:
         # refresh Reconciliator.node_to_handle so later unsubscribe calls use the
         # current handles.
         url = client.server_url.geturl()
-        prev: list[UaClientState | None] = [None]
+        prev: UaClientState | None = None
 
         def on_state_change(state: UaClientState) -> None:
-            was, prev[0] = prev[0], state
-            if was is UaClientState.RECONNECTING and state is UaClientState.CONNECTED:
+            nonlocal prev
+            if prev is UaClientState.RECONNECTING and state is UaClientState.CONNECTED:
                 self.reconciliator.refresh_handles(url)
+            prev = state
 
-        client.uaclient._add_state_listener(on_state_change)
+        unsub = client.uaclient._add_state_listener(on_state_change)
+        self._state_listener_unsubs.append(unsub)
 
     async def stop(self):
+        for unsub in self._state_listener_unsubs:
+            try:
+                unsub()
+            except Exception:
+                _logger.exception("state listener unsubscribe raised")
+        self._state_listener_unsubs.clear()
+
         to_stop: Sequence[KeepAlive | HaManager | Reconciliator] = chain(
             self._keepalive_task, self._manager_task, self._reconciliator_task
         )
