@@ -37,7 +37,6 @@ from ..ua.uaerrors import (
     BadSessionIdInvalid,
 )
 from .ua_client import StateSubscription, UaClient, UaClientState
-from .ua_session import SessionState
 
 _logger = logging.getLogger(__name__)
 
@@ -413,12 +412,12 @@ class Client:
                 except BadSessionIdInvalid:
                     _logger.info("Persisted session expired on server; creating fresh one")
                     self._clear_persisted_session()
-                    self.uaclient.session.authentication_token = ua.NodeId()
+                    self.uaclient.session.reset_authentication_token()
                     self._server_nonce = None
                 except Exception:
                     _logger.warning("Failed to resume persisted session; creating fresh one", exc_info=True)
                     self._clear_persisted_session()
-                    self.uaclient.session.authentication_token = ua.NodeId()
+                    self.uaclient.session.reset_authentication_token()
                     self._server_nonce = None
             try:
                 await self.create_session()
@@ -506,9 +505,7 @@ class Client:
             )
             self._clear_persisted_session()
             return False
-        self.uaclient.session.authentication_token = token
-        if self.uaclient.protocol is not None:
-            self.uaclient.protocol.authentication_token = token
+        self.uaclient.session.restore_authentication_token(token)
         self._server_nonce = nonce
         return True
 
@@ -802,9 +799,9 @@ class Client:
                                 await self.uaclient.inform_subscriptions(ua.StatusCode(ua.StatusCodes.BadShutdown))
                             except Exception:
                                 _logger.debug("inform_subscriptions raised during loss handling", exc_info=True)
-                            self.uaclient._set_state(UaClientState.DISCONNECTED)
+                            self.uaclient.mark_disconnected()
                             return
-                        self.uaclient._set_state(UaClientState.RECONNECTING)
+                        self.uaclient.enter_reconnecting()
                         if not await self._reconnect_with_backoff():
                             return
                 except asyncio.CancelledError:
@@ -831,7 +828,7 @@ class Client:
                         _logger.exception(
                             "Subscription %s recreate failed; escalating to reconnect", sub.subscription_id
                         )
-                        self.uaclient._on_transport_lost(None)
+                        self.uaclient.notify_transport_lost()
                         return
         except asyncio.CancelledError:
             pass
@@ -880,8 +877,7 @@ class Client:
                 ) as exc:
                     _logger.warning("Reconnect failed with security error %r; refreshing endpoints", exc)
                     await self._refresh_endpoints_quiet()
-                    if self.uaclient.state is UaClientState.DISCONNECTED:
-                        self.uaclient._set_state(UaClientState.RECONNECTING)
+                    self.uaclient.enter_reconnecting()
                     try:
                         await asyncio.sleep(delay)
                     except asyncio.CancelledError:
@@ -890,8 +886,7 @@ class Client:
                     continue
                 except Exception as exc:
                     _logger.warning("Reconnect attempt failed: %r; retrying in %.1fs", exc, delay)
-                    if self.uaclient.state is UaClientState.DISCONNECTED:
-                        self.uaclient._set_state(UaClientState.RECONNECTING)
+                    self.uaclient.enter_reconnecting()
                     try:
                         await asyncio.sleep(delay)
                     except asyncio.CancelledError:
@@ -916,19 +911,18 @@ class Client:
         alive on the server). Returns False if a fresh session had to be created.
         Raises on transport/channel-level failures so the outer loop can retry.
         """
-        session = self.uaclient.session
-        had_session = session.state is not SessionState.CLOSED and not session.authentication_token.is_null()
+        had_session = self.uaclient.has_session
         await self.connect_socket()
         try:
             await self.send_hello()
             await self.open_secure_channel()
-            if had_session and self.uaclient.protocol is not None:
-                self.uaclient.protocol.authentication_token = session.authentication_token
+            if had_session:
+                self.uaclient.session.rebind_authentication_token()
                 try:
                     await self.activate_session(
                         username=self._username, password=self._password, certificate=self.user_certificate
                     )
-                    self.uaclient.session.ensure_publish_loop()
+                    self.uaclient.ensure_publish_loop()
                     self._start_renew_loop()
                     return True
                 except BadSessionIdInvalid:
@@ -970,7 +964,7 @@ class Client:
         """
         await self._cancel_task(self._renew_channel_task)
         self._renew_channel_task = None
-        if self.uaclient.protocol is not None:
+        if self.uaclient.has_transport:
             self.uaclient.disconnect_socket()
 
     async def _recreate_subscriptions(self) -> None:
@@ -983,10 +977,10 @@ class Client:
                 _logger.exception("Failed to restore subscription")
 
     async def _close_session_quiet(self) -> None:
-        # Low-level close: does NOT touch the supervisor task; safe to call from
-        # inside the supervisor's reconnect retry loop.
+        # Goes through UaClient, not Client.close_session, so it does NOT cancel the
+        # supervisor task; safe to call from inside the reconnect retry loop.
         try:
-            await self.uaclient.session.close_session(False)
+            await self.uaclient.close_session(False)
         except Exception:
             _logger.debug("close_session during cleanup raised", exc_info=True)
 
@@ -1010,13 +1004,7 @@ class Client:
                 await asyncio.sleep(duration)
                 _logger.debug("renewing channel")
                 await self.open_secure_channel(renew=True)
-                # The receive-side path normally revolves symmetric tokens lazily,
-                # on the next outgoing request. Trigger it eagerly here so the
-                # new keys are in effect immediately — otherwise an idle channel
-                # keeps signing with stale keys until the user's next call.
-                protocol = self.uaclient.protocol
-                if protocol is not None and protocol._connection.next_security_token.TokenId != 0:
-                    protocol._connection.revolve_tokens()
+                self.uaclient.revolve_security_token()
         except ConnectionError as e:
             _logger.info("connection error  in watchdog loop %s", e, exc_info=True)
             raise
@@ -1218,7 +1206,7 @@ class Client:
             overflow=overflow,
         )
         # Wire the DISCONNECT overflow policy to the supervisor's reconnect path.
-        subscription.set_overflow_disconnect_handler(lambda: self.uaclient._on_transport_lost(None))
+        subscription.set_overflow_disconnect_handler(self.uaclient.notify_transport_lost)
         results = await subscription.init()
         new_params = self.get_subscription_revised_params(params, results)
         if new_params:
