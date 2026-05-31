@@ -195,28 +195,39 @@ class TestHaClient:
         assert node_id == node
         assert val == values
 
-        # real map data are OK
         reconciliator = ha_client.reconciliator
-        _url = None
-        for _url, vsub in reconciliator.real_map.items():
-            vs = vsub[sub]
-            if vs.publishing:
+
+        def _publishing_url() -> str | None:
+            for url, vsub in reconciliator.real_map.items():
+                vs = vsub.get(sub)
+                if vs is not None and vs.publishing:
+                    return url
+            return None
+
+        # HaManager elects a primary on its first tick; wait_sub_in_real_map
+        # above doesn't guarantee that has happened yet.
+        primary_url = None
+        for _ in range(40):
+            primary_url = _publishing_url()
+            if primary_url is not None:
                 break
+            await asyncio.sleep(0.25)
+        assert primary_url is not None, "no client has publishing=True before failover"
+        primary_client = ha_client.get_client_by_url(primary_url)
+        secondary_client = (set(ha_client.get_clients()) - {primary_client}).pop()
+        await ha_client.failover_warm(secondary_client, {primary_client})
 
-        primary_client = ha_client.get_client_by_url(_url)
-        secondary_client = set(ha_client.get_clients()) - {primary_client}
-        await ha_client.failover_warm(secondary_client.pop(), {primary_client})
-
-        # hack to wait for the next reconciliator iteration
-        sub2 = await ha_client.create_subscription(100, myhandler)
-        await wait_sub_in_real_map(ha_client, sub2)
-
-        for _url, vsub in reconciliator.real_map.items():
-            vs = vsub[sub]
-            if vs.publishing:
+        # Wait for the reconciliator to actually flip publishing on the wire,
+        # not just for a new subscription to land in real_map (the previous
+        # "create sub2 and wait" hack let update_subscription_modes lag behind).
+        new_primary_url = None
+        for _ in range(40):
+            new_primary_url = _publishing_url()
+            if new_primary_url is not None and new_primary_url != primary_url:
                 break
-
-        new_primary = ha_client.get_client_by_url(_url)
+            await asyncio.sleep(0.25)
+        assert new_primary_url is not None and new_primary_url != primary_url
+        new_primary = ha_client.get_client_by_url(new_primary_url)
         assert primary_client != new_primary
 
     @pytest.mark.asyncio
@@ -500,14 +511,23 @@ class TestReconciliator:
         # Sanity: gate must keep HaClient.reconnect untouched while auto-reconnect runs.
         reconnect_spy = mocker.spy(ha_client, "reconnect")
 
-        # Force a socket-level drop -- mimics the test_auto_reconnect helper.
-        target.uaclient.protocol.transport.close()
-
-        # The supervisor goes RECONNECTING then back to CONNECTED.
-        for _ in range(60):
-            if target.uaclient.state is UaClientState.CONNECTED:
-                break
-            await asyncio.sleep(0.1)
+        # Force a socket-level drop and wait through the full CONNECTED ->
+        # !CONNECTED -> CONNECTED cycle. Subscribing before the close means any
+        # transition that lands while we're still preparing is buffered, not
+        # lost: polling client.uaclient.state directly is racy because the
+        # cycle can complete between two poll ticks.
+        async with target.uaclient.subscribe_state() as state_sub:
+            target.uaclient.protocol.transport.close()
+            saw_leave = False
+            deadline = asyncio.get_event_loop().time() + 6.0
+            while True:
+                remaining = deadline - asyncio.get_event_loop().time()
+                assert remaining > 0, "did not observe full reconnect cycle in time"
+                state = await asyncio.wait_for(state_sub.next_change(), timeout=remaining)
+                if state is not UaClientState.CONNECTED:
+                    saw_leave = True
+                elif saw_leave:
+                    break
         assert target.uaclient.state is UaClientState.CONNECTED
 
         # Subscriptions are still in place on the recovered client.
