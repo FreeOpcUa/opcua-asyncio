@@ -10,7 +10,7 @@ from asyncua.client.ha import (
     HaSecurityConfig,
 )
 from asyncua.client.ha.common import ClientNotFound
-from asyncua.client.ua_client import UASocketProtocol
+from asyncua.client.ua_client import UASocketState
 from asyncua.common.subscription import Subscription
 from asyncua.crypto import security_policies
 from asyncua.crypto.uacrypto import CertProperties
@@ -54,7 +54,7 @@ class TestHaClient:
     async def test_clients_connected(self, ha_client):
         # check lower level clients are connected
         await ha_client.start()
-        await wait_clients_socket(ha_client, UASocketProtocol.OPEN)
+        await wait_clients_socket(ha_client, UASocketState.OPEN)
         for client, srv_info in ha_client.clients.items():
             # TODO: Enable this when freeopcua server fully supports Service Levels
             # assert srv_info.status == 255
@@ -62,7 +62,7 @@ class TestHaClient:
             assert srv_info.url == client.server_url.geturl()
 
         await ha_client.stop()
-        await wait_clients_socket(ha_client, UASocketProtocol.CLOSED)
+        await wait_clients_socket(ha_client, UASocketState.CLOSED)
 
     @pytest.mark.asyncio
     async def test_all_tasks_running(self, ha_client):
@@ -162,14 +162,14 @@ class TestHaClient:
     @pytest.mark.asyncio
     async def test_reconnect(self, ha_client):
         await ha_client.start()
-        await wait_clients_socket(ha_client, UASocketProtocol.OPEN)
+        await wait_clients_socket(ha_client, UASocketState.OPEN)
 
         first_client = next(iter(ha_client.get_clients()))
         socket = first_client.uaclient.protocol
         await ha_client.reconnect(first_client)
 
         assert first_client.server_url.geturl() in ha_client.url_to_reset
-        await wait_clients_socket(ha_client, UASocketProtocol.OPEN)
+        await wait_clients_socket(ha_client, UASocketState.OPEN)
         new_socket = first_client.uaclient.protocol
         assert socket != new_socket
 
@@ -247,7 +247,7 @@ class TestHaClient:
             assert ha_client.security_config.private_key == user_key
 
             await ha_client.start()
-            await wait_clients_socket(ha_client, UASocketProtocol.OPEN)
+            await wait_clients_socket(ha_client, UASocketState.OPEN)
 
             for client in ha_client.get_clients():
                 assert isinstance(client.security_policy, security_policies.SecurityPolicy)
@@ -340,11 +340,11 @@ class TestHaManager:
     @pytest.mark.asyncio
     async def test_reconnect(self, ha_client):
         await ha_client.start()
-        await wait_clients_socket(ha_client, UASocketProtocol.OPEN)
+        await wait_clients_socket(ha_client, UASocketState.OPEN)
         for c in ha_client.get_clients():
             await c.disconnect()
         # the HaManager task should reconnect all the clients automagically
-        await wait_clients_socket(ha_client, UASocketProtocol.OPEN)
+        await wait_clients_socket(ha_client, UASocketState.OPEN)
 
 
 class TestReconciliator:

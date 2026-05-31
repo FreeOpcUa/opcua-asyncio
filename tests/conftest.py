@@ -12,7 +12,7 @@ import pytest
 
 from asyncua import Client, Server, ua
 from asyncua.client.ha.ha_client import HaClient, HaConfig, HaMode
-from asyncua.client.ua_client import UASocketProtocol
+from asyncua.client.ua_client import UASocketState
 from asyncua.server.history import HistoryDict
 from asyncua.server.history_sql import HistorySQLite
 
@@ -416,19 +416,19 @@ async def ha_client(ha_config, ha_servers):
 async def wait_clients_socket(ha_client, state):
     for client in ha_client.get_clients():
         for _ in range(RETRY):
-            if state == UASocketProtocol.CLOSED and not client.uaclient.protocol:
+            if state == UASocketState.CLOSED and not client.uaclient.protocol:
                 break
             if client.uaclient.protocol and client.uaclient.protocol.state == state:
                 # for connection OPEN, also wait for the session to be established
                 # otherwise we can encounter failure on disconnect
-                if state == UASocketProtocol.OPEN:
+                if state == UASocketState.OPEN:
                     if client._renew_channel_task:
                         break
                 else:
                     break
             await sleep(SLEEP)
         assert (
-            not client.uaclient.protocol and state == UASocketProtocol.CLOSED
+            not client.uaclient.protocol and state == UASocketState.CLOSED
         ) or client.uaclient.protocol.state == state
 
 

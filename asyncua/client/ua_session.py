@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-class SessionState(str, Enum):
+class SessionState(Enum):
     NEW = "new"
     CREATING = "creating"
     CREATED = "created"
@@ -98,7 +98,6 @@ class UaSession(AbstractSession):
         if self._client.protocol is None:
             raise ConnectionError("Connection is not open")
         self.logger.info("create_session")
-        self._client.protocol.mark_session_closed(False)
         self._set_state(SessionState.CREATING)
         try:
             request = ua.CreateSessionRequest()
@@ -144,11 +143,10 @@ class UaSession(AbstractSession):
             self._set_state(SessionState.CLOSING)
             self._set_state(SessionState.CLOSED)
             return
-        self._client.protocol.mark_session_closed(True)
+        self._set_state(SessionState.CLOSING)
         if self._publish_task and not self._publish_task.done():
             self._publish_task.cancel()
-        self._set_state(SessionState.CLOSING)
-        if self._client.protocol.state == "closed":
+        if self._client.protocol.is_closed:
             self.logger.warning("close_session was called but connection is closed")
             self._set_state(SessionState.CLOSED)
             return
