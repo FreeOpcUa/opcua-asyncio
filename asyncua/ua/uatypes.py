@@ -277,7 +277,7 @@ class _MaskEnum(IntEnum):
         """Take an integer and interpret it as a set of enum values."""
         if not isinstance(the_int, int):
             raise ValueError(f"Argument should be an int, we received {the_int} fo type {type(the_int)}")
-        return {cls(b) for b in cls._bits(the_int)}
+        return {cls(b) for b in cls._bits(the_int) if b in cls._value2member_map_}
 
     @classmethod
     def to_bitfield(cls, collection: Any) -> int:
