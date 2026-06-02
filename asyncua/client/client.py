@@ -13,6 +13,7 @@ from urllib.parse import ParseResult, unquote, urlparse
 
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
+from cryptography.x509.oid import ExtendedKeyUsageOID
 
 import asyncua
 from asyncua import ua
@@ -27,7 +28,7 @@ from ..common.ua_utils import copy_dataclass_attr, value_to_datavalue
 from ..common.utils import ServiceError, create_nonce
 from ..common.xmlexporter import XmlExporter
 from ..common.xmlimporter import XmlImporter
-from ..crypto import security_policies, uacrypto
+from ..crypto import cert_gen, security_policies, uacrypto
 from ..crypto.validator import CertificateValidatorMethod
 from ..ua.uaerrors import (
     BadCertificateInvalid,
@@ -330,6 +331,58 @@ class Client:
         Load user private key. This is used for authenticating using certificate
         """
         self.user_private_key = await uacrypto.load_private_key(path, password, extension)
+
+    async def setup_self_signed_certificate(
+        self,
+        key_file: Path,
+        cert_file: Path,
+        subject_attrs: dict[str, str] | None = None,
+        extended: list[x509.ObjectIdentifier] | None = None,
+        host_name: str | None = None,
+    ) -> tuple[Path, Path]:
+        """Generate a self-signed application instance certificate and private key at the
+        given paths when they are missing or invalid, using this client's application_uri.
+
+        Nothing is regenerated when both files already exist and the certificate is still
+        valid (matching application_uri / host_name and not expired); otherwise the missing
+        or invalid artifact is rebuilt. Parent directories are created as needed. The pair is
+        left on disk for the caller to load through set_security; the client's own security
+        state is not modified.
+
+        :param key_file: Path to the RSA private key, in PEM (PKCS8) format. Loaded and reused
+            if present; otherwise a fresh 2048-bit key is generated and written here. A
+            regenerated key always forces the certificate to be regenerated too.
+        :param cert_file: Path to the certificate, in DER format. Regenerated when missing,
+            when the key was just regenerated, or when the existing certificate fails
+            validation. Generated certificates are valid for 365 days.
+        :param subject_attrs: Extra subject Distinguished Name fields as
+            ``{attribute_name: value}``, e.g.
+            ``{"countryName": "DE", "organizationName": "ACME"}``. The common name (CN) is set
+            automatically from this client's ``application_uri``. Keys must be X.509 attribute
+            names known to ``cryptography`` (see ``asyncua.crypto.cert_gen.OID_NAME_MAP`` for the
+            accepted set). Defaults to no extra fields.
+        :param extended: Extended Key Usage OIDs declaring how the certificate may be used.
+            ``None`` or an empty list defaults to ``[ExtendedKeyUsageOID.CLIENT_AUTH]``; pass
+            ``[ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH]`` for a pair
+            usable as both client and server.
+        :param host_name: Host name embedded as a DNS SubjectAltName and checked when validating
+            an existing certificate. Defaults to the local machine's hostname
+            (``socket.gethostname()``). The ``application_uri`` is always added as a URI SAN.
+        :return: ``(cert_file, key_file)`` as ``Path`` objects, for convenient passing to
+            ``set_security``.
+        """
+        key_file, cert_file = Path(key_file), Path(cert_file)
+        key_file.parent.mkdir(parents=True, exist_ok=True)
+        cert_file.parent.mkdir(parents=True, exist_ok=True)
+        await cert_gen.setup_self_signed_certificate(
+            key_file,
+            cert_file,
+            self.application_uri,
+            host_name or socket.gethostname(),
+            extended or [ExtendedKeyUsageOID.CLIENT_AUTH],
+            subject_attrs or {},
+        )
+        return cert_file, key_file
 
     async def _with_temp_channel(self, op: Callable[[], Awaitable[_T]]) -> _T:
         """Open a transient socket + SecureChannel, run op, tear it down on exit."""
