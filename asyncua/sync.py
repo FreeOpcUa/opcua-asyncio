@@ -319,6 +319,16 @@ class Client:
     def load_client_certificate(self, path: str, extension: str | None = None) -> None: ...
 
     @syncmethod
+    def setup_self_signed_certificate(
+        self,
+        key_file: Path,
+        cert_file: Path,
+        subject_attrs: dict[str, str] | None = None,
+        extended: list[Any] | None = None,
+        host_name: str | None = None,
+    ) -> tuple[Path, Path]: ...
+
+    @syncmethod
     def load_client_chain(self, certs: Iterable[uacrypto.CertProperties]) -> None: ...
 
     @syncmethod
