@@ -75,7 +75,7 @@ def _publish() -> None:
     for directory in ("dist", "build"):
         shutil.rmtree(directory, ignore_errors=True)
     subprocess.run(["uv", "build"], check=True)
-    subprocess.run(["uv", "publish"], check=True)
+    subprocess.run(["uv", "publish", "--check-url", "https://pypi.org/simple/asyncua/"], check=True)
 
 
 def release(bump: str) -> None:
@@ -84,8 +84,10 @@ def release(bump: str) -> None:
         print(f"Not on main/master branch ({branch}), will not release")
         return
     if not _working_tree_clean():
-        print("Working tree unclean, will not release")
-        return
+        print("Working tree is unclean:")
+        print(_run("git", "status", "--short"))
+        if not _confirm("release anyway?(Y/n)"):
+            return
     upstream_state = _local_up_to_date()
     if upstream_state is None:
         print(
@@ -110,7 +112,7 @@ def release(bump: str) -> None:
         return
 
     subprocess.run(["git", "add", str(PYPROJECT)], check=True)
-    subprocess.run(["git", "commit", "-m", f"new release: {new_version}"], check=True)
+    subprocess.run(["git", "commit", "--allow-empty", "-m", f"new release: {new_version}"], check=True)
     subprocess.run(["git", "tag", "-a", tag, "-m", f"Release {new_version}"], check=True)
 
     if _confirm("change committed, push to server (creates the GitHub release)?(Y/n)"):
