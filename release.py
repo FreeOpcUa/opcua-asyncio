@@ -120,12 +120,28 @@ def release(bump: str) -> None:
         _publish()
 
 
+def _valid_bump(bump: str) -> bool:
+    return bump in BUMP_KINDS or bool(_VERSION_RE.match(bump))
+
+
+def _prompt_bump() -> str:
+    current = _run("uv", "version", "--short")
+    while True:
+        bump = input(
+            f"Current version is {current}. Enter bump kind {BUMP_KINDS} "
+            f"or an explicit PEP 440 version (e.g. '2.0a1'): "
+        ).strip()
+        if _valid_bump(bump):
+            return bump
+        print(f"{bump!r} is not one of {BUMP_KINDS} nor a valid PEP 440 version string.")
+
+
 def main() -> None:
     if len(sys.argv) == 1:
-        bump = "patch"
+        bump = _prompt_bump()
     else:
         bump = sys.argv[1]
-        if bump not in BUMP_KINDS and not _VERSION_RE.match(bump):
+        if not _valid_bump(bump):
             raise ValueError(
                 f"Argument must be one of {BUMP_KINDS} or a PEP 440 version string "
                 f"(e.g. '2.0a1', '2.0.0rc1'), not {bump!r}"
