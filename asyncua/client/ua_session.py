@@ -89,7 +89,7 @@ class UaSession(AbstractSession):
     async def _send_request(
         self,
         request: Any,
-        timeout: float = 1,
+        timeout: float | None = None,
         message_type: ua.MessageType = ua.MessageType.SecureMessage,
     ) -> Buffer:
         return await self._client._send_request(request, timeout, message_type)

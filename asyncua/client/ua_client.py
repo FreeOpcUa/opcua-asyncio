@@ -583,7 +583,7 @@ class UaClient:
             self._set_state(UaClientState.SOCKET_OPEN)
 
     async def _send_request(
-        self, request: Any, timeout: float = 1, message_type: ua.MessageType = ua.MessageType.SecureMessage
+        self, request: Any, timeout: float | None = None, message_type: ua.MessageType = ua.MessageType.SecureMessage
     ) -> Buffer:
         if self.protocol is None:
             raise ConnectionError("Connection is not open")
