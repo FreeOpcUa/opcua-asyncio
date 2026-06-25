@@ -325,7 +325,7 @@ class InternalSession(AbstractSession):
 
         return subscription_result
 
-    def publish(self, acks: Iterable[ua.SubscriptionAcknowledgement] | None = None) -> int:
+    def publish(self, acks: Iterable[ua.SubscriptionAcknowledgement] | None = None) -> tuple[int, list[ua.StatusCode]]:
         return self.subscription_service.publish(acks or [])
 
     def modify_subscription(
