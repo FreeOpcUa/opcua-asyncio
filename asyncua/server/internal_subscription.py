@@ -2,20 +2,25 @@
 server side implementation of a subscription object
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
 from collections.abc import Awaitable, Callable, Iterable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from asyncua import ua
 
 from .address_space import AddressSpace
 from .monitored_item_service import MonitoredItemService
 
-PublishResultCallback = Callable[..., Awaitable[None]]
-PublishRequestCallback = Callable[[int], Any]
-DeleteCallback = Callable[[], None]
+if TYPE_CHECKING:
+    from asyncua.server.uaprocessor import PublishRequestData
+
+    PublishResultCallback = Callable[..., Awaitable[None]]
+    PublishRequestCallback = Callable[[int], PublishRequestData | None]
+    DeleteCallback = Callable[[], Any]
 
 
 class InternalSubscription:
@@ -132,7 +137,7 @@ class InternalSubscription:
         self._keep_alive_count += 1
         return False
 
-    async def publish_results(self, requestdata: Any = None) -> bool:
+    async def publish_results(self, requestdata: PublishRequestData | None = None) -> bool:
         """
         Publish all enqueued data changes, events and status changes though the callback.
         This method gets first called without publish request from subscription loop.

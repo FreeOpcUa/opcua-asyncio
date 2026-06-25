@@ -17,9 +17,10 @@ _logger = logging.getLogger(__name__)
 
 
 class PublishRequestData:
-    def __init__(self, requesthdr=None, seqhdr=None):
+    def __init__(self, requesthdr=None, seqhdr=None, results: list[ua.StatusCode] | None=None):
         self.requesthdr = requesthdr
         self.seqhdr = seqhdr
+        self.results = results
         self.timestamp = time.monotonic()
 
     def has_timed_out(self, now: float) -> bool:
@@ -128,6 +129,7 @@ class UaProcessor:
         # _logger.info("forward publish response %s", result)
         response = ua.PublishResponse()
         response.Parameters = result
+        result.Results = requestdata.results
         self.send_response(requestdata.requesthdr.RequestHandle, requestdata.seqhdr, response)
 
     async def process(self, header, body):
@@ -496,8 +498,8 @@ class UaProcessor:
                 if not self.session:
                     return False
                 params = struct_from_binary(ua.PublishParameters, body)
-                subscriptions = self.session.publish(params.SubscriptionAcknowledgements)
-                data = PublishRequestData(requesthdr=requesthdr, seqhdr=seqhdr)
+                subscriptions, results = self.session.publish(params.SubscriptionAcknowledgements)
+                data = PublishRequestData(requesthdr=requesthdr, seqhdr=seqhdr, results=results)
                 # If there is an enqueued publish results callback, try to call it immediately
                 while self._publish_results_subs:
                     subscription_id = next(iter(self._publish_results_subs))
