@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Protocol, overload
 from asyncua import ua
 from asyncua.client.ua_session import UaSession
 from asyncua.common.ua_utils import copy_dataclass_attr
+from asyncua.common.utils import ServiceError
 from asyncua.ua.uaerrors import BadMessageNotAvailable
 
 if TYPE_CHECKING:
@@ -596,7 +597,10 @@ class Subscription:
         params.SubscriptionId = self.subscription_id
         params.ItemsToCreate = mirs
         params.TimestampsToReturn = ua.TimestampsToReturn.Both
-        results = await self.server.create_monitored_items(params)
+        try:
+            results = await self.server.create_monitored_items(params)
+        except ServiceError as e:
+            raise ua.UaStatusCodeError(e.code)
         for idx, result in enumerate(results):
             mi = params.ItemsToCreate[idx]
             assert mi.RequestedParameters.ClientHandle is not None
@@ -850,7 +854,10 @@ class Subscription:
             data.monitoring_mode = mi.MonitoringMode
             data.sampling_interval = mi.RequestedParameters.SamplingInterval
             self._monitored_items[mi.RequestedParameters.ClientHandle] = data
-        results = await self.server.create_monitored_items(params)
+        try:
+            results = await self.server.create_monitored_items(params)
+        except ServiceError as e:
+            raise ua.UaStatusCodeError(e.code)
         mids = []
         # process result, add server_handle, or remove it if failed
         for idx, result in enumerate(results):
@@ -876,7 +883,10 @@ class Subscription:
         params = ua.DeleteMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
         params.MonitoredItemIds = list(handles)
-        results = await self.server.delete_monitored_items(params)
+        try:
+            results = await self.server.delete_monitored_items(params)
+        except ServiceError as e:
+            raise ua.UaStatusCodeError(e.code)
         results[0].check()
         handle_map = {v.server_handle: k for k, v in self._monitored_items.items()}
         for handle in handles:
@@ -917,7 +927,10 @@ class Subscription:
         params = ua.ModifyMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
         params.ItemsToModify.append(modif_item)
-        results = await self.server.modify_monitored_items(params)
+        try:
+            results = await self.server.modify_monitored_items(params)
+        except ServiceError as e:
+            raise ua.UaStatusCodeError(e.code)
         item_to_change.mfilter = results[0].FilterResult
         return results
 

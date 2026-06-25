@@ -126,12 +126,7 @@ class SubscriptionService:
     ) -> list[ua.MonitoredItemCreateResult]:
         self.logger.info("create monitored items")
         if params.SubscriptionId not in self.subscriptions:
-            res: list[ua.MonitoredItemCreateResult] = []
-            for _ in params.ItemsToCreate:
-                response = ua.MonitoredItemCreateResult()
-                response.StatusCode = ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
-                res.append(response)
-            return res
+            raise utils.ServiceError(ua.StatusCodes.BadSubscriptionIdInvalid)
         return await self.subscriptions[params.SubscriptionId].monitored_item_srv.create_monitored_items(params)
 
     def modify_monitored_items(
@@ -139,21 +134,13 @@ class SubscriptionService:
     ) -> list[ua.MonitoredItemModifyResult]:
         self.logger.info("modify monitored items")
         if params.SubscriptionId not in self.subscriptions:
-            res: list[ua.MonitoredItemModifyResult] = []
-            for _ in params.ItemsToModify:
-                result = ua.MonitoredItemModifyResult()
-                result.StatusCode = ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid)
-                res.append(result)
-            return res
+            raise utils.ServiceError(ua.StatusCodes.BadSubscriptionIdInvalid)
         return self.subscriptions[params.SubscriptionId].monitored_item_srv.modify_monitored_items(params)
 
     def delete_monitored_items(self, params: ua.DeleteMonitoredItemsParameters) -> list[ua.StatusCode]:
         self.logger.info("delete monitored items")
         if params.SubscriptionId not in self.subscriptions:
-            res: list[ua.StatusCode] = []
-            for _ in params.MonitoredItemIds:
-                res.append(ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid))
-            return res
+            raise utils.ServiceError(ua.StatusCodes.BadSubscriptionIdInvalid)
         return self.subscriptions[params.SubscriptionId].monitored_item_srv.delete_monitored_items(
             params.MonitoredItemIds
         )
