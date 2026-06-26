@@ -74,7 +74,15 @@ class Client:
     which offers the raw OPC-UA services interface.
     """
 
-    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0) -> None:
+    def __init__(
+        self,
+        url: str,
+        timeout: float = 4,
+        watchdog_intervall: float = 1.0,
+        auto_reconnect: bool = False,
+        reconnect_max_delay: float = 30.0,
+        reconnect_request_timeout: float = 60.0,
+    ) -> None:
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -84,6 +92,12 @@ class Client:
             time. The timeout is specified in seconds.
         :param watchdog_intervall:
             The time between checking if the server is still alive. The timeout is specified in seconds.
+        :param auto_reconnect: when True, a supervisor task is started that
+            monitors transport health and re-establishes the connection
+            (including re-creating all live subscriptions) on loss.
+        :param reconnect_max_delay: exponential backoff cap for reconnect attempts (seconds).
+        :param reconnect_request_timeout: how long requests block waiting for the
+            connection to become ready while the supervisor is reconnecting.
 
         Some other client parameters can be changed by setting
         attributes on the constructed object:
@@ -129,9 +143,9 @@ class Client:
         # Tracked so the auto-reconnect supervisor can re-create them; delete()
         # flips Subscription.is_deleted and the supervisor skips those.
         self._subscriptions: list[Subscription] = []
-        self._auto_reconnect: bool = False
-        self._reconnect_max_delay: float = 30.0
-        self._reconnect_request_timeout: float = 60.0
+        self._auto_reconnect: bool = auto_reconnect
+        self._reconnect_max_delay: float = reconnect_max_delay
+        self._reconnect_request_timeout: float = reconnect_request_timeout
         self._stale_check_margin: float = 1.5
         self._stale_check_interval: float = 0.5
         self.certificate_validator: CertificateValidatorMethod | None = None
@@ -418,9 +432,9 @@ class Client:
     async def connect(
         self,
         *,
-        auto_reconnect: bool = False,
-        reconnect_max_delay: float = 30.0,
-        reconnect_request_timeout: float = 60.0,
+        auto_reconnect: bool | None = None,
+        reconnect_max_delay: float | None = None,
+        reconnect_request_timeout: float | None = None,
     ) -> None:
         """
         High level method: connect, create and activate session.
@@ -433,9 +447,12 @@ class Client:
             connection to become ready while the supervisor is reconnecting.
         """
         _logger.info("connect (auto_reconnect=%s)", auto_reconnect)
-        self._auto_reconnect = auto_reconnect
-        self._reconnect_max_delay = reconnect_max_delay
-        self._reconnect_request_timeout = reconnect_request_timeout
+        if auto_reconnect is not None:
+            self._auto_reconnect = auto_reconnect
+        if reconnect_max_delay is not None:
+            self._reconnect_max_delay = reconnect_max_delay
+        if reconnect_request_timeout is not None:
+            self._reconnect_request_timeout = reconnect_request_timeout
         self.uaclient.clear_disconnect_request()
         await self._connect_sequence()
         self._supervisor_task = asyncio.create_task(self._connection_supervisor())
