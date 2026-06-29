@@ -5,10 +5,12 @@ import pytest
 from asyncua import Client, Server
 from asyncua.common.callback import CallbackType
 
+from .conftest import find_free_port
+
 _logger = logging.getLogger(__name__)
 pytestmark = pytest.mark.asyncio
 
-port_num = 48560
+port_num = find_free_port()
 
 
 async def create_monitored_items(event, dispatcher):
