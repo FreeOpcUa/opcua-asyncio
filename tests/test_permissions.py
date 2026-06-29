@@ -7,9 +7,11 @@ from asyncua.crypto import security_policies
 from asyncua.crypto.permission_rules import UserRole
 from asyncua.server.user_managers import CertificateUserManager
 
+from .conftest import find_free_port
+
 pytestmark = pytest.mark.asyncio
 
-uri_crypto_cert = "opc.tcp://127.0.0.1:48516"
+uri_crypto_cert = f"opc.tcp://127.0.0.1:{find_free_port()}"
 BASE_DIR = Path(__file__).parent.parent
 EXAMPLE_PATH = BASE_DIR / "examples"
 srv_crypto_params = (EXAMPLE_PATH / "private-key-example.pem", EXAMPLE_PATH / "certificate-example.der")

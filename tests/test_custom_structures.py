@@ -12,7 +12,9 @@ from asyncua.common.type_dictionary_builder import (
     get_ua_class,
 )
 
-port_num = 48540
+from .conftest import find_free_port
+
+port_num = find_free_port()
 ns_urn = "http://test.freeopcua.github.io"
 
 

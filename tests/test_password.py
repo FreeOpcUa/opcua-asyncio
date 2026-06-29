@@ -3,9 +3,12 @@ import pytest
 from asyncua import Client, Server, ua
 from asyncua.crypto.permission_rules import User, UserRole
 
-uri = "opc.tcp://127.0.0.1:48517/baz/server"
-uri_creds = "opc.tcp://foobar:hR%26yjjGhP%246%40nQ4e@127.0.0.1:48517/baz/server"
-uri_wrong_creds = "opc.tcp://foobar:wrong@127.0.0.1:48517/baz/server"
+from .conftest import find_free_port
+
+port_num = find_free_port()
+uri = f"opc.tcp://127.0.0.1:{port_num}/baz/server"
+uri_creds = f"opc.tcp://foobar:hR%26yjjGhP%246%40nQ4e@127.0.0.1:{port_num}/baz/server"
+uri_wrong_creds = f"opc.tcp://foobar:wrong@127.0.0.1:{port_num}/baz/server"
 
 
 class UserManager:

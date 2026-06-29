@@ -12,11 +12,13 @@ from asyncua.crypto.uacrypto import CertProperties
 from asyncua.crypto.validator import CertificateValidator, CertificateValidatorOptions
 from asyncua.server.user_managers import CertificateUserManager
 
+from .conftest import find_free_port
+
 pytestmark = pytest.mark.asyncio
 
-port_num1 = 48515
-port_num2 = 48512
-port_num3 = 48516
+port_num1 = find_free_port()
+port_num2 = find_free_port()
+port_num3 = find_free_port()
 uri_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num1)
 uri_no_crypto = "opc.tcp://127.0.0.1:{0:d}".format(port_num2)
 uri_crypto_cert = "opc.tcp://127.0.0.1:{0:d}".format(port_num3)

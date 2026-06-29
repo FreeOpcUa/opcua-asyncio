@@ -9,10 +9,12 @@ from asyncua import Client, Server, ua
 from asyncua.crypto import security_policies
 from asyncua.crypto.uacrypto import CertProperties
 
+from .conftest import find_free_port
+
 _logger = logging.getLogger("asyncua.server.address_space")
 _logger.setLevel(logging.WARNING)
 pytestmark = pytest.mark.asyncio
-uri_crypto = "opc.tcp://127.0.0.1:48515"
+uri_crypto = f"opc.tcp://127.0.0.1:{find_free_port()}"
 
 BASE_DIR = Path(__file__).parent.parent
 CHAIN_PATH = BASE_DIR / "examples" / "certificates" / "chain"
