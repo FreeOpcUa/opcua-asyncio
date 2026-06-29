@@ -529,8 +529,10 @@ async def test_stale_watchdog_recreates_subscription() -> None:
         sub.last_publish_at = time.monotonic() - 1000.0
 
         # Watchdog should pick this up within an interval or two and recreate.
+        # recreate() briefly sets subscription_id to None before init() assigns
+        # the new id, so wait for a settled new id rather than just any change.
         deadline = loop.time() + 3.0
-        while sub.subscription_id == old_sub_id:
+        while sub.subscription_id in (None, old_sub_id):
             if loop.time() > deadline:
                 raise AssertionError(f"watchdog did not recreate stale subscription (id={sub.subscription_id})")
             await asyncio.sleep(0.05)
