@@ -1,9 +1,15 @@
 import struct
 from dataclasses import dataclass, field
+from enum import Enum
+from typing import TYPE_CHECKING
 
 from asyncua.common import utils
 from asyncua.ua import uaprotocol_auto as auto
 from asyncua.ua import uatypes
+
+if TYPE_CHECKING:
+    from asyncua.common.connection import MessageChunk
+
 
 OPC_TCP_SCHEME = "opc.tcp"
 
@@ -22,9 +28,16 @@ class Hello:
     EndpointUrl: uatypes.String = ""
 
 
-class MessageType:
+@dataclass(slots=True)
+class ReverseHello:
+    ServerUri: uatypes.String = ""
+    EndpointUrl: uatypes.String = ""
+
+
+class MessageType(bytes, Enum):
     Invalid: bytes = b"INV"  # FIXME: check value
     Hello: bytes = b"HEL"
+    ReverseHello: bytes = b"RHE"
     Acknowledge: bytes = b"ACK"
     Error: bytes = b"ERR"
     SecureOpen: bytes = b"OPN"
@@ -32,7 +45,7 @@ class MessageType:
     SecureMessage: bytes = b"MSG"
 
 
-class ChunkType:
+class ChunkType(bytes, Enum):
     Invalid: bytes = b"0"  # FIXME check
     Single: bytes = b"F"
     Intermediate: bytes = b"C"
@@ -48,11 +61,11 @@ class Header:
     packet_size = 0
     header_size = 8
 
-    def add_size(self, size):
+    def add_size(self, size: int) -> None:
         self.body_size += size
 
     @staticmethod
-    def max_size():
+    def max_size() -> int:
         return struct.calcsize("<3scII")
 
 
@@ -77,7 +90,7 @@ class AsymmetricAlgorithmHeader:
     SenderCertificate: uatypes.ByteString = None
     ReceiverCertificateThumbPrint: uatypes.ByteString = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         len(self.SenderCertificate) if self.SenderCertificate is not None else None
         size2 = len(self.ReceiverCertificateThumbPrint) if self.ReceiverCertificateThumbPrint is not None else None
         return (
@@ -93,7 +106,7 @@ class SymmetricAlgorithmHeader:
     TokenId: uatypes.UInt32 = 0
 
     @staticmethod
-    def max_size():
+    def max_size() -> int:
         return struct.calcsize("<I")
 
 
@@ -103,24 +116,24 @@ class SequenceHeader:
     RequestId: uatypes.UInt32 = None
 
     @staticmethod
-    def max_size():
+    def max_size() -> int:
         return struct.calcsize("<II")
 
 
 class Message:
-    def __init__(self, chunks):
+    def __init__(self, chunks: list["MessageChunk"]) -> None:
         self._chunks = chunks
 
-    def request_id(self):
+    def request_id(self) -> uatypes.UInt32:
         return self._chunks[0].SequenceHeader.RequestId
 
-    def SequenceHeader(self):
+    def SequenceHeader(self) -> SequenceHeader:
         return self._chunks[0].SequenceHeader
 
-    def SecurityHeader(self):
+    def SecurityHeader(self) -> SymmetricAlgorithmHeader | AsymmetricAlgorithmHeader:
         return self._chunks[0].SecurityHeader
 
-    def body(self):
+    def body(self) -> utils.Buffer:
         body = b"".join([c.Body for c in self._chunks])
         return utils.Buffer(body)
 
@@ -131,8 +144,8 @@ ana = auto.NodeAttributesMask
 
 @dataclass(slots=True)
 class ObjectAttributes(auto.ObjectAttributes):
-    def __post_init__(self):
-        object.__setattr__(
+    def __post_init__(self) -> None:
+        setattr(
             self,
             "SpecifiedAttributes",
             ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.EventNotifier,
@@ -141,8 +154,8 @@ class ObjectAttributes(auto.ObjectAttributes):
 
 @dataclass(slots=True)
 class ObjectTypeAttributes(auto.ObjectTypeAttributes):
-    def __post_init__(self):
-        object.__setattr__(
+    def __post_init__(self) -> None:
+        setattr(
             self,
             "SpecifiedAttributes",
             ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.IsAbstract,
@@ -173,8 +186,8 @@ class VariableAttributes(auto.VariableAttributes):
 
 @dataclass(slots=True)
 class VariableTypeAttributes(auto.VariableTypeAttributes):
-    def __post_init__(self):
-        object.__setattr__(
+    def __post_init__(self) -> None:
+        setattr(
             self,
             "SpecifiedAttributes",
             (
@@ -193,8 +206,8 @@ class VariableTypeAttributes(auto.VariableTypeAttributes):
 
 @dataclass(slots=True)
 class MethodAttributes(auto.MethodAttributes):
-    def __post_init__(self):
-        object.__setattr__(
+    def __post_init__(self) -> None:
+        setattr(
             self,
             "SpecifiedAttributes",
             ana.DisplayName | ana.Description | ana.WriteMask | ana.UserWriteMask | ana.Executable | ana.UserExecutable,
@@ -203,8 +216,8 @@ class MethodAttributes(auto.MethodAttributes):
 
 @dataclass(slots=True)
 class ReferenceTypeAttributes(auto.ReferenceTypeAttributes):
-    def __post_init__(self):
-        object.__setattr__(
+    def __post_init__(self) -> None:
+        setattr(
             self,
             "SpecifiedAttributes",
             (
@@ -226,8 +239,8 @@ class ReferenceTypeAttributes(auto.ReferenceTypeAttributes):
 class DataTypeAttributes(auto.DataTypeAttributes):
     DataTypeDefinition: uatypes.ExtensionObject = field(default_factory=auto.ExtensionObject)
 
-    def __post_init__(self):
-        object.__setattr__(
+    def __post_init__(self) -> None:
+        setattr(
             self,
             "SpecifiedAttributes",
             (
@@ -249,8 +262,8 @@ uatypes.typeid_by_extension_objects[DataTypeAttributes] = nid
 
 @dataclass(slots=True)
 class ViewAttributes(auto.ViewAttributes):
-    def __post_init__(self):
-        object.__setattr__(
+    def __post_init__(self) -> None:
+        setattr(
             self,
             "SpecifiedAttributes",
             (
