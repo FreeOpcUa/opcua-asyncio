@@ -138,7 +138,7 @@ class Client:
         self._renew_channel_task: asyncio.Task[None] | None = None
         self._supervisor_task: asyncio.Task[None] | None = None
         self._stale_watchdog_task: asyncio.Task[None] | None = None
-        self._locale = ["en"]
+        self._locale: Sequence[str] = ["en"]
         self._watchdog_intervall = watchdog_intervall
         # Tracked so the auto-reconnect supervisor can re-create them; delete()
         # flips Subscription.is_deleted and the supervisor skips those.
@@ -328,7 +328,7 @@ class Client:
         self.security_policy = policy(server_cert, cert, pk, mode, host_cert_chain=chain)
         self.uaclient.set_security(self.security_policy)
 
-    async def load_client_certificate(self, path: str, extension: str | None = None) -> None:
+    async def load_client_certificate(self, path: bytes | str | Path, extension: str | None = None) -> None:
         """
         Load user certificate from file, either pem or der
         """
@@ -343,7 +343,7 @@ class Client:
         )
 
     async def load_private_key(
-        self, path: Path, password: str | bytes | None = None, extension: str | None = None
+        self, path: bytes | str | Path, password: str | bytes | None = None, extension: str | None = None
     ) -> None:
         """
         Load user private key. This is used for authenticating using certificate
@@ -471,6 +471,9 @@ class Client:
         persisted or the server has expired the session.
         """
         await self.connect_socket()
+        await self._connect_handshake()
+
+    async def _connect_handshake(self) -> None:
         try:
             await self.send_hello()
             await self.open_secure_channel()
