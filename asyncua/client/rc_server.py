@@ -13,6 +13,7 @@ from asyncua.ua import ua_binary, uatypes
 _logger = logging.getLogger(__name__)
 
 
+# limits according to spec Part 6 §7.1.2.6
 _MAX_SERVER_URI_LENGTH = 4095
 _MAX_ENDPOINT_URL_LENGTH = 4095
 
@@ -63,7 +64,7 @@ class RCProtocol(asyncio.Protocol):
         self.connections.append(self.transport)
         if self.slow_conn_timeout:
             self.slow_conn_timeout_handle = asyncio.get_running_loop().call_later(
-                self.slow_conn_timeout, self._on_slow_connection_timeout
+                delay=self.slow_conn_timeout, callback=self._on_slow_connection_timeout
             )
 
     def connection_lost(self, exc: Exception | None) -> None:
@@ -123,13 +124,6 @@ class RCProtocol(asyncio.Protocol):
         return header
 
     def _parse_rc_hello(self, header: ua.Header, buf: ua.utils.Buffer) -> ua.ReverseHello | None:
-        if (
-            header.header_size + header.body_size
-            > ua.Header.max_size() + _MAX_SERVER_URI_LENGTH + _MAX_ENDPOINT_URL_LENGTH
-        ):
-            _logger.debug("Reverse hello message from %s claims to be too long - dropping", self.peer)
-            self._close()
-            return None
         if len(buf) < header.body_size:
             return None
 
@@ -140,22 +134,19 @@ class RCProtocol(asyncio.Protocol):
             self._close()
             return None
 
-        # limits according to spec Part 6 §7.1.2.6
-        if (
-            len(reverse_hello.ServerUri) > _MAX_SERVER_URI_LENGTH
-            or len(reverse_hello.EndpointUrl) > _MAX_ENDPOINT_URL_LENGTH
-        ):
+        error = None
+        if len(reverse_hello.ServerUri) > _MAX_SERVER_URI_LENGTH:
             error = ua.ErrorMessage(
-                ua.StatusCode(ua.StatusCodes.BadTcpEndpointUrlInvalid),
-                uatypes.String("Server URI or Endpoint URL is too long"),
+                ua.StatusCode(ua.StatusCodes.BadServerUriInvalid), uatypes.String("Server URI is too long")
             )
+        elif len(reverse_hello.EndpointUrl) > _MAX_ENDPOINT_URL_LENGTH:
+            error = ua.ErrorMessage(
+                ua.StatusCode(ua.StatusCodes.BadTcpEndpointUrlInvalid), uatypes.String("Endpoint URL is too long")
+            )
+
+        if error:
             if self.transport:
-                self.transport.write(
-                    ua_binary.uatcp_to_binary(
-                        ua.MessageType.Error,
-                        error,
-                    )
-                )
+                self.transport.write(ua_binary.uatcp_to_binary(ua.MessageType.Error, error))
             _logger.debug("Received reverse hello message with very long URL/URI from %s - dropping", self.peer)
             self._close()
             return None
@@ -191,7 +182,7 @@ class RCServer:
         *,
         rc_validation_hook: RCValidateHook | None = None,
         slow_connection_timeout: float | None = None,
-        reuse_address: bool = False,
+        reuse_address: bool | None = None,
     ) -> None:
         """Inits Self."""
         self.host = host
@@ -219,6 +210,7 @@ class RCServer:
             self.host,
             self.port,
             reuse_address=self.reuse_address,
+            start_serving=True,
         )
 
     async def stop(self) -> None:
@@ -228,8 +220,9 @@ class RCServer:
         connections, self._connections = self._connections, []
         for c in connections:
             c.close()
-        while not self._ready_clients.empty():
-            client = self._ready_clients.get_nowait()
+        ready_clients, self._ready_clients = self._ready_clients, asyncio.Queue()
+        while not ready_clients.empty():
+            client = ready_clients.get_nowait()
             client.close()
 
     async def wait_for_next_rc(self) -> ReverseConnection:
