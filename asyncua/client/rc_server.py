@@ -130,7 +130,7 @@ class RCProtocol(asyncio.Protocol):
             _logger.debug("Reverse hello message from %s claims to be too long - dropping", self.peer)
             self._close()
             return None
-        if len(buf) < header.header_size + header.body_size:
+        if len(buf) < header.body_size:
             return None
 
         try:
@@ -140,13 +140,13 @@ class RCProtocol(asyncio.Protocol):
             self._close()
             return None
 
-        # see spec Part 6 §7.1.2.6
+        # limits according to spec Part 6 §7.1.2.6
         if (
             len(reverse_hello.ServerUri) > _MAX_SERVER_URI_LENGTH
             or len(reverse_hello.EndpointUrl) > _MAX_ENDPOINT_URL_LENGTH
         ):
             error = ua.ErrorMessage(
-                ua.StatusCodes.BadTcpEndpointUrlInvalid,  # type: ignore[arg-type]
+                ua.StatusCode(ua.StatusCodes.BadTcpEndpointUrlInvalid),
                 uatypes.String("Server URI or Endpoint URL is too long"),
             )
             if self.transport:

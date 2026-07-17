@@ -556,6 +556,23 @@ class UaClient:
             raise
         self._set_state(UaClientState.SOCKET_OPEN)
 
+    def attach_socket(self, transport: asyncio.Transport, *, leftover_data: bytes = b"") -> None:
+        """Attach to an existing socket."""
+        self.logger.info("opening connection")
+        self._set_state(UaClientState.CONNECTING)
+        try:
+            p = self._make_protocol()
+            transport.set_protocol(p)
+            p.connection_made(transport)
+            if leftover_data:
+                p.data_received(leftover_data)
+            if not transport.is_reading():
+                transport.resume_reading()
+        except BaseException:
+            self._set_state(UaClientState.DISCONNECTED)
+            raise
+        self._set_state(UaClientState.SOCKET_OPEN)
+
     def disconnect_socket(self) -> None:
         if self._state is UaClientState.DISCONNECTED:
             return
