@@ -78,7 +78,7 @@ class RCProtocol(asyncio.Protocol):
         if not exc:
             _logger.debug("Connection from %s was closed.", self.peer)
         else:
-            _logger.debug("Connection from %s was closed because of the error %s.", self.peer, exc)
+            _logger.debug("Connection from %s was closed because of the exception.", self.peer, exc_info=exc)
         self._close()
 
     def data_received(self, data: bytes) -> None:
@@ -249,8 +249,8 @@ class RCServer:
             client = ready_clients.get_nowait()
             client.close()
 
-    async def wait_for_next_rc(self) -> ReverseConnection:
-        """Wait for the next reverse connection to come in (server must be listening)."""
+    async def next_rc(self) -> ReverseConnection:
+        """Get the next reverse connection, blocking until it comes in (server must be listening)."""
         if not self.is_listening:
             raise RuntimeError("Can not wait for reverse connections when server is not listening")
         return await self._ready_clients.get()
@@ -260,9 +260,6 @@ class RCServer:
         return self
 
     async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        traceback: TracebackType | None,
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
     ) -> None:
         await self.stop()

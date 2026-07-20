@@ -3,8 +3,7 @@ from contextlib import AsyncExitStack
 from pathlib import Path
 
 from asyncua import ua
-from asyncua.client.rc_client import RCClient
-from asyncua.client.rc_server import RCServer
+from asyncua.client.rc import RCClient, RCServer
 from asyncua.crypto import security_policies
 
 namespace = "http://examples.freeopcua.github.io"
@@ -14,6 +13,7 @@ CERT_BASE = Path(__file__).parent / "examples" / "certificates" / "chain"
 
 CLIENT_CERT = CERT_BASE / "client.cert.pem"
 CLIENT_PRIVATE_KEY = CERT_BASE / "client.key.pem"
+SERVER_CERT = CERT_BASE / "server.cert.pem"
 
 
 async def single_client_per_server():
@@ -24,7 +24,7 @@ async def single_client_per_server():
         certificate=CLIENT_CERT,
         private_key=CLIENT_PRIVATE_KEY,
         private_key_password=None,
-        server_certificate=None,
+        server_certificate=SERVER_CERT,  # IMPORTANT: make sure to set server certificate
         mode=ua.MessageSecurityMode.SignAndEncrypt,
     )
 
@@ -43,7 +43,7 @@ async def _callback(c: RCClient) -> None:
 
 async def multiple_clients_per_server() -> None:
     """Creating a single RC server and creating new RC clients as connections come."""
-    tasks: list[asyncio.Task] = [] # for python>=3.11 use asyncio.TaskGroup
+    tasks: list[asyncio.Task] = []  # for python>=3.11 use asyncio.TaskGroup
     # use exit stack for dynamic context management
     async with AsyncExitStack() as stack, RCServer("127.0.0.1", 60555) as server:
         while True:
@@ -53,7 +53,7 @@ async def multiple_clients_per_server() -> None:
                 certificate=CLIENT_CERT,
                 private_key=CLIENT_PRIVATE_KEY,
                 private_key_password=None,
-                server_certificate=None,
+                server_certificate=SERVER_CERT,  # IMPORTANT: make sure to set server certificate
                 mode=ua.MessageSecurityMode.SignAndEncrypt,
             )
 

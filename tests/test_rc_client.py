@@ -7,8 +7,8 @@ import pytest
 from pytest_mock import MockerFixture
 
 from asyncua import ua
-from asyncua.client.rc_client import RCClient
-from asyncua.client.rc_server import _MAX_ENDPOINT_URL_LENGTH, _MAX_SERVER_URI_LENGTH, RCServer
+from asyncua.client.rc import RCClient, RCServer
+from asyncua.client.rc.rc_server import _MAX_ENDPOINT_URL_LENGTH, _MAX_SERVER_URI_LENGTH
 from asyncua.ua import ua_binary
 from tests.conftest import find_free_port
 
@@ -23,7 +23,7 @@ async def test_rc_client_server_wait_for_next_rc_raises_not_listening() -> None:
     server = RCServer("127.0.0.1", find_free_port())
     with pytest.raises(RuntimeError):
         assert not server.is_listening
-        await server.wait_for_next_rc()
+        await server.next_rc()
 
 
 async def test_rc_client_server_end_to_end_reverse_connection() -> None:
@@ -34,7 +34,7 @@ async def test_rc_client_server_end_to_end_reverse_connection() -> None:
             rh = ua.ReverseHello(ServerUri="urn:e2e:server", EndpointUrl="opc.tcp://127.0.0.1:4840")
             writer.write(ua_binary.uatcp_to_binary(ua.MessageType.ReverseHello, rh))
             await writer.drain()
-            rc = await asyncio.wait_for(server.wait_for_next_rc(), timeout=5)
+            rc = await asyncio.wait_for(server.next_rc(), timeout=5)
             rc.close()
 
         assert rc.server_application_uri == "urn:e2e:server"
@@ -50,7 +50,7 @@ async def test_rc_client_server_timeout() -> None:
         assert reader.at_eof()
         assert (await reader.read()) == b""
         with pytest.raises((TimeoutError, asyncio.TimeoutError)):
-            await asyncio.wait_for(server.wait_for_next_rc(), timeout=1)
+            await asyncio.wait_for(server.next_rc(), timeout=1)
 
 
 async def test_rc_client_server_uri_too_long() -> None:
@@ -70,7 +70,7 @@ async def test_rc_client_server_uri_too_long() -> None:
             assert error.Error == ua.StatusCode(ua.StatusCodes.BadServerUriInvalid)
 
         with pytest.raises((TimeoutError, asyncio.TimeoutError)):
-            await asyncio.wait_for(server.wait_for_next_rc(), timeout=1)
+            await asyncio.wait_for(server.next_rc(), timeout=1)
 
 
 async def test_rc_client_server_endpoint_url_too_long() -> None:
@@ -90,7 +90,7 @@ async def test_rc_client_server_endpoint_url_too_long() -> None:
             assert error.Error == ua.StatusCode(ua.StatusCodes.BadTcpEndpointUrlInvalid)
 
         with pytest.raises((TimeoutError, asyncio.TimeoutError)):
-            await asyncio.wait_for(server.wait_for_next_rc(), timeout=1)
+            await asyncio.wait_for(server.next_rc(), timeout=1)
 
 
 async def test_rc_client_server_leftover_data() -> None:
@@ -104,7 +104,7 @@ async def test_rc_client_server_leftover_data() -> None:
             writer.write(extra)
             writer.write(extra)
             await writer.drain()
-            rc = await asyncio.wait_for(server.wait_for_next_rc(), timeout=5)
+            rc = await asyncio.wait_for(server.next_rc(), timeout=5)
             rc.close()
 
         assert rc.leftover_data == 2 * extra

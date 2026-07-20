@@ -5,11 +5,15 @@ from contextlib import nullcontext
 from urllib.parse import urlparse
 
 from asyncua.client.client import Client
-from asyncua.client.rc_server import RCServer, ReverseConnection
+from asyncua.client.rc.rc_server import RCServer, ReverseConnection
 
 
 class RCClient(Client):
     """Reverse connection client.
+
+    When setting security on the RC client, make sure to pass the server certificate!
+    Otherwise client will try to dial the server to retrieve the certificate and
+    will fail as the server address is unknown.
 
     The source of the reverse connections for the client is a RC server.
     If you just want to get a single RC client, give the not-listening RC server to the client and it will manage
@@ -42,7 +46,7 @@ class RCClient(Client):
     async def _connect_sequence(self) -> None:
         """Run the connect handshake: reverse hello, channel, session, activate."""
         async with self._rc_server_ctx as server:
-            conn: ReverseConnection = await asyncio.wait_for(server.wait_for_next_rc(), timeout=self.rc_timeout)
+            conn: ReverseConnection = await asyncio.wait_for(server.next_rc(), timeout=self.rc_timeout)
         self.uaclient.attach_socket(conn.transport, leftover_data=conn.leftover_data)
         self._server_url = urlparse(conn.server_endpoint)
         await self._connect_handshake()
