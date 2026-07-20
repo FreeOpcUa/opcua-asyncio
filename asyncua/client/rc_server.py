@@ -1,4 +1,4 @@
-"""RC client server."""
+"""Reverse connection client-side server."""
 
 import asyncio
 import logging
@@ -35,7 +35,7 @@ RCValidateHook = Callable[[ua.ReverseHello], None]
 
 
 class RCProtocol(asyncio.Protocol):
-    """Handle reverse connection initial reverse hello and yield the socket."""
+    """Handle initial reverse hello and yield a connection (Transport)."""
 
     def __init__(
         self,
@@ -45,6 +45,13 @@ class RCProtocol(asyncio.Protocol):
         rc_validation_hook: RCValidateHook | None = None,
         slow_connection_timeout: float | None = None,
     ) -> None:
+        """
+        :param connections: Server connections list.
+        :param ready_clients: Queue of ready (accepted) connections.
+        :param rc_validation_hook: Hook to extra validate Reverse Hello. Defaults to None.
+        :param slow_connection_timeout: Timeout for slow connections. Defaults to None.
+        """
+
         self.rec_buf = bytearray()
         self.transport: asyncio.Transport | None = None
         self.connections = connections
@@ -154,7 +161,7 @@ class RCProtocol(asyncio.Protocol):
         return reverse_hello
 
     def _close(self) -> None:
-        """Close current connection."""
+        """Close current connection, cancel timeout, reset state, if any."""
         self.rec_buf.clear()
         self._cancel_slow_connection_timeout()
         if self.transport:
@@ -164,7 +171,6 @@ class RCProtocol(asyncio.Protocol):
             self.transport = None
 
     def _on_slow_connection_timeout(self) -> None:
-        """Slow connection timeout callback."""
         _logger.debug("Dropping a slow connection from %s after timeout of %.1fs", self.peer, self.slow_conn_timeout)
         self._close()
 
@@ -175,6 +181,12 @@ class RCProtocol(asyncio.Protocol):
 
 
 class RCServer:
+    """Reverse connection client-side server.
+
+    RC server accepts reverse connections, processes the rc-specific part of the handshake and hands out the
+    connection to be handle as a regular UA connection.
+    """
+
     def __init__(
         self,
         host: str,
@@ -184,7 +196,16 @@ class RCServer:
         slow_connection_timeout: float | None = None,
         reuse_address: bool | None = None,
     ) -> None:
-        """Inits Self."""
+        """Init Self.
+
+        :param host: Host.
+        :param port: Port.
+        :param rc_validation_hook: Hook to check the Server URI/Endpoint URL in
+            Reverse Hello message. Defaults to None.
+        :param slow_connection_timeout: Deadline for Reverse Hello to be processed since connection
+            initiated, to mitigate slow clients. Defaults to None.
+        :param reuse_address: Whether to reuse address (see asyncio loop.create_server()). Defaults to None.
+        """
         self.host = host
         self.port = port
         self.slow_connection_timeout = slow_connection_timeout
@@ -197,9 +218,11 @@ class RCServer:
 
     @property
     def is_listening(self) -> bool:
+        """Whether server is currently listening."""
         return self._server is not None
 
     async def start(self) -> None:
+        """Start listening for incoming reverse connections."""
         self._server = await asyncio.get_running_loop().create_server(
             lambda: RCProtocol(
                 self._connections,
@@ -214,6 +237,7 @@ class RCServer:
         )
 
     async def stop(self) -> None:
+        """Stop listening for new reverse connections and cancel all waiting or being-processed connections."""
         server, self._server = self._server, None
         if server is not None:
             server.close()
@@ -226,6 +250,7 @@ class RCServer:
             client.close()
 
     async def wait_for_next_rc(self) -> ReverseConnection:
+        """Wait for the next reverse connection to come in (server must be listening)."""
         if not self.is_listening:
             raise RuntimeError("Can not wait for reverse connections when server is not listening")
         return await self._ready_clients.get()
