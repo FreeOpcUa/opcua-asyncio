@@ -392,12 +392,15 @@ class UaClient:
     with code that used to call them on `UaClient` directly.
     """
 
+    _max_concurrent_requests = 100
+
     def __init__(self, timeout: float = 1.0) -> None:
         """
         :param timeout: Timout in seconds
         """
         self.logger = logging.getLogger(f"{__name__}.UaClient")
         self._timeout = timeout
+        self._request_semaphore = asyncio.Semaphore(self._max_concurrent_requests)
         self.security_policy: security_policies.SecurityPolicy = security_policies.SecurityPolicyNone()
         self.protocol: UASocketProtocol | None = None
         self._pre_request_hook: Callable[[], Awaitable[None]] | None = None
@@ -515,6 +518,11 @@ class UaClient:
     def set_security(self, policy: security_policies.SecurityPolicy) -> None:
         self.security_policy = policy
 
+    def set_max_concurrent_requests(self, max_concurrent_requests: int) -> None:
+        """Set the maximum number of requests sent concurrently."""
+        self._max_concurrent_requests = max_concurrent_requests
+        self._request_semaphore = asyncio.Semaphore(max_concurrent_requests)
+
     def _make_protocol(self) -> UASocketProtocol:
         self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
         self.protocol.pre_request_hook = self._pre_request_hook
@@ -585,9 +593,10 @@ class UaClient:
     async def _send_request(
         self, request: Any, timeout: float | None = None, message_type: ua.MessageType = ua.MessageType.SecureMessage
     ) -> Buffer:
-        if self.protocol is None:
-            raise ConnectionError("Connection is not open")
-        return await self.protocol.send_request(request, timeout, message_type)
+        async with self._request_semaphore:
+            if self.protocol is None:
+                raise ConnectionError("Connection is not open")
+            return await self.protocol.send_request(request, timeout, message_type)
 
     # --- back-compat: properties that previously lived on UaClient ---
 
