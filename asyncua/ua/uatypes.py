@@ -472,9 +472,12 @@ class NodeId:
     def __post_init__(self) -> None:
         if self.NodeIdType is None:
             if isinstance(self.Identifier, int):
-                if self.Identifier < 255 and self.NamespaceIndex == 0:
+                # Match TwoByteNodeId / FourByteNodeId validation bounds:
+                # TwoByte: Identifier 0..255, NamespaceIndex == 0
+                # FourByte: Identifier 0..65535, NamespaceIndex 0..255
+                if self.Identifier <= 255 and self.NamespaceIndex == 0:
                     object.__setattr__(self, "NodeIdType", NodeIdType.TwoByte)
-                elif self.Identifier < 2**16 and self.NamespaceIndex < 255:
+                elif self.Identifier <= 65535 and self.NamespaceIndex <= 255:
                     object.__setattr__(self, "NodeIdType", NodeIdType.FourByte)
                 else:
                     object.__setattr__(self, "NodeIdType", NodeIdType.Numeric)

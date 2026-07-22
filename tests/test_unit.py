@@ -638,21 +638,49 @@ def test_to_nodeid_int_ranges():
     """
     from asyncua.common.node import _to_nodeid
 
-    n = _to_nodeid(53)
-    assert isinstance(n, ua.TwoByteNodeId)
-    assert n.Identifier == 53
+    # Inclusive TwoByte upper bound (0..255)
+    for value in (0, 53, 255):
+        n = _to_nodeid(value)
+        assert n.NodeIdType == ua.NodeIdType.TwoByte
+        assert n.Identifier == value
+        assert n.NamespaceIndex == 0
 
-    n = _to_nodeid(256)
-    assert isinstance(n, ua.FourByteNodeId)
-    assert n.Identifier == 256
+    # FourByte for mid-range identifiers (256..65535), ns=0
+    for value in (256, ua.ObjectIds.HasDictionaryEntry, 65535):
+        n = _to_nodeid(value)
+        assert n.NodeIdType == ua.NodeIdType.FourByte
+        assert n.Identifier == value
 
-    n = _to_nodeid(ua.ObjectIds.HasDictionaryEntry)  # 17597
-    assert isinstance(n, (ua.FourByteNodeId, ua.NodeId))
-    assert n.Identifier == 17597
+    # Numeric for identifiers beyond uint16
+    n = _to_nodeid(65536)
+    assert n.NodeIdType == ua.NodeIdType.Numeric
+    assert n.Identifier == 65536
 
     n = _to_nodeid(70000)
-    assert isinstance(n, ua.NumericNodeId)
+    assert n.NodeIdType == ua.NodeIdType.Numeric
     assert n.Identifier == 70000
+
+
+def test_nodeid_encoding_range_bounds():
+    """NodeId auto-encoding must use inclusive TwoByte/FourByte bounds.
+
+    TwoByteNodeId allows Identifier 0..255; FourByteNodeId allows
+    Identifier 0..65535 and NamespaceIndex 0..255.  The previous
+    NodeId.__post_init__ used strict < checks, so Identifier 255 and
+    NamespaceIndex 255 were classified one encoding wider than needed.
+    """
+    assert ua.NodeId(255).NodeIdType == ua.NodeIdType.TwoByte
+    assert ua.NodeId(256).NodeIdType == ua.NodeIdType.FourByte
+    assert ua.NodeId(65535).NodeIdType == ua.NodeIdType.FourByte
+    assert ua.NodeId(65536).NodeIdType == ua.NodeIdType.Numeric
+
+    # NamespaceIndex 255 still fits in the FourByte namespace byte
+    assert ua.NodeId(1, 255).NodeIdType == ua.NodeIdType.FourByte
+    assert ua.NodeId(1, 256).NodeIdType == ua.NodeIdType.Numeric
+
+    # Subclass constructors stay consistent with auto-guess
+    assert ua.TwoByteNodeId(255).NodeIdType == ua.NodeIdType.TwoByte
+    assert ua.FourByteNodeId(65535, 255).NodeIdType == ua.NodeIdType.FourByte
 
 
 def test_zero_nodeid():
