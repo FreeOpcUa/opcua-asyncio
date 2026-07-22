@@ -629,6 +629,32 @@ def test_equal_nodeid():
     assert id(nid1) != id(nid2)
 
 
+
+def test_to_nodeid_int_ranges():
+    """_to_nodeid must encode large integer identifiers (GH-1831).
+
+    Standard reference types such as HasDictionaryEntry (17597) exceed the
+    TwoByteNodeId range and previously raised ValueError.
+    """
+    from asyncua.common.node import _to_nodeid
+
+    n = _to_nodeid(53)
+    assert isinstance(n, ua.TwoByteNodeId)
+    assert n.Identifier == 53
+
+    n = _to_nodeid(256)
+    assert isinstance(n, ua.FourByteNodeId)
+    assert n.Identifier == 256
+
+    n = _to_nodeid(ua.ObjectIds.HasDictionaryEntry)  # 17597
+    assert isinstance(n, (ua.FourByteNodeId, ua.NodeId))
+    assert n.Identifier == 17597
+
+    n = _to_nodeid(70000)
+    assert isinstance(n, ua.NumericNodeId)
+    assert n.Identifier == 70000
+
+
 def test_zero_nodeid():
     assert ua.NodeId() == ua.NodeId(0, 0)
     assert ua.NodeId() == ua.NodeId.from_string("ns=0;i=0;")
