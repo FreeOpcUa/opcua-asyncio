@@ -42,7 +42,14 @@ def _check_results(results: list[ua.StatusCode], reqlen: int = 1) -> None:
 
 def _to_nodeid(nodeid: Node | ua.NodeId | str | int) -> ua.NodeId:
     if isinstance(nodeid, int):
-        return ua.TwoByteNodeId(nodeid)
+        # Pick the compact NodeId encoding that can hold the identifier.
+        # TwoByteNodeId only supports 0..255; larger standard reference type
+        # ids (e.g. HasDictionaryEntry = 17597) need FourByte/Numeric.
+        if nodeid <= 255:
+            return ua.TwoByteNodeId(nodeid)
+        if nodeid <= 65535:
+            return ua.FourByteNodeId(nodeid)
+        return ua.NumericNodeId(nodeid)
     if isinstance(nodeid, Node):
         return nodeid.nodeid
     if isinstance(nodeid, ua.NodeId):
