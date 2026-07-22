@@ -88,16 +88,12 @@ async def generate_csr():
         x509.DNSName(f"{HOSTNAME}"),
     ]
 
-    key: RSAPrivateKey = generate_private_key()
     key = await load_private_key(base_private / "myserver.pem")
     csr: x509.CertificateSigningRequest = generate_app_certificate_signing_request(
         key, f"myserver@{HOSTNAME}", NAMES, subject_alt_names, extended=CLIENT_SERVER_USE
     )
 
-    # key_file = base_private / 'myserver.pem'
     csr_file = base_csr / "myserver.csr"
-
-    # key_file.write_bytes(dump_private_key_as_pem(key))
     async with await anyio.open_file(str(csr_file), "wb") as f:
         await f.write(csr.public_bytes(encoding=Encoding.PEM))
 
@@ -107,12 +103,14 @@ async def sign_csr():
     key_ca = await load_private_key(base_private / "ca_application.pem")
     csr_file: Path = base_csr / "myserver.csr"
     async with await anyio.open_file(str(csr_file), "rb") as f:
-        csr = x509.load_pem_x509_csr(f.read_file())
+        csr = x509.load_pem_x509_csr(await f.read())
 
     cert: x509.Certificate = sign_certificate_request(csr, issuer, key_ca, days=30)
 
+    # Write the signed certificate (not the CSR). DER matches the .der path
+    # and generate_self_signed_certificate / generate_applicationgroup_ca.
     async with await anyio.open_file(str(base_certs / "myserver.der"), "wb") as f:
-        await f.write(csr.public_bytes(encoding=Encoding.PEM))
+        await f.write(cert.public_bytes(encoding=Encoding.DER))
 
 
 async def main():
