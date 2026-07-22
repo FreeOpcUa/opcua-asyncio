@@ -954,3 +954,15 @@ assert not loaded, loaded
         [sys.executable, "-c", code],
         check=True,
     )
+
+
+async def test_set_application_uri_updates_server_array(server):
+    """set_application_uri must update both NamespaceArray[1] and ServerArray[0] (GH-1966)."""
+    new_uri = "urn:freeopcua:python:server:test_server_array"
+    await server.set_application_uri(new_uri)
+
+    ns = await server.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray)).read_value()
+    sa = await server.get_node(ua.NodeId(ua.ObjectIds.Server_ServerArray)).read_value()
+    assert ns[1] == new_uri
+    assert sa[0] == new_uri
+    assert server.get_application_uri() == new_uri

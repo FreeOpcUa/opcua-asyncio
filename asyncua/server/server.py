@@ -273,6 +273,9 @@ class Server:
         your server to a discovery server, it really should be unique in
         your system!
         default is : "urn:freeopcua:python:server"
+
+        Per OPC UA Part 5 §6.3.1, both NamespaceArray[1] and ServerArray[0]
+        shall equal the ApplicationUri.
         """
         self._application_uri = uri
         ns_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_NamespaceArray))
@@ -282,6 +285,15 @@ class Server:
         else:
             uries.append(uri)
         await ns_node.write_value(uries)
+
+        # Keep ServerArray in sync (Part 5 §6.3.1)
+        sa_node = self.get_node(ua.NodeId(ua.ObjectIds.Server_ServerArray))
+        server_array = await sa_node.read_value()
+        if server_array:
+            server_array[0] = uri
+        else:
+            server_array = [uri]
+        await sa_node.write_value(server_array)
 
     async def find_servers(self, uris: list[str] | None = None) -> list[ua.ApplicationDescription]:
         """
