@@ -1201,3 +1201,64 @@ def test_option_set_size():
     assert len(binary) == 2
     val_2 = ua_binary.from_binary(ua.DataSetFieldFlags, ua.utils.Buffer(binary))
     assert val == val_2
+
+
+def test_sort_nodes_progress_check_and_type_class_typedef():
+    """XmlImporter._sort_nodes must not hang and must sort Type-class nodes (GH-1996).
+
+    1. Progress detection: last_len must be updated each iteration so an
+       unresolvable graph raises instead of spinning forever.
+    2. Type-class nodes: a UAObjectType whose typedef points at an instance
+       of itself (TwinCAT export pattern) must still sort.
+    """
+    from asyncua.common.xmlimporter import XmlImporter
+    from asyncua.common.xmlparser import NodeData
+
+    importer = XmlImporter.__new__(XmlImporter)
+
+    # --- Type-class + instance cycle that previously hung ---
+    type_node = NodeData()
+    type_node.nodeid = "ns=1;i=1000"
+    type_node.nodetype = "UAObjectType"
+    type_node.parent = None
+    type_node.typedef = "ns=1;i=1001"  # points at instance (export quirk)
+    type_node.datatype = None
+    type_node.definitions = []
+
+    instance = NodeData()
+    instance.nodeid = "ns=1;i=1001"
+    instance.nodetype = "UAObject"
+    instance.parent = None
+    instance.typedef = "ns=1;i=1000"  # real TypeDefinition of the type
+    instance.datatype = None
+    instance.definitions = []
+
+    sorted_nodes = importer._sort_nodes([type_node, instance])
+    assert {n.nodeid for n in sorted_nodes} == {type_node.nodeid, instance.nodeid}
+    # Type must come before instance (instance depends on typedef)
+    ids = [n.nodeid for n in sorted_nodes]
+    assert ids.index(type_node.nodeid) < ids.index(instance.nodeid)
+
+    # --- Truly unresolvable: mutual parent cycle, no progress ---
+    a = NodeData()
+    a.nodeid = "ns=1;i=1"
+    a.nodetype = "UAObject"
+    a.parent = "ns=1;i=2"
+    a.typedef = None
+    a.datatype = None
+    a.definitions = []
+
+    b = NodeData()
+    b.nodeid = "ns=1;i=2"
+    b.nodetype = "UAObject"
+    b.parent = "ns=1;i=1"
+    b.typedef = None
+    b.datatype = None
+    b.definitions = []
+
+    try:
+        importer._sort_nodes([a, b])
+        raise AssertionError("expected ValueError for unresolvable parent cycle")
+    except ValueError as exc:
+        assert "Ordering of nodes is not possible" in str(exc)
+

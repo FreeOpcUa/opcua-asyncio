@@ -801,6 +801,18 @@ class XmlImporter:
             sorted_ndatas.append(ndata)
             sorted_nodes[nid] = ndata
 
+        # Type-class nodes do not require a resolved TypeDefinition before
+        # themselves; only instance nodes need their typedef ordered first.
+        # TwinCAT / Beckhoff NodeSet exports often attach a TypeDefinition
+        # reference on UA*Type nodes that points at an instance of that type,
+        # which forms a cycle under the instance rule (GH-1996).
+        type_node_kinds = {
+            "UAObjectType",
+            "UAVariableType",
+            "UADataType",
+            "UAReferenceType",
+        }
+
         last_len = 0
         while len(sorted_nodes) < len(ndatas):
             for nid, ndata in all_nodes.items():
@@ -809,7 +821,11 @@ class XmlImporter:
                 if ndata.datatype is not None and ndata.datatype in all_nodes:
                     if ndata.datatype not in sorted_nodes:
                         continue
-                if ndata.typedef is not None and ndata.typedef in all_nodes:
+                if (
+                    ndata.typedef is not None
+                    and ndata.typedef in all_nodes
+                    and ndata.nodetype not in type_node_kinds
+                ):
                     if ndata.typedef not in sorted_nodes:
                         continue
                 if ndata.parent is None or ndata.parent not in all_nodes:
@@ -820,6 +836,7 @@ class XmlImporter:
                     if ndata.parent in sorted_nodes:
                         add_to_sorted(nid, ndata)
             if last_len == len(sorted_nodes):
-                # When no change is found we are in a endlessloop
+                # When no change is found we are in an endless loop
                 raise ValueError("Ordering of nodes is not possible")
+            last_len = len(sorted_nodes)
         return sorted_ndatas
