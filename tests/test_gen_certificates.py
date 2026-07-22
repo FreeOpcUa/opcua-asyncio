@@ -287,7 +287,15 @@ async def test_signed_certificate_written_as_der_not_csr(tmp_path) -> None:
     loaded = await load_certificate(str(out_path))
     assert loaded.subject == cert.subject
     assert loaded.issuer == issuer.subject
-    assert loaded.public_key().public_numbers() == csr.public_key().public_numbers()
+    loaded_pub = loaded.public_key().public_bytes(
+        serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    csr_pub = csr.public_key().public_bytes(
+        serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    assert loaded_pub == csr_pub
     # DER-encoded X.509 cert is not PEM
     assert not out_path.read_bytes().startswith(b"-----BEGIN")
 
