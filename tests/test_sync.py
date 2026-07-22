@@ -86,6 +86,19 @@ def test_sync_client_set_max_concurrent_requests(client):
     assert client.aio_obj.uaclient._max_concurrent_requests == 3
 
 
+def test_sync_server_set_application_uri(tloop):
+    """Sync Server must expose set_application_uri / get_application_uri (GH-1967)."""
+    s = Server(tloop=tloop)
+    s.disable_clock(True)
+    new_uri = "urn:freeopcua:python:server:sync_test_app_uri"
+    s.set_application_uri(new_uri)
+    assert s.get_application_uri() == new_uri
+    # Namespace index 1 holds the application URI.
+    namespaces = s.get_namespace_array()
+    assert namespaces[1] == new_uri
+    s.stop()
+
+
 def test_sync_uaclient_method(client, idx):
     client.load_type_definitions()
     myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])

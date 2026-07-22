@@ -598,6 +598,12 @@ class Server:
     def set_server_name(self, name: str) -> None:
         return self.aio_obj.set_server_name(name)
 
+    def get_application_uri(self) -> str:
+        return self.aio_obj.get_application_uri()
+
+    @syncmethod
+    def set_application_uri(self, uri: str) -> None: ...
+
     def set_security_policy(
         self, security_policy: list[ua.SecurityPolicyType], permission_ruleset: Any | None = None
     ) -> None:
