@@ -81,6 +81,11 @@ def test_sync_client(client, idx):
     assert myvar.read_value() == 6.7
 
 
+def test_sync_client_set_max_concurrent_requests(client):
+    client.set_max_concurrent_requests(3)
+    assert client.aio_obj.uaclient._max_concurrent_requests == 3
+
+
 def test_sync_uaclient_method(client, idx):
     client.load_type_definitions()
     myvar = client.nodes.root.get_child(["0:Objects", f"{idx}:MyObject", f"{idx}:MyVariable"])

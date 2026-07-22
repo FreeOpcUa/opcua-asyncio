@@ -310,6 +310,9 @@ class Client:
     def set_locale(self, locale: Sequence[str]) -> None:
         self.aio_obj.set_locale(locale)
 
+    def set_max_concurrent_requests(self, max_concurrent_requests: int) -> None:
+        self.aio_obj.set_max_concurrent_requests(max_concurrent_requests)
+
     @syncmethod
     def load_private_key(
         self, path: str, password: str | bytes | None = None, extension: str | None = None
