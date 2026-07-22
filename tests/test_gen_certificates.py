@@ -242,6 +242,56 @@ async def test_app_sign_certificate_request() -> None:
     )
 
 
+async def test_signed_certificate_written_as_der_not_csr(tmp_path) -> None:
+    """After sign_certificate_request, persist the cert DER — not CSR PEM (GH-1959).
+
+    examples/generate_certificates.py sign_csr() previously wrote
+    csr.public_bytes(PEM) into myserver.der. The signed certificate must be
+    written instead, in DER form to match the .der path and other helpers.
+    """
+    hostname = socket.gethostname()
+    names = {
+        "countryName": "NL",
+        "stateOrProvinceName": "ZH",
+        "localityName": "Foo",
+        "organizationName": "Bar Ltd",
+    }
+    subject_alt_names: list[x509.GeneralName] = [
+        x509.UniformResourceIdentifier(f"urn:{hostname}:foobar:myserver"),
+        x509.DNSName(f"{hostname}"),
+    ]
+    extended = [ExtendedKeyUsageOID.CLIENT_AUTH, ExtendedKeyUsageOID.SERVER_AUTH]
+
+    key_ca = generate_private_key()
+    issuer = generate_self_signed_app_certificate(
+        key_ca, "Application CA", names, subject_alt_names, extended=[], days=365
+    )
+    key_server = generate_private_key()
+    csr = generate_app_certificate_signing_request(
+        key_server, f"myserver@{hostname}", names, subject_alt_names, extended=extended
+    )
+    cert = sign_certificate_request(csr, issuer, key_ca, days=30)
+
+    # Correct pattern used by the fixed example (and generate_self_signed_certificate)
+    out_path = tmp_path / "myserver.der"
+    cert_der = cert.public_bytes(serialization.Encoding.DER)
+    out_path.write_bytes(cert_der)
+
+    # Must not be CSR material (the old bug wrote CSR PEM into the .der path)
+    csr_pem = csr.public_bytes(serialization.Encoding.PEM)
+    csr_der = csr.public_bytes(serialization.Encoding.DER)
+    assert out_path.read_bytes() != csr_pem
+    assert out_path.read_bytes() != csr_der
+    assert out_path.read_bytes() == cert_der
+
+    loaded = await load_certificate(str(out_path))
+    assert loaded.subject == cert.subject
+    assert loaded.issuer == issuer.subject
+    assert loaded.public_key().public_numbers() == csr.public_key().public_numbers()
+    # DER-encoded X.509 cert is not PEM
+    assert not out_path.read_bytes().startswith(b"-----BEGIN")
+
+
 async def test_generate_load_private_key_pem(tmp_path):
     key_path = tmp_path / "cert.pem"
     key = generate_private_key()
