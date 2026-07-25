@@ -190,7 +190,7 @@ class DataSetReader(PubSubInformationModel):
                 values.append(
                     DataValue(
                         v,
-                        header.Status,
+                        status_to_status_code(header.Status),
                         SourceTimestamp=None,
                         ServerTimestamp=header.Timestamp,
                         SourcePicoseconds=None,

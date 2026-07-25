@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import struct
 from datetime import timezone
 from typing import ClassVar
 
@@ -14,6 +15,7 @@ from asyncua.pubsub.reader import DataSetReader, ReaderGroup
 from asyncua.pubsub.uadp import (
     UadpDataSetDataValue,
     UadpDataSetMessageHeader,
+    UadpDataSetRaw,
     UadpDataSetVariant,
     UadpGroupHeader,
     UadpHeader,
@@ -405,3 +407,25 @@ def test_udp_settings_key_names_consistent():
     assert "loopback" in key_names
     assert "reuse" in key_names
     assert "ttl" in key_names
+
+
+async def test_raw_dataset_status_is_status_code():
+    """Raw (fixed-layout) datasets must expose a StatusCode object, not a raw int.
+
+    Regression test for https://github.com/FreeOpcUa/opcua-asyncio/issues/1960
+    where `_datavalues_from_raw` passed the UInt16 header status straight into
+    `DataValue`, so `DataValue.StatusCode.is_good()` raised AttributeError.
+    """
+    dataset = DataSetMeta.Create(String("Raw"))
+    dataset.add_field(pubsub.DataSetField.CreateScalar(String("Val"), VariantType.Int32))
+    reader = DataSetReader.new(
+        publisherId=Variant(UInt16(1)),
+        writer_group_id=UInt16(1),
+        dataset_writer_id=UInt16(1),
+        meta=dataset,
+    )
+    header = UadpDataSetMessageHeader(Status=UInt16(0))
+    raw = UadpDataSetRaw(header, struct.pack("<i", 42))
+    values = reader._datavalues_from_raw(raw, header)
+    assert isinstance(values[0].StatusCode, StatusCode)
+    assert values[0].StatusCode.is_good()
