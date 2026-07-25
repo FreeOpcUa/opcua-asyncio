@@ -2,6 +2,9 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+from asyncua import ua
+from asyncua.common.node import Node
+
 pytestmark = pytest.mark.asyncio
 
 
@@ -115,3 +118,31 @@ async def test_history_var_read_3_with_end(history_server):
     assert 3 == len(res)
     assert res[2].Value.Value == history_server.values[-3]
     assert res[0].Value.Value == history_server.values[-1]
+
+
+async def test_history_var_read_repeated_continuation_point():
+    """
+    Some servers do not treat numvalues=0 as "as many as you can" and answer
+    with no data plus the same continuation point over and over. read_raw_history
+    must not loop forever on such a server.
+    """
+
+    class _StuckServerNode(Node):
+        def __init__(self):
+            self.calls = 0
+
+        async def history_read(self, details, continuation_point=None):
+            self.calls += 1
+            if self.calls > 10:
+                raise AssertionError("read_raw_history did not stop on a repeated continuation point")
+            result = ua.HistoryReadResult()
+            result.StatusCode = ua.StatusCode(ua.StatusCodes.Good)
+            result.ContinuationPoint = b"\x00\x00\x01\x9d"
+            result.HistoryData = ua.HistoryData()
+            result.HistoryData.DataValues = []
+            return result
+
+    node = _StuckServerNode()
+    res = await node.read_raw_history(numvalues=0)
+    assert [] == res
+    assert 2 == node.calls

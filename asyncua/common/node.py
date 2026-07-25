@@ -701,12 +701,17 @@ class Node:
         history = []
         continuation_point = None
         while True:
+            previous_continuation_point = continuation_point
             result = await self.history_read(details, continuation_point)
             result.StatusCode.check()
             continuation_point = result.ContinuationPoint
             history.extend(result.HistoryData.DataValues)  # type: ignore[attr-defined]
             # No more data available
             if continuation_point is None:
+                break
+            # Server is not making progress: it returned the same continuation
+            # point again, so continuing would loop forever
+            if continuation_point == previous_continuation_point:
                 break
             # No more data needed
             if numvalues > 0:
