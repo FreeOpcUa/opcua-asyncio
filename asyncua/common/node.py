@@ -42,9 +42,6 @@ def _check_results(results: list[ua.StatusCode], reqlen: int = 1) -> None:
 
 def _to_nodeid(nodeid: Node | ua.NodeId | str | int) -> ua.NodeId:
     if isinstance(nodeid, int):
-        # Use NodeId's range-based encoding (TwoByte/FourByte/Numeric).
-        # Plain TwoByteNodeId only allows 0..255; standard reference type ids
-        # such as HasDictionaryEntry (17597) need a wider form (GH-1831).
         return ua.NodeId(nodeid)
     if isinstance(nodeid, Node):
         return nodeid.nodeid
