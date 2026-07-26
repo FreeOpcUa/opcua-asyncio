@@ -176,7 +176,8 @@ class MonitoredItemService:
         self._commit_monitored_item(result, mdata)
         if result.StatusCode.is_good():
             self._monitored_datachange[handle] = result.MonitoredItemId
-            await self.trigger_datachange(handle, params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId)
+            if mdata.mode != ua.MonitoringMode.Disabled:
+                await self.trigger_datachange(handle, params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId)
         return result
 
     def delete_monitored_items(self, ids: list[int]) -> list[ua.StatusCode]:
@@ -243,6 +244,8 @@ class MonitoredItemService:
             event = ua.MonitoredItemNotification()
             mid = self._monitored_datachange[handle]
             mdata = self._monitored_items[mid]
+            if mdata.mode == ua.MonitoringMode.Disabled:
+                return
             mdata.mvalue.set_current_datavalue(value)
             if mdata.filter:
                 deadband_flag_pass = self._is_data_changed(
