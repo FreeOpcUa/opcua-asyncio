@@ -959,6 +959,25 @@ async def test_incl_subtypes(opc):
     assert 0 == len(descs)
 
 
+async def test_browse_reflects_written_display_name(opc):
+    objects = opc.opc.nodes.objects
+    f = await objects.add_folder(3, "MyFolder_BrowseRefresh")
+    o = await f.add_object(3, "MyObject_BrowseRefresh", ua.ObjectIds.BaseObjectType)
+
+    await o.write_attribute(
+        ua.AttributeIds.DisplayName,
+        ua.DataValue(ua.Variant(ua.LocalizedText("Renamed"), ua.VariantType.LocalizedText)),
+    )
+
+    descs = await f.get_children_descriptions()
+    desc = next(d for d in descs if d.NodeId == o.nodeid)
+    assert ua.LocalizedText("Renamed") == desc.DisplayName
+    # refreshing the name must not drop the other reference fields
+    assert ua.NodeId(ua.ObjectIds.BaseObjectType) == desc.TypeDefinition
+
+    await opc.opc.delete_nodes([o, f])
+
+
 async def test_add_node_with_type(opc):
     objects = opc.opc.nodes.objects
     f = await objects.add_folder(3, "MyFolder_TypeTest")

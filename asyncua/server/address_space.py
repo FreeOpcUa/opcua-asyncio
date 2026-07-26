@@ -147,8 +147,30 @@ class ViewService:
         for ref in node.references:
             if not self._is_suitable_ref(desc, ref):
                 continue
-            res.References.append(ref)
+            res.References.append(self._refresh_ref(ref))
         return res
+
+    def _refresh_ref(self, ref: ua.ReferenceDescription) -> ua.ReferenceDescription:
+        """Return `ref` with BrowseName/DisplayName taken from the target node.
+
+        The values stored on a ReferenceDescription are a snapshot taken when the
+        reference was created, so a later write to the target's BrowseName or
+        DisplayName attribute would otherwise never show up in Browse results.
+        """
+        target = self._aspace.get(ref.NodeId)
+        if target is None:
+            return ref
+        changes = {}
+        for name, attr in (("BrowseName", ua.AttributeIds.BrowseName), ("DisplayName", ua.AttributeIds.DisplayName)):
+            attval = target.attributes.get(attr)
+            if attval is None or attval.value is None or attval.value.Value is None:
+                continue
+            current = attval.value.Value.Value
+            if current is not None and current != getattr(ref, name):
+                changes[name] = current
+        if not changes:
+            return ref
+        return dataclasses.replace(ref, **changes)
 
     def _is_suitable_ref(self, desc: ua.BrowseDescription, ref: ua.ReferenceDescription) -> bool:
         if not self._suitable_direction(desc.BrowseDirection, ref.IsForward):
