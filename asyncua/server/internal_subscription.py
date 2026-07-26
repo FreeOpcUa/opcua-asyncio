@@ -127,14 +127,14 @@ class InternalSubscription:
     def has_published_results(self) -> bool:
         if self._startup or self._triggered_datachanges or self._triggered_events:
             return True
-        if self._keep_alive_count > self.data.RevisedMaxKeepAliveCount:
+        self._keep_alive_count += 1
+        if self._keep_alive_count >= self.data.RevisedMaxKeepAliveCount:
             self.logger.debug(
-                "keep alive count %s is > than max keep alive count %s, sending publish event",
+                "keep alive count %s reached max keep alive count %s, sending publish event",
                 self._keep_alive_count,
                 self.data.RevisedMaxKeepAliveCount,
             )
             return True
-        self._keep_alive_count += 1
         return False
 
     async def publish_results(self, requestdata: PublishRequestData | None = None) -> bool:
