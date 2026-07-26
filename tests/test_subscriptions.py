@@ -340,6 +340,25 @@ async def test_set_monitoring_mode(opc, mocker):
     await sub.delete()
 
 
+async def test_monitored_item_created_disabled_does_not_report(opc):
+    """
+    A monitored item created with MonitoringMode.Disabled must not be reported.
+    """
+    myhandler = MySubHandlerCounter()
+    o = opc.opc.nodes.objects
+    v = await o.add_variable(3, "SubscriptionVariableDisabled", 123)
+    sub = await opc.opc.create_subscription(100, myhandler)
+    handle = await sub.subscribe_data_change(v, monitoring=ua.MonitoringMode.Disabled)
+    await sleep(0.3)
+    assert myhandler.datachange_count == 0
+    await v.write_value(456)
+    await sleep(0.3)
+    assert myhandler.datachange_count == 0
+    await sub.unsubscribe(handle)
+    await sub.delete()
+    await opc.opc.delete_nodes([v])
+
+
 @pytest.mark.parametrize("opc", ["client"], indirect=True)
 async def test_set_publishing_mode(opc, mocker):
     """
