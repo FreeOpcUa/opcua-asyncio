@@ -545,7 +545,7 @@ class UaClient:
 
     async def connect_socket(self, host: str, port: int) -> None:
         """Connect to server socket."""
-        self.logger.info("opening connection")
+        self.logger.debug("opening connection")
         self._set_state(UaClientState.CONNECTING)
         try:
             await asyncio.wait_for(
@@ -553,6 +553,28 @@ class UaClient:
             )
         except BaseException:
             self._set_state(UaClientState.DISCONNECTED)
+            raise
+        self._set_state(UaClientState.SOCKET_OPEN)
+
+    def attach_socket(self, transport: asyncio.Transport, *, leftover_data: bytes = b"") -> None:
+        """Attach to an existing socket.
+
+        :param transport: Transport to attach to.
+        :param leftover_data: Data received from the transport, but to be processed by the UA protocol.
+        """
+        self.logger.debug("attaching to an existing connection")
+        self._set_state(UaClientState.CONNECTING)
+        try:
+            p = self._make_protocol()
+            transport.set_protocol(p)
+            p.connection_made(transport)
+            if leftover_data:
+                p.data_received(leftover_data)
+            if not transport.is_reading():
+                transport.resume_reading()
+        except BaseException:
+            self._set_state(UaClientState.DISCONNECTED)
+            transport.close()
             raise
         self._set_state(UaClientState.SOCKET_OPEN)
 

@@ -510,6 +510,79 @@ class Client:
         self.disconnect()
 
 
+class SyncRCServer:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        *,
+        tloop: ThreadLoop | None = None,
+        sync_wrapper_timeout: float | None = 120,
+        rc_validation_hook: client.rc.RCValidateHook | None = None,
+        slow_connection_timeout: float | None = None,
+        reuse_address: bool | None = None,
+    ) -> None:
+        self.close_tloop: bool = False
+        if not tloop:
+            tloop = ThreadLoop(sync_wrapper_timeout)
+            tloop.start()
+            self.close_tloop = True
+        self.tloop: ThreadLoop = tloop
+        self.aio_obj = client.rc.RCServer(
+            host,
+            port,
+            rc_validation_hook=rc_validation_hook,
+            slow_connection_timeout=slow_connection_timeout,
+            reuse_address=reuse_address,
+        )
+
+    @property
+    def is_listening(self) -> bool:
+        return self.aio_obj.is_listening
+
+    @syncmethod
+    def start(self) -> None: ...
+
+    @syncmethod
+    def stop(self) -> None: ...
+
+    @syncmethod
+    def next_rc(self) -> client.rc.ReverseConnection: ...
+
+    def __enter__(self) -> "SyncRCServer":
+        self.start()
+        return self
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
+    ) -> None:
+        self.stop()
+
+
+class RCClient(Client):
+    def __init__(
+        self,
+        rc_server: SyncRCServer | client.rc.RCServer,
+        *,
+        rc_timeout: float | None = 30.0,
+        timeout: float = 4,
+        tloop: ThreadLoop | None = None,
+        sync_wrapper_timeout: float | None = 120,
+        watchdog_intervall: float = 1.0,
+    ) -> None:
+        self.close_tloop: bool = False
+        if not tloop:
+            tloop = ThreadLoop(sync_wrapper_timeout)
+            tloop.start()
+            self.close_tloop = True
+        self.tloop: ThreadLoop = tloop
+        rc_server = rc_server if isinstance(rc_server, client.rc.RCServer) else rc_server.aio_obj
+        self.aio_obj = client.rc.RCClient(
+            rc_server, rc_timeout=rc_timeout, timeout=timeout, watchdog_intervall=watchdog_intervall
+        )
+        self.nodes: Shortcuts = Shortcuts(self.tloop, self.aio_obj.uaclient)
+
+
 class Shortcuts:
     root: SyncNode
     objects: SyncNode
