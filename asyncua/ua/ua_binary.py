@@ -583,15 +583,23 @@ def nodeid_from_binary(data: BytesIO | Buffer) -> ua.NodeId | ua.ExpandedNodeId:
 
 def variant_to_binary(var: ua.Variant) -> bytes:
     encoding = var.VariantType.value & 0b0011_1111
-    if var.is_array or isinstance(var.Value, list | tuple):
-        body = pack_uatype_array(var.VariantType, ua.flatten(var.Value))
-        if var.Dimensions is None:
-            encoding |= 0b1000_0000
+    try:
+        if var.is_array or isinstance(var.Value, list | tuple):
+            body = pack_uatype_array(var.VariantType, ua.flatten(var.Value))
+            if var.Dimensions is None:
+                encoding |= 0b1000_0000
+            else:
+                encoding |= 0b1100_0000
+                body += pack_uatype_array(ua.VariantType.Int32, var.Dimensions)
         else:
-            encoding |= 0b1100_0000
-            body += pack_uatype_array(ua.VariantType.Int32, var.Dimensions)
-    else:
-        body = pack_uatype(var.VariantType, var.Value)
+            body = pack_uatype(var.VariantType, var.Value)
+    except (struct.error, TypeError, OverflowError) as ex:
+        # Common when a Python value does not match VariantType (e.g. float written as Int32).
+        # Include VariantType and Python type so callers can find the offender (#1614).
+        raise UaError(
+            f"Cannot pack VariantType.{getattr(var.VariantType, 'name', var.VariantType)} "
+            f"with value {var.Value!r} (python type {type(var.Value).__name__}): {ex}"
+        ) from ex
     return Primitives.Byte.pack(encoding) + body
 
 

@@ -549,6 +549,17 @@ def test_null_string():
     assert v.Value == v2.Value
 
 
+def test_variant_to_binary_type_mismatch_error():
+    """Float stored as Int32 must raise a clear UaError (issue #1614)."""
+    v = ua.Variant(1.5, ua.VariantType.Int32)
+    with pytest.raises(ua.UaError, match=r"Cannot pack VariantType\.Int32.*1\.5.*float"):
+        variant_to_binary(v)
+
+    v_arr = ua.Variant([1, 2.5], ua.VariantType.Int32)
+    with pytest.raises(ua.UaError, match=r"Cannot pack VariantType\.Int32"):
+        variant_to_binary(v_arr)
+
+
 def test_empty_extension_object():
     obj = ua.ExtensionObject()
     obj2 = extensionobject_from_binary(ua.utils.Buffer(extensionobject_to_binary(obj)))

@@ -752,6 +752,50 @@ async def test_server_read_write_attribute_value(server: Server):
     await server.delete_nodes([node])
 
 
+async def test_publish_encoding_error_includes_nodeid(server: Server):
+    """Mismatched python type on a Variant must surface NodeId when publish encoding fails (#1614)."""
+    from asyncua.server.internal_subscription import InternalSubscription
+    from asyncua.server.monitored_item_service import MonitoredItemData
+
+    node = await server.get_objects_node().add_variable(0, "0:PackMismatch", 0, varianttype=ua.VariantType.Int32)
+    bad_dv = ua.DataValue(ua.Variant(3.14, ua.VariantType.Int32))
+    await server.write_attribute_value(node.nodeid, bad_dv)
+
+    sub_data = ua.CreateSubscriptionResult()
+    sub_data.SubscriptionId = 1
+    sub_data.RevisedPublishingInterval = 100.0
+    sub_data.RevisedLifetimeCount = 10
+    sub_data.RevisedMaxKeepAliveCount = 10
+
+    async def _noop(*_args, **_kwargs):
+        return None
+
+    isub = InternalSubscription(sub_data, server.iserver.aspace, _noop, ua.NodeId(1))
+    mdata = MonitoredItemData()
+    mdata.client_handle = 42
+    mdata.nodeid = node.nodeid
+    mdata.monitored_item_id = 1
+    isub.monitored_item_srv._monitored_items[1] = mdata
+
+    item = ua.MonitoredItemNotification()
+    item.ClientHandle = 42
+    item.Value = bad_dv
+    result = ua.PublishResult()
+    notif = ua.DataChangeNotification()
+    notif.MonitoredItems = [item]
+    result.NotificationMessage.NotificationData.append(notif)
+
+    msg = isub._describe_publish_encoding_error(result)
+    assert msg is not None
+    assert str(node.nodeid) in msg
+    assert "ClientHandle=42" in msg
+    assert "Int32" in msg
+    assert "3.14" in msg
+    assert "float" in msg
+
+    await server.delete_nodes([node])
+
+
 async def test_server_read_set_attribute_value_callback(server: Server):
     node = await server.get_objects_node().add_variable(0, "0:TestVar", 0, varianttype=ua.VariantType.Int64)
     dv = server.read_attribute_value(node.nodeid, attr=ua.AttributeIds.Value)

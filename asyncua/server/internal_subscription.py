@@ -172,13 +172,45 @@ class InternalSubscription:
                 return False
         result = self._pop_publish_result()
         # self.logger.info('publish_results for %s', self.data.SubscriptionId)
-        if requestdata is None:
-            # Subscription.publish_callback -> server internal subscription
-            await self.pub_result_callback(result)
-        else:
-            # UaProcessor.forward_publish_response -> client subscription
-            await self.pub_result_callback(result, requestdata)
+        try:
+            if requestdata is None:
+                # Subscription.publish_callback -> server internal subscription
+                await self.pub_result_callback(result)
+            else:
+                # UaProcessor.forward_publish_response -> client subscription
+                await self.pub_result_callback(result, requestdata)
+        except Exception as ex:
+            # Encoding failures (e.g. float stored as Int32) are opaque at this layer;
+            # identify the offending NodeId / VariantType when possible (#1614).
+            detail = self._describe_publish_encoding_error(result)
+            if detail:
+                self.logger.error(detail)
+                raise ua.UaError(detail) from ex
+            raise
         return True
+
+    def _describe_publish_encoding_error(self, result: ua.PublishResult) -> str | None:
+        """Find which monitored item failed to encode and describe it for logging."""
+        from asyncua.ua.ua_binary import struct_to_binary
+
+        for notif in result.NotificationMessage.NotificationData:
+            if not isinstance(notif, ua.DataChangeNotification):
+                continue
+            for item in notif.MonitoredItems:
+                try:
+                    struct_to_binary(item)
+                except Exception as item_ex:
+                    nodeid = self.monitored_item_srv.get_nodeid_by_client_handle(item.ClientHandle)
+                    variant = item.Value.Value if item.Value is not None else None
+                    vtype = getattr(variant, "VariantType", None)
+                    vtype_name = getattr(vtype, "name", vtype)
+                    value = getattr(variant, "Value", None)
+                    return (
+                        f"Failed to encode data change for NodeId={nodeid}, "
+                        f"ClientHandle={item.ClientHandle}, VariantType={vtype_name}, "
+                        f"value={value!r} (python type {type(value).__name__}): {item_ex}"
+                    )
+        return None
 
     def _pop_publish_result(self) -> ua.PublishResult:
         """

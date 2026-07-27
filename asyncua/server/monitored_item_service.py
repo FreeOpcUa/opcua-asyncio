@@ -22,6 +22,7 @@ class MonitoredItemData:
         self.client_handle: int | None = None
         self.callback_handle: int | None = None
         self.monitored_item_id: int | None = None
+        self.nodeid: ua.NodeId | None = None
         self.mode: ua.MonitoringMode | None = None
         self.filter: Any = None
         self.mvalue = MonitoredItemValues()
@@ -62,6 +63,15 @@ class MonitoredItemService:
 
     def __str__(self) -> str:
         return f"MonitoredItemService({self.isub.data.SubscriptionId})"
+
+    def get_nodeid_by_client_handle(self, client_handle: int | None) -> ua.NodeId | None:
+        """Return the NodeId monitored under the given ClientHandle, if known."""
+        if client_handle is None:
+            return None
+        for mdata in self._monitored_items.values():
+            if mdata.client_handle == client_handle:
+                return mdata.nodeid
+        return None
 
     def delete_all_monitored_items(self) -> None:
         self.delete_monitored_items([mdata.monitored_item_id for mdata in self._monitored_items.values()])
@@ -122,6 +132,7 @@ class MonitoredItemService:
         mdata.mode = params.MonitoringMode
         mdata.client_handle = params.RequestedParameters.ClientHandle
         mdata.monitored_item_id = result.MonitoredItemId
+        mdata.nodeid = params.ItemToMonitor.NodeId
         mdata.queue_size = result.RevisedQueueSize
         mdata.filter = params.RequestedParameters.Filter
         return result, mdata
