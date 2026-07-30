@@ -18,6 +18,7 @@ from typing import Any, Literal, TypeVar, overload
 from cryptography import x509
 
 from asyncua import client, common, server, ua
+from asyncua.client.ua_client import UaClientState
 from asyncua.common import node, shortcuts, subscription, type_dictionary_builder, xmlexporter
 from asyncua.common.events import Event
 from asyncua.crypto import uacrypto
@@ -239,6 +240,9 @@ class Client:
     the sync client has one extra parameter: sync_wrapper_timeout.
     if no ThreadLoop is provided this timeout is used to define how long the sync wrapper
     waits for an async call to return. defualt is 120s and hopefully should fit most applications
+
+    Disconnecting keeps the ThreadLoop alive for later reconnects. Call close
+    when the client is no longer needed.
     """
 
     def __init__(
@@ -258,6 +262,10 @@ class Client:
         self.aio_obj: client.Client = client.Client(url, timeout, watchdog_intervall)
         self.nodes: Shortcuts = Shortcuts(self.tloop, self.aio_obj.uaclient)
 
+    def _stop_owned_tloop(self) -> None:
+        if self.close_tloop and self.tloop.is_alive():
+            self.tloop.stop()
+
     def __str__(self) -> str:
         return "Sync" + self.aio_obj.__str__()
 
@@ -275,31 +283,29 @@ class Client:
     def connect(self) -> None: ...
 
     def disconnect(self) -> None:
-        try:
-            self.tloop.post(self.aio_obj.disconnect())
-        finally:
-            if self.close_tloop:
-                self.tloop.stop()
+        self.tloop.post(self.aio_obj.disconnect())
 
     @syncmethod
     def connect_sessionless(self) -> None: ...
 
     def disconnect_sessionless(self) -> None:
-        try:
-            self.tloop.post(self.aio_obj.disconnect_sessionless())
-        finally:
-            if self.close_tloop:
-                self.tloop.stop()
+        self.tloop.post(self.aio_obj.disconnect_sessionless())
 
     @syncmethod
     def connect_socket(self) -> None: ...
 
     def disconnect_socket(self) -> None:
+        self.aio_obj.disconnect_socket()
+
+    def close(self) -> None:
+        """Disconnect and stop the internally owned ThreadLoop, if any."""
+        if not self.tloop.is_alive():
+            return
         try:
-            self.aio_obj.disconnect_socket()
+            if self.aio_obj.state is not UaClientState.DISCONNECTED:
+                self.tloop.post(self.aio_obj.disconnect())
         finally:
-            if self.close_tloop:
-                self.tloop.stop()
+            self._stop_owned_tloop()
 
     def set_user(self, username: str) -> None:
         self.aio_obj.set_user(username)
@@ -499,15 +505,15 @@ class Client:
     def __enter__(self) -> Client:
         try:
             self.connect()
-        except Exception as ex:
-            self.disconnect()
-            raise ex
+        except Exception:
+            self.close()
+            raise
         return self
 
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
     ) -> None:
-        self.disconnect()
+        self.close()
 
 
 class Shortcuts:

@@ -257,6 +257,68 @@ def test_sync_client_no_tl(client_no_tloop, idx):
     test_sync_meth(client_no_tloop, idx)
 
 
+def test_sync_client_reuses_owned_tloop_across_disconnects(server):
+    client = Client(f"opc.tcp://admin@localhost:{port_num}/freeopcua/server")
+    tloop = client.tloop
+    try:
+        client.connect()
+        server_state = client.nodes.server_state
+        assert server_state.read_value() == ua.ServerState.Running
+
+        client.disconnect()
+        assert client.tloop is tloop
+        assert tloop.is_alive()
+
+        client.connect()
+        assert client.tloop is tloop
+        assert server_state.read_value() == ua.ServerState.Running
+
+        client.disconnect()
+        assert tloop.is_alive()
+    finally:
+        client.close()
+
+    client.close()
+    assert not tloop.is_alive()
+
+
+def test_sync_client_context_manager_closes_owned_tloop(server):
+    client = Client(f"opc.tcp://admin@localhost:{port_num}/freeopcua/server")
+
+    with client:
+        assert client.tloop.is_alive()
+
+    assert not client.tloop.is_alive()
+
+
+def test_sync_client_close_does_not_stop_external_tloop(tloop, server):
+    client = Client(
+        f"opc.tcp://admin@localhost:{port_num}/freeopcua/server",
+        tloop=tloop,
+    )
+
+    client.connect()
+    client.close()
+    assert tloop.is_alive()
+
+
+@pytest.mark.parametrize(
+    ("connect_method", "disconnect_method"),
+    [
+        ("connect_sessionless", "disconnect_sessionless"),
+        ("connect_socket", "disconnect_socket"),
+    ],
+)
+def test_sync_client_partial_disconnect_keeps_owned_tloop(server, connect_method, disconnect_method):
+    client = Client(f"opc.tcp://admin@localhost:{port_num}/freeopcua/server")
+    try:
+        getattr(client, connect_method)()
+        getattr(client, disconnect_method)()
+        assert client.tloop.is_alive()
+    finally:
+        client.close()
+
+
 def test_sync_call_meth(client, idx):
     methodid = client.nodes.objects.get_child(f"{idx}:Divide")
     res = call_method_full(client.tloop, client.nodes.objects, methodid, 4, 2)
