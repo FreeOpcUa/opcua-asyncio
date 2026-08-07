@@ -26,7 +26,7 @@ from ..common.shortcuts import Shortcuts
 from ..common.structures import load_enums, load_type_definitions
 from ..common.structures104 import load_data_type_definitions
 from ..common.subscription import OverflowPolicy, Subscription
-from ..common.ua_utils import get_nodes_of_namespace
+from ..common.ua_utils import get_nodes_of_namespace, value_to_datavalue
 from ..common.xmlexporter import XmlExporter
 from ..common.xmlimporter import XmlImporter
 from ..crypto import security_policies, uacrypto, validator
@@ -947,3 +947,27 @@ class Server:
             self._pubsub = PubSub(server=self)
             await self._pubsub.init_information_model()
         return self._pubsub
+
+    async def write_values(self, values) -> None:
+        """
+        Write value of multiple nodes. Only variables(properties) have values.
+        An exception will be generated for other node types.
+        value argument is a dict:
+        * of the nodeId as key and DataValue or a python object as value 
+        WARNING: On server side, ref to object is directly saved in our UA db, if this is a mutable object
+        and you modify it afterward, then the object in db will be modified without any
+        data change event generated
+        """
+        params = ua.WriteParameters()
+        for nodeid, datavalue in values.items():
+            if not isinstance(datavalue,ua.DataValue):
+                datavalue = value_to_datavalue(datavalue, None)
+            attr = ua.WriteValue()
+            attr.NodeId = nodeid
+            attr.AttributeId = ua.AttributeIds.Value
+            attr.Value = datavalue
+            attr.IndexRange = None
+            params.NodesToWrite.append(attr)
+        result = await self.iserver.isession.write(params)
+        for status in result:
+            status.check()
