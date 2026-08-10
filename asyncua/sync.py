@@ -6,6 +6,7 @@ sync API of asyncua
 from __future__ import annotations
 
 import asyncio
+import atexit
 import functools
 import logging
 from collections.abc import Callable, Coroutine, Iterable, Sequence
@@ -32,13 +33,14 @@ class ThreadLoopNotRunning(Exception): ...
 
 class ThreadLoop(Thread):
     def __init__(self, timeout: float | None = 120) -> None:
-        Thread.__init__(self)
+        Thread.__init__(self, daemon=True)
         self.loop: asyncio.AbstractEventLoop | None = None
         self._cond: Condition = Condition()
         self.timeout: float | None = timeout
 
     def start(self) -> None:
         with self._cond:
+            atexit.register(self._at_exit)
             Thread.start(self)
             self._cond.wait()
 
@@ -75,6 +77,11 @@ class ThreadLoop(Thread):
         self, exc_t: type[BaseException] | None, exc_v: BaseException | None, trace: TracebackType | None
     ) -> None:
         self.stop()
+
+    def _at_exit(self) -> None:
+        if self.is_alive():
+            _logger.warning("Thread loop %s was not closed properly -- some tasks may not be finished", self.loop)
+            self.stop()
 
 
 def _to_async(args: tuple[Any, ...] | list[Any], kwargs: dict[str, Any]) -> tuple[list[Any], dict[str, Any]]:
