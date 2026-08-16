@@ -360,6 +360,57 @@ async def test_monitored_item_created_disabled_does_not_report(opc):
 
 
 @pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_monitored_item_enabled_after_disabled_reports_initial_sample(opc):
+    """
+    Switching a monitored item from Disabled to Reporting must report the current value.
+    """
+    myhandler = MySubHandlerCounter()
+    o = opc.opc.nodes.objects
+    v = await o.add_variable(3, "SubscriptionVariableDisabledThenEnabled", 123)
+    sub = await opc.opc.create_subscription(100, myhandler)
+    handle = await sub.subscribe_data_change(v, monitoring=ua.MonitoringMode.Disabled)
+    await sleep(0.3)
+    assert myhandler.datachange_count == 0
+    results = await sub.set_monitoring_mode(ua.MonitoringMode.Reporting)
+    assert all(res.is_good() for res in results)
+    await sleep(0.3)
+    assert myhandler.datachange_count == 1
+    await v.write_value(456)
+    await sleep(0.3)
+    assert myhandler.datachange_count == 2
+    await sub.unsubscribe(handle)
+    await sub.delete()
+    await opc.opc.delete_nodes([v])
+
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
+async def test_publishing_disabled_queues_until_reenabled(opc):
+    """
+    With publishing disabled the server sends no notifications, but queued data
+    changes are delivered once publishing is enabled again.
+    """
+    myhandler = MySubHandlerCounter()
+    o = opc.opc.nodes.objects
+    v = await o.add_variable(3, "SubscriptionVariablePublishingMode", 123)
+    sub = await opc.opc.create_subscription(100, myhandler)
+    handle = await sub.subscribe_data_change(v)
+    await sleep(0.3)
+    assert myhandler.datachange_count == 1
+    results = await sub.set_publishing_mode(False)
+    assert all(res.is_good() for res in results)
+    await v.write_value(456)
+    await sleep(0.3)
+    assert myhandler.datachange_count == 1
+    results = await sub.set_publishing_mode(True)
+    assert all(res.is_good() for res in results)
+    await sleep(0.3)
+    assert myhandler.datachange_count == 2
+    await sub.unsubscribe(handle)
+    await sub.delete()
+    await opc.opc.delete_nodes([v])
+
+
+@pytest.mark.parametrize("opc", ["client"], indirect=True)
 async def test_set_publishing_mode(opc, mocker):
     """
     test flipping the publishing parameter for an existing subscription

@@ -308,6 +308,12 @@ class InternalSession(AbstractSession):
         )
         return subscription_result
 
+    async def set_monitoring_mode(self, params: ua.SetMonitoringModeParameters) -> list[ua.StatusCode]:
+        return await self.subscription_service.set_monitoring_mode(params)
+
+    async def set_publishing_mode(self, params: ua.SetPublishingModeParameters) -> list[ua.StatusCode]:
+        return await self.subscription_service.set_publishing_mode(params)
+
     def republish(self, params: ua.RepublishParameters) -> ua.NotificationMessage:
         return self.subscription_service.republish(params)
 

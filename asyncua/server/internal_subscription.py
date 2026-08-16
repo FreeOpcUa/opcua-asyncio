@@ -39,6 +39,7 @@ class InternalSubscription:
         delete_callback: DeleteCallback | None = None,
         no_acks_limit: int = 500,
         max_queue_size: int = 10_000,
+        publishing_enabled: bool = True,
     ) -> None:
         """
         :param loop: Event loop instance
@@ -68,6 +69,7 @@ class InternalSubscription:
         self.max_queue_size = max_queue_size
         self._not_acknowledged_results: dict[int, ua.PublishResult] = {}
         self._startup = True
+        self._publishing_enabled = publishing_enabled
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
         self._task: asyncio.Task[None] | None = None
@@ -124,8 +126,14 @@ class InternalSubscription:
             self.logger.exception("Exception in subscription loop")
             raise
 
+    async def set_publishing_mode(self, enabled: bool) -> None:
+        self.logger.info("set publishing mode to %s for subscription %s", enabled, self.data.SubscriptionId)
+        self._publishing_enabled = enabled
+        if enabled:
+            await self._trigger_publish()
+
     def has_published_results(self) -> bool:
-        if self._startup or self._triggered_datachanges or self._triggered_events:
+        if self._startup or (self._publishing_enabled and (self._triggered_datachanges or self._triggered_events)):
             return True
         self._keep_alive_count += 1
         if self._keep_alive_count >= self.data.RevisedMaxKeepAliveCount:
@@ -187,8 +195,9 @@ class InternalSubscription:
         """
         result = ua.PublishResult()
         result.SubscriptionId = self.data.SubscriptionId
-        self._pop_triggered_datachanges(result)
-        self._pop_triggered_events(result)
+        if self._publishing_enabled:
+            self._pop_triggered_datachanges(result)
+            self._pop_triggered_events(result)
         self._pop_triggered_statuschanges(result)
         self._keep_alive_count = 0
         self._publish_cycles_count = 0

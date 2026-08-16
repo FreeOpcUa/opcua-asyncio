@@ -23,6 +23,7 @@ class MonitoredItemData:
         self.callback_handle: int | None = None
         self.monitored_item_id: int | None = None
         self.mode: ua.MonitoringMode | None = None
+        self.read_value_id: ua.ReadValueId | None = None
         self.filter: Any = None
         self.mvalue = MonitoredItemValues()
         self.where_clause_evaluator: WhereClauseEvaluator | None = None
@@ -120,6 +121,7 @@ class MonitoredItemService:
         self.logger.debug("Creating MonitoredItem with id %s", result.MonitoredItemId)
         mdata = MonitoredItemData()
         mdata.mode = params.MonitoringMode
+        mdata.read_value_id = params.ItemToMonitor
         mdata.client_handle = params.RequestedParameters.ClientHandle
         mdata.monitored_item_id = result.MonitoredItemId
         mdata.queue_size = result.RevisedQueueSize
@@ -179,6 +181,30 @@ class MonitoredItemService:
             if mdata.mode != ua.MonitoringMode.Disabled:
                 await self.trigger_datachange(handle, params.ItemToMonitor.NodeId, params.ItemToMonitor.AttributeId)
         return result
+
+    async def set_monitoring_mode(self, mode: ua.MonitoringMode, ids: list[int]) -> list[ua.StatusCode]:
+        self.logger.info("set monitoring mode to %s for items %s", mode, ids)
+        results: list[ua.StatusCode] = []
+        for mid in ids:
+            results.append(await self._set_monitoring_mode(mode, mid))
+        return results
+
+    async def _set_monitoring_mode(self, mode: ua.MonitoringMode, mid: int) -> ua.StatusCode:
+        mdata = self._monitored_items.get(mid)
+        if mdata is None:
+            return ua.StatusCode(ua.StatusCodes.BadMonitoredItemIdInvalid)
+        previous_mode = mdata.mode
+        mdata.mode = mode
+        if (
+            previous_mode == ua.MonitoringMode.Disabled
+            and mode != ua.MonitoringMode.Disabled
+            and mdata.callback_handle is not None
+            and mdata.read_value_id is not None
+        ):
+            await self.trigger_datachange(
+                mdata.callback_handle, mdata.read_value_id.NodeId, mdata.read_value_id.AttributeId
+            )
+        return ua.StatusCode()
 
     def delete_monitored_items(self, ids: list[int]) -> list[ua.StatusCode]:
         self.logger.debug("delete monitored items %s", ids)

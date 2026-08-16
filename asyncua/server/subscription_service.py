@@ -63,6 +63,7 @@ class SubscriptionService:
             delete_callback=lambda: self.subscriptions.pop(result.SubscriptionId, None),
             no_acks_limit=no_acks_limit,
             max_queue_size=max_queue_size,
+            publishing_enabled=params.PublishingEnabled,
         )
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub
@@ -140,6 +141,26 @@ class SubscriptionService:
         if params.SubscriptionId not in self.subscriptions:
             raise utils.ServiceError(ua.StatusCodes.BadSubscriptionIdInvalid)
         return self.subscriptions[params.SubscriptionId].monitored_item_srv.modify_monitored_items(params)
+
+    async def set_publishing_mode(self, params: ua.SetPublishingModeParameters) -> list[ua.StatusCode]:
+        self.logger.info("set publishing mode")
+        results: list[ua.StatusCode] = []
+        for sid in params.SubscriptionIds:
+            sub = self.subscriptions.get(sid)
+            if sub is None:
+                results.append(ua.StatusCode(ua.StatusCodes.BadSubscriptionIdInvalid))
+            else:
+                await sub.set_publishing_mode(params.PublishingEnabled)
+                results.append(ua.StatusCode())
+        return results
+
+    async def set_monitoring_mode(self, params: ua.SetMonitoringModeParameters) -> list[ua.StatusCode]:
+        self.logger.info("set monitoring mode")
+        if params.SubscriptionId not in self.subscriptions:
+            raise utils.ServiceError(ua.StatusCodes.BadSubscriptionIdInvalid)
+        return await self.subscriptions[params.SubscriptionId].monitored_item_srv.set_monitoring_mode(
+            params.MonitoringMode, params.MonitoredItemIds
+        )
 
     def delete_monitored_items(self, params: ua.DeleteMonitoredItemsParameters) -> list[ua.StatusCode]:
         self.logger.info("delete monitored items")
