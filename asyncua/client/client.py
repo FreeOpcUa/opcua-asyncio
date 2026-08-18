@@ -890,7 +890,7 @@ class Client:
             await self._wait_for_health_signal()
             if self.uaclient.state is not UaClientState.CONNECTED:
                 raise ConnectionError("transport lost")
-        except (ConnectionError, OSError, asyncio.TimeoutError, ua.UaStatusCodeError) as exc:
+        except (OSError, asyncio.TimeoutError, ua.UaStatusCodeError) as exc:
             return exc
         return None
 
