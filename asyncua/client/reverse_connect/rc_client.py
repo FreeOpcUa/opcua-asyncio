@@ -20,6 +20,8 @@ class RCClient(Client):
     the server lifecycle itself.
     Otherwise, if you want to reuse the server for same/other RC clients, start the server before you give it out
     to any of the clients.
+
+    Note that auto_reconnect is disabled for this type of clients.
     """
 
     def __init__(
@@ -50,3 +52,12 @@ class RCClient(Client):
         self.uaclient.attach_socket(conn.transport, leftover_data=conn.leftover_data)
         self._server_url = urlparse(conn.server_endpoint)
         await self._connect_handshake()
+
+    async def connect(
+        self,
+        *,
+        auto_reconnect: bool | None = None,
+        reconnect_max_delay: float | None = None,
+        reconnect_request_timeout: float | None = None,
+    ) -> None:
+        await super().connect(auto_reconnect=False)
