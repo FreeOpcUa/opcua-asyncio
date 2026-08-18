@@ -1466,6 +1466,43 @@ async def test_custom_enum_with_bad_dtd(opc, caplog):
     assert "Failed to generate class from UA datatype" in message
 
 
+async def test_custom_struct_with_null_browsename_sibling(opc, caplog):
+    """A DataType node with a null/empty BrowseName (seen on some real servers, see
+    https://github.com/FreeOpcUa/opcua-asyncio/issues/1990) must not abort parsing of
+    the rest of the type hierarchy.
+    """
+    caplog.set_level("ERROR")
+    idx = 4
+
+    # A well-formed struct that should still be loaded despite its malformed sibling.
+    await new_struct(
+        opc.opc,
+        idx,
+        "MyGoodStruct",
+        [new_struct_field("MyBool", ua.VariantType.Boolean)],
+    )
+
+    # A struct DataType node with a null BrowseName.Name, as reported by some servers.
+    dtype = await opc.opc.nodes.base_structure_type.add_data_type(
+        ua.NodeId("MyBadStructType", idx), ua.QualifiedName(None, idx)
+    )
+    sdef = ua.StructureDefinition()
+    sdef.StructureType = ua.StructureType.Structure
+    sdef.Fields = [new_struct_field("MyInt32", ua.VariantType.Int32)]
+    await dtype.write_data_type_definition(sdef)
+
+    for name in ("MyGoodStruct",):
+        try:
+            delattr(ua, name)
+        except AttributeError:
+            pass
+
+    # Does not raise
+    await opc.opc.load_data_type_definitions()
+
+    assert hasattr(ua, "MyGoodStruct")
+
+
 async def test_custom_option_set(opc):
     idx = 4
     await new_enum(opc.opc, idx, "MyOptionSet", ["tata", "titi", "toto", "None"], True)

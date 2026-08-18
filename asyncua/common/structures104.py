@@ -143,6 +143,9 @@ def clean_name(name: str) -> str:
     Remove characters that might be present in  OPC UA structures
     but cannot be part of Python class names
     """
+    if not name:
+        # Some servers expose DataType nodes with a null/empty BrowseName
+        return "_"
     if keyword.iskeyword(name):
         return name + "_"
     if name.isidentifier():
@@ -359,7 +362,17 @@ def make_structure(
             namespace[fname] = _make_union_property(fname, idx)
 
     kwargs = {"bases": bases, "namespace": namespace}
-    cls = make_dataclass(struct_name, fields, slots=True, **kwargs)
+    try:
+        cls = make_dataclass(struct_name, fields, slots=True, **kwargs)
+    except Exception:
+        if log_error:
+            _logger.warning(
+                "Failed to create dataclass for struct %s with fields %s and origin sdef: %s",
+                struct_name,
+                fields,
+                sdef,
+            )
+        return {}
     cls.__module__ = __name__
     cls.data_type = data_type  # type: ignore[attr-defined]
     cls.__SELF__ = cls  # type: ignore[attr-defined]
@@ -453,7 +466,7 @@ async def get_children_descriptions_type_definitions(
     nodes = []
     idxs = []
     for idx, desc in enumerate(descs):
-        if not overwrite_existing:
+        if not overwrite_existing and desc.BrowseName.Name:
             existing = getattr(ua, desc.BrowseName.Name, None)
             if existing is not None and getattr(existing, "data_type", None) == desc.NodeId:
                 continue
@@ -626,16 +639,24 @@ class RecursiveParser:
         next_parent = parent_sdef
 
         if isinstance(sdef, ua.StructureDefinition):
-            name = clean_name(desc.BrowseName.Name)
+            try:
+                name = clean_name(desc.BrowseName.Name)
 
-            if parent_sdef:
-                existing = {f.Name for f in sdef.Fields}
-                inherited = [f for f in parent_sdef.Fields if f.Name not in existing]
-                if inherited:
-                    sdef.Fields = inherited + list(sdef.Fields)
+                if parent_sdef:
+                    existing = {f.Name for f in sdef.Fields}
+                    inherited = [f for f in parent_sdef.Fields if f.Name not in existing]
+                    if inherited:
+                        sdef.Fields = inherited + list(sdef.Fields)
 
-            self._dtypes.append(DataTypeInfo(desc.NodeId, name, desc, sdef))
-            next_parent = sdef
+                self._dtypes.append(DataTypeInfo(desc.NodeId, name, desc, sdef))
+                next_parent = sdef
+            except Exception:
+                # A single malformed/unusual DataType node should not abort parsing
+                # of the rest of the type hierarchy.
+                _logger.exception(
+                    "Failed to process DataType node %s (%s), skipping it", desc.NodeId, desc.BrowseName
+                )
+                next_parent = parent_sdef
 
         child_node = self.server.get_node(desc.NodeId)
 
@@ -689,7 +710,7 @@ async def load_data_type_definitions(
                 new_objects[dts.name] = cls  # type: ignore
             except NotImplementedError:
                 _logger.exception("Structure type %s not implemented", dts.sdef)
-            except (AttributeError, RuntimeError):
+            except (AttributeError, RuntimeError, KeyError, TypeError, ValueError):
                 if log_ex:
                     _logger.exception("Failed to resolve datatype %s", dts.sdef)
                 failed_types.append(dts)
