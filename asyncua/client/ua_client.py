@@ -199,6 +199,19 @@ class UASocketProtocol(asyncio.Protocol):
         self.transport.write(msg)
         return future
 
+    def attach_transport(self, transport: asyncio.Transport, leftover_data: bytes) -> None:
+        """Attach self to a new transport, feeding in the leftover data."""
+        transport.set_protocol(self)
+        self.connection_made(transport)
+        if not leftover_data:
+            return
+        f = asyncio.get_running_loop().create_future()
+        self._callbackmap[-1] = f
+        self.data_received(leftover_data)
+        if f.done() and (ex := f.exception()):
+            raise ex
+        self._callbackmap.pop(-1, None)
+
     async def send_request(
         self, request: Any, timeout: float | None = None, message_type: ua.MessageType = ua.MessageType.SecureMessage
     ) -> Buffer:
@@ -578,20 +591,21 @@ class UaClient:
         :param leftover_data: Data received from the transport, but to be processed by the UA protocol.
         """
         self.logger.debug("attaching to an existing connection")
+        if transport.is_closing():
+            self._set_state(UaClientState.DISCONNECTED)
+            raise ConnectionError("Transport was already closing before it could be attached")
+
         self._set_state(UaClientState.CONNECTING)
+        p = self._make_protocol()
         try:
-            p = self._make_protocol()
             transport.set_protocol(p)
-            p.connection_made(transport)
-            if leftover_data:
-                p.data_received(leftover_data)
-            if not transport.is_reading():
-                transport.resume_reading()
+            p.attach_transport(transport, leftover_data)
+            self._set_state(UaClientState.SOCKET_OPEN)
+            transport.resume_reading()
         except BaseException:
             self._set_state(UaClientState.DISCONNECTED)
             transport.close()
             raise
-        self._set_state(UaClientState.SOCKET_OPEN)
 
     def disconnect_socket(self) -> None:
         if self._state is UaClientState.DISCONNECTED:

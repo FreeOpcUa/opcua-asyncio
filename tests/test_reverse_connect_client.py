@@ -180,6 +180,51 @@ async def test_rc_client_server_stop_wakes_pending_next_rc_waiters() -> None:
         await asyncio.wait_for(waiter_with_timeout, timeout=2)
 
 
+async def test_rc_ua_client_attach_socket_error_in_leftover_data() -> None:
+    port = find_free_port()
+    async with RCServer("127.0.0.1", port) as server:
+        _, writer = await asyncio.open_connection("127.0.0.1", port)
+        with closing(writer):
+            rh = ua.ReverseHello(ServerUri="urn:e2e:server", EndpointUrl="opc.tcp://127.0.0.1:4840")
+            err = ua.ErrorMessage(ua.StatusCode(ua.StatusCodes.BadTcpServerTooBusy), "server is too busy")
+            writer.write(ua_binary.uatcp_to_binary(ua.MessageType.ReverseHello, rh))
+            writer.write(ua_binary.uatcp_to_binary(ua.MessageType.Error, err))
+            await writer.drain()
+            rc = await asyncio.wait_for(server.next_rc(), timeout=5)
+
+        client = RCClient(server, rc_timeout=5)
+        with pytest.raises(ua.UaStatusCodeError) as exc_info:
+            client.uaclient.attach_socket(rc.transport, leftover_data=rc.leftover_data)
+        assert exc_info.value.code == ua.StatusCodes.BadTcpServerTooBusy
+
+
+async def test_rc_ua_client_attach_socket_error_in_leftover_data_partial_message() -> None:
+    port = find_free_port()
+    async with RCServer("127.0.0.1", port) as server:
+        _, writer = await asyncio.open_connection("127.0.0.1", port)
+        with closing(writer):
+            rh = ua.ReverseHello(ServerUri="urn:e2e:server", EndpointUrl="opc.tcp://127.0.0.1:4840")
+            err = ua.ErrorMessage(ua.StatusCode(ua.StatusCodes.BadTcpServerTooBusy), "server is too busy")
+            writer.write(ua_binary.uatcp_to_binary(ua.MessageType.ReverseHello, rh))
+            err_msg = ua_binary.uatcp_to_binary(ua.MessageType.Error, err)
+            err_half1 = err_msg[0 : len(err_msg) // 2]
+            err_half2 = err_msg[len(err_msg) // 2 :]
+            assert err_half1 and err_half2
+
+            writer.write(err_half1)
+            await writer.drain()
+            rc = await asyncio.wait_for(server.next_rc(), timeout=5)
+
+            client = RCClient(server, rc_timeout=5)
+            client.uaclient.attach_socket(rc.transport, leftover_data=rc.leftover_data)
+            writer.write(err_half2)
+            await writer.drain()
+
+        with pytest.raises(ua.UaStatusCodeError) as exc_info:
+            await client.uaclient.send_hello(rc.server_endpoint)
+        assert exc_info.value.code == ua.StatusCodes.BadTcpServerTooBusy
+
+
 async def test_rc_client_shared_unstarted_server_ownership_race() -> None:
     server = RCServer("127.0.0.1", find_free_port())
     client1 = RCClient(server, rc_timeout=0.2)
