@@ -166,3 +166,44 @@ async def test_rc_client_connect_existing_server(mocker: MockerFixture) -> None:
 
     client._connect_handshake.assert_awaited_once()  # type: ignore[attr-defined]
     assert client.server_url.geturl() == "opc.tcp://127.0.0.1:4840"
+
+
+async def test_rc_client_server_stop_wakes_pending_next_rc_waiters() -> None:
+    async with RCServer("127.0.0.1", find_free_port()) as server:
+        waiter = asyncio.create_task(server.next_rc())
+        waiter_with_timeout = asyncio.create_task(asyncio.wait_for(server.next_rc(), timeout=30))
+        await asyncio.sleep(0)  # yield for tasks to run
+
+    with pytest.raises(asyncio.CancelledError):
+        await asyncio.wait_for(waiter, timeout=2)
+    with pytest.raises(asyncio.CancelledError):
+        await asyncio.wait_for(waiter_with_timeout, timeout=2)
+
+
+async def test_rc_client_shared_unstarted_server_ownership_race() -> None:
+    server = RCServer("127.0.0.1", find_free_port())
+    client1 = RCClient(server, rc_timeout=0.2)
+    client2 = RCClient(server, rc_timeout=0.2)
+    results = await asyncio.gather(client1.connect(), client2.connect(), return_exceptions=True)
+    assert all(not isinstance(r, OSError) or isinstance(r, TimeoutError) for r in results)
+
+
+async def test_rc_server_max_pending_clients_drops_excess_connections() -> None:
+    port = find_free_port()
+
+    async def send_reverse_hello() -> None:
+        _, writer = await asyncio.open_connection("127.0.0.1", port)
+        rh = ua.ReverseHello(ServerUri="urn:e2e:server", EndpointUrl="opc.tcp://127.0.0.1:4840")
+        writer.write(ua_binary.uatcp_to_binary(ua.MessageType.ReverseHello, rh))
+        await writer.drain()
+        writer.close()
+
+    async with RCServer("127.0.0.1", port, max_pending_clients=1) as server:
+        await send_reverse_hello()
+        await send_reverse_hello()
+        await asyncio.sleep(1) # wait for requests to be processed
+
+        rc = await asyncio.wait_for(server.next_rc(), timeout=0.1)
+        rc.close()
+        with pytest.raises((TimeoutError, asyncio.TimeoutError)):
+            await asyncio.wait_for(server.next_rc(), timeout=0.1)

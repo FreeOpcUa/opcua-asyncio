@@ -106,6 +106,16 @@ class RCProtocol(asyncio.Protocol):
 
         if self.ready_clients.full():
             _logger.warning("RC client queue is full, dropping connection from %s", self.peer)
+            if self.transport:
+                self.transport.write(
+                    ua_binary.uatcp_to_binary(
+                        ua.MessageType.Error,
+                        ua.ErrorMessage(
+                            ua.StatusCode(ua.StatusCodes.BadServerTooBusy),
+                            uatypes.String("Reverse-connect server is too busy"),
+                        ),
+                    )
+                )
             self._close()
             return
 
@@ -195,6 +205,7 @@ class RCServer:
         rc_validation_hook: RCValidateHook | None = None,
         slow_connection_timeout: float | None = None,
         reuse_address: bool | None = None,
+        max_pending_clients: int | None = None,
     ) -> None:
         """Init Self.
 
@@ -205,24 +216,30 @@ class RCServer:
         :param slow_connection_timeout: Deadline for Reverse Hello to be processed since connection
             initiated, to mitigate slow clients. Defaults to None.
         :param reuse_address: Whether to reuse address (see asyncio loop.create_server()). Defaults to None.
+        :param max_pending_clients: Max number of accepted connection waiting to be processed. Defaults to None.
         """
         self.host = host
         self.port = port
         self.slow_connection_timeout = slow_connection_timeout
         self.reuse_address = reuse_address
 
+        self._is_listening = False
         self._server: asyncio.Server | None = None
         self._connections: list[asyncio.Transport] = []
-        self._ready_clients = asyncio.Queue[ReverseConnection]()
+        self._waiters: list[asyncio.Future[ReverseConnection]] = []
+        self._ready_clients = asyncio.Queue[ReverseConnection](maxsize=max_pending_clients or 0)
         self._rc_validation_hook = rc_validation_hook
 
     @property
     def is_listening(self) -> bool:
         """Whether server is currently listening."""
-        return self._server is not None
+        return self._is_listening
 
     async def start(self) -> None:
         """Start listening for incoming reverse connections."""
+        if self.is_listening:
+            raise RuntimeError("Server is already listening, can not start it again")
+        self._is_listening = True
         self._server = await asyncio.get_running_loop().create_server(
             lambda: RCProtocol(
                 self._connections,
@@ -238,22 +255,28 @@ class RCServer:
 
     async def stop(self) -> None:
         """Stop listening for new reverse connections and cancel all waiting or being-processed connections."""
+        self._is_listening = False
         server, self._server = self._server, None
         if server is not None:
             server.close()
         connections, self._connections = self._connections, []
         for c in connections:
             c.close()
-        ready_clients, self._ready_clients = self._ready_clients, asyncio.Queue()
+        ready_clients, self._ready_clients = self._ready_clients, asyncio.Queue[ReverseConnection]()
         while not ready_clients.empty():
             client = ready_clients.get_nowait()
             client.close()
+        waiters, self._waiters = self._waiters, []
+        for w in waiters:
+            w.cancel()
 
     async def next_rc(self) -> ReverseConnection:
         """Get the next reverse connection, blocking until it comes in (server must be listening)."""
         if not self.is_listening:
             raise RuntimeError("Can not wait for reverse connections when server is not listening")
-        return await self._ready_clients.get()
+        t = asyncio.create_task(self._ready_clients.get())
+        self._waiters.append(t)
+        return await t
 
     async def __aenter__(self) -> "RCServer":
         await self.start()
