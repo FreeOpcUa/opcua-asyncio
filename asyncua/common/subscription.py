@@ -237,10 +237,22 @@ class Subscription:
         """Hook fired when overflow=DISCONNECT triggers; use to force a full reconnect."""
         self._on_overflow_disconnect = handler
 
-    async def init(self) -> ua.CreateSubscriptionResult:
+    def _notify_observer(self, event: str) -> None:
+        """Report a lifecycle event if the owning client is being observed."""
+        client = getattr(self.server, "_client", None)
+        callback = getattr(getattr(client, "observer", None), "on_subscription_event", None)
+        if callback is None:
+            return
+        try:
+            callback(event, self.subscription_id)
+        except Exception:
+            self.logger.exception("observer raised")
+
+    async def init(self, _event: str = "created") -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
         self.subscription_id = response.SubscriptionId  # move to data class
         self.logger.info("Subscription created %s", self.subscription_id)
+        self._notify_observer(_event)
         return response
 
     async def update(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
@@ -265,8 +277,17 @@ class Subscription:
         if publish_result.NotificationMessage.NotificationData is None:
             return
         self.last_sequence_number = int(publish_result.NotificationMessage.SequenceNumber)
+        delivered = 0
         for event in self._explode_notifications(publish_result.NotificationMessage.NotificationData):
             self._deliver(event)
+            delivered += 1
+        client = getattr(self.server, "_client", None)
+        callback = getattr(getattr(client, "observer", None), "on_notification", None)
+        if callback is not None:
+            try:
+                callback(self.subscription_id, delivered)
+            except Exception:
+                self.logger.exception("observer raised")
 
     def _explode_notifications(self, notification_data: Iterable[Any]) -> Iterable[SubEvent]:
         """Translate server `NotificationData` items into typed `SubEvent`s."""
@@ -451,6 +472,7 @@ class Subscription:
         except (ConnectionError, OSError, asyncio.TimeoutError):
             self.logger.info("delete_subscriptions: transport unavailable; local cleanup only")
         finally:
+            self._notify_observer("deleted")
             self._deleted = True
             self._close_iterator()
 
@@ -561,7 +583,7 @@ class Subscription:
             except Exception:
                 self.logger.debug("best-effort delete of old sub %s failed", old_subscription_id, exc_info=True)
 
-        await self.init()
+        await self.init(_event="recreated")
 
         if not saved_items:
             return

@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from enum import Enum
 from typing import Any
@@ -24,6 +25,7 @@ from asyncua.ua.uaerrors._base import UaError
 from ..common.connection import SecureConnection, TransportLimits
 from ..common.utils import wait_for
 from ..crypto import security_policies
+from ..observer import ClientObserver
 from ..ua.ua_binary import header_from_binary, nodeid_from_binary, struct_from_binary, struct_to_binary, uatcp_to_binary
 from ..ua.uaprotocol_auto import OpenSecureChannelResult
 from .ua_session import SessionState, UaSession
@@ -413,6 +415,9 @@ class UaClient:
         self._state: UaClientState = UaClientState.DISCONNECTED
         self._state_listeners: list[Callable[[UaClientState], None]] = []
         self._disconnect_requested: bool = False
+        #: Set to watch this client: see :mod:`asyncua.observer`. Nothing is
+        #: measured while this is None.
+        self.observer: ClientObserver | None = None
         self.session: UaSession = UaSession(self)
 
     @property
@@ -432,11 +437,21 @@ class UaClient:
         """Clear the shutdown flag ahead of a fresh connect()."""
         self._disconnect_requested = False
 
+    def _observe(self, call: Callable[[], None]) -> None:
+        """Run an observer callback; a broken observer must not break the client."""
+        try:
+            call()
+        except Exception:
+            self.logger.exception("observer raised")
+
     def _set_state(self, target: UaClientState) -> None:
         """Set state and notify listeners. Same-state assignments are no-ops."""
         if target is self._state:
             return
         self._state = target
+        on_state_change = getattr(self.observer, "on_state_change", None)
+        if on_state_change is not None:
+            self._observe(lambda: on_state_change(target.value))
         # Iterate a copy so listeners can safely unsubscribe themselves.
         for listener in list(self._state_listeners):
             try:
@@ -599,10 +614,26 @@ class UaClient:
     async def _send_request(
         self, request: Any, timeout: float | None = None, message_type: ua.MessageType = ua.MessageType.SecureMessage
     ) -> Buffer:
-        async with self._request_semaphore:
-            if self.protocol is None:
-                raise ConnectionError("Connection is not open")
-            return await self.protocol.send_request(request, timeout, message_type)
+        on_request = getattr(self.observer, "on_request", None)
+        if on_request is None:
+            async with self._request_semaphore:
+                if self.protocol is None:
+                    raise ConnectionError("Connection is not open")
+                return await self.protocol.send_request(request, timeout, message_type)
+        # The observer is called outside the semaphore: a slow one would
+        # otherwise hold the slot and serialize requests behind it.
+        started = time.monotonic()
+        error: BaseException | None = None
+        try:
+            async with self._request_semaphore:
+                if self.protocol is None:
+                    raise ConnectionError("Connection is not open")
+                return await self.protocol.send_request(request, timeout, message_type)
+        except BaseException as exc:
+            error = exc
+            raise
+        finally:
+            self._observe(lambda: on_request(type(request).__name__, time.monotonic() - started, error))
 
     # --- back-compat: properties that previously lived on UaClient ---
 
