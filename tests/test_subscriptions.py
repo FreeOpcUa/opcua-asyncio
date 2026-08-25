@@ -1243,3 +1243,112 @@ async def test_create_subscription_rejected_past_cap(opc):
     finally:
         iserver.max_subscriptions = original_cap
         await sub.delete()
+
+
+class _FakeSession:
+    """Bare-bones session double for exercising the item-registry paths
+    without a server: create_subscription succeeds, create_monitored_items
+    is scripted per test."""
+
+    def __init__(self, create_items):
+        self._create_items = create_items
+        self.recreated_with = []
+
+    async def create_subscription(self, params, callback):
+        result = ua.CreateSubscriptionResult()
+        result.SubscriptionId = 7
+        result.RevisedPublishingInterval = params.RequestedPublishingInterval
+        result.RevisedLifetimeCount = params.RequestedLifetimeCount
+        result.RevisedMaxKeepAliveCount = params.RequestedMaxKeepAliveCount
+        return result
+
+    async def create_monitored_items(self, params):
+        return await self._create_items(params)
+
+
+def _make_subscription(session) -> Subscription:
+    params = ua.CreateSubscriptionParameters()
+    params.RequestedPublishingInterval = 100
+    params.RequestedLifetimeCount = 3000
+    params.RequestedMaxKeepAliveCount = 1000
+    return Subscription(session, params, MySubHandler())
+
+
+def _item_request(client_handle: int) -> ua.MonitoredItemCreateRequest:
+    mir = ua.MonitoredItemCreateRequest()
+    mir.ItemToMonitor = ua.ReadValueId()
+    mir.ItemToMonitor.NodeId = ua.NodeId(85, 0)
+    mir.ItemToMonitor.AttributeId = ua.AttributeIds.Value
+    mir.MonitoringMode = ua.MonitoringMode.Reporting
+    mir.RequestedParameters = ua.MonitoringParameters()
+    mir.RequestedParameters.ClientHandle = client_handle
+    return mir
+
+
+async def test_failed_create_monitored_items_leaves_no_items():
+    async def failing(params):
+        raise ua.UaStatusCodeError(ua.StatusCodes.BadSubscriptionIdInvalid)
+
+    session = _FakeSession(failing)
+    sub = _make_subscription(session)
+    await sub.init()
+
+    with pytest.raises(ua.UaStatusCodeError):
+        await sub.create_monitored_items([_item_request(201)])
+
+    assert sub._monitored_items == {}
+
+
+async def test_a_reconnect_is_not_blocked_by_a_call_waiting_on_the_old_one():
+    """A call stuck on a dropped connection must not hold up the reconnect that
+    would free it — which is what ordering these with a lock would do."""
+    release = asyncio.Event()
+    calls = []
+
+    async def first_call_hangs(params):
+        calls.append(params)
+        if len(calls) == 1:
+            await release.wait()
+        return [ua.MonitoredItemCreateResult() for _ in params.ItemsToCreate]
+
+    session = _FakeSession(first_call_hangs)
+    sub = _make_subscription(session)
+    await sub.init()
+
+    stuck = asyncio.create_task(sub.create_monitored_items([_item_request(201)]))
+    await asyncio.sleep(0)
+
+    await asyncio.wait_for(sub.recreate(), timeout=3)
+
+    release.set()
+    with pytest.raises(ua.UaStatusCodeError):
+        await stuck
+    assert sub._monitored_items == {}, "the stale call leaves nothing behind"
+
+
+async def test_recreate_does_not_adopt_items_of_a_failing_call():
+    release = asyncio.Event()
+
+    async def scripted(params):
+        if not release.is_set():
+            await release.wait()
+            raise ua.UaStatusCodeError(ua.StatusCodes.BadSubscriptionIdInvalid)
+        session.recreated_with.append([mi.RequestedParameters.ClientHandle for mi in params.ItemsToCreate])
+        return [ua.MonitoredItemCreateResult() for _ in params.ItemsToCreate]
+
+    session = _FakeSession(scripted)
+    sub = _make_subscription(session)
+    await sub.init()
+
+    doomed = asyncio.create_task(sub.create_monitored_items([_item_request(201)]))
+    await asyncio.sleep(0)
+    recreate = asyncio.create_task(sub.recreate())
+    await asyncio.sleep(0)
+    release.set()
+
+    with pytest.raises(ua.UaStatusCodeError):
+        await doomed
+    await recreate
+
+    assert sub._monitored_items == {}
+    assert session.recreated_with in ([], [[]])
