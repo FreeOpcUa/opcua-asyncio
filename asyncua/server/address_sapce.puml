@@ -1,0 +1,141 @@
+@startuml Class diagram address_space
+NodeId <|-- ExpandedNodeId
+NodeId <|-- StringNodeId
+NodeId <|-- GuidNodeId
+NodeId <|-- ByteStringNodeId
+NodeId <|-- NumericNodeId
+NodeId <|-- FourByteNodeId
+NodeId <|-- TwoByteNodeId
+
+NodeId o-- NodeIdType
+
+NodeData o-- NodeId
+NodeData o-- AttributeIds
+NodeData o-- AttributeValue
+
+AttributeValue o-- DataValue
+
+DataValue o-- NodeId
+DataValue o-- StatusCode
+
+StatusCode o-- StatusCodes
+
+AddressSpace o-- NodeId
+AddressSpace o-- NodeData
+AddressSpace o-- AttributeIds
+
+enum NodeIdType {
+    TwoByte = 0
+    FourByte = 1
+    Numeric = 2
+    String = 3
+    Guid = 4
+    ByteString = 5
+}
+
+class NodeId {
+    + Union[Int32, String, Guid, ByteString] Identifier
+    + Int16 NamespaceIndex
+    + NodeIdType: NodeIdType
+    # __post_init__()
+}
+note right of NodeId::__post_init__
+  Is used to implement type and identifier checks. This check is overwritten by each child.
+end note
+
+class ExpandedNodeId {
+    # __post_init__()
+}
+class StringNodeId {
+    # __post_init__()
+}
+class GuidNodeId {
+    # __post_init__()
+}
+class ByteStringNodeId {
+    # __post_init__()
+}
+class NumericNodeId {
+    # __post_init__()
+}
+class FourByteNodeId {
+    # __post_init__()
+}
+class TwoByteNodeId {
+    # __post_init__()
+}
+
+class NodeData {
+    + NodeId nodeid
+    + Dict[AttributeIds, AttributeValue] attributes
+    + List[ReferenceDescription] references
+    + Callable call
+}
+
+enum AttributeIds {
+    NodeId = 1
+    NodeClass = 2
+    BrowseName = 3
+    DisplayName = 4
+    Description = 5
+    WriteMask = 6
+    UserWriteMask = 7
+    IsAbstract = 8
+    Symmetric = 9
+    InverseName = 10
+    ContainsNoLoops = 11
+    EventNotifier = 12
+    Value = 13
+    DataType = 14
+    ValueRank = 15
+    ArrayDimensions = 16
+    AccessLevel = 17
+    UserAccessLevel = 18
+    MinimumSamplingInterval = 19
+    Historizing = 20
+    Executable = 21
+    UserExecutable = 22
+    DataTypeDefinition = 23
+    RolePermissions = 24
+    UserRolePermissions = 25
+    AccessRestrictions = 26
+    AccessLevelEx = 27
+}
+
+class AttributeValue {
+    + DataValue value
+    + Union[Callable[[], ua.DataValue], None] value_callback
+    + Dict datachange_callbacks
+}
+
+class DataValue {
+    + NodeId data_type
+    + Byte Encoding
+    + Optional[Variant] Value
+    + Optional[StatusCode] StatusCode
+    + Optional[DateTime] SourceTimestamp
+    + Optional[DateTime] ServerTimestamp
+    + Optional[UInt16] SourcePicoseconds
+    + Optional[UInt16] ServerPicoseconds
+}
+
+class StatusCode {
+    + StatusCodes value
+}
+
+enum StatusCodes {
+    Good = 0x00000000
+    Uncertain = 0x40000000
+    Bad = 0x80000000
+    ... and much more
+}
+
+class AddressSpace {
+    + Logger logger
+    # Dict[ua.NodeId, NodeData] _nodes
+    # int _datachange_callback_counter
+    # Dict[int, Tuple[ua.NodeId, AttributeIds]] _handle_to_attribute_map
+    # int _default_idx
+    # Dict _nodeid_counter
+}
+@enduml
