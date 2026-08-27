@@ -736,6 +736,17 @@ class Node:
         params.NodesToRead.append(valueid)
         return (await self.session.history_read(params))[0]
 
+    async def history_update(self, details: ua.HistoryUpdateDetails) -> ua.HistoryUpdateResult:
+        """
+        Update history of a node, low-level function
+        result code from server is checked and an exception is raised in case of error
+        """
+        params = ua.HistoryUpdateParameters()
+        params.HistoryUpdateDetails.append(details)
+        result = (await self.session.history_update(params))[0]
+        result.StatusCode.check()
+        return result
+
     async def read_event_history(
         self,
         starttime: datetime | None = None,
