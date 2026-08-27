@@ -250,6 +250,16 @@ class UaSession(AbstractSession):
         response.ResponseHeader.ServiceResult.check()
         return response.Results
 
+    async def history_update(self, params: ua.HistoryUpdateParameters) -> list[ua.HistoryUpdateResult]:
+        self.logger.info("history_update")
+        request = ua.HistoryUpdateRequest()
+        request.Parameters = params
+        data = await self._send_request(request)
+        response = struct_from_binary(ua.HistoryUpdateResponse, data)
+        self.logger.debug(response)
+        response.ResponseHeader.ServiceResult.check()
+        return response.Results
+
     async def read_attributes(self, nodeids: list[ua.NodeId], attr: ua.AttributeIds) -> list[ua.DataValue]:
         self.logger.info("read_attributes of several nodes")
         request = ua.ReadRequest()
