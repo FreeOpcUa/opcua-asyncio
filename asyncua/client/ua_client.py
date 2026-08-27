@@ -728,6 +728,9 @@ class UaClient:
     async def history_read(self, params: ua.HistoryReadParameters) -> list[ua.HistoryReadResult]:
         return await self.session.history_read(params)
 
+    async def history_update(self, params: ua.HistoryUpdateParameters) -> list[ua.HistoryUpdateResult]:
+        return await self.session.history_update(params)
+
     async def read_attributes(self, nodeids: list[ua.NodeId], attr: ua.AttributeIds) -> list[ua.DataValue]:
         return await self.session.read_attributes(nodeids, attr)
 
