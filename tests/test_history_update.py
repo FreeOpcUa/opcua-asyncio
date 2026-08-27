@@ -39,7 +39,6 @@ async def test_node_history_update_raises_for_bad_status():
 
 async def test_ua_client_history_update_delegates_to_session():
     client = UaClient()
-    details = ua.UpdateDataDetails()
     expected = [ua.HistoryUpdateResult()]
     client.session.history_update = AsyncMock(return_value=expected)
 
