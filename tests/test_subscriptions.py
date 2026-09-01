@@ -1246,9 +1246,7 @@ async def test_create_subscription_rejected_past_cap(opc):
 
 
 class _FakeSession:
-    """Bare-bones session double for exercising the item-registry paths
-    without a server: create_subscription succeeds, create_monitored_items
-    is scripted per test."""
+    """Session double: create_subscription succeeds, create_monitored_items is scripted per test."""
 
     def __init__(self, create_items):
         self._create_items = create_items
@@ -1299,9 +1297,7 @@ async def test_failed_create_monitored_items_leaves_no_items():
     assert sub._monitored_items == {}
 
 
-async def test_a_reconnect_is_not_blocked_by_a_call_waiting_on_the_old_one():
-    """A call stuck on a dropped connection must not hold up the reconnect that
-    would free it — which is what ordering these with a lock would do."""
+async def test_recreate_completes_while_a_create_call_is_stuck():
     release = asyncio.Event()
     calls = []
 

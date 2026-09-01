@@ -206,14 +206,7 @@ class Subscription:
         self._overflow = overflow
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items: dict[int, SubscriptionItemData] = {}
-        # Which incarnation of this subscription is current. A call that starts
-        # against one and returns against another knows its work belongs to a
-        # subscription that no longer exists (issue #2020).
-        #
-        # A lock would be the obvious way to order this, and the wrong one: a
-        # call holding it while waiting on a dropped connection would block the
-        # very reconnect that could free it.
-        self._generation: int = 0
+        self._recreate_count: int = 0
         self.subscription_id: int | None = None
         # Tracks whether the user explicitly deleted this subscription, so the
         # auto-reconnect supervisor can skip re-creating dead subscriptions.
@@ -489,11 +482,8 @@ class Subscription:
         return (time.monotonic() - self.last_publish_at) >= stale_after
 
     async def restore(self) -> None:
-        await self._restore_locked()
-
-    async def _restore_locked(self) -> None:
         if self._deleted or self.subscription_id is None or not isinstance(self.server, UaSession):
-            await self._recreate_locked()
+            await self.recreate()
             return
         params = ua.TransferSubscriptionsParameters()
         params.SubscriptionIds = [self.subscription_id]
@@ -502,7 +492,7 @@ class Subscription:
             results = await self.server.transfer_subscriptions(params)
         except Exception:
             self.logger.info("transfer_subscriptions failed; falling back to recreate", exc_info=True)
-            await self._recreate_locked()
+            await self.recreate()
             return
         result = results[0] if results else None
         if result is None or not result.StatusCode.is_good():
@@ -510,12 +500,12 @@ class Subscription:
                 "transfer_subscriptions returned %s; falling back to recreate",
                 result.StatusCode if result else "no result",
             )
-            await self._recreate_locked()
+            await self.recreate()
             return
         self.server._subscription_callbacks[self.subscription_id] = self.publish_callback
         if not await self._republish_gaps(result.AvailableSequenceNumbers):
             self.logger.info("republish could not fill gap for sub %s; recreating", self.subscription_id)
-            await self._recreate_locked()
+            await self.recreate()
             return
         self.last_publish_at = time.monotonic()
 
@@ -552,16 +542,9 @@ class Subscription:
         dropped this subscription). Client handles are preserved so existing
         notification routing keeps working.
         """
-        await self._recreate_locked()
-
-    async def _recreate_locked(self) -> None:
         if self._deleted:
             return
-        self._generation += 1
-        # Only items the server confirmed are carried over. One that is still
-        # in flight belongs to a call which has not returned: adopting it would
-        # make that call raise while its node was quietly being watched, which
-        # is the shape of the bug this is here to close.
+        self._recreate_count += 1
         saved_items: list[SubscriptionItemData] = [
             item for item in self._monitored_items.values() if item.server_handle is not None
         ]
@@ -857,12 +840,8 @@ class Subscription:
         low level method to have full control over subscription parameters.
         Client handle must be unique since it will be used as key for internal registration of data.
         """
-        return await self._create_monitored_items_locked(list(monitored_items))
-
-    async def _create_monitored_items_locked(
-        self, monitored_items: list[ua.MonitoredItemCreateRequest]
-    ) -> list[int | ua.StatusCode]:
-        generation = self._generation
+        monitored_items = list(monitored_items)
+        recreate_count = self._recreate_count
         params = ua.CreateMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
         params.ItemsToCreate = monitored_items
@@ -884,21 +863,14 @@ class Subscription:
         try:
             results = await self.server.create_monitored_items(params)
         except ServiceError as e:
-            # A service-level failure registered nothing on the server, so the
-            # items inserted above must not linger: recreate() would otherwise
-            # carry them into the next subscription although this call raised.
-            self._forget(params.ItemsToCreate, generation)
+            self._forget(params.ItemsToCreate, recreate_count)
             raise ua.UaStatusCodeError(e.code)
         except Exception:
-            self._forget(params.ItemsToCreate, generation)
+            self._forget(params.ItemsToCreate, recreate_count)
             raise
 
-        if generation != self._generation:
-            # The subscription was rebuilt while this request was in flight, so
-            # these handles refer to a subscription the server no longer has.
-            # The recreated one carried over whatever was registered before this
-            # call, which is the correct set.
-            self._forget(params.ItemsToCreate, generation)
+        if recreate_count != self._recreate_count:
+            self._forget(params.ItemsToCreate, recreate_count)
             raise ua.UaStatusCodeError(ua.StatusCodes.BadSubscriptionIdInvalid)
         mids = []
         # process result, add server_handle, or remove it if failed
@@ -913,10 +885,9 @@ class Subscription:
             mids.append(result.MonitoredItemId)
         return mids
 
-    def _forget(self, requests: list[ua.MonitoredItemCreateRequest], generation: int) -> None:
-        """Drop items this call registered, unless a newer incarnation owns them."""
-        if generation != self._generation:
-            # A recreate has been through since; it decided what to keep.
+    def _forget(self, requests: list[ua.MonitoredItemCreateRequest], recreate_count: int) -> None:
+        """Drop the items this call registered, unless recreate() has since rebuilt the registry."""
+        if recreate_count != self._recreate_count:
             return
         for mi in requests:
             self._monitored_items.pop(mi.RequestedParameters.ClientHandle, None)
@@ -930,9 +901,6 @@ class Subscription:
         handles: Iterable[int] = [handle] if isinstance(handle, int) else handle
         if not handles:
             return
-        await self._unsubscribe_locked(handles)
-
-    async def _unsubscribe_locked(self, handles: Iterable[int]) -> None:
         params = ua.DeleteMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
         params.MonitoredItemIds = list(handles)
@@ -957,11 +925,6 @@ class Subscription:
         :param mod_filter_val: New deadband filter value
         :return: Return a Modify Monitored Item Result
         """
-        return await self._modify_monitored_item_locked(handle, new_samp_time, new_queuesize, mod_filter_val)
-
-    async def _modify_monitored_item_locked(
-        self, handle: int, new_samp_time: ua.Duration, new_queuesize: int = 0, mod_filter_val: int = -1
-    ) -> list[ua.MonitoredItemModifyResult]:
         # Find the monitored item in the monitored item registry.
         item_to_change = next(item for item in self._monitored_items.values() if item.server_handle == handle)
         if not item_to_change:
