@@ -1246,8 +1246,6 @@ async def test_create_subscription_rejected_past_cap(opc):
 
 
 class _FakeSession:
-    """Session double: create_subscription succeeds, create_monitored_items is scripted per test."""
-
     def __init__(self, create_items):
         self._create_items = create_items
         self.recreated_with = []

@@ -545,7 +545,7 @@ class Subscription:
         if self._deleted:
             return
         self._recreate_count += 1
-        saved_items: list[SubscriptionItemData] = [
+        saved_monitored_items: list[SubscriptionItemData] = [
             item for item in self._monitored_items.values() if item.server_handle is not None
         ]
         old_subscription_id = self.subscription_id
@@ -567,11 +567,11 @@ class Subscription:
 
         await self.init()
 
-        if not saved_items:
+        if not saved_monitored_items:
             return
 
         mirs: list[ua.MonitoredItemCreateRequest] = []
-        for item in saved_items:
+        for item in saved_monitored_items:
             if item.node is None or item.attribute is None or item.client_handle is None:
                 self.logger.warning("Skipping monitored item with missing fields during recreate")
                 continue
@@ -863,14 +863,14 @@ class Subscription:
         try:
             results = await self.server.create_monitored_items(params)
         except ServiceError as e:
-            self._forget(params.ItemsToCreate, recreate_count)
+            self._forget_monitored_items(params.ItemsToCreate, recreate_count)
             raise ua.UaStatusCodeError(e.code)
         except Exception:
-            self._forget(params.ItemsToCreate, recreate_count)
+            self._forget_monitored_items(params.ItemsToCreate, recreate_count)
             raise
 
         if recreate_count != self._recreate_count:
-            self._forget(params.ItemsToCreate, recreate_count)
+            self._forget_monitored_items(params.ItemsToCreate, recreate_count)
             raise ua.UaStatusCodeError(ua.StatusCodes.BadSubscriptionIdInvalid)
         mids = []
         # process result, add server_handle, or remove it if failed
@@ -885,8 +885,7 @@ class Subscription:
             mids.append(result.MonitoredItemId)
         return mids
 
-    def _forget(self, requests: list[ua.MonitoredItemCreateRequest], recreate_count: int) -> None:
-        """Drop the items this call registered, unless recreate() has since rebuilt the registry."""
+    def _forget_monitored_items(self, requests: list[ua.MonitoredItemCreateRequest], recreate_count: int) -> None:
         if recreate_count != self._recreate_count:
             return
         for mi in requests:
