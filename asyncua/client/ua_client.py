@@ -17,9 +17,11 @@ from collections.abc import Awaitable, Callable
 from enum import Enum
 from typing import Any
 
+from opentelemetry import metrics, trace
+
 from asyncua import ua
 from asyncua.common.utils import Buffer
-from asyncua.ua.uaerrors._base import UaError
+from asyncua.ua.uaerrors._base import UaError, UaStatusCodeError
 
 from ..common.connection import SecureConnection, TransportLimits
 from ..common.utils import wait_for
@@ -27,6 +29,19 @@ from ..crypto import security_policies
 from ..ua.ua_binary import header_from_binary, nodeid_from_binary, struct_from_binary, struct_to_binary, uatcp_to_binary
 from ..ua.uaprotocol_auto import OpenSecureChannelResult
 from .ua_session import SessionState, UaSession
+
+tracer = trace.get_tracer("ua_client.tracer")
+meter = metrics.get_meter("ua_client.meter")
+connections_counter = meter.create_up_down_counter(
+    name="opcua.client.connections",
+    unit="{connection}",
+    description="Number of connected UA clients",
+)
+requests_counter = meter.create_counter(
+    name="opcua.client.requests",
+    unit="{request}",
+    description="Number of requests sent by UA client",
+)
 
 
 class UaClientState(Enum):
@@ -211,13 +226,18 @@ class UASocketProtocol(asyncio.Protocol):
             # This will propagate exceptions from background tasks to the library user before calling a request which will
             # time out then.
             await self.pre_request_hook()
+        request_attrs = {"opcua.request.type": request.__class__.__name__}
         try:
             data = await wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
-        except UaError:
+            requests_counter.add(1, request_attrs)
+        except UaError as ex:
+            requests_counter.add(1, {"opcua.request.error": ex.__class__.__name__, **request_attrs})
             raise
         except asyncio.TimeoutError:
+            requests_counter.add(1, {"opcua.request.error": "TimeoutError", **request_attrs})
             raise
         except Exception as ex:
+            requests_counter.add(1, {"opcua.request.error": ex.__class__.__name__, **request_attrs})
             if self.state is not UASocketState.OPEN:
                 raise ConnectionError("Connection is closed") from None
             if hasattr(ex, "add_note"):
@@ -437,6 +457,10 @@ class UaClient:
         if target is self._state:
             return
         self._state = target
+        if target is UaClientState.CONNECTED:
+            connections_counter.add(1)
+        else:
+            connections_counter.add(-1)
         # Iterate a copy so listeners can safely unsubscribe themselves.
         for listener in list(self._state_listeners):
             try:
@@ -602,7 +626,22 @@ class UaClient:
         async with self._request_semaphore:
             if self.protocol is None:
                 raise ConnectionError("Connection is not open")
-            return await self.protocol.send_request(request, timeout, message_type)
+            with tracer.start_as_current_span(
+                "UaClient.send_request",
+                kind=trace.SpanKind.CLIENT,
+                attributes={"opcua.request.type": request.__class__.__name__},
+            ) as span:
+                if timeout is not None:
+                    span.set_attribute("opcua.request.timeout", timeout)
+                try:
+                    return await self.protocol.send_request(request, timeout, message_type)
+                except UaStatusCodeError as ex:
+                    span.set_attribute("opcua.response.status_code", ex.code)
+                    span.set_status(trace.Status(trace.StatusCode.ERROR, str(ex)))
+                    raise
+                except BaseException as ex:
+                    span.set_status(trace.Status(trace.StatusCode.ERROR, str(ex)))
+                    raise
 
     # --- back-compat: properties that previously lived on UaClient ---
 

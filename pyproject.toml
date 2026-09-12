@@ -24,6 +24,7 @@ dependencies = [
   "aiosqlite",
   "anyio",
   "cryptography>=45.0.0",
+  "opentelemetry-api",
   "python-dateutil",
   "pytz",
   "sortedcontainers",
