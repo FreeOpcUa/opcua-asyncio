@@ -238,7 +238,6 @@ class Subscription:
         self._on_overflow_disconnect = handler
 
     def _notify_observer(self, event: str) -> None:
-        """Report a lifecycle event if the owning client is being observed."""
         client = getattr(self.server, "_client", None)
         callback = getattr(getattr(client, "observer", None), "on_subscription_event", None)
         if callback is None:

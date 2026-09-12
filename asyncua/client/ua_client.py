@@ -415,8 +415,6 @@ class UaClient:
         self._state: UaClientState = UaClientState.DISCONNECTED
         self._state_listeners: list[Callable[[UaClientState], None]] = []
         self._disconnect_requested: bool = False
-        #: Set to watch this client: see :mod:`asyncua.observer`. Nothing is
-        #: measured while this is None.
         self.observer: ClientObserver | None = None
         self.session: UaSession = UaSession(self)
 
@@ -438,7 +436,6 @@ class UaClient:
         self._disconnect_requested = False
 
     def _observe(self, call: Callable[[], None]) -> None:
-        """Run an observer callback; a broken observer must not break the client."""
         try:
             call()
         except Exception:
@@ -620,8 +617,6 @@ class UaClient:
                 if self.protocol is None:
                     raise ConnectionError("Connection is not open")
                 return await self.protocol.send_request(request, timeout, message_type)
-        # The observer is called outside the semaphore: a slow one would
-        # otherwise hold the slot and serialize requests behind it.
         started = time.monotonic()
         error: BaseException | None = None
         try:

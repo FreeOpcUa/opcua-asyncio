@@ -61,7 +61,7 @@ async def test_an_observer_only_implements_what_it_cares_about():
     client.protocol = mock.AsyncMock()
 
     await client._send_request(ua.ReadRequest())
-    client._set_state(UaClientState.CONNECTED)  # no on_state_change: must not raise
+    client._set_state(UaClientState.CONNECTED)
 
     assert observer.seen == ["ReadRequest"]
 
@@ -111,7 +111,7 @@ def test_state_changes_are_reported_once_each():
     client.observer = observer
 
     client._set_state(UaClientState.CONNECTING)
-    client._set_state(UaClientState.CONNECTING)  # same state: no event
+    client._set_state(UaClientState.CONNECTING)
     client._set_state(UaClientState.CONNECTED)
 
     assert observer.states == ["connecting", "connected"]
@@ -122,7 +122,7 @@ async def test_a_broken_observer_does_not_break_a_request():
     client.observer = BrokenObserver()
     client.protocol = mock.AsyncMock()
 
-    await client._send_request(ua.ReadRequest())  # must not raise
+    await client._send_request(ua.ReadRequest())
 
 
 def test_a_broken_observer_does_not_break_a_state_change():
@@ -161,8 +161,6 @@ async def test_notifications_are_reported_with_their_item_count(server):
 
 
 async def test_the_request_slot_is_free_while_the_observer_runs():
-    # A slow observer would otherwise hold a concurrency slot and serialize
-    # requests behind itself.
     held = []
     client = UaClient()
     client._request_semaphore = asyncio.Semaphore(1)
