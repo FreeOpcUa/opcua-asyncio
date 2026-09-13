@@ -11,6 +11,7 @@ import sys
 from datetime import timedelta
 from enum import EnumMeta
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -24,6 +25,7 @@ from asyncua.common.event_objects import (
     AuditSecurityEvent,
     BaseEvent,
 )
+from asyncua.server.uaprocessor import UaProcessor
 
 pytestmark = pytest.mark.asyncio
 _logger = logging.getLogger(__name__)
@@ -966,3 +968,40 @@ async def test_set_application_uri_updates_server_array(server):
     assert ns[1] == new_uri
     assert sa[0] == new_uri
     assert server.get_application_uri() == new_uri
+
+
+async def test_transport_limit_error_closes_the_connection(restore_transport_limits_server: Server, caplog):
+    server = restore_transport_limits_server
+    assert server.bserver is not None
+    server.bserver.limits.max_recv_buffer = 1024
+    server.bserver.limits.max_send_buffer = 10240000
+    server.bserver.limits.max_chunk_count = 10
+    test_string = b"a" * 100 * 1024
+    n = await server.nodes.objects.add_variable(1, "MyClosingLimitVariable", test_string)
+    await n.set_writable(True)
+
+    client = Client(server.endpoint.geturl())
+    with caplog.at_level(logging.ERROR, logger="asyncua.server.binary_server_asyncio"):
+        async with client:
+            node = client.get_node(n.nodeid)
+            with pytest.raises(ua.uaerrors.BadRequestTooLarge):
+                await node.write_value(test_string, ua.VariantType.ByteString)
+            await asyncio.sleep(0.2)
+
+    assert "Exception raised while processing message from client" not in caplog.text
+
+    async with Client(server.endpoint.geturl()) as fresh:
+        assert await fresh.nodes.server_state.read_value() is not None
+
+
+async def test_process_reports_the_connection_should_close_on_a_limit_error():
+    processor = UaProcessor.__new__(UaProcessor)
+    processor._transport = Mock()
+    connection = Mock()
+    connection.receive_from_header_and_body.side_effect = ua.uaerrors.BadRequestTooLarge()
+    processor._connection = connection
+
+    keep_open = await processor.process(Mock(), Mock())
+
+    assert processor._transport.write.called, "the error message is sent before closing"
+    assert keep_open is False
