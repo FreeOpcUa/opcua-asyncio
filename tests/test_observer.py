@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import contextmanager
 from unittest import mock
 
 import pytest
@@ -17,8 +18,15 @@ class RecordingObserver(Observer):
         self.subscriptions = []
         self.notifications = []
 
-    def on_request(self, request_type, duration, error):
-        self.requests.append((request_type, duration, error))
+    @contextmanager
+    def observe_request(self, request):
+        entry = [type(request).__name__, None]
+        self.requests.append(entry)
+        try:
+            yield
+        except BaseException as exc:
+            entry[1] = exc
+            raise
 
     def on_state_change(self, state):
         self.states.append(state)
@@ -28,20 +36,6 @@ class RecordingObserver(Observer):
 
     def on_notification(self, subscription_id, item_count):
         self.notifications.append((subscription_id, item_count))
-
-
-class BrokenObserver(Observer):
-    def on_request(self, request_type, duration, error):
-        raise RuntimeError("observer is broken")
-
-    def on_state_change(self, state):
-        raise RuntimeError("observer is broken")
-
-    def on_subscription_event(self, event, subscription_id):
-        raise RuntimeError("observer is broken")
-
-    def on_notification(self, subscription_id, item_count):
-        raise RuntimeError("observer is broken")
 
 
 async def test_a_client_starts_with_an_observer_that_does_nothing():
@@ -55,14 +49,14 @@ async def test_a_client_starts_with_an_observer_that_does_nothing():
 
 
 async def test_an_observer_only_implements_what_it_cares_about():
-    class OnlyRequests(Observer):
+    class OnlyStates(Observer):
         def __init__(self):
             self.seen = []
 
-        def on_request(self, request_type, duration, error):
-            self.seen.append(request_type)
+        def on_state_change(self, state):
+            self.seen.append(state)
 
-    observer = OnlyRequests()
+    observer = OnlyStates()
     client = UaClient()
     client.observer = observer
     client.protocol = mock.AsyncMock()
@@ -70,25 +64,29 @@ async def test_an_observer_only_implements_what_it_cares_about():
     await client._send_request(ua.ReadRequest())
     client._set_state(UaClientState.CONNECTED)
 
-    assert observer.seen == ["ReadRequest"]
+    assert observer.seen == [UaClientState.CONNECTED]
 
 
-async def test_a_request_is_reported_with_its_type_and_duration():
-    observer = RecordingObserver()
+async def test_the_request_runs_inside_the_observer_context():
+    order = []
     client = UaClient()
-    client.observer = observer
     client.protocol = mock.AsyncMock()
+    client.protocol.send_request.side_effect = lambda *a: order.append("sent")
 
+    class Tracer(Observer):
+        @contextmanager
+        def observe_request(self, request):
+            order.append(f"enter {type(request).__name__}")
+            yield
+            order.append("exit")
+
+    client.observer = Tracer()
     await client._send_request(ua.ReadRequest())
 
-    assert len(observer.requests) == 1
-    request_type, duration, error = observer.requests[0]
-    assert request_type == "ReadRequest"
-    assert duration >= 0
-    assert error is None
+    assert order == ["enter ReadRequest", "sent", "exit"]
 
 
-async def test_a_failing_request_is_reported_with_its_error_and_still_raises():
+async def test_a_failing_request_is_raised_inside_the_observer_context():
     observer = RecordingObserver()
     client = UaClient()
     client.observer = observer
@@ -98,8 +96,25 @@ async def test_a_failing_request_is_reported_with_its_error_and_still_raises():
     with pytest.raises(ConnectionError):
         await client._send_request(ua.ReadRequest())
 
-    _, _, error = observer.requests[0]
-    assert isinstance(error, ConnectionError)
+    assert isinstance(observer.requests[0][1], ConnectionError)
+
+
+async def test_the_request_slot_is_free_when_the_context_closes():
+    held = []
+    client = UaClient()
+    client._request_semaphore = asyncio.Semaphore(1)
+    client.protocol = mock.AsyncMock()
+
+    class Probe(Observer):
+        @contextmanager
+        def observe_request(self, request):
+            yield
+            held.append(client._request_semaphore.locked())
+
+    client.observer = Probe()
+    await client._send_request(ua.ReadRequest())
+
+    assert held == [False]
 
 
 def test_state_changes_are_reported_once_each():
@@ -114,21 +129,16 @@ def test_state_changes_are_reported_once_each():
     assert observer.states == [UaClientState.CONNECTING, UaClientState.CONNECTED]
 
 
-async def test_a_broken_observer_does_not_break_a_request():
+def test_a_raising_observer_is_not_shielded():
+    class Broken(Observer):
+        def on_state_change(self, state):
+            raise RuntimeError("observer is broken")
+
     client = UaClient()
-    client.observer = BrokenObserver()
-    client.protocol = mock.AsyncMock()
+    client.observer = Broken()
 
-    await client._send_request(ua.ReadRequest())
-
-
-def test_a_broken_observer_does_not_break_a_state_change():
-    client = UaClient()
-    client.observer = BrokenObserver()
-
-    client._set_state(UaClientState.CONNECTED)
-
-    assert client.state is UaClientState.CONNECTED
+    with pytest.raises(RuntimeError):
+        client._set_state(UaClientState.CONNECTED)
 
 
 async def test_the_session_shares_the_observer_of_its_client():
@@ -165,22 +175,6 @@ async def test_notifications_are_reported_with_their_item_count(server):
     assert all(count >= 0 for _, count in observer.notifications)
 
 
-async def test_the_request_slot_is_free_while_the_observer_runs():
-    held = []
-    client = UaClient()
-    client._request_semaphore = asyncio.Semaphore(1)
-    client.protocol = mock.AsyncMock()
-
-    class Probe(Observer):
-        def on_request(self, request_type, duration, error):
-            held.append(client._request_semaphore.locked())
-
-    client.observer = Probe()
-    await client._send_request(ua.ReadRequest())
-
-    assert held == [False]
-
-
 async def test_a_recreated_subscription_is_reported_once(server):
     observer = RecordingObserver()
     async with Client(f"opc.tcp://127.0.0.1:{port_num}") as client:
@@ -193,6 +187,21 @@ async def test_a_recreated_subscription_is_reported_once(server):
     events = [event for event, _ in observer.subscriptions]
     assert events.count(SubscriptionEvent.RECREATED) == 1, "a recreate is one event, not created plus recreated"
     assert SubscriptionEvent.CREATED not in events
+
+
+async def test_a_deleted_subscription_is_marked_deleted_before_the_observer_runs(server):
+    seen = []
+    async with Client(f"opc.tcp://127.0.0.1:{port_num}") as client:
+        subscription = await client.create_subscription(100, mock.MagicMock())
+
+        class Late(Observer):
+            def on_subscription_event(self, event, subscription_id):
+                seen.append((event, subscription.is_deleted))
+
+        client.uaclient.observer = Late()
+        await subscription.delete()
+
+    assert (SubscriptionEvent.DELETED, True) in seen
 
 
 async def test_a_server_side_subscription_has_a_no_op_observer(server):

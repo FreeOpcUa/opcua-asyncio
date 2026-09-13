@@ -18,7 +18,7 @@ from asyncua import ua
 from asyncua.client.ua_session import UaSession
 from asyncua.common.ua_utils import copy_dataclass_attr
 from asyncua.common.utils import ServiceError
-from asyncua.observer import SubscriptionEvent, notify
+from asyncua.observer import SubscriptionEvent
 from asyncua.ua.uaerrors import BadMessageNotAvailable
 
 if TYPE_CHECKING:
@@ -245,7 +245,7 @@ class Subscription:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
         self.subscription_id = response.SubscriptionId  # move to data class
         self.logger.info("Subscription created %s", self.subscription_id)
-        notify(self.server.observer.on_subscription_event, event, self.subscription_id)
+        self.server.observer.on_subscription_event(event, self.subscription_id)
         return response
 
     async def update(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
@@ -274,7 +274,7 @@ class Subscription:
         for event in self._explode_notifications(publish_result.NotificationMessage.NotificationData):
             self._deliver(event)
             delivered += 1
-        notify(self.server.observer.on_notification, self.subscription_id, delivered)
+        self.server.observer.on_notification(self.subscription_id, delivered)
 
     def _explode_notifications(self, notification_data: Iterable[Any]) -> Iterable[SubEvent]:
         """Translate server `NotificationData` items into typed `SubEvent`s."""
@@ -459,9 +459,9 @@ class Subscription:
         except (ConnectionError, OSError, asyncio.TimeoutError):
             self.logger.info("delete_subscriptions: transport unavailable; local cleanup only")
         finally:
-            notify(self.server.observer.on_subscription_event, SubscriptionEvent.DELETED, self.subscription_id)
             self._deleted = True
             self._close_iterator()
+            self.server.observer.on_subscription_event(SubscriptionEvent.DELETED, self.subscription_id)
 
     def _close_iterator(self) -> None:
         """Push the sentinel so any active `async for ev in sub` loop ends."""

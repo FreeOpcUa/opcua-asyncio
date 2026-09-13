@@ -13,7 +13,6 @@ from __future__ import annotations
 import asyncio
 import copy
 import logging
-import time
 from collections.abc import Awaitable, Callable
 from enum import Enum
 from typing import Any
@@ -25,7 +24,7 @@ from asyncua.ua.uaerrors._base import UaError
 from ..common.connection import SecureConnection, TransportLimits
 from ..common.utils import wait_for
 from ..crypto import security_policies
-from ..observer import NULL_OBSERVER, Observer, notify
+from ..observer import NULL_OBSERVER, Observer
 from ..ua.ua_binary import header_from_binary, nodeid_from_binary, struct_from_binary, struct_to_binary, uatcp_to_binary
 from ..ua.uaprotocol_auto import OpenSecureChannelResult
 from .ua_session import SessionState, UaSession
@@ -440,7 +439,7 @@ class UaClient:
         if target is self._state:
             return
         self._state = target
-        notify(self.observer.on_state_change, target)
+        self.observer.on_state_change(target)
         # Iterate a copy so listeners can safely unsubscribe themselves.
         for listener in list(self._state_listeners):
             try:
@@ -603,18 +602,11 @@ class UaClient:
     async def _send_request(
         self, request: Any, timeout: float | None = None, message_type: ua.MessageType = ua.MessageType.SecureMessage
     ) -> Buffer:
-        started = time.monotonic()
-        error: BaseException | None = None
-        try:
+        with self.observer.observe_request(request):
             async with self._request_semaphore:
                 if self.protocol is None:
                     raise ConnectionError("Connection is not open")
                 return await self.protocol.send_request(request, timeout, message_type)
-        except BaseException as exc:
-            error = exc
-            raise
-        finally:
-            notify(self.observer.on_request, type(request).__name__, time.monotonic() - started, error)
 
     # --- back-compat: properties that previously lived on UaClient ---
 
