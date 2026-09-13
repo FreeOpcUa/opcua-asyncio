@@ -253,6 +253,7 @@ class SecureConnection:
         self._sequence_number = 0
         self._peer_sequence_number: int | None = None
         self._incoming_parts: list[MessageChunk] = []
+        self._incoming_size = 0
         self.security_policy = security_policy
         self._policies: list[Any] = []
         self._open = False
@@ -489,17 +490,25 @@ class SecureConnection:
             return msg
         raise ua.UaError(f"Unsupported message type {header.MessageType}")
 
+    def _drop_incoming_parts(self) -> None:
+        self._incoming_parts = []
+        self._incoming_size = 0
+
     def _receive(self, msg: MessageChunk) -> ua.Message | None:
         if msg.MessageHeader.packet_size > self._limits.max_recv_buffer:
-            self._incoming_parts = []
+            self._drop_incoming_parts()
             _logger.error(
                 "Message size: %s is > chunk max size: %s", msg.MessageHeader.packet_size, self._limits.max_recv_buffer
             )
             raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         self._check_incoming_chunk(msg)
+        if not self._limits.is_msg_size_within_limit(self._incoming_size + len(msg.Body)):
+            self._drop_incoming_parts()
+            raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         self._incoming_parts.append(msg)
+        self._incoming_size += len(msg.Body)
         if not self._limits.is_chunk_count_within_limit(len(self._incoming_parts)):
-            self._incoming_parts = []
+            self._drop_incoming_parts()
             raise ua.UaStatusCodeError(ua.StatusCodes.BadRequestTooLarge)
         if msg.MessageHeader.ChunkType == ua.ChunkType.Intermediate:
             return None
@@ -508,10 +517,10 @@ class SecureConnection:
             _logger.warning("Message %s aborted: %s", msg, err)
             # specs Part 6, 6.7.3 say that aborted message shall be ignored
             # and SecureChannel should not be closed
-            self._incoming_parts = []
+            self._drop_incoming_parts()
             return None
         if msg.MessageHeader.ChunkType == ua.ChunkType.Single:
             message = ua.Message(self._incoming_parts)
-            self._incoming_parts = []
+            self._drop_incoming_parts()
             return message
         raise ua.UaError(f"Unsupported chunk type: {msg}")

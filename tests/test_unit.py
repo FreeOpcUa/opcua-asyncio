@@ -14,7 +14,7 @@ from typing import Any, cast
 import pytest
 
 from asyncua import ua
-from asyncua.common.connection import MessageChunk
+from asyncua.common.connection import MessageChunk, SecureConnection, TransportLimits
 from asyncua.common.event_objects import BaseEvent
 from asyncua.common.structures import StructGenerator
 from asyncua.common.structures104 import make_structure
@@ -1349,3 +1349,83 @@ def test_keep_alive_triggers_at_max_keep_alive_count(max_keep_alive_count):
     for cycle in range(1, max_keep_alive_count):
         assert not sub.has_published_results(), f"unexpected keep-alive on cycle {cycle}"
     assert sub.has_published_results()
+
+
+def _incoming_chunk(seq: int, body: bytes, chunk_type=ua.ChunkType.Intermediate) -> MessageChunk:
+    chunk = MessageChunk(SecurityPolicyNone().symmetric_cryptography, body=body, chunk_type=chunk_type)
+    chunk.MessageHeader.ChannelId = 1
+    chunk.MessageHeader.packet_size = len(body) + 24
+    chunk.SequenceHeader.RequestId = 1
+    chunk.SequenceHeader.SequenceNumber = seq
+    return chunk
+
+
+def _connection(limits: TransportLimits) -> SecureConnection:
+    connection = SecureConnection(SecurityPolicyNone(), limits)
+    connection.security_token.ChannelId = 1
+    return connection
+
+
+def test_incomplete_message_is_capped_by_max_message_size():
+    limits = TransportLimits(max_recv_buffer=1024, max_chunk_count=1000, max_message_size=4096)
+    connection = _connection(limits)
+    body = bytes(1000)
+
+    for seq in range(1, 5):
+        assert connection._receive(_incoming_chunk(seq, body)) is None
+
+    with pytest.raises(ua.UaStatusCodeError):
+        connection._receive(_incoming_chunk(5, body))
+    assert connection._incoming_parts == []
+
+
+def test_a_message_within_max_message_size_still_arrives():
+    limits = TransportLimits(max_recv_buffer=1024, max_chunk_count=1000, max_message_size=4096)
+    connection = _connection(limits)
+    body = bytes(1000)
+
+    for seq in range(1, 4):
+        assert connection._receive(_incoming_chunk(seq, body)) is None
+    message = connection._receive(_incoming_chunk(4, body, ua.ChunkType.Single))
+
+    assert message is not None
+    assert connection._incoming_parts == []
+
+
+def test_unlimited_max_message_size_is_honoured():
+    limits = TransportLimits(max_recv_buffer=1024, max_chunk_count=1000, max_message_size=0)
+    connection = _connection(limits)
+    body = bytes(1000)
+
+    for seq in range(1, 51):
+        assert connection._receive(_incoming_chunk(seq, body)) is None
+
+    assert len(connection._incoming_parts) == 50
+
+
+def test_the_accumulated_size_resets_between_messages():
+    limits = TransportLimits(max_recv_buffer=1024, max_chunk_count=1000, max_message_size=4096)
+    connection = _connection(limits)
+    body = bytes(1000)
+
+    for seq in range(1, 4):
+        connection._receive(_incoming_chunk(seq, body))
+    connection._receive(_incoming_chunk(4, body, ua.ChunkType.Single))
+
+    for seq in range(5, 8):
+        assert connection._receive(_incoming_chunk(seq, body)) is None
+    assert connection._receive(_incoming_chunk(8, body, ua.ChunkType.Single)) is not None
+
+
+def test_an_aborted_message_frees_its_accumulated_size():
+    limits = TransportLimits(max_recv_buffer=1024, max_chunk_count=1000, max_message_size=4096)
+    connection = _connection(limits)
+    body = bytes(1000)
+
+    for seq in range(1, 4):
+        connection._receive(_incoming_chunk(seq, body))
+    abort = _incoming_chunk(4, struct_to_binary(ua.ErrorMessage()), ua.ChunkType.Abort)
+    assert connection._receive(abort) is None
+
+    for seq in range(5, 8):
+        assert connection._receive(_incoming_chunk(seq, body)) is None
