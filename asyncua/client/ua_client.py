@@ -435,17 +435,17 @@ class UaClient:
         self._disconnect_requested = False
 
     def _set_state(self, target: UaClientState) -> None:
-        """Set state and notify listeners. Same-state assignments are no-ops."""
+        """Set state, then notify the observer and the listeners. Same-state assignments are no-ops.
+
+        Both run inline and must not raise; an exception reaches whatever drove the transition.
+        """
         if target is self._state:
             return
         self._state = target
         self.observer.on_state_change(target)
         # Iterate a copy so listeners can safely unsubscribe themselves.
         for listener in list(self._state_listeners):
-            try:
-                listener(target)
-            except Exception:
-                self.logger.exception("state listener raised")
+            listener(target)
 
     def _add_state_listener(self, callback: Callable[[UaClientState], None]) -> Callable[[], None]:
         """Register a raw state-change callback; returns an unsubscribe callable.

@@ -210,3 +210,14 @@ async def test_a_server_side_subscription_has_a_no_op_observer(server):
     assert subscription.server.observer is NULL_OBSERVER
 
     await subscription.delete()
+
+
+def test_a_raising_state_listener_is_not_shielded_either():
+    def broken(state):
+        raise RuntimeError("listener is broken")
+
+    client = UaClient()
+    client._add_state_listener(broken)
+
+    with pytest.raises(RuntimeError):
+        client._set_state(UaClientState.CONNECTED)
