@@ -43,3 +43,4 @@ examples/sync/c.py
 .python-version
 combined.svg
 t.txt
+asyncua/binary_address_space.pickle
