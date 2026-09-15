@@ -138,6 +138,7 @@ async def _append_new_attribute_to_select_clauses(
     select_clauses: list[ua.SimpleAttributeOperand],
     already_selected: dict[str, str],
     browse_path: list[ua.QualifiedName],
+    type_definition_id: ua.NodeId,
 ) -> None:
     string_path = "/".join(map(str, browse_path))
     if string_path not in already_selected:
@@ -145,7 +146,7 @@ async def _append_new_attribute_to_select_clauses(
         op = ua.SimpleAttributeOperand()
         op.AttributeId = ua.AttributeIds.Value
         op.BrowsePath = browse_path
-        op.TypeDefinitionId = ua.NodeId(ua.ObjectIds.BaseEventType)
+        op.TypeDefinitionId = type_definition_id
         select_clauses.append(op)
 
 
@@ -155,16 +156,17 @@ async def _select_clause_from_childs(
     select_clauses: list[ua.SimpleAttributeOperand],
     already_selected: dict[str, str],
     browse_path: list[ua.QualifiedName],
+    type_definition_id: ua.NodeId,
 ) -> None:
     for ref in refs:
         if ref.NodeClass == ua.NodeClass.Variable:
             if ref.ReferenceTypeId == ua.ObjectIds.HasProperty:
                 await _append_new_attribute_to_select_clauses(
-                    select_clauses, already_selected, [*browse_path, ref.BrowseName]
+                    select_clauses, already_selected, [*browse_path, ref.BrowseName], type_definition_id
                 )
             else:
                 await _append_new_attribute_to_select_clauses(
-                    select_clauses, already_selected, [*browse_path, ref.BrowseName]
+                    select_clauses, already_selected, [*browse_path, ref.BrowseName], type_definition_id
                 )
                 var = child.new_node(child.session, ref.NodeId)
                 refs = await var.get_references(
@@ -175,7 +177,7 @@ async def _select_clause_from_childs(
                     _BROWSE_MASK,
                 )
                 await _select_clause_from_childs(
-                    var, refs, select_clauses, already_selected, [*browse_path, ref.BrowseName]
+                    var, refs, select_clauses, already_selected, [*browse_path, ref.BrowseName], type_definition_id
                 )
         elif ref.NodeClass == ua.NodeClass.Object:
             obj = child.new_node(child.session, ref.NodeId)
@@ -187,8 +189,26 @@ async def _select_clause_from_childs(
                 _BROWSE_MASK,
             )
             await _select_clause_from_childs(
-                obj, refs, select_clauses, already_selected, [*browse_path, ref.BrowseName]
+                obj, refs, select_clauses, already_selected, [*browse_path, ref.BrowseName], type_definition_id
             )
+
+
+async def _event_type_nodes_up_to_base(evtype: "Node") -> list["Node"]:
+    """Return EventTypes from BaseEventType to evtype (introducing types first)."""
+    nodes: list["Node"] = []
+    curr_node = evtype
+    while True:
+        nodes.append(curr_node)
+        if curr_node.nodeid == ua.NodeId(ua.ObjectIds.BaseEventType):
+            break
+        parents = await curr_node.get_referenced_nodes(
+            refs=ua.ObjectIds.HasSubtype, direction=ua.BrowseDirection.Inverse
+        )
+        if len(parents) != 1:
+            return []
+        curr_node = parents[0]
+    nodes.reverse()
+    return nodes
 
 
 async def select_clauses_from_evtype(
@@ -200,18 +220,18 @@ async def select_clauses_from_evtype(
     for evtype in evtypes:
         if not add_condition_id and await is_subtype(evtype, ua.NodeId(ua.ObjectIds.ConditionType)):
             add_condition_id = True
-        refs = await select_event_attributes_from_type_node(
-            evtype,
-            lambda n: n.get_references(
+        type_nodes = await _event_type_nodes_up_to_base(evtype)
+        for type_node in type_nodes:
+            refs = await type_node.get_references(
                 ua.ObjectIds.Aggregates,
                 ua.BrowseDirection.Forward,
                 ua.NodeClass.Object | ua.NodeClass.Variable,
                 True,
                 _BROWSE_MASK,
-            ),
-        )
-        if refs:
-            await _select_clause_from_childs(evtype, refs, select_clauses, already_selected, [])
+            )
+            await _select_clause_from_childs(
+                type_node, refs, select_clauses, already_selected, [], type_node.nodeid
+            )
     if add_condition_id:
         op = ua.SimpleAttributeOperand()
         op.AttributeId = ua.AttributeIds.NodeId
