@@ -133,7 +133,11 @@ class InternalSubscription:
             await self._trigger_publish()
 
     def has_published_results(self) -> bool:
-        if self._startup or (self._publishing_enabled and (self._triggered_datachanges or self._triggered_events)):
+        if (
+            self._startup
+            or self._triggered_statuschanges
+            or (self._publishing_enabled and (self._triggered_datachanges or self._triggered_events))
+        ):
             return True
         self._keep_alive_count += 1
         if self._keep_alive_count >= self.data.RevisedMaxKeepAliveCount:

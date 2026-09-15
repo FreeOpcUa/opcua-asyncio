@@ -266,7 +266,7 @@ class InternalSession(AbstractSession):
         return self.iserver.node_mgt_service.add_nodes(params, self.user)
 
     async def delete_nodes(self, params: ua.DeleteNodesParameters) -> list[ua.StatusCode]:
-        return self.iserver.node_mgt_service.delete_nodes(params, self.user)
+        return await self.iserver.node_mgt_service.delete_nodes(params, self.user)
 
     async def add_references(self, params: list[ua.AddReferencesItem]) -> list[ua.StatusCode]:
         return self.iserver.node_mgt_service.add_references(params, self.user)

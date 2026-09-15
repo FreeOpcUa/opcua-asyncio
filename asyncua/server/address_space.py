@@ -410,15 +410,25 @@ class NodeManagementService:
         addref.TargetNodeClass = ua.NodeClass.Unspecified
         self._add_reference_no_check(nodedata, addref)  # FIXME return StatusCode is not evaluated
 
-    def delete_nodes(
+    async def delete_nodes(
         self, deletenodeitems: ua.DeleteNodesParameters, user: User = User(role=UserRole.Admin)
     ) -> list[ua.StatusCode]:
         results: list[ua.StatusCode] = []
+        callbacks: list[tuple[int, Callable[..., Any]]] = []
         for item in deletenodeitems.NodesToDelete:
-            results.append(self._delete_node(item, user))
+            results.append(self._delete_node(item, user, callbacks))
+        # Complete the whole request's address-space changes before any callback
+        # can yield control to another request. Notification does not need a lock.
+        for handle, callback in callbacks:
+            try:
+                await callback(handle, None, ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
+            except Exception:
+                self.logger.exception("Error calling delete node callback %s", handle)
         return results
 
-    def _delete_node(self, item: ua.DeleteNodesItem, user: User) -> ua.StatusCode:
+    def _delete_node(
+        self, item: ua.DeleteNodesItem, user: User, callbacks: list[tuple[int, Callable[..., Any]]]
+    ) -> ua.StatusCode:
         if user.role != UserRole.Admin:
             return ua.StatusCode(ua.StatusCodes.BadUserAccessDenied)
 
@@ -432,22 +442,19 @@ class NodeManagementService:
                     if rdesc.NodeId == item.NodeId:
                         self._aspace[elem].references.remove(rdesc)
 
-        self._delete_node_callbacks(self._aspace[item.NodeId])
+        callbacks.extend(self._delete_node_callbacks(self._aspace[item.NodeId]))
 
         del self._aspace[item.NodeId]
 
         return ua.StatusCode()
 
-    def _delete_node_callbacks(self, nodedata: NodeData) -> None:
+    def _delete_node_callbacks(self, nodedata: NodeData) -> list[tuple[int, Callable[..., Any]]]:
+        callbacks: list[tuple[int, Callable[..., Any]]] = []
         if ua.AttributeIds.Value in nodedata.attributes:
-            for handle, callback in list(nodedata.attributes[ua.AttributeIds.Value].datachange_callbacks.items()):
-                try:
-                    callback(handle, None, ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
-                    self._aspace.delete_datachange_callback(handle)
-                except Exception as ex:
-                    self.logger.exception(
-                        "Error calling delete node callback callback %s, %s, %s", nodedata, ua.AttributeIds.Value, ex
-                    )
+            callbacks = list(nodedata.attributes[ua.AttributeIds.Value].datachange_callbacks.items())
+            for handle, _ in callbacks:
+                self._aspace.delete_datachange_callback(handle)
+        return callbacks
 
     def add_references(
         self, refs: list[ua.AddReferencesItem], user: User = User(role=UserRole.Admin)
