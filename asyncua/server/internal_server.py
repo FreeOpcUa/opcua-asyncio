@@ -103,6 +103,7 @@ class InternalServer:
             self, self.aspace, self.subscription_service, "Internal", user=User(role=UserRole.Admin)
         )
         self.current_time_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_CurrentTime))
+        self.server_status_node = Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus))
         self.time_task: asyncio.Task[None] | None = None
         self._time_task_stop = False
         self.match_discovery_endpoint_url: bool = True
@@ -223,12 +224,14 @@ class InternalServer:
         self.logger.info("starting internal server")
         for edp in self.endpoints:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
+        status = copy(await self.server_status_node.read_value()) or ua.ServerStatusDataType()
+        status.State = ua.ServerState.Running
+        status.StartTime = datetime.now(timezone.utc)
+        await self.server_status_node.write_value(status)
         await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(
             ua.ServerState.Running, ua.VariantType.Int32
         )
-        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(
-            datetime.now(timezone.utc)
-        )
+        await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_StartTime)).write_value(status.StartTime)
         if not self.disabled_clock:
             self.time_task = asyncio.create_task(self._set_current_time_loop())
 
@@ -243,7 +246,10 @@ class InternalServer:
 
     async def _set_current_time_loop(self) -> None:
         while not self._time_task_stop:
-            await self.current_time_node.write_value(datetime.now(timezone.utc))
+            status = copy(await self.server_status_node.read_value())
+            status.CurrentTime = datetime.now(timezone.utc)
+            await self.server_status_node.write_value(status)
+            await self.current_time_node.write_value(status.CurrentTime)
             await asyncio.sleep(1)
 
     def get_new_channel_id(self) -> int:
