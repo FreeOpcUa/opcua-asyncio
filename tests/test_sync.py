@@ -1,5 +1,8 @@
+import socket
 import tempfile
+import threading
 from concurrent.futures import Future
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -11,6 +14,7 @@ from asyncua.sync import (
     Client,
     Server,
     SyncNode,
+    SyncRCServer,
     ThreadLoop,
     XmlExporter,
     call_method_full,
@@ -20,6 +24,7 @@ from asyncua.sync import (
     sync_async_client_method,
     sync_uaclient_method,
 )
+from asyncua.ua import ua_binary
 
 from .conftest import find_free_port
 
@@ -350,3 +355,29 @@ def test_create_struct_sync_client(client):
     var = client.nodes.objects.add_variable(idx, "my_struct", mystruct)
     val = var.read_value()
     assert val.MyUInt32 == [78, 79]
+
+
+def test_sync_rc_server_create_client_same_tloop():
+    with SyncRCServer("127.0.0.1", find_free_port()) as srv:
+        rc_client = srv.create_client(rc_timeout=5.0)
+        assert rc_client.tloop is srv.tloop
+
+
+def test_sync_rc_server_create_client_delivers_connection():
+    port = find_free_port()
+    with SyncRCServer("127.0.0.1", port) as srv:
+        srv.create_client(rc_timeout=5.0)
+
+        def fake_reverse_client():
+            with closing(socket.create_connection(("127.0.0.1", port), timeout=5)) as s:
+                rh = ua.ReverseHello(ServerUri="urn:test:server", EndpointUrl="opc.tcp://127.0.0.1:4840")
+                s.sendall(ua_binary.uatcp_to_binary(ua.MessageType.ReverseHello, rh))
+
+        t = threading.Thread(target=fake_reverse_client)
+        t.start()
+        try:
+            rc = srv.next_rc()
+            assert rc.server_application_uri == "urn:test:server"
+            assert rc.server_endpoint == "opc.tcp://127.0.0.1:4840"
+        finally:
+            t.join()

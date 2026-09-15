@@ -863,7 +863,8 @@ def header_to_binary(hdr: ua.Header) -> bytes:
 
 def header_from_binary(data: Buffer | IO) -> ua.Header:
     hdr = ua.Header()
-    hdr.MessageType, hdr.ChunkType, hdr.packet_size = struct.unpack("<3scI", data.read(8))
+    msg_type, hdr.ChunkType, hdr.packet_size = struct.unpack("<3scI", data.read(8))
+    hdr.MessageType = ua.MessageType(msg_type)
     hdr.body_size = hdr.packet_size - 8
     if hdr.MessageType in (ua.MessageType.SecureOpen, ua.MessageType.SecureClose, ua.MessageType.SecureMessage):
         hdr.body_size -= 4

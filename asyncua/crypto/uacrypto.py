@@ -50,7 +50,7 @@ def _is_pem_format(path_or_content: bytes | str | Path, extension: str | None) -
     return False
 
 
-async def load_certificate(path_or_content: bytes | str | Path, extension: str | None = None):
+async def load_certificate(path_or_content: bytes | str | Path, extension: str | None = None) -> x509.Certificate:
     content = await get_content(path_or_content)
     if _is_pem_format(path_or_content, extension):
         return x509.load_pem_x509_certificate(content, default_backend())
