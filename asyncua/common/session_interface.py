@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import Any
 
 from asyncua import ua
+from asyncua.observer import NULL_OBSERVER, Observer
 
 
 class AbstractSession(ABC):
@@ -10,6 +11,10 @@ class AbstractSession(ABC):
     An abstract interface for the sessionbased Service Sets like:
     NodeManagement, View, Attribute, Method, MonitoredItem and Subscription
     """
+
+    @property
+    def observer(self) -> Observer:
+        return NULL_OBSERVER
 
     # View Service Set: https://reference.opcfoundation.org/Core/Part4/v104/5.8.1/
 

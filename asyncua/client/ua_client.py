@@ -24,6 +24,7 @@ from asyncua.ua.uaerrors._base import UaError
 from ..common.connection import SecureConnection, TransportLimits
 from ..common.utils import wait_for
 from ..crypto import security_policies
+from ..observer import NULL_OBSERVER, Observer
 from ..ua.ua_binary import header_from_binary, nodeid_from_binary, struct_from_binary, struct_to_binary, uatcp_to_binary
 from ..ua.uaprotocol_auto import OpenSecureChannelResult
 from .ua_session import SessionState, UaSession
@@ -413,6 +414,7 @@ class UaClient:
         self._state: UaClientState = UaClientState.DISCONNECTED
         self._state_listeners: list[Callable[[UaClientState], None]] = []
         self._disconnect_requested: bool = False
+        self.observer: Observer = NULL_OBSERVER
         self.session: UaSession = UaSession(self)
 
     @property
@@ -432,11 +434,18 @@ class UaClient:
         """Clear the shutdown flag ahead of a fresh connect()."""
         self._disconnect_requested = False
 
+    def _observe(self, hook: Callable[[], None]) -> None:
+        try:
+            hook()
+        except Exception:
+            self.logger.exception("observer raised")
+
     def _set_state(self, target: UaClientState) -> None:
         """Set state and notify listeners. Same-state assignments are no-ops."""
         if target is self._state:
             return
         self._state = target
+        self._observe(lambda: self.observer.on_state_change(target))
         # Iterate a copy so listeners can safely unsubscribe themselves.
         for listener in list(self._state_listeners):
             try:
@@ -599,10 +608,11 @@ class UaClient:
     async def _send_request(
         self, request: Any, timeout: float | None = None, message_type: ua.MessageType = ua.MessageType.SecureMessage
     ) -> Buffer:
-        async with self._request_semaphore:
-            if self.protocol is None:
-                raise ConnectionError("Connection is not open")
-            return await self.protocol.send_request(request, timeout, message_type)
+        with self.observer.observe_request(request):
+            async with self._request_semaphore:
+                if self.protocol is None:
+                    raise ConnectionError("Connection is not open")
+                return await self.protocol.send_request(request, timeout, message_type)
 
     # --- back-compat: properties that previously lived on UaClient ---
 

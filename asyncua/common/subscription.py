@@ -18,6 +18,7 @@ from asyncua import ua
 from asyncua.client.ua_session import UaSession
 from asyncua.common.ua_utils import copy_dataclass_attr
 from asyncua.common.utils import ServiceError
+from asyncua.observer import SubscriptionEvent
 from asyncua.ua.uaerrors import BadMessageNotAvailable
 
 if TYPE_CHECKING:
@@ -238,10 +239,20 @@ class Subscription:
         """Hook fired when overflow=DISCONNECT triggers; use to force a full reconnect."""
         self._on_overflow_disconnect = handler
 
+    def _observe(self, hook: Callable[[], None]) -> None:
+        try:
+            hook()
+        except Exception:
+            self.logger.exception("observer raised")
+
     async def init(self) -> ua.CreateSubscriptionResult:
+        return await self._create(SubscriptionEvent.CREATED)
+
+    async def _create(self, event: SubscriptionEvent) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
         self.subscription_id = response.SubscriptionId  # move to data class
         self.logger.info("Subscription created %s", self.subscription_id)
+        self._observe(lambda: self.server.observer.on_subscription_event(self.subscription_id, event))
         return response
 
     async def update(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
@@ -266,8 +277,11 @@ class Subscription:
         if publish_result.NotificationMessage.NotificationData is None:
             return
         self.last_sequence_number = int(publish_result.NotificationMessage.SequenceNumber)
+        produced = 0
         for event in self._explode_notifications(publish_result.NotificationMessage.NotificationData):
             self._deliver(event)
+            produced += 1
+        self._observe(lambda: self.server.observer.on_notification(self.subscription_id, produced))
 
     def _explode_notifications(self, notification_data: Iterable[Any]) -> Iterable[SubEvent]:
         """Translate server `NotificationData` items into typed `SubEvent`s."""
@@ -454,6 +468,7 @@ class Subscription:
         finally:
             self._deleted = True
             self._close_iterator()
+            self._observe(lambda: self.server.observer.on_subscription_event(self.subscription_id, SubscriptionEvent.DELETED))
 
     def _close_iterator(self) -> None:
         """Push the sentinel so any active `async for ev in sub` loop ends."""
@@ -565,7 +580,7 @@ class Subscription:
             except Exception:
                 self.logger.debug("best-effort delete of old sub %s failed", old_subscription_id, exc_info=True)
 
-        await self.init()
+        await self._create(SubscriptionEvent.RECREATED)
 
         if not saved_monitored_items:
             return
