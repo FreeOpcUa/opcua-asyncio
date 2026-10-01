@@ -326,6 +326,34 @@ async def test_delete_references(opc):
     await opc.opc.delete_nodes([fold, newtype], recursive=True)
 
 
+async def test_readded_reference_preserves_target_type_definition(opc):
+    parent = await opc.opc.nodes.objects.add_folder(2, "TypeDefinitionParent")
+    obj_type = await opc.opc.nodes.base_object_type.add_object_type(2, "ReferenceTargetType")
+    obj = await parent.add_object(2, "ReferenceTarget", obj_type.nodeid)
+    var = await parent.add_variable(2, "ReferenceVariable", 42)
+
+    for target, reference_type, expected_type in (
+        (obj, ua.ObjectIds.Organizes, obj_type.nodeid),
+        (var, ua.ObjectIds.HasComponent, ua.NodeId(ua.ObjectIds.BaseDataVariableType)),
+    ):
+        await parent.delete_reference(target, reference_type)
+        await parent.add_reference(target, reference_type)
+        refs = await parent.get_references(
+            refs=reference_type,
+            direction=ua.BrowseDirection.Forward,
+        )
+        ref = next(ref for ref in refs if ref.NodeId == target.nodeid)
+        assert ref.TypeDefinition == expected_type
+        inverse_refs = await target.get_references(
+            refs=reference_type,
+            direction=ua.BrowseDirection.Inverse,
+        )
+        inverse_ref = next(ref for ref in inverse_refs if ref.NodeId == parent.nodeid)
+        assert inverse_ref.TypeDefinition == ua.NodeId(ua.ObjectIds.FolderType)
+
+    await opc.opc.delete_nodes([parent, obj_type], recursive=True)
+
+
 async def test_reference_with_nodeid_reftype(opc):
     """Test that add_reference/get_referenced_nodes/delete_reference accept ua.NodeId as reftype.
 

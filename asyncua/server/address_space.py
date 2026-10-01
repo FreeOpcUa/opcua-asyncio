@@ -491,6 +491,13 @@ class NodeManagementService:
         dname = dname_dv.Value.Value if dname_dv.Value is not None else None
         if dname:
             rdesc.DisplayName = dname
+        if rdesc.NodeClass in (ua.NodeClass.Object, ua.NodeClass.Variable):
+            targetdata = self._aspace.get(addref.TargetNodeId)
+            if targetdata is not None:
+                for target_ref in targetdata.references:
+                    if target_ref.IsForward and target_ref.ReferenceTypeId == ua.NodeId(ua.ObjectIds.HasTypeDefinition):
+                        rdesc.TypeDefinition = target_ref.NodeId
+                        break
         return self._add_unique_reference(sourcedata, rdesc)
 
     def delete_references(
