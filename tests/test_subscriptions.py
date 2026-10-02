@@ -732,6 +732,36 @@ async def test_get_event_contains_object(opc):
     assert browsePathId in browsePathList
 
 
+async def test_get_filter_typedefinitionid_is_defining_type(opc):
+    """Select clauses must use the EventType that introduces each field (Part 4 SimpleAttributeOperand)."""
+    alarm_type = opc.opc.get_node(ua.ObjectIds.AlarmConditionType)
+    evfilter = await asyncua.common.events.get_filter_from_event_type([alarm_type])
+    type_by_path = {
+        tuple(bp.Name for bp in op.BrowsePath): op.TypeDefinitionId
+        for op in evfilter.SelectClauses
+        if op.BrowsePath
+    }
+    expected = {
+        ("EventId",): ua.ObjectIds.BaseEventType,
+        ("Message",): ua.ObjectIds.BaseEventType,
+        ("Severity",): ua.ObjectIds.BaseEventType,
+        ("ConditionName",): ua.ObjectIds.ConditionType,
+        ("BranchId",): ua.ObjectIds.ConditionType,
+        ("EnabledState",): ua.ObjectIds.ConditionType,
+        ("EnabledState", "Id"): ua.ObjectIds.ConditionType,
+        ("Quality",): ua.ObjectIds.ConditionType,
+        ("Comment",): ua.ObjectIds.ConditionType,
+        ("AckedState",): ua.ObjectIds.AcknowledgeableConditionType,
+        ("AckedState", "Id"): ua.ObjectIds.AcknowledgeableConditionType,
+        ("ConfirmedState",): ua.ObjectIds.AcknowledgeableConditionType,
+        ("ActiveState",): ua.ObjectIds.AlarmConditionType,
+        ("ActiveState", "Id"): ua.ObjectIds.AlarmConditionType,
+        ("InputNode",): ua.ObjectIds.AlarmConditionType,
+    }
+    for path, type_id in expected.items():
+        assert type_by_path[path] == ua.NodeId(type_id)
+
+
 async def test_get_event_from_type_node_CustomEvent(opc):
     etype = await opc.server.create_custom_event_type(
         2,
