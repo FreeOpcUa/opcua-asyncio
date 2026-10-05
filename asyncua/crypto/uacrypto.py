@@ -346,8 +346,8 @@ def check_certificate(cert: x509.Certificate, application_uri: str, hostname: st
             )
             err = True
         if hostname is not None:
-            san_dns_names = san.value.get_values_for_type(x509.DNSName)
-            if hostname not in san_dns_names:
+            san_dns_names = [name.casefold() for name in san.value.get_values_for_type(x509.DNSName)]
+            if hostname.casefold() not in san_dns_names:
                 _logger.warning(
                     "certificate does not contain the hostname in DNSNames %s. Some applications will check this.",
                     hostname,
