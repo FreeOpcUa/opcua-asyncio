@@ -16,7 +16,7 @@ from asyncua.crypto.cert_gen import (
     generate_self_signed_app_certificate,
     sign_certificate_request,
 )
-from asyncua.crypto.uacrypto import load_certificate, load_private_key
+from asyncua.crypto.uacrypto import check_certificate, load_certificate, load_private_key
 
 
 async def test_create_self_signed_app_certificate() -> None:
@@ -396,3 +396,19 @@ async def test_load_certificate_infers_from_file_extension(tmp_path):
     der_path.write_bytes(cert.public_bytes(serialization.Encoding.DER))
     loaded_der = await load_certificate(str(der_path))
     assert loaded_der.subject == cert.subject
+
+
+async def test_check_certificate_hostname_is_case_insensitive() -> None:
+    app_uri = "urn:foobar:myserver"
+    subject_alt_names: list[x509.GeneralName] = [
+        x509.UniformResourceIdentifier(app_uri),
+        x509.DNSName("MyHostname"),
+    ]
+    key: RSAPrivateKey = generate_private_key()
+    cert: x509.Certificate = generate_self_signed_app_certificate(
+        key, "myserver", {"organizationName": "Bar Ltd"}, subject_alt_names, extended=[], days=1
+    )
+
+    assert check_certificate(cert, app_uri, "myhostname") is False
+    assert check_certificate(cert, app_uri, "MYHOSTNAME") is False
+    assert check_certificate(cert, app_uri, "otherhost") is True
