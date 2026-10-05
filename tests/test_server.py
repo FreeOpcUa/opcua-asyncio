@@ -18,6 +18,7 @@ import pytest
 import asyncua
 from asyncua import Client, Server, ua, uamethod
 from asyncua.common import ua_utils
+from asyncua.common.connection import TransportLimits
 from asyncua.common.event_objects import (
     AuditChannelEvent,
     AuditEvent,
@@ -1004,4 +1005,20 @@ async def test_process_reports_the_connection_should_close_on_a_limit_error():
     keep_open = await processor.process(Mock(), Mock())
 
     assert processor._transport.write.called, "the error message is sent before closing"
+    assert keep_open is False
+
+
+async def test_process_rejects_a_repeated_hello_and_closes_the_connection() -> None:
+    transport = Mock()
+    processor = UaProcessor(Mock(), transport, TransportLimits())
+    connection = Mock()
+    connection.receive_from_header_and_body.return_value = ua.Hello()
+    processor._connection = connection
+
+    assert await processor.process(Mock(), Mock()) is True
+    assert transport.write.call_args.args[0].startswith(b"ACKF")
+
+    keep_open = await processor.process(Mock(), Mock())
+
+    assert transport.write.call_args.args[0].startswith(b"ERRF")
     assert keep_open is False
