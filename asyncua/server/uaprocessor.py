@@ -47,6 +47,7 @@ class UaProcessor:
         self._limits = copy.deepcopy(limits)  # Copy limits because they get overriden
         self._connection = SecureConnection(SecurityPolicyNone(), self._limits)
         self._closing: bool = False
+        self._hello_received: bool = False
         self._session_watchdog_task: asyncio.Task | None = None
         self._watchdog_interval: float = 1.0
 
@@ -153,6 +154,14 @@ class UaProcessor:
             elif header.MessageType == ua.MessageType.SecureMessage:
                 return await self.process_message(msg.SequenceHeader(), msg.body())
         elif isinstance(msg, ua.Hello):
+            if self._hello_received:
+                _logger.warning("Received a repeated Hello message from %s", self.name)
+                err = ua.ErrorMessage(
+                    ua.StatusCode(ua.StatusCodes.BadTcpMessageTypeInvalid), "Hello was already received"
+                )
+                self._transport.write(uatcp_to_binary(ua.MessageType.Error, err))
+                return False
+            self._hello_received = True
             ack = self._limits.create_acknowledge_and_set_limits(msg)
             data = uatcp_to_binary(ua.MessageType.Acknowledge, ack)
             self._transport.write(data)
