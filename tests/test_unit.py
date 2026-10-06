@@ -1429,3 +1429,23 @@ def test_an_aborted_message_frees_its_accumulated_size():
 
     for seq in range(5, 8):
         assert connection._receive(_incoming_chunk(seq, body)) is None
+
+
+def test_acknowledge_bounds_each_buffer_by_the_opposite_hello_buffer() -> None:
+    limits = TransportLimits(max_recv_buffer=16384, max_send_buffer=65535)
+    hello = ua.Hello(ReceiveBufferSize=8192, SendBufferSize=32768)
+
+    ack = limits.create_acknowledge_and_set_limits(hello)
+
+    assert (ack.ReceiveBufferSize, ack.SendBufferSize) == (16384, 8192)
+    assert (limits.max_recv_buffer, limits.max_send_buffer) == (16384, 8192)
+
+
+@pytest.mark.parametrize("initial", [(65535, 65535), (8192, 65535)])
+def test_client_sends_what_the_server_receives_and_receives_what_it_sends(initial: tuple[int, int]) -> None:
+    limits = TransportLimits(*initial, 0, 0)
+    ack = ua.Acknowledge(ReceiveBufferSize=8192, SendBufferSize=65535)
+
+    limits.update_client_limits(ack)
+
+    assert (limits.max_recv_buffer, limits.max_send_buffer) == (65535, 8192)

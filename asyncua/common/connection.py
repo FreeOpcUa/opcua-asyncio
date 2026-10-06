@@ -57,8 +57,8 @@ class TransportLimits:
 
     def create_acknowledge_and_set_limits(self, msg: ua.Hello) -> ua.Acknowledge:
         ack = ua.Acknowledge()
-        ack.ReceiveBufferSize = min(msg.ReceiveBufferSize, self.max_send_buffer)
-        ack.SendBufferSize = min(msg.SendBufferSize, self.max_recv_buffer)
+        ack.ReceiveBufferSize = min(msg.SendBufferSize, self.max_recv_buffer)
+        ack.SendBufferSize = min(msg.ReceiveBufferSize, self.max_send_buffer)
         ack.MaxChunkCount = self._select_limit(msg.MaxChunkCount, self.max_chunk_count)
         ack.MaxMessageSize = self._select_limit(msg.MaxMessageSize, self.max_message_size)
         have_changes = (
@@ -70,8 +70,8 @@ class TransportLimits:
         if have_changes:
             _logger.info("updating server limits to: %s", self)
             self.max_chunk_count = ack.MaxChunkCount
-            self.max_recv_buffer = ack.SendBufferSize
-            self.max_send_buffer = ack.ReceiveBufferSize
+            self.max_recv_buffer = ack.ReceiveBufferSize
+            self.max_send_buffer = ack.SendBufferSize
             self.max_message_size = ack.MaxMessageSize
         return ack
 
@@ -85,15 +85,15 @@ class TransportLimits:
     def update_client_limits(self, msg: ua.Acknowledge) -> None:
         have_changes = (
             self.max_chunk_count != msg.MaxChunkCount
-            or self.max_recv_buffer != msg.ReceiveBufferSize
-            or self.max_send_buffer != msg.SendBufferSize
+            or self.max_recv_buffer != msg.SendBufferSize
+            or self.max_send_buffer != msg.ReceiveBufferSize
             or self.max_message_size != msg.MaxMessageSize
         )
         if have_changes:
             _logger.info("updating client limits to: %s", self)
             self.max_chunk_count = msg.MaxChunkCount
-            self.max_recv_buffer = msg.ReceiveBufferSize
-            self.max_send_buffer = msg.SendBufferSize
+            self.max_recv_buffer = msg.SendBufferSize
+            self.max_send_buffer = msg.ReceiveBufferSize
             self.max_message_size = msg.MaxMessageSize
 
 
