@@ -369,6 +369,18 @@ def test_sync_server_init_failure_stops_own_tloop(monkeypatch):
     assert alive_thread_loops() == before
 
 
+def test_sync_server_stop_failure_stops_own_tloop(monkeypatch):
+    s = Server()
+
+    async def failing_stop():
+        raise RuntimeError("stop failed")
+
+    monkeypatch.setattr(s.aio_obj, "stop", failing_stop)
+    with pytest.raises(RuntimeError, match="stop failed"):
+        s.stop()
+    assert not s.tloop.is_alive()
+
+
 def test_sync_client_init_failure_stops_own_tloop(monkeypatch):
     def failing_init(self, *args, **kwargs):
         raise ValueError("bad url")

@@ -641,8 +641,10 @@ class Server:
     def start(self) -> None: ...
 
     def stop(self) -> None:
-        self.tloop.post(self.aio_obj.stop())
-        self._stop_own_tloop()
+        try:
+            self.tloop.post(self.aio_obj.stop())
+        finally:
+            self._stop_own_tloop()
 
     def link_method(self, node: SyncNode, callback: Callable[..., Any]) -> None:
         return self.aio_obj.link_method(node, callback)
