@@ -1,4 +1,5 @@
 import tempfile
+import threading
 from concurrent.futures import Future
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import pytest
 from asyncua import ua, uamethod
 from asyncua.client import Client as AsyncClient
 from asyncua.client.ua_client import UaClient
+from asyncua.server import Server as AsyncServer
 from asyncua.sync import (
     Client,
     Server,
@@ -350,3 +352,29 @@ def test_create_struct_sync_client(client):
     var = client.nodes.objects.add_variable(idx, "my_struct", mystruct)
     val = var.read_value()
     assert val.MyUInt32 == [78, 79]
+
+
+def alive_thread_loops():
+    return {t for t in threading.enumerate() if isinstance(t, ThreadLoop) and t.is_alive()}
+
+
+def test_sync_server_init_failure_stops_own_tloop(monkeypatch):
+    async def failing_init(self, shelf_file=None):
+        raise RuntimeError("init failed")
+
+    monkeypatch.setattr(AsyncServer, "init", failing_init)
+    before = alive_thread_loops()
+    with pytest.raises(RuntimeError, match="init failed"):
+        Server()
+    assert alive_thread_loops() == before
+
+
+def test_sync_client_init_failure_stops_own_tloop(monkeypatch):
+    def failing_init(self, *args, **kwargs):
+        raise ValueError("bad url")
+
+    monkeypatch.setattr(AsyncClient, "__init__", failing_init)
+    before = alive_thread_loops()
+    with pytest.raises(ValueError, match="bad url"):
+        Client("opc.tcp://localhost:4840")
+    assert alive_thread_loops() == before
