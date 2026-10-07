@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
 from asyncua.common.utils import Buffer
+from asyncua.observer import Observer
 from asyncua.ua.ua_binary import struct_from_binary
 from asyncua.ua.uaerrors import (
     BadNoSubscription,
@@ -57,6 +58,10 @@ class UaSession(AbstractSession):
         self._state: SessionState = SessionState.NEW
         self._subscription_callbacks: dict[int, Callable[..., Any]] = {}
         self._publish_task: asyncio.Task[None] | None = None
+
+    @property
+    def observer(self) -> Observer:
+        return self._client.observer
 
     @property
     def state(self) -> SessionState:
@@ -246,6 +251,16 @@ class UaSession(AbstractSession):
         request.Parameters = params
         data = await self._send_request(request)
         response = struct_from_binary(ua.HistoryReadResponse, data)
+        self.logger.debug(response)
+        response.ResponseHeader.ServiceResult.check()
+        return response.Results
+
+    async def history_update(self, params: ua.HistoryUpdateParameters) -> list[ua.HistoryUpdateResult]:
+        self.logger.info("history_update")
+        request = ua.HistoryUpdateRequest()
+        request.Parameters = params
+        data = await self._send_request(request)
+        response = struct_from_binary(ua.HistoryUpdateResponse, data)
         self.logger.debug(response)
         response.ResponseHeader.ServiceResult.check()
         return response.Results

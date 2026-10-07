@@ -223,6 +223,9 @@ class InternalSession(AbstractSession):
     async def history_read(self, params: ua.HistoryReadParameters) -> list[ua.HistoryReadResult]:
         return await self.iserver.history_manager.read_history(params)
 
+    async def history_update(self, params: ua.HistoryUpdateParameters) -> list[ua.HistoryUpdateResult]:
+        return self.iserver.history_manager.update_history(params)
+
     async def write(self, params: ua.WriteParameters) -> list[ua.StatusCode]:
         if self.user is None:
             user = User()

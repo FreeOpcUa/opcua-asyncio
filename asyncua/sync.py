@@ -255,8 +255,16 @@ class Client:
             self.tloop = ThreadLoop(sync_wrapper_timeout)
             self.tloop.start()
             self.close_tloop = True
-        self.aio_obj: client.Client = client.Client(url, timeout, watchdog_intervall)
-        self.nodes: Shortcuts = Shortcuts(self.tloop, self.aio_obj.uaclient)
+        try:
+            self.aio_obj: client.Client = client.Client(url, timeout, watchdog_intervall)
+            self.nodes: Shortcuts = Shortcuts(self.tloop, self.aio_obj.uaclient)
+        except Exception:
+            self._stop_own_tloop()
+            raise
+
+    def _stop_own_tloop(self) -> None:
+        if self.close_tloop:
+            self.tloop.stop()
 
     def __str__(self) -> str:
         return "Sync" + self.aio_obj.__str__()
@@ -278,8 +286,7 @@ class Client:
         try:
             self.tloop.post(self.aio_obj.disconnect())
         finally:
-            if self.close_tloop:
-                self.tloop.stop()
+            self._stop_own_tloop()
 
     @syncmethod
     def connect_sessionless(self) -> None: ...
@@ -288,8 +295,7 @@ class Client:
         try:
             self.tloop.post(self.aio_obj.disconnect_sessionless())
         finally:
-            if self.close_tloop:
-                self.tloop.stop()
+            self._stop_own_tloop()
 
     @syncmethod
     def connect_socket(self) -> None: ...
@@ -298,8 +304,7 @@ class Client:
         try:
             self.aio_obj.disconnect_socket()
         finally:
-            if self.close_tloop:
-                self.tloop.stop()
+            self._stop_own_tloop()
 
     def set_user(self, username: str) -> None:
         self.aio_obj.set_user(username)
@@ -566,9 +571,17 @@ class Server:
             self.tloop = ThreadLoop(timeout=sync_wrapper_timeout)
             self.tloop.start()
             self.close_tloop = True
-        self.aio_obj: server.Server = server.Server()
-        self.tloop.post(self.aio_obj.init(shelf_file))
-        self.nodes: Shortcuts = Shortcuts(self.tloop, self.aio_obj.iserver.isession)
+        try:
+            self.aio_obj: server.Server = server.Server()
+            self.tloop.post(self.aio_obj.init(shelf_file))
+            self.nodes: Shortcuts = Shortcuts(self.tloop, self.aio_obj.iserver.isession)
+        except Exception:
+            self._stop_own_tloop()
+            raise
+
+    def _stop_own_tloop(self) -> None:
+        if self.close_tloop:
+            self.tloop.stop()
 
     def __str__(self) -> str:
         return "Sync" + self.aio_obj.__str__()
@@ -628,9 +641,10 @@ class Server:
     def start(self) -> None: ...
 
     def stop(self) -> None:
-        self.tloop.post(self.aio_obj.stop())
-        if self.close_tloop:
-            self.tloop.stop()
+        try:
+            self.tloop.post(self.aio_obj.stop())
+        finally:
+            self._stop_own_tloop()
 
     def link_method(self, node: SyncNode, callback: Callable[..., Any]) -> None:
         return self.aio_obj.link_method(node, callback)

@@ -157,20 +157,22 @@ class OPCUAProtocol(asyncio.Protocol):
                 # Connection was closed, end task
                 break
             try:
-                await self._process_one_msg(header, buf)
+                if not await self._process_one_msg(header, buf):
+                    break
             except Exception:
                 _logger.exception("Exception raised while processing message from client")
 
-    async def _process_one_msg(self, header: Any, buf: Buffer) -> None:
+    async def _process_one_msg(self, header: Any, buf: Buffer) -> bool:
         _logger.debug("_process_received_message %s %s", header.body_size, len(buf))
         if self.processor is None:
-            return
+            return True
         ret = await self.processor.process(header, buf)
         if not ret:
             _logger.info("processor returned False, we close connection from %s", self.peer_name)
             if self.transport is not None:
                 self.transport.close()
-            return
+            return False
+        return True
 
 
 class BinaryServer:

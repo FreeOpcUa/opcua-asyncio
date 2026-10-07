@@ -60,7 +60,7 @@ def new_struct_field(
 async def new_struct(
     server: Server | Client,
     idx: int | ua.NodeId,
-    name: int | ua.QualifiedName,
+    name: str | ua.QualifiedName,
     fields: list[ua.StructureField],
     is_union: bool = False,
 ) -> tuple[Node, list[Node]]:
