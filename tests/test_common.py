@@ -1587,6 +1587,31 @@ async def test_custom_struct_(opc):
     assert val.MyUInt32 == [78, 79]
 
 
+async def test_custom_struct_with_a_field_named_encoding(opc):
+    idx = 4
+
+    await new_struct(
+        opc.opc,
+        idx,
+        "MyEncodingFieldStruct",
+        [
+            new_struct_field("Encoding", ua.VariantType.Int32),
+            new_struct_field("MyString", ua.VariantType.String),
+        ],
+    )
+
+    await opc.opc.load_data_type_definitions()
+    mystruct = ua.MyEncodingFieldStruct()
+    mystruct.Encoding = 7
+    mystruct.MyString = "seven"
+    var = await opc.opc.nodes.objects.add_variable(
+        idx, "my_encoding_field_struct", ua.Variant(mystruct, ua.VariantType.ExtensionObject)
+    )
+    val = await var.read_value()
+    assert val.Encoding == 7
+    assert val.MyString == "seven"
+
+
 async def test_custom_struct_with_optional_fields(opc):
     idx = 4
 
