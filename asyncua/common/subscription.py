@@ -18,6 +18,7 @@ from asyncua import ua
 from asyncua.client.ua_session import UaSession
 from asyncua.common.ua_utils import copy_dataclass_attr
 from asyncua.common.utils import ServiceError
+from asyncua.observer import SubscriptionEvent
 from asyncua.ua.uaerrors import BadMessageNotAvailable
 
 if TYPE_CHECKING:
@@ -206,6 +207,7 @@ class Subscription:
         self._overflow = overflow
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items: dict[int, SubscriptionItemData] = {}
+        self._recreate_count: int = 0
         self.subscription_id: int | None = None
         # Tracks whether the user explicitly deleted this subscription, so the
         # auto-reconnect supervisor can skip re-creating dead subscriptions.
@@ -237,10 +239,20 @@ class Subscription:
         """Hook fired when overflow=DISCONNECT triggers; use to force a full reconnect."""
         self._on_overflow_disconnect = handler
 
+    def _observe(self, hook: Callable[[], None]) -> None:
+        try:
+            hook()
+        except Exception:
+            self.logger.exception("observer raised")
+
     async def init(self) -> ua.CreateSubscriptionResult:
+        return await self._create(SubscriptionEvent.CREATED)
+
+    async def _create(self, event: SubscriptionEvent) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
         self.subscription_id = response.SubscriptionId  # move to data class
         self.logger.info("Subscription created %s", self.subscription_id)
+        self._observe(lambda: self.server.observer.on_subscription_event(self.subscription_id, event))
         return response
 
     async def update(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
@@ -265,8 +277,11 @@ class Subscription:
         if publish_result.NotificationMessage.NotificationData is None:
             return
         self.last_sequence_number = int(publish_result.NotificationMessage.SequenceNumber)
+        produced = 0
         for event in self._explode_notifications(publish_result.NotificationMessage.NotificationData):
             self._deliver(event)
+            produced += 1
+        self._observe(lambda: self.server.observer.on_notification(self.subscription_id, produced))
 
     def _explode_notifications(self, notification_data: Iterable[Any]) -> Iterable[SubEvent]:
         """Translate server `NotificationData` items into typed `SubEvent`s."""
@@ -453,6 +468,7 @@ class Subscription:
         finally:
             self._deleted = True
             self._close_iterator()
+            self._observe(lambda: self.server.observer.on_subscription_event(self.subscription_id, SubscriptionEvent.DELETED))
 
     def _close_iterator(self) -> None:
         """Push the sentinel so any active `async for ev in sub` loop ends."""
@@ -543,7 +559,10 @@ class Subscription:
         """
         if self._deleted:
             return
-        saved_items = list(self._monitored_items.values())
+        self._recreate_count += 1
+        saved_monitored_items: list[SubscriptionItemData] = [
+            item for item in self._monitored_items.values() if item.server_handle is not None
+        ]
         old_subscription_id = self.subscription_id
         self._monitored_items.clear()
         self.subscription_id = None
@@ -561,13 +580,13 @@ class Subscription:
             except Exception:
                 self.logger.debug("best-effort delete of old sub %s failed", old_subscription_id, exc_info=True)
 
-        await self.init()
+        await self._create(SubscriptionEvent.RECREATED)
 
-        if not saved_items:
+        if not saved_monitored_items:
             return
 
         mirs: list[ua.MonitoredItemCreateRequest] = []
-        for item in saved_items:
+        for item in saved_monitored_items:
             if item.node is None or item.attribute is None or item.client_handle is None:
                 self.logger.warning("Skipping monitored item with missing fields during recreate")
                 continue
@@ -836,9 +855,11 @@ class Subscription:
         low level method to have full control over subscription parameters.
         Client handle must be unique since it will be used as key for internal registration of data.
         """
+        monitored_items = list(monitored_items)
+        recreate_count = self._recreate_count
         params = ua.CreateMonitoredItemsParameters()
         params.SubscriptionId = self.subscription_id
-        params.ItemsToCreate = list(monitored_items)
+        params.ItemsToCreate = monitored_items
         params.TimestampsToReturn = ua.TimestampsToReturn.Both
         # insert monitored item into map to avoid notification arrive before result return
         # server_handle is left as None in purpose as we don't get it yet.
@@ -857,7 +878,15 @@ class Subscription:
         try:
             results = await self.server.create_monitored_items(params)
         except ServiceError as e:
+            self._forget_monitored_items(params.ItemsToCreate, recreate_count)
             raise ua.UaStatusCodeError(e.code)
+        except Exception:
+            self._forget_monitored_items(params.ItemsToCreate, recreate_count)
+            raise
+
+        if recreate_count != self._recreate_count:
+            self._forget_monitored_items(params.ItemsToCreate, recreate_count)
+            raise ua.UaStatusCodeError(ua.StatusCodes.BadSubscriptionIdInvalid)
         mids = []
         # process result, add server_handle, or remove it if failed
         for idx, result in enumerate(results):
@@ -870,6 +899,12 @@ class Subscription:
             data.server_handle = result.MonitoredItemId
             mids.append(result.MonitoredItemId)
         return mids
+
+    def _forget_monitored_items(self, requests: list[ua.MonitoredItemCreateRequest], recreate_count: int) -> None:
+        if recreate_count != self._recreate_count:
+            return
+        for mi in requests:
+            self._monitored_items.pop(mi.RequestedParameters.ClientHandle, None)
 
     async def unsubscribe(self, handle: int | Iterable[int]) -> None:
         """

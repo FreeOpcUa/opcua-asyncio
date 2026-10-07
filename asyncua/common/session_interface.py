@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import Any
 
 from asyncua import ua
+from asyncua.observer import NULL_OBSERVER, Observer
 
 
 class AbstractSession(ABC):
@@ -10,6 +11,10 @@ class AbstractSession(ABC):
     An abstract interface for the sessionbased Service Sets like:
     NodeManagement, View, Attribute, Method, MonitoredItem and Subscription
     """
+
+    @property
+    def observer(self) -> Observer:
+        return NULL_OBSERVER
 
     # View Service Set: https://reference.opcfoundation.org/Core/Part4/v104/5.8.1/
 
@@ -99,6 +104,19 @@ class AbstractSession(ABC):
         For constructed Attribute values whose elements are indexed, such as an array,
         this Service allows Clients to read the entire set of indexed values as a composite,
         to read individual elements or to read ranges of elements of the composite.
+        Servers may make historical values available to Clients using this Service,
+        although the historical values themselves are not visible in the AddressSpace.
+        """
+
+    @abstractmethod
+    async def history_update(self, params: ua.HistoryUpdateParameters) -> list[ua.HistoryUpdateResult]:
+        """
+        https://reference.opcfoundation.org/Core/Part4/v104/5.10.5/
+
+        This Service is used to update historical values or Events of one or more Nodes.
+        For constructed Attribute values whose elements are indexed, such as an array,
+        this Service allows Clients to update the entire set of indexed values as a composite,
+        to update individual elements or to update ranges of elements of the composite.
         Servers may make historical values available to Clients using this Service,
         although the historical values themselves are not visible in the AddressSpace.
         """
