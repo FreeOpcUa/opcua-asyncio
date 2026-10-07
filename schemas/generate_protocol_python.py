@@ -173,10 +173,6 @@ class CodeGenerator:
 
         if obj.fields:
             self.write("")
-        # hack extension object stuff
-        extobj_hack = False
-        if "BodyLength" in [f.name for f in obj.fields]:
-            extobj_hack = True
 
         for field in obj.fields:
             typestring = f"ua.{field.data_type}"
@@ -188,10 +184,7 @@ class CodeGenerator:
                 typestring = f"{typestring} | None"
             fieldname = field.name
 
-            if field.name == "Encoding":
-                val = 0 if not extobj_hack else 1
-                self.write(f"{field.name}: Byte = field(default={val}, repr=False, init=False, compare=False)")
-            elif field.data_type == obj.name:  # help!!! self referencing class
+            if field.data_type == obj.name:  # help!!! self referencing class
                 # FIXME: Might not be good enough
                 self.write(f"{fieldname}: 'Optional[ExtensionObject]' = None")
             elif (
