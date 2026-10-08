@@ -355,8 +355,7 @@ class CodeGenerator:
         self.writecode(indent, "attrs = ua.VariableTypeAttributes(")
         if obj.desc:
             self.writecode(indent, '   Description=LocalizedText("{0}"),'.format(obj.desc))
-        if obj.abstract:
-            self.writecode(indent, f"    IsAbstract={obj.abstract},")
+        self.writecode(indent, f"    IsAbstract={obj.abstract},")
         self.make_common_variable_code(indent, obj)
         self.make_node_code(obj, indent)
 
@@ -378,10 +377,8 @@ class CodeGenerator:
         self.writecode(indent, '    DisplayName=LocalizedText("{0}"),'.format(obj.displayname))
         if obj.inversename:
             self.writecode(indent, '    InverseName=LocalizedText("{0}"),'.format(obj.inversename))
-        if obj.abstract:
-            self.writecode(indent, f"    IsAbstract={obj.abstract},")
-        if obj.symmetric:
-            self.writecode(indent, f"    Symmetric={obj.symmetric},")
+        self.writecode(indent, f"    IsAbstract={obj.abstract},")
+        self.writecode(indent, f"    Symmetric={obj.symmetric},")
         self.writecode(indent, "    )")
         self.make_node_code(obj, indent)
 

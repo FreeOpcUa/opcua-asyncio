@@ -204,6 +204,8 @@ def create_standard_address_space_Services_8(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasDataSetWriter"),
         InverseName=LocalizedText("IsWriterInGroup"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(15296, 0),
@@ -218,6 +220,8 @@ def create_standard_address_space_Services_8(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasWriterGroup"),
         InverseName=LocalizedText("IsWriterGroupOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(18804, 0),
@@ -1357,6 +1361,8 @@ def create_standard_address_space_Services_8(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasDataSetReader"),
         InverseName=LocalizedText("IsReaderInGroup"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(15297, 0),
@@ -1371,6 +1377,8 @@ def create_standard_address_space_Services_8(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasReaderGroup"),
         InverseName=LocalizedText("IsReaderGroupOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(18805, 0),
@@ -4846,6 +4854,7 @@ def create_standard_address_space_Services_8(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("PubSubDiagnosticsCounterType"),
         DataType=ua.NodeId(ua.ObjectIds.UInt32),
         ValueRank=-1,
