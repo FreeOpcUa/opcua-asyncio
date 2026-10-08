@@ -8312,6 +8312,8 @@ def create_standard_address_space_Services_6(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasPushedSecurityGroup"),
         InverseName=LocalizedText("HasPushTarget"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(25345, 0),

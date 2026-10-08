@@ -2,6 +2,7 @@ import datetime
 import logging
 import pathlib
 import uuid
+from typing import Any
 
 import pytest
 from pytz import timezone
@@ -240,6 +241,34 @@ async def test_xml_ns(opc, tmpdir):
     await nnode.read_browse_name()
     vnew2 = (await nnode.get_children())[0]
     assert vnew2.nodeid.NamespaceIndex == new_ns
+
+
+async def test_xml_import_reference_type_symmetric(opc: Any) -> None:
+    xml = """
+    <UANodeSet xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd">
+      <NamespaceUris>
+        <Uri>http://examples.freeopcua.github.io/reftypes</Uri>
+      </NamespaceUris>
+      <UAReferenceType NodeId="ns=1;i=5001" BrowseName="1:HasPlainRef">
+        <DisplayName>HasPlainRef</DisplayName>
+        <References>
+          <Reference ReferenceType="i=45" IsForward="false">i=32</Reference>
+        </References>
+      </UAReferenceType>
+      <UAReferenceType NodeId="ns=1;i=5002" BrowseName="1:HasSymmetricRef" Symmetric="true">
+        <DisplayName>HasSymmetricRef</DisplayName>
+        <References>
+          <Reference ReferenceType="i=45" IsForward="false">i=32</Reference>
+        </References>
+      </UAReferenceType>
+    </UANodeSet>
+    """
+    nodes = [opc.opc.get_node(nodeid) for nodeid in await opc.opc.import_xml(xmlstring=xml)]
+    plain, symmetric = sorted(nodes, key=lambda node: node.nodeid.Identifier)
+    assert (await plain.read_attribute(ua.AttributeIds.IsAbstract)).Value.Value is False
+    assert (await plain.read_attribute(ua.AttributeIds.Symmetric)).Value.Value is False
+    assert (await symmetric.read_attribute(ua.AttributeIds.Symmetric)).Value.Value is True
+    await opc.opc.delete_nodes(nodes)
 
 
 async def test_xml_invalid_ns(opc, tmpdir):

@@ -651,8 +651,7 @@ class XmlImporter:
             attrs.IsAbstract = obj.abstract
         else:
             attrs.IsAbstract = False
-        if obj.symmetric:
-            attrs.Symmetric = obj.symmetric
+        attrs.Symmetric = obj.symmetric
         node.NodeAttributes = attrs
         res = await self._get_server().add_nodes([node])
         await self._add_refs(obj)
