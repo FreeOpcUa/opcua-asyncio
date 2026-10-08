@@ -2,6 +2,7 @@ import datetime
 import logging
 import pathlib
 import uuid
+from typing import Any
 
 import pytest
 from pytz import timezone
@@ -240,6 +241,69 @@ async def test_xml_ns(opc, tmpdir):
     await nnode.read_browse_name()
     vnew2 = (await nnode.get_children())[0]
     assert vnew2.nodeid.NamespaceIndex == new_ns
+
+
+async def test_xml_import_binary_encoded_extension_object(opc: Any) -> None:
+    xml = """
+    <UANodeSet xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd" xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd">
+      <NamespaceUris>
+        <Uri>http://examples.freeopcua.github.io/binaryextobj</Uri>
+      </NamespaceUris>
+      <UAVariable NodeId="ns=1;i=6001" BrowseName="1:BinaryRange" DataType="i=884" ParentNodeId="i=85">
+        <DisplayName>BinaryRange</DisplayName>
+        <References>
+          <Reference ReferenceType="i=47" IsForward="false">i=85</Reference>
+          <Reference ReferenceType="i=40">i=63</Reference>
+        </References>
+        <Value>
+          <uax:ExtensionObject>
+            <uax:TypeId>
+              <uax:Identifier>i=886</uax:Identifier>
+            </uax:TypeId>
+            <uax:Body>
+              <uax:ByteString>AAAAAAAAJMAAAAAAAFBvQA==</uax:ByteString>
+            </uax:Body>
+          </uax:ExtensionObject>
+        </Value>
+      </UAVariable>
+    </UANodeSet>
+    """
+    nodes = [opc.opc.get_node(nodeid) for nodeid in await opc.opc.import_xml(xmlstring=xml)]
+    assert await nodes[0].read_value() == ua.Range(Low=-10.0, High=250.5)
+    await opc.opc.delete_nodes(nodes)
+
+
+async def test_xml_import_binary_encoded_extension_object_unknown_type(opc: Any) -> None:
+    uri = "http://examples.freeopcua.github.io/binaryextobj_unknown"
+    xml = f"""
+    <UANodeSet xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd" xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd">
+      <NamespaceUris>
+        <Uri>{uri}</Uri>
+      </NamespaceUris>
+      <UAVariable NodeId="ns=1;i=6002" BrowseName="1:BinaryUnknown" DataType="i=22" ParentNodeId="i=85">
+        <DisplayName>BinaryUnknown</DisplayName>
+        <References>
+          <Reference ReferenceType="i=47" IsForward="false">i=85</Reference>
+          <Reference ReferenceType="i=40">i=63</Reference>
+        </References>
+        <Value>
+          <uax:ExtensionObject>
+            <uax:TypeId>
+              <uax:Identifier>ns=1;i=5005</uax:Identifier>
+            </uax:TypeId>
+            <uax:Body>
+              <uax:ByteString>AQID</uax:ByteString>
+            </uax:Body>
+          </uax:ExtensionObject>
+        </Value>
+      </UAVariable>
+    </UANodeSet>
+    """
+    nodes = [opc.opc.get_node(nodeid) for nodeid in await opc.opc.import_xml(xmlstring=xml)]
+    ns = await opc.opc.get_namespace_index(uri)
+    value = await nodes[0].read_value()
+    assert value == ua.ExtensionObject(TypeId=ua.NodeId(5005, ns), Body=b"\x01\x02\x03")
+    await opc.opc.delete_nodes(nodes)
 
 
 async def test_xml_invalid_ns(opc, tmpdir):
