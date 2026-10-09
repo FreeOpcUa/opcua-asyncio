@@ -23,7 +23,7 @@ from ..common.node import Node
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_enums, load_type_definitions
 from ..common.structures104 import load_data_type_definitions
-from ..common.subscription import OverflowPolicy, Subscription, SubscriptionHandler
+from ..common.subscription import Subscription, SubscriptionHandler
 from ..common.ua_utils import copy_dataclass_attr, value_to_datavalue
 from ..common.utils import ServiceError, create_nonce
 from ..common.xmlexporter import XmlExporter
@@ -1248,7 +1248,6 @@ class Client:
         publishing: bool = True,
         *,
         queue_maxsize: int = 1000,
-        overflow: OverflowPolicy = OverflowPolicy.DROP_OLDEST,
     ) -> Subscription:
         """
         Create a subscription.
@@ -1256,8 +1255,7 @@ class Client:
         Returns a Subscription object which can be used either:
         - **Callback mode** (legacy): pass a `handler` and implement
           `datachange_notification` / `event_notification` /
-          `status_change_notification`. The handler is invoked from a task
-          so the publish loop never awaits user code.
+          `status_change_notification`.
         - **Iterator mode**: pass `handler=None` and use the subscription as
           an async context manager + async iterator:
 
@@ -1266,14 +1264,12 @@ class Client:
                   async for ev in sub:
                       ...
 
-          `queue_maxsize` bounds the internal buffer; `overflow` selects what
-          happens when the consumer falls behind.
+          `queue_maxsize` bounds the internal buffer.
 
         :param period: Either a publishing interval in milliseconds or a
             `CreateSubscriptionParameters` instance.
         :param handler: Optional callback handler. If None, iterator mode.
         :param queue_maxsize: Iterator-mode queue bound (default 1000).
-        :param overflow: Iterator-mode overflow policy (default DROP_OLDEST).
         """
         if isinstance(period, ua.CreateSubscriptionParameters):
             params = period
@@ -1290,10 +1286,7 @@ class Client:
             params,
             handler,
             queue_maxsize=queue_maxsize,
-            overflow=overflow,
         )
-        # Wire the DISCONNECT overflow policy to the supervisor's reconnect path.
-        subscription.set_overflow_disconnect_handler(self.uaclient.notify_transport_lost)
         results = await subscription.init()
         new_params = self.get_subscription_revised_params(params, results)
         if new_params:
