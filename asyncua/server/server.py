@@ -25,7 +25,7 @@ from ..common.node import Node
 from ..common.shortcuts import Shortcuts
 from ..common.structures import load_enums, load_type_definitions
 from ..common.structures104 import load_data_type_definitions
-from ..common.subscription import OverflowPolicy, Subscription
+from ..common.subscription import Subscription
 from ..common.ua_utils import get_nodes_of_namespace
 from ..common.xmlexporter import XmlExporter
 from ..common.xmlimporter import XmlImporter
@@ -591,7 +591,6 @@ class Server:
         handler: Any = None,
         *,
         queue_maxsize: int = 1000,
-        overflow: OverflowPolicy = OverflowPolicy.DROP_OLDEST,
     ) -> Subscription:
         params = ua.CreateSubscriptionParameters()
         params.RequestedPublishingInterval = period
@@ -605,7 +604,6 @@ class Server:
             params,
             handler,
             queue_maxsize=queue_maxsize,
-            overflow=overflow,
         )
         await subscription.init()
         return subscription
