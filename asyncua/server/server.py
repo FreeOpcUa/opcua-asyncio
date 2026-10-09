@@ -480,10 +480,7 @@ class Server:
             idtoken = ua.UserTokenPolicy()
             idtoken.PolicyId = "username"
             idtoken.TokenType = ua.UserTokenType.UserName
-            if mode == ua.MessageSecurityMode.SignAndEncrypt:
-                # channel is encrypted, no need to encrypt password again
-                idtoken.SecurityPolicyUri = security_policies.SecurityPolicyNone.URI
-            elif mode == ua.MessageSecurityMode.Sign:
+            if mode != ua.MessageSecurityMode.None_:
                 # use same policy for encryption
                 idtoken.SecurityPolicyUri = policy.URI
             # try to avoid plaintext password, find first policy with encryption
