@@ -362,7 +362,8 @@ class FiniteStateMachine(StateMachine):
                 self._available_transitions_node = await self._state_machine_node.get_child(["AvailableTransitions"])
             if isinstance(transitions, list) and all(isinstance(transition, ua.NodeId) for transition in transitions):
                 await self._available_transitions_node.write_value(transitions, varianttype=ua.VariantType.NodeId)
-            raise ValueError(f"Statemachine: {self._name} -> transitions: {transitions} is not a list")
+            else:
+                raise ValueError(f"Statemachine: {self._name} -> transitions: {transitions} is not a list")
 
 
 class ExclusiveLimitStateMachine(FiniteStateMachine):
