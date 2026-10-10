@@ -349,12 +349,13 @@ class FiniteStateMachine(StateMachine):
         self._available_states_node: Node = None  # type: ignore[assignment]
         self._available_transitions_node: Node = None  # type: ignore[assignment]
 
-    async def set_available_states(self, states: list[ua.NodeId]) -> Any:
+    async def set_available_states(self, states: list[ua.NodeId]) -> None:
         if not self._available_states_node:
             self._available_states_node = await self._state_machine_node.get_child(["AvailableStates"])
         if isinstance(states, list) and all(isinstance(state, ua.NodeId) for state in states):
-            return await self._available_states_node.write_value(states, varianttype=ua.VariantType.NodeId)
-        return ValueError(f"Statemachine: {self._name} -> states: {states} is not a list")
+            await self._available_states_node.write_value(states, varianttype=ua.VariantType.NodeId)
+        else:
+            raise ValueError(f"Statemachine: {self._name} -> states: {states} is not a list")
 
     async def set_available_transitions(self, transitions: list[ua.NodeId]) -> None:
         if self._optionals:
