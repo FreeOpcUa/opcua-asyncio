@@ -26,7 +26,9 @@ from asyncua.common.event_objects import (
     AuditSecurityEvent,
     BaseEvent,
 )
+from asyncua.common.utils import Buffer
 from asyncua.server.uaprocessor import UaProcessor
+from asyncua.ua.ua_binary import struct_from_binary, uatcp_to_binary
 
 pytestmark = pytest.mark.asyncio
 _logger = logging.getLogger(__name__)
@@ -1022,3 +1024,53 @@ async def test_process_rejects_a_repeated_hello_and_closes_the_connection() -> N
 
     assert transport.write.call_args.args[0].startswith(b"ERRF")
     assert keep_open is False
+
+
+@pytest.mark.parametrize(("receive_size", "send_size"), [(0, 65535), (8191, 65535), (65535, 0), (65535, 8191)])
+async def test_process_rejects_a_hello_below_the_minimum_buffer_size(receive_size: int, send_size: int) -> None:
+    transport = Mock()
+    limits = TransportLimits()
+    processor = UaProcessor(Mock(), transport, limits)
+    connection = Mock()
+    connection.receive_from_header_and_body.return_value = ua.Hello(
+        ReceiveBufferSize=receive_size, SendBufferSize=send_size
+    )
+    processor._connection = connection
+
+    keep_open = await processor.process(Mock(), Mock())
+
+    assert transport.write.call_args.args[0].startswith(b"ERRF")
+    assert keep_open is False
+    assert processor._limits == limits
+
+
+@pytest.mark.parametrize("server_buffer_size", [65535, 1024])
+async def test_process_accepts_a_hello_with_the_minimum_buffer_size(server_buffer_size: int) -> None:
+    transport = Mock()
+    processor = UaProcessor(Mock(), transport, TransportLimits(server_buffer_size, server_buffer_size))
+    connection = Mock()
+    connection.receive_from_header_and_body.return_value = ua.Hello(ReceiveBufferSize=8192, SendBufferSize=8192)
+    processor._connection = connection
+
+    assert await processor.process(Mock(), Mock()) is True
+    assert transport.write.call_args.args[0].startswith(b"ACKF")
+
+
+async def test_server_closes_the_connection_on_a_hello_below_the_minimum_buffer_size(server: Server) -> None:
+    url = server.endpoint.geturl()
+    reader, writer = await asyncio.open_connection(server.endpoint.hostname, server.endpoint.port)
+    writer.write(uatcp_to_binary(ua.MessageType.Hello, ua.Hello(ReceiveBufferSize=0, EndpointUrl=url)))
+
+    try:
+        head = await asyncio.wait_for(reader.readexactly(8), 5)
+        assert head.startswith(b"ERRF")
+        body = await asyncio.wait_for(reader.read(), 5)
+    finally:
+        writer.close()
+        await writer.wait_closed()
+
+    error = struct_from_binary(ua.ErrorMessage, Buffer(body))
+    assert error.Error.value == ua.StatusCodes.BadTcpInternalError
+
+    async with Client(url) as client:
+        assert await client.nodes.server_state.read_value() is not None
