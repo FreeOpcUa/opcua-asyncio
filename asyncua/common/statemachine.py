@@ -355,7 +355,7 @@ class FiniteStateMachine(StateMachine):
         if isinstance(states, list) and all(isinstance(state, ua.NodeId) for state in states):
             await self._available_states_node.write_value(states, varianttype=ua.VariantType.NodeId)
         else:
-            raise ValueError(f"Statemachine: {self._name} -> states: {states} is not a list")
+            raise ValueError(f"Statemachine: {self._name} -> states: {states} must be a list of NodeIds")
 
     async def set_available_transitions(self, transitions: list[ua.NodeId]) -> None:
         if self._optionals:
