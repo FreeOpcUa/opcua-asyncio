@@ -32,6 +32,13 @@ from .ua_utils import data_type_to_variant_type, value_to_datavalue
 
 _logger = logging.getLogger(__name__)
 
+_SIGNED_INTEGER_BITS = {
+    ua.VariantType.SByte: 8,
+    ua.VariantType.Int16: 16,
+    ua.VariantType.Int32: 32,
+    ua.VariantType.Int64: 64,
+}
+
 
 def _check_results(results: list[ua.StatusCode], reqlen: int = 1) -> None:
     if not len(results) == reqlen:
@@ -50,6 +57,16 @@ def _to_nodeid(nodeid: Node | ua.NodeId | str | int) -> ua.NodeId:
     if isinstance(nodeid, str):
         return ua.NodeId.from_string(nodeid)
     raise ua.UaError(f"Could not resolve '{nodeid}' to a type id")
+
+
+def _wrap_signed(value: int, variant_type: ua.VariantType) -> int:
+    bits = _SIGNED_INTEGER_BITS.get(variant_type)
+    if bits is None:
+        return value
+    value &= (1 << bits) - 1
+    if value >= 1 << (bits - 1):
+        value -= 1 << bits
+    return value
 
 
 class Node:
@@ -299,14 +316,14 @@ class Node:
         dv = await self.read_attribute(attr)
         if dv.Value is None:
             raise UaInvalidParameterError("Value must not be None if the result is in Good status")
-        val = ua.ua_binary.set_bit(dv.Value.Value, bit)
+        val = _wrap_signed(ua.ua_binary.set_bit(dv.Value.Value, bit), dv.Value.VariantType)
         await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
     async def unset_attr_bit(self, attr: ua.AttributeIds, bit: ua.AccessLevel | int) -> None:
         dv = await self.read_attribute(attr)
         if dv.Value is None:
             raise UaInvalidParameterError("Value must not be None if the result is in Good status")
-        val = ua.ua_binary.unset_bit(dv.Value.Value, bit)
+        val = _wrap_signed(ua.ua_binary.unset_bit(dv.Value.Value, bit), dv.Value.VariantType)
         await self.write_attribute(attr, ua.DataValue(ua.Variant(val, dv.Value.VariantType)))
 
     async def set_read_only(self) -> None:
