@@ -782,6 +782,25 @@ async def test_negative_value(opc):
     await opc.opc.delete_nodes([v])
 
 
+@pytest.mark.parametrize(
+    "vtype, bit",
+    [
+        (ua.VariantType.SByte, 7),
+        (ua.VariantType.Int16, 15),
+        (ua.VariantType.Int32, 31),
+        (ua.VariantType.Int64, 63),
+    ],
+)
+async def test_attr_bit_signed_integer(opc, vtype, bit):
+    o = opc.opc.nodes.objects
+    v = await o.add_variable(3, f"VariableSignedBit{vtype.name}", ua.Variant(1, vtype))
+    await v.set_attr_bit(ua.AttributeIds.Value, bit)
+    assert 1 - (1 << bit) == await v.read_value()
+    await v.unset_attr_bit(ua.AttributeIds.Value, bit)
+    assert 1 == await v.read_value()
+    await opc.opc.delete_nodes([v])
+
+
 async def test_read_server_state(opc):
     statenode = opc.opc.get_node(ua.NodeId(ua.ObjectIds.Server_ServerStatus_State))
     assert 0 == await statenode.read_value()
