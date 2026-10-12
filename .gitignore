@@ -24,7 +24,6 @@ examples/history.db
 /.settings/
 /venv/
 .eggs*
-.vscode
 .coverage
 schemas/UA-Nodese*
 uv.lock
@@ -43,3 +42,5 @@ examples/sync/c.py
 .python-version
 combined.svg
 t.txt
+config.bat
+node_modules
