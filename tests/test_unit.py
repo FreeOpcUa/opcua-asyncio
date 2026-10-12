@@ -438,6 +438,17 @@ def test_nodeid_bytestring():
     assert n.Identifier == b"\xaa\xbb\xcc\xdd"
 
 
+def test_nodeid_bytestring_base64_starting_with_0x():
+    # the base64 text of these bytes starts with "0x" but is not valid hex
+    for identifier in (b"\xd3\x1e\x57\x14\xbd", b"\xd3\x1e\x57"):
+        n = ua.ByteStringNodeId(Identifier=identifier, NamespaceIndex=1)
+        s = n.to_string()
+        assert s.startswith("ns=1;b=0x")
+        n2 = ua.NodeId.from_string(s)
+        assert n2 == n
+        assert n2.to_string() == s
+
+
 def test__nodeid():
     nid = ua.NodeId()
     assert nid.NodeIdType == ua.NodeIdType.TwoByte
