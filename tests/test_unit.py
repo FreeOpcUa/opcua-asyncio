@@ -449,6 +449,15 @@ def test_nodeid_bytestring_base64_starting_with_0x():
         assert n2.to_string() == s
 
 
+def test_nodeid_bytestring_base64_that_is_also_hex():
+    # Known remaining ambiguity: the base64 text of b"\xd3\x10\x01" is "0xAB", which is
+    # also valid hex. The legacy "b=0x<hex>" form wins, so the text is read as b"\xab".
+    n = ua.ByteStringNodeId(Identifier=b"\xd3\x10\x01", NamespaceIndex=1)
+    s = n.to_string()
+    assert s == "ns=1;b=0xAB"
+    assert ua.NodeId.from_string(s).Identifier == b"\xab"
+
+
 def test__nodeid():
     nid = ua.NodeId()
     assert nid.NodeIdType == ua.NodeIdType.TwoByte
