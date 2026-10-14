@@ -303,6 +303,33 @@ async def test_xml_import_binary_encoded_extension_object_unknown_type(opc: Any)
     ns = await opc.opc.get_namespace_index(uri)
     value = await nodes[0].read_value()
     assert value == ua.ExtensionObject(TypeId=ua.NodeId(5005, ns), Body=b"\x01\x02\x03")
+
+
+async def test_xml_import_reference_type_symmetric(opc: Any) -> None:
+    xml = """
+    <UANodeSet xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd">
+      <NamespaceUris>
+        <Uri>http://examples.freeopcua.github.io/reftypes</Uri>
+      </NamespaceUris>
+      <UAReferenceType NodeId="ns=1;i=5001" BrowseName="1:HasPlainRef">
+        <DisplayName>HasPlainRef</DisplayName>
+        <References>
+          <Reference ReferenceType="i=45" IsForward="false">i=32</Reference>
+        </References>
+      </UAReferenceType>
+      <UAReferenceType NodeId="ns=1;i=5002" BrowseName="1:HasSymmetricRef" Symmetric="true">
+        <DisplayName>HasSymmetricRef</DisplayName>
+        <References>
+          <Reference ReferenceType="i=45" IsForward="false">i=32</Reference>
+        </References>
+      </UAReferenceType>
+    </UANodeSet>
+    """
+    nodes = [opc.opc.get_node(nodeid) for nodeid in await opc.opc.import_xml(xmlstring=xml)]
+    plain, symmetric = sorted(nodes, key=lambda node: node.nodeid.Identifier)
+    assert (await plain.read_attribute(ua.AttributeIds.IsAbstract)).Value.Value is False
+    assert (await plain.read_attribute(ua.AttributeIds.Symmetric)).Value.Value is False
+    assert (await symmetric.read_attribute(ua.AttributeIds.Symmetric)).Value.Value is True
     await opc.opc.delete_nodes(nodes)
 
 

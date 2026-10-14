@@ -5323,6 +5323,8 @@ def create_standard_address_space_Services_4(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasCondition"),
         InverseName=LocalizedText("IsConditionOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(9006, 0),
@@ -5337,6 +5339,8 @@ def create_standard_address_space_Services_4(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasEffectDisable"),
         InverseName=LocalizedText("MayBeDisabledBy"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(17276, 0),
@@ -5351,6 +5355,8 @@ def create_standard_address_space_Services_4(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasEffectEnable"),
         InverseName=LocalizedText("MayBeEnabledBy"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(17983, 0),
@@ -5365,6 +5371,8 @@ def create_standard_address_space_Services_4(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasEffectSuppressed"),
         InverseName=LocalizedText("MayBeSuppressedBy"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(17984, 0),
@@ -5379,6 +5387,8 @@ def create_standard_address_space_Services_4(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasEffectUnsuppressed"),
         InverseName=LocalizedText("MayBeUnsuppressedBy"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(17985, 0),
@@ -5594,6 +5604,7 @@ def create_standard_address_space_Services_4(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("AlarmRateVariableType"),
         DataType=ua.NodeId(ua.ObjectIds.Double),
         ValueRank=-1,
@@ -5625,6 +5636,7 @@ def create_standard_address_space_Services_4(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("AlarmStateVariableType"),
         DataType=NumericNodeId(32251, 0),
         ValueRank=-1,
@@ -6820,6 +6832,7 @@ def create_standard_address_space_Services_4(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("ProgramDiagnosticType"),
         DataType=NumericNodeId(894, 0),
         ValueRank=-1,
@@ -6997,6 +7010,7 @@ def create_standard_address_space_Services_4(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("ProgramDiagnostic2Type"),
         DataType=NumericNodeId(24033, 0),
         ValueRank=-1,
@@ -7712,6 +7726,8 @@ def create_standard_address_space_Services_4(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasCurrentData"),
         InverseName=LocalizedText("HasHistoricalData"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(32633, 0),
@@ -7726,6 +7742,8 @@ def create_standard_address_space_Services_4(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasCurrentEvent"),
         InverseName=LocalizedText("HasHistoricalEvent"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(32634, 0),

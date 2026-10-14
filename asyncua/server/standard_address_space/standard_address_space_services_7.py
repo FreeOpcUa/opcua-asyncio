@@ -4812,6 +4812,8 @@ def create_standard_address_space_Services_7(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasPubSubConnection"),
         InverseName=LocalizedText("PubSubConnectionOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(14476, 0),
@@ -5507,6 +5509,8 @@ def create_standard_address_space_Services_7(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("DataSetToWriter"),
         InverseName=LocalizedText("WriterToDataSet"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(14936, 0),

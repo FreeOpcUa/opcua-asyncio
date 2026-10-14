@@ -11,7 +11,6 @@ import logging
 import time
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from enum import Enum
 from typing import TYPE_CHECKING, Any, Protocol, overload
 
 from asyncua import ua
@@ -163,15 +162,6 @@ class StatusChangeEvent:
 SubEvent = DataChangeEvent | OpcEvent | StatusChangeEvent
 
 
-class OverflowPolicy(str, Enum):
-    """Behavior when the iterator-mode Subscription queue is full."""
-
-    DROP_OLDEST = "drop_oldest"  # pop front, push new — keeps most recent state
-    DROP_NEWEST = "drop_newest"  # discard incoming notification
-    WARN = "warn"  # log a warning AND drop the newest
-    DISCONNECT = "disconnect"  # force a reconnect via the supervisor
-
-
 class Subscription:
     """
     Subscription object returned by Server or Client objects.
@@ -188,7 +178,6 @@ class Subscription:
         handler: SubscriptionHandler | None = None,
         *,
         queue_maxsize: int = 1000,
-        overflow: OverflowPolicy = OverflowPolicy.DROP_OLDEST,
     ) -> None:
         self.logger = logging.getLogger(__name__)
         self.server: InternalSession | UaSession = server
@@ -204,7 +193,6 @@ class Subscription:
             None if handler is not None else asyncio.Queue(maxsize=queue_maxsize)
         )
         self._queue_maxsize = queue_maxsize
-        self._overflow = overflow
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items: dict[int, SubscriptionItemData] = {}
         self._recreate_count: int = 0
@@ -219,13 +207,6 @@ class Subscription:
         # going down. `None` means no notification has arrived yet.
         self.last_publish_at: float | None = None
         self.last_sequence_number: int | None = None
-        # Hook used to force a full reconnect cycle when overflow=DISCONNECT
-        # fires. Wired via set_overflow_disconnect_handler() by the owner
-        # (typically Client.create_subscription).
-        self._on_overflow_disconnect: Callable[[], None] | None = None
-        # Keep strong refs to in-flight dispatch tasks so the GC can't cancel
-        # them while they're still running user-handler code.
-        self._dispatch_tasks: set[asyncio.Task[None]] = set()
         # Set while publish_callback is dispatching notifications retrieved via
         # Republish; consumed by _explode_* to tag events with replayed=True.
         self._replaying: bool = False
@@ -234,10 +215,6 @@ class Subscription:
     def is_deleted(self) -> bool:
         """True once the user has called delete() (or it failed past a recoverable point)."""
         return self._deleted
-
-    def set_overflow_disconnect_handler(self, handler: Callable[[], None] | None) -> None:
-        """Hook fired when overflow=DISCONNECT triggers; use to force a full reconnect."""
-        self._on_overflow_disconnect = handler
 
     def _observe(self, hook: Callable[[], None]) -> None:
         try:
@@ -267,10 +244,6 @@ class Subscription:
     async def publish_callback(self, publish_result: ua.PublishResult) -> None:
         """
         Handle a `PublishResult` from the publish loop.
-
-        This stays cheap and synchronous-feeling: notifications are exploded
-        into typed `SubEvent` instances, and each is delivered without
-        awaiting user code. The publish loop never blocks on a slow consumer.
         """
         self.logger.info("Publish callback called with result: %s", publish_result)
         self.last_publish_at = time.monotonic()
@@ -279,7 +252,7 @@ class Subscription:
         self.last_sequence_number = int(publish_result.NotificationMessage.SequenceNumber)
         produced = 0
         for event in self._explode_notifications(publish_result.NotificationMessage.NotificationData):
-            self._deliver(event)
+            await self._deliver(event)
             produced += 1
         self._observe(lambda: self.server.observer.on_notification(self.subscription_id, produced))
 
@@ -323,48 +296,14 @@ class Subscription:
             result.server_handle = data.server_handle
             yield OpcEvent(event=result, replayed=self._replaying)
 
-    def _deliver(self, event: SubEvent) -> None:
-        """Deliver one event to either the iterator queue or the legacy handler.
-
-        Either path is non-blocking: the iterator path uses `put_nowait` (with
-        the configured overflow policy), and the handler path schedules a task
-        so the publish loop doesn't await user code.
+    async def _deliver(self, event: SubEvent) -> None:
+        """
+        Deliver one event to either the iterator queue or the legacy handler.
         """
         if self._event_queue is not None:
-            try:
-                self._event_queue.put_nowait(event)
-                return
-            except asyncio.QueueFull:
-                self._handle_overflow(event)
-                return
-        if self._handler is not None:
-            task = asyncio.create_task(self._dispatch_to_handler(event))
-            self._dispatch_tasks.add(task)
-            task.add_done_callback(self._dispatch_tasks.discard)
-
-    def _handle_overflow(self, event: SubEvent) -> None:
-        """Apply the configured overflow policy when the iterator queue is full."""
-        assert self._event_queue is not None
-        if self._overflow is OverflowPolicy.DROP_OLDEST:
-            try:
-                self._event_queue.get_nowait()
-            except asyncio.QueueEmpty:
-                pass
-            else:
-                try:
-                    self._event_queue.put_nowait(event)
-                except asyncio.QueueFull:
-                    pass
-        elif self._overflow is OverflowPolicy.WARN:
-            self.logger.warning("Subscription %s event queue full; dropping event", self.subscription_id)
-        elif self._overflow is OverflowPolicy.DISCONNECT:
-            self.logger.error("Subscription %s event queue full; forcing reconnect", self.subscription_id)
-            if callable(self._on_overflow_disconnect):
-                try:
-                    self._on_overflow_disconnect()
-                except Exception:
-                    self.logger.exception("overflow-disconnect hook raised")
-        # DROP_NEWEST: do nothing — the new event is discarded.
+            await self._event_queue.put(event)
+        else:
+            await self._dispatch_to_handler(event)
 
     async def _dispatch_to_handler(self, event: SubEvent) -> None:
         """Call the right legacy handler method for `event`, in its own task."""

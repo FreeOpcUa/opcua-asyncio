@@ -11,6 +11,7 @@ import tempfile
 from base64 import b64encode
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -380,6 +381,35 @@ async def test_reference_with_nodeid_reftype(opc):
 
     # clean-up
     await opc.opc.delete_nodes([fold, newtype], recursive=True)
+
+
+@pytest.mark.parametrize(
+    "nodeid, is_abstract, symmetric",
+    [
+        (ua.ObjectIds.References, True, True),
+        (ua.ObjectIds.HierarchicalReferences, True, False),
+        (ua.ObjectIds.Organizes, False, False),
+        (ua.ObjectIds.HasSubtype, False, False),
+        (ua.ObjectIds.AssociatedWith, False, True),
+    ],
+)
+async def test_standard_reference_type_attributes(opc: Any, nodeid: int, is_abstract: bool, symmetric: bool) -> None:
+    node = opc.opc.get_node(nodeid)
+    assert is_abstract == (await node.read_attribute(ua.AttributeIds.IsAbstract)).Value.Value
+    assert symmetric == (await node.read_attribute(ua.AttributeIds.Symmetric)).Value.Value
+
+
+@pytest.mark.parametrize(
+    "nodeid, is_abstract",
+    [
+        (ua.ObjectIds.BaseVariableType, True),
+        (ua.ObjectIds.BaseDataVariableType, False),
+        (ua.ObjectIds.PropertyType, False),
+    ],
+)
+async def test_standard_variable_type_is_abstract(opc: Any, nodeid: int, is_abstract: bool) -> None:
+    node = opc.opc.get_node(nodeid)
+    assert is_abstract == (await node.read_attribute(ua.AttributeIds.IsAbstract)).Value.Value
 
 
 async def test_server_node(opc):

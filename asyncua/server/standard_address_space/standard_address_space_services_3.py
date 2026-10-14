@@ -6387,6 +6387,8 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasDictionaryEntry"),
         InverseName=LocalizedText("DictionaryEntryOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(17597, 0),
@@ -6458,6 +6460,8 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasInterface"),
         InverseName=LocalizedText("InterfaceOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(17603, 0),
@@ -6472,6 +6476,8 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasAddIn"),
         InverseName=LocalizedText("AddInOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(17604, 0),
@@ -6603,6 +6609,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("DataItemType"),
         DataType=ua.NodeId(ua.ObjectIds.String),
         ValueRank=-2,
@@ -6664,6 +6671,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("BaseAnalogType"),
         DataType=ua.NodeId(ua.ObjectIds.Number),
         ValueRank=-2,
@@ -6759,6 +6767,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("AnalogItemType"),
         DataType=ua.NodeId(ua.ObjectIds.Number),
         ValueRank=-2,
@@ -6790,6 +6799,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("AnalogNumberItemType"),
         DataType=ua.NodeId(ua.ObjectIds.Number),
         ValueRank=-2,
@@ -6821,6 +6831,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("AnalogUnitType"),
         DataType=ua.NodeId(ua.ObjectIds.Number),
         ValueRank=-2,
@@ -6852,6 +6863,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("AnalogUnitRangeType"),
         DataType=ua.NodeId(ua.ObjectIds.Number),
         ValueRank=-2,
@@ -6883,6 +6895,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("AnalogNumberUnitRangeType"),
         DataType=ua.NodeId(ua.ObjectIds.Number),
         ValueRank=-2,
@@ -6930,6 +6943,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("TwoStateDiscreteType"),
         DataType=ua.NodeId(ua.ObjectIds.Boolean),
         ValueRank=-2,
@@ -6977,6 +6991,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("MultiStateDiscreteType"),
         DataType=ua.NodeId(ua.ObjectIds.UInteger),
         ValueRank=-2,
@@ -7009,6 +7024,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("MultiStateValueDiscreteType"),
         DataType=ua.NodeId(ua.ObjectIds.Number),
         ValueRank=-2,
@@ -7152,6 +7168,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("YArrayItemType"),
         DataType=ua.NodeId(ua.ObjectIds.String),
         ValueRank=1,
@@ -7184,6 +7201,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("XYArrayItemType"),
         DataType=NumericNodeId(12080, 0),
         ValueRank=1,
@@ -7216,6 +7234,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("ImageItemType"),
         DataType=ua.NodeId(ua.ObjectIds.String),
         ValueRank=2,
@@ -7264,6 +7283,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("CubeItemType"),
         DataType=ua.NodeId(ua.ObjectIds.String),
         ValueRank=3,
@@ -7328,6 +7348,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("NDimensionArrayItemType"),
         DataType=ua.NodeId(ua.ObjectIds.String),
         )
@@ -7901,6 +7922,8 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasEngineeringUnitDetails"),
         InverseName=LocalizedText("EngineeringUnitDetailsOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(32558, 0),
@@ -7915,6 +7938,8 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasQuantity"),
         InverseName=LocalizedText("QuantityOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(32559, 0),
@@ -7927,6 +7952,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("TwoStateVariableType"),
         DataType=ua.NodeId(ua.ObjectIds.LocalizedText),
         ValueRank=-1,
@@ -8022,6 +8048,7 @@ def create_standard_address_space_Services_3(server):
     server.add_nodes([node])
 
     attrs = ua.VariableTypeAttributes(
+        IsAbstract=False,
         DisplayName=LocalizedText("ConditionVariableType"),
         DataType=ua.NodeId(ua.ObjectIds.String),
         ValueRank=-2,
@@ -8055,6 +8082,8 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasTrueSubState"),
         InverseName=LocalizedText("IsTrueSubStateOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(9004, 0),
@@ -8069,6 +8098,8 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasFalseSubState"),
         InverseName=LocalizedText("IsFalseSubStateOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(9005, 0),
@@ -8083,6 +8114,8 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("HasAlarmSuppressionGroup"),
         InverseName=LocalizedText("IsAlarmSuppressionGroupOf"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(16361, 0),
@@ -8097,6 +8130,8 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("AlarmGroupMember"),
         InverseName=LocalizedText("MemberOfAlarmGroup"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(16362, 0),
@@ -8111,6 +8146,8 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.ReferenceTypeAttributes(
         DisplayName=LocalizedText("AlarmSuppressionGroupMember"),
         InverseName=LocalizedText("MemberOfAlarmSuppressionGroup"),
+        IsAbstract=False,
+        Symmetric=False,
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(32059, 0),
