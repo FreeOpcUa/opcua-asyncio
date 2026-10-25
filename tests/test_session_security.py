@@ -86,16 +86,17 @@ async def _activate_with_token(client: Client, token: ua.NodeId) -> None:
     await client.uaclient.activate_session(params)
 
 
-async def _read_server_state(client: Client) -> ua.DataValue:
+async def _read_server_state(client: Client) -> bool:
     params = ua.ReadParameters()
     params.NodesToRead = [
         ua.ReadValueId(NodeId=ua.NodeId(ua.ObjectIds.Server_ServerStatus_State), AttributeId=ua.AttributeIds.Value)
     ]
-    return (await client.uaclient.read(params))[0]
+    status = (await client.uaclient.read(params))[0].StatusCode
+    return status is not None and status.is_good()
 
 
 async def test_authentication_tokens_are_random_bytestrings(open_server: tuple[Server, str]) -> None:
-    srv, url = open_server
+    _srv, url = open_server
     async with Client(url) as first, Client(url) as second:
         tokens = [first.uaclient.session.authentication_token, second.uaclient.session.authentication_token]
     assert all(token.NodeIdType == ua.NodeIdType.ByteString for token in tokens)
@@ -121,13 +122,13 @@ async def test_failed_activation_on_new_channel_does_not_bind_session(open_serve
             with pytest.raises(ua.UaStatusCodeError):
                 await attacker.get_node(node.nodeid).write_value(666.0)
             assert await node.read_value() == 1.0
-            assert (await _read_server_state(victim)).StatusCode.is_good()
+            assert await _read_server_state(victim)
         finally:
             attacker.disconnect_socket()
 
 
 async def test_session_cannot_move_to_channel_with_other_certificate(secure_server: tuple[Server, str]) -> None:
-    srv, url = secure_server
+    _srv, url = secure_server
     victim = await _secure_client(url, PEER_1)
     async with victim:
         attacker = await _secure_client(url, PEER_2)
@@ -137,29 +138,29 @@ async def test_session_cannot_move_to_channel_with_other_certificate(secure_serv
                 await _activate_with_token(attacker, victim.uaclient.session.authentication_token)
             with pytest.raises(ua.UaStatusCodeError):
                 await _read_server_state(attacker)
-            assert (await _read_server_state(victim)).StatusCode.is_good()
+            assert await _read_server_state(victim)
         finally:
             attacker.disconnect_socket()
 
 
 async def test_moved_session_rejects_requests_on_old_channel(open_server: tuple[Server, str]) -> None:
-    srv, url = open_server
+    _srv, url = open_server
     async with Client(url) as original:
         token = original.uaclient.session.authentication_token
         replacement = Client(url)
         await _open_channel(replacement)
         try:
             await _activate_with_token(replacement, token)
-            assert (await _read_server_state(replacement)).StatusCode.is_good()
+            assert await _read_server_state(replacement)
             with pytest.raises(ua.uaerrors.BadSecureChannelIdInvalid):
                 await _read_server_state(original)
         finally:
             replacement.disconnect_socket()
 
 
-@pytest.mark.parametrize("client_certificate", [None, PEER_2[0]])
+@pytest.mark.parametrize("client_certificate", [None, PEER_2[0].read_bytes()], ids=["missing", "other"])
 async def test_create_session_certificate_must_match_channel(
-    secure_server: tuple[Server, str], client_certificate: Path | None
+    secure_server: tuple[Server, str], client_certificate: bytes | None
 ) -> None:
     srv, url = secure_server
     validated = []
@@ -169,12 +170,11 @@ async def test_create_session_certificate_must_match_channel(
         raise ServiceError(ua.StatusCodes.BadCertificateUntrusted)
 
     srv.set_certificate_validator(reject_unknown)
-    replacement = None if client_certificate is None else client_certificate.read_bytes()
     client = await _secure_client(url, PEER_1)
     create_session = client.uaclient.create_session
 
     async def create_session_with_other_certificate(params: ua.CreateSessionParameters) -> ua.CreateSessionResult:
-        params.ClientCertificate = replacement
+        params.ClientCertificate = client_certificate
         return await create_session(params)
 
     client.uaclient.create_session = create_session_with_other_certificate
