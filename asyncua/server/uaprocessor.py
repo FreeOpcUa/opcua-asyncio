@@ -9,9 +9,11 @@ from asyncua import ua
 
 from ..common.connection import SecureConnection, TransportLimits
 from ..common.utils import ServiceError
+from ..crypto import uacrypto
 from ..crypto.security_policies import SecurityPolicyNone
 from ..ua.ua_binary import nodeid_from_binary, struct_from_binary, struct_to_binary, uatcp_to_binary
 from .internal_server import InternalServer, InternalSession
+from .internal_session import ChannelSecurity, identity_token
 
 _logger = logging.getLogger(__name__)
 
@@ -222,6 +224,7 @@ class UaProcessor:
             _logger.warning("Received a request of type %d without an existing session", typeid.Identifier)
             raise ua.uaerrors.BadUserAccessDenied
         else:
+            self._check_session_binding(requesthdr)
             user = self.session.user
             if self._connection.security_policy.permissions is not None:
                 if self._connection.security_policy.permissions.check_validity(user, typeid, body) is False:
@@ -234,8 +237,12 @@ class UaProcessor:
         if typeid == ua.NodeId(ua.ObjectIds.CreateSessionRequest_Encoding_DefaultBinary):
             _logger.info("Create session request (%s)", user)
             params = struct_from_binary(ua.CreateSessionParameters, body)
+            channel_security = self._channel_security()
+            self._check_client_certificate(params.ClientCertificate, channel_security)
             # create the session on server
             self.session = self.iserver.create_session(self.name, external=True)
+            self.session.channel_security = channel_security
+            self.session.channel_owner = self
             # get a session creation result to send back
             sessiondata = await self.session.create_session(params, sockname=self.sockname)
             self._closing = False
@@ -258,6 +265,7 @@ class UaProcessor:
         elif typeid == ua.NodeId(ua.ObjectIds.CloseSessionRequest_Encoding_DefaultBinary):
             _logger.info("Close session request (%s)", user)
             if self.session:
+                self._check_session_binding(requesthdr)
                 deletesubs = ua.ua_binary.Primitives.Boolean.unpack(body)
                 self._closing = True
                 await self.session.close_session(deletesubs)
@@ -271,28 +279,20 @@ class UaProcessor:
         elif typeid == ua.NodeId(ua.ObjectIds.ActivateSessionRequest_Encoding_DefaultBinary):
             _logger.info("Activate session request (%s)", user)
             params = struct_from_binary(ua.ActivateSessionParameters, body)
-            if not self.session:
-                # Spec Part 4 §6.7 reconnect: a fresh SecureChannel may carry an
-                # ActivateSession for a still-live session. Look it up by auth_token
-                # and rebind any existing subscriptions' publish callbacks here.
-                existing = self.iserver.lookup_external_session(requesthdr.AuthenticationToken)
-                if existing is None:
-                    _logger.info("request to activate non-existing session (%s)", user)
-                    raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
-                self.session = existing
-                self._closing = False
-                if self._session_watchdog_task is None or self._session_watchdog_task.done():
-                    self._session_watchdog_task = asyncio.create_task(self._session_watchdog_loop())
-                for sub in self.iserver.subscription_service.subscriptions.values():
-                    if sub.session_id == existing.session_id:
-                        sub.pub_result_callback = self.forward_publish_response
-                        sub.pub_request_callback = self.get_publish_request
+            session = self._session_to_activate(requesthdr)
+            moving = session.channel_owner is not self
+            if moving:
+                self._check_session_move(session, params)
             if self._connection.security_policy.host_certificate is None:
-                data = self.session.nonce
+                data = session.nonce
             else:
-                data = self._connection.security_policy.host_certificate + self.session.nonce
+                data = self._connection.security_policy.host_certificate + session.nonce
             self._connection.security_policy.asymmetric_cryptography.verify(data, params.ClientSignature.Signature)
-            result = self.session.activate_session(params, self._connection.security_policy.peer_certificate)
+            result = session.activate_session(
+                params, self._connection.security_policy.peer_certificate, require_same_user=moving
+            )
+            if moving:
+                self._attach_session(session)
             response = ua.ActivateSessionResponse()
             response.Parameters = result
             # _logger.info("sending read response")
@@ -574,6 +574,60 @@ class UaProcessor:
 
         return True
 
+    def _channel_security(self) -> ChannelSecurity:
+        policy = self._connection.security_policy
+        return ChannelSecurity(policy.peer_certificate, policy.URI, policy.Mode)
+
+    @staticmethod
+    def _check_client_certificate(client_certificate: bytes | None, channel_security: ChannelSecurity) -> None:
+        if channel_security.mode == ua.MessageSecurityMode.None_:
+            return
+        try:
+            certificate = uacrypto.der_from_x509(uacrypto.x509_from_der(client_certificate))
+        except Exception:
+            raise ServiceError(ua.StatusCodes.BadCertificateInvalid)
+        if certificate != channel_security.certificate:
+            _logger.warning("CreateSession certificate does not match the SecureChannel certificate")
+            raise ServiceError(ua.StatusCodes.BadSecurityChecksFailed)
+
+    def _check_session_binding(self, requesthdr: ua.RequestHeader) -> None:
+        if self.session is None or requesthdr.AuthenticationToken != self.session.auth_token:
+            raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
+        if self.session.channel_owner is not self:
+            raise ServiceError(ua.StatusCodes.BadSecureChannelIdInvalid)
+
+    def _session_to_activate(self, requesthdr: ua.RequestHeader) -> InternalSession:
+        if self.session is not None:
+            if requesthdr.AuthenticationToken != self.session.auth_token:
+                raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
+            return self.session
+        existing = self.iserver.lookup_external_session(requesthdr.AuthenticationToken)
+        if existing is None:
+            _logger.info("request to activate non-existing session")
+            raise ServiceError(ua.StatusCodes.BadSessionIdInvalid)
+        return existing
+
+    def _check_session_move(self, session: InternalSession, params: ua.ActivateSessionParameters) -> None:
+        channel_security = self._channel_security()
+        if not session.is_activated() or session.channel_security != channel_security:
+            _logger.warning("Rejected moving session %s to a SecureChannel with different security", session.name)
+            raise ServiceError(ua.StatusCodes.BadSecurityChecksFailed)
+        if channel_security.mode == ua.MessageSecurityMode.Sign and isinstance(
+            identity_token(params), ua.AnonymousIdentityToken
+        ):
+            raise ServiceError(ua.StatusCodes.BadIdentityTokenRejected)
+
+    def _attach_session(self, session: InternalSession) -> None:
+        self.session = session
+        session.channel_owner = self
+        self._closing = False
+        if self._session_watchdog_task is None or self._session_watchdog_task.done():
+            self._session_watchdog_task = asyncio.create_task(self._session_watchdog_loop())
+        for sub in self.iserver.subscription_service.subscriptions.values():
+            if sub.session_id == session.session_id:
+                sub.pub_result_callback = self.forward_publish_response
+                sub.pub_request_callback = self.get_publish_request
+
     def publish_request_limit(self, subscription_count: int) -> int:
         # "A Server should limit the number of active Publish
         # requests to avoid an infinite number since it is
@@ -610,7 +664,7 @@ class UaProcessor:
                 await self.session.close_session(True)
 
     def _should_close_session_on_transport_loss(self) -> bool:
-        if self.session is None:
+        if self.session is None or self.session.channel_owner is not self:
             return False
         if not self.session.external or not self.session.is_activated():
             return True

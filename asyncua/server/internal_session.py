@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import secrets
 import time
 from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
@@ -27,13 +29,26 @@ class SessionState(Enum):
     Closed = 2
 
 
+@dataclass(frozen=True)
+class ChannelSecurity:
+    certificate: bytes | None
+    policy_uri: str
+    mode: ua.MessageSecurityMode
+
+
+def identity_token(params: ua.ActivateSessionParameters) -> Any:
+    token = params.UserIdentityToken
+    if isinstance(token, ua.ExtensionObject) and token.TypeId == ua.NodeId(ua.ObjectIds.Null):
+        return ua.AnonymousIdentityToken()
+    return token
+
+
 class InternalSession(AbstractSession):
     """ """
 
     max_connections = 1000
     _current_connections = 0
     _counter = 10
-    _auth_counter = 1000
 
     def __init__(
         self,
@@ -56,8 +71,9 @@ class InternalSession(AbstractSession):
         self.state = SessionState.Created
         self.session_id = ua.NodeId(self._counter)
         InternalSession._counter += 1
-        self.auth_token = ua.NodeId(self._auth_counter)
-        InternalSession._auth_counter += 1
+        self.auth_token = ua.NodeId(secrets.token_bytes(32), 0, ua.NodeIdType.ByteString)
+        self.channel_security: ChannelSecurity | None = None
+        self.channel_owner: object | None = None
         self.logger.info("Created internal session %s", self.name)
         self.session_timeout: float | None = None
         self._last_activity: float = time.monotonic()
@@ -156,7 +172,10 @@ class InternalSession(AbstractSession):
             self.logger.exception("Session timeout watchdog crashed")
 
     def activate_session(
-        self, params: ua.ActivateSessionParameters, peer_certificate: bytes | None
+        self,
+        params: ua.ActivateSessionParameters,
+        peer_certificate: bytes | None,
+        require_same_user: bool = False,
     ) -> ua.ActivateSessionResult:
         self.logger.info("activate session")
         result = ua.ActivateSessionResult()
@@ -167,11 +186,7 @@ class InternalSession(AbstractSession):
             raise ServiceError(ua.StatusCodes.BadMaxConnectionsReached)
         for _ in params.ClientSoftwareCertificates:
             result.Results.append(ua.StatusCode())
-        id_token = params.UserIdentityToken
-        if isinstance(id_token, ua.ExtensionObject) and id_token.TypeId == ua.NodeId(ua.ObjectIds.Null):
-            # https://reference.opcfoundation.org/Core/Part4/v104/docs/5.6.3
-            # Null or empty user token shall always be interpreted as anonymous.
-            id_token = ua.AnonymousIdentityToken()
+        id_token = identity_token(params)
         # Check if security policy is supported
         if not isinstance(id_token, self.iserver.supported_tokens):
             self.logger.error("Rejected active session UserIdentityToken not supported")
@@ -195,6 +210,9 @@ class InternalSession(AbstractSession):
             )
             if user is None:
                 raise ServiceError(ua.StatusCodes.BadUserAccessDenied)
+            if require_same_user and user != self.user:
+                self.logger.warning("Rejected moving session %s to a new channel with a different user", self.name)
+                raise ServiceError(ua.StatusCodes.BadIdentityTokenRejected)
             self.user = user
         self.nonce = create_nonce(32)
         result.ServerNonce = self.nonce
