@@ -8,12 +8,14 @@ import asyncio
 import logging
 import time
 from collections.abc import Awaitable, Callable, Iterable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from asyncua import ua
 
 from .address_space import AddressSpace
 from .monitored_item_service import MonitoredItemService
+
+NotificationT = TypeVar("NotificationT")
 
 if TYPE_CHECKING:
     from asyncua.server.uaprocessor import PublishRequestData
@@ -40,6 +42,7 @@ class InternalSubscription:
         no_acks_limit: int = 500,
         max_queue_size: int = 10_000,
         publishing_enabled: bool = True,
+        max_notifications_per_publish: int = 0,
     ) -> None:
         """
         :param loop: Event loop instance
@@ -70,6 +73,7 @@ class InternalSubscription:
         self._not_acknowledged_results: dict[int, ua.PublishResult] = {}
         self._startup = True
         self._publishing_enabled = publishing_enabled
+        self.max_notifications_per_publish = max_notifications_per_publish
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
         self._task: asyncio.Task[None] | None = None
@@ -178,26 +182,29 @@ class InternalSubscription:
             if requestdata is None:
                 self._publish_cycles_count += 1
                 return False
-        result = self._pop_publish_result()
-        # self.logger.info('publish_results for %s', self.data.SubscriptionId)
-        if requestdata is None:
-            # Subscription.publish_callback -> server internal subscription
-            await self.pub_result_callback(result)
-        else:
-            # UaProcessor.forward_publish_response -> client subscription
-            await self.pub_result_callback(result, requestdata)
-        return True
+        while True:
+            result = self._pop_publish_result()
+            if requestdata is None:
+                await self.pub_result_callback(result)
+            else:
+                await self.pub_result_callback(result, requestdata)
+            if not result.MoreNotifications:
+                return True
+            if self.pub_request_callback:
+                requestdata = self.pub_request_callback(self.data.SubscriptionId)
+                if requestdata is None:
+                    return True
 
     def _pop_publish_result(self) -> ua.PublishResult:
         """
-        Return a `PublishResult` with all enqueued data changes, events and status changes.
-        Clear all queues.
+        Return a `PublishResult` while retaining notifications above the client limit.
         """
         result = ua.PublishResult()
         result.SubscriptionId = self.data.SubscriptionId
         if self._publishing_enabled:
-            self._pop_triggered_datachanges(result)
-            self._pop_triggered_events(result)
+            limit = self.max_notifications_per_publish or None
+            count = self._pop_triggered_datachanges(result, limit)
+            self._pop_triggered_events(result, None if limit is None else limit - count)
         self._pop_triggered_statuschanges(result)
         self._keep_alive_count = 0
         self._publish_cycles_count = 0
@@ -210,24 +217,39 @@ class InternalSubscription:
             while len(self._not_acknowledged_results) > self._no_acks_limit:
                 oldest = next(iter(self._not_acknowledged_results))
                 self._not_acknowledged_results.pop(oldest)
-        result.MoreNotifications = False
+        result.MoreNotifications = self._publishing_enabled and bool(
+            self._triggered_datachanges or self._triggered_events
+        )
         result.AvailableSequenceNumbers = list(self._not_acknowledged_results.keys())
         return result
 
-    def _pop_triggered_datachanges(self, result: ua.PublishResult) -> None:
-        """Append all enqueued data changes to the given `PublishResult` and clear the queue."""
-        if self._triggered_datachanges:
-            notif = ua.DataChangeNotification()
-            notif.MonitoredItems = [item for sublist in self._triggered_datachanges.values() for item in sublist]
-            self._triggered_datachanges = {}
-            result.NotificationMessage.NotificationData.append(notif)
+    @staticmethod
+    def _pop_notifications(queues: dict[int, list[NotificationT]], limit: int | None) -> list[NotificationT]:
+        items: list[NotificationT] = []
+        while queues and (limit is None or len(items) < limit):
+            mid = next(iter(queues))
+            queue = queues[mid]
+            count = len(queue) if limit is None else min(len(queue), limit - len(items))
+            items.extend(queue[:count])
+            if count == len(queue):
+                del queues[mid]
+            else:
+                del queue[:count]
+        return items
 
-    def _pop_triggered_events(self, result: ua.PublishResult) -> None:
-        """Append all enqueued events to the given `PublishResult` and clear the queue."""
-        if self._triggered_events:
+    def _pop_triggered_datachanges(self, result: ua.PublishResult, limit: int | None = None) -> int:
+        items = self._pop_notifications(self._triggered_datachanges, limit)
+        if items:
+            notif = ua.DataChangeNotification()
+            notif.MonitoredItems = items
+            result.NotificationMessage.NotificationData.append(notif)
+        return len(items)
+
+    def _pop_triggered_events(self, result: ua.PublishResult, limit: int | None = None) -> None:
+        items = self._pop_notifications(self._triggered_events, limit)
+        if items:
             notif = ua.EventNotificationList()
-            notif.Events = [item for sublist in self._triggered_events.values() for item in sublist]
-            self._triggered_events = {}
+            notif.Events = items
             result.NotificationMessage.NotificationData.append(notif)
 
     def _pop_triggered_statuschanges(self, result: ua.PublishResult) -> None:
