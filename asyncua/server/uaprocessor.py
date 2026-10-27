@@ -15,6 +15,8 @@ from .internal_server import InternalServer, InternalSession
 
 _logger = logging.getLogger(__name__)
 
+MIN_HELLO_BUFFER_SIZE = 8192
+
 
 class PublishRequestData:
     def __init__(self, requesthdr=None, seqhdr=None, results: list[ua.StatusCode] | None=None):
@@ -158,6 +160,19 @@ class UaProcessor:
                 _logger.warning("Received a repeated Hello message from %s", self.name)
                 err = ua.ErrorMessage(
                     ua.StatusCode(ua.StatusCodes.BadTcpMessageTypeInvalid), "Hello was already received"
+                )
+                self._transport.write(uatcp_to_binary(ua.MessageType.Error, err))
+                return False
+            if min(msg.ReceiveBufferSize, msg.SendBufferSize) < MIN_HELLO_BUFFER_SIZE:
+                _logger.warning(
+                    "Received a Hello message from %s with buffer sizes %s/%s below the minimum",
+                    self.name,
+                    msg.ReceiveBufferSize,
+                    msg.SendBufferSize,
+                )
+                err = ua.ErrorMessage(
+                    ua.StatusCode(ua.StatusCodes.BadTcpInternalError),
+                    f"Hello buffer sizes are below {MIN_HELLO_BUFFER_SIZE} bytes",
                 )
                 self._transport.write(uatcp_to_binary(ua.MessageType.Error, err))
                 return False
