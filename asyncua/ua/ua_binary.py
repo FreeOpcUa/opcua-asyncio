@@ -372,6 +372,10 @@ def field_serializer(uatype: Any, is_optional: bool, dataclazz: type) -> Callabl
     return serializer
 
 
+def _has_encoding_mask(data_fields: tuple[Field[Any], ...], has_optional_fields: bool) -> bool:
+    return any(f.name == "Encoding" and (has_optional_fields or not f.init) for f in data_fields)
+
+
 @functools.cache
 def create_dataclass_serializer(dataclazz: type) -> Callable[[Any], bytes]:
     """Given a dataclass, return a function that serializes instances of this dataclass"""
@@ -412,11 +416,12 @@ def create_dataclass_serializer(dataclazz: type) -> Callable[[Any], bytes]:
     encoding_functions = [
         (f.name, field_serializer(*resolve_uatype(resolved_fieldtypes[f.name]), dataclazz)) for f in data_fields
     ]
+    has_encoding_mask = _has_encoding_mask(data_fields, bool(option_fields_encodings))
 
     def serialize(obj: Any) -> bytes:
         parts: list[bytes] = []
         for name, serializer in encoding_functions:
-            if name == "Encoding":
+            if has_encoding_mask and name == "Encoding":
                 parts.append(serializer(enc_value(obj)))
             else:
                 parts.append(serializer(getattr(obj, name)))
@@ -829,12 +834,13 @@ def _create_dataclass_deserializer(objtype: type | str) -> Callable[[Buffer | IO
         else:
             deserialize_field = _create_type_deserializer(field_type, objtype)
         dc_field_deserializers.append((field, optional_enc_bit, deserialize_field))
+    has_encoding_mask = _has_encoding_mask(fields(objtype), enc_count > 0)
 
     def decode(data: Buffer | IO) -> Any:
         kwargs: dict[str, Any] = {}
         enc: int = 0
         for field, optional_enc_bit, deserialize_field in dc_field_deserializers:
-            if field.name == "Encoding":
+            if has_encoding_mask and field.name == "Encoding":
                 enc = deserialize_field(data)
             elif optional_enc_bit == 0 or enc & optional_enc_bit:
                 kwargs[field.name] = deserialize_field(data)

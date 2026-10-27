@@ -10135,7 +10135,7 @@ class SessionSecurityDiagnosticsDataType:
     ClientUserIdOfSession: 'ua.String' = None
     ClientUserIdHistory: 'list[ua.String]' = field(default_factory=list)
     AuthenticationMechanism: 'ua.String' = None
-    Encoding: Byte = field(default=0, repr=False, init=False, compare=False)
+    Encoding: 'ua.String' = None
     TransportProtocol: 'ua.String' = None
     SecurityMode: 'ua.MessageSecurityMode' = field(default_factory=lambda:MessageSecurityMode.Invalid)
     SecurityPolicyUri: 'ua.String' = None

@@ -6,7 +6,7 @@ Simple unit test that do not need to setup a server or a client
 import io
 import logging
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, make_dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, cast
@@ -1014,6 +1014,80 @@ def test_struct104_optional_field_respects_encoding_mask() -> None:
     assert decoded.Description is None
 
 
+def test_struct104_mask_bytes_without_optional_fields() -> None:
+    sdef = ua.StructureDefinition()
+    sdef.StructureType = ua.StructureType.StructureWithOptionalFields
+    sdef.Fields = [_make_struct_field("Count", ua.NodeId(ua.ObjectIds.Int32))]
+
+    cls = make_structure(ua.NodeId(65002, 2), "_MandatoryFieldMaskStruct", sdef)["_MandatoryFieldMaskStruct"]
+    data = ua_binary.Primitives.UInt32.pack(0) + ua_binary.Primitives.Int32.pack(7)
+
+    assert struct_to_binary(cls(Count=7)) == data
+    assert struct_from_binary(cls, ua.utils.Buffer(data)).Count == 7
+
+
+@pytest.mark.parametrize(
+    ("uatype", "data"),
+    [(ua.Int32, b"\x07\x00\x00\x00"), (ua.UInt32, b"\x07\x00\x00\x00"), (ua.Byte, b"\x07")],
+)
+def test_struct_ordinary_field_named_encoding(uatype: type, data: bytes) -> None:
+    cls = make_dataclass("_OrdinaryEncodingField", [("Encoding", uatype, 0)])
+
+    assert struct_to_binary(cls(Encoding=7)) == data
+    assert struct_from_binary(cls, ua.utils.Buffer(data)).Encoding == 7
+
+
+def test_struct_encoding_mask_without_optional_fields() -> None:
+    @dataclass
+    class MaskOnly:
+        Encoding: ua.UInt32 = field(default=0, repr=False, init=False)
+        a: ua.Int32 = 1
+
+    data = ua_binary.Primitives.UInt32.pack(0) + ua_binary.Primitives.Int32.pack(5)
+
+    assert struct_to_binary(MaskOnly(a=5)) == data
+    assert struct_from_binary(MaskOnly, ua.utils.Buffer(data)) == MaskOnly(a=5)
+
+
+def test_struct104_ordinary_field_named_encoding_roundtrip() -> None:
+    sdef = ua.StructureDefinition()
+    sdef.StructureType = ua.StructureType.Structure
+    sdef.Fields = [_make_struct_field("Encoding", ua.NodeId(ua.ObjectIds.Int32))]
+
+    cls = make_structure(ua.NodeId(65003, 2), "_OrdinaryEncodingStruct104", sdef)["_OrdinaryEncodingStruct104"]
+    data = ua_binary.Primitives.Int32.pack(7)
+
+    assert struct_to_binary(cls(Encoding=7)) == data
+    assert struct_from_binary(cls, ua.utils.Buffer(data)).Encoding == 7
+
+
+def test_session_security_diagnostics_encoding_is_a_string() -> None:
+    policy = "http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256"
+    data = b"".join(
+        [
+            nodeid_to_binary(ua.NodeId(42, 1)),
+            ua_binary.Primitives.String.pack("alice"),
+            ua_binary.Primitives.Int32.pack(1),
+            ua_binary.Primitives.String.pack("alice"),
+            ua_binary.Primitives.String.pack("UserName"),
+            ua_binary.Primitives.String.pack("UA Binary"),
+            ua_binary.Primitives.String.pack("opc.tcp"),
+            ua_binary.Primitives.Int32.pack(ua.MessageSecurityMode.SignAndEncrypt.value),
+            ua_binary.Primitives.String.pack(policy),
+            ua_binary.Primitives.ByteString.pack(b"\x30\x82"),
+        ]
+    )
+
+    decoded = struct_from_binary(ua.SessionSecurityDiagnosticsDataType, ua.utils.Buffer(data))
+
+    assert decoded.Encoding == "UA Binary"
+    assert decoded.TransportProtocol == "opc.tcp"
+    assert decoded.SecurityMode == ua.MessageSecurityMode.SignAndEncrypt
+    assert decoded.SecurityPolicyUri == policy
+    assert decoded.ClientCertificate == b"\x30\x82"
+    assert struct_to_binary(decoded) == data
+
+
 def test_typeid_by_extension_objects_distinguishes_same_named_classes(restore_ua_registry) -> None:
     @dataclass
     class CollideA:
@@ -1221,7 +1295,7 @@ def test_set_ua_attribute_collision_keeps_first_and_warns(restore_ua_registry, c
 
 
 def test_session_security_diagnostics_roundtrip():
-    """Regression test: SessionSecurityDiagnosticsDataType has a bare
+    """Regression test: SessionSecurityDiagnosticsDataType had a bare
     'Encoding: Byte' annotation (not quoted as 'ua.Byte'). With
     from __future__ import annotations in uaprotocol_auto.py, this becomes
     a forward reference that get_type_hints() must resolve using the
@@ -1232,6 +1306,7 @@ def test_session_security_diagnostics_roundtrip():
         ClientUserIdOfSession="testuser",
         ClientUserIdHistory=["user1", "user2"],
         AuthenticationMechanism="Anonymous",
+        Encoding="UA Binary",
         TransportProtocol="opc.tcp",
         SecurityPolicyUri="http://opcfoundation.org/UA/SecurityPolicy#None",
         ClientCertificate=b"\x00\x01\x02",
