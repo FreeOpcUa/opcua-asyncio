@@ -77,15 +77,14 @@ class UaSession(AbstractSession):
         return self._state is not SessionState.CLOSED and not self.authentication_token.is_null()
 
     def restore_authentication_token(self, token: ua.NodeId) -> None:
-        """Adopt `token` and bind it to the transport so the next ActivateSession
-        resumes the matching server-side session instead of creating a new one."""
+        """Adopt the token used to resume an existing server-side session."""
         self.authentication_token = token
-        if self._client.protocol is not None:
-            self._client.protocol.authentication_token = token
+        self.rebind_authentication_token()
 
     def rebind_authentication_token(self) -> None:
-        """Re-apply the current token to a freshly opened transport during reconnect."""
-        self.restore_authentication_token(self.authentication_token)
+        """Update the legacy protocol token for the default session only."""
+        if self is self._client.session and self._client.protocol is not None:
+            self._client.protocol.authentication_token = self.authentication_token
 
     def reset_authentication_token(self) -> None:
         """Forget the current token so a fresh CreateSession is required."""
@@ -97,7 +96,9 @@ class UaSession(AbstractSession):
         timeout: float | None = None,
         message_type: ua.MessageType = ua.MessageType.SecureMessage,
     ) -> Buffer:
-        return await self._client._send_request(request, timeout, message_type)
+        if self is self._client.session:
+            return await self._client._send_request(request, timeout, message_type)
+        return await self._client._send_request(request, timeout, message_type, session=self)
 
     async def create_session(self, parameters: ua.CreateSessionParameters) -> ua.CreateSessionResult:
         if self._client.protocol is None:
@@ -107,7 +108,7 @@ class UaSession(AbstractSession):
         try:
             request = ua.CreateSessionRequest()
             request.Parameters = parameters
-            data = await self._send_request(request)
+            data = await self._client._send_request(request)
             response = struct_from_binary(ua.CreateSessionResponse, data)
             self.logger.debug(response)
             response.ResponseHeader.ServiceResult.check()

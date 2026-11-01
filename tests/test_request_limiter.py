@@ -17,6 +17,7 @@ def test_request_limit_has_a_high_default() -> None:
 @pytest.mark.asyncio
 async def test_request_limit_caps_in_flight_requests() -> None:
     client = Client("opc.tcp://localhost:4840")
+    client.uaclient.pre_request_hook = None
     client.set_max_concurrent_requests(2)
     release = asyncio.Event()
     limit_reached = asyncio.Event()
@@ -27,6 +28,9 @@ async def test_request_limit_caps_in_flight_requests() -> None:
         request: Any,
         timeout: float | None = None,
         message_type: ua.MessageType = ua.MessageType.SecureMessage,
+        *,
+        authentication_token: ua.NodeId | None = None,
+        skip_pre_request_hook: bool = False,
     ) -> Buffer:
         nonlocal active, peak
         active += 1

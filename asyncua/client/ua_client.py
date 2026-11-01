@@ -169,7 +169,12 @@ class UASocketProtocol(asyncio.Protocol):
             raise ua.UaError(f"Unsupported message type: {msg}")
 
     def _send_request(
-        self, request: Any, timeout: float = 1, message_type: ua.MessageType = ua.MessageType.SecureMessage
+        self,
+        request: Any,
+        timeout: float = 1,
+        message_type: ua.MessageType = ua.MessageType.SecureMessage,
+        *,
+        authentication_token: ua.NodeId | None = None,
     ) -> asyncio.Future[Any]:
         """
         Send request to server, lower-level method.
@@ -181,7 +186,10 @@ class UASocketProtocol(asyncio.Protocol):
         """
         if self.transport is None:
             raise ConnectionError("Connection is not open")
-        self._setup_request_header(request.RequestHeader, timeout)
+        if authentication_token is None:
+            self._setup_request_header(request.RequestHeader, timeout)
+        else:
+            self._setup_request_header(request.RequestHeader, timeout, authentication_token=authentication_token)
         self.logger.debug("Sending: %s", request)
         next_request_id = self._request_id + 1
         try:
@@ -200,7 +208,13 @@ class UASocketProtocol(asyncio.Protocol):
         return future
 
     async def send_request(
-        self, request: Any, timeout: float | None = None, message_type: ua.MessageType = ua.MessageType.SecureMessage
+        self,
+        request: Any,
+        timeout: float | None = None,
+        message_type: ua.MessageType = ua.MessageType.SecureMessage,
+        *,
+        authentication_token: ua.NodeId | None = None,
+        skip_pre_request_hook: bool = False,
     ) -> Buffer:
         """
         Send a request to the server.
@@ -208,12 +222,14 @@ class UASocketProtocol(asyncio.Protocol):
         Returns response object if no callback is provided.
         """
         timeout = self.timeout if timeout is None else timeout
-        if self.pre_request_hook:
-            # This will propagate exceptions from background tasks to the library user before calling a request which will
-            # time out then.
+        if not skip_pre_request_hook and self.pre_request_hook is not None:
             await self.pre_request_hook()
         try:
-            data = await wait_for(self._send_request(request, timeout, message_type), timeout if timeout else None)
+            if authentication_token is None:
+                future = self._send_request(request, timeout, message_type)
+            else:
+                future = self._send_request(request, timeout, message_type, authentication_token=authentication_token)
+            data = await wait_for(future, timeout if timeout else None)
         except UaError:
             raise
         except asyncio.TimeoutError:
@@ -265,12 +281,17 @@ class UASocketProtocol(asyncio.Protocol):
             else:
                 self.logger.warning("Future for request id %s is already done", request_id)
 
-    def _setup_request_header(self, hdr: ua.RequestHeader, timeout: float = 1) -> None:
+    def _setup_request_header(
+        self, hdr: ua.RequestHeader, timeout: float = 1, *, authentication_token: ua.NodeId | None = None
+    ) -> None:
         """
         :param hdr: Request header
         :param timeout: Timeout in seconds
         """
-        hdr.AuthenticationToken = self.authentication_token
+        if authentication_token is not None:
+            hdr.AuthenticationToken = authentication_token
+        else:
+            hdr.AuthenticationToken = self.authentication_token
         self._request_handle += 1
         hdr.RequestHandle = self._request_handle
         hdr.TimeoutHint = int(timeout * 1000)
@@ -541,6 +562,7 @@ class UaClient:
     def _make_protocol(self) -> UASocketProtocol:
         self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
         self.protocol.pre_request_hook = self._pre_request_hook
+        self.session.rebind_authentication_token()
         self.protocol.on_connection_lost = self._on_transport_lost
         self.protocol.is_session_closing = self._is_session_closing
         return self.protocol
@@ -555,8 +577,8 @@ class UaClient:
     @pre_request_hook.setter
     def pre_request_hook(self, hook: Callable[[], Awaitable[None]] | None) -> None:
         self._pre_request_hook = hook
-        if self.protocol:
-            self.protocol.pre_request_hook = self._pre_request_hook
+        if self.protocol is not None:
+            self.protocol.pre_request_hook = hook
 
     async def connect_socket(self, host: str, port: int) -> None:
         """Connect to server socket."""
@@ -606,13 +628,31 @@ class UaClient:
             self._set_state(UaClientState.SOCKET_OPEN)
 
     async def _send_request(
-        self, request: Any, timeout: float | None = None, message_type: ua.MessageType = ua.MessageType.SecureMessage
+        self,
+        request: Any,
+        timeout: float | None = None,
+        message_type: ua.MessageType = ua.MessageType.SecureMessage,
+        *,
+        session: UaSession | None = None,
     ) -> Buffer:
         with self.observer.observe_request(request):
             async with self._request_semaphore:
+                if session is None:
+                    if self.protocol is None:
+                        raise ConnectionError("Connection is not open")
+                    return await self.protocol.send_request(request, timeout, message_type)
+                hook = self.protocol.pre_request_hook if self.protocol is not None else self._pre_request_hook
+                if hook is not None:
+                    await hook()
                 if self.protocol is None:
                     raise ConnectionError("Connection is not open")
-                return await self.protocol.send_request(request, timeout, message_type)
+                return await self.protocol.send_request(
+                    request,
+                    timeout,
+                    message_type,
+                    authentication_token=session.authentication_token,
+                    skip_pre_request_hook=True,
+                )
 
     # --- back-compat: properties that previously lived on UaClient ---
 
