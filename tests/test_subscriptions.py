@@ -5,6 +5,7 @@ from copy import copy
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from pytest_mock import MockerFixture
 
 from asyncua.common.subscription import Subscription
 
@@ -737,9 +738,7 @@ async def test_get_filter_typedefinitionid_is_defining_type(opc):
     alarm_type = opc.opc.get_node(ua.ObjectIds.AlarmConditionType)
     evfilter = await asyncua.common.events.get_filter_from_event_type([alarm_type])
     type_by_path = {
-        tuple(bp.Name for bp in op.BrowsePath): op.TypeDefinitionId
-        for op in evfilter.SelectClauses
-        if op.BrowsePath
+        tuple(bp.Name for bp in op.BrowsePath): op.TypeDefinitionId for op in evfilter.SelectClauses if op.BrowsePath
     }
     expected = {
         ("EventId",): ua.ObjectIds.BaseEventType,
@@ -1168,23 +1167,27 @@ async def test_maxkeepalive_count(opc, mocker):
 
 @pytest.mark.parametrize("opc", ["client"], indirect=True)
 async def test_publish_without_subscription(opc):
-    assert opc.server.iserver.subscription_service.subscriptions == {}, "Some prior test has left subscriptions on the server"
+    assert opc.server.iserver.subscription_service.subscriptions == {}, (
+        "Some prior test has left subscriptions on the server"
+    )
     with pytest.raises(ua.UaStatusCodeError) as excinfo:
         _ = await opc.opc.uaclient.session.publish([])
     assert excinfo.value.code == ua.StatusCodes.BadNoSubscription
 
 
 @pytest.mark.parametrize("opc", ["client"], indirect=True)
-async def test_too_many_publish(opc, mocker):
-    assert opc.server.iserver.subscription_service.subscriptions == {}, "Some prior test has left subscriptions on the server"
+async def test_too_many_publish(opc: Opc, mocker: MockerFixture) -> None:
+    assert opc.server.iserver.subscription_service.subscriptions == {}, (
+        "Some prior test has left subscriptions on the server"
+    )
     mocker.patch.object(opc.opc.uaclient.session, "ensure_publish_loop", lambda: None)
     sub_handler = MySubHandler()
     sub = await opc.opc.create_subscription(500, sub_handler)
     try:
         requests = [asyncio.create_task(opc.opc.uaclient.session.publish([])) for _ in range(12)]
         while True:
-            done, pending = await asyncio.wait(requests, timeout=5, return_when=asyncio.FIRST_COMPLETED)
-            for task in done:
+            done, _ = await asyncio.wait(requests, timeout=5, return_when=asyncio.FIRST_COMPLETED)
+            for task in sorted(done, key=requests.index):
                 exception = task.exception()
                 if exception is None:
                     requests.remove(task)
@@ -1196,10 +1199,11 @@ async def test_too_many_publish(opc, mocker):
                     break
             else:
                 continue
-            for task in pending:
-                task.cancel()
             break
     finally:
+        for task in requests:
+            task.cancel()
+        await asyncio.gather(*requests, return_exceptions=True)
         await sub.delete()
 
 

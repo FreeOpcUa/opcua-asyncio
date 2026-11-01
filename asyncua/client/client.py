@@ -1024,7 +1024,6 @@ class Client:
         Returns True if the server still held the session; False (after closing it)
         when a fresh CreateSession is needed.
         """
-        self.uaclient.session.rebind_authentication_token()
         try:
             await self._activate_with_credentials()
         except BadSessionIdInvalid:
