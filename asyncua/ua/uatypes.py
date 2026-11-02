@@ -580,10 +580,15 @@ class NodeId:
                 identifier = uuid.UUID(f"urn:uuid:{v}")
             elif k == "b":
                 ntype = NodeIdType.ByteString
+                identifier = None
                 if v[0:2] == "0x":
                     # our custom handling, normaly all bytestring nodes are base64
-                    identifier = bytes.fromhex(v[2:])
-                else:
+                    try:
+                        identifier = bytes.fromhex(v[2:])
+                    except ValueError:
+                        # not hex: a base64 value that happens to start with "0x"
+                        pass
+                if identifier is None:
                     try:
                         # this should be the default case base64
                         identifier = b64decode(v.encode("ascii"))
