@@ -1,6 +1,6 @@
 import asyncio
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -29,7 +29,7 @@ async def test_server_status_timestamps_match_components(opc: Any, field: str) -
 
 async def test_server_status_clock_updates_preserve_fields(server: Server) -> None:
     status_node = server.get_node(ua.ObjectIds.Server_ServerStatus)
-    await server.set_build_info("urn:test", "Manufacturer", "Product", "2.0", "42", datetime.now(timezone.utc))
+    await server.set_build_info("urn:test", "Manufacturer", "Product", "2.0", "42", datetime.now(UTC))
     before = deepcopy(await status_node.read_value())
     for _ in range(30):
         current = await status_node.read_value()
@@ -49,12 +49,12 @@ async def test_server_status_start_time_and_clock_shutdown(disabled_clock: bool)
     server = Server()
     await server.init()
     server.iserver.disabled_clock = disabled_clock
-    before = datetime.now(timezone.utc)
+    before = datetime.now(UTC)
     await server.iserver.start()
     try:
         status = await server.get_node(ua.ObjectIds.Server_ServerStatus).read_value()
         start = await server.get_node(ua.ObjectIds.Server_ServerStatus_StartTime).read_value()
-        assert before <= status.StartTime <= datetime.now(timezone.utc)
+        assert before <= status.StartTime <= datetime.now(UTC)
         assert status.StartTime == start
         assert (server.iserver.time_task is None) == disabled_clock
     finally:

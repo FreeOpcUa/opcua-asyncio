@@ -483,7 +483,7 @@ class KeepAlive:
                 except ConnectionError:
                     _logger.warning("No connection.")
                     server_info.status = ConnectionStates.NO_DATA
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     _logger.warning("Timeout when fetching state")
                     server_info.status = ConnectionStates.NO_DATA
                 except asyncio.CancelledError:

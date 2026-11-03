@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import struct
-from datetime import timezone
+from datetime import UTC
 from typing import ClassVar
 
 import pytest
@@ -49,29 +49,23 @@ def _get_test_msg() -> UadpNetworkMessage:
     gp_header = UadpGroupHeader(UInt16(2), NetworkMessageNo=UInt16(3), SequenceNo=UInt16(5))
     datasets = [
         UadpDataSetVariant(
-            Header=UadpDataSetMessageHeader(
-                True, UInt16(5), DateTime.now(timezone.utc), None, UInt16(StatusCodes.Good)
-            ),
+            Header=UadpDataSetMessageHeader(True, UInt16(5), DateTime.now(UTC), None, UInt16(StatusCodes.Good)),
             Data=[Variant(123), Variant(True), Variant("1234565456")],
         ),
         UadpDataSetDataValue(
-            Header=UadpDataSetMessageHeader(
-                True, UInt16(5), DateTime.now(timezone.utc), None, UInt16(StatusCodes.Good)
-            ),
+            Header=UadpDataSetMessageHeader(True, UInt16(5), DateTime.now(UTC), None, UInt16(StatusCodes.Good)),
             Data=[
-                DataValue(Variant(123), StatusCode(UInt32(StatusCodes.Good)), None, DateTime.now(timezone.utc)),
-                DataValue(Variant(True), StatusCode(UInt32(StatusCodes.Good)), None, DateTime.now(timezone.utc)),
-                DataValue(
-                    Variant("1234565456"), StatusCode(UInt32(StatusCodes.Good)), None, DateTime.now(timezone.utc)
-                ),
-                DataValue(None, StatusCode(UInt32(StatusCodes.BadNodeIdUnknown)), None, DateTime.now(timezone.utc)),
+                DataValue(Variant(123), StatusCode(UInt32(StatusCodes.Good)), None, DateTime.now(UTC)),
+                DataValue(Variant(True), StatusCode(UInt32(StatusCodes.Good)), None, DateTime.now(UTC)),
+                DataValue(Variant("1234565456"), StatusCode(UInt32(StatusCodes.Good)), None, DateTime.now(UTC)),
+                DataValue(None, StatusCode(UInt32(StatusCodes.BadNodeIdUnknown)), None, DateTime.now(UTC)),
             ],
         ),
     ]
     return UadpNetworkMessage(
         UadpHeader(UInt16(16)),
         GroupHeader=gp_header,
-        Timestamp=DateTime.now(timezone.utc),
+        Timestamp=DateTime.now(UTC),
         DataSetPayloadHeader=[UInt16(5), UInt16(4)],
         Payload=datasets,
     )

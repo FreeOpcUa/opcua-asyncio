@@ -6,7 +6,7 @@ import asyncio
 import logging
 import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from asyncua import Client, ua
 
@@ -121,7 +121,7 @@ def test_subscribe_server_time(self, client):
 
     node, val, _data = msclt.future.result()
     self.assertEqual(node, server_time_node)
-    delta = datetime.now(timezone.utc) - val
+    delta = datetime.now(UTC) - val
     print("Timedelta is ", delta)
     # assert delta < timedelta(seconds=2))
 

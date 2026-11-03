@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Flag, auto
 
 from cryptography import x509
@@ -87,7 +87,7 @@ class CertificateValidator:
         """
 
         if CertificateValidatorOptions.TIME_RANGE in self._options:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             if cert.not_valid_after_utc < now:
                 raise ServiceError(ua.StatusCodes.BadCertificateTimeInvalid)
             if cert.not_valid_before_utc > now:

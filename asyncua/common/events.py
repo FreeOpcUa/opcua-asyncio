@@ -229,9 +229,7 @@ async def select_clauses_from_evtype(
                 True,
                 _BROWSE_MASK,
             )
-            await _select_clause_from_childs(
-                type_node, refs, select_clauses, already_selected, [], type_node.nodeid
-            )
+            await _select_clause_from_childs(type_node, refs, select_clauses, already_selected, [], type_node.nodeid)
     if add_condition_id:
         op = ua.SimpleAttributeOperand()
         op.AttributeId = ua.AttributeIds.NodeId

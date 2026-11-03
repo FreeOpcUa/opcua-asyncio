@@ -94,7 +94,9 @@ class OPCUAProtocol(asyncio.Protocol):
         """Close the transport if the client never activates a session within the grace window."""
         try:
             await asyncio.sleep(self.iserver.max_pending_activation_seconds)
-            if self.processor is not None and (self.processor.session is None or not self.processor.session.is_activated()):
+            if self.processor is not None and (
+                self.processor.session is None or not self.processor.session.is_activated()
+            ):
                 _logger.warning(
                     "Closing idle connection from %s: no ActivateSession within %.1fs",
                     self.peer_name,

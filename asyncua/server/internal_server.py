@@ -9,7 +9,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from copy import copy
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from struct import unpack_from
 from typing import Any
@@ -163,7 +163,7 @@ class InternalServer:
             attr.Value = ua.DataValue(
                 ua.Variant(10000, ua.VariantType.UInt32),
                 StatusCode=ua.StatusCode(ua.StatusCodes.Good),
-                SourceTimestamp=datetime.now(timezone.utc),
+                SourceTimestamp=datetime.now(UTC),
             )
             params.NodesToWrite.append(attr)
         result = await self.isession.write(params)
@@ -226,7 +226,7 @@ class InternalServer:
             self._known_servers[edp.Server.ApplicationUri] = ServerDesc(edp.Server)
         status = copy(await self.server_status_node.read_value()) or ua.ServerStatusDataType()
         status.State = ua.ServerState.Running
-        status.StartTime = datetime.now(timezone.utc)
+        status.StartTime = datetime.now(UTC)
         await self.server_status_node.write_value(status)
         await Node(self.isession, ua.NodeId(ua.ObjectIds.Server_ServerStatus_State)).write_value(
             ua.ServerState.Running, ua.VariantType.Int32
@@ -247,7 +247,7 @@ class InternalServer:
     async def _set_current_time_loop(self) -> None:
         while not self._time_task_stop:
             status = copy(await self.server_status_node.read_value())
-            status.CurrentTime = datetime.now(timezone.utc)
+            status.CurrentTime = datetime.now(UTC)
             await self.server_status_node.write_value(status)
             await self.current_time_node.write_value(status.CurrentTime)
             await asyncio.sleep(1)
@@ -433,9 +433,7 @@ class InternalServer:
         """
         self.aspace.set_attribute_value_setter(nodeid, attr, setter)
 
-    def read_attribute_value(
-        self, nodeid: ua.NodeId, attr: ua.AttributeIds = ua.AttributeIds.Value
-    ) -> ua.DataValue:
+    def read_attribute_value(self, nodeid: ua.NodeId, attr: ua.AttributeIds = ua.AttributeIds.Value) -> ua.DataValue:
         """
         directly read datavalue of the Attribute
         """

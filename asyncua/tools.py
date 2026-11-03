@@ -5,7 +5,7 @@ import logging
 import math
 import sys
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 try:
@@ -766,7 +766,7 @@ def str_to_datetime(s: str | None, default: datetime | None = None) -> datetime:
     if not s:
         if default is not None:
             return default
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
     # FIXME: try different datetime formats
     for fmt in ["%Y-%m-%d", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]:
         try:
@@ -808,8 +808,8 @@ async def _uahistoryread() -> None:
     await client.connect()
     try:
         node = await get_node(client, args)
-        starttime = str_to_datetime(args.starttime, datetime.now(timezone.utc) - timedelta(days=1))
-        endtime = str_to_datetime(args.endtime, datetime.now(timezone.utc))
+        starttime = str_to_datetime(args.starttime, datetime.now(UTC) - timedelta(days=1))
+        endtime = str_to_datetime(args.endtime, datetime.now(UTC))
         print(f"Reading raw history of node {node} at {args.url}; start at {starttime}, end at {endtime}\n")
         if args.events:
             evs = await node.read_event_history(starttime, endtime, numvalues=args.limit)

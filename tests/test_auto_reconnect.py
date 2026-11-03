@@ -417,9 +417,7 @@ async def test_reconnect_replays_unacked_notifications_via_republish() -> None:
             msg = ua.NotificationMessage()
             msg.SequenceNumber = seq
             msg.NotificationData = [data_change]
-            srv_sub._not_acknowledged_results[seq] = ua.PublishResult(
-                sub.subscription_id, NotificationMessage=msg
-            )
+            srv_sub._not_acknowledged_results[seq] = ua.PublishResult(sub.subscription_id, NotificationMessage=msg)
 
         await _force_transport_close_and_wait(client)
         await _wait_until_state(client, UaClientState.CONNECTED, timeout=5.0)

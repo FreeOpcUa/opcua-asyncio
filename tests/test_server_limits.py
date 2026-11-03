@@ -67,8 +67,6 @@ async def test_unacked_buffer_cap_propagated_from_iserver() -> None:
         await srv.stop()
 
 
-
-
 async def test_monitored_item_queue_size_clamped() -> None:
     """RequestedQueueSize larger than max_monitored_item_queue_size is revised down."""
     port = find_free_port()

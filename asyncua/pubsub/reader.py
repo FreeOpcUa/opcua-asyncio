@@ -212,7 +212,7 @@ class DataSetReader(PubSubInformationModel):
             else:
                 try:
                     await asyncio.wait_for(self.timeout_ev.wait(), self._cfg.MessageReceiveTimeout * 1000)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.warning("%s: Timed out", self._cfg.Name)
                     await self._set_state(PubSubState.Error)
                     if self._subscribed:

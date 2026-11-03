@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import anyio
@@ -329,7 +329,7 @@ def check_certificate(cert: x509.Certificate, application_uri: str, hostname: st
     check certificate if it matches the application_uri and log errors.
     """
     err = False
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if cert.not_valid_after_utc < now:
         _logger.error("certificate is no longer valid: valid until %s", cert.not_valid_after_utc)
         err = True

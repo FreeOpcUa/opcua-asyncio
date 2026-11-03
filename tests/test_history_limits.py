@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -14,7 +14,7 @@ async def result_count(history):
 
 
 def add_value(history, age):
-    value = ua.DataValue(SourceTimestamp=datetime.now(timezone.utc) - timedelta(hours=age))
+    value = ua.DataValue(SourceTimestamp=datetime.now(UTC) - timedelta(hours=age))
     return history.save_node_value(NODE_ID, value)
 
 
