@@ -1,4 +1,4 @@
-OPC UA / IEC 62541 Client and Server for Python >= 3.10 and pypy3 .
+OPC UA / IEC 62541 Client and Server for Python >= 3.11 and pypy3 .
 http://freeopcua.github.io/, https://github.com/FreeOpcUa/opcua-asyncio
 
 [![Python package](https://github.com/FreeOpcUa/opcua-asyncio/workflows/Python%20package/badge.svg)](https://github.com/FreeOpcUa/opcua-asyncio/actions)
@@ -44,10 +44,10 @@ The client can be used as a context manager. The client will then automatically 
 ```python
 from asyncua import Client
 
-async with Client(url='opc.tcp://localhost:4840/freeopcua/server/') as client:
+async with Client(url="opc.tcp://localhost:4840/freeopcua/server/") as client:
     while True:
         # Do something with client
-        node = client.get_node('i=85')
+        node = client.get_node("i=85")
         value = await node.read_value()
 ```
 

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING
 
 from ..common import instantiate_util
@@ -171,7 +171,7 @@ class DataSetWriter(PubSubInformationModel):
             server = DataSetFieldContentMask.ServerTimestamp
             data = await pds.get_source().get_value(status, server, source)
             ds = UadpDataSetDataValue(header, data)
-            dt = DateTime.now(timezone.utc)
+            dt = DateTime.now(UTC)
             status = StatusCode(UInt32(status_codes.StatusCodes.Good))
         if UadpDataSetMessageContentMask.Status in msg_cfg.DataSetMessageContentMask:
             # per OPC UA v1.05, 7.2.4.5.4, Header.Status is the high word of a StatusCode
@@ -346,7 +346,7 @@ class WriterGroup(PubSubInformationModel):
         if UadpNetworkMessageContentMask.PayloadHeader in msg_cfg.NetworkMessageContentMask:
             payload_header = True
         if UadpNetworkMessageContentMask.Timestamp in msg_cfg.NetworkMessageContentMask:
-            msg.Timestamp = DateTime.now(timezone.utc)
+            msg.Timestamp = DateTime.now(UTC)
         if UadpNetworkMessageContentMask.PicoSeconds in msg_cfg.NetworkMessageContentMask:
             msg.PicoSeconds = UInt16(0)  # Not supported
         if UadpNetworkMessageContentMask.DataSetClassId in msg_cfg.NetworkMessageContentMask:

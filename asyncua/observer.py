@@ -4,7 +4,7 @@ import logging
 import time
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-class SubscriptionEvent(str, Enum):
+class SubscriptionEvent(StrEnum):
     CREATED = "created"
     RECREATED = "recreated"
     DELETED = "deleted"

@@ -8,7 +8,7 @@ import typing
 import uuid
 from collections import defaultdict, deque
 from dataclasses import dataclass, field, make_dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, IntEnum, IntFlag
 from typing import TYPE_CHECKING, Any
 
@@ -180,7 +180,7 @@ def _default_value_for(uatype: str, optional: bool = False) -> Any:
     if uatype == "Boolean":
         return False
     if uatype == "DateTime":
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
     if uatype in _NUMERIC_TYPES:
         return getattr(ua, uatype)(0)
     if isinstance(cls, type) and issubclass(cls, Enum):
@@ -653,9 +653,7 @@ class RecursiveParser:
             except Exception:
                 # A single malformed/unusual DataType node should not abort parsing
                 # of the rest of the type hierarchy.
-                _logger.exception(
-                    "Failed to process DataType node %s (%s), skipping it", desc.NodeId, desc.BrowseName
-                )
+                _logger.exception("Failed to process DataType node %s (%s), skipping it", desc.NodeId, desc.BrowseName)
                 next_parent = parent_sdef
 
         child_node = self.server.get_node(desc.NodeId)

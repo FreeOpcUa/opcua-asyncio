@@ -8,7 +8,7 @@ import io
 import logging
 import uuid
 from dataclasses import dataclass, field, make_dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -117,7 +117,7 @@ def test_custom_structs(tmpdir):
     v.FloatValue = 9.0
     v.DoubleValue = 10.0
     v.StringValue = "elleven"
-    v.DateTimeValue = datetime.now(timezone.utc)
+    v.DateTimeValue = datetime.now(UTC)
     # self.GuidValue = uuid.uudib"14"
     v.ByteStringValue = b"fifteen"
     v.XmlElementValue = ua.XmlElement("<toto>titi</toto>")
@@ -211,7 +211,7 @@ def test_custom_structs_array(tmpdir):
     v.FloatValue = [9.0]
     v.DoubleValue = [10.0]
     v.StringValue = ["elleven"]
-    v.DateTimeValue = [datetime.now(timezone.utc)]
+    v.DateTimeValue = [datetime.now(UTC)]
     # self.GuidValue = uuid.uudib"14"
     v.ByteStringValue = [b"fifteen", b"sixteen"]
     v.XmlElementValue = [ua.XmlElement("<toto>titi</toto>")]
@@ -659,16 +659,16 @@ def test_extension_object_missing_length():
 
 
 def test_datetime():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     epch = ua.datetime_to_win_epoch(now)
     dt = ua.win_epoch_to_datetime(epch)
     assert now == dt
     # python's datetime has a range from Jan 1, 0001 to the end of year 9999
     # windows' filetime has a range from Jan 1, 1601 to approx. year 30828
     # let's test an overlapping range [Jan 1, 1601 - Dec 31, 9999]
-    dt = datetime(1601, 1, 1, tzinfo=timezone.utc)
+    dt = datetime(1601, 1, 1, tzinfo=UTC)
     assert ua.win_epoch_to_datetime(ua.datetime_to_win_epoch(dt)) == dt
-    dt = datetime(9999, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+    dt = datetime(9999, 12, 31, 23, 59, 59, tzinfo=UTC)
     assert ua.win_epoch_to_datetime(ua.datetime_to_win_epoch(dt)) == dt
     epch = 128930364000001000
     dt = ua.win_epoch_to_datetime(epch)
@@ -686,7 +686,6 @@ def test_equal_nodeid():
     nid2 = ua.NodeId(999, 2)
     assert nid1 == nid2
     assert id(nid1) != id(nid2)
-
 
 
 def test_to_nodeid_int_ranges():
@@ -793,10 +792,10 @@ def test_qualified_name():
 
 
 def test_datavalue():
-    dv = ua.DataValue(123, SourceTimestamp=datetime.now(timezone.utc))
+    dv = ua.DataValue(123, SourceTimestamp=datetime.now(UTC))
     assert dv.Value == ua.Variant(123)
     assert type(dv.Value) is ua.Variant
-    dv = ua.DataValue("abc", SourceTimestamp=datetime.now(timezone.utc))
+    dv = ua.DataValue("abc", SourceTimestamp=datetime.now(UTC))
     assert dv.Value == ua.Variant("abc")
     assert isinstance(dv.SourceTimestamp, datetime)
 
@@ -805,7 +804,7 @@ def test_variant():
     dv = ua.Variant(True, ua.VariantType.Boolean)
     assert dv.Value is True
     assert isinstance(dv.Value, bool)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     v = ua.Variant(now)
     assert v.Value == now
     assert v.VariantType == ua.VariantType.DateTime
@@ -825,7 +824,7 @@ def test_variant_array():
     assert v.VariantType == v2.VariantType
     assert v2.Dimensions is None
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     v = ua.Variant([now])
     assert v.Value[0] == now
     assert v.VariantType == ua.VariantType.DateTime

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING
 
 from ..common import instantiate_util
@@ -243,7 +243,7 @@ class PubSubDataSource:
         """
         return all variants for a dataset as Variant
         """
-        dt = DateTime.now(timezone.utc)
+        dt = DateTime.now(UTC)
         vars = await self.on_get_value()
         ret = [v.Value for v in vars]
         st = StatusCode(UInt32(StatusCodes.Good))
@@ -270,7 +270,7 @@ class PubSubDataSource:
         """
         returns all values for a dataset as rawbytes
         """
-        dt = DateTime.now(timezone.utc)
+        dt = DateTime.now(UTC)
         vars = await self.on_get_value()
         ret = [pack_uatype(v.Value.VariantType, v.Value.Value) for v in vars if v.Value is not None]
 
@@ -340,8 +340,8 @@ class PubSubDataSourceServer(PubSubDataSource):
             ):
                 dv = DataValue(
                     pd.SubstituteValue,
-                    SourceTimestamp=DateTime.now(timezone.utc),
-                    ServerTimestamp=DateTime.now(timezone.utc),
+                    SourceTimestamp=DateTime.now(UTC),
+                    ServerTimestamp=DateTime.now(UTC),
                     StatusCode=StatusCode(UInt32(StatusCodes.UncertainSubstituteValue)),
                 )
             ret.append(dv)

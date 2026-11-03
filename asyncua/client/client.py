@@ -850,7 +850,7 @@ class Client:
         async with self.uaclient.subscribe_state() as sub:
             try:
                 await sub.wait_for_state(UaClientState.CONNECTED, timeout=self._reconnect_request_timeout)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise ConnectionError(
                     f"Timed out waiting for client to reconnect (state={self.uaclient.state.value})"
                 ) from None
@@ -893,7 +893,7 @@ class Client:
             await self._wait_for_health_signal()
             if self.uaclient.state is not UaClientState.CONNECTED:
                 raise ConnectionError("transport lost")
-        except (OSError, asyncio.TimeoutError, ua.UaStatusCodeError) as exc:
+        except (TimeoutError, OSError, ua.UaStatusCodeError) as exc:
             return exc
         return None
 
@@ -946,7 +946,7 @@ class Client:
         async with self.uaclient.subscribe_state() as sub:
             try:
                 await sub.next_change(self._watchdog_intervall)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
         if self.uaclient.state is UaClientState.CONNECTED:
             probe_timeout = min(self.session_timeout / 1000 / 2, self._watchdog_intervall)

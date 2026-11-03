@@ -12,11 +12,9 @@ import types
 import uuid
 from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import IntEnum
-from typing import TYPE_CHECKING, Any, ClassVar, Union, get_args, get_origin
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Any, ClassVar, Self, Union, get_args, get_origin
 
 from asyncua.ua.object_ids import ObjectIds
 
@@ -33,9 +31,9 @@ _logger = logging.getLogger(__name__)
 EPOCH_AS_FILETIME = 116444736000000000  # January 1, 1970 as MS file time
 HUNDREDS_OF_NANOSECONDS = 10000000
 FILETIME_EPOCH_AS_DATETIME = datetime(1601, 1, 1)
-FILETIME_EPOCH_AS_UTC_DATETIME = FILETIME_EPOCH_AS_DATETIME.replace(tzinfo=timezone.utc)
+FILETIME_EPOCH_AS_UTC_DATETIME = FILETIME_EPOCH_AS_DATETIME.replace(tzinfo=UTC)
 MAX_FILETIME_EPOCH_DATETIME = datetime(9999, 12, 31, 23, 59, 59)
-MAX_FILETIME_EPOCH_AS_UTC_DATETIME = MAX_FILETIME_EPOCH_DATETIME.replace(tzinfo=timezone.utc)
+MAX_FILETIME_EPOCH_AS_UTC_DATETIME = MAX_FILETIME_EPOCH_DATETIME.replace(tzinfo=UTC)
 MAX_OPC_FILETIME = (
     int((MAX_FILETIME_EPOCH_DATETIME - FILETIME_EPOCH_AS_DATETIME).total_seconds()) * HUNDREDS_OF_NANOSECONDS
 )
@@ -1192,7 +1190,7 @@ def get_default_value(vtype: VariantType) -> Any:
     if vtype == VariantType.String:
         return None  # a string can be null
     if vtype == VariantType.DateTime:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
     if vtype == VariantType.Guid:
         return uuid.uuid4()
     if vtype == VariantType.XmlElement:

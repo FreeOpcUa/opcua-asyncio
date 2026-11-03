@@ -246,7 +246,7 @@ async def test_rc_server_max_pending_clients_drops_excess_connections() -> None:
     async with RCServer("127.0.0.1", port, max_pending_clients=1) as server:
         await send_reverse_hello()
         await send_reverse_hello()
-        await asyncio.sleep(1) # wait for requests to be processed
+        await asyncio.sleep(1)  # wait for requests to be processed
 
         rc = await asyncio.wait_for(server.next_rc(), timeout=0.1)
         rc.close()
