@@ -171,7 +171,7 @@ class XmlExporter:
         # try to write the XML etree to a file
         self.logger.info("Exporting XML file to %s", xmlpath)
         if pretty:
-            indent(self.etree.getroot())
+            Et.indent(self.etree.getroot())
         func = functools.partial(self.etree.write, xmlpath, encoding="utf-8", xml_declaration=True)
         await asyncio.get_running_loop().run_in_executor(None, func)
 
@@ -563,24 +563,3 @@ class XmlExporter:
                     self.logger.debug("could not find field type %s in registered types", field.type)
                     return
             await self.member_to_etree(struct_el, field.name, dtype, getattr(val, field.name))
-
-
-def indent(elem, level=0):
-    """
-    copy and paste from http://effbot.org/zone/element-lib.htm#prettyprint
-    it basically walks your tree and adds spaces and newlines so the tree is
-    printed in a nice way
-    """
-    i = "\n" + level * "  "
-    if elem:
-        if not elem.text or not elem.text.strip():
-            elem.text = i + "  "
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-        for elem in elem:
-            indent(elem, level + 1)
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-    else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
