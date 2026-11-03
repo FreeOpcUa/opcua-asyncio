@@ -5,10 +5,11 @@ format is the one from opc-ua specification
 
 from __future__ import annotations
 
+import base64
 import logging
 import uuid
 from dataclasses import fields, is_dataclass
-from typing import get_type_hints
+from typing import Any, get_type_hints
 
 import asyncua
 from asyncua import Node, ua
@@ -17,6 +18,8 @@ from asyncua.common.structures104 import (
     load_custom_struct_xml_import,
     load_enum_xml_import,
 )
+from asyncua.common.utils import Buffer
+from asyncua.ua.ua_binary import struct_from_binary
 from asyncua.ua.uatypes import (
     type_from_list,
     type_from_optional,
@@ -27,7 +30,7 @@ from asyncua.ua.uatypes import (
 )
 
 from ..ua.uaerrors import UaError
-from .xmlparser import XMLParser, ua_type_to_python
+from .xmlparser import ExtObj, XMLParser, ua_type_to_python
 
 _logger = logging.getLogger(__name__)
 
@@ -477,6 +480,8 @@ class XmlImporter:
         raise Exception("Error no alias found for extension class", name)
 
     async def _make_ext_obj(self, obj):
+        if obj.objname == "ByteString":
+            return await self._make_binary_ext_obj(obj)
         try:
             extclass = self._get_ext_class(obj.objname)
         except Exception as exp:
@@ -503,6 +508,17 @@ class XmlImporter:
                     atttype = resolved_types[attname]
                     self._set_attr(atttype, args, attname, v)
         return extclass(**args)
+
+    async def _make_binary_ext_obj(self, obj: ExtObj) -> Any:
+        typeid = self._to_migrated_nodeid(obj.typeid)
+        data = base64.b64decode(dict(obj.body).get("ByteString", ""))
+        extclass = ua.get_extensionobject_class_type(typeid)
+        if extclass is None and self.auto_load_definitions:
+            await self.session.load_data_type_definitions()
+            extclass = ua.get_extensionobject_class_type(typeid)
+        if extclass is None:
+            return ua.ExtensionObject(TypeId=typeid, Body=data)
+        return struct_from_binary(extclass, Buffer(data))
 
     def _get_val_type(self, objclass, attname: str):
         for field in fields(objclass):
