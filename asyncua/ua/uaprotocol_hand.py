@@ -35,21 +35,21 @@ class ReverseHello:
 
 
 class MessageType(bytes, Enum):
-    Invalid: bytes = b"INV"  # FIXME: check value
-    Hello: bytes = b"HEL"
-    ReverseHello: bytes = b"RHE"
-    Acknowledge: bytes = b"ACK"
-    Error: bytes = b"ERR"
-    SecureOpen: bytes = b"OPN"
-    SecureClose: bytes = b"CLO"
-    SecureMessage: bytes = b"MSG"
+    Invalid = b"INV"  # FIXME: check value
+    Hello = b"HEL"
+    ReverseHello = b"RHE"
+    Acknowledge = b"ACK"
+    Error = b"ERR"
+    SecureOpen = b"OPN"
+    SecureClose = b"CLO"
+    SecureMessage = b"MSG"
 
 
 class ChunkType(bytes, Enum):
-    Invalid: bytes = b"0"  # FIXME check
-    Single: bytes = b"F"
-    Intermediate: bytes = b"C"
-    Abort: bytes = b"A"  # when an error occurred and the Message is aborted (body is ErrorMessage)
+    Invalid = b"0"  # FIXME check
+    Single = b"F"
+    Intermediate = b"C"
+    Abort = b"A"  # when an error occurred and the Message is aborted (body is ErrorMessage)
 
 
 @dataclass(slots=False)

@@ -596,8 +596,8 @@ class UaClient:
             raise ConnectionError("Transport was already closing before it could be attached")
 
         self._set_state(UaClientState.CONNECTING)
-        p = self._make_protocol()
         try:
+            p = self._make_protocol()
             transport.set_protocol(p)
             p.attach_transport(transport, leftover_data)
             self._set_state(UaClientState.SOCKET_OPEN)
