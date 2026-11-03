@@ -1,7 +1,7 @@
 from __future__ import annotations
 """
 Autogenerate code from xml spec
-Date:2026-05-16 06:47:19.383822+00:00
+Date:2026-11-03 20:44:07.352681+00:00
 """
 
 from datetime import datetime, timezone
