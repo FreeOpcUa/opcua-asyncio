@@ -64,6 +64,7 @@ class SubscriptionService:
             no_acks_limit=no_acks_limit,
             max_queue_size=max_queue_size,
             publishing_enabled=params.PublishingEnabled,
+            max_notifications_per_publish=params.MaxNotificationsPerPublish,
         )
         await internal_sub.start()
         self.subscriptions[result.SubscriptionId] = internal_sub
@@ -82,11 +83,11 @@ class SubscriptionService:
         return min(requested, cap) if requested > 0 else cap
 
     def modify_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
-        # Requested params are ignored, result = params set during create_subscription.
         self.logger.info("modify subscription")
         result = ua.ModifySubscriptionResult()
         try:
             sub = self.subscriptions[params.SubscriptionId]
+            sub.max_notifications_per_publish = params.MaxNotificationsPerPublish
             result.RevisedPublishingInterval = sub.data.RevisedPublishingInterval
             result.RevisedLifetimeCount = sub.data.RevisedLifetimeCount
             result.RevisedMaxKeepAliveCount = sub.data.RevisedMaxKeepAliveCount
