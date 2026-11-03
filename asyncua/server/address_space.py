@@ -417,11 +417,11 @@ class NodeManagementService:
         callbacks: list[tuple[int, Callable[..., Any]]] = []
         for item in deletenodeitems.NodesToDelete:
             results.append(self._delete_node(item, user, callbacks))
-        # Complete the whole request's address-space changes before any callback
-        # can yield control to another request. Notification does not need a lock.
         for handle, callback in callbacks:
             try:
-                await callback(handle, None, ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
+                result = callback(handle, None, ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
+                if inspect.isawaitable(result):
+                    await result
             except Exception:
                 self.logger.exception("Error calling delete node callback %s", handle)
         return results

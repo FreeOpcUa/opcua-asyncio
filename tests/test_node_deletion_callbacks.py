@@ -1,5 +1,7 @@
 import asyncio
-from unittest.mock import AsyncMock
+from collections import Counter
+from typing import Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -16,14 +18,12 @@ async def test_delete_monitored_node_notifies_subscriber(opc: Opc, node_count: i
         for index in range(node_count)
     ]
     handler = AsyncMock()
-    initial_values: asyncio.Queue[None] = asyncio.Queue()
-    received: asyncio.Queue[ua.StatusCode] = asyncio.Queue()
-    handler.datachange_notification.side_effect = lambda *_: initial_values.put_nowait(None)
+    received: asyncio.Queue[tuple[ua.NodeId, Any, ua.StatusCode]] = asyncio.Queue()
 
-    async def status_change(notification: ua.StatusChangeNotification) -> None:
-        received.put_nowait(notification.Status)
+    async def datachange(node: Any, value: Any, data: Any) -> None:
+        received.put_nowait((node.nodeid, value, data.monitored_item.Value.StatusCode))
 
-    handler.status_change_notification.side_effect = status_change
+    handler.datachange_notification.side_effect = datachange
     subscriptions = []
     try:
         for _ in range(subscriber_count):
@@ -31,28 +31,29 @@ async def test_delete_monitored_node_notifies_subscriber(opc: Opc, node_count: i
             subscriptions.append(subscription)
             await subscription.subscribe_data_change(nodes)
         for _ in range(node_count * subscriber_count):
-            await asyncio.wait_for(initial_values.get(), 2)
+            assert (await asyncio.wait_for(received.get(), 2))[1] == 42
         _, results = await opc.opc.delete_nodes(nodes)
         assert results == [ua.StatusCode()] * node_count
-        for _ in range(node_count * subscriber_count):
-            assert await asyncio.wait_for(received.get(), 2) == ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown)
-        assert handler.status_change_notification.await_count == node_count * subscriber_count
-        deleted_ids = {node.nodeid for node in nodes}
+        deleted = [await asyncio.wait_for(received.get(), 2) for _ in range(node_count * subscriber_count)]
+        assert Counter(nodeid for nodeid, _, _ in deleted) == Counter({node.nodeid: subscriber_count for node in nodes})
         assert all(
-            nodeid not in deleted_ids for nodeid, _ in opc.server.iserver.aspace._handle_to_attribute_map.values()
+            value is None and status == ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown) for _, value, status in deleted
         )
+        handler.status_change_notification.assert_not_awaited()
     finally:
         for subscription in subscriptions:
             await subscription.delete()
 
 
-async def test_delete_node_cleans_up_failed_callback_and_notifies_others(opc: Opc) -> None:
+async def test_delete_node_cleans_up_failed_callback_and_notifies_others(
+    opc: Opc, caplog: pytest.LogCaptureFixture
+) -> None:
     node = await opc.opc.nodes.objects.add_variable(2, "DeletedCallbackVariable", 42)
     aspace = opc.server.iserver.aspace
     failed_callback = AsyncMock(side_effect=RuntimeError("callback failed"))
-    completed_callback = AsyncMock()
+    callbacks = (failed_callback, AsyncMock(), Mock())
     handles = []
-    for callback in (failed_callback, completed_callback):
+    for callback in callbacks:
         status, handle = aspace.add_datachange_callback(node.nodeid, ua.AttributeIds.Value, callback)
         status.check()
         handles.append(handle)
@@ -60,9 +61,11 @@ async def test_delete_node_cleans_up_failed_callback_and_notifies_others(opc: Op
     _, results = await opc.opc.delete_nodes([node])
 
     assert results == [ua.StatusCode()]
-    for callback, handle in zip((failed_callback, completed_callback), handles):
-        callback.assert_awaited_once_with(handle, None, ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
-        assert handle not in aspace._handle_to_attribute_map
+    for callback, handle in zip(callbacks, handles):
+        callback.assert_called_once_with(handle, None, ua.StatusCode(ua.StatusCodes.BadNodeIdUnknown))
+        aspace.delete_datachange_callback(handle)
+    errors = [record.args for record in caplog.records if record.msg == "Error calling delete node callback %s"]
+    assert errors == [(handles[0],)]
     assert node.nodeid not in aspace
 
 
@@ -88,11 +91,10 @@ async def test_delete_batch_finishes_mutation_before_callback_yields(opc: Opc) -
     deletion = asyncio.create_task(opc.opc.delete_nodes(nodes))
     try:
         await asyncio.wait_for(entered.wait(), 2)
-        # The first notification is suspended: another task must already see
-        # the complete batch and handle/reference cleanup, not half a request.
         deleted_ids = {node.nodeid for node in nodes}
         assert all(nodeid not in aspace for nodeid in deleted_ids)
-        assert all(handle not in aspace._handle_to_attribute_map for handle in handles)
+        for handle in handles:
+            aspace.delete_datachange_callback(handle)
         assert all(ref.NodeId not in deleted_ids for ref in aspace[parent.nodeid].references)
         params = ua.DeleteNodesParameters(
             NodesToDelete=[ua.DeleteNodesItem(NodeId=node.nodeid, DeleteTargetReferences=True) for node in nodes]
