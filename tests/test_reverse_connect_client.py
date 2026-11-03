@@ -172,7 +172,7 @@ async def test_rc_client_server_stop_wakes_pending_next_rc_waiters() -> None:
     async with RCServer("127.0.0.1", find_free_port()) as server:
         waiter = asyncio.create_task(server.next_rc())
         waiter_with_timeout = asyncio.create_task(asyncio.wait_for(server.next_rc(), timeout=30))
-        await asyncio.sleep(0)  # yield for tasks to run
+        await asyncio.sleep(1)  # yield for tasks to run
 
     with pytest.raises(asyncio.CancelledError):
         await asyncio.wait_for(waiter, timeout=2)

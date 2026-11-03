@@ -9,7 +9,7 @@ from asyncua.crypto.uacrypto import CertProperties
 url = "opc.tcp://localhost:4840/freeopcua/server/"
 namespace = "http://examples.freeopcua.github.io"
 
-CERT_BASE = Path(__file__).parent / "examples" / "certificates" / "chain"
+CERT_BASE = Path(__file__).parent / "certificates" / "chain"
 
 
 class CertChain(Enum):

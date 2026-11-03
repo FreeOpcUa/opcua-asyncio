@@ -104,6 +104,17 @@ def _to_sync(tloop: ThreadLoop, result: Any) -> Any:
     return result
 
 
+_IsOwned = bool
+
+
+def init_tloop(tloop: ThreadLoop | None, sync_wrapper_timeout: float | None) -> tuple[_IsOwned, ThreadLoop]:
+    if tloop:
+        return False, tloop
+    tloop = ThreadLoop(sync_wrapper_timeout)
+    tloop.start()
+    return True, tloop
+
+
 def syncmethod(func: Callable[..., Any]) -> Callable[..., Any]:
     """
     decorator for sync methods
@@ -249,12 +260,7 @@ class Client:
         sync_wrapper_timeout: float | None = 120,
         watchdog_intervall: float = 1.0,
     ) -> None:
-        self.tloop: ThreadLoop = tloop  # type: ignore[assignment]
-        self.close_tloop: bool = False
-        if not self.tloop:
-            self.tloop = ThreadLoop(sync_wrapper_timeout)
-            self.tloop.start()
-            self.close_tloop = True
+        self.close_tloop, self.tloop = init_tloop(tloop, sync_wrapper_timeout)
         try:
             self.aio_obj: client.Client = client.Client(url, timeout, watchdog_intervall)
             self.nodes: Shortcuts = Shortcuts(self.tloop, self.aio_obj.uaclient)
@@ -372,7 +378,7 @@ class Client:
 
     def get_subscription_revised_params(
         self, params: ua.CreateSubscriptionParameters, results: ua.CreateSubscriptionResult
-    ) -> ua.ModifySubscriptionParameters | None:  # type: ignore
+    ) -> ua.ModifySubscriptionParameters | None:
         return self.aio_obj.get_subscription_revised_params(params, results)
 
     @syncmethod
@@ -515,6 +521,35 @@ class Client:
         self.disconnect()
 
 
+class RCClient(Client):
+    """Sync wrapper for `client.reverse_connect.RCClient`.
+
+    If you just want a single reverse-connect client or you are ok with starting the RC server for each client
+    connection, instantiate with `client.reverse_connect.RCServer`: `RCClient(RCServer(host, port), ...)`.
+    If you want to use a single server to create multiple clients, use `SyncRCServer`.
+    """
+
+    def __init__(
+        self,
+        rc_server: client.reverse_connect.RCServer,
+        *,
+        rc_timeout: float | None = 30.0,
+        timeout: float = 4,
+        tloop: ThreadLoop | None = None,
+        sync_wrapper_timeout: float | None = 120,
+        watchdog_intervall: float = 1.0,
+    ) -> None:
+        self.close_tloop, self.tloop = init_tloop(tloop, sync_wrapper_timeout)
+        try:
+            self.aio_obj = client.reverse_connect.RCClient(
+                rc_server, rc_timeout=rc_timeout, timeout=timeout, watchdog_intervall=watchdog_intervall
+            )
+            self.nodes: Shortcuts = Shortcuts(self.tloop, self.aio_obj.uaclient)
+        except Exception:
+            self._stop_own_tloop()
+            raise
+
+
 class SyncRCServer:
     def __init__(
         self,
@@ -527,19 +562,22 @@ class SyncRCServer:
         slow_connection_timeout: float | None = None,
         reuse_address: bool | None = None,
     ) -> None:
-        self.close_tloop: bool = False
-        if not tloop:
-            tloop = ThreadLoop(sync_wrapper_timeout)
-            tloop.start()
-            self.close_tloop = True
-        self.tloop: ThreadLoop = tloop
-        self.aio_obj = client.reverse_connect.RCServer(
-            host,
-            port,
-            rc_validation_hook=rc_validation_hook,
-            slow_connection_timeout=slow_connection_timeout,
-            reuse_address=reuse_address,
-        )
+        self.close_tloop, self.tloop = init_tloop(tloop, sync_wrapper_timeout)
+        try:
+            self.aio_obj = client.reverse_connect.RCServer(
+                host,
+                port,
+                rc_validation_hook=rc_validation_hook,
+                slow_connection_timeout=slow_connection_timeout,
+                reuse_address=reuse_address,
+            )
+        except Exception:
+            self._stop_own_tloop()
+            raise
+
+    def _stop_own_tloop(self) -> None:
+        if self.close_tloop:
+            self.tloop.stop()
 
     @property
     def is_listening(self) -> bool:
@@ -548,11 +586,26 @@ class SyncRCServer:
     @syncmethod
     def start(self) -> None: ...
 
-    @syncmethod
-    def stop(self) -> None: ...
+    def stop(self) -> None:
+        try:
+            self.tloop.post(self.aio_obj.stop())
+        finally:
+            if self.close_tloop:
+                self.tloop.stop()
 
     @syncmethod
     def next_rc(self) -> client.reverse_connect.ReverseConnection: ...
+
+    def create_client(
+        self, *, rc_timeout: float | None = 30.0, timeout: float = 4, watchdog_intervall: float = 1.0
+    ) -> RCClient:
+        return RCClient(
+            self.aio_obj,
+            tloop=self.tloop,
+            rc_timeout=rc_timeout,
+            timeout=timeout,
+            watchdog_intervall=watchdog_intervall,
+        )
 
     def __enter__(self) -> "SyncRCServer":
         self.start()
@@ -562,30 +615,6 @@ class SyncRCServer:
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
     ) -> None:
         self.stop()
-
-
-class RCClient(Client):
-    def __init__(
-        self,
-        rc_server: SyncRCServer | client.reverse_connect.RCServer,
-        *,
-        rc_timeout: float | None = 30.0,
-        timeout: float = 4,
-        tloop: ThreadLoop | None = None,
-        sync_wrapper_timeout: float | None = 120,
-        watchdog_intervall: float = 1.0,
-    ) -> None:
-        self.close_tloop: bool = False
-        if not tloop:
-            tloop = ThreadLoop(sync_wrapper_timeout)
-            tloop.start()
-            self.close_tloop = True
-        self.tloop: ThreadLoop = tloop
-        rc_server = rc_server if isinstance(rc_server, client.reverse_connect.RCServer) else rc_server.aio_obj
-        self.aio_obj = client.reverse_connect.RCClient(
-            rc_server, rc_timeout=rc_timeout, timeout=timeout, watchdog_intervall=watchdog_intervall
-        )
-        self.nodes: Shortcuts = Shortcuts(self.tloop, self.aio_obj.uaclient)
 
 
 class Shortcuts:
@@ -638,12 +667,7 @@ class Server:
         tloop: ThreadLoop | None = None,
         sync_wrapper_timeout: float | None = 120,
     ) -> None:
-        self.tloop: ThreadLoop = tloop  # type: ignore[assignment]
-        self.close_tloop: bool = False
-        if not self.tloop:
-            self.tloop = ThreadLoop(timeout=sync_wrapper_timeout)
-            self.tloop.start()
-            self.close_tloop = True
+        self.close_tloop, self.tloop = init_tloop(tloop, sync_wrapper_timeout)
         try:
             self.aio_obj: server.Server = server.Server()
             self.tloop.post(self.aio_obj.init(shelf_file))

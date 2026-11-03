@@ -8,7 +8,7 @@ from asyncua.crypto import security_policies
 
 namespace = "http://examples.freeopcua.github.io"
 
-CERT_BASE = Path(__file__).parent / "examples" / "certificates" / "chain"
+CERT_BASE = Path(__file__).parent / "certificates" / "chain"
 
 
 CLIENT_CERT = CERT_BASE / "client.cert.pem"
@@ -16,7 +16,7 @@ CLIENT_PRIVATE_KEY = CERT_BASE / "client.key.pem"
 SERVER_CERT = CERT_BASE / "server.cert.pem"
 
 
-async def single_client_per_server():
+async def single_client_per_server() -> None:
     """Creating a single RC client."""
     client = RCClient(RCServer("127.0.0.1", 60555))
     await client.set_security(
