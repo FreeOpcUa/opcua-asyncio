@@ -835,7 +835,11 @@ class Node:
         return ditem
 
     async def delete_reference(
-        self, target: Node | ua.NodeId | str | int, reftype: Node | ua.NodeId | str | int, forward: bool = True, bidirectional: bool = True
+        self,
+        target: Node | ua.NodeId | str | int,
+        reftype: Node | ua.NodeId | str | int,
+        forward: bool = True,
+        bidirectional: bool = True,
     ) -> None:
         """
         Delete given node's references from address space

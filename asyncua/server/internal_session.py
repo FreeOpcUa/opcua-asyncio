@@ -91,9 +91,7 @@ class InternalSession(AbstractSession):
             self.iserver.max_session_timeout_ms,
         )
         if revised_ms != requested_timeout_ms:
-            self.logger.info(
-                "Clamping RequestedSessionTimeout %.0fms to %.0fms", requested_timeout_ms, revised_ms
-            )
+            self.logger.info("Clamping RequestedSessionTimeout %.0fms to %.0fms", requested_timeout_ms, revised_ms)
         result.RevisedSessionTimeout = revised_ms
         result.MaxRequestMessageSize = 65536
         self.session_timeout = result.RevisedSessionTimeout / 1000
@@ -257,9 +255,7 @@ class InternalSession(AbstractSession):
     async def unregister_nodes(self, nodes: list[ua.NodeId]) -> None:
         self.logger.info("Node registration not implemented")
 
-    async def translate_browsepaths_to_nodeids(
-        self, params: list[ua.BrowsePath]
-    ) -> list[ua.BrowsePathResult]:
+    async def translate_browsepaths_to_nodeids(self, params: list[ua.BrowsePath]) -> list[ua.BrowsePathResult]:
         return self.iserver.view_service.translate_browsepaths_to_nodeids(params)
 
     async def add_nodes(self, params: list[ua.AddNodesItem]) -> list[ua.AddNodesResult]:
@@ -323,9 +319,7 @@ class InternalSession(AbstractSession):
     async def delete_subscriptions(self, ids: list[int]) -> list[ua.StatusCode]:
         return await self.subscription_service.delete_subscriptions(ids)
 
-    async def delete_monitored_items(
-        self, params: ua.DeleteMonitoredItemsParameters
-    ) -> list[ua.StatusCode]:
+    async def delete_monitored_items(self, params: ua.DeleteMonitoredItemsParameters) -> list[ua.StatusCode]:
         # This is an async method, dues to symmetry with client code
         subscription_result = self.subscription_service.delete_monitored_items(params)
         await self.iserver.callback_service.dispatch(
@@ -337,9 +331,7 @@ class InternalSession(AbstractSession):
     def publish(self, acks: Iterable[ua.SubscriptionAcknowledgement] | None = None) -> tuple[int, list[ua.StatusCode]]:
         return self.subscription_service.publish(acks or [])
 
-    def modify_subscription(
-        self, params: ua.ModifySubscriptionParameters
-    ) -> ua.ModifySubscriptionResult:
+    def modify_subscription(self, params: ua.ModifySubscriptionParameters) -> ua.ModifySubscriptionResult:
         # Sync because the underlying service is sync; the client-side UaSession
         # is async (RPC). Not part of AbstractSession because the shapes diverge.
         return self.subscription_service.modify_subscription(params)

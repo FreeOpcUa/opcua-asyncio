@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from asyncua import ua
@@ -101,8 +101,8 @@ class EventGenerator:
         if time_attr:
             self.event.Time = time_attr
         else:
-            self.event.Time = datetime.now(timezone.utc)
-        self.event.ReceiveTime = datetime.now(timezone.utc)
+            self.event.Time = datetime.now(UTC)
+        self.event.ReceiveTime = datetime.now(UTC)
 
         self.event.LocalTime = ua.uaprotocol_auto.TimeZoneDataType()
         localtime = time.localtime(self.event.Time.timestamp())

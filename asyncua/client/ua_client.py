@@ -245,7 +245,7 @@ class UASocketProtocol(asyncio.Protocol):
             data = await wait_for(future, timeout if timeout else None)
         except UaError:
             raise
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise
         except Exception as ex:
             if self.state is not UASocketState.OPEN:

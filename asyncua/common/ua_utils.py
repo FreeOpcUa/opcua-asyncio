@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import fields
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, IntEnum, IntFlag
 from typing import TYPE_CHECKING, Any
 
@@ -30,8 +30,8 @@ def value_to_datavalue(val: Any, varianttype: ua.VariantType | None = None) -> u
     if isinstance(val, ua.DataValue):
         return val
     if isinstance(val, ua.Variant):
-        return ua.DataValue(val, SourceTimestamp=datetime.now(timezone.utc))
-    return ua.DataValue(ua.Variant(val, varianttype), SourceTimestamp=datetime.now(timezone.utc))
+        return ua.DataValue(val, SourceTimestamp=datetime.now(UTC))
+    return ua.DataValue(ua.Variant(val, varianttype), SourceTimestamp=datetime.now(UTC))
 
 
 def val_to_string(val: Any, truncate: bool = False) -> str:
@@ -64,7 +64,11 @@ def val_to_string(val: Any, truncate: bool = False) -> str:
             val = val[:10] + "...." + val[-10:]
     elif isinstance(val, bytes):
         if truncate and len(val) > 100:
-            val = val[:10].decode(get_string_encoding(), errors="surrogateescape") + "...." + val[-10:].decode(get_string_encoding(), errors="surrogateescape")
+            val = (
+                val[:10].decode(get_string_encoding(), errors="surrogateescape")
+                + "...."
+                + val[-10:].decode(get_string_encoding(), errors="surrogateescape")
+            )
         else:
             val = val.decode(get_string_encoding(), errors="surrogateescape")
     elif isinstance(val, datetime):

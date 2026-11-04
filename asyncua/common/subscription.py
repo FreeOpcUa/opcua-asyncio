@@ -385,7 +385,7 @@ class Subscription:
                 item = await self._event_queue.get()
             else:
                 item = await asyncio.wait_for(self._event_queue.get(), timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return None
         if item is None:
             raise StopAsyncIteration
@@ -402,12 +402,14 @@ class Subscription:
         try:
             results = await self.server.delete_subscriptions([self.subscription_id])
             results[0].check()
-        except (ConnectionError, OSError, asyncio.TimeoutError):
+        except (TimeoutError, ConnectionError, OSError):
             self.logger.info("delete_subscriptions: transport unavailable; local cleanup only")
         finally:
             self._deleted = True
             self._close_iterator()
-            self._observe(lambda: self.server.observer.on_subscription_event(self.subscription_id, SubscriptionEvent.DELETED))
+            self._observe(
+                lambda: self.server.observer.on_subscription_event(self.subscription_id, SubscriptionEvent.DELETED)
+            )
 
     def _close_iterator(self) -> None:
         """Push the sentinel so any active `async for ev in sub` loop ends."""
@@ -476,9 +478,7 @@ class Subscription:
                 except BadMessageNotAvailable:
                     break
                 except Exception:
-                    self.logger.warning(
-                        "republish failed for sub %s seq %s", self.subscription_id, seq, exc_info=True
-                    )
+                    self.logger.warning("republish failed for sub %s seq %s", self.subscription_id, seq, exc_info=True)
                     return False
                 await self.publish_callback(ua.PublishResult(self.subscription_id, NotificationMessage=msg))
                 seq += 1

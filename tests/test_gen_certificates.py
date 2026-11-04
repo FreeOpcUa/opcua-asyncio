@@ -1,7 +1,7 @@
 """Several tests for certificate /signing request generation"""
 
 import socket
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -40,12 +40,12 @@ async def test_create_self_signed_app_certificate() -> None:
     days_valid = 100
 
     key: RSAPrivateKey = generate_private_key()
-    dt_before_generation = datetime.now(timezone.utc)
+    dt_before_generation = datetime.now(UTC)
     dt_before_generation -= timedelta(microseconds=dt_before_generation.microsecond)
     cert: x509.Certificate = generate_self_signed_app_certificate(
         key, f"myserver@{hostname}", names, subject_alt_names, extended=extended, days=days_valid
     )
-    dt_after_generation = datetime.now(timezone.utc)
+    dt_after_generation = datetime.now(UTC)
     dt_after_generation -= timedelta(microseconds=dt_after_generation.microsecond)
 
     # check if it is version 3
@@ -311,17 +311,19 @@ async def test_generate_load_private_key_pem(tmp_path):
 
 def _generate_self_signed_cert(key):
     """Helper to generate a self-signed certificate for testing."""
-    subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, "Test"),
-    ])
+    subject = issuer = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COMMON_NAME, "Test"),
+        ]
+    )
     return (
         x509.CertificateBuilder()
         .subject_name(subject)
         .issuer_name(issuer)
         .public_key(key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.now(timezone.utc))
-        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=1))
+        .not_valid_before(datetime.now(UTC))
+        .not_valid_after(datetime.now(UTC) + timedelta(days=1))
         .sign(key, hashes.SHA256())
     )
 

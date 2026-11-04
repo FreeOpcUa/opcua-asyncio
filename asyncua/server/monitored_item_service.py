@@ -79,9 +79,7 @@ class MonitoredItemService:
             results.append(result)
         return results
 
-    def modify_monitored_items(
-        self, params: ua.ModifyMonitoredItemsParameters
-    ) -> list[ua.MonitoredItemModifyResult]:
+    def modify_monitored_items(self, params: ua.ModifyMonitoredItemsParameters) -> list[ua.MonitoredItemModifyResult]:
         results: list[ua.MonitoredItemModifyResult] = []
         for item in params.ItemsToModify:
             results.append(self._modify_monitored_item(item))
@@ -258,9 +256,7 @@ class MonitoredItemService:
 
         return False
 
-    async def datachange_callback(
-        self, handle: int, value: ua.DataValue, error: ua.StatusCode | None = None
-    ) -> None:
+    async def datachange_callback(self, handle: int, value: ua.DataValue, error: ua.StatusCode | None = None) -> None:
         if error:
             self.logger.info(
                 "subscription %s: datachange callback called with handle '%s' and error '%s'", self, handle, error
