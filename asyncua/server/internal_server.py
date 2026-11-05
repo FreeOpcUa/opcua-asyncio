@@ -274,7 +274,8 @@ class InternalServer:
             if netloc:
                 return url._replace(netloc=netloc).geturl()
         if self.match_discovery_source_ip and sockname:
-            return url._replace(netloc=sockname[0] + ":" + str(sockname[1])).geturl()
+            host = f"[{sockname[0]}]" if ":" in sockname[0] else sockname[0]
+            return url._replace(netloc=f"{host}:{sockname[1]}").geturl()
         return url.geturl()
 
     async def get_endpoints(
