@@ -4122,6 +4122,7 @@ class LogRecord:
 
     data_type = NodeId(ObjectIds.LogRecord)
 
+    Encoding: 'ua.UInt32' = field(default=0, repr=False, init=False, compare=False)
     Time: 'ua.DateTime' = field(default_factory=lambda: datetime.now(timezone.utc))
     Severity: 'ua.UInt16' = 0
     EventType: 'ua.NodeId | None' = None

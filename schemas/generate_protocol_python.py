@@ -174,6 +174,9 @@ class CodeGenerator:
         if obj.fields:
             self.write("")
 
+        if obj.has_optional:
+            self.write("Encoding: 'ua.UInt32' = field(default=0, repr=False, init=False, compare=False)")
+
         for field in obj.fields:
             typestring = f"ua.{field.data_type}"
             if field.allow_subtypes and typestring != "ua.ExtensionObject":
