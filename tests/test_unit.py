@@ -1109,6 +1109,57 @@ def test_struct104_ordinary_field_named_encoding_roundtrip() -> None:
     assert struct_from_binary(cls, ua.utils.Buffer(data)).Encoding == 7
 
 
+_LOG_TIME = datetime(2026, 11, 6, 12, 0, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize(
+    ("record", "data"),
+    [
+        (
+            ua.LogRecord(Time=_LOG_TIME, Severity=300, SourceName="pump", Message=ua.LocalizedText("started")),
+            b"".join(
+                [
+                    ua_binary.Primitives.UInt32.pack(0b10100),
+                    ua_binary.Primitives.DateTime.pack(_LOG_TIME),
+                    ua_binary.Primitives.UInt16.pack(300),
+                    ua_binary.Primitives.String.pack("pump"),
+                    b"\x02" + ua_binary.Primitives.String.pack("started"),
+                    ua_binary.Primitives.Int32.pack(0),
+                ]
+            ),
+        ),
+        (
+            ua.LogRecord(
+                Time=_LOG_TIME,
+                Severity=100,
+                EventType=ua.NodeId(2041),
+                Message=ua.LocalizedText("tick"),
+                AdditionalData=[ua.NameValuePair(Name="unit", Value=ua.Variant(7, ua.VariantType.Int32))],
+            ),
+            b"".join(
+                [
+                    ua_binary.Primitives.UInt32.pack(0b10001),
+                    ua_binary.Primitives.DateTime.pack(_LOG_TIME),
+                    ua_binary.Primitives.UInt16.pack(100),
+                    b"\x01\x00\xf9\x07",
+                    b"\x02" + ua_binary.Primitives.String.pack("tick"),
+                    ua_binary.Primitives.Int32.pack(1),
+                    ua_binary.Primitives.String.pack("unit"),
+                    b"\x06" + ua_binary.Primitives.Int32.pack(7),
+                ]
+            ),
+        ),
+    ],
+)
+def test_log_record_has_the_optional_field_mask(record: ua.LogRecord, data: bytes) -> None:
+    assert struct_to_binary(record) == data
+    assert struct_from_binary(ua.LogRecord, ua.utils.Buffer(data)) == record
+
+
+def test_log_record_positional_arguments_skip_the_mask() -> None:
+    assert ua.LogRecord(_LOG_TIME, 300) == ua.LogRecord(Time=_LOG_TIME, Severity=300)
+
+
 def test_session_security_diagnostics_encoding_is_a_string() -> None:
     policy = "http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256"
     data = b"".join(
