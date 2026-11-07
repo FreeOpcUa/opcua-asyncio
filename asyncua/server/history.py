@@ -243,8 +243,9 @@ class HistoryDict(HistoryStorageInterface):
 
 
 class SubHandler:
-    def __init__(self, storage: HistoryStorageInterface) -> None:
+    def __init__(self, storage: HistoryStorageInterface, event_sources: dict[int, ua.NodeId] | None = None) -> None:
         self.storage = storage
+        self.event_sources = {} if event_sources is None else event_sources
         self.datachange_task: asyncio.Task[None] | None = None
         self.event_task: asyncio.Task[None] | None = None
 
@@ -252,6 +253,9 @@ class SubHandler:
         self.datachange_task = asyncio.create_task(self.storage.save_node_value(node.nodeid, data.monitored_item.Value))
 
     def event_notification(self, event: Event) -> None:
+        source = self.event_sources.get(event.server_handle)
+        if source is not None:
+            event.emitting_node = source
         self.event_task = asyncio.create_task(self.storage.save_event(event))
 
 
@@ -261,6 +265,7 @@ class HistoryManager:
         self.storage: HistoryStorageInterface = HistoryDict()
         self._sub: Subscription | None = None
         self._handlers: dict[Node, Any] = {}
+        self._event_sources: dict[int, ua.NodeId] = {}
 
     async def init(self) -> None:
         await self.storage.init()
@@ -290,7 +295,7 @@ class HistoryManager:
         Subscribe to the nodes' data changes and store the data in the active storage.
         """
         if not self._sub:
-            self._sub = await self._create_subscription(SubHandler(self.storage))
+            self._sub = await self._create_subscription(SubHandler(self.storage, self._event_sources))
         if node in self._handlers:
             raise ua.UaError(f"Node {node} is already historized")
         await self.storage.new_historized_node(node.nodeid, period, count)
@@ -315,7 +320,7 @@ class HistoryManager:
         must be deleted manually so that a new table with the custom event fields can be created.
         """
         if not self._sub:
-            self._sub = await self._create_subscription(SubHandler(self.storage))
+            self._sub = await self._create_subscription(SubHandler(self.storage, self._event_sources))
         if source in self._handlers:
             raise ua.UaError(f"Events from {source} are already historized")
 
@@ -327,6 +332,7 @@ class HistoryManager:
 
         handler = await self._sub.subscribe_events(source, event_types)
         self._handlers[source] = handler
+        self._event_sources[handler] = source.nodeid
 
     async def dehistorize(self, node: Node) -> None:
         """
@@ -337,6 +343,7 @@ class HistoryManager:
         """
         if node in self._handlers and self._sub is not None:
             await self._sub.unsubscribe(self._handlers[node])
+            self._event_sources.pop(self._handlers[node], None)
             del self._handlers[node]
         else:
             _logger.error("History Manager isn't subscribed to %s", node)
