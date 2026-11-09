@@ -450,6 +450,71 @@ class UaClient:
         self._disconnect_requested: bool = False
         self.observer: Observer = NULL_OBSERVER
         self.session: UaSession = UaSession(self)
+        self._sessions: dict[ua.NodeId, UaSession] = {}
+        self._session_lock = asyncio.Lock()
+
+    @property
+    def sessions(self) -> tuple[UaSession, ...]:
+        """Snapshot of owned server-side sessions, including the live default session."""
+        default = (self.session,) if self.session.has_session else ()
+        return default + tuple(self._sessions.values())
+
+    def get_session(self, session_id: ua.NodeId) -> UaSession:
+        """Find an owned session by its server-assigned SessionId."""
+        if self.session.has_session and self.session.session_id == session_id:
+            return self.session
+        return self._sessions[session_id]
+
+    async def create_session_object(self, parameters: ua.CreateSessionParameters) -> UaSession:
+        """Create an additional session; the caller must activate it with its own credentials."""
+        async with self._session_lock:
+            session = UaSession(self)
+            await session.create_session(parameters)
+            return session
+
+    async def close_session_object(self, session_id: ua.NodeId, delete_subscriptions: bool = True) -> None:
+        """Close one owned session without closing its channel."""
+        await self.get_session(session_id).close_session(delete_subscriptions)
+
+    async def close_all_sessions(self, delete_subscriptions: bool = True) -> None:
+        """Attempt every session close, then propagate the first failure."""
+        async with self._session_lock:
+            error: Exception | None = None
+            for session in self.sessions:
+                try:
+                    await session.close_session(delete_subscriptions)
+                except Exception as exc:
+                    if error is None:
+                        error = exc
+            if error is not None:
+                raise error
+
+    async def disconnect(self, delete_subscriptions: bool = True) -> None:
+        """Close owned sessions, then close the channel and socket even if cleanup fails."""
+        try:
+            await self.close_all_sessions(delete_subscriptions)
+        finally:
+            try:
+                await self.close_secure_channel()
+            finally:
+                self.disconnect_socket()
+
+    def _session_state_changed(self, session: UaSession) -> None:
+        if session is not self.session and session.state is SessionState.CREATED:
+            assert session.session_id is not None
+            for session_id, owned in tuple(self._sessions.items()):
+                if owned is session:
+                    del self._sessions[session_id]
+            self._sessions[session.session_id] = session
+        if session is not self.session and self._sessions.get(session.session_id) is not session:
+            return
+        if session.state is SessionState.CLOSED:
+            self._sessions.pop(session.session_id, None)
+        active = any(item.state is SessionState.ACTIVATED for item in self.sessions)
+        if active and self._state is UaClientState.CHANNEL_OPEN:
+            self._set_state(UaClientState.CONNECTED)
+        elif not active and self._state is UaClientState.CONNECTED:
+            self._set_state(UaClientState.CHANNEL_OPEN)
 
     @property
     def state(self) -> UaClientState:
@@ -581,7 +646,10 @@ class UaClient:
         return self.protocol
 
     def _is_session_closing(self) -> bool:
-        return self.session.state in (SessionState.CLOSING, SessionState.CLOSED)
+        return all(
+            session.state in (SessionState.CLOSING, SessionState.CLOSED)
+            for session in (self.session, *self._sessions.values())
+        )
 
     @property
     def pre_request_hook(self) -> Callable[[], Awaitable[None]] | None:
@@ -656,11 +724,13 @@ class UaClient:
         return result
 
     async def close_secure_channel(self) -> None:
+        for session in self.sessions:
+            await session._stop_publish_loop()
         if not self.protocol or self.protocol.state is UASocketState.CLOSED:
             self.logger.warning("close_secure_channel was called but connection is closed")
             return
         await self.protocol.close_secure_channel()
-        if self._state is UaClientState.CHANNEL_OPEN:
+        if self._state in (UaClientState.CHANNEL_OPEN, UaClientState.CONNECTED):
             self._set_state(UaClientState.SOCKET_OPEN)
 
     async def _send_request(
@@ -715,7 +785,9 @@ class UaClient:
 
     async def close_session(self, delete_subscriptions: bool) -> None:
         await self.session.close_session(delete_subscriptions)
-        if self._state is UaClientState.CONNECTED:
+        if self._state is UaClientState.CONNECTED and not any(
+            session.state is SessionState.ACTIVATED for session in self.sessions
+        ):
             self._set_state(UaClientState.CHANNEL_OPEN)
 
     # --- sessionless services ---

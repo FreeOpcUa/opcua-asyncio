@@ -24,3 +24,17 @@ Browsing and accessing nodes
 ============================
 
 .. todo:: Usage of shortcut objects (root, objects, ...)
+
+
+Managing additional sessions
+===========================
+
+Use ``UaClient.create_session_object(parameters)`` to create an additional
+session on an open secure channel, then activate it with its own credentials.
+``sessions`` lists owned sessions; ``get_session(id)`` and
+``close_session_object(id)`` use the server-assigned SessionId.
+``disconnect()`` closes all owned sessions and the connection.
+
+The server must support multiple sessions per channel. Callers manage channel
+renewal and keep each session active; additional sessions are not automatically
+recovered.
