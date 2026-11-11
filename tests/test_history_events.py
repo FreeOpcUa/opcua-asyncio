@@ -1,3 +1,4 @@
+import asyncio
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -91,3 +92,24 @@ async def test_history_ev_read_all_filter_order_reversed(history_server):
     assert 20 == len(res)
     assert res[-1].Severity == history_server.ev_values[-1]
     assert res[0].Severity == history_server.ev_values[0]
+
+
+async def test_history_ev_node_other_than_server(history_server):
+    """events of a historized node are stored under that node, not under the Server node"""
+    srv = history_server.srv
+    obj = await srv.nodes.objects.add_object(3, "history_ev_obj")
+    evgen = await srv.get_event_generator(emitting_node=obj)
+    await srv.historize_node_event(obj, period=None)
+    for severity in range(3):
+        evgen.event.Severity = severity
+        await evgen.trigger(message="obj message")
+        await asyncio.sleep(0.1)
+    await asyncio.sleep(2)
+    now = datetime.now(UTC)
+    old = now - timedelta(days=6)
+
+    res = await obj.read_event_history(old, now, 0)
+    assert [ev.Severity for ev in res] == [0, 1, 2]
+
+    res = await history_server.srv_node.read_event_history(old, now, 0)
+    assert 20 == len(res)
