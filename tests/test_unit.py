@@ -1108,7 +1108,7 @@ def test_struct104_ordinary_field_named_encoding_roundtrip() -> None:
     assert struct_from_binary(cls, ua.utils.Buffer(data)).Encoding == 7
 
 
-_LOG_TIME = datetime(2026, 11, 6, 12, 0, tzinfo=timezone.utc)
+_LOG_TIME = datetime(2026, 11, 6, 12, 0, tzinfo=UTC)
 
 
 @pytest.mark.parametrize(
