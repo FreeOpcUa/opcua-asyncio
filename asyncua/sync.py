@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from threading import Condition, Thread
 from types import TracebackType
-from typing import Any, Literal, TypeVar, overload
+from typing import Any, Literal, Self, TypeVar, overload
 
 from cryptography import x509
 
@@ -34,9 +34,13 @@ class ThreadLoopNotRunning(Exception): ...
 class ThreadLoop(Thread):
     def __init__(self, timeout: float | None = 120) -> None:
         Thread.__init__(self, daemon=True)
-        self.loop: asyncio.AbstractEventLoop | None = None
+        self._runner: asyncio.Runner | None = None
         self._cond: Condition = Condition()
         self.timeout: float | None = timeout
+
+    @property
+    def loop(self) -> asyncio.AbstractEventLoop | None:
+        return self._runner.get_loop() if self._runner else None
 
     def start(self) -> None:
         with self._cond:
@@ -45,31 +49,35 @@ class ThreadLoop(Thread):
             self._cond.wait()
 
     def run(self) -> None:
-        self.loop = asyncio.new_event_loop()
-        _logger.debug("Threadloop: %s", self.loop)
-        self.loop.call_soon_threadsafe(self._notify_start)
-        self.loop.run_forever()
+        self._runner = asyncio.Runner()
+        loop = self._runner.get_loop()
+        _logger.debug("Threadloop: %s", loop)
+        loop.call_soon_threadsafe(self._notify_start)
+        loop.run_forever()
 
     def _notify_start(self) -> None:
         with self._cond:
             self._cond.notify_all()
 
     def stop(self) -> None:
-        if self.loop is None:
+        if self._runner is None:
             return
-        self.loop.call_soon_threadsafe(self.loop.stop)
+        runner, self._runner = self._runner, None
+        loop = runner.get_loop()
+        loop.call_soon_threadsafe(loop.stop)
         self.join()
-        self.loop.close()
+        runner.close()
+        atexit.unregister(self._at_exit)
 
     def post(self, coro: Coroutine[Any, Any, _T]) -> _T:
-        if not self.loop or not self.loop.is_running() or not self.is_alive():
+        if not self._runner or not self.is_alive() or not (loop := self._runner.get_loop()).is_running():
             raise ThreadLoopNotRunning(
                 f"could not post {coro} since asyncio loop in thread has not been started or has been stopped"
             )
-        futur = asyncio.run_coroutine_threadsafe(coro, loop=self.loop)
-        return futur.result(self.timeout)
+        future = asyncio.run_coroutine_threadsafe(coro, loop=loop)
+        return future.result(self.timeout)
 
-    def __enter__(self) -> ThreadLoop:
+    def __enter__(self) -> Self:
         self.start()
         return self
 
@@ -79,8 +87,10 @@ class ThreadLoop(Thread):
         self.stop()
 
     def _at_exit(self) -> None:
-        if self.is_alive():
-            _logger.warning("Thread loop %s was not closed properly -- some tasks may not be finished", self.loop)
+        if self._runner and self.is_alive():
+            _logger.warning(
+                "Thread loop %s was not closed properly -- some tasks may not be finished", self._runner.get_loop()
+            )
             self.stop()
 
 
@@ -514,7 +524,7 @@ class Client:
         self, starting_node: ua.NodeId, relative_paths: Iterable[ua.RelativePath | str]
     ) -> list[ua.BrowsePathResult]: ...
 
-    def __enter__(self) -> Client:
+    def __enter__(self) -> Self:
         try:
             self.connect()
         except Exception as ex:
@@ -614,7 +624,7 @@ class SyncRCServer:
             watchdog_intervall=watchdog_intervall,
         )
 
-    def __enter__(self) -> "SyncRCServer":
+    def __enter__(self) -> Self:
         self.start()
         return self
 
@@ -692,7 +702,7 @@ class Server:
 
     __repr__ = __str__
 
-    def __enter__(self) -> Server:
+    def __enter__(self) -> Self:
         self.start()
         return self
 
@@ -1170,13 +1180,13 @@ class Subscription:
         self.tloop: ThreadLoop = tloop
         self.aio_obj: subscription.Subscription = sub
 
-    def __enter__(self) -> Subscription:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, exc_type: Any, exc_value: Any, tb: Any) -> None:
         self.delete()
 
-    def __iter__(self) -> Subscription:
+    def __iter__(self) -> Self:
         return self
 
     def __next__(self) -> subscription.SubEvent:
