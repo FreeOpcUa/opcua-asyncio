@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from asyncua import ua
@@ -139,7 +139,7 @@ class HistoryDict(HistoryStorageInterface):
         data = self._datachanges[node_id]
         period, count = self._datachanges_period[node_id]
         data.append(datavalue)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if period:
             while len(data) and now - data[0].SourceTimestamp > period:  # type: ignore[operator]
                 data.pop(0)
@@ -194,7 +194,7 @@ class HistoryDict(HistoryStorageInterface):
         evts = self._events[event.emitting_node]
         evts.append(event)
         period, count = self._events_periods[event.emitting_node]
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if period:
             while len(evts) and now - evts[0].Time > period:  # type: ignore[attr-defined,operator]
                 evts.pop(0)
@@ -302,9 +302,7 @@ class HistoryManager:
         handler = await self._sub.subscribe_data_change(node)
         self._handlers[node] = handler
 
-    async def historize_event(
-        self, source: Node, period: timedelta | None = timedelta(days=7), count: int = 0
-    ) -> None:
+    async def historize_event(self, source: Node, period: timedelta | None = timedelta(days=7), count: int = 0) -> None:
         """
         Subscribe to the source nodes' events and store the data in the active storage.
 

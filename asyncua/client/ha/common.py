@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 import logging
 import pickle
@@ -16,7 +15,7 @@ class ClientNotFound(Exception):
 async def event_wait(evt, timeout) -> bool:
     try:
         await wait_for(evt.wait(), timeout)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         pass
     return evt.is_set()
 

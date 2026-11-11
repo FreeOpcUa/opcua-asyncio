@@ -12,6 +12,7 @@ from datetime import timedelta
 from enum import EnumMeta
 from pathlib import Path
 from unittest.mock import Mock
+from urllib.parse import urlparse
 
 import pytest
 
@@ -94,6 +95,24 @@ async def test_find_servers2(server, discovery_server):
         assert len(new_servers) - len(servers) == 2
         assert new_app_uri1 in [s.ApplicationUri for s in new_servers]
         assert new_app_uri2 in [s.ApplicationUri for s in new_servers]
+
+
+@pytest.mark.parametrize(
+    ("sockname", "netloc"),
+    [
+        (("::1", 4840, 0, 0), "[::1]:4840"),
+        (("fe80::1%eth0", 4840, 0, 1), "[fe80::1%eth0]:4840"),
+        (("127.0.0.1", 4840), "127.0.0.1:4840"),
+    ],
+)
+async def test_discovery_urls_from_sockname(server: Server, sockname: tuple[str | int, ...], netloc: str) -> None:
+    endpoints = await server.iserver.get_endpoints(sockname=sockname)
+    servers = server.iserver.find_servers(ua.FindServersParameters(), sockname=sockname)
+    urls = [endpoints[0].EndpointUrl, *endpoints[0].Server.DiscoveryUrls, *servers[0].DiscoveryUrls]
+    for url in urls:
+        parsed = urlparse(url)
+        assert parsed.netloc == netloc
+        assert parsed.port == 4840
 
 
 async def test_register_namespace(server):

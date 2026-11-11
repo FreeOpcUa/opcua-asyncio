@@ -135,9 +135,7 @@ class SubscriptionService:
             raise utils.ServiceError(ua.StatusCodes.BadSubscriptionIdInvalid)
         return await self.subscriptions[params.SubscriptionId].monitored_item_srv.create_monitored_items(params)
 
-    def modify_monitored_items(
-        self, params: ua.ModifyMonitoredItemsParameters
-    ) -> list[ua.MonitoredItemModifyResult]:
+    def modify_monitored_items(self, params: ua.ModifyMonitoredItemsParameters) -> list[ua.MonitoredItemModifyResult]:
         self.logger.info("modify monitored items")
         if params.SubscriptionId not in self.subscriptions:
             raise utils.ServiceError(ua.StatusCodes.BadSubscriptionIdInvalid)

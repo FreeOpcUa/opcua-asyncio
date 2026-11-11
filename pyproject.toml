@@ -3,7 +3,7 @@ name = "asyncua"
 version = "2.1.0"
 description = "Pure Python OPC-UA client and server library"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "GNU Lesser General Public License v3 or later" }
 authors = [
   { name = "Olivier Roulet-Dubonnet", email = "olivier.roulet@gmail.com" },
@@ -13,10 +13,11 @@ classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Typing :: Typed",
 ]
@@ -27,7 +28,6 @@ dependencies = [
   "python-dateutil",
   "pytz",
   "sortedcontainers",
-  "typing-extensions",
   "wait_for2;python_version<'3.12'",
 ]
 
@@ -109,7 +109,7 @@ asyncio_default_test_loop_scope = "module"
 asyncio_default_fixture_loop_scope = "module"
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 120
 extend-exclude = [
   "docs",
@@ -148,6 +148,7 @@ ignore = [
   "UP032",  # Use f-string instead of `format` call
   "UP030",  # Use implicit references for positional format fields
   "UP037",  # due to protocol using class member name same as object type we want to use quotes and precise ua namespace
+  "ASYNC109",  # timeout parameters are part of the public API
   "ASYNC110",  # too many false positives
   "RET504",  # do not agree
   "RUF015",  # Not sure

@@ -8,7 +8,7 @@ import io
 import logging
 import uuid
 from dataclasses import dataclass, field, make_dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -117,7 +117,7 @@ def test_custom_structs(tmpdir):
     v.FloatValue = 9.0
     v.DoubleValue = 10.0
     v.StringValue = "elleven"
-    v.DateTimeValue = datetime.now(timezone.utc)
+    v.DateTimeValue = datetime.now(UTC)
     # self.GuidValue = uuid.uudib"14"
     v.ByteStringValue = b"fifteen"
     v.XmlElementValue = ua.XmlElement("<toto>titi</toto>")
@@ -211,7 +211,7 @@ def test_custom_structs_array(tmpdir):
     v.FloatValue = [9.0]
     v.DoubleValue = [10.0]
     v.StringValue = ["elleven"]
-    v.DateTimeValue = [datetime.now(timezone.utc)]
+    v.DateTimeValue = [datetime.now(UTC)]
     # self.GuidValue = uuid.uudib"14"
     v.ByteStringValue = [b"fifteen", b"sixteen"]
     v.XmlElementValue = [ua.XmlElement("<toto>titi</toto>")]
@@ -659,16 +659,16 @@ def test_extension_object_missing_length():
 
 
 def test_datetime():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     epch = ua.datetime_to_win_epoch(now)
     dt = ua.win_epoch_to_datetime(epch)
     assert now == dt
     # python's datetime has a range from Jan 1, 0001 to the end of year 9999
     # windows' filetime has a range from Jan 1, 1601 to approx. year 30828
     # let's test an overlapping range [Jan 1, 1601 - Dec 31, 9999]
-    dt = datetime(1601, 1, 1, tzinfo=timezone.utc)
+    dt = datetime(1601, 1, 1, tzinfo=UTC)
     assert ua.win_epoch_to_datetime(ua.datetime_to_win_epoch(dt)) == dt
-    dt = datetime(9999, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+    dt = datetime(9999, 12, 31, 23, 59, 59, tzinfo=UTC)
     assert ua.win_epoch_to_datetime(ua.datetime_to_win_epoch(dt)) == dt
     epch = 128930364000001000
     dt = ua.win_epoch_to_datetime(epch)
@@ -686,7 +686,6 @@ def test_equal_nodeid():
     nid2 = ua.NodeId(999, 2)
     assert nid1 == nid2
     assert id(nid1) != id(nid2)
-
 
 
 def test_to_nodeid_int_ranges():
@@ -793,10 +792,10 @@ def test_qualified_name():
 
 
 def test_datavalue():
-    dv = ua.DataValue(123, SourceTimestamp=datetime.now(timezone.utc))
+    dv = ua.DataValue(123, SourceTimestamp=datetime.now(UTC))
     assert dv.Value == ua.Variant(123)
     assert type(dv.Value) is ua.Variant
-    dv = ua.DataValue("abc", SourceTimestamp=datetime.now(timezone.utc))
+    dv = ua.DataValue("abc", SourceTimestamp=datetime.now(UTC))
     assert dv.Value == ua.Variant("abc")
     assert isinstance(dv.SourceTimestamp, datetime)
 
@@ -805,7 +804,7 @@ def test_variant():
     dv = ua.Variant(True, ua.VariantType.Boolean)
     assert dv.Value is True
     assert isinstance(dv.Value, bool)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     v = ua.Variant(now)
     assert v.Value == now
     assert v.VariantType == ua.VariantType.DateTime
@@ -825,7 +824,7 @@ def test_variant_array():
     assert v.VariantType == v2.VariantType
     assert v2.Dimensions is None
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     v = ua.Variant([now])
     assert v.Value[0] == now
     assert v.VariantType == ua.VariantType.DateTime
@@ -1107,6 +1106,57 @@ def test_struct104_ordinary_field_named_encoding_roundtrip() -> None:
 
     assert struct_to_binary(cls(Encoding=7)) == data
     assert struct_from_binary(cls, ua.utils.Buffer(data)).Encoding == 7
+
+
+_LOG_TIME = datetime(2026, 11, 6, 12, 0, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(
+    ("record", "data"),
+    [
+        (
+            ua.LogRecord(Time=_LOG_TIME, Severity=300, SourceName="pump", Message=ua.LocalizedText("started")),
+            b"".join(
+                [
+                    ua_binary.Primitives.UInt32.pack(0b10100),
+                    ua_binary.Primitives.DateTime.pack(_LOG_TIME),
+                    ua_binary.Primitives.UInt16.pack(300),
+                    ua_binary.Primitives.String.pack("pump"),
+                    b"\x02" + ua_binary.Primitives.String.pack("started"),
+                    ua_binary.Primitives.Int32.pack(0),
+                ]
+            ),
+        ),
+        (
+            ua.LogRecord(
+                Time=_LOG_TIME,
+                Severity=100,
+                EventType=ua.NodeId(2041),
+                Message=ua.LocalizedText("tick"),
+                AdditionalData=[ua.NameValuePair(Name="unit", Value=ua.Variant(7, ua.VariantType.Int32))],
+            ),
+            b"".join(
+                [
+                    ua_binary.Primitives.UInt32.pack(0b10001),
+                    ua_binary.Primitives.DateTime.pack(_LOG_TIME),
+                    ua_binary.Primitives.UInt16.pack(100),
+                    b"\x01\x00\xf9\x07",
+                    b"\x02" + ua_binary.Primitives.String.pack("tick"),
+                    ua_binary.Primitives.Int32.pack(1),
+                    ua_binary.Primitives.String.pack("unit"),
+                    b"\x06" + ua_binary.Primitives.Int32.pack(7),
+                ]
+            ),
+        ),
+    ],
+)
+def test_log_record_has_the_optional_field_mask(record: ua.LogRecord, data: bytes) -> None:
+    assert struct_to_binary(record) == data
+    assert struct_from_binary(ua.LogRecord, ua.utils.Buffer(data)) == record
+
+
+def test_log_record_positional_arguments_skip_the_mask() -> None:
+    assert ua.LogRecord(_LOG_TIME, 300) == ua.LogRecord(Time=_LOG_TIME, Severity=300)
 
 
 def test_session_security_diagnostics_encoding_is_a_string() -> None:

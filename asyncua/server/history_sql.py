@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 from collections.abc import Iterable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 import aiosqlite
@@ -43,9 +43,7 @@ class HistorySQLite(HistoryStorageInterface):
         await self._db.close()
         self.logger.info("Historizing SQL connection closed")
 
-    async def new_historized_node(
-        self, node_id: ua.NodeId, period: timedelta | None, count: int = 0
-    ) -> None:
+    async def new_historized_node(self, node_id: ua.NodeId, period: timedelta | None, count: int = 0) -> None:
         table = self._get_table_name(node_id)
         self._datachanges_period[node_id] = period, count
         # create a table for the node which will store attributes of the DataValue object
@@ -66,9 +64,7 @@ class HistorySQLite(HistoryStorageInterface):
         except aiosqlite.Error as e:
             self.logger.info("Historizing SQL Table Creation Error for %s: %s", node_id, e)
 
-    async def execute_sql_delete(
-        self, condition: str, args: Iterable[Any], table: str, node_id: ua.NodeId
-    ) -> None:
+    async def execute_sql_delete(self, condition: str, args: Iterable[Any], table: str, node_id: ua.NodeId) -> None:
         try:
             validate_table_name(table)
             await self._db.execute(f'DELETE FROM "{table}" WHERE {condition}', args)
@@ -99,7 +95,7 @@ class HistorySQLite(HistoryStorageInterface):
         period, count = self._datachanges_period[node_id]
         if period:
             # after the insert, if a period was specified delete all records older than period
-            date_limit = datetime.now(timezone.utc) - period
+            date_limit = datetime.now(UTC) - period
             validate_table_name(table)
             await self.execute_sql_delete("SourceTimestamp < ?", (date_limit,), table, node_id)
         if count:
@@ -188,7 +184,7 @@ class HistorySQLite(HistoryStorageInterface):
             self.logger.error("Historizing SQL Insert Error for events from %s: %s", event.SourceNode, e)  # type: ignore[attr-defined]
         period = self._datachanges_period[event.emitting_node]
         if period:
-            date_limit = datetime.now(timezone.utc) - period
+            date_limit = datetime.now(UTC) - period
             try:
                 validate_table_name(table)
                 await self._db.execute(f'DELETE FROM "{table}" WHERE Time < ?', (date_limit.isoformat(" "),))
@@ -255,15 +251,13 @@ class HistorySQLite(HistoryStorageInterface):
         return ev_fields
 
     @staticmethod
-    def _get_bounds(
-        start: datetime | None, end: datetime | None, nb_values: int
-    ) -> tuple[str, str, str, int]:
+    def _get_bounds(start: datetime | None, end: datetime | None, nb_values: int) -> tuple[str, str, str, int]:
         order = "ASC"
         if start is None or start == ua.get_win_epoch():
             order = "DESC"
             start = ua.get_win_epoch()
         if end is None or end == ua.get_win_epoch():
-            end = datetime.now(timezone.utc) + timedelta(days=1)
+            end = datetime.now(UTC) + timedelta(days=1)
         if start < end:
             start_time = start.isoformat(" ")
             end_time = end.isoformat(" ")

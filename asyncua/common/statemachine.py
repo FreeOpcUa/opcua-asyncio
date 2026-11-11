@@ -40,9 +40,7 @@ class State:
     number: Number is an integer which uniquely identifies the current state within the StateMachineType.
     """
 
-    def __init__(
-        self, id: Any, name: str | None = None, number: int | None = None, node: Node | None = None
-    ) -> None:
+    def __init__(self, id: Any, name: str | None = None, number: int | None = None, node: Node | None = None) -> None:
         if id is not None:
             self.id: Any = ua.Variant(id)
         else:
@@ -70,16 +68,14 @@ class Transition:
     with each change of a substate.
     """
 
-    def __init__(
-        self, id: Any, name: str | None = None, number: int | None = None, node: Node | None = None
-    ) -> None:
+    def __init__(self, id: Any, name: str | None = None, number: int | None = None, node: Node | None = None) -> None:
         if id is not None:
             self.id: Any = ua.Variant(id)
         else:
             self.id = id
         self.name = name
         self.number = number
-        self._transitiontime = datetime.datetime.now(datetime.timezone.utc)
+        self._transitiontime = datetime.datetime.now(datetime.UTC)
         self.node: Node = node  # type: ignore[assignment]
 
 
@@ -146,7 +142,7 @@ class StateMachine:
                 self._last_transition_transitiontime_node = await self._last_transition_node.add_property(
                     0,
                     "TransitionTime",
-                    ua.Variant(datetime.datetime.now(datetime.timezone.utc), VariantType=ua.VariantType.DateTime),
+                    ua.Variant(datetime.datetime.now(datetime.UTC), VariantType=ua.VariantType.DateTime),
                 )
             else:
                 self._last_transition_transitiontime_node = await self._last_transition_node.get_child("TransitionTime")
@@ -255,7 +251,7 @@ class StateMachine:
             raise ValueError(
                 f"Statemachine: {self._name} -> state: {transition} is not a instance of StateMachine.Transition class"
             )
-        transition._transitiontime = datetime.datetime.now(datetime.timezone.utc)
+        transition._transitiontime = datetime.datetime.now(datetime.UTC)
         await self._last_transition_node.write_value(
             ua.LocalizedText(transition.name, self.locale), ua.VariantType.LocalizedText
         )
