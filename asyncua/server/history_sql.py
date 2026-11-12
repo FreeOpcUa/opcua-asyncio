@@ -246,9 +246,9 @@ class HistorySQLite(HistoryStorageInterface):
         for event_type in evtypes:
             ev_aggregate_fields.extend(await get_event_properties_from_type_node(event_type))
         ev_fields = []
-        for field in set(ev_aggregate_fields):
+        for field in ev_aggregate_fields:
             ev_fields.append((await field.read_display_name()).Text)
-        return ev_fields
+        return list(dict.fromkeys(ev_fields))
 
     @staticmethod
     def _get_bounds(start: datetime | None, end: datetime | None, nb_values: int) -> tuple[str, str, str, int]:
