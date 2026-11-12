@@ -55,6 +55,9 @@ class UaSession(AbstractSession):
         self.logger = logging.getLogger(f"{__name__}.UaSession")
         self._client = client
         self.authentication_token: ua.NodeId = ua.NodeId()
+        self.session_id: ua.NodeId | None = None
+        self.create_session_result: ua.CreateSessionResult | None = None
+        self._close_lock = asyncio.Lock()
         self._state: SessionState = SessionState.NEW
         self._subscription_callbacks: dict[int, Callable[..., Any]] = {}
         self._publish_task: asyncio.Task[None] | None = None
@@ -70,6 +73,8 @@ class UaSession(AbstractSession):
     def _set_state(self, target: SessionState) -> None:
         """Set state. Callers know the right transition; no validation here."""
         self._state = target
+        if target in (SessionState.CREATED, SessionState.ACTIVATED, SessionState.CLOSED):
+            self._client._session_state_changed(self)
 
     @property
     def has_session(self) -> bool:
@@ -116,6 +121,8 @@ class UaSession(AbstractSession):
             self._set_state(SessionState.NEW)
             raise
         self.restore_authentication_token(response.Parameters.AuthenticationToken)
+        self.session_id = response.Parameters.SessionId
+        self.create_session_result = response.Parameters
         self._set_state(SessionState.CREATED)
         return response.Parameters
 
@@ -137,10 +144,20 @@ class UaSession(AbstractSession):
         self._set_state(SessionState.ACTIVATED)
         return response.Parameters
 
+    async def _stop_publish_loop(self) -> None:
+        if self._publish_task and self._publish_task is not asyncio.current_task():
+            self._publish_task.cancel()
+            await asyncio.gather(self._publish_task, return_exceptions=True)
+
     async def close_session(self, delete_subscriptions: bool) -> None:
+        async with self._close_lock:
+            await self._close_session(delete_subscriptions)
+
+    async def _close_session(self, delete_subscriptions: bool) -> None:
         self.logger.info("close_session")
         if self._state in (SessionState.CLOSED, SessionState.CLOSING):
             return
+        await self._stop_publish_loop()
         if self._state is SessionState.NEW:
             self._set_state(SessionState.CLOSED)
             return
@@ -150,8 +167,6 @@ class UaSession(AbstractSession):
             self._set_state(SessionState.CLOSED)
             return
         self._set_state(SessionState.CLOSING)
-        if self._publish_task and not self._publish_task.done():
-            self._publish_task.cancel()
         if self._client.protocol.is_closed:
             self.logger.warning("close_session was called but connection is closed")
             self._set_state(SessionState.CLOSED)

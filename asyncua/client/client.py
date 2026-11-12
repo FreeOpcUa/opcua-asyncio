@@ -553,6 +553,10 @@ class Client:
         except Exception:
             _logger.exception("close_session raised during disconnect; continuing teardown")
         try:
+            await self.uaclient.close_all_sessions()
+        except Exception:
+            _logger.exception("close_all_sessions raised during disconnect; continuing teardown")
+        try:
             await self.close_secure_channel()
         except Exception:
             _logger.exception("close_secure_channel raised during disconnect; continuing teardown")
