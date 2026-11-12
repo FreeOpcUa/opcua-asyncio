@@ -2,8 +2,9 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from asyncua import ua
+from asyncua import Server, ua
 from asyncua.common.node import Node
+from asyncua.server.history_sql import HistorySQLite
 
 pytestmark = pytest.mark.asyncio
 
@@ -146,3 +147,25 @@ async def test_history_var_read_repeated_continuation_point():
     res = await node.read_raw_history(numvalues=0)
     assert [] == res
     assert 2 == node.calls
+
+
+async def test_sqlite_event_table_with_same_property_name_in_two_event_types(server: Server) -> None:
+    idx = await server.register_namespace("urn:history:duplicate-event-fields")
+    type_a = await server.create_custom_event_type(
+        idx, "DuplicateFieldEventA", properties=[("Temperature", ua.VariantType.Double)]
+    )
+    type_b = await server.create_custom_event_type(
+        idx, "DuplicateFieldEventB", properties=[("Temperature", ua.VariantType.Double)]
+    )
+    source_id = ua.NodeId(4242, idx)
+    history = HistorySQLite(":memory:")
+    await history.init()
+    try:
+        await history.new_historized_event(source_id, [type_a, type_b], period=None)
+        fields = history._event_fields[source_id]
+        assert fields.count("Temperature") == 1
+        async with history._db.execute(f'SELECT * FROM "{history._get_table_name(source_id)}"') as cursor:
+            columns = [description[0] for description in cursor.description]
+        assert columns.count("Temperature") == 1
+    finally:
+        await history.stop()
