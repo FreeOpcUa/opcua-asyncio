@@ -449,21 +449,26 @@ class UaClient:
         self._state_listeners: list[Callable[[UaClientState], None]] = []
         self._disconnect_requested: bool = False
         self.observer: Observer = NULL_OBSERVER
-        self.session: UaSession = UaSession(self)
-        self._sessions: dict[ua.NodeId, UaSession] = {}
+        self._default_session_id = ua.NodeId()
+        self._sessions: dict[ua.NodeId, UaSession] = {self._default_session_id: UaSession(self)}
         self._session_lock = asyncio.Lock()
+
+    @property
+    def session(self) -> UaSession:
+        """Legacy default session; a null registry key holds it before creation and after closure."""
+        return self._sessions[self._default_session_id]
 
     @property
     def sessions(self) -> tuple[UaSession, ...]:
         """Snapshot of owned server-side sessions, including the live default session."""
-        default = (self.session,) if self.session.has_session else ()
-        return default + tuple(self._sessions.values())
+        return tuple(session for session in self._sessions.values() if session.has_session)
 
     def get_session(self, session_id: ua.NodeId) -> UaSession:
         """Find an owned session by its server-assigned SessionId."""
-        if self.session.has_session and self.session.session_id == session_id:
-            return self.session
-        return self._sessions[session_id]
+        session = self._sessions[session_id]
+        if not session.has_session:
+            raise KeyError(session_id)
+        return session
 
     async def create_session_object(self, parameters: ua.CreateSessionParameters) -> UaSession:
         """Create an additional session; the caller must activate it with its own credentials."""
@@ -480,7 +485,7 @@ class UaClient:
         """Attempt every session close, then propagate the first failure."""
         async with self._session_lock:
             error: Exception | None = None
-            for session in self.sessions:
+            for session in tuple(self._sessions.values()):
                 try:
                     await session.close_session(delete_subscriptions)
                 except Exception as exc:
@@ -500,16 +505,24 @@ class UaClient:
                 self.disconnect_socket()
 
     def _session_state_changed(self, session: UaSession) -> None:
-        if session is not self.session and session.state is SessionState.CREATED:
+        is_default = session is self.session
+        if session.state is SessionState.CREATED:
             assert session.session_id is not None
             for session_id, owned in tuple(self._sessions.items()):
                 if owned is session:
                     del self._sessions[session_id]
             self._sessions[session.session_id] = session
-        if session is not self.session and self._sessions.get(session.session_id) is not session:
+            if is_default:
+                self._default_session_id = session.session_id
+        if not is_default and self._sessions.get(session.session_id) is not session:
             return
         if session.state is SessionState.CLOSED:
-            self._sessions.pop(session.session_id, None)
+            if is_default:
+                del self._sessions[self._default_session_id]
+                self._default_session_id = ua.NodeId()
+                self._sessions[self._default_session_id] = session
+            else:
+                self._sessions.pop(session.session_id, None)
         active = any(item.state is SessionState.ACTIVATED for item in self.sessions)
         if active and self._state is UaClientState.CHANNEL_OPEN:
             self._set_state(UaClientState.CONNECTED)
@@ -646,10 +659,7 @@ class UaClient:
         return self.protocol
 
     def _is_session_closing(self) -> bool:
-        return all(
-            session.state in (SessionState.CLOSING, SessionState.CLOSED)
-            for session in (self.session, *self._sessions.values())
-        )
+        return all(session.state in (SessionState.CLOSING, SessionState.CLOSED) for session in self._sessions.values())
 
     @property
     def pre_request_hook(self) -> Callable[[], Awaitable[None]] | None:

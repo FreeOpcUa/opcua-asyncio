@@ -79,11 +79,16 @@ async def test_sessions_are_registered_and_close_independently(managed_client: t
 
 
 @pytest.mark.parametrize("disconnect", [False, True])
+@pytest.mark.parametrize("default", [False, True])
 async def test_recreated_session_is_registered_and_cleaned_up(
-    managed_client: tuple[UaClient, list], disconnect: bool
+    managed_client: tuple[UaClient, list], disconnect: bool, default: bool
 ) -> None:
     client, requests = managed_client
-    session = await client.create_session_object(ua.CreateSessionParameters())
+    if default:
+        session = client.session
+        await client.create_session(ua.CreateSessionParameters())
+    else:
+        session = await client.create_session_object(ua.CreateSessionParameters())
     old_id = session.session_id
     assert old_id is not None
     await session.close_session(True)
@@ -91,6 +96,10 @@ async def test_recreated_session_is_registered_and_cleaned_up(
     assert result.SessionId != old_id
     assert client.sessions == (session,)
     assert client.get_session(result.SessionId) is session
+    assert client._sessions[result.SessionId] is session
+    if default:
+        assert client.session is session
+        assert client._default_session_id == result.SessionId
     with pytest.raises(KeyError):
         client.get_session(old_id)
     await session.activate_session(ua.ActivateSessionParameters())
@@ -106,23 +115,33 @@ async def test_recreated_session_is_registered_and_cleaned_up(
         await client.close_all_sessions()
     assert session.state is SessionState.CLOSED
     assert client.sessions == ()
+    with pytest.raises(KeyError):
+        client.get_session(result.SessionId)
+    if default:
+        assert client.session is session
 
 
-async def test_legacy_default_session_api_is_preserved(managed_client: tuple[UaClient, list]) -> None:
+@pytest.mark.parametrize("close_default_first", [False, True])
+async def test_legacy_default_session_api_is_preserved(
+    managed_client: tuple[UaClient, list], close_default_first: bool
+) -> None:
     client, _ = managed_client
     result = await client.create_session(ua.CreateSessionParameters())
     assert isinstance(result, ua.CreateSessionResult)
     assert client.get_session(result.SessionId) is client.session
+    assert client._sessions[result.SessionId] is client.session
     await client.activate_session(ua.ActivateSessionParameters())
     other = await client.create_session_object(ua.CreateSessionParameters())
     await other.activate_session(ua.ActivateSessionParameters())
 
-    await client.close_session(True)
-    assert client.state is UaClientState.CONNECTED
-    assert not client._is_session_closing()
-    assert await other.read(ua.ReadParameters()) == []
+    if close_default_first:
+        await client.close_session(True)
+        assert client.state is UaClientState.CONNECTED
+        assert not client._is_session_closing()
+        assert await other.read(ua.ReadParameters()) == []
     await client.close_all_sessions()
     assert client.sessions == ()
+    assert client.session.state is other.state is SessionState.CLOSED
 
 
 async def test_failed_creation_does_not_register_session(managed_client: tuple[UaClient, list]) -> None:
