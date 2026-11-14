@@ -10,7 +10,7 @@ import aiosqlite
 
 from asyncua import ua
 
-from ..common.events import Event, get_event_properties_from_type_node
+from ..common.events import Event, select_clauses_from_evtype
 from ..common.sql_injection import validate_table_name
 from ..common.utils import Buffer
 from ..ua.ua_binary import variant_from_binary, variant_to_binary
@@ -239,16 +239,23 @@ class HistorySQLite(HistoryStorageInterface):
         Args:
             evtypes: List of event type nodes
 
-        Returns: List of fields for all event types
+        Returns: List of fields for all event types, named like the fields of the events that the
+        history subscription delivers: the browse path joined with "/" (for example "AckedState/Id"),
+        or the attribute name for clauses without a browse path (the ConditionId of conditions)
         """
-        # get all fields from the event types that are to be historized
-        ev_aggregate_fields = []
-        for event_type in evtypes:
-            ev_aggregate_fields.extend(await get_event_properties_from_type_node(event_type))
+        # The history manager subscribes with a filter built from these same select clauses, so the
+        # columns cover every field an event can carry: properties, variables (such as the states of
+        # conditions and alarms) and the properties of those variables.
         ev_fields = []
-        for field in set(ev_aggregate_fields):
-            ev_fields.append((await field.read_display_name()).Text)
-        return ev_fields
+        for clause in await select_clauses_from_evtype(evtypes):
+            ev_fields.append(self._select_clause_name(clause))
+        return list(dict.fromkeys(ev_fields))
+
+    @staticmethod
+    def _select_clause_name(clause: ua.SimpleAttributeOperand) -> str:
+        if not clause.BrowsePath:
+            return ua.AttributeIds(clause.AttributeId).name
+        return Event.browse_path_to_attribute_name(clause.BrowsePath)
 
     @staticmethod
     def _get_bounds(start: datetime | None, end: datetime | None, nb_values: int) -> tuple[str, str, str, int]:
@@ -296,19 +303,15 @@ class HistorySQLite(HistoryStorageInterface):
     def _get_event_columns(self, ev_fields: list[str]) -> str:
         fields = []
         for field in ev_fields:
-            fields.append(field + " BLOB")
+            fields.append(f'"{field}" BLOB')
         return self._list_to_sql_str(fields, False)
 
     def _get_select_clauses(self, source_id: ua.NodeId, evfilter: Any) -> tuple[list[str], str]:
         s_clauses = []
         for select_clause in evfilter.SelectClauses:
             try:
-                if not select_clause.BrowsePath:
-                    s_clauses.append(select_clause.Attribute.name)
-                else:
-                    name = select_clause.BrowsePath[0].Name
-                    s_clauses.append(name)
-            except AttributeError:
+                s_clauses.append(self._select_clause_name(select_clause))
+            except (AttributeError, ValueError):
                 self.logger.warning(
                     "Historizing SQL OPC UA Select Clause Warning for node %s, Clause: %s:", source_id, select_clause
                 )
