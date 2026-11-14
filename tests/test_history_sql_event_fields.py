@@ -1,9 +1,11 @@
 import asyncio
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from asyncua import Server, ua
+from asyncua import Node, Server, ua
+from asyncua.common.events import Event
 from asyncua.server.history_sql import HistorySQLite
 
 from .conftest import find_free_port
@@ -12,7 +14,7 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def sqlite_server():
+async def sqlite_server() -> AsyncIterator[Server]:
     srv = Server()
     await srv.init()
     srv.set_endpoint(f"opc.tcp://127.0.0.1:{find_free_port()}")
@@ -23,12 +25,12 @@ async def sqlite_server():
         yield srv
 
 
-async def _read_all(node, evtype):
+async def _read_all(node: Node, evtype: Node) -> list[Event]:
     end = datetime.now(UTC) + timedelta(days=1)
     return await node.read_event_history(datetime.now(UTC) - timedelta(days=1), end, 0, [evtype])
 
 
-async def test_event_type_with_variable_is_stored(sqlite_server):
+async def test_event_type_with_variable_is_stored(sqlite_server: Server) -> None:
     srv = sqlite_server
     idx = await srv.register_namespace("urn:test:history")
     etype = await srv._create_custom_type(
@@ -52,11 +54,11 @@ async def test_event_type_with_variable_is_stored(sqlite_server):
 
     events = await _read_all(emitter, etype)
     assert len(events) == 1
-    assert events[0].Temperature == 71.5
-    assert events[0].Station == "S1"
+    assert getattr(events[0], "Temperature") == 71.5
+    assert getattr(events[0], "Station") == "S1"
 
 
-async def test_alarm_states_are_stored(sqlite_server):
+async def test_alarm_states_are_stored(sqlite_server: Server) -> None:
     srv = sqlite_server
     idx = await srv.register_namespace("urn:test:history")
     emitter = await srv.nodes.objects.add_object(idx, "Tank")
@@ -74,16 +76,15 @@ async def test_alarm_states_are_stored(sqlite_server):
 
     events = await _read_all(emitter, alarm_type)
     assert len(events) == 1
-    assert events[0].Severity == 700
+    assert getattr(events[0], "Severity") == 700
     assert getattr(events[0], "ActiveState/Id") is True
 
 
-async def test_select_clause_with_a_browse_path_reads_its_own_column(sqlite_server):
-    history = sqlite_server.iserver.history_manager.storage
+async def test_select_clause_with_a_browse_path_reads_its_own_column() -> None:
     clause = ua.SimpleAttributeOperand(
         BrowsePath=[ua.QualifiedName("ActiveState", 0), ua.QualifiedName("Id", 0)],
         AttributeId=ua.AttributeIds.Value,
     )
     condition_id = ua.SimpleAttributeOperand(AttributeId=ua.AttributeIds.NodeId)
-    assert history._select_clause_name(clause) == "ActiveState/Id"
-    assert history._select_clause_name(condition_id) == "NodeId"
+    assert HistorySQLite._select_clause_name(clause) == "ActiveState/Id"
+    assert HistorySQLite._select_clause_name(condition_id) == "NodeId"

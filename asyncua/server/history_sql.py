@@ -243,9 +243,6 @@ class HistorySQLite(HistoryStorageInterface):
         history subscription delivers: the browse path joined with "/" (for example "AckedState/Id"),
         or the attribute name for clauses without a browse path (the ConditionId of conditions)
         """
-        # The history manager subscribes with a filter built from these same select clauses, so the
-        # columns cover every field an event can carry: properties, variables (such as the states of
-        # conditions and alarms) and the properties of those variables.
         ev_fields = []
         for clause in await select_clauses_from_evtype(evtypes):
             ev_fields.append(self._select_clause_name(clause))
