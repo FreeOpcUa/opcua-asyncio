@@ -19,7 +19,7 @@ from asyncua.common import structures
 from asyncua.common.connection import MessageChunk, SecureConnection, TransportLimits
 from asyncua.common.event_objects import BaseEvent
 from asyncua.common.structures import StructGenerator
-from asyncua.common.structures104 import make_structure
+from asyncua.common.structures104 import clean_name, make_enum, make_structure
 from asyncua.common.ua_utils import string_to_val, val_to_string
 from asyncua.crypto.security_policies import SecurityPolicyNone
 from asyncua.server.monitored_item_service import WhereClauseEvaluator
@@ -1071,6 +1071,17 @@ def test_struct104_mask_bytes_without_optional_fields() -> None:
 
     assert struct_to_binary(cls(Count=7)) == data
     assert struct_from_binary(cls, ua.utils.Buffer(data)).Count == 7
+
+
+def test_enum_field_name_with_surrounding_whitespace() -> None:
+    edef = ua.EnumDefinition()
+    edef.Fields = [ua.EnumField(Name=" LessEqual ", Value=1), ua.EnumField(Name="Greater", Value=2)]
+
+    cls: Any = make_enum("CompareOp", edef, False)["CompareOp"]
+
+    assert cls.LessEqual == 1
+    assert cls.Greater == 2
+    assert clean_name(" Less Equal ") == "Less_Equal"
 
 
 @pytest.mark.parametrize(
