@@ -438,6 +438,8 @@ class XmlExporter:
             await self._val_to_etree(member_el, dtype, val)
 
     async def _val_to_etree(self, el, dtype, val):
+        if val is None:
+            return
         if dtype == ua.NodeId(ua.ObjectIds.NodeId) or dtype == ua.NodeId(ua.ObjectIds.ExpandedNodeId):
             id_el = Et.SubElement(el, "uax:Identifier")
             if val.NamespaceIndex in self._addr_idx_to_xml_idx:
@@ -453,8 +455,6 @@ class XmlExporter:
                 val = ""
             el.text = val.Value
         elif dtype == ua.NodeId(ua.ObjectIds.ByteString):
-            if val is None:
-                val = b""
             data = base64.b64encode(val)
             el.text = data.decode("utf-8")
         elif dtype == ua.NodeId(ua.ObjectIds.QualifiedName):
@@ -474,8 +474,7 @@ class XmlExporter:
             elif isinstance(val, Enum):
                 el.text = str(val.value)
             else:
-                if val is not None:
-                    el.text = str(val)
+                el.text = str(val)
         else:
             await self._all_fields_to_etree(el, val)
 
