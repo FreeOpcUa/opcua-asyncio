@@ -455,7 +455,7 @@ class UaClient:
 
     @property
     def session(self) -> UaSession:
-        """Legacy default session; a null registry key holds it before creation and after closure."""
+        """Return the default session."""
         return self._sessions[self._default_session_id]
 
     @property
