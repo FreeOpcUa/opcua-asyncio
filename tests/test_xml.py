@@ -803,6 +803,24 @@ async def test_xml_struct_optional(opc, tmpdir):
     assert t.MyInt64 == 5
 
 
+async def test_xml_struct_optional_fields_unset_with_value(opc, tmpdir):
+    idx = 1
+    kinds = ("NodeId", "ExpandedNodeId", "QualifiedName", "StatusCode", "XmlElement", "Guid", "Boolean")
+    await new_struct(
+        opc.opc,
+        idx,
+        "MyOptionalUnsetStruct",
+        [new_struct_field("MyInt32", ua.VariantType.Int32)]
+        + [new_struct_field(f"My{kind}", getattr(ua.VariantType, kind), optional=True) for kind in kinds],
+    )
+    await opc.opc.load_data_type_definitions()
+    valnode = await opc.opc.nodes.objects.add_variable(
+        idx, "my_optional_unset", ua.Variant(ua.MyOptionalUnsetStruct(MyInt32=1), ua.VariantType.ExtensionObject)
+    )
+    node2 = await _test_xml_var_type(opc, tmpdir, valnode, "optional_unset")
+    await opc.opc.delete_nodes([node2])
+
+
 async def test_xml_struct_with_value(opc, tmpdir):
     idx = 1
     my_struct, _ = await new_struct(
