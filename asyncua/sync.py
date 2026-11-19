@@ -1229,6 +1229,11 @@ class Subscription:
     def unsubscribe(self, handle: int | Iterable[int]) -> None: ...
 
     @syncmethod
+    def modify_monitored_item(
+        self, handle: int, new_samp_time: ua.Duration, new_queuesize: int = 0, mod_filter_val: int = -1
+    ) -> list[ua.MonitoredItemModifyResult]: ...
+
+    @syncmethod
     def create_monitored_items(
         self, monitored_items: Iterable[ua.MonitoredItemCreateRequest]
     ) -> list[int | ua.StatusCode]: ...

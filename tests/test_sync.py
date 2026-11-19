@@ -252,6 +252,19 @@ def test_sync_sub(client):
     sub.delete()
 
 
+def test_sync_sub_modify_monitored_item(client: Client) -> None:
+    myhandler = MySubHandler()
+    sub = client.create_subscription(1, myhandler)
+    var = client.nodes.objects.add_variable(3, "SubVarModify", 0.1)
+    handle = sub.subscribe_data_change(var, queuesize=1)
+    myhandler.future.result()
+    results = sub.modify_monitored_item(handle, 100, new_queuesize=5)
+    assert results[0].StatusCode.is_good()
+    assert results[0].RevisedSamplingInterval == 100
+    assert results[0].RevisedQueueSize == 5
+    sub.delete()
+
+
 def test_sync_meth(client, idx):
     res = client.nodes.objects.call_method(f"{idx}:Divide", 4, 2)
     assert res == 2
