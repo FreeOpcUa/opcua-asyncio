@@ -1,6 +1,12 @@
+import asyncio
 from datetime import UTC, datetime, timedelta
 
 import pytest
+
+from asyncua import Server, ua
+from asyncua.server.history_sql import HistorySQLite
+
+from .conftest import find_free_port
 
 pytestmark = pytest.mark.asyncio
 
@@ -91,3 +97,34 @@ async def test_history_ev_read_all_filter_order_reversed(history_server):
     assert 20 == len(res)
     assert res[-1].Severity == history_server.ev_values[-1]
     assert res[0].Severity == history_server.ev_values[0]
+
+
+@pytest.mark.parametrize("storage", ["dict", "sqlite"])
+async def test_history_ev_rehistorize_with_new_event_type(storage: str) -> None:
+    srv = Server()
+    await srv.init()
+    srv.set_endpoint(f"opc.tcp://127.0.0.1:{find_free_port()}")
+    if storage == "sqlite":
+        history = HistorySQLite(":memory:")
+        await history.init()
+        srv.iserver.history_manager.set_storage(history)
+    async with srv:
+        idx = await srv.register_namespace("urn:test:rehistorize")
+        evtype = await srv.create_custom_event_type(
+            idx, "RehistorizeEvent", properties=[("Code", ua.VariantType.String)]
+        )
+        node = srv.get_node(ua.ObjectIds.Server)
+        base_evgen = await srv.get_event_generator(emitting_node=node)
+        await srv.historize_node_event(node, period=None)
+        await base_evgen.trigger(message="before")
+        await asyncio.sleep(0.5)
+        evgen = await srv.get_event_generator(evtype, node)
+        await srv.dehistorize_node_event(node)
+        await srv.historize_node_event(node, period=None)
+        evgen.event.Code = "E42"
+        await evgen.trigger(message="after")
+        await asyncio.sleep(0.5)
+        now = datetime.now(UTC)
+        res = await node.read_event_history(now - timedelta(days=1), now + timedelta(days=1), 0, [evtype])
+    fields = [ev.get_event_props_as_fields_dict() for ev in res]
+    assert [(f["Message"].Value.Text, f["Code"].Value) for f in fields] == [("before", None), ("after", "E42")]

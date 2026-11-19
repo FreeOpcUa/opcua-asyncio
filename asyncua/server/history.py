@@ -182,9 +182,7 @@ class HistoryDict(HistoryStorageInterface):
     async def new_historized_event(  # type: ignore[override]
         self, source_id: ua.NodeId, evtypes: list[ua.NodeId], period: timedelta | None, count: int = 0
     ) -> None:
-        if source_id in self._events:
-            raise UaNodeAlreadyHistorizedError(source_id)
-        self._events[source_id] = []
+        self._events.setdefault(source_id, [])
         self._events_periods[source_id] = period, count
 
     async def save_event(self, event: Event) -> None:
@@ -306,11 +304,6 @@ class HistoryManager:
         custom event properties are included. At
         this time there is no way to historize a specific event type. The user software can filter
         out events which are not desired when reading.
-
-        Note that adding custom events to a source node AFTER historizing has been activated is not
-        supported at this time (in SQL history there will be no columns in the SQL table for the new
-        event properties). For SQL The table
-        must be deleted manually so that a new table with the custom event fields can be created.
         """
         if not self._sub:
             self._sub = await self._create_subscription(SubHandler(self.storage))

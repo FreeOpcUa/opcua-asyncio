@@ -158,10 +158,15 @@ class HistorySQLite(HistoryStorageInterface):
         try:
             validate_table_name(table)
             await self._db.execute(
-                f'CREATE TABLE "{table}" '
+                f'CREATE TABLE IF NOT EXISTS "{table}" '
                 f"(_Id INTEGER PRIMARY KEY NOT NULL, _Timestamp TIMESTAMP, _EventTypeName TEXT, {columns})",
                 None,
             )
+            async with self._db.execute(f'PRAGMA table_info("{table}")') as cursor:
+                existing_fields = {row[1] async for row in cursor}
+            for field in ev_fields:
+                if field not in existing_fields:
+                    await self._db.execute(f'ALTER TABLE "{table}" ADD COLUMN "{field}" BLOB')
             await self._db.commit()
         except aiosqlite.Error as e:
             self.logger.info("Historizing SQL Table Creation Error for events from %s: %s", source_id, e)
