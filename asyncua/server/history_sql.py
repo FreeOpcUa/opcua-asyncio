@@ -187,7 +187,7 @@ class HistorySQLite(HistoryStorageInterface):
             date_limit = datetime.now(UTC) - period
             try:
                 validate_table_name(table)
-                await self._db.execute(f'DELETE FROM "{table}" WHERE Time < ?', (date_limit.isoformat(" "),))
+                await self._db.execute(f'DELETE FROM "{table}" WHERE "_Timestamp" < ?', (date_limit.isoformat(" "),))
                 await self._db.commit()
             except aiosqlite.Error as e:
                 self.logger.error("Historizing SQL Delete Old Data Error for events from %s: %s", event.SourceNode, e)  # type: ignore[attr-defined]
