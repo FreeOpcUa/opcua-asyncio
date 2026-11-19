@@ -143,6 +143,7 @@ def clean_name(name: str) -> str:
     Remove characters that might be present in  OPC UA structures
     but cannot be part of Python class names
     """
+    name = (name or "").strip()
     if not name:
         # Some servers expose DataType nodes with a null/empty BrowseName
         return "_"
