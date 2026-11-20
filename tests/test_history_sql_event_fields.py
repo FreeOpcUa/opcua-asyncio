@@ -77,7 +77,15 @@ async def test_alarm_states_are_stored(sqlite_server: Server) -> None:
     events = await _read_all(emitter, alarm_type)
     assert len(events) == 1
     assert getattr(events[0], "Severity") == 700
+    # ActiveState and ActiveState/Id are distinct fields and must round-trip in their own columns
+    assert getattr(events[0], "ActiveState").Text == "Active"
     assert getattr(events[0], "ActiveState/Id") is True
+
+
+def test_quote_identifier_escapes_embedded_double_quote() -> None:
+    # an event field name containing a double quote must not break the generated SQL
+    assert HistorySQLite._quote_identifier('Pre"ss') == '"Pre""ss"'
+    assert HistorySQLite._list_to_sql_str(['a"b', "c"]) == '"a""b", "c"'
 
 
 async def test_select_clause_with_a_browse_path_reads_its_own_column() -> None:

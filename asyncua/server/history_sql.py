@@ -300,7 +300,7 @@ class HistorySQLite(HistoryStorageInterface):
     def _get_event_columns(self, ev_fields: list[str]) -> str:
         fields = []
         for field in ev_fields:
-            fields.append(f'"{field}" BLOB')
+            fields.append(f"{self._quote_identifier(field)} BLOB")
         return self._list_to_sql_str(fields, False)
 
     def _get_select_clauses(self, source_id: ua.NodeId, evfilter: Any) -> tuple[list[str], str]:
@@ -317,6 +317,12 @@ class HistorySQLite(HistoryStorageInterface):
         return clauses, self._list_to_sql_str(clauses)
 
     @staticmethod
+    def _quote_identifier(name: str) -> str:
+        # SQLite escapes a double quote inside a quoted identifier by doubling it; without
+        # this an event field whose name contains a " yields a malformed CREATE/INSERT/SELECT.
+        return '"' + name.replace('"', '""') + '"'
+
+    @staticmethod
     def _list_to_sql_str(ls: list[str], quotes: bool = True) -> str:
-        items = [f'"{item}"' if quotes else str(item) for item in ls]
+        items = [HistorySQLite._quote_identifier(item) if quotes else str(item) for item in ls]
         return ", ".join(items)
