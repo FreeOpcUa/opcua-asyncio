@@ -87,6 +87,11 @@ def test_sync_client(client, idx):
     assert myvar.read_value() == 6.7
 
 
+def test_sync_client_session_id(client: Client) -> None:
+    assert client.session_id is not None
+    assert client.session_id == client.aio_obj.session_id
+
+
 def test_sync_client_set_max_concurrent_requests(client):
     client.set_max_concurrent_requests(3)
     assert client.aio_obj.uaclient._max_concurrent_requests == 3
