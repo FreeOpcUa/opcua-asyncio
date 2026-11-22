@@ -878,10 +878,9 @@ class Subscription:
         :param mod_filter_val: New deadband filter value
         :return: Return a Modify Monitored Item Result
         """
-        # Find the monitored item in the monitored item registry.
-        item_to_change = next(item for item in self._monitored_items.values() if item.server_handle == handle)
-        if not item_to_change:
-            raise ValueError("The monitored item was not found.")
+        item_to_change = next((item for item in self._monitored_items.values() if item.server_handle == handle), None)
+        if item_to_change is None:
+            raise ValueError(f"The monitored item with handle {handle} was not found.")
         if mod_filter_val is None:
             mod_filter = None
         elif mod_filter_val < 0:

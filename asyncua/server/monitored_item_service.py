@@ -101,7 +101,7 @@ class MonitoredItemService:
                 mdata.queue_size = params.RequestedParameters.QueueSize
                 return result
         result = ua.MonitoredItemModifyResult()
-        result.StatusCode(ua.StatusCodes.BadMonitoredItemIdInvalid)
+        result.StatusCode = ua.StatusCode(ua.StatusCodes.BadMonitoredItemIdInvalid)
         return result
 
     def _commit_monitored_item(self, result: ua.MonitoredItemCreateResult, mdata: MonitoredItemData) -> None:
