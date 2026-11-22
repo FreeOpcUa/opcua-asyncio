@@ -285,6 +285,10 @@ class Client:
     def application_uri(self, value: str) -> None:
         self.aio_obj.application_uri = value
 
+    @property
+    def session_id(self) -> ua.NodeId | None:
+        return self.aio_obj.session_id
+
     @syncmethod
     def connect(self) -> None: ...
 

@@ -174,6 +174,15 @@ class Client:
         """Current connection state. Mirrors `self.uaclient.state`."""
         return self.uaclient.state
 
+    @property
+    def session_id(self) -> ua.NodeId | None:
+        """
+        SessionId the server assigned to the default session, or None when no session is open.
+        The server exposes the session's diagnostics under this NodeId.
+        """
+        session = self.uaclient.session
+        return session.session_id if session.has_session else None
+
     def subscribe_state(self) -> StateSubscription:
         """Subscribe to state transitions; see `UaClient.subscribe_state`."""
         return self.uaclient.subscribe_state()

@@ -50,6 +50,16 @@ async def test_variable_anonymous(server, admin_client, client):
     assert await v_ro.read_value() == 2
 
 
+async def test_session_id(server) -> None:
+    client = Client(f"opc.tcp://127.0.0.1:{server.endpoint.port}")
+    assert client.session_id is None
+    async with client:
+        assert isinstance(client.session_id, ua.NodeId)
+        assert not client.session_id.is_null()
+        assert client.session_id == client.uaclient.session.session_id
+    assert client.session_id is None
+
+
 async def test_context_manager(server):
     """Context manager calls connect() and disconnect()"""
     state = [0]
