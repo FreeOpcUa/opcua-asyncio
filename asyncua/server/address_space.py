@@ -582,7 +582,6 @@ class NodeManagementService:
         self._add_node_attr(node_attributes, nodedata, "Symmetric", ua.VariantType.Boolean)
         self._add_node_attr(node_attributes, nodedata, "UserAccessLevel", ua.VariantType.Byte)
         self._add_node_attr(node_attributes, nodedata, "UserExecutable", ua.VariantType.Boolean)
-        self._add_node_attr(node_attributes, nodedata, "UserWriteMask", ua.VariantType.Byte)
         self._add_node_attr(node_attributes, nodedata, "ValueRank", ua.VariantType.Int32)
         self._add_node_attr(node_attributes, nodedata, "WriteMask", ua.VariantType.UInt32)
         self._add_node_attr(node_attributes, nodedata, "UserWriteMask", ua.VariantType.UInt32)
