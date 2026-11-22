@@ -107,6 +107,34 @@ is created and, similar to the objects and variables, registered on the server. 
 also be possible to register a undecorated function on the server, but in this case the
 conversion from and to UA Variant types would be up to us.
 
+Passing only a :class:`~asyncua.ua.VariantType` per argument, as above, gives the arguments
+no names, so clients such as UaExpert show them without a label. To give arguments a name and
+a description, pass :class:`~asyncua.ua.Argument` instances instead:
+
+.. code-block:: python
+
+    value_arg = ua.Argument(
+        Name="value",
+        DataType=ua.NodeId(ua.ObjectIds.Int64),
+        ValueRank=-1,
+        Description=ua.LocalizedText("Value to double"),
+    )
+    result_arg = ua.Argument(
+        Name="result",
+        DataType=ua.NodeId(ua.ObjectIds.Int64),
+        ValueRank=-1,
+        Description=ua.LocalizedText("Twice the input value"),
+    )
+    await server.nodes.objects.add_method(
+        ua.NodeId("ServerMethod", idx),
+        ua.QualifiedName("ServerMethod", idx),
+        func,
+        [value_arg],
+        [result_arg],
+    )
+
+Both forms can be mixed in the same list.
+
 Starting the Server
 ===================
 
