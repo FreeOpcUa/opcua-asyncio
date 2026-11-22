@@ -252,6 +252,28 @@ def test_sync_sub(client):
     sub.delete()
 
 
+def test_sync_sub_deadband_and_modes(client: Client) -> None:
+    myhandler = MySubHandler()
+    sub = client.create_subscription(1, myhandler)
+    var = client.nodes.objects.add_variable(3, "SubVarDeadband", 1.0)
+    handle = sub.deadband_monitor(var, 10.0)
+    assert isinstance(handle, int)
+    myhandler.future.result()
+    assert all(status.is_good() for status in sub.set_monitoring_mode(ua.MonitoringMode.Disabled))
+    assert all(status.is_good() for status in sub.set_monitoring_mode(ua.MonitoringMode.Reporting))
+    assert all(status.is_good() for status in sub.set_publishing_mode(False))
+    assert all(status.is_good() for status in sub.set_publishing_mode(True))
+    sub.delete()
+
+
+def test_sync_sub_alarms_and_conditions(client: Client) -> None:
+    myhandler = MySubHandler()
+    sub = client.create_subscription(1, myhandler)
+    handle = sub.subscribe_alarms_and_conditions(client.nodes.server)
+    assert isinstance(handle, int)
+    sub.delete()
+
+
 def test_sync_meth(client, idx):
     res = client.nodes.objects.call_method(f"{idx}:Divide", 4, 2)
     assert res == 2
