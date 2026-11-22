@@ -82,6 +82,9 @@ def test_add_node_stores_write_masks_as_uint32() -> None:
     assert list(node_mgt_service.try_add_nodes([item], check=False)) == []
     attributes = aspace[ua.NodeId(1, 1)].attributes
     for attr_id, expected in ((ua.AttributeIds.WriteMask, 0x1234), (ua.AttributeIds.UserWriteMask, 0x5678)):
-        variant = attributes[attr_id].value.Value
+        data_value = attributes[attr_id].value
+        assert data_value is not None
+        variant = data_value.Value
+        assert variant is not None
         assert variant.VariantType == ua.VariantType.UInt32
         assert variant.Value == expected
