@@ -1,6 +1,10 @@
+import asyncio
 from datetime import UTC, datetime, timedelta
 
 import pytest
+
+from asyncua import Server, ua
+from asyncua.server.history_sql import HistorySQLite
 
 pytestmark = pytest.mark.asyncio
 
@@ -91,3 +95,33 @@ async def test_history_ev_read_all_filter_order_reversed(history_server):
     assert 20 == len(res)
     assert res[-1].Severity == history_server.ev_values[-1]
     assert res[0].Severity == history_server.ev_values[0]
+
+
+async def test_history_sqlite_event_type_with_variable():
+    """Events whose type has variables (not only properties) are stored (#2077)."""
+    srv = Server()
+    await srv.init()
+    history = HistorySQLite(":memory:")
+    await history.init()
+    srv.iserver.history_manager.set_storage(history)
+    try:
+        etype = await srv.create_custom_event_type(
+            2, "MyVariableEvent", ua.ObjectIds.BaseEventType, [("Level", ua.VariantType.Int32)]
+        )
+        await etype.add_variable(2, "Temperature", 0.0)
+        source = await srv.nodes.objects.add_object(2, "Boiler")
+        await source.set_event_notifier([ua.EventNotifier.SubscribeToEvents, ua.EventNotifier.HistoryRead])
+        evgen = await srv.get_event_generator(etype, source)
+        await srv.historize_node_event(source, period=None)
+
+        evgen.event.Level = 3
+        evgen.event.Temperature = 21.5
+        await evgen.trigger(message="hot")
+        await asyncio.sleep(0.5)
+
+        res = await source.read_event_history(None, None, 0, [etype])
+        assert len(res) == 1
+        assert res[0].Level == 3
+        assert res[0].Message.Text == "hot"
+    finally:
+        await history.stop()

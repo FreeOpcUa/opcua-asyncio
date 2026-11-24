@@ -283,6 +283,12 @@ class HistorySQLite(HistoryStorageInterface):
         placeholders = []
         ev_variant_binaries = []
         ev_variant_dict = event.get_event_props_as_fields_dict()
+        # The table only has columns for the event type properties (see new_historized_event),
+        # but the event also carries the type's variables, e.g. AckedState of an alarm.
+        # Store the fields that have a column instead of failing the whole insert.
+        ev_fields = self._event_fields.get(event.SourceNode)  # type: ignore[attr-defined]
+        if ev_fields is not None:
+            ev_variant_dict = {name: v for name, v in ev_variant_dict.items() if name in ev_fields}
         names = list(ev_variant_dict.keys())
         names.sort()  # sort alphabetically since dict is not sorted
         # split dict into two synchronized lists which will be converted to SQL strings
