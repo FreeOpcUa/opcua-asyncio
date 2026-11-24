@@ -271,7 +271,9 @@ class MonitoredItemService:
             mdata = self._monitored_items[mid]
             if mdata.mode == ua.MonitoringMode.Disabled:
                 return
-            mdata.mvalue.set_current_datavalue(value)
+            # Set current value without updating old_dvalue yet
+            mdata.mvalue.current_dvalue = copy.deepcopy(value)
+            # Keep old_dvalue as is for the deadband check
             if mdata.filter:
                 deadband_flag_pass = self._is_data_changed(
                     mdata.mvalue, mdata.filter.Trigger
@@ -283,6 +285,9 @@ class MonitoredItemService:
                 event.ClientHandle = mdata.client_handle
                 event.Value = value
                 await self.isub.enqueue_datachange_event(mid, event, mdata.queue_size)
+                # After reporting the value, update old_dvalue to this reported value
+                # so the next comparison uses the last REPORTED value, not any intermediate values
+                mdata.mvalue.old_dvalue = copy.deepcopy(value)
 
     def _is_deadband_exceeded(self, values: MonitoredItemValues, flt: ua.DataChangeFilter) -> bool:
         cur = values.get_current_datavalue()
