@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from threading import Condition, Thread
 from types import TracebackType
-from typing import Any, Literal, TypeVar, overload
+from typing import Any, Literal, Self, TypeVar, overload
 
 from cryptography import x509
 
@@ -43,31 +43,31 @@ class ThreadLoop(Thread):
             self._cond.wait()
 
     def run(self) -> None:
-        self.loop = asyncio.new_event_loop()
-        _logger.debug("Threadloop: %s", self.loop)
-        self.loop.call_soon_threadsafe(self._notify_start)
-        self.loop.run_forever()
+        with asyncio.Runner() as runner:
+            self.loop = runner.get_loop()
+            _logger.debug("Threadloop: %s", self.loop)
+            self.loop.call_soon_threadsafe(self._notify_start)
+            self.loop.run_forever()
 
     def _notify_start(self) -> None:
         with self._cond:
             self._cond.notify_all()
 
     def stop(self) -> None:
-        if self.loop is None:
+        if self.loop is None or self.loop.is_closed():
             return
         self.loop.call_soon_threadsafe(self.loop.stop)
         self.join()
-        self.loop.close()
 
     def post(self, coro: Coroutine[Any, Any, _T]) -> _T:
         if not self.loop or not self.loop.is_running() or not self.is_alive():
             raise ThreadLoopNotRunning(
                 f"could not post {coro} since asyncio loop in thread has not been started or has been stopped"
             )
-        futur = asyncio.run_coroutine_threadsafe(coro, loop=self.loop)
-        return futur.result(self.timeout)
+        future = asyncio.run_coroutine_threadsafe(coro, loop=self.loop)
+        return future.result(self.timeout)
 
-    def __enter__(self) -> ThreadLoop:
+    def __enter__(self) -> Self:
         self.start()
         return self
 
@@ -511,7 +511,7 @@ class Client:
         self, starting_node: ua.NodeId, relative_paths: Iterable[ua.RelativePath | str]
     ) -> list[ua.BrowsePathResult]: ...
 
-    def __enter__(self) -> Client:
+    def __enter__(self) -> Self:
         try:
             self.connect()
         except Exception as ex:
@@ -611,7 +611,7 @@ class SyncRCServer:
             watchdog_intervall=watchdog_intervall,
         )
 
-    def __enter__(self) -> "SyncRCServer":
+    def __enter__(self) -> Self:
         self.start()
         return self
 
@@ -689,7 +689,7 @@ class Server:
 
     __repr__ = __str__
 
-    def __enter__(self) -> Server:
+    def __enter__(self) -> Self:
         self.start()
         return self
 
@@ -1167,13 +1167,13 @@ class Subscription:
         self.tloop: ThreadLoop = tloop
         self.aio_obj: subscription.Subscription = sub
 
-    def __enter__(self) -> Subscription:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, exc_type: Any, exc_value: Any, tb: Any) -> None:
         self.delete()
 
-    def __iter__(self) -> Subscription:
+    def __iter__(self) -> Self:
         return self
 
     def __next__(self) -> subscription.SubEvent:
