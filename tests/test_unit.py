@@ -22,7 +22,7 @@ from asyncua.common.structures import StructGenerator
 from asyncua.common.structures104 import clean_name, make_enum, make_structure
 from asyncua.common.ua_utils import string_to_val, val_to_string
 from asyncua.crypto.security_policies import SecurityPolicyNone
-from asyncua.server.monitored_item_service import WhereClauseEvaluator
+from asyncua.server.monitored_item_service import MonitoredItemData, MonitoredItemService, WhereClauseEvaluator
 from asyncua.ua import flatten, get_shape, ua_binary
 from asyncua.ua.ua_binary import (
     _reshape,
@@ -1633,3 +1633,25 @@ def test_client_sends_what_the_server_receives_and_receives_what_it_sends(initia
     limits.update_client_limits(ack)
 
     assert (limits.max_recv_buffer, limits.max_send_buffer) == (65535, 8192)
+
+
+async def test_absolute_deadband_compares_against_last_reported_value() -> None:
+    reported: list[float] = []
+
+    class FakeSubscription:
+        data = ua.CreateSubscriptionResult(SubscriptionId=1)
+
+        async def enqueue_datachange_event(self, mid: int, event: ua.MonitoredItemNotification, size: int) -> None:
+            reported.append(event.Value.Value.Value)
+
+    service = MonitoredItemService(cast(Any, FakeSubscription()), cast(Any, None))
+    mdata = MonitoredItemData()
+    mdata.mode = ua.MonitoringMode.Reporting
+    mdata.filter = ua.DataChangeFilter(
+        Trigger=ua.DataChangeTrigger.StatusValue, DeadbandType=ua.DeadbandType.Absolute, DeadbandValue=2
+    )
+    service._monitored_items[1] = mdata
+    service._monitored_datachange[10] = 1
+    for value in (0.0, 1.0, 2.0, 3.0, 4.0, 6.0):
+        await service.datachange_callback(10, ua.DataValue(ua.Variant(value, ua.VariantType.Double)))
+    assert reported == [0.0, 3.0, 6.0]
