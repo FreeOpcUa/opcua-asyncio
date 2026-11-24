@@ -583,6 +583,26 @@ async def test_modify_monitored_item(opc):
     await sub.delete()
 
 
+async def test_modify_monitored_item_unknown_server_id(opc: Opc) -> None:
+    sub = await opc.opc.create_subscription(1000, MySubHandler())
+    modify = ua.MonitoredItemModifyRequest()
+    modify.MonitoredItemId = 999999
+    params = ua.ModifyMonitoredItemsParameters()
+    params.SubscriptionId = sub.subscription_id
+    params.ItemsToModify.append(modify)
+    results = await sub.server.modify_monitored_items(params)
+    assert len(results) == 1
+    assert results[0].StatusCode.value == ua.StatusCodes.BadMonitoredItemIdInvalid
+    await sub.delete()
+
+
+async def test_modify_monitored_item_unknown_handle(opc: Opc) -> None:
+    sub = await opc.opc.create_subscription(1000, MySubHandler())
+    with pytest.raises(ValueError):
+        await sub.modify_monitored_item(999999, 2000)
+    await sub.delete()
+
+
 async def test_create_delete_subscription(opc):
     o = opc.opc.nodes.objects
     v = await o.add_variable(3, "SubscriptionVariable4", [1, 2, 3])
