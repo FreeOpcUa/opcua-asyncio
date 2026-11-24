@@ -10,8 +10,6 @@ from asyncua.server.history_sql import HistorySQLite
 
 from .conftest import find_free_port
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 async def sqlite_server() -> AsyncIterator[Server]:
