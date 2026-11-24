@@ -1243,6 +1243,35 @@ class Subscription:
     ) -> list[int | ua.StatusCode]: ...
 
     @syncmethod
+    def subscribe_alarms_and_conditions(
+        self,
+        sourcenode: SyncNode | ua.NodeId | str | int = ua.ObjectIds.Server,
+        evtypes: SyncNode
+        | ua.NodeId
+        | str
+        | int
+        | Iterable[SyncNode | ua.NodeId | str | int] = ua.ObjectIds.ConditionType,
+        evfilter: ua.EventFilter | None = None,
+        queuesize: int = 0,
+    ) -> int: ...
+
+    @syncmethod
+    def deadband_monitor(
+        self,
+        var: SyncNode | Iterable[SyncNode],
+        deadband_val: ua.Double,
+        deadbandtype: ua.UInt32 = 1,
+        queuesize: int = 0,
+        attr: ua.AttributeIds = ua.AttributeIds.Value,
+    ) -> int | list[int | ua.StatusCode]: ...
+
+    @syncmethod
+    def set_monitoring_mode(self, monitoring: ua.MonitoringMode) -> list[ua.StatusCode]: ...
+
+    @syncmethod
+    def set_publishing_mode(self, publishing: bool) -> list[ua.StatusCode]: ...
+
+    @syncmethod
     def delete(self) -> None: ...
 
 
