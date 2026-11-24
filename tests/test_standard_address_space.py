@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from asyncua import ua
 from asyncua.server.address_space import AddressSpace, NodeManagementService
 from asyncua.server.standard_address_space import standard_address_space
 
@@ -64,3 +65,26 @@ def test_std_address_space_references():
             for r in find_elem(std_nodes[k.to_string()], "References")
         )
         assert 0 == len(xml_refs - refs)
+
+
+def test_add_node_stores_write_masks_as_uint32() -> None:
+    aspace = AddressSpace()
+    node_mgt_service = NodeManagementService(aspace)
+    attrs = ua.ObjectAttributes()
+    attrs.WriteMask = 0x1234
+    attrs.UserWriteMask = 0x5678
+    attrs.SpecifiedAttributes = ua.NodeAttributesMask.WriteMask | ua.NodeAttributesMask.UserWriteMask
+    item = ua.AddNodesItem()
+    item.RequestedNewNodeId = ua.NodeId(1, 1)
+    item.BrowseName = ua.QualifiedName("Obj", 1)
+    item.NodeClass = ua.NodeClass.Object
+    item.NodeAttributes = attrs
+    assert list(node_mgt_service.try_add_nodes([item], check=False)) == []
+    attributes = aspace[ua.NodeId(1, 1)].attributes
+    for attr_id, expected in ((ua.AttributeIds.WriteMask, 0x1234), (ua.AttributeIds.UserWriteMask, 0x5678)):
+        data_value = attributes[attr_id].value
+        assert data_value is not None
+        variant = data_value.Value
+        assert variant is not None
+        assert variant.VariantType == ua.VariantType.UInt32
+        assert variant.Value == expected
