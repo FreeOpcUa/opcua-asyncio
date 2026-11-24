@@ -318,8 +318,6 @@ class HistorySQLite(HistoryStorageInterface):
 
     @staticmethod
     def _quote_identifier(name: str) -> str:
-        # SQLite escapes a double quote inside a quoted identifier by doubling it; without
-        # this an event field whose name contains a " yields a malformed CREATE/INSERT/SELECT.
         return '"' + name.replace('"', '""') + '"'
 
     @staticmethod
