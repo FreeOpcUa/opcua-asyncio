@@ -679,6 +679,21 @@ async def test_variable_data_type(opc):
     await opc.opc.delete_nodes([var])
 
 
+async def test_variant_array_variable_data_type(opc):
+    objects = opc.opc.nodes.objects
+    empty = await objects.add_variable(3, "emptyvariantarray", ua.Variant([], ua.VariantType.Variant))
+    mixed = await objects.add_variable(
+        3,
+        "mixedvariantarray",
+        ua.Variant([ua.Variant(1, ua.VariantType.Int32), ua.Variant("a")], ua.VariantType.Variant),
+    )
+    assert ua.NodeId(ua.ObjectIds.BaseDataType) == await empty.read_data_type()
+    assert ua.NodeId(ua.ObjectIds.BaseDataType) == await mixed.read_data_type()
+    assert [] == await empty.read_value()
+    assert [ua.Variant(1, ua.VariantType.Int32), ua.Variant("a")] == await mixed.read_value()
+    await opc.opc.delete_nodes([empty, mixed])
+
+
 async def test_add_string_array_variable(opc):
     objects = opc.opc.nodes.objects
     v = await objects.add_variable("ns=3;s=stringarrayid", "9:stringarray", ["l", "b"])
