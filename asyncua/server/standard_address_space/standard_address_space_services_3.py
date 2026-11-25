@@ -6,7 +6,7 @@ Model Uri:http://opcfoundation.org/UA/
 Version:1.05.07
 Publication date:2026-07-30T00:00:00Z
 
-File creation Date:2026-11-03 20:44:00.860384+00:00
+File creation Date:2026-11-25 10:24:28.912733+00:00
 """
 import datetime
 from dateutil.tz import tzutc
@@ -150,7 +150,7 @@ def create_standard_address_space_Services_3(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("<FieldName>"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -166,7 +166,7 @@ def create_standard_address_space_Services_3(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("<OptionalFieldName>"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -352,7 +352,7 @@ def create_standard_address_space_Services_3(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("Id"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -384,7 +384,7 @@ def create_standard_address_space_Services_3(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("Id"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -416,7 +416,7 @@ def create_standard_address_space_Services_3(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("Id"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -446,7 +446,7 @@ def create_standard_address_space_Services_3(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("OldStateId"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -462,7 +462,7 @@ def create_standard_address_space_Services_3(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("NewStateId"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -6611,7 +6611,7 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=False,
         DisplayName=LocalizedText("DataItemType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-2,
         )
     node = ua.AddNodesItem(
@@ -6929,7 +6929,7 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=True,
         DisplayName=LocalizedText("DiscreteItemType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-2,
         )
     node = ua.AddNodesItem(
@@ -7075,7 +7075,7 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=True,
         DisplayName=LocalizedText("ArrayItemType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(12021, 0),
@@ -7170,7 +7170,7 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=False,
         DisplayName=LocalizedText("YArrayItemType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )
@@ -7236,7 +7236,7 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=False,
         DisplayName=LocalizedText("ImageItemType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=2,
         ArrayDimensions=[0, 0],
         )
@@ -7285,7 +7285,7 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=False,
         DisplayName=LocalizedText("CubeItemType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=3,
         ArrayDimensions=[0, 0, 0],
         )
@@ -7350,7 +7350,7 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=False,
         DisplayName=LocalizedText("NDimensionArrayItemType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         )
     node = ua.AddNodesItem(
         RequestedNewNodeId=NumericNodeId(12068, 0),
@@ -8050,7 +8050,7 @@ def create_standard_address_space_Services_3(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=False,
         DisplayName=LocalizedText("ConditionVariableType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-2,
         )
     node = ua.AddNodesItem(

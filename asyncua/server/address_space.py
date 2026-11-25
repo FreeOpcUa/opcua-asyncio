@@ -885,6 +885,7 @@ class AddressSpace:
                 and dtype.NamespaceIndex == 0
                 and isinstance(dtype.Identifier, int)
                 and dtype.Identifier <= 25
+                and dtype.Identifier != ua.ObjectIds.BaseDataType
             ):
                 vtype = ua.VariantType(dtype.Identifier)
             else:

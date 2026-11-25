@@ -243,7 +243,7 @@ class CodeGenerator:
     @staticmethod
     def to_data_type(nodeid: str | None) -> str:
         if not nodeid:
-            return "ua.NodeId(ua.ObjectIds.String)"
+            return "ua.NodeId(ua.ObjectIds.BaseDataType)"
         if "=" in nodeid:
             return nodeid_code(nodeid)
         else:

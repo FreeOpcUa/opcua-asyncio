@@ -6,7 +6,7 @@ Model Uri:http://opcfoundation.org/UA/
 Version:1.05.07
 Publication date:2026-07-30T00:00:00Z
 
-File creation Date:2026-11-03 20:44:00.992148+00:00
+File creation Date:2026-11-25 10:24:28.997474+00:00
 """
 import datetime
 from dateutil.tz import tzutc
@@ -6165,7 +6165,7 @@ def create_standard_address_space_Services_4(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("LastMethodInputValues"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )
@@ -6182,7 +6182,7 @@ def create_standard_address_space_Services_4(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("LastMethodOutputValues"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )
@@ -6741,7 +6741,7 @@ def create_standard_address_space_Services_4(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("IntermediateResult"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -6945,7 +6945,7 @@ def create_standard_address_space_Services_4(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("LastMethodInputArguments"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )
@@ -6962,7 +6962,7 @@ def create_standard_address_space_Services_4(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("LastMethodOutputArguments"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )
@@ -7157,7 +7157,7 @@ def create_standard_address_space_Services_4(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("LastMethodInputValues"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )
@@ -7174,7 +7174,7 @@ def create_standard_address_space_Services_4(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("LastMethodOutputValues"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )

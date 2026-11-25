@@ -27,6 +27,7 @@ from asyncua.common.event_objects import (
     AuditSecurityEvent,
     BaseEvent,
 )
+from asyncua.common.statemachine import State, StateMachine, Transition
 from asyncua.common.utils import Buffer
 from asyncua.server.uaprocessor import UaProcessor
 from asyncua.ua.ua_binary import struct_from_binary, uatcp_to_binary
@@ -1093,3 +1094,35 @@ async def test_server_closes_the_connection_on_a_hello_below_the_minimum_buffer_
 
     async with Client(url) as client:
         assert await client.nodes.server_state.read_value() is not None
+
+
+@pytest.mark.parametrize(
+    "nodeid",
+    [
+        ua.ObjectIds.BaseVariableType,
+        ua.ObjectIds.BaseDataVariableType,
+        ua.ObjectIds.PropertyType,
+        ua.ObjectIds.StateVariableType_Id,
+        ua.ObjectIds.TransitionVariableType_Id,
+    ],
+)
+async def test_standard_variable_without_datatype_defaults_to_base_data_type(server: Server, nodeid: int) -> None:
+    datatype = await server.get_node(ua.NodeId(nodeid)).read_data_type()
+    assert datatype == ua.NodeId(ua.ObjectIds.BaseDataType)
+
+
+async def test_statemachine_change_state(server: Server) -> None:
+    idx = await server.register_namespace("http://test.statemachine")
+    statemachine = StateMachine(server, server.nodes.objects, idx, "TestStateMachine")
+    await statemachine.install(optionals=True)
+    state = State("State-Id-1", "Idle", 1)
+    await statemachine.add_state(state, state_type=ua.NodeId(ua.ObjectIds.InitialStateType))
+    transition = Transition("Transition-Id-1", "to Idle", 1)
+    await statemachine.add_transition(transition)
+    await statemachine.change_state(state, transition)
+    statemachine_node = await server.nodes.objects.get_child(f"{idx}:TestStateMachine")
+    current_state_id = await statemachine_node.get_child(["0:CurrentState", "0:Id"])
+    last_transition_id = await statemachine_node.get_child(["0:LastTransition", "0:Id"])
+    assert await current_state_id.read_value() == state.node.nodeid
+    assert await last_transition_id.read_value() == transition.node.nodeid
+    await server.delete_nodes([statemachine_node], recursive=True)
