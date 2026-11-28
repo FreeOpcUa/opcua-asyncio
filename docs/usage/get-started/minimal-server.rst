@@ -45,6 +45,16 @@ the server. The following session gives you an idea how the tools can be used.
     $ uaread --url=opc.tcp://127.0.0.1:4840 --path "0:Objects,2:MyObject,2:MyVariable" # By BrowsePath
     12.199999999999996
 
+Use :code:`uacall` to call the server's method. Pass the parent node ID
+(:code:`i=85` for Objects) to :code:`--nodeid` and the method's qualified browse
+name (:code:`2:ServerMethod` in the listing above) to :code:`--method`.
+The method doubles its input, so passing :code:`3` returns :code:`6`.
+
+.. code-block:: console
+
+    $ uacall --url=opc.tcp://127.0.0.1:4840 --nodeid i=85 --method 2:ServerMethod 3
+    resulting result_variants=6
+
 Seems like our server is working and we can browse through the nodes, read values, ...
 So let's start working through the code!
 
