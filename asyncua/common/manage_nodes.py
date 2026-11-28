@@ -556,6 +556,8 @@ def _guess_datatype(variant: ua.Variant) -> ua.NodeId:
         if extobj.__class__ in ua.datatype_by_extension_object:
             return ua.datatype_by_extension_object[extobj.__class__]
         raise ua.UaError(f"Cannot guess DataType of {variant} of python type {type(variant)}")
+    if variant.VariantType == ua.VariantType.Variant:
+        return ua.NodeId(ua.ObjectIds.BaseDataType)
     return ua.NodeId(getattr(ua.ObjectIds, variant.VariantType.name))
 
 
