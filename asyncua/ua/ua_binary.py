@@ -725,7 +725,7 @@ def extensionobject_to_binary(obj: Any) -> bytes:
         nodeid_to_binary(type_id),
         Primitives.Byte.pack(encoding),
     ]
-    if body:
+    if body is not None:
         packet.append(Primitives.Bytes.pack(body))
     return b"".join(packet)
 
