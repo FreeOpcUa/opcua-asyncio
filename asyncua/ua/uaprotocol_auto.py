@@ -2714,6 +2714,23 @@ class PortableQualifiedName:
 
 
 @dataclass(slots=True)
+class PortableNodeId:
+    """
+    https://reference.opcfoundation.org/v105/Core/docs/Part5/12.38
+
+    :ivar NamespaceUri:
+    :vartype NamespaceUri: String
+    :ivar Identifier:
+    :vartype Identifier: NodeId
+    """
+
+    data_type = NodeId(ObjectIds.PortableNodeId)
+
+    NamespaceUri: 'ua.String' = None
+    Identifier: 'ua.NodeId' = field(default_factory=lambda: NodeId())
+
+
+@dataclass(slots=True)
 class UnsignedRationalNumber:
     """
     https://reference.opcfoundation.org/v105/Core/docs/Part5/12.40
@@ -10789,6 +10806,9 @@ typeid_by_extension_objects[SimpleTypeDescription] = nid
 nid = FourByteNodeId(ObjectIds.PortableQualifiedName_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = PortableQualifiedName
 typeid_by_extension_objects[PortableQualifiedName] = nid
+nid = FourByteNodeId(ObjectIds.PortableNodeId_Encoding_DefaultBinary)
+extension_objects_by_typeid[nid] = PortableNodeId
+typeid_by_extension_objects[PortableNodeId] = nid
 nid = FourByteNodeId(ObjectIds.UnsignedRationalNumber_Encoding_DefaultBinary)
 extension_objects_by_typeid[nid] = UnsignedRationalNumber
 typeid_by_extension_objects[UnsignedRationalNumber] = nid

@@ -1434,6 +1434,17 @@ def test_extension_object_with_empty_body_roundtrip():
     assert extensionobject_from_binary(ua.utils.Buffer(extensionobject_to_binary(group))) == group
 
 
+def test_alias_category_update_with_portable_node_id_roundtrip():
+    """AliasCategoryUpdateDataType has a PortableNodeId field, so PortableNodeId must be generated."""
+    obj = ua.AliasCategoryUpdateDataType(
+        Category=ua.PortableNodeId(NamespaceUri="http://example.org/UA/", Identifier=ua.NodeId(42, 0)),
+        LastChange=7,
+    )
+    data = extensionobject_to_binary(obj)
+    assert extensionobject_from_binary(ua.utils.Buffer(data)) == obj
+    assert ua.AliasCategoryUpdateDataType().Category == ua.PortableNodeId()
+
+
 def test_builtin_type_variant():
     v = ua.Variant(ua.Int16(4))
     assert v.VariantType == ua.VariantType.Int16

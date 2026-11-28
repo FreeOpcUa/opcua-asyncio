@@ -49,7 +49,7 @@ class CodeGenerator:
         for struct in self.model.structs:
             if struct.name in IgnoredStructs:
                 continue
-            if struct.name.endswith("Node") or struct.name.endswith("NodeId"):
+            if struct.name.endswith("Node"):
                 continue
             self.generate_struct_code(struct)
 
@@ -67,7 +67,7 @@ class CodeGenerator:
         for struct in self.model.structs:
             if struct.name in IgnoredStructs:
                 continue
-            if struct.name.endswith("Node") or struct.name.endswith("NodeId"):
+            if struct.name.endswith("Node"):
                 continue
             if struct.do_not_register:
                 continue
