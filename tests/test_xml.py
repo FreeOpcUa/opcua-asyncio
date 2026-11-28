@@ -855,6 +855,27 @@ async def test_xml_struct_with_value(opc, tmpdir):
     assert value == imported_value
 
 
+async def test_xml_struct_bytestring_fields(opc, tmpdir):
+    idx = 1
+    await new_struct(
+        opc.opc,
+        idx,
+        "MyBytesStruct",
+        [
+            new_struct_field("MyBytes", ua.VariantType.ByteString),
+            new_struct_field("MyBytesList", ua.VariantType.ByteString, array=True),
+        ],
+    )
+    await opc.opc.load_data_type_definitions()
+    value = ua.MyBytesStruct(MyBytes=b"\x00\xffab", MyBytesList=[b"cd", b"\x01\x02"])
+    valnode = await opc.opc.nodes.objects.add_variable(
+        idx, "my_bytes_struct", ua.Variant(value, ua.VariantType.ExtensionObject)
+    )
+    node2 = await _test_xml_var_type(opc, tmpdir, valnode, "struct_bytestring")
+    assert (await node2.read_value()) == value
+    await opc.opc.delete_nodes([node2])
+
+
 async def test_xml_struct_in_struct_with_value(opc, tmpdir):
     idx = 1
     inner_struct, _ = await new_struct(

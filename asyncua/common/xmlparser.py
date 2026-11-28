@@ -19,6 +19,9 @@ def ua_type_to_python(val, uatype_as_str):
     """
     Converts a string value to a python value according to ua_utils.
     """
+    if uatype_as_str == "ByteString":
+        # XML encodes a ByteString as xs:base64Binary
+        return base64.b64decode(val)
     if hasattr(ua.VariantType, uatype_as_str):
         return string_to_val(val, getattr(ua.VariantType, uatype_as_str))
     if hasattr(ua, uatype_as_str):
