@@ -6,7 +6,7 @@ Model Uri:http://opcfoundation.org/UA/
 Version:1.05.07
 Publication date:2026-07-30T00:00:00Z
 
-File creation Date:2026-11-03 20:44:00.294253+00:00
+File creation Date:2026-11-25 10:24:28.626273+00:00
 """
 import datetime
 from dateutil.tz import tzutc
@@ -946,7 +946,7 @@ def create_standard_address_space_Services_1(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=True,
         DisplayName=LocalizedText("BaseVariableType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-2,
         )
     node = ua.AddNodesItem(
@@ -960,7 +960,7 @@ def create_standard_address_space_Services_1(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=False,
         DisplayName=LocalizedText("BaseDataVariableType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-2,
         )
     node = ua.AddNodesItem(
@@ -976,7 +976,7 @@ def create_standard_address_space_Services_1(server):
     attrs = ua.VariableTypeAttributes(
         IsAbstract=False,
         DisplayName=LocalizedText("PropertyType"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-2,
         )
     node = ua.AddNodesItem(
@@ -3345,7 +3345,7 @@ def create_standard_address_space_Services_1(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("<VendorCapability>"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(

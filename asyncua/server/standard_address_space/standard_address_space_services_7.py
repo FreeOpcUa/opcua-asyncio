@@ -6,7 +6,7 @@ Model Uri:http://opcfoundation.org/UA/
 Version:1.05.07
 Publication date:2026-07-30T00:00:00Z
 
-File creation Date:2026-11-03 20:44:01.390501+00:00
+File creation Date:2026-11-25 10:24:29.233320+00:00
 """
 import datetime
 from dateutil.tz import tzutc
@@ -532,7 +532,7 @@ def create_standard_address_space_Services_7(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("PublisherId"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -564,7 +564,7 @@ def create_standard_address_space_Services_7(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("Selections"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )
@@ -629,7 +629,7 @@ def create_standard_address_space_Services_7(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("Selections"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )
@@ -5402,7 +5402,7 @@ def create_standard_address_space_Services_7(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("<ExtensionFieldName>"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -6949,7 +6949,7 @@ def create_standard_address_space_Services_7(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("PublisherId"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=-1,
         )
     node = ua.AddNodesItem(
@@ -6981,7 +6981,7 @@ def create_standard_address_space_Services_7(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("Selections"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )
@@ -7046,7 +7046,7 @@ def create_standard_address_space_Services_7(server):
 
     attrs = ua.VariableAttributes(
         DisplayName=LocalizedText("Selections"),
-        DataType=ua.NodeId(ua.ObjectIds.String),
+        DataType=ua.NodeId(ua.ObjectIds.BaseDataType),
         ValueRank=1,
         ArrayDimensions=[0],
         )
