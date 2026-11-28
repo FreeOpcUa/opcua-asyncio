@@ -1425,6 +1425,15 @@ def test_session_security_diagnostics_roundtrip():
     assert obj == obj2
 
 
+def test_extension_object_with_empty_body_roundtrip():
+    """A structure without fields has an empty body, but its length must still be encoded."""
+    data = extensionobject_to_binary(ua.HistoryReadDetails())
+    assert data.endswith(b"\x01\x00\x00\x00\x00")
+    assert extensionobject_from_binary(ua.utils.Buffer(data)) == ua.HistoryReadDetails()
+    group = ua.WriterGroupDataType(Name="group")
+    assert extensionobject_from_binary(ua.utils.Buffer(extensionobject_to_binary(group))) == group
+
+
 def test_builtin_type_variant():
     v = ua.Variant(ua.Int16(4))
     assert v.VariantType == ua.VariantType.Int16
